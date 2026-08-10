@@ -361,3 +361,35 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Local operator config / seeds
+data/
+**/appsettings.*.local.json
+*.local.json
+
+# Secrets and credentials
+.env
+.env.*
+*.pem
+oci.env
+**/Infrastructure-Deployment-Private.md
+
+# JetBrains Rider
+.idea/
+
+# VS Code / Cursor (keep repo-level recommendations out of user settings)
+.vscode/*
+!.vscode/extensions.json
+
+# Cursor local
+.cursor/
+AGENTS.md
+
+# Avalonia / publish leftovers
+publish/
+*.appx
+*.msix
+*.msixbundle
+)
+
+docs/

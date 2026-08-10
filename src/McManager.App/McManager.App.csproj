@@ -2,8 +2,6 @@
   <PropertyGroup>
     <RootNamespace>McManager.App</RootNamespace>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
-    <Nullable>enable</Nullable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
 
@@ -22,7 +20,6 @@
       <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
     </PackageReference>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
-    <PackageReference Include="OCI.DotNetSDK.Common" Version="144.0.0" />
   </ItemGroup>
 
   <ItemGroup>

@@ -7,16 +7,27 @@
         x:Class="McManager.App.Views.MainWindow"
         x:DataType="vm:MainViewModel"
         Icon="/Assets/avalonia-logo.ico"
-        Title="McManager.App">
+        Title="{Binding Title}"
+        Width="800"
+        Height="450">
 
     <Design.DataContext>
-        <!-- This only sets the DataContext for the previewer in an IDE,
-             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
         <vm:MainViewModel />
     </Design.DataContext>
 
-    <TextBox Text="{Binding Greeting}"
-             HorizontalAlignment="Center"
-             VerticalAlignment="Center" />
+    <StackPanel HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Spacing="8">
+        <TextBlock Text="{Binding Title}"
+                   FontSize="22"
+                   FontWeight="SemiBold"
+                   HorizontalAlignment="Center" />
+        <TextBlock Text="{Binding Status}"
+                   Opacity="0.75"
+                   HorizontalAlignment="Center"
+                   TextWrapping="Wrap"
+                   MaxWidth="480"
+                   TextAlignment="Center" />
+    </StackPanel>
 
 </Window>

@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "oci": {
+    "config_file": "%USERPROFILE%\\.oci\\config",
+    "profile": "DEFAULT",
+    "region": "us-sanjose-1",
+    "compartment_id": "ocid1.compartment.oc1..REPLACE_ME",
+    "tenancy_id": "ocid1.tenancy.oc1..REPLACE_ME"
+  },
+  "network": {
+    "vcn_id": "ocid1.vcn.oc1.us-sanjose-1.REPLACE_ME",
+    "subnet_id": "ocid1.subnet.oc1.us-sanjose-1.REPLACE_ME",
+    "security_list_id": "ocid1.securitylist.oc1.us-sanjose-1.REPLACE_ME",
+    "minecraft_port": 25565,
+    "ssh_port": 22,
+    "firewalld_zone": "public"
+  },
+  "vm1": {
+    "instance_id": "ocid1.instance.oc1.us-sanjose-1.REPLACE_ME",
+    "display_name": "minecraft-vm3",
+    "shape": "VM.Standard.A1.Flex",
+    "shape_ocpus": 4.0,
+    "shape_memory_gb": 24.0,
+    "primary_private_ip": "10.0.0.0",
+    "secondary_private_ip": "10.0.0.0",
+    "secondary_private_ip_id": "ocid1.privateip.oc1.us-sanjose-1.REPLACE_ME",
+    "ssh_host": "0.0.0.0",
+    "ssh_user": "ubuntu",
+    "ssh_key_path": "%USERPROFILE%\\.ssh\\REPLACE_ME.key",
+    "world_path": "/home/ubuntu/minecraft/server/world",
+    "minecraft_unit": "minecraft"
+  },
+  "door": {
+    "instance_id": "ocid1.instance.oc1.us-sanjose-1.REPLACE_ME",
+    "display_name": "minecraft-vm-door",
+    "primary_private_ip": "10.0.0.0",
+    "secondary_private_ip": "10.0.0.0",
+    "secondary_private_ip_id": "ocid1.privateip.oc1.us-sanjose-1.REPLACE_ME",
+    "ssh_host": "0.0.0.0",
+    "ssh_user": "ubuntu",
+    "ssh_key_path": "%USERPROFILE%\\.ssh\\REPLACE_ME.key",
+    "http_port": 8080
+  },
+  "play": {
+    "reserved_public_ip": "0.0.0.0",
+    "reserved_public_ip_id": "ocid1.publicip.oc1.us-sanjose-1.REPLACE_ME"
+  },
+  "object_storage": {
+    "namespace": "REPLACE_ME",
+    "bucket": "minecraft-shared-data",
+    "bucket_id": "ocid1.bucket.oc1.us-sanjose-1.REPLACE_ME",
+    "soft_cap_gb": 9.5,
+    "backup_enabled": true,
+    "prefixes": {
+      "meta": "meta/",
+      "ledger": "ledger/",
+      "budget": "budget/",
+      "ip": "ip/",
+      "messages": "messages/",
+      "backups": "backups/"
+    }
+  },
+  "budget": {
+    "monthly_ocpu_target": 1400.0,
+    "monthly_gb_target": 8800.0,
+    "soft_ocpu_cap": 1375.0,
+    "soft_gb_cap": 8600.0,
+    "idle_timeout_minutes": 15,
+    "budget_warn_minutes": 5,
+    "idle_agent_enabled": true
+  },
+  "rcon": {
+    "port": 25575,
+    "password": ""
+  },
+  "admin_name": ""
+}

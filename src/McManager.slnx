@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="../.gitignore" />
+  </Folder>
   <Project Path="McManager.App/McManager.App.csproj" Id="a4410d29-1a23-46ce-924c-acabde414cfe" />
   <Project Path="McManager.Core/McManager.Core.csproj" Id="eca09ac2-103b-47bb-a953-82ca94be7fa6" />
 </Solution>
