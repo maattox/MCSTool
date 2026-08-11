@@ -1,0 +1,7 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="McManager.App.Views.Tabs.AdvancedView">
+    <TextBlock Text="Advanced / Danger Zone — coming in Step 1.7"
+               Margin="24"
+               Opacity="0.75" />
+</UserControl>

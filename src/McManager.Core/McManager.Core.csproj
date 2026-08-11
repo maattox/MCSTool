@@ -6,6 +6,8 @@
 
   <ItemGroup>
     <PackageReference Include="OCI.DotNetSDK.Common" Version="144.0.0" />
+    <PackageReference Include="OCI.DotNetSDK.Core" Version="144.0.0" />
+    <PackageReference Include="OCI.DotNetSDK.Objectstorage" Version="144.0.0" />
   </ItemGroup>
 
 </Project>

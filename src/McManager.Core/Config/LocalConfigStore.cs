@@ -31,6 +31,11 @@ public static class LocalConfigStore
                 return overrideDir;
         }
 
+        // Prefer an existing data/config.local.json while walking up from the binary / cwd.
+        // McManager.slnx lives under src/ — do not treat that as the repo root or we create
+        // src/data/ and miss the canonical repo-root data/ folder.
+        string? solutionDataFallback = null;
+
         foreach (var start in CandidateStarts())
         {
             var dir = new DirectoryInfo(start);
@@ -41,15 +46,28 @@ public static class LocalConfigStore
                 if (File.Exists(configPath))
                     return data;
 
-                if (File.Exists(Path.Combine(dir.FullName, "McManager.slnx"))
-                    || File.Exists(Path.Combine(dir.FullName, "AGENTS.md")))
+                // Product repo root (example configs / AGENTS.md). Prefer over src/ with only the .slnx.
+                if (File.Exists(Path.Combine(dir.FullName, "AGENTS.md"))
+                    || File.Exists(Path.Combine(dir.FullName, "config.local.example.json")))
                 {
                     Directory.CreateDirectory(data);
                     return data;
                 }
 
+                if (solutionDataFallback is null
+                    && File.Exists(Path.Combine(dir.FullName, "McManager.slnx")))
+                {
+                    solutionDataFallback = data;
+                }
+
                 dir = dir.Parent;
             }
+        }
+
+        if (solutionDataFallback is not null)
+        {
+            Directory.CreateDirectory(solutionDataFallback);
+            return solutionDataFallback;
         }
 
         return null;
