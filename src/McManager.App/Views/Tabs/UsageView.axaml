@@ -1,7 +1,94 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="McManager.App.Views.Tabs.UsageView">
-    <TextBlock Text="Usage — coming in Step 1.5"
-               Margin="24"
-               Opacity="0.75" />
+             xmlns:vm="using:McManager.App.ViewModels"
+             x:Class="McManager.App.Views.Tabs.UsageView"
+             x:DataType="vm:UsageViewModel">
+    <ScrollViewer Padding="16">
+        <StackPanel Spacing="16">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8">
+                    <Button Content="Refresh"
+                            Command="{Binding RefreshCommand}"
+                            IsEnabled="{Binding !IsBusy}" />
+                    <Button Content="Save / Publish"
+                            Command="{Binding PublishCommand}"
+                            IsEnabled="{Binding !IsBusy}" />
+                </StackPanel>
+                <TextBlock Text="{Binding StatusMessage}"
+                           TextWrapping="Wrap"
+                           VerticalAlignment="Center"
+                           Opacity="0.85" />
+            </DockPanel>
+
+            <TextBlock Text="Dashboard (Object Storage ledger + budget)"
+                       FontWeight="SemiBold"
+                       FontSize="16" />
+
+            <Grid ColumnDefinitions="180,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Month (UTC)" Opacity="0.7" />
+                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding MonthLabel}" />
+
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Monthly targets" Opacity="0.7" />
+                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding MonthlyTargetsDisplay}" />
+
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Soft caps" Opacity="0.7" />
+                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SoftCapsDisplay}" />
+
+                <TextBlock Grid.Row="3" Grid.Column="0" Text="MTD usage" Opacity="0.7" />
+                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding MtdDisplay}" />
+
+                <TextBlock Grid.Row="4" Grid.Column="0" Text="Avg hours/day" Opacity="0.7" />
+                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding AvgHoursDisplay}" />
+
+                <TextBlock Grid.Row="5" Grid.Column="0" Text="Leftover bank" Opacity="0.7" />
+                <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding LeftoverDisplay}" />
+
+                <TextBlock Grid.Row="6" Grid.Column="0" Text="Today vs daily" Opacity="0.7" />
+                <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding TodayDisplay}" />
+
+                <TextBlock Grid.Row="7" Grid.Column="0" Text="Soft cap hit" Opacity="0.7" />
+                <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding SoftCapHitDisplay}" />
+            </Grid>
+
+            <TextBlock Text="{Binding LastRefreshDisplay, StringFormat=Last refresh: {0}}"
+                       Opacity="0.65"
+                       FontSize="12" />
+
+            <TextBlock Text="Edit budget (publishes to Object Storage)"
+                       FontWeight="SemiBold"
+                       FontSize="16"
+                       Margin="0,8,0,0" />
+
+            <Grid ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="8">
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Monthly OCPU target" VerticalAlignment="Center" />
+                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding EditMonthlyOcpu}" />
+
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Monthly GB target" VerticalAlignment="Center" />
+                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding EditMonthlyGb}" />
+
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Soft OCPU cap" VerticalAlignment="Center" />
+                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding EditSoftOcpu}" />
+
+                <TextBlock Grid.Row="3" Grid.Column="0" Text="Soft GB cap" VerticalAlignment="Center" />
+                <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding EditSoftGb}" />
+
+                <TextBlock Grid.Row="4" Grid.Column="0" Text="Idle timeout (min)" VerticalAlignment="Center" />
+                <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding EditIdleTimeout}" />
+
+                <TextBlock Grid.Row="5" Grid.Column="0" Text="Budget warn (min)" VerticalAlignment="Center" />
+                <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding EditBudgetWarn}" />
+
+                <TextBlock Grid.Row="6" Grid.Column="0" Text="Shape OCPUs" VerticalAlignment="Center" />
+                <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding EditShapeOcpus}" />
+
+                <TextBlock Grid.Row="7" Grid.Column="0" Text="Shape memory GB" VerticalAlignment="Center" />
+                <TextBox Grid.Row="7" Grid.Column="1" Text="{Binding EditShapeMemory}" />
+
+                <TextBlock Grid.Row="8" Grid.Column="0" Text="Idle agent enabled" VerticalAlignment="Center" />
+                <CheckBox Grid.Row="8" Grid.Column="1"
+                          Content="Include idle_agent_enabled in published budget"
+                          IsChecked="{Binding EditIdleAgentEnabled}" />
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
 </UserControl>

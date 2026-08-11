@@ -1,10 +1,27 @@
 using System.Text;
+using System.Text.Json;
 
 namespace McManager.Core.Services;
+
+public interface IDoorClient
+{
+    Task<ServiceResult<string>> GetStatusAsync(CancellationToken cancellationToken = default);
+
+    Task<ServiceResult<DoorStatus>> GetStatusParsedAsync(CancellationToken cancellationToken = default);
+
+    Task<ServiceResult> WakeAsync(CancellationToken cancellationToken = default);
+
+    Task<ServiceResult> IdleEmptyAsync(CancellationToken cancellationToken = default);
+}
 
 public sealed class DoorClient : IDoorClient, IDisposable
 {
     private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(10);
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+    };
+
     private readonly HttpClient _http;
 
     public DoorClient(string doorAdminBaseUrl, HttpClient? httpClient = null)
@@ -33,11 +50,31 @@ public sealed class DoorClient : IDoorClient, IDisposable
         }
     }
 
+    public async Task<ServiceResult<DoorStatus>> GetStatusParsedAsync(CancellationToken cancellationToken = default)
+    {
+        var raw = await GetStatusAsync(cancellationToken);
+        if (!raw.Succeeded || raw.Value is null)
+            return ServiceResult<DoorStatus>.Fail(raw.Error ?? "Door status failed.");
+
+        try
+        {
+            var status = JsonSerializer.Deserialize<DoorStatus>(raw.Value, JsonOptions);
+            if (status is null)
+                return ServiceResult<DoorStatus>.Fail("Door status JSON deserialized to null.");
+
+            return ServiceResult<DoorStatus>.Ok(status);
+        }
+        catch (Exception ex)
+        {
+            return ServiceResult<DoorStatus>.Fail($"Failed to parse door status: {ex.Message}");
+        }
+    }
+
     public async Task<ServiceResult> WakeAsync(CancellationToken cancellationToken = default)
     {
         try
         {
-            using var content = new StringContent("", Encoding.UTF8, "application/json");
+            using var content = new StringContent("{}", Encoding.UTF8, "application/json");
             using var response = await _http.PostAsync("api/wake", content, cancellationToken);
             var body = await response.Content.ReadAsStringAsync(cancellationToken);
 
@@ -59,7 +96,7 @@ public sealed class DoorClient : IDoorClient, IDisposable
     {
         try
         {
-            using var content = new StringContent("", Encoding.UTF8, "application/json");
+            using var content = new StringContent("{}", Encoding.UTF8, "application/json");
             using var response = await _http.PostAsync("api/idle-empty", content, cancellationToken);
             var body = await response.Content.ReadAsStringAsync(cancellationToken);
 

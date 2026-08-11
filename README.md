@@ -34,6 +34,8 @@ Open `src/McManager.slnx` in Visual Studio or Cursor/VS Code with the C# extensi
 
 Stay on **Always Free–eligible** OCI resources unless you explicitly accept spend. Do not add paid shapes, load balancers, or surprise billable services casually.
 
+OCI SDK call patterns (throttling, waiters, request thrift): [`docs/OCI-API-Usage.md`](docs/OCI-API-Usage.md).
+
 ## Dual-repo layout
 
 | Repo | Role |
