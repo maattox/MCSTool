@@ -89,6 +89,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         Usage?.OnTabSelected(selectedIndex == 1);
         ServerManagement?.OnTabSelected(selectedIndex == 2);
+        Advanced?.OnTabSelected(selectedIndex == 3);
     }
 
     private void SetTodayUsageDisplay(string text)
@@ -150,15 +151,22 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             _session = sessionResult.Value;
             _compute = new ComputeService(_session);
-            Advanced = new AdvancedViewModel(_config, _compute, OnAdvancedBusyChanged);
             var os = new ObjectStorageService(_session, _config.ObjectStorage);
             var usageStore = new UsageBudgetStore(os, _config.ObjectStorage.Prefixes);
+            var ssh = new SshService();
+            Advanced = new AdvancedViewModel(
+                _config,
+                _compute,
+                usageStore,
+                ssh,
+                () => Vm1Lifecycle,
+                OnAdvancedBusyChanged);
             Usage = new UsageViewModel(_config, usageStore, SetTodayUsageDisplay, OnUsageBusyChanged);
             var backupStore = new BackupStore(os, _config.ObjectStorage);
             ServerManagement = new ServerManagementViewModel(
                 _config,
                 backupStore,
-                new SshService(),
+                ssh,
                 () => Vm1Lifecycle,
                 OnServerManagementBusyChanged);
         }

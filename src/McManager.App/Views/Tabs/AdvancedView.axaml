@@ -3,23 +3,64 @@
              xmlns:vm="using:McManager.App.ViewModels"
              x:Class="McManager.App.Views.Tabs.AdvancedView"
              x:DataType="vm:AdvancedViewModel">
-    <StackPanel Margin="24" Spacing="12" MaxWidth="640">
-        <TextBlock Text="Break-glass VM power"
-                   FontWeight="SemiBold"
-                   FontSize="16" />
-        <TextBlock Text="These call OCI Compute directly and do NOT move the reserved play IP. Prefer the top-bar Start/Stop (door wake / idle-empty). Full idle / Danger Zone controls arrive in Step 1.7."
-                   TextWrapping="Wrap"
-                   Opacity="0.8" />
-        <StackPanel Orientation="Horizontal" Spacing="8">
-            <Button Content="Raw VM Start"
-                    Command="{Binding BreakGlassStartCommand}"
-                    IsEnabled="{Binding !IsBusy}" />
-            <Button Content="Raw VM SoftStop"
-                    Command="{Binding BreakGlassSoftStopCommand}"
-                    IsEnabled="{Binding !IsBusy}" />
+    <ScrollViewer Padding="16">
+        <StackPanel Spacing="20" MaxWidth="720">
+            <StackPanel Spacing="12">
+                <TextBlock Text="Break-glass VM power"
+                           FontWeight="SemiBold"
+                           FontSize="16" />
+                <TextBlock Text="These call OCI Compute directly and do NOT move the reserved play IP. Prefer the top-bar Start/Stop (door wake / idle-empty)."
+                           TextWrapping="Wrap"
+                           Opacity="0.8" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="Raw VM Start"
+                            Command="{Binding BreakGlassStartCommand}"
+                            IsEnabled="{Binding !IsBusy}" />
+                    <Button Content="Raw VM SoftStop"
+                            Command="{Binding BreakGlassSoftStopCommand}"
+                            IsEnabled="{Binding !IsBusy}" />
+                </StackPanel>
+            </StackPanel>
+
+            <Border Padding="12"
+                    BorderThickness="1"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                    CornerRadius="4">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Danger Zone — Idle agent"
+                               FontWeight="SemiBold"
+                               FontSize="16" />
+                    <TextBlock TextWrapping="Wrap"
+                               Opacity="0.9"
+                               Text="Disable is testing/troubleshooting only. Every VM1 boot / Minecraft start FORCE-ENABLES the idle timer and rewrites shared Object Storage budget to enabled if it was off (OS-ISSUE-7). A forgotten disable cannot leave Always Free brakes off after a restart. Prefer this tab (not Usage) for enable/disable + apply-to-VM." />
+
+                    <Grid ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="8">
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Idle timeout (min)" VerticalAlignment="Center" />
+                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding EditIdleTimeout}" />
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Budget warn (min)" VerticalAlignment="Center" />
+                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding EditBudgetWarn}" />
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Idle agent enabled" VerticalAlignment="Center" />
+                        <CheckBox Grid.Row="2" Grid.Column="1"
+                                  Content="mc-idle-watch.timer active (empty + daily SoftStop)"
+                                  IsChecked="{Binding EditIdleAgentEnabled}" />
+                    </Grid>
+
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="Refresh from Object Storage"
+                                Command="{Binding RefreshIdleFromOsCommand}"
+                                IsEnabled="{Binding !IsBusy}" />
+                        <Button Content="Apply idle settings"
+                                Command="{Binding ApplyIdleSettingsCommand}"
+                                IsEnabled="{Binding !IsBusy}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <TextBlock Text="{Binding StatusMessage}"
+                       TextWrapping="Wrap"
+                       Opacity="0.85" />
         </StackPanel>
-        <TextBlock Text="{Binding StatusMessage}"
-                   TextWrapping="Wrap"
-                   Opacity="0.85" />
-    </StackPanel>
+    </ScrollViewer>
 </UserControl>
