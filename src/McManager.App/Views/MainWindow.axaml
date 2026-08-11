@@ -90,7 +90,7 @@
                 <tabs:UsageView DataContext="{Binding Usage}" />
             </TabItem>
             <TabItem Header="Server Management">
-                <tabs:ServerManagementView />
+                <tabs:ServerManagementView DataContext="{Binding ServerManagement}" />
             </TabItem>
             <TabItem Header="Advanced / Danger Zone">
                 <tabs:AdvancedView DataContext="{Binding Advanced}" />

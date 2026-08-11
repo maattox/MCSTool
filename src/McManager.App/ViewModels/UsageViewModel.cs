@@ -137,7 +137,8 @@ public partial class UsageViewModel : ViewModelBase, IDisposable
         var confirmed = await ConfirmDialog.ShowAsync(
             owner,
             "Publish budget?",
-            "This publishes budget/config.json to Object Storage and notifies door + VM1 (dirty flags). Continue?");
+            "This publishes budget/config.json to Object Storage and notifies door + VM1 (dirty flags). Continue?",
+            confirmButtonText: "Publish");
         if (!confirmed)
         {
             StatusMessage = "Publish cancelled.";

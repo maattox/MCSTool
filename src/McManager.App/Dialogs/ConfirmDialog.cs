@@ -6,19 +6,24 @@ namespace McManager.App.Dialogs;
 
 public static class ConfirmDialog
 {
-    public static async Task<bool> ShowAsync(Window? owner, string title, string message)
+    public static async Task<bool> ShowAsync(
+        Window? owner,
+        string title,
+        string message,
+        string confirmButtonText = "OK")
     {
         var result = false;
         var dialog = new Window
         {
             Title = title,
-            Width = 440,
-            Height = 220,
+            Width = 480,
+            MinHeight = 200,
+            SizeToContent = SizeToContent.Height,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             CanResize = false,
         };
 
-        var ok = new Button { Content = "Publish", MinWidth = 88, IsDefault = true };
+        var ok = new Button { Content = confirmButtonText, MinWidth = 88, IsDefault = true };
         var cancel = new Button { Content = "Cancel", MinWidth = 88, IsCancel = true };
 
         ok.Click += (_, _) =>

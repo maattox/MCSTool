@@ -68,6 +68,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     public UsageViewModel? Usage { get; private set; }
 
+    public ServerManagementViewModel? ServerManagement { get; private set; }
+
     public AdvancedViewModel? Advanced { get; private set; }
 
     public MainViewModel()
@@ -86,6 +88,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     public void OnMainTabChanged(int selectedIndex)
     {
         Usage?.OnTabSelected(selectedIndex == 1);
+        ServerManagement?.OnTabSelected(selectedIndex == 2);
     }
 
     private void SetTodayUsageDisplay(string text)
@@ -94,6 +97,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     }
 
     private void OnUsageBusyChanged(bool busy)
+    {
+        IsBusy = busy;
+        UpdateCommandFlags();
+    }
+
+    private void OnServerManagementBusyChanged(bool busy)
     {
         IsBusy = busy;
         UpdateCommandFlags();
@@ -130,6 +139,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             Status = $"Config OK, but OCI session failed: {sessionResult.Error}";
             Usage = new UsageViewModel(_config, store: null, SetTodayUsageDisplay, OnUsageBusyChanged);
+            ServerManagement = new ServerManagementViewModel(
+                _config,
+                backups: null,
+                new SshService(),
+                () => Vm1Lifecycle,
+                OnServerManagementBusyChanged);
         }
         else
         {
@@ -139,6 +154,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             var os = new ObjectStorageService(_session, _config.ObjectStorage);
             var usageStore = new UsageBudgetStore(os, _config.ObjectStorage.Prefixes);
             Usage = new UsageViewModel(_config, usageStore, SetTodayUsageDisplay, OnUsageBusyChanged);
+            var backupStore = new BackupStore(os, _config.ObjectStorage);
+            ServerManagement = new ServerManagementViewModel(
+                _config,
+                backupStore,
+                new SshService(),
+                () => Vm1Lifecycle,
+                OnServerManagementBusyChanged);
         }
 
         try

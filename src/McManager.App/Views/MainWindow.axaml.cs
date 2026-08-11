@@ -6,6 +6,8 @@ namespace McManager.App.Views;
 
 public partial class MainWindow : Window
 {
+    private int _lastMainTabIndex = -1;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -16,8 +18,15 @@ public partial class MainWindow : Window
 
     private void OnMainTabsSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        if (sender is TabControl tabs && DataContext is MainViewModel vm)
-            vm.OnMainTabChanged(tabs.SelectedIndex);
+        // ListBox/other nested Selectors also raise SelectionChanged that bubbles to TabControl.
+        // Only react when the selected tab index actually changes.
+        if (sender is not TabControl tabs || DataContext is not MainViewModel vm)
+            return;
+        if (tabs.SelectedIndex == _lastMainTabIndex)
+            return;
+
+        _lastMainTabIndex = tabs.SelectedIndex;
+        vm.OnMainTabChanged(tabs.SelectedIndex);
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
