@@ -26,6 +26,8 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     private bool _configLoaded;
 
+    public WhitelistViewModel? Whitelist { get; private set; }
+
     public MainViewModel()
     {
         _ = InitializeAsync();
@@ -45,6 +47,11 @@ public partial class MainViewModel : ViewModelBase
         PlayIp = string.IsNullOrWhiteSpace(cfg.Play.ReservedPublicIp)
             ? Placeholder
             : cfg.Play.ReservedPublicIp;
+
+        Whitelist = new WhitelistViewModel(
+            cfg,
+            loaded.Friends,
+            loaded.DataDirectory ?? "");
 
         var warn = loaded.Warnings.Count == 0
             ? ""

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using McManager.Core.Services;
 
 namespace McManager.Core.Config;
 
@@ -71,6 +72,43 @@ public static class LocalConfigStore
         }
 
         return null;
+    }
+
+    private static readonly JsonSerializerOptions JsonWriteOptions = new()
+    {
+        WriteIndented = true,
+        PropertyNamingPolicy = null,
+    };
+
+    public static string? GetFriendsFilePath(string? dataDirectory = null)
+    {
+        dataDirectory ??= TryFindDataDirectory();
+        return dataDirectory is null
+            ? null
+            : Path.Combine(dataDirectory, FriendsFileName);
+    }
+
+    public static ServiceResult SaveFriends(FriendsLocalFile friends, string? dataDirectory = null)
+    {
+        dataDirectory ??= TryFindDataDirectory();
+        if (dataDirectory is null)
+        {
+            return ServiceResult.Fail(
+                $"Could not locate data directory. Set {ConfigDirEnvVar} or ensure data/ exists.");
+        }
+
+        try
+        {
+            Directory.CreateDirectory(dataDirectory);
+            var path = Path.Combine(dataDirectory, FriendsFileName);
+            var json = JsonSerializer.Serialize(friends, JsonWriteOptions);
+            File.WriteAllText(path, json);
+            return ServiceResult.Ok();
+        }
+        catch (Exception ex)
+        {
+            return ServiceResult.Fail($"Failed to save friends: {ex.Message}");
+        }
     }
 
     public static LocalConfigLoadResult Load()

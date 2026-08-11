@@ -71,7 +71,7 @@
 
         <TabControl Margin="8">
             <TabItem Header="Whitelist">
-                <tabs:WhitelistView />
+                <tabs:WhitelistView DataContext="{Binding Whitelist}" />
             </TabItem>
             <TabItem Header="Usage">
                 <tabs:UsageView />

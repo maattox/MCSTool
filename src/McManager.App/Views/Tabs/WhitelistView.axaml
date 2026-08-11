@@ -1,7 +1,104 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="McManager.App.Views.Tabs.WhitelistView">
-    <TextBlock Text="Whitelist — coming in Step 1.3"
-               Margin="24"
-               Opacity="0.75" />
+             xmlns:vm="using:McManager.App.ViewModels"
+             x:Class="McManager.App.Views.Tabs.WhitelistView"
+             x:DataType="vm:WhitelistViewModel">
+    <Grid RowDefinitions="Auto,*,Auto,Auto" Margin="16" RowSpacing="12">
+        <TextBlock Grid.Row="0"
+                   Text="Allowlisted friends sync to the OCI Security List (firewalld deferred)."
+                   TextWrapping="Wrap"
+                   Opacity="0.8" />
+
+        <Border Grid.Row="1"
+                BorderThickness="1"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                CornerRadius="4"
+                Padding="8">
+            <Grid RowDefinitions="Auto,*">
+                <Grid Grid.Row="0"
+                      ColumnDefinitions="*,140,80"
+                      Margin="0,0,0,8"
+                      Opacity="0.7">
+                    <TextBlock Grid.Column="0" Text="Name" FontWeight="SemiBold" />
+                    <TextBlock Grid.Column="1" Text="IP" FontWeight="SemiBold" />
+                    <TextBlock Grid.Column="2" Text="Admin" FontWeight="SemiBold" />
+                </Grid>
+                <ListBox Grid.Row="1"
+                         ItemsSource="{Binding Friends}"
+                         SelectedItem="{Binding SelectedFriend}"
+                         MinHeight="160">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="vm:FriendRowViewModel">
+                            <Grid ColumnDefinitions="*,140,80">
+                                <TextBlock Grid.Column="0" Text="{Binding Name}" />
+                                <TextBlock Grid.Column="1" Text="{Binding Ip}" />
+                                <CheckBox Grid.Column="2"
+                                          IsChecked="{Binding IsAdmin}"
+                                          IsHitTestVisible="False"
+                                          HorizontalAlignment="Left" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="2" ColumnDefinitions="*,140,80,Auto" ColumnSpacing="8">
+            <TextBox Grid.Column="0"
+                     PlaceholderText="Name (optional)"
+                     Text="{Binding EditName}" />
+            <TextBox Grid.Column="1"
+                     PlaceholderText="IPv4"
+                     Text="{Binding EditIp}" />
+            <CheckBox Grid.Column="2"
+                      Content="Admin"
+                      IsChecked="{Binding EditIsAdmin}"
+                      VerticalAlignment="Center" />
+            <StackPanel Grid.Column="3"
+                        Orientation="Horizontal"
+                        Spacing="8">
+                <Button Content="Add" Command="{Binding AddFriendCommand}" />
+                <Button Content="Update" Command="{Binding UpdateSelectedCommand}" />
+                <Button Content="Remove" Command="{Binding RemoveSelectedCommand}" />
+            </StackPanel>
+        </Grid>
+
+        <StackPanel Grid.Row="3" Spacing="12">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="Save"
+                        Command="{Binding SaveFriendsCommand}" />
+                <Button Content="Sync to OCI"
+                        Command="{Binding SyncToOciCommand}"
+                        IsEnabled="{Binding !IsBusy}" />
+            </StackPanel>
+
+            <Border Padding="12"
+                    BorderThickness="1"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                    CornerRadius="4">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Update admin IP"
+                               FontWeight="SemiBold" />
+                    <TextBlock Text="Detect or paste your current public IP, then update the admin friend's SSH / Minecraft / door rules."
+                               TextWrapping="Wrap"
+                               Opacity="0.75" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBox Width="180"
+                                 PlaceholderText="Public IPv4"
+                                 Text="{Binding AdminIpInput}" />
+                        <Button Content="Detect IP"
+                                Command="{Binding DetectPublicIpCommand}"
+                                IsEnabled="{Binding !IsBusy}" />
+                        <Button Content="Update admin IP + sync"
+                                Command="{Binding UpdateAdminIpCommand}"
+                                IsEnabled="{Binding !IsBusy}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <TextBlock Text="{Binding StatusMessage}"
+                       TextWrapping="Wrap"
+                       Opacity="0.85" />
+        </StackPanel>
+    </Grid>
 </UserControl>
