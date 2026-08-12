@@ -33,25 +33,8 @@ rcon_setup() {
 
   server_properties_apply "${secret}"
 
-  # Minimal seam: if idle-agent config exists, keep rcon_password in sync.
-  # Full world_path/minecraft_unit sync is Step 2.4.
-  if [[ -f "${MC_MANAGER_CONFIG}" ]]; then
-    local py
-    py="$(mcmgr_python)"
-    "${py}" - "${MC_MANAGER_CONFIG}" "${secret}" <<'PY'
-import json, sys
-path, password = sys.argv[1:3]
-with open(path, encoding="utf-8") as f:
-    cfg = json.load(f)
-cfg["rcon_password"] = password
-cfg.setdefault("rcon_host", "127.0.0.1")
-cfg.setdefault("rcon_port", 25575)
-with open(path, "w", encoding="utf-8") as f:
-    json.dump(cfg, f, indent=2)
-    f.write("\n")
-PY
-    mcmgr_log "rcon: patched ${MC_MANAGER_CONFIG} rcon_password"
-  fi
+  # Full idle-agent key sync (world_path / unit / port / password) runs after
+  # manifest_write via idle_agent_sync.sh (§10.2). Password-only early patch removed.
 
   export RCON_PASSWORD_REF="file:${RCON_SECRET}"
 }

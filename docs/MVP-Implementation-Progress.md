@@ -4,7 +4,7 @@
 **Not authority for intent:** product goals still live in lab `PRODUCT-IDEAS.md` and the checklist in [`MVP-Implementation-Plan.md`](MVP-Implementation-Plan.md). This file records **as-built/as-frozen** behavior so agents and the operator do not rediscover completed steps.  
 **Update policy:** Append or revise sections when an MVP plan step completes. Broader docs (README, lab `VM-Software.md`, etc.) wait until the relevant exit gate / operator asks.
 
-**As of:** 2026-08-11 (Phase **1 DONE**; Phase **2 IN PROGRESS** — Steps **2.1–2.3 DONE**; **NEXT = Step 2.4** door/agent gaps).
+**As of:** 2026-08-11 (Phase **1 DONE**; Phase **2 DONE** — Steps **2.1–2.4**; **NEXT = Step 3.1** OpenTofu skeleton).
 
 ---
 
@@ -24,7 +24,8 @@
 | **2.1** | Document OS / meta / ledger contracts | **DONE** (live-bucket reviewed) |
 | **2.2** | Infra meta object (`meta/infra.json`) | **DONE** (live migrated + round-trip) |
 | **2.3** | Vanilla on-box path readiness | **DONE** (offline dry-run + fixtures) |
-| 2.4+ | Door/agent gaps / remaining Phase 2 | NEXT |
+| **2.4** | Door / agent product gaps | **DONE** (force OS pull; §10.2 sync; oversized flag; OS-ISSUE-6 deferred) |
+| 3.1+ | Setup / OpenTofu | NEXT |
 
 **Run:**
 
@@ -809,12 +810,46 @@ Asserts §4.1-shaped `game-manifest.json` (`distribution=vanilla`, `loader=null`
 ### Limits / deferred
 
 - No live aarch64 VM install this step (operator greenfield E2E later).
-- Full idle-agent `world_path` / `minecraft_unit` sync → Step **2.4**.
+- Full idle-agent `world_path` / `minecraft_unit` sync completed in Step **2.4**.
 - Paper/modded modules, OpenTofu, Setup wizard → Phase 3 / v1.
 
 ### Next
 
-**Step 2.4** — Door / agent product gaps (incl. blueprint §10.2 idle-agent config sync from game-manifest).
+**Step 2.4** — Door / agent product gaps (incl. blueprint §10.2 idle-agent config sync from game-manifest). **Completed below.**
+
+---
+
+## Step 2.4 — Door / agent product gaps
+
+**Status:** DONE (2026-08-11).
+
+### Triage
+
+| Item | Outcome |
+|------|---------|
+| OS-ISSUE-6 door SoftStop skips backup | **Deferred** with operator OK — idle SoftStop still backs up; MVP criterion is soft-cap policy |
+| Door wake stale OS cache | **Fixed** — `pull_os_budget.sh --force` on wake + `/api/os-refresh` (OS-ISSUE-8) |
+| Door accounting LA/OCPU-only vs Manager UTC | Deferred (not MVP blocker for wake gate with OS SoT) |
+| DOOR-ISSUE-1 MOTD / OS-ISSUE-3 dual-write / OS-ISSUE-7 | Deferred / by design |
+
+### What shipped
+
+| Piece | Repo | Role |
+|-------|------|------|
+| `door_vm/src/control.c` `run_script_args(..., "--force")` | lab | Wake + os-refresh always re-pull OS ledger/budget |
+| `app/door_deploy.py` prefer `door_vm/` | lab | Avoid stale `development/` deploy tree |
+| `onbox/mcmgr/common/idle_agent_sync.sh` | product | After `manifest_write`, RMW idle `world_path` / `minecraft_unit` / `rcon_port` / `rcon_password` |
+| `vm_agent/world_backup.py` oversized flag | lab | PUT `meta/oversized-world-backup.json` + skip while blocked (no hard SoftStop fail) |
+
+### Verification
+
+- Offline dry-run assert includes §10.2 idle config match.
+- Live door: Phase 3 redeploy + `run_door_pull(force=True)` → `force=1` + `os-refresh {"ok":true}`.
+- Live VM1: idle agent redeployed; synthetic mock set/skip for oversized path OK.
+
+### Next
+
+**Step 3.1** — OpenTofu module skeleton (product names).
 
 ---
 
@@ -833,23 +868,25 @@ Through Step **1.8** Phase 1 exit:
 - Danger Zone idle apply (OS + SSH) and boot force-enable story
 - Exit gate: Python Manager optional for normal day-to-day manage
 
-Through Steps **2.1–2.3**:
+Through Steps **2.1–2.4**:
 
 - Contract doc reviewed against live bucket sample objects (read-only in 2.1)
 - `meta/infra.json` legacy → nested v2 publish + GET round-trip
 - Published meta contains no SSH private key paths / OCI config path / RCON password
 - Advanced Refresh/Publish infra meta wired for operator re-test
-- Offline Vanilla bootstrap dry-run (`onbox/mcmgr`) for 1.21.1 / 1.21.11 — §4.1 manifest + generic unit asserts
+- Offline Vanilla bootstrap dry-run (`onbox/mcmgr`) for 1.21.1 / 1.21.11 — §4.1 manifest + generic unit + §10.2 idle sync asserts
+- Door wake force OS pull redeployed; oversized-world flag set/skip on VM1 agent
 
 ---
 
 ## Explicitly not built yet (Phase 2+)
 
-- Step 2.4 conformance work recorded by the contract (door refresh/accounting, budget/backup concurrency, oversized-world set/skip, restore hardening as prioritized) + idle-agent §10.2 manifest sync
-- Setup / OpenTofu, Connect-existing hydrate UI, installer, update checks
+- Setup / OpenTofu (Phase 3+), Connect-existing hydrate UI, installer, update checks
+- Door SoftStop pre-stop world backup (OS-ISSUE-6 — deferred)
+- Door UTC/override/GB accounting parity with Manager
 - firewalld sync, notification center / settings gear
 - Usage: lease apply, interval editor, SSH ledger push/pull
-- Flag-driven Object Storage → VM1 world apply; oversized-world SSH download (v1)
+- Flag-driven Object Storage → VM1 world apply; oversized-world SSH download / Manager clear UX (v1)
 - Separate “disable daily guardrails only” flag
 
 ---
@@ -858,6 +895,7 @@ Through Steps **2.1–2.3**:
 
 | Date | Note |
 |------|------|
+| 2026-08-11 | Step 2.4: door `--force` OS pull; §10.2 idle sync; oversized-world flag; Phase 2 DONE; NEXT = 3.1. |
 | 2026-08-11 | Step 2.3: `onbox/mcmgr/` Vanilla bootstrap + fixtures/dry-run; NEXT = Step 2.4. |
 | 2026-08-11 | Expanded as-built docs for Steps **1.8**, **2.1**, and **2.2** (exit gate / contract freeze / infra meta) to match 1.5–1.7 depth; refreshed architecture + file map through 2.2. |
 | 2026-08-11 | Step 2.2: nested `meta/infra.json` v2 DTO/store + Advanced publish; live legacy v1 migrated; round-trip + secret scan OK; NEXT = Step 2.3. |

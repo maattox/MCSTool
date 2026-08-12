@@ -6,6 +6,7 @@ set -euo pipefail
 MANIFEST="${1:?manifest path}"
 UNIT="${2:?unit path}"
 SECRET="${3:?rcon secret path}"
+IDLE_CFG="${4:-}"
 
 PY=""
 if command -v python3 >/dev/null 2>&1; then PY=python3
@@ -18,17 +19,20 @@ fi
 [[ -f "${MANIFEST}" ]] || { echo "missing manifest"; exit 1; }
 [[ -f "${UNIT}" ]] || { echo "missing unit"; exit 1; }
 [[ -f "${SECRET}" ]] || { echo "missing rcon secret"; exit 1; }
+[[ -n "${IDLE_CFG}" && -f "${IDLE_CFG}" ]] || { echo "missing idle-agent config (${IDLE_CFG})"; exit 1; }
 
-"${PY}" - "${MANIFEST}" "${UNIT}" "${SECRET}" <<'PY'
+"${PY}" - "${MANIFEST}" "${UNIT}" "${SECRET}" "${IDLE_CFG}" <<'PY'
 import json, sys, re
 
-manifest_path, unit_path, secret_path = sys.argv[1:4]
+manifest_path, unit_path, secret_path, idle_cfg_path = sys.argv[1:5]
 with open(manifest_path, encoding="utf-8") as f:
     doc = json.load(f)
 with open(unit_path, encoding="utf-8") as f:
     unit = f.read()
 password = open(secret_path, encoding="utf-8").read().strip()
 assert password, "empty rcon secret"
+with open(idle_cfg_path, encoding="utf-8") as f:
+    idle = json.load(f)
 
 required = [
     "schema_version", "game_type", "distribution", "minecraft_version",
@@ -78,5 +82,11 @@ assert "WorkingDirectory=" in unit
 # Generic generator: no hard-coded vanilla-only comment required, but must not shell-wrap.
 assert "bash -c" not in unit
 
-print("assert-dry-run: all checks passed")
+# §10.2 idle-agent sync
+assert idle.get("world_path") == doc["world_path"], "idle world_path mismatch"
+assert idle.get("minecraft_unit") == doc["minecraft_unit"], "idle minecraft_unit mismatch"
+assert int(idle.get("rcon_port")) == int(doc["rcon"]["port"]), "idle rcon_port mismatch"
+assert idle.get("rcon_password") == password, "idle rcon_password mismatch"
+
+print("assert-dry-run: all checks passed (incl. §10.2 idle sync)")
 PY

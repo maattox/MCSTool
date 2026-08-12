@@ -70,7 +70,7 @@ These are normative rules for new Phase 2+ work. Existing lab/product code does 
 |------------|---------|----------------------------|---------|--------|
 | `meta/infra.json` | canonical **2** | Setup; Manager infra-publish/upgrade | Manager / Connect existing; diagnostics | **Live nested v2** after Step 2.2 migration |
 | `meta/flags.json` | 1 | Shared protocol (last modifier) | Manager, VM1, door | Live |
-| `meta/oversized-world-backup.json` | 1 | VM1 backup agent | Manager | Reserved contract; on-box implementation is Step 2.4 / v1 UX later |
+| `meta/oversized-world-backup.json` | 1 | VM1 backup agent | Manager | **Live set/skip (Step 2.4)**; Manager UX / clear flow remains v1 |
 | `meta/world-restore-request.json` | 1 | Manager requests; VM1 updates outcome | VM1, Manager | Reserved contract for flag-driven restore; current MVP uses SSH fallback |
 | `meta/backup-upload-lock.json` | 1 | Manager or VM1 active uploader | Manager, VM1 | Reserved coordination contract; not implemented |
 | `ledger/usage.json` | 2 | VM1; door only for STOPPED orphan heal | Manager, door, VM1 boot | Live |
@@ -636,7 +636,7 @@ No live objects were modified during review.
 ## Known gaps after contract freeze
 
 1. **Step 2.2 (done):** canonical nested `meta/infra.json` v2 read/write + live legacy migration; unsupported newer schema rejected on read.
-2. **Step 2.4:** add VM1 `meta/oversized-world-backup.json` set/skip behavior.
+2. **DONE (Step 2.4):** VM1 `meta/oversized-world-backup.json` set/skip behavior in `vm_agent/world_backup.py`.
 3. **Step 2.4:** make door wake force-refresh/validate authoritative ledger+budget rather than relying only on flags/cache.
 4. **Step 2.4:** align door UTC/override/OCPU+GB accounting with Manager and VM1, or record an operator-approved deferral.
 5. Conditional writes are robust for the ledger but not consistently applied to budget/flags/other shared JSON.

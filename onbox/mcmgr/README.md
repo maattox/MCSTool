@@ -8,8 +8,8 @@
 
 ```text
 onbox/mcmgr/
-  common/driver.sh              shared stages (layout → java → module → eula/rcon → unit → manifest)
-  common/*.sh                   helpers
+  common/driver.sh              shared stages (… → manifest → idle_agent_sync)
+  common/*.sh                   helpers (incl. idle_agent_sync.sh §10.2)
   modules/bootstrap-vanilla.sh  piston-meta Vanilla installer module only
   templates/minecraft.service.in
   dry-run/run-dry-run.sh        offline proof (fixtures + temp root)

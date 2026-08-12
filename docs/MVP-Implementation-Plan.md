@@ -70,15 +70,15 @@ Do not commit. Do not start the following large step unless I say so.
 |-------|--------|--------|
 | **0** | Operator infra + dual-repo foundation | **DONE** |
 | **1** | Avalonia manage MVP (existing stack) | **DONE** |
-| **2** | On-box / contract freeze for product | **IN PROGRESS** — next: Step 2.4 |
-| **3** | Setup wizard + OpenTofu greenfield | **TODO** |
+| **2** | On-box / contract freeze for product | **DONE** |
+| **3** | Setup wizard + OpenTofu greenfield | **TODO** — next: Step 3.1 |
 | **4** | Connect-existing (auto-detect + meta) | **TODO** |
 | **5** | UI polish (novice-ready) | **TODO** |
 | **6** | Guide + greenfield E2E proof | **TODO** |
 | **7** | Packaging, updates, closed beta | **TODO** |
 | **8** | MVP exit review | **TODO** |
 
-**Current NEXT step:** [2.4 — Door / agent product gaps that block MVP](#step-24--door--agent-product-gaps-that-block-mvp)
+**Current NEXT step:** [3.1 — OpenTofu module skeleton](#step-31--opentofu-module-skeleton-product-names)
 
 ---
 
@@ -384,7 +384,7 @@ Operator Always Free stack + product repo bootstrap. Do not re-do unless somethi
 
 ### Step 2.4 — Door / agent product gaps that block MVP
 
-**Status:** NEXT  
+**Status:** DONE  
 
 **Do**
 
@@ -401,7 +401,7 @@ Operator Always Free stack + product repo bootstrap. Do not re-do unless somethi
 
 **Done when:** No known on-box blocker for MVP success criteria (or deferred with operator initials in changelog).
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-11 — Triaged Issues: **OS-ISSUE-6 deferred** (idle SoftStop still backs up; door Stop skip OK for MVP soft-cap criterion). Door `do_wake`/`os-refresh` now `pull_os_budget.sh --force` (OS-ISSUE-8 fixed); redeployed door from `door_vm/` (resolve order prefers SoT). Product `idle_agent_sync.sh` after `manifest_write` + dry-run §10.2 assert. `vm_agent/world_backup.py` sets/skips `meta/oversized-world-backup.json`; agent redeployed; synthetic set/skip smoke on VM1. NEXT = Step 3.1.
 
 ---
 
@@ -411,7 +411,7 @@ Operator Always Free stack + product repo bootstrap. Do not re-do unless somethi
 
 ### Step 3.1 — OpenTofu module skeleton (product names)
 
-**Status:** TODO  
+**Status:** NEXT  
 
 **Do**
 
@@ -682,6 +682,7 @@ Operator Always Free stack + product repo bootstrap. Do not re-do unless somethi
 
 | Date | Note |
 |------|------|
+| 2026-08-11 | Step 2.4 DONE: door wake `--force` OS pull; idle-agent §10.2 sync; oversized-world flag set/skip; OS-ISSUE-6 deferred with operator OK. Phase 2 complete. NEXT = Step 3.1. |
 | 2026-08-11 | Step 2.3 DONE: product `onbox/mcmgr/` Vanilla bootstrap (generic driver + piston-meta module) + offline dry-run/fixtures. NEXT = Step 2.4. |
 | 2026-08-11 | Aligned Phase 2/3 steps with [`Minecraft-Server-Deployment-Blueprint.md`](Minecraft-Server-Deployment-Blueprint.md) §30: Step 2.3 Do list covers §3–§9/§16 (layout, RCON, properties, generic unit, final manifest); Step 2.4 adds idle-agent §10.2 sync; Steps 3.1–3.3 encode §13/§14 OpenTofu-vs-game split + bootstrap resume; out-of-scope notes no in-app pack catalog. NEXT remains Step 2.3. |
 | 2026-08-11 | Step 1.8 / Phase 1 DONE: manage MVP exit gate; Avalonia usable for daily ops. NEXT = Step 2.1. |

@@ -24,6 +24,8 @@ source "${COMMON_DIR}/rcon.sh"
 source "${COMMON_DIR}/unit_gen.sh"
 # shellcheck source=manifest_write.sh
 source "${COMMON_DIR}/manifest_write.sh"
+# shellcheck source=idle_agent_sync.sh
+source "${COMMON_DIR}/idle_agent_sync.sh"
 
 on_err() {
   local ec=$?
@@ -92,6 +94,7 @@ main() {
   export SERVER_DIR WORLD_PATH
 
   run_stage manifest_written manifest_write
+  run_stage idle_agent_synced idle_agent_sync_from_manifest
 
   if [[ "${DRY_RUN}" != "1" ]]; then
     # Optional start + light health check (RCON may not be ready until first world gen).

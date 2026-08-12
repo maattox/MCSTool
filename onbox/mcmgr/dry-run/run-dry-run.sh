@@ -30,8 +30,9 @@ bash "${ROOT}/common/driver.sh"
 MANIFEST="${STAGING}/etc/mcmgr/game-manifest.json"
 UNIT="${STAGING}/etc/systemd/system/minecraft.service"
 SECRET="${STAGING}/etc/mcmgr/rcon.secret"
+IDLE_CFG="${STAGING}/etc/mc-manager/config.json"
 
-bash "${ROOT}/dry-run/assert-dry-run.sh" "${MANIFEST}" "${UNIT}" "${SECRET}"
+bash "${ROOT}/dry-run/assert-dry-run.sh" "${MANIFEST}" "${UNIT}" "${SECRET}" "${IDLE_CFG}"
 
 echo "[dry-run] OK"
 echo "[dry-run] manifest=${MANIFEST}"
