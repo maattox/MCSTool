@@ -13,10 +13,12 @@ public partial class AdvancedViewModel : ViewModelBase
     private readonly ManagerLocalConfig _config;
     private readonly ComputeService _compute;
     private readonly UsageBudgetStore? _budgetStore;
+    private readonly InfraMetaStore? _infraStore;
     private readonly ISshService _ssh;
     private readonly Func<string> _getVm1Lifecycle;
     private readonly Action<bool> _setBusy;
     private BudgetConfigDocument? _lastBudget;
+    private InfraMetaDocument? _lastInfra;
 
     [ObservableProperty]
     private string _statusMessage =
@@ -34,10 +36,23 @@ public partial class AdvancedViewModel : ViewModelBase
     [ObservableProperty]
     private bool _editIdleAgentEnabled = true;
 
+    [ObservableProperty]
+    private string _infraSummary = "Not loaded yet.";
+
+    [ObservableProperty]
+    private string _editStackVersion = InfraMetaDocument.DefaultStackVersion;
+
+    [ObservableProperty]
+    private string _editServerKind = "vanilla";
+
+    [ObservableProperty]
+    private string _editMinecraftVersion = "unspecified";
+
     public AdvancedViewModel(
         ManagerLocalConfig config,
         ComputeService compute,
         UsageBudgetStore? budgetStore,
+        InfraMetaStore? infraStore,
         ISshService ssh,
         Func<string> getVm1Lifecycle,
         Action<bool> setBusy)
@@ -45,6 +60,7 @@ public partial class AdvancedViewModel : ViewModelBase
         _config = config;
         _compute = compute;
         _budgetStore = budgetStore;
+        _infraStore = infraStore;
         _ssh = ssh;
         _getVm1Lifecycle = getVm1Lifecycle;
         _setBusy = setBusy;
@@ -53,8 +69,15 @@ public partial class AdvancedViewModel : ViewModelBase
 
     public void OnTabSelected(bool selected)
     {
-        if (selected)
-            _ = RefreshIdleFromOsAsync();
+        if (!selected)
+            return;
+        _ = RefreshAdvancedTabAsync();
+    }
+
+    private async Task RefreshAdvancedTabAsync()
+    {
+        await RefreshIdleFromOsAsync();
+        await RefreshInfraMetaAsync();
     }
 
     [RelayCommand]
@@ -262,6 +285,141 @@ public partial class AdvancedViewModel : ViewModelBase
             IsBusy = false;
             _setBusy(false);
         }
+    }
+
+    [RelayCommand]
+    private async Task RefreshInfraMetaAsync()
+    {
+        if (_infraStore is null)
+        {
+            InfraSummary = "Object Storage unavailable — cannot read meta/infra.json.";
+            return;
+        }
+
+        if (IsBusy)
+            return;
+
+        IsBusy = true;
+        _setBusy(true);
+        StatusMessage = "Loading meta/infra.json…";
+
+        try
+        {
+            var read = await _infraStore.GetAsync();
+            if (!read.Succeeded || read.Value is null)
+            {
+                InfraSummary = read.Error ?? "Failed to read meta/infra.json.";
+                StatusMessage = InfraSummary;
+                return;
+            }
+
+            ApplyInfraRead(read.Value);
+            StatusMessage = read.Value.Notes;
+        }
+        finally
+        {
+            IsBusy = false;
+            _setBusy(false);
+        }
+    }
+
+    [RelayCommand]
+    private async Task PublishInfraMetaAsync()
+    {
+        if (_infraStore is null)
+        {
+            StatusMessage = "Object Storage unavailable — cannot publish meta/infra.json.";
+            return;
+        }
+
+        if (IsBusy)
+            return;
+
+        var stackVersion = EditStackVersion.Trim();
+        var serverKind = EditServerKind.Trim();
+        var minecraftVersion = EditMinecraftVersion.Trim();
+        if (string.IsNullOrWhiteSpace(stackVersion)
+            || string.IsNullOrWhiteSpace(serverKind)
+            || string.IsNullOrWhiteSpace(minecraftVersion))
+        {
+            StatusMessage = "stack_version, server_kind, and minecraft_version are required.";
+            return;
+        }
+
+        var window = (Avalonia.Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)
+            ?.MainWindow;
+        var confirmed = await ConfirmDialog.ShowAsync(
+            window,
+            "Publish infrastructure meta?",
+            "This writes meta/infra.json from local config (OCIDs, play IP, network, VM/door identity, Object Storage). "
+            + "It does NOT include SSH private keys, OCI API paths, or RCON passwords.\n\n"
+            + "If the bucket still has the legacy flat v1 object, this migrates it to nested v2 for Connect existing. Continue?",
+            confirmButtonText: "Publish meta");
+        if (!confirmed)
+        {
+            StatusMessage = "Publish meta cancelled.";
+            return;
+        }
+
+        IsBusy = true;
+        _setBusy(true);
+        StatusMessage = "Publishing meta/infra.json…";
+
+        try
+        {
+            var published = await _infraStore.PublishFromLocalAsync(
+                _config,
+                stackVersion: stackVersion,
+                serverKind: serverKind,
+                minecraftVersion: minecraftVersion);
+            if (!published.Succeeded || published.Value is null)
+            {
+                StatusMessage = published.Error ?? "Publish meta failed.";
+                return;
+            }
+
+            _lastInfra = published.Value.Document;
+            InfraSummary = published.Value.Document.FormatSummary();
+            EditStackVersion = published.Value.Document.StackVersion;
+            EditServerKind = published.Value.Document.Game.ServerKind;
+            EditMinecraftVersion = published.Value.Document.Game.MinecraftVersion;
+            StatusMessage = published.Value.Message;
+        }
+        finally
+        {
+            IsBusy = false;
+            _setBusy(false);
+        }
+    }
+
+    private void ApplyInfraRead(InfraMetaReadResult read)
+    {
+        if (read.Document is { } doc)
+        {
+            _lastInfra = doc;
+            InfraSummary = doc.FormatSummary();
+            EditStackVersion = doc.StackVersion;
+            EditServerKind = doc.Game.ServerKind;
+            EditMinecraftVersion = doc.Game.MinecraftVersion;
+            return;
+        }
+
+        _lastInfra = null;
+        if (read.Missing)
+        {
+            InfraSummary = "meta/infra.json missing — publish from local config to seed Connect existing.";
+            return;
+        }
+
+        if (read.IsLegacy)
+        {
+            InfraSummary =
+                $"Legacy object needs migration. {read.LegacySummary ?? ""} "
+                + "Publish from local config to write nested v2.";
+            return;
+        }
+
+        InfraSummary = read.Notes;
     }
 
     private void SeedIdleFromLocal()

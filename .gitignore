@@ -391,5 +391,3 @@ publish/
 *.msix
 *.msixbundle
 )
-
-docs/

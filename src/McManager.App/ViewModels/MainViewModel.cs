@@ -153,11 +153,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             _compute = new ComputeService(_session);
             var os = new ObjectStorageService(_session, _config.ObjectStorage);
             var usageStore = new UsageBudgetStore(os, _config.ObjectStorage.Prefixes);
+            var infraStore = new InfraMetaStore(os, _config.ObjectStorage.Prefixes);
             var ssh = new SshService();
             Advanced = new AdvancedViewModel(
                 _config,
                 _compute,
                 usageStore,
+                infraStore,
                 ssh,
                 () => Vm1Lifecycle,
                 OnAdvancedBusyChanged);

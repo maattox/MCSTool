@@ -1,0 +1,31 @@
+[Unit]
+Description=Minecraft server
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=600
+StartLimitBurst=3
+
+[Service]
+Type=simple
+User=mcmgr
+Group=mcmgr
+WorkingDirectory={{WORKING_DIRECTORY}}
+ExecStart={{EXECUTABLE}} {{ARGS_JOINED}}
+ExecStop={{BIN_DIR}}/rcon-graceful-stop.sh
+TimeoutStopSec=120
+Restart=on-failure
+RestartSec=10
+Environment=LANG=C.UTF-8
+Environment=JAVA_TOOL_OPTIONS=-Djava.net.preferIPv4Stack=true
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=minecraft
+
+# Light sandboxing — does not block legitimate mod/plugin file access under server_dir
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths={{WORKING_DIRECTORY}}
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
