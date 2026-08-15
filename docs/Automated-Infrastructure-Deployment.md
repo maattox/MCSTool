@@ -615,7 +615,7 @@ Order of operations (Phase 3.3; 3.1 only needs the module to be plan-able):
 5. Capacity failure → do not abandon variables; retry/poll/resume.
 6. Wait instances RUNNING; wait cloud-init marker over SSH. **Do not** `apt upgrade` / `do-release-upgrade` on the guests (22.04 is the baseline; cloud-init already sets `package_upgrade: false`).
 7. SSH: door deploy (`install.sh` must write Object Storage namespace/bucket into `oci.env` when OS wake is on), VM1 `onbox/mcmgr` Vanilla driver, idle agent, §10.2 config sync.
-8. Guest repair (same SSH session or Re-Deploy at `apply_stage=vm1` without re-apply): `/etc/netplan/99-mcmgr-play.yaml` for the **secondary** play IP on both VMs (reserved public IP targets that address, not the ephemeral primary); seed Vanilla `whitelist.json` from the wizard **admin Minecraft username**.
+8. Guest repair (same SSH session or Re-Deploy at `apply_stage=vm1` without re-apply): `/etc/netplan/99-mcmgr-play.yaml` for the **secondary** play IP on both VMs (reserved public IP targets that address, not the ephemeral primary); re-apply managed `server.properties` (`white-list=false`, `enforce-whitelist=false`); optionally seed `whitelist.json` from the wizard **admin Minecraft username** (not required to join — OCI Security List is the allowlist).
 9. Seed Object Storage layout if tofu did not (empty prefixes, initial budget JSON). Treat **missing** `meta/infra.json` / `ledger/usage.json` as create (greenfield GET 404 is not a fatal publish error). Log seed failures into the Setup deploy log.
 10. Publish `meta/infra.json` from tofu outputs + on-box game manifest summary.
 11. Write `data/config.local.json`. Players connect on the **reserved play IP**, not the SSH ephemeral.
@@ -844,6 +844,7 @@ Ubuntu on OCI:
 
 | Date | Note |
 |------|------|
+| 2026-08-15 | Step **4.3 DONE:** bootstrap / Re-Deploy write `white-list=false` + `enforce-whitelist=false` (SETUP-ISSUE-3). Admin Minecraft username is optional. |
 | 2026-08-15 | D7 Connect-existing = MVP plan Phase 5; **D10** test-deploy bugs must be fixed in product HCL/bootstrap, not only the live VM. Vanilla in-game whitelist off (SETUP-ISSUE-3 / Step 4.3). SETUP-ISSUE-4 CHDIR → Step 4.2 comprehensive permissions. |
 | 2026-08-14 | Step 3.3 blank-tenancy test: tenancy `mcmgr-door-ip`; door DG by instance OCID; OS seed 404=create; door `oci.env` OS vars; guest netplan; Vanilla whitelist; no apt-upgrade. Out-of-band policy import uses repo `infra/` + LocalAppData `-state` (quoted PowerShell). |
 | 2026-08-12 | Budget wiring correction: live path is Events → Function; ONS `Budget-Alerts` is unlinked leftover. RM dump omitted the Events action. |

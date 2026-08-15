@@ -95,6 +95,9 @@
             <TabItem Header="Advanced / Danger Zone">
                 <tabs:AdvancedView DataContext="{Binding Advanced}" />
             </TabItem>
+            <TabItem Header="Troubleshooting">
+                <tabs:TroubleshootingView DataContext="{Binding Troubleshooting}" />
+            </TabItem>
         </TabControl>
     </DockPanel>
 

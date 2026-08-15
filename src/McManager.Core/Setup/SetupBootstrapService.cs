@@ -1,5 +1,6 @@
 using System.Text;
 using McManager.Core.Config;
+using McManager.Core.Onbox;
 using McManager.Core.Services;
 using Renci.SshNet;
 using Renci.SshNet.Common;
@@ -109,7 +110,8 @@ public sealed class SetupBootstrapService
 
     /// <summary>
     /// Idempotent post-bootstrap: secondary play netplan, door oci.env Object Storage vars,
-    /// Minecraft whitelist, clear sticky DEGRADED. Safe to re-run when apply_stage is already vm1.
+    /// managed server.properties (in-game whitelist off), optional whitelist.json seed,
+    /// clear sticky DEGRADED. Safe to re-run when apply_stage is already vm1.
     /// </summary>
     public Task<ServiceResult> EnsureGuestRuntimeAsync(
         TofuApplyOutputs outputs,
@@ -311,7 +313,7 @@ public sealed class SetupBootstrapService
         string? minecraftUsername,
         IProgress<string>? log)
     {
-        log?.Report("Repairing VM1 runtime (play netplan, whitelist)…");
+        log?.Report("Repairing VM1 runtime (play netplan, server.properties, whitelist)…");
         using var client = Connect(outputs.Vm1SshHost, outputs.SshUser, keyPath);
         ApplyPlayNetplan(client, outputs.Vm1SecondaryPrivateIp, "vm1", log);
         Exec(
@@ -321,7 +323,10 @@ public sealed class SetupBootstrapService
                 + "systemctl start mc-boot-ledger.service 2>/dev/null || true"),
             TimeSpan.FromSeconds(20),
             log);
+        var onboxStaging = UploadOnboxRepairHelpers(client, log);
+        ApplyManagedProperties(client, onboxStaging, log);
         SeedWhitelist(client, minecraftUsername, log);
+        RepairPermissions(client, onboxStaging, log);
         log?.Report("VM1 runtime repaired.");
     }
 
@@ -335,32 +340,60 @@ public sealed class SetupBootstrapService
             || !System.Net.IPAddress.TryParse(secondaryIp, out _))
             throw new InvalidOperationException($"Missing/invalid {role} secondary private IP for netplan.");
 
-        var script =
-            "set -euo pipefail\n"
-            + $"IP={secondaryIp}\n"
-            + "IFACE=$(ip -o -4 route show default | awk '{print $5}' | head -1)\n"
-            + "if [ -z \"$IFACE\" ]; then echo 'ERROR: no default interface' >&2; exit 1; fi\n"
-            + "umask 077\n"
-            + "cat > /etc/netplan/99-mcmgr-play.yaml <<EOF\n"
-            + "network:\n"
-            + "  version: 2\n"
-            + "  ethernets:\n"
-            + "    ${IFACE}:\n"
-            + "      addresses:\n"
-            + "        - ${IP}/24\n"
-            + "EOF\n"
-            + "chmod 600 /etc/netplan/99-mcmgr-play.yaml\n"
-            + "netplan apply\n"
-            + "echo \"play netplan: $IFACE $IP/24\"\n"
-            + "ip -4 addr show dev \"$IFACE\" | grep -F \"$IP\" || true\n";
+        var script = GuestPlayNetplan.BuildApplyScript(secondaryIp);
         Exec(client, "sudo bash -c " + ShQuote(script), TimeSpan.FromSeconds(45), log);
+    }
+
+    private static string UploadOnboxRepairHelpers(SshClient client, IProgress<string>? log)
+    {
+        var onbox = ProductPaths.FindOnboxDirectory()
+            ?? throw new InvalidOperationException("Product onbox/mcmgr/ not found.");
+        const string staging = "/tmp/mcmgr-onbox";
+        Exec(client, $"rm -rf {staging} && mkdir -p {staging}/common", TimeSpan.FromSeconds(30), log);
+        UploadFile(client, Path.Combine(onbox, "repair-server-properties.sh"), staging + "/repair-server-properties.sh", log);
+        UploadFile(client, Path.Combine(onbox, "repair-permissions.sh"), staging + "/repair-permissions.sh", log);
+        UploadFile(client, Path.Combine(onbox, "common", "env.sh"), staging + "/common/env.sh", log);
+        UploadFile(client, Path.Combine(onbox, "common", "layout.sh"), staging + "/common/layout.sh", log);
+        UploadFile(
+            client,
+            Path.Combine(onbox, "common", "server_properties.sh"),
+            staging + "/common/server_properties.sh",
+            log);
+        Exec(
+            client,
+            "sed -i 's/\\r$//' "
+            + staging + "/repair-server-properties.sh "
+            + staging + "/repair-permissions.sh "
+            + staging + "/common/*.sh",
+            TimeSpan.FromSeconds(15),
+            log);
+        return staging;
+    }
+
+    private static void ApplyManagedProperties(SshClient client, string onboxStaging, IProgress<string>? log)
+    {
+        log?.Report("Applying managed server.properties (in-game whitelist off)…");
+        Exec(
+            client,
+            "sudo bash " + onboxStaging + "/repair-server-properties.sh",
+            TimeSpan.FromMinutes(1),
+            log);
+    }
+
+    private static void RepairPermissions(SshClient client, string onboxStaging, IProgress<string>? log)
+    {
+        Exec(
+            client,
+            "sudo bash " + onboxStaging + "/repair-permissions.sh",
+            TimeSpan.FromMinutes(2),
+            log);
     }
 
     private static void SeedWhitelist(SshClient client, string? minecraftUsername, IProgress<string>? log)
     {
         if (!MinecraftUsername.IsValid(minecraftUsername))
         {
-            log?.Report("No admin Minecraft username; leaving Vanilla whitelist empty (joins will be rejected).");
+            log?.Report("No admin Minecraft username; skipping optional whitelist.json seed (joins use OCI Security List).");
             return;
         }
 
@@ -398,10 +431,7 @@ public sealed class SetupBootstrapService
             "sudo bash -c " + ShQuote(
                 "set -euo pipefail; "
                 + "python3 /tmp/mcmgr-seed-whitelist.py; "
-                + "rm -f /tmp/mcmgr-seed-whitelist.py; "
-                + "if [ -x /opt/mcmgr/bin/repair-permissions.sh ]; then "
-                + "bash /opt/mcmgr/bin/repair-permissions.sh; "
-                + "fi"),
+                + "rm -f /tmp/mcmgr-seed-whitelist.py"),
             TimeSpan.FromMinutes(2),
             log);
 

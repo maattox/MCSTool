@@ -35,7 +35,7 @@ public sealed class ComputeService : IComputeService
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(instanceId))
-            return ServiceResult<string>.Fail("vm1.instance_id is empty.");
+            return ServiceResult<string>.Fail("instance_id is empty.");
 
         try
         {
@@ -58,7 +58,7 @@ public sealed class ComputeService : IComputeService
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(instanceId))
-            return ServiceResult.Fail("vm1.instance_id is empty.");
+            return ServiceResult.Fail("instance_id is empty.");
 
         try
         {
@@ -84,7 +84,7 @@ public sealed class ComputeService : IComputeService
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(instanceId))
-            return ServiceResult.Fail("vm1.instance_id is empty.");
+            return ServiceResult.Fail("instance_id is empty.");
 
         try
         {

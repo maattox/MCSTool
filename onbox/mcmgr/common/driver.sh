@@ -76,6 +76,11 @@ main() {
 
   run_stage eula_written eula_write "${RESOLVED_MC_VERSION}"
   run_stage rcon_ready rcon_setup
+  # Properties apply must never skip on resume (SETUP-ISSUE-3): rcon_ready may
+  # already be complete from a prior run that wrote white-list=true.
+  if [[ -f "${RCON_SECRET}" ]]; then
+    server_properties_apply "$(tr -d '\r\n' <"${RCON_SECRET}")"
+  fi
 
   # Build launch_command args for single_jar (generic unit_gen — no vanilla branch).
   local launch_args

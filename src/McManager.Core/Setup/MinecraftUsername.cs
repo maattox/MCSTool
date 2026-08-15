@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 
 namespace McManager.Core.Setup;
 
-/// <summary>Mojang account name rules used by Vanilla whitelist.</summary>
+/// <summary>Mojang account name rules (optional wizard field; not a join gate).</summary>
 public static class MinecraftUsername
 {
     private static readonly Regex Pattern = new(
@@ -13,6 +13,13 @@ public static class MinecraftUsername
     {
         var trimmed = name?.Trim() ?? "";
         return Pattern.IsMatch(trimmed);
+    }
+
+    /// <summary>Empty is OK (join uses OCI Security List). Non-empty values must be valid Mojang names.</summary>
+    public static bool IsMissingOrValid(string? name)
+    {
+        var trimmed = name?.Trim() ?? "";
+        return trimmed.Length == 0 || IsValid(trimmed);
     }
 
     public static string Normalize(string name) => name.Trim();

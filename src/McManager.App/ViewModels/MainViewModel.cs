@@ -72,6 +72,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     public AdvancedViewModel? Advanced { get; private set; }
 
+    public TroubleshootingViewModel? Troubleshooting { get; private set; }
+
     public MainViewModel()
     {
         Initialize();
@@ -84,7 +86,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             _ = RefreshStatusAsync(forceDoor: true, forceOci: true);
     }
 
-    /// <summary>Tab indices: 0 Whitelist, 1 Usage, 2 Server Management, 3 Advanced.</summary>
+    /// <summary>Tab indices: 0 Whitelist, 1 Usage, 2 Server Management, 3 Advanced, 4 Troubleshooting.</summary>
     public void OnMainTabChanged(int selectedIndex)
     {
         Usage?.OnTabSelected(selectedIndex == 1);
@@ -180,11 +182,20 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             Status = $"Config OK, but door client failed: {ex.Message}";
         }
 
+        var troubleshooting = new TroubleshootingService(_config, ssh, _compute, _door);
+        Troubleshooting = new TroubleshootingViewModel(troubleshooting, OnTroubleshootingBusyChanged);
+
         StartPoller();
         _ = RefreshStatusAsync(forceDoor: true, forceOci: true);
     }
 
     private void OnAdvancedBusyChanged(bool busy)
+    {
+        IsBusy = busy;
+        UpdateCommandFlags();
+    }
+
+    private void OnTroubleshootingBusyChanged(bool busy)
     {
         IsBusy = busy;
         UpdateCommandFlags();

@@ -7,6 +7,7 @@ MANIFEST="${1:?manifest path}"
 UNIT="${2:?unit path}"
 SECRET="${3:?rcon secret path}"
 IDLE_CFG="${4:-}"
+PROPS="${5:-}"
 
 PY=""
 if command -v python3 >/dev/null 2>&1; then PY=python3
@@ -20,11 +21,12 @@ fi
 [[ -f "${UNIT}" ]] || { echo "missing unit"; exit 1; }
 [[ -f "${SECRET}" ]] || { echo "missing rcon secret"; exit 1; }
 [[ -n "${IDLE_CFG}" && -f "${IDLE_CFG}" ]] || { echo "missing idle-agent config (${IDLE_CFG})"; exit 1; }
+[[ -n "${PROPS}" && -f "${PROPS}" ]] || { echo "missing server.properties (${PROPS})"; exit 1; }
 
-"${PY}" - "${MANIFEST}" "${UNIT}" "${SECRET}" "${IDLE_CFG}" <<'PY'
+"${PY}" - "${MANIFEST}" "${UNIT}" "${SECRET}" "${IDLE_CFG}" "${PROPS}" <<'PY'
 import json, sys, re
 
-manifest_path, unit_path, secret_path, idle_cfg_path = sys.argv[1:5]
+manifest_path, unit_path, secret_path, idle_cfg_path, props_path = sys.argv[1:6]
 with open(manifest_path, encoding="utf-8") as f:
     doc = json.load(f)
 with open(unit_path, encoding="utf-8") as f:
@@ -90,5 +92,18 @@ assert idle.get("minecraft_unit") == doc["minecraft_unit"], "idle minecraft_unit
 assert int(idle.get("rcon_port")) == int(doc["rcon"]["port"]), "idle rcon_port mismatch"
 assert idle.get("rcon_password") == password, "idle rcon_password mismatch"
 
-print("assert-dry-run: all checks passed (incl. §10.2 idle sync)")
+# SETUP-ISSUE-3 / §7.3: in-game whitelist off; never online-mode=false
+props = {}
+with open(props_path, encoding="utf-8") as f:
+    for line in f:
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        k, _, v = line.partition("=")
+        props[k.strip()] = v.strip()
+assert props.get("white-list") == "false", f"white-list want false got {props.get('white-list')}"
+assert props.get("enforce-whitelist") == "false", f"enforce-whitelist want false got {props.get('enforce-whitelist')}"
+assert props.get("online-mode") == "true", f"online-mode want true got {props.get('online-mode')}"
+
+print("assert-dry-run: all checks passed (incl. §10.2 idle sync, §7.3 whitelist off)")
 PY

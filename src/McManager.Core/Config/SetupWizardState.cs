@@ -77,7 +77,7 @@ public sealed class SetupWizardState
     [JsonPropertyName("admin_cidr")]
     public string AdminCidr { get; set; } = "";
 
-    /// <summary>Mojang username seeded into Vanilla whitelist.json (not an OCI IP allowlist entry).</summary>
+    /// <summary>Optional Mojang username (later MOTD/ops; not required to join — OCI Security List is the allowlist).</summary>
     [JsonPropertyName("admin_minecraft_username")]
     public string AdminMinecraftUsername { get; set; } = "";
 

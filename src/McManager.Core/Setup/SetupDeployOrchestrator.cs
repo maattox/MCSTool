@@ -79,11 +79,11 @@ public sealed class SetupDeployOrchestrator
         if (cidr is null)
             return SetupDeployResult.Fail(state.ApplyStage, "Admin public IP /32 is required.");
 
-        if (!MinecraftUsername.IsValid(state.AdminMinecraftUsername))
+        if (!MinecraftUsername.IsMissingOrValid(state.AdminMinecraftUsername))
         {
             return SetupDeployResult.Fail(
                 state.ApplyStage,
-                "Admin Minecraft username is required (3–16 letters, digits, or underscore) so Vanilla whitelist can allow you to join.");
+                "Admin Minecraft username must be empty or 3–16 letters, digits, or underscore (optional; joins use OCI Security List).");
         }
 
         var infra = ProductPaths.FindInfraDirectory();

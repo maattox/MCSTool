@@ -12,25 +12,43 @@ public interface IDoorClient
     Task<ServiceResult> WakeAsync(CancellationToken cancellationToken = default);
 
     Task<ServiceResult> IdleEmptyAsync(CancellationToken cancellationToken = default);
+
+    Task<ServiceResult<string>> RefreshOsAsync(CancellationToken cancellationToken = default);
 }
 
 public sealed class DoorClient : IDoorClient, IDisposable
 {
     private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan OsRefreshTimeout = TimeSpan.FromMinutes(2);
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
     };
 
     private readonly HttpClient _http;
+    private readonly HttpClient _longHttp;
+    private readonly bool _ownsHttp;
 
     public DoorClient(string doorAdminBaseUrl, HttpClient? httpClient = null)
     {
         if (string.IsNullOrWhiteSpace(doorAdminBaseUrl))
             throw new ArgumentException("Door admin base URL is empty.", nameof(doorAdminBaseUrl));
 
-        _http = httpClient ?? new HttpClient { Timeout = DefaultTimeout };
-        _http.BaseAddress = new Uri(doorAdminBaseUrl.TrimEnd('/') + "/");
+        var baseUri = new Uri(doorAdminBaseUrl.TrimEnd('/') + "/");
+        if (httpClient is null)
+        {
+            _http = new HttpClient { Timeout = DefaultTimeout, BaseAddress = baseUri };
+            _longHttp = new HttpClient { Timeout = OsRefreshTimeout, BaseAddress = baseUri };
+            _ownsHttp = true;
+        }
+        else
+        {
+            _http = httpClient;
+            _longHttp = httpClient;
+            _ownsHttp = false;
+            if (_http.BaseAddress is null)
+                _http.BaseAddress = baseUri;
+        }
     }
 
     public async Task<ServiceResult<string>> GetStatusAsync(CancellationToken cancellationToken = default)
@@ -111,6 +129,24 @@ public sealed class DoorClient : IDoorClient, IDisposable
         }
     }
 
+    public async Task<ServiceResult<string>> RefreshOsAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            using var content = new StringContent("{}", Encoding.UTF8, "application/json");
+            using var response = await _longHttp.PostAsync("api/os-refresh", content, cancellationToken);
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
+            if (!response.IsSuccessStatusCode)
+                return ServiceResult<string>.Fail(FormatHttpError("POST /api/os-refresh", response.StatusCode, body));
+
+            return ServiceResult<string>.Ok(string.IsNullOrWhiteSpace(body) ? "{\"ok\":true}" : body);
+        }
+        catch (Exception ex)
+        {
+            return ServiceResult<string>.Fail(FormatTransportError("POST /api/os-refresh", ex));
+        }
+    }
+
     private static string FormatHttpError(string operation, System.Net.HttpStatusCode statusCode, string body)
     {
         var snippet = body.Length > 200 ? body[..200] + "…" : body;
@@ -120,5 +156,12 @@ public sealed class DoorClient : IDoorClient, IDisposable
     private static string FormatTransportError(string operation, Exception ex) =>
         $"{operation} failed: {ex.Message}";
 
-    public void Dispose() => _http.Dispose();
+    public void Dispose()
+    {
+        if (!_ownsHttp)
+            return;
+        _http.Dispose();
+        if (!ReferenceEquals(_http, _longHttp))
+            _longHttp.Dispose();
+    }
 }

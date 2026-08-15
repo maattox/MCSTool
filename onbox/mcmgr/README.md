@@ -9,6 +9,7 @@
 ```text
 onbox/mcmgr/
   repair-permissions.sh         root wrapper: layout_ensure_accounts + apply + verify
+  repair-server-properties.sh   root wrapper: re-apply managed server.properties (§7.3)
   common/driver.sh              shared stages (… → manifest → idle_agent_sync)
   common/layout.sh              §5 accounts / apply / fail-closed verify
   common/*.sh                   helpers (incl. idle_agent_sync.sh §10.2)
@@ -23,7 +24,7 @@ Greenfield paths (live install):
 |------|-------------|------|------|
 | `/opt/mcmgr` | `root:mcmgr` | `0750` | Product tree root |
 | `/opt/mcmgr/server` | `mcmgr:mcmgr` | `0750` | `server_dir` / world |
-| `/opt/mcmgr/bin` | `root:mcmgr` | `0750` | ExecStop helper + `repair-permissions.sh` |
+| `/opt/mcmgr/bin` | `root:mcmgr` | `0750` | ExecStop helper + `repair-permissions.sh` + `repair-server-properties.sh` |
 | `/etc/mcmgr/game-manifest.json` | `root:mcmgr` | `0640` | Authoritative game manifest |
 | `/etc/mcmgr/rcon.secret` | `root:root` | `0600` | RCON password (never in Object Storage / manifest body) |
 | `/var/lib/mcmgr/bootstrap-state.json` | `root:root` | `0750` dir | Resumable stages |
@@ -37,6 +38,16 @@ sudo bash /path/to/onbox/mcmgr/repair-permissions.sh
 sudo bash /opt/mcmgr/bin/repair-permissions.sh
 ```
 
+Managed `server.properties` (in-game whitelist off — SETUP-ISSUE-3):
+
+```bash
+sudo bash /path/to/onbox/mcmgr/repair-server-properties.sh
+# or, once installed:
+sudo bash /opt/mcmgr/bin/repair-server-properties.sh
+```
+
+Then re-apply permissions if you wrote under `/opt/mcmgr`.
+
 ## Offline dry-run (Windows / CI)
 
 From Git Bash (or any bash with `python` + `curl`):
@@ -46,7 +57,7 @@ cd onbox/mcmgr
 MCMGR_DRY_KEEP=1 MINECRAFT_VERSION=1.21.1 bash dry-run/run-dry-run.sh
 ```
 
-Uses [`tests/fixtures/game-metadata/`](../../tests/fixtures/game-metadata/) — no apt, no systemctl, no real jar download. Asserts §4.1-shaped manifest + generic unit (`User=mcmgr`, `nogui`, `ExecStop=+`, `RestartPreventExitStatus=200`).
+Uses [`tests/fixtures/game-metadata/`](../../tests/fixtures/game-metadata/) — no apt, no systemctl, no real jar download. Asserts §4.1-shaped manifest + generic unit (`User=mcmgr`, `nogui`, `ExecStop=+`, `RestartPreventExitStatus=200`) + §7.3 `white-list=false` / `enforce-whitelist=false` / `online-mode=true`.
 
 ## Live install (Phase 3 / operator VM)
 

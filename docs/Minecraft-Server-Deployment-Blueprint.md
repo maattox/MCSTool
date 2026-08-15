@@ -1698,6 +1698,7 @@ This document is research + architecture, not an execution checklist — [`OCI-m
 
 | Date | Note |
 |---|---|
+| 2026-08-15 | Step **4.3:** `server_properties.sh` writes `white-list=false` / `enforce-whitelist=false` (code now matches §7.3). |
 | 2026-08-15 | §5: SETUP-ISSUE-4 `CHDIR` **fixed** — `layout_apply` + `layout_verify` + `repair-permissions.sh` (MVP Step 4.2). §7.3 whitelist-off remains Step **4.3**. |
 | 2026-08-15 | §7.3: `white-list` / `enforce-whitelist` default **false** — OCI Security List is the only MVP allowlist (SETUP-ISSUE-3 / MVP Step 4.3). |
 | 2026-08-13 | PRODUCT-IDEAS staging: §11.3 wipe world (v1); §28.1 day-2 pack replace light-swap vs full re-setup (after v1); v1 inspect + re-download imported pack; §29 day-2 row updated. |

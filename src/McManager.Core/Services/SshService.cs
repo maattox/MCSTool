@@ -23,6 +23,17 @@ public interface ISshService
         int idleTimeoutMinutes,
         int budgetWarnMinutes,
         CancellationToken cancellationToken = default);
+
+    Task<SshExecResult> RunCommandAsync(
+        SshTarget target,
+        string command,
+        TimeSpan? timeout = null,
+        CancellationToken cancellationToken = default);
+
+    Task<SshExecResult> UploadTextFilesAsync(
+        SshTarget target,
+        IReadOnlyList<(string LocalPath, string RemotePath)> files,
+        CancellationToken cancellationToken = default);
 }
 
 public sealed class SshService : ISshService
@@ -57,6 +68,19 @@ public sealed class SshService : ISshService
         Task.Run(
             () => ApplyIdleSettings(vm1, idleAgentEnabled, idleTimeoutMinutes, budgetWarnMinutes),
             cancellationToken);
+
+    public Task<SshExecResult> RunCommandAsync(
+        SshTarget target,
+        string command,
+        TimeSpan? timeout = null,
+        CancellationToken cancellationToken = default) =>
+        Task.Run(() => RunCommand(target, command, timeout ?? TimeSpan.FromMinutes(2)), cancellationToken);
+
+    public Task<SshExecResult> UploadTextFilesAsync(
+        SshTarget target,
+        IReadOnlyList<(string LocalPath, string RemotePath)> files,
+        CancellationToken cancellationToken = default) =>
+        Task.Run(() => UploadTextFiles(target, files), cancellationToken);
 
     private static ServiceResult RestartMinecraft(Vm1Settings vm1)
     {
@@ -301,35 +325,127 @@ public sealed class SshService : ISshService
         }
     }
 
+    private static SshExecResult RunCommand(SshTarget target, string command, TimeSpan timeout)
+    {
+        if (!TryOpenSsh(target, out var client, out var error))
+            return SshExecResult.Fail(error!);
+
+        using (client)
+        {
+            try
+            {
+                var cmd = client.CreateCommand(command);
+                cmd.CommandTimeout = timeout;
+                var stdout = cmd.Execute() ?? "";
+                var stderr = cmd.Error ?? "";
+                var combined = CombineOutput(stdout, stderr);
+                var exit = cmd.ExitStatus ?? -1;
+                if (exit != 0)
+                {
+                    return SshExecResult.Fail(
+                        $"{target.Label} SSH command failed (exit {exit}).",
+                        combined,
+                        exit);
+                }
+
+                return SshExecResult.Ok(combined, exit);
+            }
+            catch (Exception ex)
+            {
+                return SshExecResult.Fail($"{target.Label} SSH command failed: {ex.Message}");
+            }
+        }
+    }
+
+    private static SshExecResult UploadTextFiles(
+        SshTarget target,
+        IReadOnlyList<(string LocalPath, string RemotePath)> files)
+    {
+        if (files.Count == 0)
+            return SshExecResult.Ok("(no files)");
+
+        if (!TryOpenSsh(target, out var client, out var error))
+            return SshExecResult.Fail(error!);
+
+        using (client)
+        {
+            try
+            {
+                var parents = files
+                    .Select(f => RemoteParent(f.RemotePath))
+                    .Where(p => !string.IsNullOrEmpty(p))
+                    .Distinct(StringComparer.Ordinal)
+                    .ToList();
+                foreach (var parent in parents)
+                {
+                    var mkdir = client.RunCommand("mkdir -p " + SshShell.Quote(parent));
+                    if (mkdir.ExitStatus != 0)
+                    {
+                        var err = string.IsNullOrWhiteSpace(mkdir.Error) ? mkdir.Result : mkdir.Error;
+                        return SshExecResult.Fail(
+                            $"mkdir {parent} failed (ubuntu-writable staging only): {err.Trim()}",
+                            CombineOutput(mkdir.Result, mkdir.Error),
+                            mkdir.ExitStatus ?? -1);
+                    }
+                }
+
+                using var sftp = new SftpClient(client.ConnectionInfo);
+                sftp.Connect();
+                var names = new List<string>();
+                foreach (var (localPath, remotePath) in files)
+                {
+                    if (!File.Exists(localPath))
+                        return SshExecResult.Fail($"Local file not found: {localPath}");
+
+                    var text = File.ReadAllText(localPath).Replace("\r\n", "\n").Replace("\r", "\n");
+                    using var ms = new MemoryStream(Encoding.UTF8.GetBytes(text));
+                    sftp.UploadFile(ms, remotePath, canOverride: true);
+                    names.Add(Path.GetFileName(localPath));
+                }
+
+                return SshExecResult.Ok("uploaded " + string.Join(", ", names));
+            }
+            catch (Exception ex)
+            {
+                return SshExecResult.Fail($"{target.Label} SFTP upload failed: {ex.Message}");
+            }
+        }
+    }
+
     private static bool TryOpenSsh(
         Vm1Settings vm1,
         out SshClient client,
         out string unit,
         out string? error)
     {
-        client = null!;
         unit = string.IsNullOrWhiteSpace(vm1.MinecraftUnit) ? "minecraft" : vm1.MinecraftUnit.Trim();
+        return TryOpenSsh(SshTarget.FromVm1(vm1), out client, out error);
+    }
+
+    private static bool TryOpenSsh(SshTarget target, out SshClient client, out string? error)
+    {
+        client = null!;
         error = null;
 
-        if (string.IsNullOrWhiteSpace(vm1.SshHost))
+        if (string.IsNullOrWhiteSpace(target.Host))
         {
-            error = "vm1.ssh_host is empty.";
+            error = $"{target.Label} ssh_host is empty.";
             return false;
         }
 
-        var keyPath = LocalConfigStore.ExpandPath(vm1.SshKeyPath);
+        var keyPath = LocalConfigStore.ExpandPath(target.KeyPath);
         if (string.IsNullOrWhiteSpace(keyPath) || !File.Exists(keyPath))
         {
             error = $"SSH key not found: {keyPath}";
             return false;
         }
 
-        var user = string.IsNullOrWhiteSpace(vm1.SshUser) ? "ubuntu" : vm1.SshUser;
+        var user = string.IsNullOrWhiteSpace(target.User) ? "ubuntu" : target.User;
 
         try
         {
             var keyFile = new PrivateKeyFile(keyPath);
-            client = new SshClient(vm1.SshHost, user, keyFile);
+            client = new SshClient(target.Host, user, keyFile);
             client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(30);
             client.Connect();
             return true;
@@ -338,11 +454,28 @@ public sealed class SshService : ISshService
         {
             client?.Dispose();
             client = null!;
-            error = $"SSH connect failed: {ex.Message}";
+            error = $"{target.Label} SSH connect failed: {ex.Message}";
             return false;
         }
     }
 
-    private static string EscapeShellArg(string value) =>
-        "'" + value.Replace("'", "'\\''") + "'";
+    private static string CombineOutput(string? stdout, string? stderr)
+    {
+        var outText = (stdout ?? "").TrimEnd();
+        var errText = (stderr ?? "").TrimEnd();
+        if (string.IsNullOrEmpty(errText))
+            return outText;
+        if (string.IsNullOrEmpty(outText))
+            return errText;
+        return outText + Environment.NewLine + errText;
+    }
+
+    private static string RemoteParent(string remotePath)
+    {
+        var n = remotePath.Replace('\\', '/');
+        var i = n.LastIndexOf('/');
+        return i <= 0 ? "" : n[..i];
+    }
+
+    private static string EscapeShellArg(string value) => SshShell.Quote(value);
 }

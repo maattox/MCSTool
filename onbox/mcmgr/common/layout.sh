@@ -49,19 +49,27 @@ _layout_install_repair_helpers() {
 
   cp -f "${src_common}/env.sh" "${OPT_MCMGR}/lib/env.sh"
   cp -f "${src_common}/layout.sh" "${OPT_MCMGR}/lib/layout.sh"
+  cp -f "${src_common}/server_properties.sh" "${OPT_MCMGR}/lib/server_properties.sh"
   if [[ -f "${src_home}/repair-permissions.sh" ]]; then
     cp -f "${src_home}/repair-permissions.sh" "${BIN_DIR}/repair-permissions.sh"
+  fi
+  if [[ -f "${src_home}/repair-server-properties.sh" ]]; then
+    cp -f "${src_home}/repair-server-properties.sh" "${BIN_DIR}/repair-server-properties.sh"
   fi
   if [[ -f "${src_common}/rcon-graceful-stop.sh" ]]; then
     cp -f "${src_common}/rcon-graceful-stop.sh" "${BIN_DIR}/rcon-graceful-stop.sh"
   fi
   if _layout_is_live; then
-    chown root:mcmgr "${OPT_MCMGR}/lib" "${OPT_MCMGR}/lib/env.sh" "${OPT_MCMGR}/lib/layout.sh" 2>/dev/null || true
+    chown root:mcmgr "${OPT_MCMGR}/lib" "${OPT_MCMGR}/lib/env.sh" "${OPT_MCMGR}/lib/layout.sh" "${OPT_MCMGR}/lib/server_properties.sh" 2>/dev/null || true
     chmod 0750 "${OPT_MCMGR}/lib"
-    chmod 0640 "${OPT_MCMGR}/lib/env.sh" "${OPT_MCMGR}/lib/layout.sh"
+    chmod 0640 "${OPT_MCMGR}/lib/env.sh" "${OPT_MCMGR}/lib/layout.sh" "${OPT_MCMGR}/lib/server_properties.sh"
     if [[ -f "${BIN_DIR}/repair-permissions.sh" ]]; then
       chown root:mcmgr "${BIN_DIR}/repair-permissions.sh"
       chmod 0755 "${BIN_DIR}/repair-permissions.sh"
+    fi
+    if [[ -f "${BIN_DIR}/repair-server-properties.sh" ]]; then
+      chown root:mcmgr "${BIN_DIR}/repair-server-properties.sh"
+      chmod 0755 "${BIN_DIR}/repair-server-properties.sh"
     fi
     if [[ -f "${BIN_DIR}/rcon-graceful-stop.sh" ]]; then
       chown root:mcmgr "${BIN_DIR}/rcon-graceful-stop.sh"
@@ -69,6 +77,7 @@ _layout_install_repair_helpers() {
     fi
   else
     chmod 0755 "${BIN_DIR}/repair-permissions.sh" 2>/dev/null || true
+    chmod 0755 "${BIN_DIR}/repair-server-properties.sh" 2>/dev/null || true
     chmod 0755 "${BIN_DIR}/rcon-graceful-stop.sh" 2>/dev/null || true
   fi
 }

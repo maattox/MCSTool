@@ -253,7 +253,7 @@
                 <StackPanel Grid.Row="1" Spacing="8">
                     <TextBlock Text="Admin public IP (Security List /32)" />
                     <TextBox Text="{Binding AdminCidr}" PlaceholderText="203.0.113.10/32" />
-                    <TextBlock Text="Your Minecraft username (Vanilla whitelist — required to join)" />
+                    <TextBlock Text="Your Minecraft username (optional — later MOTD/ops; join is gated by Security List /32, not in-game whitelist)" />
                     <TextBox Text="{Binding AdminMinecraftUsername}" PlaceholderText="Steve" />
                     <CheckBox IsChecked="{Binding CreateResourcesConfirmed}">
                         <TextBlock Text="{Binding CreateResourcesConfirmText}" TextWrapping="Wrap" />

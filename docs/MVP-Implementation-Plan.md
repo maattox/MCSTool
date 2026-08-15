@@ -79,14 +79,14 @@ Do not commit. Do not start the following large step unless I say so.
 | **1** | Avalonia manage MVP (existing stack) | **DONE** |
 | **2** | On-box / contract freeze for product | **DONE** |
 | **3** | Setup wizard + OpenTofu greenfield | **DONE** |
-| **4** | Stabilize test stack + operator repair | **TODO** — NEXT = Step 4.3 |
-| **5** | Connect-existing (auto-detect + meta) | **TODO** |
+| **4** | Stabilize test stack + operator repair | **DONE** |
+| **5** | Connect-existing (auto-detect + meta) | **TODO** — NEXT |
 | **6** | UI polish (novice-ready) | **TODO** |
 | **7** | Guide + greenfield E2E proof | **TODO** |
 | **8** | Packaging, updates, closed beta | **TODO** |
 | **9** | MVP exit review | **TODO** |
 
-**Current NEXT step:** [Step 4.3 — Bootstrap: disable Minecraft in-game whitelist](#step-43--bootstrap-disable-minecraft-in-game-whitelist)
+**Current NEXT step:** [Phase 5 — Connect existing](#phase-5--connect-existing-mvp-light)
 
 Phases **1–3 are frozen** (do not rewrite those step bodies). Historical step changelogs that said “NEXT = Phase 4” meant Connect-existing at the time; that work is now **Phase 5**.
 
@@ -579,7 +579,7 @@ Phases 0–3 stay **DONE**; do not rewrite them. Bootstrap/HCL fixes that belong
 
 ### Step 4.3 — Bootstrap: disable Minecraft in-game whitelist
 
-**Status:** TODO  
+**Status:** DONE  
 **Depends on:** 4.2 preferred first (game should actually start) but can proceed in parallel.
 
 **Do**
@@ -598,13 +598,13 @@ Phases 0–3 stay **DONE**; do not rewrite them. Bootstrap/HCL fixes that belong
 
 **Done when:** Next greenfield/Re-Deploy does not require a manual whitelist toggle.
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-15 — **DONE.** `server_properties.sh` writes `white-list=false` / `enforce-whitelist=false` (never `online-mode=false`). Driver always re-applies managed keys on resume. `repair-server-properties.sh` + Setup `EnsureGuestRuntime` Re-Deploy the same writer. Admin Minecraft username optional (not a join gate). Dry-run asserts the three keys. Test VM1: product script flipped leftover `white-list=true` → `false`; Minecraft left stopped; idle left disabled. SETUP-ISSUE-3 fixed. NEXT = Step 4.4.
 
 ---
 
 ### Step 4.4 — Manager troubleshooting / one-shot repair actions
 
-**Status:** TODO  
+**Status:** DONE  
 **Depends on:** 4.1–4.2 (know which repairs actually help; game must be able to start)
 
 **Do**
@@ -641,7 +641,7 @@ Phases 0–3 stay **DONE**; do not rewrite them. Bootstrap/HCL fixes that belong
 
 **Done when:** Operator can recover doorbell IP + the Step 4.1 failure modes without asking an agent for ad-hoc SSH.
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-15 — **DONE.** Dedicated **Troubleshooting** tab (not Advanced/Danger split). **Preferred park-IP shipped:** VM1 `RUNNING` → door `ip_to_vm1.sh`; else start door if needed + `ip_to_vm2.sh` (instance principal; already-on-target is success). Also: diagnose/reset/unstick, `POST /api/os-refresh` + SSH `--force` fallback, heal only when VM1 STOPPED, idle status + force-enable (no Minecraft start), netplan re-apply, CHDIR diagnosis, `repair-permissions.sh` (4.2 contract). OS-ISSUE-5 Console copy only; top-bar Restart not duplicated. Operator-Troubleshooting button map. NEXT = Phase **5**. Do not start Phase 5 in this session.
 
 ---
 
@@ -856,6 +856,8 @@ Phases 0–3 stay **DONE**; do not rewrite them. Bootstrap/HCL fixes that belong
 
 ## Plan changelog
 
+| 2026-08-15 | Step **4.4 DONE:** Troubleshooting tab one-shots (preferred park-IP + door/idle/netplan/permissions). Phase 4 complete. NEXT = Phase **5** (Connect-existing). |
+| 2026-08-15 | Step **4.3 DONE:** bootstrap/Re-Deploy write `white-list=false`; username optional; test VM1 product repair flipped leftover `true`. NEXT = Step **4.4**. |
 | 2026-08-15 | UI work: agents may search for and add NuGet packages (themes, icons, controls, etc.) — not restricted to Fluent / already-referenced libraries. |
 | 2026-08-15 | Step **4.2 DONE:** §5 permission contract in `onbox/mcmgr` layout+verify; test VM1 Minecraft `active` without CHDIR; door TCP OK. NEXT = Step **4.3**. |
 | 2026-08-15 | Step **4.1 DONE:** idle SoftStop when Minecraft is not running (`vm_agent/` + test VM1 proof). SETUP-ISSUE-4 confirmed (`ubuntu:ubuntu` 0750). NEXT = Step **4.2**. |

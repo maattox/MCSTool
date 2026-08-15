@@ -170,7 +170,7 @@ public partial class SetupWizardViewModel : ViewModelBase
         ShowDeployButton
         && EulaAccepted
         && TfvarsWriter.NormalizeAdminCidr(AdminCidr) is not null
-        && MinecraftUsername.IsValid(AdminMinecraftUsername)
+        && MinecraftUsername.IsMissingOrValid(AdminMinecraftUsername)
         && !IsBusy
         && CreateResourcesConfirmed
         && (!ShowReplaceConfigConfirm || ReplaceConfigConfirmed);
@@ -180,7 +180,7 @@ public partial class SetupWizardViewModel : ViewModelBase
         && !IsBusy
         && EulaAccepted
         && TfvarsWriter.NormalizeAdminCidr(AdminCidr) is not null
-        && MinecraftUsername.IsValid(AdminMinecraftUsername);
+        && MinecraftUsername.IsMissingOrValid(AdminMinecraftUsername);
 
     public bool ShowReplaceConfigConfirm => HasExistingManageConfig && !IsTofuDryRun;
 
