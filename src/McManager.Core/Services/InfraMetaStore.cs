@@ -134,10 +134,27 @@ public sealed class InfraMetaStore
         string? preserveStack = stackVersion;
 
         var existing = await GetAsync(cancellationToken);
-        if (!existing.Succeeded || existing.Value is null)
-            return ServiceResult<InfraMetaPublishResult>.Fail(existing.Error ?? "Failed to read existing meta.");
+        InfraMetaReadResult? priorRead = existing.Value;
+        if (!existing.Succeeded || priorRead is null)
+        {
+            // Greenfield Setup: the object does not exist yet. Treat any not-found
+            // GET as create-new rather than aborting the first publish.
+            if (OciErrorFormatter.IsNotFoundMessage(existing.Error))
+            {
+                priorRead = new InfraMetaReadResult
+                {
+                    Missing = true,
+                    Notes = $"{InfraObjectName} is missing.",
+                };
+            }
+            else
+            {
+                return ServiceResult<InfraMetaPublishResult>.Fail(
+                    existing.Error ?? "Failed to read existing meta.");
+            }
+        }
 
-        if (existing.Value.Document is { } prior)
+        if (priorRead.Document is { } prior)
         {
             preserveCreatedAt = prior.CreatedAt;
             if (string.IsNullOrWhiteSpace(preserveStack))
@@ -195,7 +212,7 @@ public sealed class InfraMetaStore
                 putFlags.Error ?? "Infra meta saved but failed to update flags.");
         }
 
-        var migrated = existing.Value.IsLegacy || existing.Value.Missing;
+        var migrated = priorRead.IsLegacy || priorRead.Missing;
         return ServiceResult<InfraMetaPublishResult>.Ok(new InfraMetaPublishResult
         {
             Document = doc,

@@ -11,6 +11,7 @@ public static class LocalConfigStore
 {
     public const string ConfigFileName = "config.local.json";
     public const string FriendsFileName = "friends.local.json";
+    public const string WizardStateFileName = "setup-wizard.local.json";
     public const string ConfigDirEnvVar = "MCMANAGER_CONFIG_DIR";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -109,6 +110,39 @@ public static class LocalConfigStore
         {
             return ServiceResult.Fail($"Failed to save friends: {ex.Message}");
         }
+    }
+
+    public static ServiceResult SaveConfig(ManagerLocalConfig config, string? dataDirectory = null)
+    {
+        dataDirectory ??= TryFindDataDirectory();
+        if (dataDirectory is null)
+        {
+            return ServiceResult.Fail(
+                $"Could not locate data directory. Set {ConfigDirEnvVar} or ensure data/ exists.");
+        }
+
+        try
+        {
+            Directory.CreateDirectory(dataDirectory);
+            var path = Path.Combine(dataDirectory, ConfigFileName);
+            var json = JsonSerializer.Serialize(config, JsonWriteOptions);
+            File.WriteAllText(path, json);
+            return ServiceResult.Ok();
+        }
+        catch (Exception ex)
+        {
+            return ServiceResult.Fail($"Failed to save config: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// True when <c>data/config.local.json</c> exists and parses. Used to skip the first-run
+    /// Setup chooser so an existing manage stack is not hijacked on every launch.
+    /// </summary>
+    public static bool HasManageConfig()
+    {
+        var loaded = Load();
+        return loaded.Succeeded && loaded.Config is not null;
     }
 
     public static LocalConfigLoadResult Load()

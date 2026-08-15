@@ -50,7 +50,10 @@ public static class OciErrorFormatter
         !string.IsNullOrWhiteSpace(error)
         && (error.Contains("ObjectNotFound", StringComparison.OrdinalIgnoreCase)
             || error.Contains("NotAuthorizedOrNotFound", StringComparison.OrdinalIgnoreCase)
-            || error.Contains("404", StringComparison.OrdinalIgnoreCase));
+            || error.Contains("404", StringComparison.OrdinalIgnoreCase)
+            || error.Contains("was not found", StringComparison.OrdinalIgnoreCase)
+            || error.Contains("does not exist", StringComparison.OrdinalIgnoreCase)
+            || error.Contains("not found in the bucket", StringComparison.OrdinalIgnoreCase));
 
     private static string? TryGetOpcRequestId(Exception ex)
     {

@@ -35,6 +35,8 @@ Between **large steps** (Phase / Step headings below), always stop for operator 
 
 If blocked (missing OCIDs, unclear UX, cost risk), stop and ask — do not guess in a way that opens `0.0.0.0/0` or accrues spend.
 
+**Cloud apply is operator-only.** Agents must not run `tofu apply` / `tofu plan` / `tofu destroy` against any tenancy, must not `docker push` / `fn push` to OCIR, and must not SSH-bootstrap the live lab VMs. Allowed checks: `dotnet build`, `tofu validate` in `infra/`, wizard Deploy only with `MCMANAGER_TOFU_DRY_RUN=1` (fake runner). A real apply creates a second Always Free A1 (product MVP 4/24; **TEMPORARY test default 2/12** — revert `infra/variables.tf` after the 3.3 test). Same-tenancy as the lab competes for hours; a blank test tenancy does not.
+
 ### Operator prompt (copy-paste for a new agent)
 
 ```text
@@ -60,7 +62,7 @@ Do not commit. Do not start the following large step unless I say so.
 - [ ] Single Windows installer → one Manager app (Setup integrated)  
 - [ ] App can check GitHub Releases for updates + show release notes  
 
-**Explicitly out of MVP:** public game access, paid/spend mode, modded UI / Optimized Vanilla (Paper) / pack analyze, per-day budget sculpting, usage-API 48h reconcile Function, rich MOTD editor, interactive PTY console, event-driven door handback, macOS/Linux Manager, VPN / Distant Horizons engineering, silent OCI probing on startup, notification-center / settings / overflow chrome, oversized-world SSH download UX, Players tab.
+**Explicitly out of MVP:** public game access, paid/spend mode, modded UI / Optimized Vanilla (Paper) / pack analyze, per-day budget sculpting, usage-API 48h reconcile Function, rich MOTD editor, interactive PTY console, event-driven door handback, macOS/Linux Manager, VPN / Distant Horizons engineering, silent OCI probing on startup, notification-center / settings / overflow chrome, oversized-world SSH download UX, Players tab, **$1 spend-brake lock UX** (Function OS flag + full-window warning + typed confirmation — v1), **Start progress checklist** (after v1). Guide/Setup **must** still disclose the possible ~$1–$2 residual if the $1 Function fires.
 
 ---
 
@@ -71,14 +73,14 @@ Do not commit. Do not start the following large step unless I say so.
 | **0** | Operator infra + dual-repo foundation | **DONE** |
 | **1** | Avalonia manage MVP (existing stack) | **DONE** |
 | **2** | On-box / contract freeze for product | **DONE** |
-| **3** | Setup wizard + OpenTofu greenfield | **TODO** — next: Step 3.1 |
-| **4** | Connect-existing (auto-detect + meta) | **TODO** |
+| **3** | Setup wizard + OpenTofu greenfield | **DONE** |
+| **4** | Connect-existing (auto-detect + meta) | **TODO** — NEXT |
 | **5** | UI polish (novice-ready) | **TODO** |
 | **6** | Guide + greenfield E2E proof | **TODO** |
 | **7** | Packaging, updates, closed beta | **TODO** |
 | **8** | MVP exit review | **TODO** |
 
-**Current NEXT step:** [3.1 — OpenTofu module skeleton](#step-31--opentofu-module-skeleton-product-names)
+**Current NEXT step:** [Phase 4 — Connect existing](#phase-4--connect-existing-mvp-light)
 
 ---
 
@@ -91,7 +93,7 @@ Operator Always Free stack + product repo bootstrap. Do not re-do unless somethi
 | Dual-VM doorbell (reserved IP, door MOTD/wake, reconcile) | DONE | Lab live — see VM-Software |
 | VM1 idle/budget SoftStop + ledger/lease + shape detect | DONE | `vm_agent/` |
 | Object Storage Phases 1–5 + world backup soft cap | DONE | Lab |
-| $1 budget → Function SoftStop | DONE | Lab |
+| $1 budget → Function SoftStop | DONE | Lab — SoftStops **VM1 and VM2**; copy in lab `functions/shutdown_vm/` |
 | Dual-repo (lab vs `OCI-mc-server`) | DONE | 2026-08-10 |
 | Avalonia scaffold (net8, App + Core) | DONE | |
 | Local config seed (`data/config.local.json`, friends) | DONE | See `docs/Local-Config.md` |
@@ -146,7 +148,7 @@ Operator Always Free stack + product repo bootstrap. Do not re-do unless somethi
   - Top bar **left:** status panel placeholders (playability, play IP, players, today’s usage vs budget), **copy play IP** control (can wire clipboard even if other fields are “—”), Start/Stop, Restart
   - Mini-terminal *visual* styling may wait for Phase 5; structure and fields are this step / 1.4
   - Top bar **right** (bell / settings / overflow): **out of MVP** — leave empty or omit until v1
-  - Tabs: **Whitelist**, **Usage**, **Server Management** (backups / Download World Save), **Advanced / Danger Zone**
+  - Tabs: **Whitelist**, **Usage**, **Server Management** (backups / Download World Save), **Advanced / Danger Zone** (one tab in MVP; PRODUCT-IDEAS **v1** splits Advanced vs Danger Zone — do not split during MVP)
 - Wire play IP from local config; other fields “—” until later steps.
 - Keep Fluent theme; no heavy design polish.
 
@@ -251,7 +253,7 @@ Operator Always Free stack + product repo bootstrap. Do not re-do unless somethi
 - **Download World Save** — download chosen/latest backup to an operator-chosen directory on the PC.
 - Upload/replace world via Object Storage + dirty/meta flag; SSH fallback when VM1 up (document).
 - Respect soft-cap messaging (eviction is on-box upload path; UI should not encourage breeching 9.5 GB).
-- **Out of this step (v1):** adaptive SSH download when oversized-world flag is set; bell notification for that flag. If the flag object already exists in the bucket, UI may show a simple status string, but full notification center is v1.
+- **Out of this step (v1):** adaptive SSH download when oversized-world flag is set; bell notification for that flag. If the flag object already exists in the bucket, UI may show a simple status string, but full notification center is v1. **Wipe world** and Server Management **modding** inspect are also v1 (`PRODUCT-IDEAS.md`) — not this step.
 
 **Test**
 
@@ -411,12 +413,14 @@ Operator Always Free stack + product repo bootstrap. Do not re-do unless somethi
 
 ### Step 3.1 — OpenTofu module skeleton (product names)
 
-**Status:** NEXT  
+**Status:** DONE  
+
+**Read first:** [`Automated-Infrastructure-Deployment.md`](Automated-Infrastructure-Deployment.md) (locked IaC decisions) and [`Lab-Reference-Stack-Notes.md`](Lab-Reference-Stack-Notes.md) (sanitized lab dump: `mcmgr-…` names, 3 dynamic groups, skip NAT/private subnet, Events → Function). Do not apply or import the discovery pack.
 
 **Do**
 
-- Add `infra/` (or `tofu/`) OpenTofu HCL: VCN, subnet, Security List, VM1 A1 Flex, VM2 Micro, reserved public IP + secondaries, NSG/SL rules for private Minecraft/SSH/door admin, Object Storage bucket, IAM dynamic groups/policies (least privilege where practical), budget + Events + Function placeholders as needed.
-- **Product naming** per lab PRODUCT-IDEAS: compartment display name `mcmgr`; resources `mcmgr-vcn`, `mcmgr-subnet-public`, `mcmgr-sl`, `mcmgr-vm1`, `mcmgr-door`, `mcmgr-play-ip`, bucket `mcmgr-shared-data`, etc. Freeform tag on compartment: `mcmgr-domain=mc-server-compartment`.
+- Add `infra/` (or `tofu/`) OpenTofu HCL: VCN, subnet, Security List, VM1 A1 Flex, VM2 Micro, reserved public IP + secondaries, NSG/SL rules for private Minecraft/SSH/door admin, Object Storage bucket, IAM dynamic groups/policies (least privilege where practical), budget + **Events → Function** placeholders as needed (do not copy the lab’s unused ONS topic).
+- **Product naming** per lab PRODUCT-IDEAS / [`Lab-Reference-Stack-Notes.md`](Lab-Reference-Stack-Notes.md): compartment `mcmgr`; `mcmgr-vcn`, `mcmgr-subnet-public`, `mcmgr-sl`, `mcmgr-vm1`, `mcmgr-door`, `mcmgr-play-ip`, bucket `mcmgr-shared-data`, DGs `mcmgr-dg-instances` / `mcmgr-dg-door` / `mcmgr-dg-fn`, etc. Freeform tag on compartment: `mcmgr-domain=mc-server-compartment`; instances `mcmgr-role=vm1|door`.
 - Do not clone ad-hoc Console names from the first manual deploy.
 - Outputs → values Manager needs for local config + `meta/infra.json`.
 - **Game-layer boundary** (blueprint §13.1): OpenTofu / cloud-init may create the `mcmgr` user/group, empty `/opt/mcmgr/` + `/etc/mcmgr/` / `/var/lib/mcmgr/` tree, baseline OS packages, and Adoptium apt **repo registration** — but must **not** install Minecraft, Java majors chosen in the wizard, loaders, or mod packs (version-sensitive work stays in SSH bootstrap from Step 2.3 / 3.3).
@@ -427,17 +431,18 @@ Operator Always Free stack + product repo bootstrap. Do not re-do unless somethi
 
 **Done when:** Validatable OpenTofu root module exists with documented variables.
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-12 — Linked [`Automated-Infrastructure-Deployment.md`](Automated-Infrastructure-Deployment.md) + [`Lab-Reference-Stack-Notes.md`](Lab-Reference-Stack-Notes.md); no HCL written yet.  
+2026-08-12 — Added [`infra/`](../infra/) OpenTofu root (`oracle/oci` 8.27.0); `tofu validate` passed; plan skipped (no `terraform.tfvars`); **no apply**. NEXT = Step 3.2.
 
 ---
 
 ### Step 3.2 — Setup wizard UX (no apply yet)
 
-**Status:** TODO  
+**Status:** DONE  
 
 **Do**
 
-- Integrated Setup (not a second exe): collect alert email, region/compartment strategy, **Minecraft version picker** (from Mojang manifest; default `latest.release`; releases-only unless Advanced), EULA accept, Vanilla confirm, Always Free docs confirmation link, capacity-handling consent, SSH key creation/import.
+- Integrated Setup (not a second exe): collect alert email, region/compartment strategy, **Minecraft version picker** (from Mojang manifest; default `latest.release`; releases-only unless Advanced), EULA accept, Vanilla confirm, Always Free docs confirmation link, **$1 last-resort brake + possible ~$1–$2 residual-charge disclosure**, capacity-handling consent, SSH key creation/import.
 - See [`Minecraft-Server-Deployment-Blueprint.md`](Minecraft-Server-Deployment-Blueprint.md) §13 for which parts of this belong to the wizard UI vs the SSH bootstrap module vs OpenTofu — the wizard fetches version metadata **read-only for display**; the actual bootstrap module re-resolves it on-box at execution time. Manager must **not** re-implement authoritative jar URL/hash resolution in C# (§13.3).
 - Persist wizard state for resume-later (including selected version id).
 - Auth Token: collect when OCIR/Function push needed; prefer Windows Credential Manager for storage (not long-term plaintext); gitignored local OK only as temporary operator aid.
@@ -450,13 +455,13 @@ Operator Always Free stack + product repo bootstrap. Do not re-do unless somethi
 
 **Done when:** Wizard UI complete without requiring live apply.
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-12 — `SetupWizardWindow` (9 steps), first-run chooser when `config.local.json` is missing, Advanced **Deploy / repair infrastructure**. Resume in `data/setup-wizard.local.json`. Mojang catalog live + fixture fallback. Auth Token → Credential Manager `McManager/ocir`. Deploy disabled; **no** `tofu` / **no** `terraform.tfvars` write. NEXT = Step 3.3.
 
 ---
 
 ### Step 3.3 — Apply + bootstrap + capacity wait
 
-**Status:** TODO  
+**Status:** DONE  
 
 **Do**
 
@@ -474,16 +479,17 @@ Operator Always Free stack + product repo bootstrap. Do not re-do unless somethi
 - **Operator-approved** apply to a disposable compartment (or carefully chosen empty compartment).
 - Full wake/play/stop + backup + budget gate smoke.
 - Destroy or stop resources after test to protect Always Free hours / avoid clutter (operator decision).
+- Agents: `dotnet build`; optional `MCMANAGER_TOFU_DRY_RUN=1` wizard Deploy. **No** live `tofu apply`.
 
 **Done when:** Greenfield deploy from app reaches manageable stack.
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-14 — Blank-tenancy operator test: OS seed 404=create, door OS env, guest netplan, Vanilla whitelist, tenancy `mcmgr-door-ip`, door DG by instance OCID, `wait_forge` `set -u`, `ip_to_vm1 --force`. 2026-08-13 — Wired Setup Deploy to LocalAppData OpenTofu (`%LOCALAPPDATA%\McManager\tofu`), SSH bootstrap (`door_vm` install.sh + `onbox/mcmgr` + `vm_agent`), Object Storage seed + `config.local.json` write, best-effort OCIR push. Fake runner / `MCMANAGER_TOFU_DRY_RUN`. Agents did not apply. **TEMPORARY:** VM1 OpenTofu defaults **2/12** for the blank-tenancy test — revert to **4/24** after. NEXT = Phase 4.
 
 ---
 
 ## Phase 4 — Connect existing (MVP-light)
 
-**Status:** TODO  
+**Status:** NEXT  
 
 **Do**
 
@@ -537,6 +543,7 @@ Operator Always Free stack + product repo bootstrap. Do not re-do unless somethi
 **Do**
 
 - Short guide: OCI account / PAYG as needed, API key + Auth Token under `%USERPROFILE%\.oci\`, Always Free confirmation, installer → Setup → play.
+- Disclose plainly: the stack is built to stay at **$0**, but if the **$1 last-resort budget** ever fires, Function latency can leave a **~$1–$2** charge for that month, then no further charges while the brake holds. (Full-window Manager lock UX is **v1**; this honesty is **MVP** guide/Setup copy.) See lab `PRODUCT-IDEAS.md` Always Free mode + $1 spend-brake lock.
 - Optional deep appendix (SSH, door, Object Storage).
 
 **Test**
@@ -637,6 +644,7 @@ Operator Always Free stack + product repo bootstrap. Do not re-do unless somethi
 - Confirm out-of-MVP items were not accidentally scoped in.
 - Point forward to Development-Steps / PRODUCT-IDEAS **v1** (not started here).
 - Update `README.md` + lab `VM-Software.md` to “MVP complete” (or “MVP closed beta”).
+- **Operator (not agents):** after declaring MVP complete, run the clean-room acceptance test in lab `PRODUCT-IDEAS.md` (new account + installer + full Setup + $1 budget stress). Prefer a local VM / spare PC. This test may incur the documented ~$1–$2 residual — do not run it on the long-lived lab tenancy unless that spend is explicitly accepted.
 
 **Done when:** Operator declares MVP achieved for product purposes.
 
@@ -650,6 +658,7 @@ Operator Always Free stack + product repo bootstrap. Do not re-do unless somethi
 |------|--------|
 | MVP / v1 intent | Lab `PRODUCT-IDEAS.md` |
 | Minecraft server install/upgrade mechanism (Vanilla/Paper/Fabric/NeoForge/Forge/Quilt/modpacks) | [`Minecraft-Server-Deployment-Blueprint.md`](Minecraft-Server-Deployment-Blueprint.md) |
+| Automated cloud infra (OpenTofu, Resource Manager reference capture, VM images, config hosting) | [`Automated-Infrastructure-Deployment.md`](Automated-Infrastructure-Deployment.md) |
 | Suggested order narrative | Lab `docs/Development-Steps.md` |
 | What’s live on VMs today | Lab `docs/VM-Software.md` |
 | OCI layout | Lab `Infrastructure-Information.md` |
@@ -674,14 +683,23 @@ Operator Always Free stack + product repo bootstrap. Do not re-do unless somethi
 - Notification center / settings gear / overflow menu (v1)  
 - Oversized-world SSH **Download World Save** path + bell UX (v1; on-box flag OK in Phase 2)  
 - Players tab / Kick·Op·Ban (after v1)  
+- **$1 spend-brake lock UX** (Function writes Object Storage flag; full-window warning; typed confirmation to restart) — **v1**; MVP Function still SoftStops. Guide residual ~$1–$2 copy is in Step 6.1.  
+- Start-from-Manager **progress checklist** (after v1)  
 - Migrating the operator’s live Forge lab off `/home/ubuntu/minecraft/server` as a prerequisite for Step 2.3 (greenfield `/opt/mcmgr/` only; Connect-existing reads actual `world_path`)  
 
 ---
 
 ## Plan changelog
 
-| Date | Note |
-|------|------|
+| 2026-08-14 | Step 3.3 blank-tenancy test lessons (IAM tenancy IP policy, door DG instance.id, OS seed, netplan, whitelist). NEXT remains Phase 4. |
+| 2026-08-13 | TEMPORARY: VM1 OpenTofu defaults 2/12 for blank-tenancy 3.3 test (revert `infra/variables.tf` to 4/24 after). |
+| 2026-08-13 | PRODUCT-IDEAS only: v1 will split Advanced vs Danger Zone; MVP Step 1.2 tab list unchanged (one combined tab). |
+| 2026-08-12 | Step 3.2 DONE: Setup wizard UX (resume JSON, Mojang picker, Credential Manager token, static plan summary). No apply / no tfvars write. NEXT = Step 3.3. |
+| 2026-08-12 | Step 3.1 DONE: product `infra/` OpenTofu skeleton (`mcmgr-…` names, cloud-init baseline, 3 DGs); `tofu validate` OK; no apply. NEXT = Step 3.2. |
+| 2026-08-12 | Lab `$1` Function confirmed SoftStops VM1 **and** VM2; source copy in lab `functions/shutdown_vm/`. |
+| 2026-08-12 | Budget wiring: Events → Function is live; unused ONS topic is leftover. NEXT remains Step 3.1. |
+| 2026-08-12 | Pre-3.1: sanitized lab RM dump; [`Lab-Reference-Stack-Notes.md`](Lab-Reference-Stack-Notes.md) (naming, 3 DGs). NEXT remains Step 3.1. |
+| 2026-08-12 | Pre-3.1: added [`Automated-Infrastructure-Deployment.md`](Automated-Infrastructure-Deployment.md) (OpenTofu-on-PC, RM discovery as reference only). NEXT remains Step 3.1. |
 | 2026-08-11 | Step 2.4 DONE: door wake `--force` OS pull; idle-agent §10.2 sync; oversized-world flag set/skip; OS-ISSUE-6 deferred with operator OK. Phase 2 complete. NEXT = Step 3.1. |
 | 2026-08-11 | Step 2.3 DONE: product `onbox/mcmgr/` Vanilla bootstrap (generic driver + piston-meta module) + offline dry-run/fixtures. NEXT = Step 2.4. |
 | 2026-08-11 | Aligned Phase 2/3 steps with [`Minecraft-Server-Deployment-Blueprint.md`](Minecraft-Server-Deployment-Blueprint.md) §30: Step 2.3 Do list covers §3–§9/§16 (layout, RCON, properties, generic unit, final manifest); Step 2.4 adds idle-agent §10.2 sync; Steps 3.1–3.3 encode §13/§14 OpenTofu-vs-game split + bootstrap resume; out-of-scope notes no in-app pack catalog. NEXT remains Step 2.3. |

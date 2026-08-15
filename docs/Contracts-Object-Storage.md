@@ -13,10 +13,11 @@ This document defines object names, JSON shapes, writer ownership, dirty flags, 
 
 The bucket is the shared source of truth for actors that are not always connected:
 
-- **Manager** — budget/UI writer; ledger reader; future IP/message/meta writer.
+- **Manager** — budget/UI writer; ledger reader; future IP/message/meta writer; **v1:** only clearer of the $1 spend-brake lock flag.
 - **VM1** — primary usage-ledger, lease, and backup writer.
-- **Door** — budget/ledger reader before wake; rare ledger repair writer while VM1 is `STOPPED`.
+- **Door** — budget/ledger reader before wake; rare ledger repair writer while VM1 is `STOPPED`; **v1:** read spend-brake lock flag and refuse VM1 wake while it is set.
 - **Setup / Connect existing** — infrastructure metadata writer/reader.
+- **$1 budget Function (v1)** — writer of the spend-brake lock flag; not an MVP actor in this contract.
 
 Dirty flags are pull hints, not the source of truth. The **target contract** requires a safety-critical action (especially door wake) to fetch or validate authoritative data rather than trusting only a stale flag/cache. The deployed door is currently flag-aware and can reuse a cache when bits are clear; closing that gap belongs to Step 2.4.
 
@@ -71,6 +72,7 @@ These are normative rules for new Phase 2+ work. Existing lab/product code does 
 | `meta/infra.json` | canonical **2** | Setup; Manager infra-publish/upgrade | Manager / Connect existing; diagnostics | **Live nested v2** after Step 2.2 migration |
 | `meta/flags.json` | 1 | Shared protocol (last modifier) | Manager, VM1, door | Live |
 | `meta/oversized-world-backup.json` | 1 | VM1 backup agent | Manager | **Live set/skip (Step 2.4)**; Manager UX / clear flow remains v1 |
+| `meta/spend-brake-triggered.json` | TBD | $1 budget Function sets; Manager clears | Manager, door (v1) | **Reserved v1** — exact key/shape TBD; see lab PRODUCT-IDEAS $1 spend-brake lock |
 | `meta/world-restore-request.json` | 1 | Manager requests; VM1 updates outcome | VM1, Manager | Reserved contract for flag-driven restore; current MVP uses SSH fallback |
 | `meta/backup-upload-lock.json` | 1 | Manager or VM1 active uploader | Manager, VM1 | Reserved coordination contract; not implemented |
 | `ledger/usage.json` | 2 | VM1; door only for STOPPED orphan heal | Manager, door, VM1 boot | Live |
@@ -453,6 +455,8 @@ The deployed door currently uses America/Los_Angeles day windows, ignores `daily
 - Manager is the intended writer.
 - This is the future shared IP SoT. Avalonia Phase 1 currently reads/writes local `friends.local.json` and applies the Security List directly; it does not yet publish this object.
 
+**v1 evolution (do not change the MVP contract yet):** lab `PRODUCT-IDEAS.md` Allowlist CIDR ranges lets an allowlist entry be a **CIDR prefix** (e.g. `172.56.0.0/16`) instead of a single host, for friends on dynamic/CGNAT IPs. Exact JSON shape (`ip` vs a new `cidr` field) is frozen at v1 implementation — until then, `ip` remains one IPv4 address. CIDR is intended for Minecraft 25565; SSH/door admin rules stay `/32` unless the admin is explicitly editing their own admin entry.
+
 ## `ip/mode.json` — access mode v1
 
 ```json
@@ -562,6 +566,22 @@ Semantics:
 - No v1 dirty-flag category is added; consumers GET this small object at the relevant UI/action boundary.
 - The flag must not include the world contents, SSH paths/keys, or credentials.
 
+### `meta/spend-brake-triggered.json` — reserved v1 $1 budget lock (key TBD)
+
+**Not an MVP contract.** Product intent: lab `PRODUCT-IDEAS.md` ($1 spend-brake lock). Exact object key and JSON shape are **TBD at v1 implementation** — this filename is a sketch so agents do not invent a second flag.
+
+Intended semantics (do not implement under the MVP plan):
+
+- **Existence** of the object means the $1 last-resort compartment budget has fired this period.
+- **Writer:** the budget Function sets/replaces it when handling a real threshold alert (not RESET).
+- **Clearer:** Manager only, after the admin types the exact confirmation statement and Start succeeds.
+- **Readers:** Manager (full-window warning; block Start); door (refuse VM1 wake while present), if the door is left running.
+- Absence means no known spend-brake lock.
+- No new dirty-flag category required if consumers GET this small object at Manager open / Start / door wake (same pattern as oversized-world).
+- Must not contain secrets, card details, or live OCIDs beyond what `meta/infra.json` already holds.
+
+Do **not** freeze this key in `infra_schema` until v1 implementation chooses the final name.
+
 ### `meta/world-restore-request.json` — reserved restore request v1
 
 This exact singleton key is the Object Storage apply path referenced by the MVP restore design. Current Phase 1 replaces directly over SSH while VM1 is running; no current on-box consumer applies this object.
@@ -647,7 +667,7 @@ No live objects were modified during review.
 10. Flag-driven `meta/world-restore-request.json` apply is not implemented; SSH replacement is the current fallback.
 11. The upload lock is not implemented; current Manager/VM1 List+PUT operations can race and exceed the aggregate cap. Current VM1 eviction accepts any `.zip` under `backups/`, not only canonical `world-*.zip`.
 12. Current SSH world replace lacks archive preflight and rollback after extraction failure.
-13. Avalonia whitelist currently uses local config + Security List directly; shared IP objects remain future contract surfaces.
+13. Avalonia whitelist currently uses local config + Security List directly; shared IP objects remain future contract surfaces. **v1** may extend entries to CIDR prefixes (`PRODUCT-IDEAS.md`); do not change the MVP single-IPv4 `ip` field until that work.
 14. Prefixes are fixed for `infra_schema: 2`; the prefix map is configuration/discovery data, not permission to change hardcoded deployed actors independently. A prefix change requires coordinated actor updates plus an `infra_schema` bump.
 15. Lease fields are all required properties (nullable where shown). A VM1 helper implements the configured 900-second stale test, but no active caller was found; deployed door heal does not enforce age and uses the heartbeat only after OCI reports VM1 `STOPPED`.
 
@@ -669,4 +689,4 @@ Lab/on-box:
 - `vm_agent/ledger.py`, `vm_agent/lease.py`, `vm_agent/os_publish.py`, `vm_agent/world_backup.py`
 - `door_vm/oci/pull_os_budget.sh`, `door_vm/oci/heal_os_ledger.sh`
 - `docs/Object-Storage-Phase1.md` through `Object-Storage-Phase5.md`
-- `PRODUCT-IDEAS.md` — sync model, infra meta, oversized-world intent
+- `PRODUCT-IDEAS.md` — sync model, infra meta, oversized-world intent, v1 $1 spend-brake lock

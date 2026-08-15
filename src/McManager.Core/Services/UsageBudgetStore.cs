@@ -170,6 +170,27 @@ public sealed class UsageBudgetStore
         });
     }
 
+    /// <summary>
+    /// First-deploy seed so door <c>pull_os_budget.sh --force</c> does not 404 on an empty bucket.
+    /// Does not overwrite a ledger VM1 already published.
+    /// </summary>
+    public async Task<ServiceResult> SeedEmptyLedgerIfMissingAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var existing = await GetJsonAsync<UsageLedgerDocument>(LedgerObjectName, cancellationToken);
+        if (existing.Succeeded && existing.Value is not null)
+            return ServiceResult.Ok();
+
+        if (!OciErrorFormatter.IsNotFoundMessage(existing.Error))
+            return ServiceResult.Fail(existing.Error ?? "Get ledger failed.");
+
+        var empty = UsageLedgerDocument.Empty();
+        var put = await PutJsonAsync(LedgerObjectName, empty, cancellationToken);
+        return put.Succeeded
+            ? ServiceResult.Ok()
+            : ServiceResult.Fail(put.Error ?? "Put empty ledger failed.");
+    }
+
     private async Task<ServiceResult<T>> GetJsonAsync<T>(
         string objectName,
         CancellationToken cancellationToken)

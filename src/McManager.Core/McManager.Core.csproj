@@ -5,8 +5,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="..\..\tests\fixtures\game-metadata\mojang-version-manifest-v2.json">
+      <LogicalName>McManager.Core.Setup.mojang-version-manifest-v2.json</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="OCI.DotNetSDK.Common" Version="144.0.0" />
     <PackageReference Include="OCI.DotNetSDK.Core" Version="144.0.0" />
+    <PackageReference Include="OCI.DotNetSDK.Identity" Version="144.0.0" />
     <PackageReference Include="OCI.DotNetSDK.Objectstorage" Version="144.0.0" />
     <PackageReference Include="SSH.NET" Version="2024.2.0" />
   </ItemGroup>

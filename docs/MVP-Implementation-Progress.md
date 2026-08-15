@@ -4,7 +4,7 @@
 **Not authority for intent:** product goals still live in lab `PRODUCT-IDEAS.md` and the checklist in [`MVP-Implementation-Plan.md`](MVP-Implementation-Plan.md). This file records **as-built/as-frozen** behavior so agents and the operator do not rediscover completed steps.  
 **Update policy:** Append or revise sections when an MVP plan step completes. Broader docs (README, lab `VM-Software.md`, etc.) wait until the relevant exit gate / operator asks.
 
-**As of:** 2026-08-11 (Phase **1 DONE**; Phase **2 DONE** — Steps **2.1–2.4**; **NEXT = Step 3.1** OpenTofu skeleton).
+**As of:** 2026-08-14 (Phase **1 DONE**; Phase **2 DONE**; Phase **3 DONE** through Step **3.3** apply/bootstrap + blank-tenancy operator test; **NEXT = Phase 4** Connect-existing).
 
 ---
 
@@ -25,7 +25,10 @@
 | **2.2** | Infra meta object (`meta/infra.json`) | **DONE** (live migrated + round-trip) |
 | **2.3** | Vanilla on-box path readiness | **DONE** (offline dry-run + fixtures) |
 | **2.4** | Door / agent product gaps | **DONE** (force OS pull; §10.2 sync; oversized flag; OS-ISSUE-6 deferred) |
-| 3.1+ | Setup / OpenTofu | NEXT |
+| **3.1** | OpenTofu module skeleton | **DONE** (`tofu validate`; no apply) |
+| **3.2** | Setup wizard UX (no apply) | **DONE** (walkable) |
+| **3.3** | Apply + bootstrap + capacity wait | **DONE** (code + blank-tenancy operator test 2026-08-14) |
+| 4+ | Connect-existing | NEXT |
 
 **Run:**
 
@@ -42,15 +45,19 @@ dotnet run --project "C:\Users\matto\Desktop\Minecraft Server\OCI-mc-server\src\
 ```text
 McManager.App (Avalonia 12, Fluent, CommunityToolkit.Mvvm)
   MainWindow + MainViewModel          top bar, poller, power commands, Today usage
+  FirstRunWindow                      missing-config chooser (Setup vs existing stack)
+  SetupWizardWindow                   9-step collect / resume / Deploy (LocalAppData tofu + SSH bootstrap)
   WhitelistViewModel                  friends CRUD / Save / Sync
   UsageViewModel                      OS ledger/budget pull + publish; 2 min tab poll
   ServerManagementViewModel           backups list / download / upload / SSH replace
-  AdvancedViewModel                   break-glass Compute + Danger Zone idle + infra meta publish
+  AdvancedViewModel                   break-glass Compute + Danger Zone idle + infra meta publish + Setup entry
+  SetupWizardViewModel                9-step greenfield collect / resume / static plan (no tofu)
         |
         v
 McManager.Core
-  Config/     LocalConfigStore, ManagerLocalConfig, FriendRules, FriendsLocalFile
+  Config/     LocalConfigStore, SetupWizardStore, ManagerLocalConfig, FriendRules, FriendsLocalFile
   Oci/        OciSession (auth + clients + RetryConfiguration)
+  Setup/      MojangVersionCatalog, OciConfigProfiles, SshKeyHelper, WindowsCredentialStore, InfraPlanSummary
   Usage/      Ledger/Budget/Flags/InfraMeta DTOs + UsageMath.BudgetReport
   Services/   Compute, SecurityList, ObjectStorage (+ stream), UsageBudgetStore, InfraMetaStore, BackupStore, DoorClient, SshService (restart/replace/idle), …
 ```
@@ -270,8 +277,11 @@ Enable rules (approx.): Start when not already Starting/Playable; Stop when Play
 | Path | Notes |
 |------|--------|
 | [`Contracts-Object-Storage.md`](Contracts-Object-Storage.md) | Frozen OS/meta/ledger contracts (**2.1**) |
+| [`Automated-Infrastructure-Deployment.md`](Automated-Infrastructure-Deployment.md) | Phase 3 IaC authority (2026-08-12): OpenTofu on admin PC; RM discovery = operator reference only |
+| [`Lab-Reference-Stack-Notes.md`](Lab-Reference-Stack-Notes.md) | Sanitized lab dump digest: `mcmgr-…` names, 3 DGs, skip NAT, Events→Function (ONS leftover) |
 | [`Local-Config.md`](Local-Config.md) | Local seeds + Step 2.2 publish note (updated with infra meta) |
 | [`OCI-API-Usage.md`](OCI-API-Usage.md) | 429 / waiter / pagination thrift (Phase 1 era; still current) |
+| [`../infra/`](../infra/) | Step **3.1** OpenTofu root (`oracle/oci` 8.27.0); see [`infra/README.md`](../infra/README.md) |
 
 ---
 
@@ -849,7 +859,126 @@ Asserts §4.1-shaped `game-manifest.json` (`distribution=vanilla`, `loader=null`
 
 ### Next
 
-**Step 3.1** — OpenTofu module skeleton (product names).
+**Step 3.1** — OpenTofu module skeleton (product names). **Completed below.**
+
+---
+
+## Step 3.1 — OpenTofu module skeleton
+
+**Status:** DONE (2026-08-12). Validatable HCL only; **no apply**, no live-lab import, no Setup wizard.
+
+### What shipped
+
+Product tree [`infra/`](../infra/) (OpenTofu, provider `oracle/oci` **8.27.0** locked):
+
+| Piece | Role |
+|-------|------|
+| Root `versions.tf` / `providers.tf` / `variables.tf` / `main.tf` / `outputs.tf` | `config_file_profile` from `~/.oci`; documented wizard-bound variables |
+| `modules/compartment` | Create `mcmgr` + tag `mcmgr-domain=mc-server-compartment`, or use `existing_compartment_id` |
+| `modules/network` | VCN `10.0.0.0/16`, public subnet, IGW, dedicated `mcmgr-sl` (no NAT/IPv6/NSG) |
+| `modules/compute` | VM1 A1 Flex (product 4/24; **TEMPORARY test default 2/12**) aarch64 + door E2.1.Micro x86; secondaries; reserved IP on door secondary |
+| `modules/storage` | Private Standard `mcmgr-shared-data`; `prevent_destroy`; no objects |
+| `modules/iam` | 3 DGs (compartment/tag match) + bucket-scoped policies |
+| `modules/budget_brake` | $1 budget + email; Functions app + OCIR repo; Function/Events gated on `function_image` |
+| `cloud-init/*.yaml.tftpl` | OS baseline only (blueprint §13.1) |
+| `manifest.json` | `infra_schema=2`, `stack_version=0.1.0` |
+| `README.md` + `terraform.tfvars.example` | Operator how-to; SL vs Manager split; IAM notes |
+
+SL ingress uses Manager description conventions, then `ignore_changes = [ingress_security_rules]`. Instance `metadata` is also `ignore_changes` after create. No ONS topic. `softstop_instance_ids` defaults to both VMs. Greenfield `world_path` output is `/opt/mcmgr/server/world`. `output.infra_meta_skeleton` matches nested `meta/infra.json` v2 (no secrets).
+
+### Verification
+
+```powershell
+cd infra
+tofu init
+tofu validate   # Success
+```
+
+`tofu plan` skipped — no gitignored `terraform.tfvars` yet. **Do not apply** on the live lab tenancy.
+
+### Out of scope (3.1)
+
+Setup wizard; apply; SSH bootstrap; OCIR image push; seeding Object Storage JSON; writing `config.local.json`.
+
+### Next
+
+**Step 3.2** — Setup wizard UX (collect variables, plan summary, resume state; still no apply). **Completed below.**
+
+---
+
+## Step 3.2 — Setup wizard UX (no apply)
+
+**Status:** DONE (2026-08-12). Walkable Avalonia wizard; **no** `tofu plan`/`apply`, **no** `infra/terraform.tfvars` write, **no** `config.local.json` overwrite.
+
+### What shipped
+
+| Piece | Role |
+|-------|------|
+| `SetupWizardState` / `SetupWizardStore` | Gitignored `data/setup-wizard.local.json` resume (step + fields; version **id** only) |
+| `MojangVersionCatalog` | GET piston-meta `version_manifest_v2.json` for display; embedded fixture fallback |
+| `OciConfigProfiles` | Profile + region from `~/.oci/config` (no API) |
+| `SshKeyHelper` | Generate `%USERPROFILE%\.ssh\mcmgr_ed25519_yyyyMMdd_HHmmss` (unique; no overwrite) or import `.pub` |
+| `WindowsCredentialStore` | Optional OCIR Auth Token → Credential Manager target `McManager/ocir` |
+| `InfraPlanSummary` | Static ~20-create list aligned with the 3.1 plan |
+| `SetupWizardWindow` | Fluent ~720×560, 9 steps, Back/Next, Deploy **disabled** |
+| `FirstRunWindow` | Shown only when `config.local.json` is missing (Setup vs existing stack) |
+| Advanced tab | **Deploy / repair infrastructure** (does not hijack launches that already have manage config) |
+
+`infra/README.md` troubleshooting notes that tofu never overwrites `terraform.tfvars` (unsaved editor buffer vs disk; do not copy the example over a filled file).
+
+### Out of scope (3.2)
+
+Writing `infra/terraform.tfvars`; invoking tofu; SSH bootstrap; seeding Object Storage; overwriting `config.local.json`; Phase 4 auto-detect beyond the first-run stub; notification chrome.
+
+### Next
+
+**Phase 4** — Connect-existing (auto-detect + hydrate from `meta/infra.json`). **Do not start until the operator asks.**
+
+---
+
+## Step 3.3 — Apply + bootstrap + capacity wait
+
+**Status:** DONE (2026-08-13) as **product code**. Live OCI apply is **operator-only**; agents did not `tofu apply`, OCIR push, or SSH the lab VMs. **Blank PAYG tenancy operator test 2026-08-14:** apply + bootstrap succeeded; follow-up fixes below are in tree.
+
+### What shipped
+
+| Piece | Role |
+|-------|------|
+| `OpenTofuLocator` / `OpenTofuRunner` | Find `tofu.exe` (PATH, then WinGet Links). `init` / `apply -auto-approve` / `output -json` with `-chdir=infra` and `-state`/`-var-file` under `%LOCALAPPDATA%\McManager\tofu\<stack-id>\` |
+| `RecordingOpenTofuRunner` | Fake runner: records argv, canned outputs, **never starts tofu** |
+| `TfvarsWriter` / `TofuWorkspace` | Writes LocalAppData `terraform.tfvars` from wizard + `tenancy=` from `~/.oci`. **Never** repo `infra/terraform.tfvars` |
+| `SetupDeployOrchestrator` | Resumable pipeline: apply → wait RUNNING + cloud-init markers → door → VM1 → OS/meta → optional Function → `config.local.json` |
+| `SetupBootstrapService` | SSH: lab `door_vm/install.sh --yes` (gcc/OCI CLI/make; stop mccontrol first), `onbox/mcmgr/common/driver.sh` with `EULA_ACCEPTED` + `MINECRAFT_VERSION`, lab `vm_agent/` + timer. CRLF strip, `/tmp` staging, `sudo bash -c` chains |
+| `OcirFunctionPublisher` | Best-effort linux/arm64 `docker buildx --push`; skip without token/Docker/`MCMANAGER_OCIR_USERNAME`. Stages a temp Dockerfile; Function config `INSTANCE_OCIDS` (does not bake lab placeholders) |
+| Wizard summary | Detected admin `/32` (editable), Deploy enabled, confirm (second A1 + overwrite `config.local.json`), log panel, capacity Retry / 7 min poll / Stop |
+| `LocalConfigStore.SaveConfig` | Maps tofu outputs: SSH hosts = ephemeral primaries; play IP = reserved; key = private sibling of wizard `.pub`; RCON from VM1 only (never meta) |
+| `MCMANAGER_TOFU_DRY_RUN=1` | Uses fake runner; skips wait/SSH/OS/config write |
+
+`apply_stage` in wizard JSON: `not_started` → `tofu_applied` → `cloud_init` → `door` → `vm1` → `os_meta` → `function` → `config_written`. Re-Deploy skips completed tofu stages. At `vm1` or later, Re-Deploy re-runs guest repair (netplan, door `oci.env` OS vars, Vanilla whitelist) and can start a STOPPED VM1 without `tofu apply`. On-box Vanilla resume remains `/var/lib/mcmgr/bootstrap-state.json`.
+
+### Blank-tenancy test lessons (2026-08-14)
+
+| Symptom | Cause | Handling |
+|---------|--------|----------|
+| Setup stuck at `apply_stage=vm1`; bucket missing `meta/infra.json` | Greenfield GET 404 treated as publish failure; seed errors not in the deploy log | `PublishFromLocalAsync` treats missing meta as create; seed empty ledger; log seed failures |
+| Door MOTD **Control plane degraded** on first wake | `oci.env` lacked Object Storage namespace/bucket; `pull_os_budget.sh` failed closed on missing ledger | `install.sh` / Setup persist OS vars; ledger 404 is OK on first pull |
+| Reserved play IP connect timeout; ephemeral SSH worked | Guest OS had no secondary play address; reserved public IP maps to that secondary | Setup writes `/etc/netplan/99-mcmgr-play.yaml` on both VMs |
+| Vanilla “you are not white-listed” | `white-list=true` with empty `whitelist.json` | Wizard **admin Minecraft username** → seed whitelist |
+| `wait_forge.sh`: `POLL_INTERVAL_SEC: unbound variable` | `set -u` + `${UNSET//$'\r'/}` before `:-10` | Default optional env vars **before** CR-strip (`door_vm/oci/wait_forge.sh`) |
+| `ip_to_vm1.sh failed` / `UpdatePublicIp` 404 | Compartment-only public-ip policy; door DG tag match did not enroll the instance | Tenancy policy `mcmgr-door-ip`; door DG `instance.id`; scripts `--force` + already-on-target no-op |
+| `ubuntu` cannot source `/etc/mccontrol/oci.env` | File is mode 600 root — expected | Diagnose as root; do not treat this as a misdeploy |
+| Manual `tofu import` “no configuration files” / literal `$infra` | LocalAppData has state only; PowerShell `-flag=$var` does not expand | `cd` repo `infra/`; `-state="$state"` `-var-file="$vars"`; see `infra/README.md` |
+| Guest “restart required” / 22.04 vs 24.04 | cloud-init `package_update` only | **Do not** `apt upgrade` / `do-release-upgrade` |
+
+Players join the **reserved play IP**, not the ephemeral SSH addresses. **TEMPORARY** VM1 OpenTofu default remains **2/12** until reverted to **4/24**.
+
+### Out of scope (3.3)
+
+GitHub infra zip pull; tofu state encryption; `remote-exec`; copying `door_vm/` / `vm_agent/` into this repo; agent live apply; Phase 4 auto-detect.
+
+### Next
+
+**Phase 4** — Connect-existing.
 
 ---
 
@@ -877,11 +1006,33 @@ Through Steps **2.1–2.4**:
 - Offline Vanilla bootstrap dry-run (`onbox/mcmgr`) for 1.21.1 / 1.21.11 — §4.1 manifest + generic unit + §10.2 idle sync asserts
 - Door wake force OS pull redeployed; oversized-world flag set/skip on VM1 agent
 
+Through Step **3.1**:
+
+- `infra/` OpenTofu root `tofu validate` (oracle/oci 8.27.0)
+- No `tofu apply`; no live-lab import
+
+Through Step **3.2**:
+
+- Solution builds; Setup is Advanced **Deploy / repair infrastructure** when `config.local.json` exists
+- First-run chooser when config is missing (`MCMANAGER_CONFIG_DIR` at an empty dir)
+- Wizard resume file is `data/setup-wizard.local.json`; Deploy does not call OCI/tofu
+- Version list from live piston-meta **or** embedded fixture
+
 ---
 
-## Explicitly not built yet (Phase 2+)
+Through Step **3.3** (code + operator blank-tenancy test 2026-08-14):
 
-- Setup / OpenTofu (Phase 3+), Connect-existing hydrate UI, installer, update checks
+- Solution builds; Deploy is enabled on the summary step
+- State/tfvars path is `%LOCALAPPDATA%\McManager\tofu` (repo `infra/terraform.tfvars` untouched by Setup)
+- Dry-run via `MCMANAGER_TOFU_DRY_RUN=1` does not create OCI resources or overwrite `config.local.json`
+- Operator apply on a **separate PAYG test tenancy** reached Vanilla up, idle SoftStop, Object Storage seed, door **PLAYABLE** on the reserved play IP (after IAM/netplan/whitelist/seed fixes)
+- **TEMPORARY:** `infra/variables.tf` VM1 defaults are **2 OCPU / 12 GB** for the blank-tenancy 3.3 test — **revert to 4 / 24** after the test. Wizard plan/confirm copy matches. Product MVP shape remains 4/24 until Setup offers a picker (PRODUCT-IDEAS).
+
+---
+
+## Explicitly not built yet (Phase 4+)
+
+- Connect-existing hydrate UI, installer, update checks
 - Door SoftStop pre-stop world backup (OS-ISSUE-6 — deferred)
 - Door UTC/override/GB accounting parity with Manager
 - firewalld sync, notification center / settings gear
@@ -893,8 +1044,12 @@ Through Steps **2.1–2.4**:
 
 ## Changelog (this file)
 
-| Date | Note |
-|------|------|
+| 2026-08-14 | Step 3.3 blank-tenancy operator test: OS seed 404=create, door OS env, netplan, Vanilla whitelist, tenancy `mcmgr-door-ip`, door DG by instance OCID, wait_forge `set -u`, ip_to_vm1 `--force`. NEXT remains Phase 4. |
+| 2026-08-12 | Step 3.2: Setup wizard UX (resume JSON, Mojang picker, Credential Manager, static plan). No apply. NEXT = Step 3.3. |
+| 2026-08-12 | Step 3.1: `infra/` OpenTofu skeleton; `tofu validate` OK; no apply. NEXT = Step 3.2. |
+| 2026-08-12 | Budget wiring correction: Events → Function is live; ONS topic unlinked leftover. NEXT remains Step 3.1. |
+| 2026-08-12 | Sanitized lab RM dump; added [`Lab-Reference-Stack-Notes.md`](Lab-Reference-Stack-Notes.md). NEXT remains Step 3.1 (do not start until operator says so). |
+| 2026-08-12 | Pre-3.1 research: added [`Automated-Infrastructure-Deployment.md`](Automated-Infrastructure-Deployment.md). NEXT remains Step 3.1 (do not start until operator says so). |
 | 2026-08-11 | Step 2.4: door `--force` OS pull; §10.2 idle sync; oversized-world flag; Phase 2 DONE; NEXT = 3.1. |
 | 2026-08-11 | Step 2.3: `onbox/mcmgr/` Vanilla bootstrap + fixtures/dry-run; NEXT = Step 2.4. |
 | 2026-08-11 | Expanded as-built docs for Steps **1.8**, **2.1**, and **2.2** (exit gate / contract freeze / infra meta) to match 1.5–1.7 depth; refreshed architecture + file map through 2.2. |

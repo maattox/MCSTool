@@ -10,6 +10,7 @@ Avalonia manage MVP seeds connectivity from **local JSON**, not from lab private
 | [`friends.local.example.json`](../friends.local.example.json) | Tracked | Whitelist template |
 | `data/config.local.json` | **Ignored** | Live OCIDs / SSH / Object Storage / budgets |
 | `data/friends.local.json` | **Ignored** | Live Desired List seed |
+| `data/setup-wizard.local.json` | **Ignored** | Setup wizard resume (step index + fields; **no** Auth Token, **no** SSH private key) |
 
 Copy examples into `data/` and fill values, or keep the operator-seeded files already present on this machine.
 
@@ -19,7 +20,28 @@ Copy examples into `data/` and fill values, or keep the operator-seeded files al
 2. Lab `data/Infrastructure-Deployment-Private.md` — full OCIDs (reserved IP id, private IP ids, VCN, bucket, …)  
 3. Lab `data/friends.json` — whitelist  
 
-Do **not** copy Auth Tokens into `config.local.json` (OCIR only; Manager uses `~/.oci` API key).
+Do **not** copy Auth Tokens into `config.local.json` (OCIR only; Manager uses `~/.oci` API key). Setup stores an optional OCIR Auth Token in **Windows Credential Manager** (`McManager/ocir`), not in wizard JSON.
+
+## Setup wizard resume
+
+`McManager.Core.Config.SetupWizardStore` reads/writes `data/setup-wizard.local.json` (same data directory as manage config). Saved on each Next/Back/Close.
+
+Included: current step, Always Free / residual / capacity flags, OCI profile + region, compartment strategy, alert email, SSH **public** path/line/fingerprint (Generate creates `%USERPROFILE%\.ssh\mcmgr_ed25519_yyyyMMdd_HHmmss`, not a reused default name), Vanilla + version **id**, EULA flag, whether a token was stored, **admin `/32` CIDR**, **admin Minecraft username** (Vanilla whitelist), **`apply_stage`**, optional Function image after OCIR push.
+
+**Not** included: Auth Token secret, SSH private key, tenancy OCID, jar URL/sha1.
+
+**Step 3.3 writes:**
+
+- `data/config.local.json` after a successful (non-dry-run) Deploy — **replaces** an existing manage seed in that data directory (wizard confirms first). Prefer `MCMANAGER_CONFIG_DIR` pointing at a **new empty folder** so the lab Manager config stays intact.
+- OpenTofu `terraform.tfvars` + `terraform.tfstate` under `%LOCALAPPDATA%\McManager\tofu\<stack-id>\` (not the repo, not the shared bucket). **Never** writes [`infra/terraform.tfvars`](../infra/terraform.tfvars). Manual `tofu import` / `plan` for that stack must `-state`/`-var-file` those LocalAppData files while the working directory is repo `infra/` (PowerShell: quote `-state="$state"`).
+- `friends.local.json` with the admin `/32` **only if that file is empty**.
+- Guest netplan (`/etc/netplan/99-mcmgr-play.yaml`) for the secondary play IP; Vanilla whitelist from **admin Minecraft username**.
+
+**Re-Deploy:** if `apply_stage` is already `vm1` (or later), Deploy re-runs guest repair (netplan, door env, whitelist) and can start a STOPPED VM1 — it does **not** re-`tofu apply`. Players use `play.reserved_public_ip`, not `vm1.ssh_host` / `door.ssh_host`.
+
+Dry-run: set `MCMANAGER_TOFU_DRY_RUN=1` so Deploy uses a fake tofu runner and does **not** create OCI resources or overwrite `config.local.json`. Agents must use this (or not click Deploy). A real apply creates another Always Free A1 (product MVP **4 OCPU / 24 GB**; **TEMPORARY test default 2 / 12** — revert after 3.3). In the **same** tenancy as the live lab that competes for Ampere hours; a **separate** test tenancy does not.
+
+First-run: if `config.local.json` is missing, the app opens a chooser (Setup vs “I already have a stack”) instead of MainWindow. With a valid manage config, Setup is **Advanced → Deploy / repair infrastructure**. To walk first-run while a real config exists, point `MCMANAGER_CONFIG_DIR` at an empty directory.
 
 ## Load path
 
@@ -67,3 +89,9 @@ Lab private doc targets **4 OCPU / 24 GB**. Lab `config.json` may show a differe
 ## Sync discipline
 
 When you change OCI resources in Console or lab config, update `data/config.local.json` (and lab private markdown) in the same sitting so Avalonia and Python stay aligned.
+
+## Later (after v1): deployment profiles
+
+MVP/v1 assume **one** connected stack: a single `data/config.local.json` (+ friends / wizard resume beside it). Lab `PRODUCT-IDEAS.md` **Multi-deploy profiles (after v1)** adds connecting an *additional* infrastructure deployment from Advanced (OCI API config + VM SSH keys → auto-detect/validate → profile switcher).
+
+When that ships, local data should become **per-profile folders** (each with that deployment’s config, friends list, and paths to keys — still gitignored; still no secrets in Object Storage). Do **not** change the current flat `data/` layout until that feature is implemented. Connect existing in MVP remains one stack.

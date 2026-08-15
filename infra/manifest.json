@@ -1,0 +1,8 @@
+{
+  "infra_schema": 2,
+  "stack_version": "0.1.0",
+  "min_app_version": "0.1.0",
+  "engine": "opentofu",
+  "required_tofu": ">= 1.6.0",
+  "provider_oci": "oracle/oci ~> 8.0"
+}

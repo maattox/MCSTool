@@ -3,6 +3,11 @@
 ###############################################################################
 * text=auto
 
+# cloud-init templates must stay LF (systemd/cloud-init on Ubuntu)
+*.tftpl text eol=lf
+infra/**/*.yaml text eol=lf
+infra/**/*.yml text eol=lf
+
 ###############################################################################
 # Set default behavior for command prompt diff.
 #

@@ -136,42 +136,40 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         Status = $"Config OK — region {_config.Oci.Region}, play IP {PlayIp}, {warn}. Waiting for status…";
 
         var sessionResult = OciSession.TryCreate(_config);
+        UsageBudgetStore? usageStore = null;
+        InfraMetaStore? infraStore = null;
+        BackupStore? backupStore = null;
+        var ssh = new SshService();
+
         if (!sessionResult.Succeeded || sessionResult.Value is null)
         {
             Status = $"Config OK, but OCI session failed: {sessionResult.Error}";
-            Usage = new UsageViewModel(_config, store: null, SetTodayUsageDisplay, OnUsageBusyChanged);
-            ServerManagement = new ServerManagementViewModel(
-                _config,
-                backups: null,
-                new SshService(),
-                () => Vm1Lifecycle,
-                OnServerManagementBusyChanged);
         }
         else
         {
             _session = sessionResult.Value;
             _compute = new ComputeService(_session);
             var os = new ObjectStorageService(_session, _config.ObjectStorage);
-            var usageStore = new UsageBudgetStore(os, _config.ObjectStorage.Prefixes);
-            var infraStore = new InfraMetaStore(os, _config.ObjectStorage.Prefixes);
-            var ssh = new SshService();
-            Advanced = new AdvancedViewModel(
-                _config,
-                _compute,
-                usageStore,
-                infraStore,
-                ssh,
-                () => Vm1Lifecycle,
-                OnAdvancedBusyChanged);
-            Usage = new UsageViewModel(_config, usageStore, SetTodayUsageDisplay, OnUsageBusyChanged);
-            var backupStore = new BackupStore(os, _config.ObjectStorage);
-            ServerManagement = new ServerManagementViewModel(
-                _config,
-                backupStore,
-                ssh,
-                () => Vm1Lifecycle,
-                OnServerManagementBusyChanged);
+            usageStore = new UsageBudgetStore(os, _config.ObjectStorage.Prefixes);
+            infraStore = new InfraMetaStore(os, _config.ObjectStorage.Prefixes);
+            backupStore = new BackupStore(os, _config.ObjectStorage);
         }
+
+        Advanced = new AdvancedViewModel(
+            _config,
+            _compute,
+            usageStore,
+            infraStore,
+            ssh,
+            () => Vm1Lifecycle,
+            OnAdvancedBusyChanged);
+        Usage = new UsageViewModel(_config, usageStore, SetTodayUsageDisplay, OnUsageBusyChanged);
+        ServerManagement = new ServerManagementViewModel(
+            _config,
+            backupStore,
+            ssh,
+            () => Vm1Lifecycle,
+            OnServerManagementBusyChanged);
 
         try
         {

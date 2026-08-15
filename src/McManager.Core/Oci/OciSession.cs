@@ -6,6 +6,7 @@ using Oci.Common.Auth;
 using Oci.Common.Retry;
 using Oci.Common.Waiters;
 using Oci.CoreService;
+using Oci.IdentityService;
 using Oci.ObjectstorageService;
 
 namespace McManager.Core.Oci;
@@ -18,6 +19,7 @@ public sealed class OciSession : IDisposable
     private readonly ConfigFileAuthenticationDetailsProvider _authProvider;
 
     public ComputeClient Compute { get; }
+    public IdentityClient Identity { get; }
     public VirtualNetworkClient VirtualNetwork { get; }
     public ObjectStorageClient ObjectStorage { get; }
 
@@ -27,12 +29,14 @@ public sealed class OciSession : IDisposable
     private OciSession(
         ConfigFileAuthenticationDetailsProvider authProvider,
         ComputeClient compute,
+        IdentityClient identity,
         VirtualNetworkClient virtualNetwork,
         ObjectStorageClient objectStorage,
         RetryConfiguration retryConfiguration)
     {
         _authProvider = authProvider;
         Compute = compute;
+        Identity = identity;
         VirtualNetwork = virtualNetwork;
         ObjectStorage = objectStorage;
         RetryConfiguration = retryConfiguration;
@@ -96,15 +100,17 @@ public sealed class OciSession : IDisposable
             };
 
             var compute = new ComputeClient(authProvider, clientConfig);
+            var identity = new IdentityClient(authProvider, clientConfig);
             var virtualNetwork = new VirtualNetworkClient(authProvider, clientConfig);
             var objectStorage = new ObjectStorageClient(authProvider, clientConfig);
 
             compute.SetRegion(region);
+            identity.SetRegion(region);
             virtualNetwork.SetRegion(region);
             objectStorage.SetRegion(region);
 
             return ServiceResult<OciSession>.Ok(
-                new OciSession(authProvider, compute, virtualNetwork, objectStorage, retry));
+                new OciSession(authProvider, compute, identity, virtualNetwork, objectStorage, retry));
         }
         catch (Exception ex)
         {
@@ -115,6 +121,7 @@ public sealed class OciSession : IDisposable
     public void Dispose()
     {
         Compute.Dispose();
+        Identity.Dispose();
         VirtualNetwork.Dispose();
         ObjectStorage.Dispose();
     }

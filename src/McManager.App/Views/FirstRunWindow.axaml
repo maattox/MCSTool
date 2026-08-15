@@ -1,0 +1,31 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="McManager.App.Views.FirstRunWindow"
+        Title="OCI MC Server Manager"
+        Width="560"
+        Height="360"
+        MinWidth="480"
+        MinHeight="320"
+        WindowStartupLocation="CenterScreen">
+
+    <StackPanel Margin="24" Spacing="16">
+        <TextBlock Text="No local manage config"
+                   FontSize="20"
+                   FontWeight="SemiBold" />
+        <TextBlock TextWrapping="Wrap"
+                   Opacity="0.9"
+                   Text="data/config.local.json was not found. Deploy a new Always Free stack with Setup, or continue to the Manager if you already have infrastructure. Connect-existing auto-detect lands in Phase 4 — you can still seed config.local.json by hand." />
+        <Button Content="Deploy a new stack (Setup)"
+                HorizontalAlignment="Left"
+                MinWidth="240"
+                Click="OnSetupClick" />
+        <Button Content="I already have a stack"
+                HorizontalAlignment="Left"
+                MinWidth="240"
+                Click="OnExistingClick" />
+        <TextBlock TextWrapping="Wrap"
+                   Opacity="0.7"
+                   FontSize="12"
+                   Text="Choosing an existing stack opens the manage UI. Phase 4 will auto-detect from Object Storage meta; until then, copy config.local.example.json to data/config.local.json and fill OCIDs." />
+    </StackPanel>
+</Window>

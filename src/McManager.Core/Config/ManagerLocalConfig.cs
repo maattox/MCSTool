@@ -34,6 +34,7 @@ public sealed class ManagerLocalConfig
     [JsonPropertyName("admin_name")]
     public string AdminName { get; init; } = "";
 
+    [JsonIgnore]
     public string DoorAdminBaseUrl =>
         $"http://{Door.SshHost}:{Door.HttpPort}";
 }

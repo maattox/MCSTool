@@ -57,7 +57,7 @@ Oracle **SDK waiters** default strategy (match this in Core helpers):
 | Wait for VM1 `RUNNING` / `STOPPED` | Waiter / exponential backoff (few sec → ≤30s); timeout ~20 min |
 | Top-bar status while focused | **15–60s**; slow or pause when minimized / unfocused |
 | Usage tab open | ~**2 min**; refresh on open; stop when leaving |
-| Setup capacity wait | **5–10 min**, user consent; persist resume |
+| Setup capacity wait | **5 min** auto-retry with consent; **`CreateComputeCapacityReport` before apply** (not a 1s loop); persist resume |
 | Door-aware power | Prefer door HTTP for play path; OCI GetInstance as secondary — don’t double-poll aggressively |
 | Security List after sync | One write (+ optional single re-GET); no tight list loop |
 | Object Storage flags / ledger | On demand / on open / slow timer |

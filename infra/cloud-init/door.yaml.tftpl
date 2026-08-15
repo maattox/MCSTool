@@ -1,0 +1,22 @@
+#cloud-config
+# Door OS baseline only. Game tree, Java, and door binaries are SSH-bootstrap (Step 3.3).
+hostname: mcmgr-door
+fqdn: mcmgr-door
+manage_etc_hosts: localhost
+package_update: true
+# Security MOTD / "restart required" is expected. Do not apt-upgrade or
+# do-release-upgrade here: that races SSH bootstrap, is slow on the Micro,
+# and Ubuntu 24.04 is not the product baseline (22.04 jammy).
+package_upgrade: false
+
+users:
+  - default
+
+packages:
+  - jq
+  - curl
+  - ca-certificates
+
+runcmd:
+  - mkdir -p /etc/mcmgr-door
+  - date -u +%Y-%m-%dT%H:%M:%SZ > /etc/mcmgr-door/cloud-init-done

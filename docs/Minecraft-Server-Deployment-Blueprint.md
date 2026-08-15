@@ -65,7 +65,7 @@ The product will eventually offer three "server type" experiences (per `PRODUCT-
 |---|---|---|
 | **Vanilla** | Official Mojang `server.jar`, no loader | **MVP** |
 | **Optimized Vanilla** | Paper (Bukkit/Spigot-API-compatible server implementation), no mod loader, optional plugins later | **v1** |
-| **Modded** | A mod loader (Fabric / NeoForge / Forge / Quilt) plus a set of mod jars, usually sourced from a Modrinth `.mrpack` or CurseForge modpack, or a manually uploaded server pack | **v1** for Setup-driven install; deeper day-2 mod UX is **later** |
+| **Modded** | A mod loader (Fabric / NeoForge / Forge / Quilt) plus a set of mod jars, usually sourced from a Modrinth `.mrpack` or CurseForge modpack, or a manually uploaded server pack | **v1** for Setup-driven install **and** Server Management inspect + re-download of the imported pack; **change/replace pack** (light swap vs full re-setup) is **later** |
 
 The **mistake to avoid** is building the MVP Vanilla bootstrap as if "the server is a jar file downloaded from one URL and started with `java -jar server.jar`" — because that assumption breaks immediately for Paper (still one jar, but a different API and checksum algorithm), breaks harder for Fabric (a "launcher" jar that itself launches game code from Maven-hosted libraries), and breaks completely for Forge/NeoForge 1.17+ (there is no single server jar at all — the "launch command" is `java @user_jvm_args.txt @libraries/.../unix_args.txt`, a two-file **argument-file** invocation against a `libraries/` tree assembled by a one-time **installer** run).
 
@@ -272,7 +272,16 @@ modpack: {
   pack_version_label:  string | null   — human display version, e.g. "1.4.2"
   client_pack_required: boolean         — true unless every installed mod is server_only-safe
   excluded_client_only_files: array<string> — file paths present in the pack but NOT installed
-                                              server-side, recorded for audit/debugging
+                                              server-side because a pack declaration (Modrinth
+                                              env.server) or a known override list (§24.3 Layer 1/2)
+                                              said so BEFORE install was attempted
+  quarantined_files:    array<object> | []  — files removed AFTER an install/upgrade crash-looped
+                                              and the loader attributed the crash to them (§24.3
+                                              Layer 3); distinct from excluded_client_only_files
+                                              because these are provisional and must be surfaced
+                                              for operator confirmation, not silently permanent.
+                                              Each entry: { path, reason, detected_at,
+                                              retry_succeeded, operator_acknowledged }
   imported_at:          UTC timestamp
 }
 ```
@@ -775,6 +784,16 @@ Rotating the RCON password (support/hygiene action, not required for MVP) is: ge
 
 Research surfaced `systemd`'s `LoadCredentialEncrypted=` mechanism (stable since systemd v254, which Ubuntu 22.04's systemd (v249) predates — **not usable on the current VM1 base image without an OS upgrade**) as the modern best-practice replacement for "secret sits in a mode-0600 file." Because Minecraft's own server process only ever reads its password from `server.properties` (it has no support for systemd credential files natively), this would only harden the **idle agent's** copy of the secret, not the Minecraft process's own file — and the current Ubuntu 22.04 base does not support it anyway. **Recommendation: do not adopt this for MVP or v1**; revisit only if/when the base OS image moves to a systemd version that supports it and there is a concrete threat model (e.g. multi-tenant hosting) that a mode-0600 root-owned file does not already address for this product's single-admin-operator use case.
 
+### 8.5 Console-access alternatives researched and deliberately not adopted
+
+The `itzg/docker-minecraft-server` project documents three ways to reach a running server's console, worth recording here so a future implementer does not "rediscover" them and wonder why this product doesn't use them:
+
+1. **`rcon-cli` exec / stdin pipe** — attaches to a running container and issues RCON commands interactively, or (when RCON is disabled) pipes commands to the Minecraft process's own stdin via a helper script. Not applicable here in the "RCON disabled" branch specifically, because this product's design never disables RCON (§8.1 — the idle agent and graceful-stop path depend on it unconditionally).
+2. **An SSH console on a dedicated port, authenticated with the RCON password**, giving full admin console access without needing the game's own RCON client.
+3. **A WebSocket console** (`/console` endpoint) with log streaming and command injection, authenticated via a `Sec-WebSocket-Protocol` header password.
+
+**Decision: adopt none of these.** VM1 already has a real admin SSH login (`ubuntu` user, OCI Security List–gated per-admin `/32`), which is a strictly more capable and already-audited access path than a bolt-on SSH-on-a-different-port or a WebSocket endpoint whose only auth is reusing the RCON password over a **new** listening socket. Adding either would mean a second network-exposed credential surface for no capability this product doesn't already have via existing SSH + RCON-over-localhost. The eventual v1 "Console" tab (RCON + logs, per `PRODUCT-IDEAS.md`) should be implemented as **Manager SSH tunnel to localhost RCON, plus `journalctl -u minecraft` tail over the same SSH session** — not a new always-listening service on VM1. This keeps VM1's attack surface exactly as documented in `Infrastructure-Information.md` (game port + SSH only) rather than growing it for a Manager convenience feature.
+
 ---
 
 ## 9. Java version mapping and ARM64 packages
@@ -789,9 +808,9 @@ Research surfaced `systemd`'s `LoadCredentialEncrypted=` mechanism (stable since
 | 1.17 – 1.17.1 | 16 | Narrow band; Forge's server launch mechanics also changed exactly here (§6.4, §20) |
 | 1.18 – 1.20.4 | 17 | |
 | 1.20.5 – 1.21.11 | 21 | **Current mainstream target as of 2026-08-11** |
-| 26.1 and newer | 25 | Mojang's newer date-influenced version scheme (`26.1`, `26.2`, ...); confirmed via Minecraft Wiki changelog and independently by PaperMC/NeoForge docs already tracking Java 25 for `26.1+` |
+| 26.1 and newer | 25 | Mojang's newer date-influenced version scheme (`26.1`, `26.2`, ...); confirmed via Minecraft Wiki changelog, independently by PaperMC/NeoForge docs already tracking Java 25 for `26.1+`, and by Mojang's own [announcement of the new version numbering system](https://www.minecraft.net/en-us/article/minecraft-new-version-numbering-system) (also linked from the `itzg/docker-minecraft-server` version-selection docs, which accept the new scheme's identifiers — e.g. `26.1`, `26.1-snapshot-1`, `26.1-pre-1`, `26.1-rc-1` — directly as `VERSION` values) |
 
-**Product policy:** always install the **minimum required** Java major for the selected `minecraft_version`/loader combination, not reflexively "the latest LTS," because (a) it is the documented, supported baseline every upstream project tests against, and (b) it keeps `java_major` in the manifest meaningfully tied to compatibility rather than to "whatever was newest the day Setup ran." A newer major usually also works (Minecraft/Forge/Paper all state older MC versions can run on newer JVMs), but "usually works" is not a basis for a repair/rollback-safe product — pin to the documented floor.
+**Product policy:** always install the **minimum required** Java major for the selected `minecraft_version`/loader combination, not reflexively "the latest LTS," because (a) it is the documented, supported baseline every upstream project tests against, and (b) it keeps `java_major` in the manifest meaningfully tied to compatibility rather than to "whatever was newest the day Setup ran." A newer major usually also works (Minecraft/Forge/Paper all state older MC versions can run on newer JVMs), but "usually works" is not a basis for a repair/rollback-safe product — pin to the documented floor. **This floor is a per-Minecraft-version default, not an unconditional rule — see §9.5 for confirmed real-world exceptions where a specific modpack/loader build needs an *older* Java than the Minecraft version alone would suggest.**
 
 **Where the floor comes from, per distribution:**
 
@@ -832,6 +851,15 @@ Multiple Java majors can coexist on the same VM1 (Debian/Ubuntu `update-alternat
 
 Because the JRE is installed via signed apt packages (Adoptium's repository is GPG-signed, and apt/dpkg verify packages against that key automatically), there is no separate manual checksum step needed for the Java runtime the way there is for the *game* artifact — apt's own integrity verification is already equivalent to (arguably stronger than) manually checking a `.sha256.txt` file. Do not add a redundant manual hash check here; do record the resolved package version string in `java.install_path`/`java.resolved_at` for audit.
 
+### 9.5 Confirmed real-world Java/loader interaction hazards (must override the static floor when they apply)
+
+Cross-checking against `itzg/docker-minecraft-server`'s Java-version documentation (a project old enough, and used at enough scale, to have accumulated years of these exact bug reports) surfaced concrete exceptions that a naive "Minecraft version → Java major" lookup would get wrong:
+
+- **A specific Forge modpack can require an *older* Java than its Minecraft version's generic floor.** Confirmed real symptom on Java 21 with some Forge mods as recent as Minecraft 1.21: `ClassMetadataNotFoundException` from Sponge Mixin, resolved only by pinning to Java 17. **Consequence for this manifest's design:** `java_major` resolution for a **modded** install must let the pack's own declared/tested requirement (or an explicit Setup override) win over the generic per-Minecraft-version table in §9.1 when they conflict — the table is the right default for Vanilla/Paper (no third-party mod code involved) and a *starting point*, not an unconditional rule, for modded installs.
+- **Forge below Minecraft 1.18 requires Java 8 specifically** — not "8 or newer." Confirmed symptom: `ClassCastException: class jdk.internal.loader.ClassLoaders$AppClassLoader cannot be cast to class java.net.URLClassLoader` on newer JVMs, because these Forge versions reach into JVM classloader internals that changed shape after Java 8. This reinforces §20.4's legacy Forge Java-8 pin — do not let a future "just use a newer JVM for safety" impulse apply to pre-1.18 Forge.
+- **Forge does not support the OpenJ9 JVM implementation at all**, on any Minecraft version. Not a concern for this product today (the Java-acquisition decision in §9.2 already standardizes on Eclipse Temurin/HotSpot), but worth recording so nobody "optimizes" Java acquisition toward OpenJ9 later (e.g. for a memory-footprint win) without rediscovering this the hard way on a Forge/NeoForge stack.
+- **Base-OS libc choice is a related but distinct compatibility axis from CPU architecture.** `itzg/docker-minecraft-server` explicitly documents that its Oracle GraalVM image variants (built on Oracle Linux, an RHEL derivative) break the **Forge installer itself** because of the installer's use of `zlib-ng`, and separately ships both glibc-based (Ubuntu) and musl-based (Alpine) image variants as distinct compatibility tiers. This product already standardizes on Ubuntu 22.04 (glibc) for VM1 (`Infrastructure-Information.md`), which is the safe choice this cross-check validates — but it means **any future proposal to move VM1 to a slimmer/Alpine-style base image must be re-validated against the Forge/NeoForge installer and against any mod that bundles native libraries (§27.2)**, not assumed compatible just because the CPU architecture (aarch64) is unchanged. Native-library compatibility has (at least) two independent axes — CPU architecture **and** C library — and this product's ARM64 research (§27) only speaks to the first one.
+
 ---
 
 ## 10. Idle agent integration
@@ -870,6 +898,12 @@ Because both files already live on the same box and are both touched by the same
 ### 11.2 Multi-GiB modded worlds and the existing 9.5 GiB soft cap
 
 Nothing here overrides the existing Object Storage Always-Free soft-cap policy (`meta/oversized-world-backup.json`, `Contracts-Object-Storage.md`) — it already anticipates modded worlds being the common trigger case ("especially modded" is called out explicitly in `PRODUCT-IDEAS.md`). This blueprint adds no new policy; it simply confirms that the existing flag/skip contract is distribution-agnostic and needs no changes for Paper/Modded support.
+
+### 11.3 Wipe world (v1 Manager, not Setup)
+
+Lab `PRODUCT-IDEAS.md` **Wipe world (v1)** is a Server Management action: stop Minecraft, delete the live save at `world_path` (the world directory only — not `mods/`, not Object Storage backups), then the next start lets the server generate a **new** world. Confirmation UI is a PRODUCT-IDEAS concern.
+
+**On-box:** delete the contents of `world_path` (or the directory itself and recreate an empty one with the same ownership as §5). Do **not** use this path to wipe `mods/` or `config/`. Restoring a previous world remains the existing backup download / world-replace flow. If Minecraft is running, stop the unit first (same stop discipline as a cold backup) so files are not rewritten while being deleted.
 
 ---
 
@@ -920,6 +954,8 @@ A distribution switch is modeled as an upgrade whose `distribution` (and possibl
 ## 13. Bootstrap responsibilities: OpenTofu/user-data vs SSH scripts vs Manager
 
 Three actors could plausibly "own" installing the game. This section assigns responsibility so future implementers do not duplicate or fight over this.
+
+**Cloud-infra companion:** how OpenTofu is run (admin PC, not Resource Manager), which Ubuntu images to use, and how HCL is shipped/updated is defined in [`Automated-Infrastructure-Deployment.md`](Automated-Infrastructure-Deployment.md). This section only assigns the **game vs infra** boundary.
 
 ### 13.1 OpenTofu / cloud-init user-data — **infrastructure only, not the game**
 
@@ -1132,6 +1168,19 @@ Fill v3 additionally publishes, per the v2→v3 migration announcement: version 
 
 Paper's extensibility mechanism is **plugins** (Bukkit/Spigot API, dropped into `plugins/`), not Forge/Fabric-style mods — this product's "Optimized Vanilla" framing in `PRODUCT-IDEAS.md` currently does not commit to shipping a plugin-management UI in v1, and this research does not recommend rushing one in; Setup installing bare Paper (zero plugins, just the performance/bug-fix benefit over Vanilla) is a complete, useful v1 feature on its own, matching the "Not the same as a Fabric/Forge modpack—Paper is a server implementation" framing already in PRODUCT-IDEAS.
 
+### 17.6 The Paper fork ecosystem — named for completeness, Paper itself remains the recommendation
+
+Paper is not the only "Optimized Vanilla" option; it is the **root** of an actively-maintained fork ecosystem confirmed current via `itzg/docker-minecraft-server`'s own server-type documentation (a good signal of real-world adoption, since that project only documents software people actually run at scale):
+
+| Fork | Positioning | Notes for this product |
+|---|---|---|
+| **Purpur** | "A drop-in replacement for Paper... configurability and new, fun, exciting gameplay features" | The most broadly popular Paper fork; adds config-gated gameplay tweaks on top of Paper/Bukkit compatibility. **Worth evaluating as a second "Optimized Vanilla" option at v1 implementation time** — same `single_jar` launch shape and plugin model as Paper, so it fits this blueprint's architecture with no new `server_artifact.kind`. Its own version-resolution API was not part of this research pass; confirm before implementing. |
+| **Pufferfish** | "Highly optimized Paper fork... for large servers requiring maximum performance, stability, and enterprise features" | Positioned for high player counts, less relevant to this product's small-friend-group scale — **later**, not v1. |
+| **Leaf** | Paper fork focused on low-level performance optimization | Similar niche to Pufferfish; **later**. |
+| **Folia** | Paper's own **regionized multithreading** fork — splits the world into independently-ticked regions to scale across cores | Explicitly **experimental only** as of this research (no stable release channel, per `itzg`'s docs) and a materially different runtime model (per-region threading changes how some plugins/mods behave). **Do not build on Folia** until it ships a stable channel — track it as a **later** re-evaluation candidate, not a v1 option, given this product's modest 2–4 OCPU Ampere target where multi-region threading benefit is unproven and added complexity is not currently justified. |
+
+**Recommendation:** keep Paper as the sole "Optimized Vanilla" implementation for v1 (simplest, most conservative, best-documented API per §17.1–§17.3); revisit Purpur specifically as a v1-or-shortly-after addition once Paper's own path is proven, precisely because it shares Paper's exact launch/plugin model and would not require new architecture — just a second entry in the platform picker and its own version-resolution research.
+
 ---
 
 ## 18. Fabric
@@ -1206,6 +1255,8 @@ A real, documented bug report (itzg's `mc-image-helper` issue tracker) shows a N
 ## 20. Forge, including legacy versions
 
 **Stage: v1 candidate, retained specifically for legacy-version packs** (per operator's provisional list; confirmed by this research — see §29 for the exact reasoning on *why* "retained for older packs" rather than "retained generally").
+
+**A note on automating around Forge's ad-supported download page:** the official Forge installer itself displays a request to third-party tooling authors: *"Please do not automate the download and installation of Forge. Our efforts are supported by ads from the download page. If you MUST automate this, please consider supporting the project [through Patreon]."* This product's entire value proposition depends on unattended install/upgrade, so full compliance (never automating) is not viable — the same tension every comparable tool (including `itzg/docker-minecraft-server`, which documents the request verbatim and "passes it along") already lives with. **This product should not pretend the tension doesn't exist.** Concrete, low-cost mitigations to carry into Setup implementation (v1, not a blocker for this document): (a) surface a courtesy link to Forge's Patreon/support page in Setup copy whenever a user selects Forge, mirroring `itzg`'s own approach; (b) prefer NeoForge by default for any Minecraft version where it is the maintained option (§19.2, §29) so Forge automation is scoped to the legacy catalog it is actually needed for, not used as a blanket default; (c) do not scrape the ad-supported HTML download page itself — `promotions_slim.json` (§20.1) and the Maven artifact URLs (§20.2) are Forge's own published machine-readable endpoints, not the ad-supported page, which is a meaningfully smaller ask than scraping page HTML would be, but is still automation the maintainer has asked tooling authors to reconsider.
 
 ### 20.1 Version discovery: `promotions_slim.json`
 
@@ -1301,7 +1352,9 @@ An `.mrpack` is a ZIP file (MIME type `application/x-modrinth-modpack+zip`) whos
 }
 ```
 
-`env.server` (and `env.client`) is one of `required` / `optional` / `unsupported` **per file** — this is the single most valuable property of this format for automated server-side install: **the pack itself tells you which files belong on the server.** The installer module's file-selection rule is simply: install every file where `env.server != "unsupported"` (i.e. `required` or `optional`); record every file where `env.server == "unsupported"` into the manifest's `modpack.excluded_client_only_files` (§3.7) for transparency, even though — unlike CurseForge (§23) — Modrinth packs rarely need any *heuristic* guessing here since the format is explicit.
+`env.server` (and `env.client`) is one of `required` / `optional` / `unsupported` **per file** — this is the single most valuable property of this format for automated server-side install: **the pack itself tells you which files belong on the server.** The installer module's file-selection rule is simply: install every file where `env.server != "unsupported"` (i.e. `required` or `optional`); record every file where `env.server == "unsupported"` into the manifest's `modpack.excluded_client_only_files` (§3.7) for transparency.
+
+**Correction from an earlier draft of this document, confirmed by cross-checking `itzg/docker-minecraft-server`'s Modrinth-modpack docs:** this format's `env.server` field is authoritative for *intent*, but pack authors still sometimes mis-declare a client-only file as server-compatible in practice — `itzg`'s tooling ships `MODRINTH_EXCLUDE_FILES`/`MODRINTH_FORCE_INCLUDE_FILES` override variables specifically to correct this, on top of trusting `env.server`. **So: Modrinth packs need meaningfully *less* heuristic guessing than CurseForge (§23.3) — trust `env.server` first — but still benefit from the same maintained override-list mechanism described in §24.3, not zero heuristics as an earlier draft of this section implied.**
 
 `dependencies` gives the loader + loader version + Minecraft version directly (`fabric-loader`, `quilt-loader`, `forge`, or `neoforge` as keys) — this maps straight onto the manifest's `loader`/`loader_version`/`minecraft_version` fields with no guesswork.
 
@@ -1337,6 +1390,8 @@ Every file entry carries both `sha1` and `sha512` — prefer `sha512` when avail
 
 CurseForge announced API-key authentication for direct CDN file downloads (`edge.forgecdn.net`) as **optional starting mid-2026, becoming required from 2026-07-16 onward** — meaning as of this document's writing (2026-08-11), **unauthenticated CurseForge CDN downloads are already failing with `401 Unauthorized`.** Any implementation must apply for a CurseForge for Studios developer key (`x-api-key` header, preferred over the `?api-key=` query-parameter form specifically because query parameters leak into logs/referrers) before this integration can function at all — this is now a **hard prerequisite**, not a nice-to-have, and the application/approval process is manual (a form reviewed by Overwolf's team, considering "impact on Authors' earnings," "effect on CurseForge's servers/CDN," and "Authors' consent... for third party distribution").
 
+**Prior art confirming the "one product-owned key" design (§23.2's last bullet) is workable:** `itzg/docker-minecraft-server` — a much larger-scale consumer of this API than this product will be for the foreseeable future — ships a **key it obtained itself, bundled into its own image**, with a documented escape hatch for a user to supply their own instead. This is a direct, real-world precedent for "the product applies for and holds exactly one key; individual deployments never need their own" (this product's own plan per §23.2), and a reminder that the request/approval process is a known, survivable step other real projects have already been through successfully.
+
 ### 23.2 Terms of Service restrictions that constrain this product's design
 
 The CurseForge 3rd Party API Terms and Conditions (confirmed by reading the actual ToS text during this research, not a summary of it) impose several restrictions directly relevant to how this product may use the API:
@@ -1348,11 +1403,33 @@ The CurseForge 3rd Party API Terms and Conditions (confirmed by reading the actu
 
 ### 23.3 CurseForge manifest format and the client/server detection problem
 
-Unlike Modrinth's `.mrpack`, a CurseForge pack's `manifest.json` (root of the pack ZIP) does **not** mark files client-only or server-only — CurseForge's manifest lists mod project/file ids with no environment field at all. This means **automated server-side install of a CurseForge pack requires a maintained heuristic** for "which of these mods are client-only and must be excluded" — there is no authoritative per-file signal to read the way there is for Modrinth. The best current public reference for this heuristic is itzg's `mc-image-helper` `install-curseforge` command (widely used, actively maintained, handles exactly this problem daily across a huge range of real packs) — **recommendation: do not attempt to build this heuristic list from scratch; study/reuse the *category* of logic (known client-only mod slugs/ids, side annotations where CurseForge's own newer API does expose per-file `gameVersions`/environment hints for some files) that mature open-source tooling already maintains, and budget ongoing maintenance time for this list specifically**, because it will drift as new mods appear — this is explicitly **not** a "solve once" problem the way Modrinth's explicit `env.server` field is.
+Unlike Modrinth's `.mrpack`, a CurseForge pack's `manifest.json` (root of the pack ZIP) does **not** mark files client-only or server-only — CurseForge's manifest lists mod project/file ids with no environment field at all. Confirmed concretely from CurseForge's own documented "unpublished modpack" manifest shape:
+
+```json
+{
+  "minecraft": { "version": "1.20.4", "modLoaders": [{ "id": "fabric-0.15.3", "primary": true }] },
+  "manifestType": "minecraftModpack",
+  "manifestVersion": 1,
+  "name": "Custom",
+  "files": [
+    { "projectID": 351725, "fileID": 4973035, "required": true },
+    { "projectID": 306612, "fileID": 5010374, "required": true }
+  ],
+  "overrides": "overrides"
+}
+```
+
+**Precision note (do not conflate with Modrinth's `env.server`):** `required` here means "installed by default vs. an opt-in extra within the CurseForge/client-launcher install flow" — it is **not** a client/server side marker. A file with `required: true` can still be entirely client-only (e.g. a UI mod every player is expected to have). This means **automated server-side install of a CurseForge pack requires a maintained heuristic** for "which of these mods are client-only and must be excluded" — there is no authoritative per-file signal to read the way there is for Modrinth. The best current public reference for this heuristic is itzg's `mc-image-helper` `install-curseforge` command (widely used, actively maintained, handles exactly this problem daily across a huge range of real packs) — **recommendation: do not attempt to build this heuristic list from scratch; study/reuse the *category* of logic (known client-only mod slugs/ids, side annotations where CurseForge's own newer API does expose per-file `gameVersions`/environment hints for some files) that mature open-source tooling already maintains, and budget ongoing maintenance time for this list specifically**, because it will drift as new mods appear — this is explicitly **not** a "solve once" problem the way Modrinth's explicit `env.server` field is. See §24.3 for the maintenance/detection design this document commits to for that ongoing drift.
+
+### 23.3a Some CurseForge files cannot be resolved via the API at all, by the mod author's own choice
+
+Confirmed directly from `itzg/docker-minecraft-server`'s own design: it maintains a dedicated `/downloads` manual-drop mechanism specifically because **a mod/file author can disable third-party API distribution for their file**, in which case **no valid API key changes anything** — the file is only obtainable by a human visiting the CurseForge website in a browser, downloading it there, and placing it somewhere the tooling can pick it up. This is not a hypothetical edge case; it is common enough that a project as mature as `itzg`'s dedicates a first-class, documented feature to it.
+
+**Consequence for this product's design (a real gap in earlier drafts of this document, not just a footnote):** the CurseForge installer module (§23) must treat "the API refused to resolve this file's download URL because the author disabled third-party distribution" as an **expected, named outcome**, not a generic failure. When it occurs during Setup: halt before touching `server_dir` (same "no partial installs" discipline as §12.2), and tell the operator **exactly which mod(s)** could not be resolved, with a direct link to that mod's CurseForge page, and instruct them to download the file there and supply it back into Setup via the **same manual-upload primitive** already defined in §24 (a single extra jar is just a one-file case of the same "user hands over a file" mechanism, not a new pathway). This keeps the product's promise from §2.4 intact — the user is never asked to *browse/pick* anything new, only to fetch one specific, already-identified file the automated path could not legally reach.
 
 ### 23.4 Recommendation given all of the above
 
-Ship **Modrinth first** (§22) as the v1 pack-source integration; treat **CurseForge as a v1-candidate-but-gated** feature that additionally requires: (a) a completed, approved API-key application before any code path can function at all, (b) a designed-and-legal-reviewed key-custody mechanism (§23.2's last bullet), and (c) an explicitly budgeted, ongoing client-only-mod-heuristic maintenance responsibility. None of these are reasons to rule CurseForge out of v1 — a large fraction of the most popular modpacks are CurseForge-exclusive or CurseForge-primary — but they are reasons it should not be assumed to ship in the *same* v1 slice as Modrinth support without its own explicit go-ahead, separate from "implement modpack Setup" as a single undifferentiated task.
+Ship **Modrinth first** (§22) as the v1 pack-source integration; treat **CurseForge as a v1-candidate-but-gated** feature that additionally requires: (a) a completed, approved API-key application before any code path can function at all, (b) a designed-and-legal-reviewed key-custody mechanism (§23.2's last bullet), (c) an explicitly budgeted, ongoing client-only-mod-heuristic maintenance responsibility (§24.3), and (d) the per-file manual-fallback handling in §23.3a for files the API is not permitted to serve regardless of key validity. None of these are reasons to rule CurseForge out of v1 — a large fraction of the most popular modpacks are CurseForge-exclusive or CurseForge-primary — but they are reasons it should not be assumed to ship in the *same* v1 slice as Modrinth support without its own explicit go-ahead, separate from "implement modpack Setup" as a single undifferentiated task.
 
 ---
 
@@ -1369,6 +1446,45 @@ Ship **Modrinth first** (§22) as the v1 pack-source integration; treat **CurseF
 ### 24.2 Why this pathway is legally simpler than CurseForge API integration
 
 Because the *user* supplies the archive (already, presumably, having agreed to whatever license/ToS governed their own download of it), this product is not itself calling a gated API or redistributing third-party content — it is acting on a file the operator already possesses, the same legal posture as "the user pastes in a URL and our server downloads it," which is explicitly the existing precedent in this product's own MVP world-restore design (`Contracts-Object-Storage.md`'s `meta/world-restore-request.json`) and Server Management upload/replace flow. This does **not** remove all legal considerations (Setup should still show "you supplied this archive; you are responsible for having the right to install it" copy, per PRODUCT-IDEAS' existing "do not redistribute paid modpack contents" principle) but it is a materially simpler starting point than building CurseForge API compliance from zero.
+
+### 24.3 Exclude/include override lists and mis-tagged-mod detection (applies to Modrinth §22 and CurseForge §23 imports)
+
+This is a cross-cutting concern for both structured pack formats, because both can mis-declare a client-only mod as server-installable (§22.1's correction; §23.3's heuristic problem). This section commits to a concrete, three-layer design rather than leaving "maintain a list" as an unstated assumption.
+
+**Layer 1 — vendor an actively-maintained upstream list, do not start from zero.** `itzg/docker-minecraft-server` maintains and ships exactly this kind of override data today — `files/modrinth-exclude-include.json` and `files/cf-exclude-include.json` in that project's repo, both using [the same documented JSON schema](https://github.com/itzg/mc-image-helper#excludeinclude-file-schema). A trimmed real excerpt (fetched during this research, [`modrinth-exclude-include.json`](modrinth-exclude-include.json) is checked into this repo alongside this document for reference):
+
+```json
+{
+  "globalExcludes": [
+    "sodium",
+    "iris",
+    "entityculling",
+    "Xaeros_Minimap",
+    "XaerosWorldMap",
+    "chat_heads",
+    "notenoughanimations"
+  ],
+  "globalForceIncludes": [],
+  "modpacks": {
+    "cobbleverse": {
+      "excludes": ["cloth-config"]
+    }
+  }
+}
+```
+
+`globalExcludes` is a flat list of mod slugs/names always treated as client-only regardless of a pack's own declaration; `globalForceIncludes` is the reverse (mods sometimes mis-tagged as client-only that must always be kept); `modpacks` allows a **per-pack-slug** override layer on top of the globals. **Recommendation: this product should track (vendor/refresh) `itzg`'s two files as its default data source, with attribution, rather than hand-building an equivalent list from scratch** — that list represents years of accumulated real-world corrections this product would otherwise have to rediscover mod-by-mod. Refresh the vendored copy on a regular cadence (e.g. tied to product releases), not live-fetched from GitHub at install time (keeps bootstrap's dependency surface limited to the platforms already in Part B, and avoids a new "what if GitHub is unreachable during Setup" failure mode).
+
+**Layer 2 — a small product-owned supplemental file** for corrections specific to this product's own experience (e.g. an ARM64-specific exclusion that a generic x86-focused list would have no reason to carry — see §27.3's separate "known-problematic-on-ARM64" list, which is conceptually the same mechanism scoped to a different failure category and can share this implementation rather than becoming a second, redundant list format). Same schema, layered on top of (never replacing) the vendored Layer 1 file.
+
+**Layer 3 — automatic, reversible, transparent quarantine when a crash is directly attributable to one mod, closing the "the list doesn't have this new mod yet" gap the operator raised.** Neither Layer 1 nor Layer 2 can ever be fully current — a newly published mod that mis-declares itself as server-compatible will not be in any list on day one. Rather than either (a) doing nothing and leaving the operator to debug a crash-looping modded server cold, or (b) trying to *fully automatically and silently* patch the exclude list from a single observed crash (rejected — too easy to misattribute a crash caused by a mod *interaction* to the wrong single mod, and a silent, permanent, unreviewed exclusion is exactly the kind of "the product changed my modpack without telling me" surprise this product should never produce):
+
+1. During the health check after a modded first-boot/upgrade (§12.1 step 9 / §14.3's "health check failure" row), if the server crash-loops, inspect the crash output for the mod loader's **own** "problem mod" report — Forge, NeoForge, and Fabric all commonly print an explicit "the following mod(s) caused the server to crash" section in a modded crash report, which is a *much* more reliable attribution signal than free-text stack-trace scraping.
+2. If **exactly one** mod is implicated this way (not zero, not several — ambiguous cases always fall through to a plain reported failure, no automatic action), retry **once**: move that mod's jar to a sibling `mods.quarantined/` directory (never delete it — fully reversible) and attempt the boot again.
+3. Whether the retry succeeds or not, **always** write the outcome into a new manifest field, `modpack.quarantined_files` (extends §3.7): `{ "path": "mods/badmod-1.2.3.jar", "reason": "crash_attributed_by_loader_report", "detected_at": "<UTC timestamp>", "retry_succeeded": true, "operator_acknowledged": false }`. This is **never** silently folded into `excluded_client_only_files` (which is reserved for pack-declared/known-list exclusions decided *before* install) — quarantine is a distinct, provisional, must-be-surfaced state.
+4. Surface every unacknowledged `quarantined_files` entry prominently wherever Server Management/Console (v1) shows modpack status, with one-click "keep excluded" (promotes it into the local Layer 2 override file, so future re-installs of the *same* pack do not repeat the crash-detect-quarantine cycle) or "put it back" (moves the jar back from `mods.quarantined/` and clears the entry, for when the operator determines the crash was actually caused by something else and this mod was wrongly blamed).
+
+This turns "our list doesn't know about this brand-new mod yet" from a cold, unrecoverable Setup failure into a self-healing-with-consent recovery path that also **feeds Layer 2** over time from this product's own real operator base — which is exactly the same kind of empirically-grown list `itzg`'s project itself represents, just started later and scoped to what this product's own users actually hit.
 
 ---
 
@@ -1421,7 +1537,7 @@ A minority of mods/plugins link against **non-LWJGL** native libraries for their
 
 | Example | Native dependency | Failure mode observed |
 |---|---|---|
-| Simple Voice Chat's Discord Bridge plugin | `libvoicechat_discord.so`, requires a specific glibc version | `UnsatisfiedLinkError: ... GLIBC_2.27' not found` on an older base OS — architecture-independent glibc-version issue, but the same *class* of native-loading fragility applies to an architecture mismatch |
+| Simple Voice Chat's Discord Bridge plugin | `libvoicechat_discord.so`, requires a specific glibc version | `UnsatisfiedLinkError: ... GLIBC_2.27' not found` on an older base OS — architecture-independent glibc-version issue, but the same *class* of native-loading fragility applies to an architecture mismatch. See §9.5 for the distinct-but-related finding that the base OS's **C library** (glibc vs musl, or even RHEL-derivative quirks like Oracle Linux's `zlib-ng`) is its own compatibility axis alongside CPU architecture — this product's Ubuntu 22.04/glibc choice is the validated-safe default on both axes. |
 | `sqlite-jdbc` (used by some mods/plugins for local databases) | Bundles per-OS/per-arch native `.so` files inside the jar (`org/sqlite/native/Linux/aarch64/...`) | Modern releases (post ~3.40) **do** ship an aarch64 build and generally work; older pinned versions inside an old, unmaintained mod may not have bundled an aarch64 native at all, or `/tmp` execution restrictions (noexec mounts, some container runtimes) can break native loading even when the right architecture's `.so` **is** present in the jar |
 | Any mod using JNA/JNI for OS-level integration (hardware info libraries, some anti-cheat/analytics mods, occasional physics/audio libraries) | Varies | Same general class — a native library that was only ever built/tested for x86_64 |
 
@@ -1431,7 +1547,7 @@ The common thread: **the failure is always an explicit, loud exception at plugin
 
 - **Do not attempt to pre-scan every mod jar for bundled native libraries at install time** — this would require unpacking and inspecting every jar in a pack (expensive, and native libraries are not always trivially identifiable by filename convention alone) for a failure class that, per §27.2, already fails loudly and specifically on its own.
 - **Do** surface the *specific* mod/plugin name from a crash-loop's log output prominently in whatever v1 "install failed" / Console-tab UI exists (§14.3), rather than a generic "server failed to start" message — this is the single highest-leverage mitigation, because it turns "mysterious ARM64 failure" into "this specific mod does not support ARM64, remove it or find an alternative," which the operator can then act on immediately.
-- **Do** maintain a short, product-owned "known-problematic-on-ARM64" list (starting empty, or seeded with any mods this research or the operator's own future testing confirms) that Setup/Manager can warn about **before** install for a *known* offender, without needing to claim completeness — this is explicitly a "grows over time from real incidents" list, not a research deliverable this document can fully populate up front, because the space of "mods that happen to bundle x86_64-only natives" is large, changes as mod authors add aarch64 builds, and is best discovered empirically from this product's own real usage rather than guessed at exhaustively here.
+- **Do** maintain a short, product-owned "known-problematic-on-ARM64" list (starting empty, or seeded with any mods this research or the operator's own future testing confirms) that Setup/Manager can warn about **before** install for a *known* offender, without needing to claim completeness — this is explicitly a "grows over time from real incidents" list, not a research deliverable this document can fully populate up front, because the space of "mods that happen to bundle x86_64-only natives" is large, changes as mod authors add aarch64 builds, and is best discovered empirically from this product's own real usage rather than guessed at exhaustively here. **Implementation note:** do not build this as a separate, third list format — it is the same Layer 2 product-owned override file already defined in §24.3 (which already layers on top of a vendored community list and already has a Layer-3 crash-quarantine feedback loop); an ARM64-native-load crash is simply another input that can promote a mod into that same file via the same §24.3 Layer 3 mechanism, since it produces the same loud, attributable, per-mod failure signature described above.
 - **Distant Horizons** (already flagged in `PRODUCT-IDEAS.md` as a "recommend against under multiplayer load" item, and already observed by the operator to degrade badly with multiple players on this Ampere shape) is worth explicitly noting here too: its issues are **performance/multiplayer-load-related** based on the operator's own observation, not a documented native-ARM64-incompatibility per this research — do not conflate the two problem categories in guide copy; they warrant separate warnings for separate reasons.
 
 ### 27.4 Old/abandoned packs and permanent unsupportability
@@ -1456,6 +1572,19 @@ This section consolidates the update/migration-relevant findings from Part B int
 
 **Cross-platform migration principle, restated from §12.2 for emphasis:** any pack/mod-set change (as opposed to a same-pack loader-only bump) should be implemented as **"compute the complete desired file set for the target state, then converge `mods/`/`config/`/overrides to exactly that set"** — deleting files that are no longer wanted, not just adding new ones — because Minecraft mod loaders generally do not gracefully ignore a stale, no-longer-referenced mod jar sitting in `mods/`; it will simply keep loading and can conflict with the new pack's intended set. A "just download the new files" upgrade implementation is a **known bug class**, not a hypothetical one, based on how many of the researched reference scripts (`gist.github.com` community modpack-updater scripts, §22) had to explicitly grapple with exactly this cleanup step.
 
+### 28.1 Day-2 pack replace: light swap vs full re-setup (after v1)
+
+Lab `PRODUCT-IDEAS.md` **Modpack replace (after v1)** is a Server Management file-picker flow (still **no in-app catalog** — §2.4). The Manager should **detect** whether the new archive can be a **light swap** or needs the **full** Setup-style Minecraft install pipeline:
+
+| Detected situation | Mechanism |
+|---|---|
+| Same Minecraft version + same loader (compatible loader version); pack is mostly the same (config changes, one or two mods added/removed) | Stop the unit → converge `mods/` + `config/` / overrides to the new desired set (§28 principle) → start + health check. Do **not** re-run Java install or the Forge/NeoForge/Fabric installer. |
+| Different Minecraft version, different loader, large pack identity change, or analysis cannot prove a small delta | Same pipeline as §12.2 / §12.3 (stop → snapshot → safety world backup → installer module → pack install → manifest → unit → start → health check). Keep the existing world unless the user also chose Wipe world (§11.3). Warn if the new pack is unlikely to load that save. |
+
+**v1** only needs inspect-current-mods + **re-download the original imported archive** (client pack — not a zip of live server `mods/`). Retain that archive on the admin PC (and optionally on VM1 outside `mods/`); do not treat server-side jars as a reconstructable client pack.
+
+Exact “mostly the same” heuristic is product-open (file-diff threshold vs manifest identity vs showing a diff and asking). This section only locks the **two mechanical paths** so UI work does not invent a third installer.
+
 ---
 
 ## 29. Future game-platform matrix — classification
@@ -1466,6 +1595,9 @@ This is the operator's requested classification, informed by every finding above
 |---|---|---|
 | **Vanilla** (official Mojang jar) | **MVP** | Already the committed MVP scope; simplest artifact shape; stable, well-documented API |
 | **Paper** (Optimized Vanilla) | **v1 candidate** | Confirmed low implementation risk (single jar, same `server.properties`/RCON/world model as Vanilla); Fill v3 is stable and current; strongest "bang for the buck" performance win for the least added complexity |
+| **Purpur** (Paper fork with extra config/gameplay tweaks) | **v1-or-shortly-after candidate** (§17.6) | Same launch/plugin architecture as Paper (no new `server_artifact.kind`); confirmed as the most broadly adopted Paper fork via `itzg/docker-minecraft-server`'s own server-type coverage. Worth adding as a **second** "Optimized Vanilla" option once Paper itself ships, not a Paper replacement. |
+| **Pufferfish / Leaf** (large-server-focused Paper forks) | **Later** (§17.6) | Positioned for player counts well beyond this product's small-friend-group Ampere target; no current justification over plain Paper/Purpur |
+| **Folia** (Paper's regionized-multithreading fork) | **Later — explicitly not until it has a stable release channel** (§17.6) | Confirmed experimental-only as of this research (no stable channel); different-enough runtime model (per-region ticking) that plugin/mod compatibility assumptions elsewhere in this document would need re-validation before use |
 | **Fabric** | **v1 candidate** | Confirmed via research: simplest modded launch shape (still a single runnable jar), large and modern-focused mod ecosystem, unauthenticated/simple meta API |
 | **NeoForge** | **v1 candidate** | Confirmed via research: the de facto modern successor to Forge, "default choice for content-heavy modpacks on 1.20.2+" per multiple 2026 sources; more implementation complexity than Fabric (argfile mechanics, XML metadata, no published checksum) but this complexity is well-understood and documented, not a research gap |
 | **Forge** | **v1 candidate, explicitly scoped to legacy-version packs (primarily 1.12.2-era and 1.20.1)** | Confirmed via research **and directly contradicted the "retained generally" framing**: for 1.20.2+, NeoForge is the recommended path and Forge is redundant; Forge's ongoing relevance is specifically the pre-1.20.2 catalog (huge, long-lived pack ecosystem with no NeoForge equivalent) and the 1.20.1 boundary version NeoForge's own team says to use Forge for. **Recommendation: implement the Forge installer module as part of the same v1 slice as NeoForge (they share the argfile launch mechanics, §20.3), but do not present Forge as a "current-version" alternative to NeoForge in any UI — steer new/current-version modded setups to NeoForge, and offer Forge specifically when a pack itself declares a Forge dependency (almost always implying an older Minecraft version).** |
@@ -1475,9 +1607,10 @@ This is the operator's requested classification, informed by every finding above
 | **In-app modpack/mod catalog, browse, or search UI (Modrinth, CurseForge, or otherwise)** | **Explicitly unsupported — durable product decision, not staged for any future release** | Operator-confirmed (§2.4): this product is a server host/manager, not a modpack marketplace. Users always select/build packs on the source platform's own site/launcher and import the resulting file; Setup's only pack-input widget is a file picker/drag-and-drop, permanently. |
 | **Manual server-pack upload/import** | **v1 candidate — ship alongside Modrinth, not after it; also the umbrella mechanism the two rows above are specific manifest formats of (§24)** | Confirmed via research to be the most legally simple pathway (operator-supplied archive, same posture as existing world-restore/upload precedent) and the most resilient to any single upstream API's future ToS/uptime changes; also the *only* pathway available for packs with no server-pack variant published anywhere, or for formats (FTB, etc.) with no dedicated adapter yet |
 | **Required client-pack communication** | **v1 candidate, must ship with the first modded Setup path** | Not optional/deferrable once any modded distribution ships — a modded server with no client-pack guidance is not a usable feature, it is a support-ticket generator |
-| **Deeper day-2 mod UX** (swap individual mods, per-mod config UI, an in-app mod browser) | **Later** | Matches the operator's own already-stated product stance ("keep design around full pack replace, not a per-mod IDE" — `PRODUCT-IDEAS.md`); nothing in this research changes that recommendation |
-| **A curated Fabric "performance preset" as an alternative Optimized-Vanilla path** | **Later** (design-compatible with this schema today, not yet a scoped feature) | The manifest schema already supports this without changes (`distribution: "modded"`, `loader: "fabric"`, a product-curated rather than user-supplied mod list) — explicitly noted so a future decision to build this is a product-scope choice, not a schema migration |
-| **Explicitly unsupported: any loader/platform not named above** (e.g. Bukkit/Spigot directly rather than via Paper, Sponge, standalone Bedrock/PocketMine servers, proxy-only platforms like Velocity/BungeeCord as the primary server) | **Explicitly unsupported** | Out of scope for this product's "one Java Edition survival server for a friend group" mission (`PRODUCT-IDEAS.md`/`oci-minecraft-context.mdc`); Paper already supersedes plain Bukkit/Spigot for this product's purposes (Paper is a superset), and a proxy-network architecture (Velocity/BungeeCord fronting multiple backend servers) is a different, larger product shape this workspace's mission does not call for |
+| **Deeper day-2 mod UX** (swap individual mods, per-mod config UI, an in-app mod browser) | **Later / explicitly unsupported for catalog UI** | Inspect + re-download of the **already-imported** pack is **v1** (`PRODUCT-IDEAS.md` Server Management modding). **Change/replace pack** (file picker; light swap vs full re-setup, §28.1) is **later**. Still **full pack replace**, not a per-mod IDE. In-app catalog/browse remains **unsupported** (§2.4). |
+| **A curated Fabric "performance preset" as an alternative Optimized-Vanilla path** | **Later** (design-compatible with this schema today, not yet a scoped feature) | The manifest schema already supports this without changes (`distribution: "modded"`, `loader: "fabric"`, a product-curated rather than user-supplied mod list) — explicitly noted so a future decision to build this is a product-scope choice, not a schema migration. **If built, consider distributing/versioning the curated preset as an OCI-registry artifact** (a real, current pattern confirmed via `itzg/docker-minecraft-server`'s `GENERIC_PACKS=oci://...` support) rather than re-hosting a bespoke zip format — lower-effort than it sounds since this product's own container registry tooling (if any exists by then) would already speak that protocol. |
+| **Hybrid mod+plugin servers** (Magma, Magma Maintained, Ketting, Mohist, Youer, Banner, Arclight — combined Forge/NeoForge/Fabric **and** Bukkit-plugin support in one server) | **Explicitly unsupported** | Confirmed real but volatile ecosystem: the original Magma project is **terminated**, replaced by several independently-maintained forks with narrow per-Minecraft-version support matrices (each pinned to specific Forge/loader builds). No confirmed operator/product demand, and the instability itself (a whole project dying and needing multiple successor forks) is a concrete reason not to build install automation against any one of them without a specific, explicit future ask. Named here explicitly so a future agent finds this reasoning instead of wondering why hybrids are unaddressed. |
+| **Explicitly unsupported: any other loader/platform not named above** (e.g. Bukkit/Spigot directly rather than via Paper — confirmed its official download provider no longer supports automated downloads at all, per `itzg`'s docs, which independently validates steering to Paper — Sponge, standalone Bedrock/PocketMine servers, proxy-only platforms like Velocity/BungeeCord as the primary server) | **Explicitly unsupported** | Out of scope for this product's "one Java Edition survival server for a friend group" mission (`PRODUCT-IDEAS.md`/`oci-minecraft-context.mdc`); Paper already supersedes plain Bukkit/Spigot for this product's purposes (Paper is a superset, and now also the *only* automatable option of the two), and a proxy-network architecture (Velocity/BungeeCord fronting multiple backend servers) is a different, larger product shape this workspace's mission does not call for |
 
 ---
 
@@ -1490,7 +1623,7 @@ This document is research + architecture, not an execution checklist — [`OCI-m
 | **Step 2.3 — Vanilla on-box path readiness** (current NEXT step as of this document's writing) | §16 (Vanilla acquisition), §5 (directory layout — implementers should adopt the `/opt/mcmgr/` + `mcmgr` user layout described here rather than continuing to special-case the lab's `/home/ubuntu/minecraft/server` path in any new automated-bootstrap code), §6 (systemd unit generation — build the **generic** template now, even though only Vanilla feeds it today), §7 (server.properties/EULA), §8 (RCON secret generation), §3/§4.1 (write the actual `game-manifest.json` file, not just install the jar) |
 | **Step 2.4 — Door / agent product gaps** | §10 (idle agent integration seam — confirm/patch the manifest-to-`/etc/mc-manager/config.json` sync step, §10.2) |
 | **Step 3.1–3.3 — OpenTofu + Setup wizard + apply/bootstrap** | §13 (bootstrap responsibility split — keep OpenTofu/user-data limited to infra per §13.1), §14 (failure recovery/resumability — this directly extends the existing "Setup survives capacity wait and can resume" MVP criterion to the bootstrap portion, not just the OpenTofu-apply portion) |
-| **v1 "Setup game types" work** (per `PRODUCT-IDEAS.md`, not yet a numbered MVP-Implementation-Plan step as of this writing) | Part B in full, §26–§29 for platform prioritization and compatibility gating, §12 for the upgrade/rollback/distribution-switch pipeline, §22–§25 for pack-source integration order (Modrinth + manual upload first, CurseForge as its own gated work item, Quilt deferred) |
+| **v1 "Setup game types" work** (per `PRODUCT-IDEAS.md`, not yet a numbered MVP-Implementation-Plan step as of this writing) | Part B in full, §26–§29 for platform prioritization and compatibility gating, §12 for the upgrade/rollback/distribution-switch pipeline, §22–§25 for pack-source integration order (Modrinth + manual upload first, CurseForge as its own gated work item, Quilt deferred). Server Management **inspect + re-download imported pack** is v1; **wipe world** is §11.3; **pack replace** light-swap vs full re-setup is §28.1 / after v1. |
 
 **Immediate, concrete recommendation for whoever picks up Step 2.3:** implement the manifest schema (§3), the generic systemd unit generator (§6), and the directory/user layout (§5) as real, tested code now, even though the *only* installer module that exists yet is Vanilla's (§16) — this is the entire point of the "avoid hard-coding Vanilla into infrastructure contracts" goal, and retrofitting a generic contract under an already-shipped Vanilla-only implementation later is strictly more work than building it generic from the start.
 
@@ -1502,14 +1635,21 @@ This document is research + architecture, not an execution checklist — [`OCI-m
 - Version manifest: https://piston-meta.mojang.com/mc/game/version_manifest_v2.json
 - Format reference: https://minecraft.wiki/w/Version_manifest.json , https://wiki.vg/Game_files
 - Java version history: https://minecraft.wiki/w/Tutorial:Update_Java
+- New version numbering scheme, official Mojang announcement: https://www.minecraft.net/en-us/article/minecraft-new-version-numbering-system
 
 **Java runtime**
 - Adoptium: https://adoptium.net/ , API docs/cookbook: https://github.com/adoptium/api.adoptium.net , CI script guidance: https://adoptium.net/installation/ci-scripts , Linux packages: https://adoptium.net/installation/linux
+- Real-world Java/loader interaction hazards (§9.5) cross-checked against: https://docker-minecraft-server.readthedocs.io/en/latest/versions/java/
 
-**Paper**
+**Paper (and forks, §17.6)**
 - Downloads Service docs: https://docs.papermc.io/misc/downloads-service/
 - Fill v3 base: https://fill.papermc.io/v3/projects/paper ; Swagger: https://fill.papermc.io/swagger-ui/index.html ; GraphQL: https://fill.papermc.io/graphiql?path=/graphql
 - v2→v3 migration announcement (mirrored in multiple community threads): https://github.com/itzg/docker-minecraft-server/issues/3517
+- Fork ecosystem (Purpur/Pufferfish/Leaf/Folia) surveyed via: https://docker-minecraft-server.readthedocs.io/en/latest/types-and-platforms/server-types/paper/
+- Purpur: https://purpurmc.org/ ; Pufferfish: https://github.com/pufferfish-gg/Pufferfish ; Leaf: https://www.leafmc.one/ ; Folia: https://papermc.io/software/folia
+
+**Bukkit/Spigot (explicitly unsupported, §29)**
+- Automated-download-provider deprecation confirmed via: https://docker-minecraft-server.readthedocs.io/en/latest/types-and-platforms/server-types/bukkit-spigot/
 
 **Fabric / Quilt**
 - Fabric Meta: https://meta.fabricmc.net/ , source: https://github.com/FabricMC/fabric-meta/
@@ -1525,20 +1665,30 @@ This document is research + architecture, not an execution checklist — [`OCI-m
 - Promotions: https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json
 - Legacy server setup tutorial: https://minecraft.fandom.com/wiki/Tutorials/Setting_up_a_Minecraft_Forge_server
 - `run.sh` source (argfile launch): https://github.com/MinecraftForge/MinecraftForge/blob/26.1.2/server_files/run.sh
+- "Please do not automate" installer notice + alternatives (Cleanroom) + Hybrids survey (§29): https://docker-minecraft-server.readthedocs.io/en/latest/types-and-platforms/server-types/forge/ , https://docker-minecraft-server.readthedocs.io/en/latest/types-and-platforms/server-types/hybrids/
 
 **Modrinth**
 - `.mrpack` format: https://support.modrinth.com/en/articles/8802351-modrinth-modpack-format-mrpack
 - API base: https://api.modrinth.com/v2/
+- Real-world mis-tagging + exclude/include mechanism (§22.1, §24.3): https://docker-minecraft-server.readthedocs.io/en/latest/types-and-platforms/mod-platforms/modrinth-modpacks/
 
 **CurseForge**
 - API key rollout announcement: https://blog.curseforge.com/introducing-api-key-authentication-for-curseforge-file-downloads/
 - API application process: https://support.curseforge.com/support/solutions/articles/9000208346-about-the-curseforge-api-and-how-to-apply-for-a-key
 - 3rd party ToS: https://support.curseforge.com/en/support/solutions/articles/9000207405-curse-forge-3rd-party-api-terms-and-conditions
 - API reference: https://docs.curseforge.com/rest-api/
+- Bundled-key precedent, manual `/downloads` fallback for API-blocked files, unpublished-manifest shape (§23.1, §23.3, §23.3a): https://docker-minecraft-server.readthedocs.io/en/latest/types-and-platforms/mod-platforms/auto-curseforge/ , https://docker-minecraft-server.readthedocs.io/en/latest/types-and-platforms/mod-platforms/curseforge/
 
-**Reference implementations studied (not dependencies of this product, used only to validate real-world install/URL patterns)**
-- itzg/docker-minecraft-server + mc-image-helper: https://github.com/itzg/docker-minecraft-server , https://github.com/itzg/mc-image-helper
+**Exclude/include override list schema (§24.3)**
+- Schema doc: https://github.com/itzg/mc-image-helper#excludeinclude-file-schema
+- Reference data files: https://github.com/itzg/docker-minecraft-server/blob/master/files/modrinth-exclude-include.json , https://github.com/itzg/docker-minecraft-server/blob/master/files/cf-exclude-include.json (a trimmed copy of the former is vendored at [`docs/modrinth-exclude-include.json`](modrinth-exclude-include.json) in this repo)
+
+**Reference implementations studied (not dependencies of this product, used only to validate real-world install/URL patterns and operational decisions)**
+- itzg/docker-minecraft-server + mc-image-helper: https://github.com/itzg/docker-minecraft-server , https://github.com/itzg/mc-image-helper , full docs: https://docker-minecraft-server.readthedocs.io/en/latest/
 - ServerStarterJar (Forge/NeoForge same-process wrapper reference for argfile launch): https://github.com/neoforged/ServerStarterJar
+- Console-access alternatives surveyed and deliberately not adopted (§8.5): https://docker-minecraft-server.readthedocs.io/en/latest/sending-commands/commands/ , https://docker-minecraft-server.readthedocs.io/en/latest/sending-commands/ssh/ , https://docker-minecraft-server.readthedocs.io/en/latest/sending-commands/websocket/
+- Java/OS image-tag compatibility matrix (§9.5): https://docker-minecraft-server.readthedocs.io/en/latest/versions/java/
+- `server.properties` environment-variable mapping surveyed for §7.3 cross-check: https://docker-minecraft-server.readthedocs.io/en/latest/configuration/server-properties/
 
 ---
 
@@ -1546,6 +1696,8 @@ This document is research + architecture, not an execution checklist — [`OCI-m
 
 | Date | Note |
 |---|---|
+| 2026-08-13 | PRODUCT-IDEAS staging: §11.3 wipe world (v1); §28.1 day-2 pack replace light-swap vs full re-setup (after v1); v1 inspect + re-download imported pack; §29 day-2 row updated. |
+| 2026-08-12 | Full-document cross-check against `itzg/docker-minecraft-server`'s documentation (a large, actively-maintained, real-world implementation of most of what this blueprint designs). Added: §8.5 (console-access alternatives surveyed, deliberately not adopted); §9.5 (confirmed Java/loader interaction hazards — per-pack Java overrides, Forge/OpenJ9 incompatibility, base-OS libc as a compatibility axis distinct from CPU architecture) plus a Mojang-official citation for the new version-numbering scheme in §16.2/§9.1; §17.6 (Paper fork ecosystem — Purpur/Pufferfish/Leaf/Folia — and their staging); a Forge "please don't automate" ethical callout in §20; softened §22.1's Modrinth mis-tagging claim; §23.1 bundled-API-key precedent, §23.3's `required`-field precision fix, and new §23.3a (per-file API-download-permission blocks and their manual fallback); new §24.3 (three-layer exclude/include override-list design with crash-attributable automatic quarantine, extending §3.7's `modpack` schema with `quarantined_files`); a Hybrids row and a Purpur/Pufferfish/Leaf/Folia set of rows in §29's classification table, plus a Bukkit/Spigot automated-download-dead confirmation. Vendored `docs/modrinth-exclude-include.json` from the upstream project as a concrete schema/data reference for §24.3. |
 | 2026-08-11 | Added §2.4 **"No in-app mod/modpack catalog"** as a firm, operator-confirmed architecture decision: Setup never browses/searches Modrinth or CurseForge; the only pack input is an already-exported file via file picker/drag-and-drop. Reframed §22 (Modrinth), §23 (CurseForge), and §24 (manual upload — now the umbrella mechanism) accordingly, updated the §29 classification table with an explicit "in-app catalog UI" = unsupported row, and clarified §3.7's `modpack` schema fields as file-provenance, not user-selection, data. |
 | 2026-08-11 | Initial version. Full research pass across Mojang/Paper/Fabric/NeoForge/Forge/Quilt/Modrinth/CurseForge, Java/ARM64 packaging, and systemd/RCON/idle-agent integration. Defined the game-manifest contract (Part A) and the future-platform classification table (§29). Created as the authoritative companion to `PRODUCT-IDEAS.md`'s existing (now superseded-in-detail, still correct-in-intent) Vanilla bootstrap and Setup-game-types sections. |
 

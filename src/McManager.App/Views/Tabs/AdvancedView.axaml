@@ -6,6 +6,18 @@
     <ScrollViewer Padding="16">
         <StackPanel Spacing="20" MaxWidth="720">
             <StackPanel Spacing="12">
+                <TextBlock Text="Infrastructure Setup"
+                           FontWeight="SemiBold"
+                           FontSize="16" />
+                <TextBlock TextWrapping="Wrap"
+                           Opacity="0.8"
+                           Text="Greenfield deploy / repair wizard. Deploy runs OpenTofu apply (operator-only against a real tenancy) then SSH bootstrap. State lives under %LOCALAPPDATA%\McManager\tofu — not repo infra/terraform.tfvars." />
+                <Button Content="Deploy / repair infrastructure"
+                        Command="{Binding OpenSetupCommand}"
+                        HorizontalAlignment="Left" />
+            </StackPanel>
+
+            <StackPanel Spacing="12">
                 <TextBlock Text="Break-glass VM power"
                            FontWeight="SemiBold"
                            FontSize="16" />

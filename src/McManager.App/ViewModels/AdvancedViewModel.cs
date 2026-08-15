@@ -2,6 +2,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using McManager.App.Dialogs;
+using McManager.App.Views;
 using McManager.Core.Config;
 using McManager.Core.Services;
 using McManager.Core.Usage;
@@ -11,7 +12,7 @@ namespace McManager.App.ViewModels;
 public partial class AdvancedViewModel : ViewModelBase
 {
     private readonly ManagerLocalConfig _config;
-    private readonly ComputeService _compute;
+    private readonly ComputeService? _compute;
     private readonly UsageBudgetStore? _budgetStore;
     private readonly InfraMetaStore? _infraStore;
     private readonly ISshService _ssh;
@@ -50,7 +51,7 @@ public partial class AdvancedViewModel : ViewModelBase
 
     public AdvancedViewModel(
         ManagerLocalConfig config,
-        ComputeService compute,
+        ComputeService? compute,
         UsageBudgetStore? budgetStore,
         InfraMetaStore? infraStore,
         ISshService ssh,
@@ -224,8 +225,22 @@ public partial class AdvancedViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private async Task OpenSetupAsync()
+    {
+        var window = (Avalonia.Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)
+            ?.MainWindow;
+        await SetupWizardWindow.ShowAsync(window);
+    }
+
+    [RelayCommand]
     private async Task BreakGlassStartAsync()
     {
+        if (_compute is null)
+        {
+            StatusMessage = "OCI session unavailable — cannot start VM1.";
+            return;
+        }
+
         if (IsBusy)
             return;
 
@@ -258,6 +273,12 @@ public partial class AdvancedViewModel : ViewModelBase
     [RelayCommand]
     private async Task BreakGlassSoftStopAsync()
     {
+        if (_compute is null)
+        {
+            StatusMessage = "OCI session unavailable — cannot SoftStop VM1.";
+            return;
+        }
+
         if (IsBusy)
             return;
 
