@@ -14,18 +14,40 @@ bootstrap_state_init() {
   local dist="${3:-vanilla}"
   mkdir -p "${VAR_MCMGR}"
   "${_state_py}" - "${BOOTSTRAP_STATE}" "${op}" "${ver}" "${dist}" <<'PY'
-import json, sys, datetime
+import json, sys, datetime, os
 path, op, ver, dist = sys.argv[1:5]
 now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-doc = {
-  "operation": op,
-  "started_at": now,
-  "target_manifest_partial": {"distribution": dist, "minecraft_version": ver or None},
-  "stages_completed": [],
-  "current_stage": None,
-  "last_error": None,
-  "updated_at": now,
-}
+ver_n = ver or None
+existing = None
+if os.path.isfile(path):
+    try:
+        with open(path, encoding="utf-8") as f:
+            existing = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        existing = None
+partial = (existing or {}).get("target_manifest_partial") or {}
+same = (
+    existing is not None
+    and existing.get("operation") == op
+    and partial.get("distribution") == dist
+    and (partial.get("minecraft_version") or None) == ver_n
+)
+if same:
+    existing["updated_at"] = now
+    existing["current_stage"] = None
+    existing["last_error"] = None
+    existing.setdefault("stages_completed", [])
+    doc = existing
+else:
+    doc = {
+      "operation": op,
+      "started_at": now,
+      "target_manifest_partial": {"distribution": dist, "minecraft_version": ver_n},
+      "stages_completed": [],
+      "current_stage": None,
+      "last_error": None,
+      "updated_at": now,
+    }
 with open(path, "w", encoding="utf-8") as f:
     json.dump(doc, f, indent=2)
     f.write("\n")

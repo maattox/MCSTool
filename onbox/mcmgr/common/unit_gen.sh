@@ -29,6 +29,9 @@ unit_generate() {
   mkdir -p "$(dirname "${SYSTEMD_UNIT_PATH}")" "${BIN_DIR}"
   cp "${MCMGR_HOME}/common/rcon-graceful-stop.sh" "${BIN_DIR}/rcon-graceful-stop.sh"
   chmod 0755 "${BIN_DIR}/rcon-graceful-stop.sh"
+  if [[ "${DRY_RUN}" != "1" ]]; then
+    chown root:mcmgr "${BIN_DIR}/rcon-graceful-stop.sh"
+  fi
 
   local py
   py="$(mcmgr_python)"

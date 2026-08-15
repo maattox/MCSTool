@@ -401,7 +401,7 @@ The current Avalonia `UsageInterval` DTO reads fields needed for budget math but
 | `monthly_gb_target` | number > 0 | Monthly GB-h target |
 | `soft_ocpu_cap` | number > 0 | Monthly OCPU-h SoftStop cap |
 | `soft_gb_cap` | number > 0 | Monthly GB-h SoftStop cap |
-| `idle_timeout_minutes` | integer >= 1 | Empty-server timeout |
+| `idle_timeout_minutes` | integer >= 1 | Minutes before SoftStop when the server is empty **or** Minecraft is not `active` (same field; Step 4.1 does **not** add a second key) |
 | `budget_warn_minutes` | integer >= 0 | Final warning grace |
 | `idle_agent_enabled` | boolean | Testing switch; VM1 boot force-enables |
 | `daily_ocpu_limit_phase_a` | number > 0 | Compatibility field for older door logic |
@@ -654,6 +654,8 @@ No live objects were modified during review.
 ---
 
 ## Known gaps after contract freeze
+
+**Idle timeout meaning (MVP Step 4.1 — no schema change):** `budget/config.json` `idle_timeout_minutes` stays the same key. Product intent now includes SoftStop when Minecraft is **not running**, not only when RCON `list` is empty. Do **not** add a second timeout field.
 
 1. **Step 2.2 (done):** canonical nested `meta/infra.json` v2 read/write + live legacy migration; unsupported newer schema rejected on read.
 2. **DONE (Step 2.4):** VM1 `meta/oversized-world-backup.json` set/skip behavior in `vm_agent/world_backup.py`.

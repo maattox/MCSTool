@@ -72,7 +72,7 @@ Descriptions match Manager ownership (`"{name} SSH access"`, name, `"{name} door
 
 | VM1 | Door |
 |-----|------|
-| `mcmgr` user/group, empty `/opt/mcmgr` + `/etc/mcmgr` + `/var/lib/mcmgr` | hostname + `jq`/`curl` |
+| `mcmgr` user/group, empty `/opt/mcmgr` + `/etc/mcmgr` + `/var/lib/mcmgr` with blueprint **§5** owners (`root:mcmgr` `0750` on `/opt/mcmgr`, **not** `chown -R mcmgr`; SoT is `onbox/mcmgr/common/layout.sh`) | hostname + `jq`/`curl` |
 | Adoptium **apt repo registration** (no `temurin-*` package) | no game tree, no firewalld |
 | firewalld: SSH + 25565 tcp/udp **without** source IPs (Security List is the IP allowlist) | iptables comes with `door_vm` in 3.3 |
 | marker `/etc/mcmgr/cloud-init-done` | marker `/etc/mcmgr-door/cloud-init-done` |

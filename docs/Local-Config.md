@@ -26,7 +26,7 @@ Do **not** copy Auth Tokens into `config.local.json` (OCIR only; Manager uses `~
 
 `McManager.Core.Config.SetupWizardStore` reads/writes `data/setup-wizard.local.json` (same data directory as manage config). Saved on each Next/Back/Close.
 
-Included: current step, Always Free / residual / capacity flags, OCI profile + region, compartment strategy, alert email, SSH **public** path/line/fingerprint (Generate creates `%USERPROFILE%\.ssh\mcmgr_ed25519_yyyyMMdd_HHmmss`, not a reused default name), Vanilla + version **id**, EULA flag, whether a token was stored, **admin `/32` CIDR**, **admin Minecraft username** (Vanilla whitelist), **`apply_stage`**, optional Function image after OCIR push.
+Included: current step, Always Free / residual / capacity flags, OCI profile + region, compartment strategy, alert email, SSH **public** path/line/fingerprint (Generate creates `%USERPROFILE%\.ssh\mcmgr_ed25519_yyyyMMdd_HHmmss`, not a reused default name), Vanilla + version **id**, EULA flag, whether a token was stored, **admin `/32` CIDR**, **admin Minecraft username** (historically Vanilla `whitelist.json`; MVP Step 4.3 turns in-game whitelist **off** — OCI Security List is the allowlist), **`apply_stage`**, optional Function image after OCIR push.
 
 **Not** included: Auth Token secret, SSH private key, tenancy OCID, jar URL/sha1.
 
@@ -35,7 +35,7 @@ Included: current step, Always Free / residual / capacity flags, OCI profile + r
 - `data/config.local.json` after a successful (non-dry-run) Deploy — **replaces** an existing manage seed in that data directory (wizard confirms first). Prefer `MCMANAGER_CONFIG_DIR` pointing at a **new empty folder** so the lab Manager config stays intact.
 - OpenTofu `terraform.tfvars` + `terraform.tfstate` under `%LOCALAPPDATA%\McManager\tofu\<stack-id>\` (not the repo, not the shared bucket). **Never** writes [`infra/terraform.tfvars`](../infra/terraform.tfvars). Manual `tofu import` / `plan` for that stack must `-state`/`-var-file` those LocalAppData files while the working directory is repo `infra/` (PowerShell: quote `-state="$state"`).
 - `friends.local.json` with the admin `/32` **only if that file is empty**.
-- Guest netplan (`/etc/netplan/99-mcmgr-play.yaml`) for the secondary play IP; Vanilla whitelist from **admin Minecraft username**.
+- Guest netplan (`/etc/netplan/99-mcmgr-play.yaml`) for the secondary play IP; Vanilla whitelist from **admin Minecraft username** (until MVP Step 4.3 disables in-game `white-list`).
 
 **Re-Deploy:** if `apply_stage` is already `vm1` (or later), Deploy re-runs guest repair (netplan, door env, whitelist) and can start a STOPPED VM1 — it does **not** re-`tofu apply`. Players use `play.reserved_public_ip`, not `vm1.ssh_host` / `door.ssh_host`.
 

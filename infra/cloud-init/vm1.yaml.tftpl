@@ -1,5 +1,7 @@
 #cloud-config
 # VM1 OS baseline only. Do not install Minecraft, a Java major, loaders, or RCON.
+# Directory ownership SoT is onbox/mcmgr/common/layout.sh (blueprint §5).
+# Never chown -R /opt/mcmgr — server/ is mcmgr:mcmgr, parent is root:mcmgr.
 hostname: mcmgr-vm1
 fqdn: mcmgr-vm1
 manage_etc_hosts: localhost
@@ -15,7 +17,7 @@ users:
   - name: mcmgr
     system: true
     primary_group: mcmgr
-    homedir: /opt/mcmgr
+    homedir: /opt/mcmgr/server
     shell: /usr/sbin/nologin
     lock_passwd: true
 
@@ -29,8 +31,12 @@ packages:
 
 runcmd:
   - mkdir -p /opt/mcmgr/server /opt/mcmgr/backups-work /opt/mcmgr/bin /etc/mcmgr /var/lib/mcmgr
-  - chown -R mcmgr:mcmgr /opt/mcmgr /var/lib/mcmgr
-  - chmod 0755 /opt/mcmgr /etc/mcmgr /var/lib/mcmgr
+  - chown root:mcmgr /opt/mcmgr /opt/mcmgr/bin /etc/mcmgr
+  - chmod 0750 /opt/mcmgr /opt/mcmgr/bin /etc/mcmgr
+  - chown mcmgr:mcmgr /opt/mcmgr/server /opt/mcmgr/backups-work
+  - chmod 0750 /opt/mcmgr/server /opt/mcmgr/backups-work
+  - chown root:root /var/lib/mcmgr
+  - chmod 0750 /var/lib/mcmgr
   - curl -fsSL https://packages.adoptium.net/artifactory/api/gpg/key/public | gpg --dearmor -o /usr/share/keyrings/adoptium.gpg
   - echo "deb [signed-by=/usr/share/keyrings/adoptium.gpg] https://packages.adoptium.net/artifactory/deb jammy main" > /etc/apt/sources.list.d/adoptium.list
   - apt-get update

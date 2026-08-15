@@ -30,6 +30,8 @@ export RCON_SECRET
 export BOOTSTRAP_STATE
 export SYSTEMD_UNIT_PATH
 export MC_MANAGER_CONFIG
+export OPT_MC_MANAGER
+export ETC_MC_MANAGER
 
 OPT_MCMGR="$(_mcmgr_prefix /opt/mcmgr)"
 ETC_MCMGR="$(_mcmgr_prefix /etc/mcmgr)"
@@ -43,6 +45,8 @@ RCON_SECRET="${ETC_MCMGR}/rcon.secret"
 BOOTSTRAP_STATE="${VAR_MCMGR}/bootstrap-state.json"
 SYSTEMD_UNIT_PATH="$(_mcmgr_prefix /etc/systemd/system/minecraft.service)"
 MC_MANAGER_CONFIG="$(_mcmgr_prefix /etc/mc-manager/config.json)"
+OPT_MC_MANAGER="$(_mcmgr_prefix /opt/mc-manager)"
+ETC_MC_MANAGER="$(_mcmgr_prefix /etc/mc-manager)"
 
 export DRY_RUN="${DRY_RUN:-0}"
 export EULA_ACCEPTED="${EULA_ACCEPTED:-}"

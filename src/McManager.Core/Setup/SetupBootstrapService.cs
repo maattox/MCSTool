@@ -395,8 +395,14 @@ public sealed class SetupBootstrapService
         UploadText(client, "/tmp/mcmgr-seed-whitelist.py", py);
         Exec(
             client,
-            "sudo bash -c " + ShQuote("python3 /tmp/mcmgr-seed-whitelist.py && rm -f /tmp/mcmgr-seed-whitelist.py"),
-            TimeSpan.FromSeconds(30),
+            "sudo bash -c " + ShQuote(
+                "set -euo pipefail; "
+                + "python3 /tmp/mcmgr-seed-whitelist.py; "
+                + "rm -f /tmp/mcmgr-seed-whitelist.py; "
+                + "if [ -x /opt/mcmgr/bin/repair-permissions.sh ]; then "
+                + "bash /opt/mcmgr/bin/repair-permissions.sh; "
+                + "fi"),
+            TimeSpan.FromMinutes(2),
             log);
 
         var rcon =
@@ -502,7 +508,7 @@ public sealed class SetupBootstrapService
             client,
             "sudo bash -c " + ShQuote(
                 "cp /tmp/mc-manager-config.json /etc/mc-manager/config.json && "
-                + "chown root:root /etc/mc-manager/config.json && chmod 600 /etc/mc-manager/config.json && "
+                + "chown root:root /etc/mc-manager/config.json && chmod 640 /etc/mc-manager/config.json && "
                 + "rm -f /tmp/mc-manager-config.json && "
                 + "systemctl enable --now mc-idle-watch.timer"),
             TimeSpan.FromSeconds(60),

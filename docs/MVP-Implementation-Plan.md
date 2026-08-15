@@ -27,6 +27,9 @@
 5. **Never create git commits** (operator commits in Visual Studio). You may suggest a commit message.
 6. Do **not** implement v1 / later features from PRODUCT-IDEAS unless the operator asks.
 7. Do **not** put Avalonia product code in the lab repo. Lab changes are OK only when a step explicitly requires on-box / door / idle-agent / infra-doc updates.
+8. **Fix the product path, not only the test VM.** If troubleshooting the blank-tenancy / Setup deploy shows a bug caused by OpenTofu, IAM matching rules, cloud-init, SSH bootstrap, `onbox/mcmgr/`, `door_vm/`, or `vm_agent/` install: file it in lab `docs/Issues.md` **and** change the automated-deploy code in the same effort so the next greenfield run does not repeat it. Patching only the live test instance is not done. Example: SETUP-ISSUE-2 (door DG tag match + compartment-only `manage public-ips`) had to land in product HCL, not just a Console tweak.
+9. **`ubuntu` often cannot read/write the files you need.** Recurring pitfall (lab `docs/Agent-Deploy-Pitfalls.md`): `/etc/mccontrol/oci.env` is mode 600 root; `/opt/mcmgr/`, `/etc/mcmgr/`, `/etc/mc-manager/`, systemd units, and many scripts are root-owned. Before operating on a path as `ubuntu`, check permissions; use `sudo` or fix ownership/mode. Do not burn a session rediscovering `Permission denied`.
+10. **UI sketches in PRODUCT-IDEAS are not locked.** See [Phase 6](#phase-6--ui-polish) and lab `PRODUCT-IDEAS.md` → Manager UI. For UI-design work, use or offer the `find-skills` skill unless the operator already asked; also look at panels such as Pterodactyl for feature reference. **NuGet is allowed:** search and add packages to `McManager.App` for themes, icons, controls, fonts, or other UI needs. Do not feel restricted to Fluent or packages already in the solution. Phase 1’s “keep Fluent / no heavy polish” applied to **that** step only. Keep OCI SDK on Core; prefer OSS licenses; ask before paid/commercial packages; confirm large IA redesigns with the operator.
 
 ### Agent stop protocol
 
@@ -54,9 +57,11 @@ Do not commit. Do not start the following large step unless I say so.
 **MVP success criteria**
 
 - [ ] Friend can wake and play on reserved play IP  
-- [ ] Empty / budget SoftStop works  
+- [ ] Empty / budget SoftStop works (no players **or** Minecraft not running, after idle timeout)  
 - [ ] Door refuses wake when daily budget exhausted (clear MOTD/kick)  
 - [ ] Admin can whitelist and repair SSH allow IP without Console  
+- [ ] In-game Minecraft `white-list` is **off**; OCI Security List is the allowlist  
+- [ ] Operator can recover a stuck reserved play IP / doorbell from Manager (Troubleshooting one-shots)  
 - [ ] World backups under ~9.5 GB Object Storage policy  
 - [ ] Setup survives capacity wait and can resume  
 - [ ] Single Windows installer → one Manager app (Setup integrated)  
@@ -74,13 +79,16 @@ Do not commit. Do not start the following large step unless I say so.
 | **1** | Avalonia manage MVP (existing stack) | **DONE** |
 | **2** | On-box / contract freeze for product | **DONE** |
 | **3** | Setup wizard + OpenTofu greenfield | **DONE** |
-| **4** | Connect-existing (auto-detect + meta) | **TODO** — NEXT |
-| **5** | UI polish (novice-ready) | **TODO** |
-| **6** | Guide + greenfield E2E proof | **TODO** |
-| **7** | Packaging, updates, closed beta | **TODO** |
-| **8** | MVP exit review | **TODO** |
+| **4** | Stabilize test stack + operator repair | **TODO** — NEXT = Step 4.3 |
+| **5** | Connect-existing (auto-detect + meta) | **TODO** |
+| **6** | UI polish (novice-ready) | **TODO** |
+| **7** | Guide + greenfield E2E proof | **TODO** |
+| **8** | Packaging, updates, closed beta | **TODO** |
+| **9** | MVP exit review | **TODO** |
 
-**Current NEXT step:** [Phase 4 — Connect existing](#phase-4--connect-existing-mvp-light)
+**Current NEXT step:** [Step 4.3 — Bootstrap: disable Minecraft in-game whitelist](#step-43--bootstrap-disable-minecraft-in-game-whitelist)
+
+Phases **1–3 are frozen** (do not rewrite those step bodies). Historical step changelogs that said “NEXT = Phase 4” meant Connect-existing at the time; that work is now **Phase 5**.
 
 ---
 
@@ -91,7 +99,7 @@ Operator Always Free stack + product repo bootstrap. Do not re-do unless somethi
 | Item | Status | Notes |
 |------|--------|-------|
 | Dual-VM doorbell (reserved IP, door MOTD/wake, reconcile) | DONE | Lab live — see VM-Software |
-| VM1 idle/budget SoftStop + ledger/lease + shape detect | DONE | `vm_agent/` |
+| VM1 idle/budget SoftStop + ledger/lease + shape detect | DONE | `vm_agent/` empty + budget path live; SoftStop when Minecraft is **down** is Step **4.1** |
 | Object Storage Phases 1–5 + world backup soft cap | DONE | Lab |
 | $1 budget → Function SoftStop | DONE | Lab — SoftStops **VM1 and VM2**; copy in lab `functions/shutdown_vm/` |
 | Dual-repo (lab vs `OCI-mc-server`) | DONE | 2026-08-10 |
@@ -487,9 +495,159 @@ Operator Always Free stack + product repo bootstrap. Do not re-do unless somethi
 
 ---
 
-## Phase 4 — Connect existing (MVP-light)
+## Phase 4 — Stabilize test stack + operator repair
 
-**Status:** NEXT  
+**Goal:** The blank-tenancy Setup stack actually meets MVP success criteria (wake → play → idle/budget SoftStop) before Connect-existing or polish. Pull a **subset** of PRODUCT-IDEAS v1 Door/IP Repair into MVP as one-shot Manager repair actions. Keep the operator SSH runbook current.
+
+**Why this sits before Connect-existing:** Phase 3.3 is code-complete, but 2026-08-15 dogfood still shows idle SoftStop not firing as expected, door wake **DEGRADED** (`wait_forge.sh` timed out), and **`minecraft.service` crash-looping on `CHDIR` / Permission denied**. Those block “friend can wake and play” and “empty SoftStop works.”
+
+Phases 0–3 stay **DONE**; do not rewrite them. Bootstrap/HCL fixes that belong in Setup still land **here** (and in product code), not by editing frozen Phase 3 step text.
+
+---
+
+### Step 4.1 — Idle SoftStop when Minecraft is down + wait_forge
+
+**Status:** DONE  
+**Depends on:** Phase 3.3 operator test stack (blank PAYG tenancy)
+
+**Do**
+
+- **Product decision (operator 2026-08-15):** the idle agent **must SoftStop VM1 when Minecraft is not running**, using the **same idle timeout** as the empty-server path (default 15 minutes). Today’s `idle_watch.py` early-return (`Minecraft inactive; nothing to do.`) is **wrong** for product intent — not merely a log-line curiosity.
+- **Implement in lab SoT and on the test VM — both required:**
+  1. Change lab [`vm_agent/idle_watch.py`](../../OCI-mc-server-manager/vm_agent/idle_watch.py) (tracked SoT). Door Phase 4 deploy **does not** push VM1.
+  2. **Redeploy the idle agent** to the blank-tenancy test VM1 (`/opt/mc-manager` + timer) so live behavior matches git. Updating only the PC checkout is **not done.** Updating only the test VM without `vm_agent/` is **not done.**
+- **Semantics to implement:**
+  - SoftStop after `idle_timeout_minutes` if **either** (a) Minecraft is `active` and RCON `list` shows no players, **or** (b) the `minecraft_unit` is **not** `active` (stopped, failed, crash-loop / CHDIR storm).
+  - **Do not** SoftStop on the first oneshot tick. A normal wake/boot can take minutes in `activating` before `active` — start the same idle clock, then **clear it** when the unit becomes `active` **and** players are present (existing empty-server logic). If it never becomes a healthy `active` server, the timeout must still fire (this is how a CHDIR loop stops burning Ampere hours).
+  - When the game is already down: skip RCON (it will fail); skip `systemctl stop` if already inactive; still attempt **cold world backup** if `world_path` exists, then ledger/lease close + OCI SoftStop (same stop path as empty-server, minus flush/`list`).
+  - Budget **soft cap** must still SoftStop if VM1 is up even when Minecraft is down (hours are burning). Skip in-game `say` warnings when RCON cannot connect.
+  - Do **not** change OS-ISSUE-7 (boot still force-enables idle).
+- **CHDIR / wait_forge (same session context, do not chmod here):**
+  - Operator turned VM1 on; idle timeout 15 minutes; VM did **not** SoftStop because of the old early-return. Timer **was** firing.
+  - Manager Start did **not** bring Minecraft up. `journalctl -u minecraft` is a restart storm (`status=200/CHDIR`). That is SETUP-ISSUE-4 — product permission fix is Step **4.2**, not a one-off `chmod` in 4.1.
+  - Door `wait_forge` TCP FAIL is expected until Minecraft listens. After 4.2, re-check VCN SL / firewalld only if TCP still fails while `minecraft` is `active`.
+- Confirm CHDIR with lab [`docs/Operator-Troubleshooting.md`](../../OCI-mc-server-manager/docs/Operator-Troubleshooting.md) (`systemctl cat`, `namei -l`). File leftover findings in [`docs/Issues.md`](../../OCI-mc-server-manager/docs/Issues.md).
+- Do **not** implement Manager repair buttons (Step 4.4). Do **not** start Connect-existing.
+
+**Test**
+
+- On the **test VM1** after redeploy: with Minecraft **stopped** (or still crash-looping), wait `idle_timeout_minutes` → VM1 SoftStops. Logs must **not** be only `Minecraft inactive; nothing to do.`
+- After 4.2 (game can start): empty running server still SoftStops on the same timeout; a successful Start that reaches `active` within the timeout must **not** SoftStop mid-boot just because the unit was `activating` for a few minutes.
+- Lab `vm_agent/` diff matches what is on `/opt/mc-manager`.
+
+**Done when:** SoT + test VM1 both run the new idle rule; IDLE-ISSUE-1 marked fixed or “fixed in agent, pending 4.2 for play path”; wait_forge/CHDIR remaining work is Step 4.2.
+
+**Changelog:** 2026-08-15 — Operator: idle agent must SoftStop when Minecraft is **not running** (same timeout). Implement in `vm_agent/` **and** redeploy test VM1. CHDIR still Step 4.2.  
+2026-08-15 — **DONE.** `idle_watch.py` idle clock when unit not `active`; skip RCON/stop if already down; cold backup + SoftStop. Redeployed test VM1. Proof (timeout=2 min, Minecraft stopped): first tick started clock; ~2 min later `Stopped instance after: Minecraft not running for 2 minutes.`; VM1 STOPPED. SETUP-ISSUE-4 confirmed (`ubuntu:ubuntu` `0750` on `/opt/mcmgr`); DOOR-ISSUE-5 expected until 4.2. NEXT = Step 4.2.
+
+---
+
+### Step 4.2 — Comprehensive on-box permission model (bootstrap)
+
+**Status:** DONE  
+**Depends on:** 4.1 (CHDIR / `mcmgr` user confirmed)
+
+**Do**
+
+- **Problem class, not a one-path chmod.** Recurring theme: SSH/`ubuntu`, systemd `User=mcmgr`, root-owned `/etc` files, and Setup-created directories do not agree. SETUP-ISSUE-4 (`WorkingDirectory` CHDIR) is one symptom. A fix that only `chmod`s `/opt/mcmgr/server` on the test VM **is not done.**
+- Audit and **encode in product bootstrap** (`onbox/mcmgr/` `layout.sh` / unit template / driver, and Setup SSH that creates dirs) a single ownership/mode contract that systemd, the game, idle-agent (root), and Manager-over-SSH (`ubuntu` + `sudo`) can all use. Start from blueprint **§5** (`root:mcmgr` `0750` on `/opt/mcmgr`, `mcmgr:mcmgr` `0750` on `server/`, etc.) and verify it is **actually applied** after every stage (including resume/Re-Deploy — a skipped `layout` stage plus a later `mkdir` as root `0700` is a likely bug).
+- Cover at least:
+  - Every parent of systemd `WorkingDirectory=` must be traversable by `User=mcmgr` (`x` bit + group). `status=200/CHDIR` means this failed.
+  - `server.jar`, `server.properties`, `eula.txt`, `world/`, `ReadWritePaths=`, backups-work, `/opt/mcmgr/bin/` (ExecStop helper).
+  - Java: `mcmgr` must be able to exec the Temurin JRE (normally world-executable under `/usr/lib/jvm/`; do not copy the JRE into a 0700 tree).
+  - `/etc/mcmgr/` (manifest `0640` `root:mcmgr`; `rcon.secret` stays `0600` root — ExecStop/idle agent run as root).
+  - `/etc/mc-manager/` idle-agent config (root).
+  - systemd sandbox: `ProtectSystem=strict` / `ProtectHome=true` / `ReadWritePaths` must not contradict the tree. If sandboxing is the CHDIR cause, fix the unit **and** the tree together.
+  - **Restart storm:** unit was at restart **30** with `Restart=on-failure` / `RestartSec=10`. Confirm `StartLimitBurst` in the **installed** unit actually stops the loop; if the live unit diverges from `minecraft.service.in`, that is part of this bug.
+  - Door VM: same class of “created as ubuntu/root, later run as another user” — do not expand into a door rewrite, but do not ignore an identical pattern if bootstrap creates `/opt/mccontrol` wrong.
+- **Do not** “fix” by running Minecraft as `ubuntu` or `chmod 0777`. Keep `User=mcmgr`.
+- Add a bootstrap **verify** step (or `namei -l` / `systemd-analyze` check) that fails the install if `mcmgr` cannot `chdir` + exec Java, so this cannot ship green again.
+- Update lab [`docs/Operator-Troubleshooting.md`](../../OCI-mc-server-manager/docs/Operator-Troubleshooting.md) + [`docs/Agent-Deploy-Pitfalls.md`](../../OCI-mc-server-manager/docs/Agent-Deploy-Pitfalls.md) with the contract (not only the CHDIR symptom).
+- Fix **product code** (`onbox/mcmgr/`, Setup bootstrap if it mkdirs outside layout.sh). A Console/`chmod` on the test VM is only a temporary operator workaround.
+
+**Test**
+
+- After Re-Deploy or a documented permission-repair script from bootstrap: `systemctl start minecraft` stays `active` (no CHDIR loop); `ss` shows `:25565`; door `diagnose_wait_forge.sh` TCP OK.
+- `namei -l` on WorkingDirectory is traversable by `mcmgr` on a **fresh** layout, not only the patched test box.
+- Dry-run/fixtures still pass.
+
+**Done when:** Next greenfield/Re-Deploy starts Minecraft as `mcmgr` without a manual permission chase; sibling paths in §5 are in the same contract.
+
+**Changelog:** 2026-08-15 — **DONE.** Encoded blueprint §5 in `onbox/mcmgr/common/layout.sh` (`layout_ensure_accounts` / `layout_apply` / fail-closed `layout_verify`) + `repair-permissions.sh`. Driver never skips apply/verify; resume preserves `stages_completed`. Unit `ExecStop=+` + `RestartPreventExitStatus=200`. Cloud-init per-path owners (no `chown -R`). Setup whitelist seed + Manager world-replace re-apply the contract. Test VM1: repair script (not ad-hoc chmod) → `systemctl start minecraft` **active**, no CHDIR, `:25565` listen, door `diagnose_wait_forge.sh` TCP **OK**. Idle timer left **disabled** (start triggered `mc-boot-ledger` OS-ISSUE-7 force-enable; disabled again). NEXT = Step 4.3.
+
+---
+
+### Step 4.3 — Bootstrap: disable Minecraft in-game whitelist
+
+**Status:** TODO  
+**Depends on:** 4.2 preferred first (game should actually start) but can proceed in parallel.
+
+**Do**
+
+- Product access control for MVP is **OCI Security List `/32`s only**. Vanilla `white-list` / `enforce-whitelist` must be **off** on automated Setup so friends are not also gated by `whitelist.json`.
+- Operator already turned it off **manually** on the current test deploy; that is not enough — change:
+  - Product `onbox/mcmgr/common/server_properties.sh` managed defaults
+  - [`Minecraft-Server-Deployment-Blueprint.md`](Minecraft-Server-Deployment-Blueprint.md) §7.3 (intent already updated 2026-08-15; keep code in sync)
+  - Setup seed of `whitelist.json` from admin Minecraft username (SETUP-ISSUE-1 workaround) — stop requiring it for join; username may remain in wizard for later MOTD/ops
+- Re-Deploy / bootstrap resume must write `white-list=false` and `enforce-whitelist=false` (read-modify-write managed keys only). Never set `online-mode=false`.
+- Lab Forge stack: do not rip the operator’s live lab unless asked; Connect-existing reads whatever the stack actually has.
+
+**Test**
+
+- Fresh or Re-Deploy bootstrap: `server.properties` has whitelist off; an allowlisted IP can join without a Minecraft `whitelist.json` entry.
+
+**Done when:** Next greenfield/Re-Deploy does not require a manual whitelist toggle.
+
+**Changelog:** _(empty)_
+
+---
+
+### Step 4.4 — Manager troubleshooting / one-shot repair actions
+
+**Status:** TODO  
+**Depends on:** 4.1–4.2 (know which repairs actually help; game must be able to start)
+
+**Do**
+
+- Add a **Troubleshooting** section on the existing combined **Advanced / Danger Zone** tab, **or** a dedicated **Troubleshooting** tab if that stays clearly “repair, not Danger Zone.” Do **not** split Advanced vs Danger Zone (that remains **v1**). PRODUCT-IDEAS v1 “Door/IP Repair” is **partially pulled forward** into MVP; full v1 recovery-after-$1-lock UX stays v1.
+- Each action is a **one-shot**, confirm-gated, with a result log in the UI (SSH/OCI output the operator can paste). Prefer wrapping existing `door_vm/` scripts over new door Python.
+- **Minimum — park reserved play IP (operator-requested):**
+  - Preferred behavior: if VM1 is **RUNNING**, assign the reserved public IP to **VM1’s secondary**; if VM1 is **not** RUNNING, assign it to the **door secondary**. Start the door first if it is stopped and the IP should live there.
+  - Alternate (also acceptable if cleaner): ensure VM1 is off, door is on, then assign the reserved IP to the door (hard reset to idle doorbell). Document which variant shipped.
+  - Covers stuck/wrong-VM IP and FN-ISSUE-1 leftover after the `$1` Function SoftStops both VMs.
+- **Also implement (or explicitly defer with operator OK) one-shots for other known failure modes** — design from lab `docs/Issues.md` + Step 4.1 findings. Candidate set:
+
+  | Problem | Repair idea |
+  |---------|-------------|
+  | Door stuck STARTING/DEGRADED after game is actually up | Wrap `reset_door_state.sh` / `unstick_after_forge_ready.sh` |
+  | `wait_forge` timeout / private `:25565` closed | Read-only **Diagnose wait_forge** (run `diagnose_wait_forge.sh`, show output); optional “ensure VCN→25565 + host listen” if 4.1 proved it |
+  | Idle timer disabled / “Minecraft inactive” confusion | Show unit + timer status; **Force-enable idle timer** (warn: boot already force-enables — OS-ISSUE-7) |
+  | Door stopped (`$1` Function) | **Start door VM** then park IP on door |
+  | Stale door OS budget cache | Door `/api/os-refresh` / `pull_os_budget.sh --force` |
+  | Open ledger after failed SoftStop | Door heal **only when VM1 STOPPED** (Phase 5 heal rules) |
+  | Guest missing secondary play IP | Re-apply netplan `99-mcmgr-play.yaml` (SETUP-ISSUE-1) |
+  | Sticky mccontrol / Minecraft | Restart `mccontrol` / `minecraft` (Restart already exists — don’t duplicate without a reason) |
+  | `minecraft.service` `200/CHDIR` / restart storm | Show journal + `namei`; optional **repair game tree permissions** that runs the **same** bootstrap layout contract as Step 4.2 — not an ad-hoc chmod |
+  | Guest ACPI SoftStop hang (OS-ISSUE-5) | **Not** a silent button — copy pointing at Console reset |
+
+- Keep Always Free: no extra paid APIs; waiter/429 habits; do not open `0.0.0.0/0`.
+- Update lab [`docs/Operator-Troubleshooting.md`](../../OCI-mc-server-manager/docs/Operator-Troubleshooting.md) so each new button maps to the SSH/OCI commands it runs.
+
+**Test**
+
+- Operator can recover a stuck reserved IP without Console.
+- At least one other high-value repair (door reset or diagnose) works on the test stack.
+- Confirm dialogs prevent accidental VM stop / IP move.
+
+**Done when:** Operator can recover doorbell IP + the Step 4.1 failure modes without asking an agent for ad-hoc SSH.
+
+**Changelog:** _(empty)_
+
+---
+
+## Phase 5 — Connect existing (MVP-light)
+
+**Status:** TODO  
 
 **Do**
 
@@ -513,7 +671,7 @@ Operator Always Free stack + product repo bootstrap. Do not re-do unless somethi
 
 ---
 
-## Phase 5 — UI polish
+## Phase 6 — UI polish
 
 **Status:** TODO  
 
@@ -523,10 +681,15 @@ Operator Always Free stack + product repo bootstrap. Do not re-do unless somethi
 - **Mini-terminal** visual styling for the top-bar status panel (structure already from Phase 1).
 - Still Always Free–first messaging; no paid-mode UI.
 - Do **not** add bell / settings / overflow chrome here unless operator pulls v1 chrome forward — default remains **v1**.
+- **UI is not locked.** PRODUCT-IDEAS tab/layout notes are starting ideas. Use UI/software-design skills (`find-skills` unless the operator already directed it) and look at similar products (e.g. **Pterodactyl panel**) for what a server Manager should surface. Ask the operator before a large visual redesign. **Search and add NuGet packages** as needed (Avalonia themes, icon packs, extra controls, fonts, etc.) — do not stay on the Phase 1 Fluent default just because it is already referenced.
+- **Setup Deploy log:** auto-scroll to the bottom on new text **unless** the user scrolled up; resume auto-scroll when they scroll back to the bottom.
+- **Setup deploy progress (if it can be implemented cleanly):** progress bar + **percent** from known stages (`apply_stage` / bootstrap-state). Add **timestamps** on deploy-log lines so later timed test deploys can feed an ETA. **Minutes remaining** is **not** required in the first polish pass — operator will time a few deploys (or hand timestamped logs to an agent) before a useful estimate.
+- **Setup lock after Deploy starts:** **Deploy** is not clickable once apply/bootstrap has started **or** after it has finished. Disable Back / previous wizard pages and any other control that could mutate the in-flight or completed deploy. Resume-later / Re-Deploy remains a **separate** explicit action (existing `apply_stage` behavior), not a second click of Deploy on the same finished page.
 
 **Test**
 
 - Operator (or a friend) can use Manager without reading lab docs.
+- During a dry-run or real deploy: log stick-to-bottom works; Deploy/Back stay disabled after start; progress percent moves if implemented.
 
 **Done when:** Operator accepts polish bar for MVP.
 
@@ -534,9 +697,9 @@ Operator Always Free stack + product repo bootstrap. Do not re-do unless somethi
 
 ---
 
-## Phase 6 — Guide + greenfield E2E
+## Phase 7 — Guide + greenfield E2E
 
-### Step 6.1 — Happy-path guide
+### Step 7.1 — Happy-path guide
 
 **Status:** TODO  
 
@@ -556,7 +719,7 @@ Operator Always Free stack + product repo bootstrap. Do not re-do unless somethi
 
 ---
 
-### Step 6.2 — Full greenfield E2E proof
+### Step 7.2 — Full greenfield E2E proof
 
 **Status:** TODO  
 
@@ -575,9 +738,9 @@ Operator Always Free stack + product repo bootstrap. Do not re-do unless somethi
 
 ---
 
-## Phase 7 — Packaging, updates, closed beta
+## Phase 8 — Packaging, updates, closed beta
 
-### Step 7.1 — Windows installer
+### Step 8.1 — Windows installer
 
 **Status:** TODO  
 
@@ -596,7 +759,7 @@ Operator Always Free stack + product repo bootstrap. Do not re-do unless somethi
 
 ---
 
-### Step 7.2 — GitHub Releases update check
+### Step 8.2 — GitHub Releases update check
 
 **Status:** TODO  
 
@@ -615,7 +778,7 @@ Operator Always Free stack + product repo bootstrap. Do not re-do unless somethi
 
 ---
 
-### Step 7.3 — Closed beta with friends
+### Step 8.3 — Closed beta with friends
 
 **Status:** TODO  
 
@@ -634,7 +797,7 @@ Operator Always Free stack + product repo bootstrap. Do not re-do unless somethi
 
 ---
 
-## Phase 8 — MVP exit review
+## Phase 9 — MVP exit review
 
 **Status:** TODO  
 
@@ -663,7 +826,9 @@ Operator Always Free stack + product repo bootstrap. Do not re-do unless somethi
 | What’s live on VMs today | Lab `docs/VM-Software.md` |
 | OCI layout | Lab `Infrastructure-Information.md` |
 | Door behavior | Lab `docs/Door-VM-Control-Plane.md` |
-| Deploy pitfalls (SSH/sudo) | Lab `docs/Agent-Deploy-Pitfalls.md` |
+| Operator SSH/OCI troubleshooting commands | Lab [`docs/Operator-Troubleshooting.md`](../../OCI-mc-server-manager/docs/Operator-Troubleshooting.md) |
+| Known bugs / quirks | Lab `docs/Issues.md` |
+| Deploy pitfalls (SSH/sudo; `ubuntu` permissions) | Lab `docs/Agent-Deploy-Pitfalls.md` |
 | Local Avalonia config | `docs/Local-Config.md` |
 | OCI API usage (429, waiters, thrift) | `docs/OCI-API-Usage.md` (lab twin: `OCI-mc-server-manager/docs/OCI-API-Usage.md`) |
 | Secrets / OCIDs (gitignored) | `data/config.local.json`; lab private markdown |
@@ -683,7 +848,7 @@ Operator Always Free stack + product repo bootstrap. Do not re-do unless somethi
 - Notification center / settings gear / overflow menu (v1)  
 - Oversized-world SSH **Download World Save** path + bell UX (v1; on-box flag OK in Phase 2)  
 - Players tab / Kick·Op·Ban (after v1)  
-- **$1 spend-brake lock UX** (Function writes Object Storage flag; full-window warning; typed confirmation to restart) — **v1**; MVP Function still SoftStops. Guide residual ~$1–$2 copy is in Step 6.1.  
+- **$1 spend-brake lock UX** (Function writes Object Storage flag; full-window warning; typed confirmation to restart) — **v1**; MVP Function still SoftStops. Guide residual ~$1–$2 copy is in Step 7.1.  
 - Start-from-Manager **progress checklist** (after v1)  
 - Migrating the operator’s live Forge lab off `/home/ubuntu/minecraft/server` as a prerequisite for Step 2.3 (greenfield `/opt/mcmgr/` only; Connect-existing reads actual `world_path`)  
 
@@ -691,6 +856,11 @@ Operator Always Free stack + product repo bootstrap. Do not re-do unless somethi
 
 ## Plan changelog
 
+| 2026-08-15 | UI work: agents may search for and add NuGet packages (themes, icons, controls, etc.) — not restricted to Fluent / already-referenced libraries. |
+| 2026-08-15 | Step **4.2 DONE:** §5 permission contract in `onbox/mcmgr` layout+verify; test VM1 Minecraft `active` without CHDIR; door TCP OK. NEXT = Step **4.3**. |
+| 2026-08-15 | Step **4.1 DONE:** idle SoftStop when Minecraft is not running (`vm_agent/` + test VM1 proof). SETUP-ISSUE-4 confirmed (`ubuntu:ubuntu` 0750). NEXT = Step **4.2**. |
+| 2026-08-15 | SETUP-ISSUE-4: `minecraft.service` `200/CHDIR` Permission denied (game never starts). Inserted **Step 4.2** comprehensive on-box permission model; whitelist → 4.3; Manager repairs → 4.4. NEXT remains 4.1. |
+| 2026-08-15 | Inserted **Phase 4** (stabilize test stack: idle/`wait_forge` investigation, in-game whitelist off, Manager one-shot repairs). Former Phases 4–8 → **5–9**. NEXT = Step 4.1. Phases 1–3 unchanged. Operator runbook: lab `docs/Operator-Troubleshooting.md`. |
 | 2026-08-14 | Step 3.3 blank-tenancy test lessons (IAM tenancy IP policy, door DG instance.id, OS seed, netplan, whitelist). NEXT remains Phase 4. |
 | 2026-08-13 | TEMPORARY: VM1 OpenTofu defaults 2/12 for blank-tenancy 3.3 test (revert `infra/variables.tf` to 4/24 after). |
 | 2026-08-13 | PRODUCT-IDEAS only: v1 will split Advanced vs Danger Zone; MVP Step 1.2 tab list unchanged (one combined tab). |

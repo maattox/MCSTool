@@ -11,10 +11,11 @@ User=mcmgr
 Group=mcmgr
 WorkingDirectory={{WORKING_DIRECTORY}}
 ExecStart={{EXECUTABLE}} {{ARGS_JOINED}}
-ExecStop={{BIN_DIR}}/rcon-graceful-stop.sh
+ExecStop=+{{BIN_DIR}}/rcon-graceful-stop.sh
 TimeoutStopSec=120
 Restart=on-failure
 RestartSec=10
+RestartPreventExitStatus=200
 Environment=LANG=C.UTF-8
 Environment=JAVA_TOOL_OPTIONS=-Djava.net.preferIPv4Stack=true
 StandardOutput=journal

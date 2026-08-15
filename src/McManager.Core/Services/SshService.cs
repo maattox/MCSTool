@@ -139,7 +139,13 @@ public sealed class SshService : ISshService
                     + "if [ -e \"$WORLD\" ]; then sudo mv \"$WORLD\" \"$BAK\"; fi; "
                     + "sudo mkdir -p \"$WORLD\"; "
                     + "sudo unzip -q \"$ZIP\" -d \"$WORLD\"; "
-                    + "sudo chown -R ubuntu:ubuntu \"$WORLD\"; "
+                    + "case \"$WORLD\" in "
+                    + "/opt/mcmgr/*) sudo chown -R mcmgr:mcmgr \"$WORLD\"; sudo chmod 0750 \"$WORLD\" ;; "
+                    + "*) sudo chown -R ubuntu:ubuntu \"$WORLD\" ;; "
+                    + "esac; "
+                    + "if [ -x /opt/mcmgr/bin/repair-permissions.sh ] && [ \"${WORLD#/opt/mcmgr/}\" != \"$WORLD\" ]; then "
+                    + "sudo bash /opt/mcmgr/bin/repair-permissions.sh; "
+                    + "fi; "
                     + "rm -f \"$ZIP\"; "
                     + "echo OK";
 

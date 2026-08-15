@@ -63,7 +63,9 @@ main() {
     bootstrap_state_complete "${name}"
   }
 
-  run_stage layout_ready layout_create
+  # Accounts may skip on resume; permission apply/verify must never skip (SETUP-ISSUE-4).
+  run_stage layout_ready layout_ensure_accounts
+  layout_apply
 
   # Resolve + place artifact first so Java major comes from Mojang metadata.
   # shellcheck source=../modules/bootstrap-vanilla.sh
@@ -95,6 +97,9 @@ main() {
 
   run_stage manifest_written manifest_write
   run_stage idle_agent_synced idle_agent_sync_from_manifest
+
+  layout_apply
+  layout_verify
 
   if [[ "${DRY_RUN}" != "1" ]]; then
     # Optional start + light health check (RCON may not be ready until first world gen).

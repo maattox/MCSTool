@@ -8,7 +8,9 @@
 
 ```text
 onbox/mcmgr/
+  repair-permissions.sh         root wrapper: layout_ensure_accounts + apply + verify
   common/driver.sh              shared stages (… → manifest → idle_agent_sync)
+  common/layout.sh              §5 accounts / apply / fail-closed verify
   common/*.sh                   helpers (incl. idle_agent_sync.sh §10.2)
   modules/bootstrap-vanilla.sh  piston-meta Vanilla installer module only
   templates/minecraft.service.in
@@ -17,13 +19,23 @@ onbox/mcmgr/
 
 Greenfield paths (live install):
 
-| Path | Role |
-|------|------|
-| `/opt/mcmgr/server` | `server_dir` / world |
-| `/etc/mcmgr/game-manifest.json` | Authoritative game manifest |
-| `/etc/mcmgr/rcon.secret` | RCON password (never in Object Storage / manifest body) |
-| `/var/lib/mcmgr/bootstrap-state.json` | Resumable stages |
-| `/etc/systemd/system/minecraft.service` | Generated from `launch_command` |
+| Path | Owner:Group | Mode | Role |
+|------|-------------|------|------|
+| `/opt/mcmgr` | `root:mcmgr` | `0750` | Product tree root |
+| `/opt/mcmgr/server` | `mcmgr:mcmgr` | `0750` | `server_dir` / world |
+| `/opt/mcmgr/bin` | `root:mcmgr` | `0750` | ExecStop helper + `repair-permissions.sh` |
+| `/etc/mcmgr/game-manifest.json` | `root:mcmgr` | `0640` | Authoritative game manifest |
+| `/etc/mcmgr/rcon.secret` | `root:root` | `0600` | RCON password (never in Object Storage / manifest body) |
+| `/var/lib/mcmgr/bootstrap-state.json` | `root:root` | `0750` dir | Resumable stages |
+| `/etc/systemd/system/minecraft.service` | root | `0644` | Generated from `launch_command` (`User=mcmgr`, `ExecStop=+`, `RestartPreventExitStatus=200`) |
+
+Permission repair (existing VM, same contract as bootstrap — not an ad-hoc chmod):
+
+```bash
+sudo bash /path/to/onbox/mcmgr/repair-permissions.sh
+# or, once installed:
+sudo bash /opt/mcmgr/bin/repair-permissions.sh
+```
 
 ## Offline dry-run (Windows / CI)
 
@@ -34,7 +46,7 @@ cd onbox/mcmgr
 MCMGR_DRY_KEEP=1 MINECRAFT_VERSION=1.21.1 bash dry-run/run-dry-run.sh
 ```
 
-Uses [`tests/fixtures/game-metadata/`](../../tests/fixtures/game-metadata/) — no apt, no systemctl, no real jar download. Asserts §4.1-shaped manifest + generic unit (`User=mcmgr`, `nogui`, `rcon-graceful-stop.sh`).
+Uses [`tests/fixtures/game-metadata/`](../../tests/fixtures/game-metadata/) — no apt, no systemctl, no real jar download. Asserts §4.1-shaped manifest + generic unit (`User=mcmgr`, `nogui`, `ExecStop=+`, `RestartPreventExitStatus=200`).
 
 ## Live install (Phase 3 / operator VM)
 

@@ -4,7 +4,7 @@
 **Not authority for intent:** product goals still live in lab `PRODUCT-IDEAS.md` and the checklist in [`MVP-Implementation-Plan.md`](MVP-Implementation-Plan.md). This file records **as-built/as-frozen** behavior so agents and the operator do not rediscover completed steps.  
 **Update policy:** Append or revise sections when an MVP plan step completes. Broader docs (README, lab `VM-Software.md`, etc.) wait until the relevant exit gate / operator asks.
 
-**As of:** 2026-08-14 (Phase **1 DONE**; Phase **2 DONE**; Phase **3 DONE** through Step **3.3** apply/bootstrap + blank-tenancy operator test; **NEXT = Phase 4** Connect-existing).
+**As of:** 2026-08-15 (Phases **1–3 DONE**; **NEXT = Step 4.3** — in-game whitelist off; Step **4.2 DONE** permission contract / CHDIR; Step **4.1 DONE** idle SoftStop when Minecraft is down; Connect-existing is **Phase 5**).
 
 ---
 
@@ -28,7 +28,11 @@
 | **3.1** | OpenTofu module skeleton | **DONE** (`tofu validate`; no apply) |
 | **3.2** | Setup wizard UX (no apply) | **DONE** (walkable) |
 | **3.3** | Apply + bootstrap + capacity wait | **DONE** (code + blank-tenancy operator test 2026-08-14) |
-| 4+ | Connect-existing | NEXT |
+| **4.1** | Idle SoftStop when Minecraft is down + wait_forge | **DONE** (`vm_agent/` + test VM1 SoftStop proof; CHDIR was 4.2) |
+| **4.2** | Comprehensive on-box permission model | **DONE** (`layout.sh` apply+verify; test VM1 `active` / door TCP OK) |
+| **4.3** | Bootstrap: disable Minecraft in-game whitelist | **NEXT** |
+| 4.4 | Manager troubleshooting / one-shot repairs | TODO |
+| 5+ | Connect-existing | TODO (was Phase 4) |
 
 **Run:**
 
@@ -43,7 +47,7 @@ dotnet run --project "C:\Users\matto\Desktop\Minecraft Server\OCI-mc-server\src\
 ## Architecture (as built)
 
 ```text
-McManager.App (Avalonia 12, Fluent, CommunityToolkit.Mvvm)
+McManager.App (Avalonia 12, Fluent as of Phase 1, CommunityToolkit.Mvvm)
   MainWindow + MainViewModel          top bar, poller, power commands, Today usage
   FirstRunWindow                      missing-config chooser (Setup vs existing stack)
   SetupWizardWindow                   9-step collect / resume / Deploy (LocalAppData tofu + SSH bootstrap)
@@ -123,7 +127,7 @@ Placeholder tabs until later steps (all filled through 1.7):
 | Server Management | `Views/Tabs/ServerManagementView.*` | **1.6** |
 | Advanced | `Views/Tabs/AdvancedView.*` | Break-glass **1.4**; Danger Zone idle **1.7**; infra meta **2.2** |
 
-Theme: Fluent (`App.axaml`). Window ~960×640.
+Theme: Fluent (`App.axaml`) as of Phase 1. Later UI work **may add or replace** themes/icon packs via NuGet — see `AGENTS.md` / MVP plan agent rule 10. Window ~960×640.
 
 **Tab selection wiring (1.5–1.7):** `MainWindow` `TabControl.SelectionChanged` → `MainViewModel.OnMainTabChanged(index)` only when the **tab index actually changes** (nested `ListBox` selection bubbles SelectionChanged — guard with `_lastMainTabIndex` added during 1.6 fixes). Indices: 0 Whitelist, 1 Usage, 2 Server Management, 3 Advanced.
 
@@ -963,7 +967,7 @@ Writing `infra/terraform.tfvars`; invoking tofu; SSH bootstrap; seeding Object S
 | Setup stuck at `apply_stage=vm1`; bucket missing `meta/infra.json` | Greenfield GET 404 treated as publish failure; seed errors not in the deploy log | `PublishFromLocalAsync` treats missing meta as create; seed empty ledger; log seed failures |
 | Door MOTD **Control plane degraded** on first wake | `oci.env` lacked Object Storage namespace/bucket; `pull_os_budget.sh` failed closed on missing ledger | `install.sh` / Setup persist OS vars; ledger 404 is OK on first pull |
 | Reserved play IP connect timeout; ephemeral SSH worked | Guest OS had no secondary play address; reserved public IP maps to that secondary | Setup writes `/etc/netplan/99-mcmgr-play.yaml` on both VMs |
-| Vanilla “you are not white-listed” | `white-list=true` with empty `whitelist.json` | Wizard **admin Minecraft username** → seed whitelist |
+| Vanilla “you are not white-listed” | `white-list=true` with empty `whitelist.json` | Wizard **admin Minecraft username** → seed whitelist. **2026-08-15:** product intent is now **`white-list=false`** (OCI SL only) — SETUP-ISSUE-3 / MVP Step 4.3; operator already toggled the test VM manually. |
 | `wait_forge.sh`: `POLL_INTERVAL_SEC: unbound variable` | `set -u` + `${UNSET//$'\r'/}` before `:-10` | Default optional env vars **before** CR-strip (`door_vm/oci/wait_forge.sh`) |
 | `ip_to_vm1.sh failed` / `UpdatePublicIp` 404 | Compartment-only public-ip policy; door DG tag match did not enroll the instance | Tenancy policy `mcmgr-door-ip`; door DG `instance.id`; scripts `--force` + already-on-target no-op |
 | `ubuntu` cannot source `/etc/mccontrol/oci.env` | File is mode 600 root — expected | Diagnose as root; do not treat this as a misdeploy |
@@ -978,7 +982,7 @@ GitHub infra zip pull; tofu state encryption; `remote-exec`; copying `door_vm/` 
 
 ### Next
 
-**Phase 4** — Connect-existing.
+**Phase 4** — Stabilize test stack (idle SoftStop + `wait_forge`; then in-game whitelist off + Manager repair one-shots). Connect-existing is **Phase 5**.
 
 ---
 
@@ -1032,7 +1036,8 @@ Through Step **3.3** (code + operator blank-tenancy test 2026-08-14):
 
 ## Explicitly not built yet (Phase 4+)
 
-- Connect-existing hydrate UI, installer, update checks
+- **Phase 4 (NOW):** Step **4.2 DONE** (§5 permission contract; Minecraft starts as `mcmgr`). NEXT = Step **4.3** (`white-list=false`); Manager Troubleshooting one-shots (4.4)
+- Connect-existing hydrate UI (**Phase 5**), installer, update checks
 - Door SoftStop pre-stop world backup (OS-ISSUE-6 — deferred)
 - Door UTC/override/GB accounting parity with Manager
 - firewalld sync, notification center / settings gear
@@ -1044,6 +1049,11 @@ Through Step **3.3** (code + operator blank-tenancy test 2026-08-14):
 
 ## Changelog (this file)
 
+| 2026-08-15 | UI: Fluent is as-built Phase 1; agents may add NuGet themes/icons/controls later (not a lock). |
+| 2026-08-15 | Step **4.2 DONE:** §5 layout apply+verify; test VM1 Minecraft `active` without CHDIR; door TCP OK. NEXT = Step 4.3. |
+| 2026-08-15 | Step **4.1 DONE:** idle SoftStop when Minecraft is not running (`vm_agent/` + test VM1). SETUP-ISSUE-4 CHDIR remains 4.2. NEXT = Step 4.2. |
+| 2026-08-15 | SETUP-ISSUE-4: `minecraft.service` `200/CHDIR`; Phase 4.2 = comprehensive permission contract; whitelist → 4.3; repairs → 4.4. NEXT remains 4.1. |
+| 2026-08-15 | Plan insert: Phase 4 = stabilize/repair; Connect-existing → Phase 5. NEXT = Step 4.1. Operator runbook in lab `docs/Operator-Troubleshooting.md`. |
 | 2026-08-14 | Step 3.3 blank-tenancy operator test: OS seed 404=create, door OS env, netplan, Vanilla whitelist, tenancy `mcmgr-door-ip`, door DG by instance OCID, wait_forge `set -u`, ip_to_vm1 `--force`. NEXT remains Phase 4. |
 | 2026-08-12 | Step 3.2: Setup wizard UX (resume JSON, Mojang picker, Credential Manager, static plan). No apply. NEXT = Step 3.3. |
 | 2026-08-12 | Step 3.1: `infra/` OpenTofu skeleton; `tofu validate` OK; no apply. NEXT = Step 3.2. |
