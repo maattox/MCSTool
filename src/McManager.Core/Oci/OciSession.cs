@@ -57,40 +57,51 @@ public sealed class OciSession : IDisposable
 
     public static ServiceResult<OciSession> TryCreate(ManagerLocalConfig config)
     {
+        var configPath = LocalConfigStore.ExpandPath(config.Oci.ConfigFile);
+        var profile = string.IsNullOrWhiteSpace(config.Oci.Profile) ? "DEFAULT" : config.Oci.Profile;
+        return TryCreate(configPath, profile, config.Oci.Region);
+    }
+
+    /// <summary>
+    /// Build a session from an OCI config file + profile + region without a full
+    /// <see cref="ManagerLocalConfig"/> (Connect-existing auto-detect).
+    /// </summary>
+    public static ServiceResult<OciSession> TryCreate(string configFile, string profile, string regionId)
+    {
         try
         {
-            var configPath = LocalConfigStore.ExpandPath(config.Oci.ConfigFile);
+            var configPath = LocalConfigStore.ExpandPath(configFile);
             if (string.IsNullOrWhiteSpace(configPath))
                 return ServiceResult<OciSession>.Fail("OCI config file path is empty.");
 
             if (!File.Exists(configPath))
                 return ServiceResult<OciSession>.Fail($"OCI config file not found: {configPath}");
 
-            var profile = string.IsNullOrWhiteSpace(config.Oci.Profile) ? "DEFAULT" : config.Oci.Profile;
+            var resolvedProfile = string.IsNullOrWhiteSpace(profile) ? "DEFAULT" : profile.Trim();
 
             ConfigFileAuthenticationDetailsProvider authProvider;
             try
             {
-                authProvider = new ConfigFileAuthenticationDetailsProvider(configPath, profile);
+                authProvider = new ConfigFileAuthenticationDetailsProvider(configPath, resolvedProfile);
             }
             catch (Exception ex)
             {
                 return ServiceResult<OciSession>.Fail(
-                    $"Failed to load OCI profile '{profile}' from {configPath}: {ex.Message}");
+                    $"Failed to load OCI profile '{resolvedProfile}' from {configPath}: {ex.Message}");
             }
 
-            if (string.IsNullOrWhiteSpace(config.Oci.Region))
-                return ServiceResult<OciSession>.Fail("oci.region is empty in local config.");
+            if (string.IsNullOrWhiteSpace(regionId))
+                return ServiceResult<OciSession>.Fail("OCI region is empty.");
 
             Region region;
             try
             {
-                region = Region.FromRegionId(config.Oci.Region);
+                region = Region.FromRegionId(regionId.Trim());
             }
             catch (Exception ex)
             {
                 return ServiceResult<OciSession>.Fail(
-                    $"Invalid oci.region '{config.Oci.Region}': {ex.Message}");
+                    $"Invalid OCI region '{regionId}': {ex.Message}");
             }
 
             var retry = CreateDefaultRetryConfiguration();

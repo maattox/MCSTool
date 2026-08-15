@@ -11,10 +11,16 @@
                            FontSize="16" />
                 <TextBlock TextWrapping="Wrap"
                            Opacity="0.8"
-                           Text="Greenfield deploy / repair wizard. Deploy runs OpenTofu apply (operator-only against a real tenancy) then SSH bootstrap. State lives under %LOCALAPPDATA%\McManager\tofu — not repo infra/terraform.tfvars." />
-                <Button Content="Deploy / repair infrastructure"
-                        Command="{Binding OpenSetupCommand}"
-                        HorizontalAlignment="Left" />
+                           Text="Greenfield deploy / repair wizard. Deploy runs OpenTofu apply (operator-only against a real tenancy) then SSH bootstrap. Auto-detect is button-gated (never on launch): it reads ~/.oci profiles, finds a mcmgr or tagged compartment, and hydrates config from meta/infra.json after you confirm. State lives under %LOCALAPPDATA%\McManager\tofu — not repo infra/terraform.tfvars." />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="Deploy / repair infrastructure"
+                            Command="{Binding OpenSetupCommand}"
+                            HorizontalAlignment="Left" />
+                    <Button Content="Auto-detect infrastructure"
+                            Command="{Binding AutoDetectCommand}"
+                            IsEnabled="{Binding !IsBusy}"
+                            HorizontalAlignment="Left" />
+                </StackPanel>
             </StackPanel>
 
             <StackPanel Spacing="12">

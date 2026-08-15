@@ -233,6 +233,47 @@ public partial class AdvancedViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private async Task AutoDetectAsync()
+    {
+        if (IsBusy)
+            return;
+
+        var window = (Avalonia.Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)
+            ?.MainWindow;
+        if (window is null)
+        {
+            StatusMessage = "No window for Auto-detect.";
+            return;
+        }
+
+        IsBusy = true;
+        _setBusy(true);
+        StatusMessage = "Auto-detect: scanning OCI profiles…";
+        var progress = new Progress<string>(msg => StatusMessage = msg);
+
+        try
+        {
+            var outcome = await ConnectExistingFlow.RunAsync(window, progress);
+            if (outcome == ConnectExistingOutcome.Connected)
+            {
+                StatusMessage = "Connected. Reloading Manager…";
+                MainWindow.ShowReplacing(window);
+                return;
+            }
+
+            if (outcome == ConnectExistingOutcome.NoneFound)
+                StatusMessage = "No product stack found. Existing local config was not changed.";
+            else if (outcome == ConnectExistingOutcome.Cancelled)
+                StatusMessage = "Auto-detect cancelled. Existing local config was not changed.";
+        }
+        finally
+        {
+            IsBusy = false;
+            _setBusy(false);
+        }
+    }
+
+    [RelayCommand]
     private async Task BreakGlassStartAsync()
     {
         if (_compute is null)

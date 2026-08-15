@@ -80,13 +80,13 @@ Do not commit. Do not start the following large step unless I say so.
 | **2** | On-box / contract freeze for product | **DONE** |
 | **3** | Setup wizard + OpenTofu greenfield | **DONE** |
 | **4** | Stabilize test stack + operator repair | **DONE** |
-| **5** | Connect-existing (auto-detect + meta) | **TODO** — NEXT |
-| **6** | UI polish (novice-ready) | **TODO** |
+| **5** | Connect-existing (auto-detect + meta) | **DONE** |
+| **6** | UI polish (novice-ready) | **TODO** — NEXT |
 | **7** | Guide + greenfield E2E proof | **TODO** |
 | **8** | Packaging, updates, closed beta | **TODO** |
 | **9** | MVP exit review | **TODO** |
 
-**Current NEXT step:** [Phase 5 — Connect existing](#phase-5--connect-existing-mvp-light)
+**Current NEXT step:** [Phase 6 — UI polish](#phase-6--ui-polish)
 
 Phases **1–3 are frozen** (do not rewrite those step bodies). Historical step changelogs that said “NEXT = Phase 4” meant Connect-existing at the time; that work is now **Phase 5**.
 
@@ -647,7 +647,7 @@ Phases 0–3 stay **DONE**; do not rewrite them. Bootstrap/HCL fixes that belong
 
 ## Phase 5 — Connect existing (MVP-light)
 
-**Status:** TODO  
+**Status:** DONE  
 
 **Do**
 
@@ -667,13 +667,13 @@ Phases 0–3 stay **DONE**; do not rewrite them. Bootstrap/HCL fixes that belong
 
 **Done when:** New PC can attach to existing deployment without full Setup.
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-15 — **DONE.** Button-gated Auto-detect (first-run + Advanced). Sequential `~/.oci` profiles; compartments named `mcmgr` **or** tagged `mcmgr-domain=mc-server-compartment`; bucket `mcmgr-shared-data` and/or any bucket with `meta/infra.json`; hydrate `config.local.json` from meta (SSH key / RCON / OCI profile stay local); overwrite confirm; chooser on multiple matches; soft `infra_schema` warn+confirm (no meta mutate). “I already have a stack” still skips detect. No launch-time OCI probe. NEXT = Phase **6**. Do not start Phase 6 in this session.
 
 ---
 
 ## Phase 6 — UI polish
 
-**Status:** TODO  
+**Status:** NEXT  
 
 **Do**
 
@@ -856,7 +856,7 @@ Phases 0–3 stay **DONE**; do not rewrite them. Bootstrap/HCL fixes that belong
 
 ## Plan changelog
 
-| 2026-08-15 | Step **4.4 DONE:** Troubleshooting tab one-shots (preferred park-IP + door/idle/netplan/permissions). Phase 4 complete. NEXT = Phase **5** (Connect-existing). |
+| 2026-08-15 | Phase **5 DONE:** Connect-existing auto-detect (button-gated; meta hydrate; chooser; local-only SSH/RCON). NEXT = Phase **6** (UI polish). Do not start Phase 6 in this session. |
 | 2026-08-15 | Step **4.3 DONE:** bootstrap/Re-Deploy write `white-list=false`; username optional; test VM1 product repair flipped leftover `true`. NEXT = Step **4.4**. |
 | 2026-08-15 | UI work: agents may search for and add NuGet packages (themes, icons, controls, etc.) — not restricted to Fluent / already-referenced libraries. |
 | 2026-08-15 | Step **4.2 DONE:** §5 permission contract in `onbox/mcmgr` layout+verify; test VM1 Minecraft `active` without CHDIR; door TCP OK. NEXT = Step **4.3**. |

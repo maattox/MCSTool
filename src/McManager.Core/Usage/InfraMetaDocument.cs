@@ -238,6 +238,185 @@ public sealed class InfraMetaDocument
             + $"bucket={ObjectStorage.Namespace}/{ObjectStorage.Bucket}";
     }
 
+    /// <summary>
+    /// Operator-facing Connect-existing confirm text (profile, region, compartment, play IP, VMs, bucket).
+    /// </summary>
+    public string FormatConnectSummary(string profileName, string compartmentName)
+    {
+        var play = string.IsNullOrWhiteSpace(Play.ReservedPublicIp) ? "—" : Play.ReservedPublicIp;
+        var vm1 = string.IsNullOrWhiteSpace(Vm1.DisplayName) ? Vm1.InstanceId : Vm1.DisplayName;
+        var door = string.IsNullOrWhiteSpace(Door.DisplayName) ? Door.InstanceId : Door.DisplayName;
+        var bucket = string.IsNullOrWhiteSpace(ObjectStorage.Bucket)
+            ? "—"
+            : $"{ObjectStorage.Namespace}/{ObjectStorage.Bucket}";
+        return
+            $"Profile: {profileName}\n"
+            + $"Region: {Region}\n"
+            + $"Compartment: {compartmentName}\n"
+            + $"Play IP: {play}\n"
+            + $"VM1: {vm1}\n"
+            + $"Door: {door}\n"
+            + $"Bucket: {bucket}";
+    }
+
+    /// <summary>
+    /// Hydrate local manage config from meta. Never copies SSH private key paths, OCI config
+    /// paths, or RCON passwords from Object Storage — those stay operator-local.
+    /// </summary>
+    public ManagerLocalConfig ToLocalConfig(
+        string ociConfigFile,
+        string ociProfile,
+        string sshKeyPath,
+        string? rconPassword = null,
+        ManagerLocalConfig? preserveLocal = null)
+    {
+        var key = FirstNonEmpty(sshKeyPath, preserveLocal?.Vm1.SshKeyPath, preserveLocal?.Door.SshKeyPath);
+        var rcon = FirstNonEmpty(rconPassword, preserveLocal?.Rcon.Password);
+        var prefixes = ObjectStorage.Prefixes;
+        return new ManagerLocalConfig
+        {
+            SchemaVersion = 1,
+            AdminName = string.IsNullOrWhiteSpace(preserveLocal?.AdminName)
+                ? "admin"
+                : preserveLocal!.AdminName,
+            Oci = new OciSettings
+            {
+                ConfigFile = string.IsNullOrWhiteSpace(ociConfigFile)
+                    ? "%USERPROFILE%\\.oci\\config"
+                    : ociConfigFile.Trim(),
+                Profile = string.IsNullOrWhiteSpace(ociProfile) ? "DEFAULT" : ociProfile.Trim(),
+                Region = Region?.Trim() ?? "",
+                CompartmentId = CompartmentId?.Trim() ?? "",
+                TenancyId = TenancyId?.Trim() ?? "",
+            },
+            Network = new NetworkSettings
+            {
+                VcnId = Network.VcnId?.Trim() ?? "",
+                SubnetId = Network.SubnetId?.Trim() ?? "",
+                SecurityListId = Network.SecurityListId?.Trim() ?? "",
+                MinecraftPort = Network.MinecraftPort > 0 ? Network.MinecraftPort : 25565,
+                SshPort = Network.SshPort > 0 ? Network.SshPort : 22,
+                FirewalldZone = preserveLocal?.Network.FirewalldZone ?? "public",
+            },
+            Vm1 = new Vm1Settings
+            {
+                InstanceId = Vm1.InstanceId?.Trim() ?? "",
+                DisplayName = Vm1.DisplayName?.Trim() ?? "",
+                Shape = Vm1.Shape?.Trim() ?? "",
+                ShapeOcpus = Vm1.ShapeOcpus,
+                ShapeMemoryGb = Vm1.ShapeMemoryGb,
+                PrimaryPrivateIp = Vm1.PrimaryPrivateIp?.Trim() ?? "",
+                SecondaryPrivateIp = Vm1.SecondaryPrivateIp?.Trim() ?? "",
+                SecondaryPrivateIpId = Vm1.SecondaryPrivateIpId?.Trim() ?? "",
+                SshHost = Vm1.SshHost?.Trim() ?? "",
+                SshUser = string.IsNullOrWhiteSpace(Vm1.SshUser) ? "ubuntu" : Vm1.SshUser.Trim(),
+                SshKeyPath = key,
+                WorldPath = Vm1.WorldPath?.Trim() ?? "",
+                MinecraftUnit = string.IsNullOrWhiteSpace(Vm1.MinecraftUnit)
+                    ? "minecraft"
+                    : Vm1.MinecraftUnit.Trim(),
+            },
+            Door = new DoorSettings
+            {
+                InstanceId = Door.InstanceId?.Trim() ?? "",
+                DisplayName = Door.DisplayName?.Trim() ?? "",
+                PrimaryPrivateIp = Door.PrimaryPrivateIp?.Trim() ?? "",
+                SecondaryPrivateIp = Door.SecondaryPrivateIp?.Trim() ?? "",
+                SecondaryPrivateIpId = Door.SecondaryPrivateIpId?.Trim() ?? "",
+                SshHost = Door.SshHost?.Trim() ?? "",
+                SshUser = string.IsNullOrWhiteSpace(Door.SshUser) ? "ubuntu" : Door.SshUser.Trim(),
+                SshKeyPath = key,
+                HttpPort = Door.HttpPort > 0 ? Door.HttpPort : 8080,
+            },
+            Play = new PlaySettings
+            {
+                ReservedPublicIp = Play.ReservedPublicIp?.Trim() ?? "",
+                ReservedPublicIpId = Play.ReservedPublicIpId?.Trim() ?? "",
+            },
+            ObjectStorage = new ObjectStorageSettings
+            {
+                Namespace = ObjectStorage.Namespace?.Trim() ?? "",
+                Bucket = ObjectStorage.Bucket?.Trim() ?? "",
+                BucketId = ObjectStorage.BucketId?.Trim() ?? "",
+                SoftCapGb = ObjectStorage.SoftCapGb > 0 ? ObjectStorage.SoftCapGb : 9.5,
+                BackupEnabled = ObjectStorage.BackupEnabled,
+                Prefixes = new ObjectStoragePrefixes
+                {
+                    Meta = NormalizePrefix(prefixes.Meta, "meta/"),
+                    Ledger = NormalizePrefix(prefixes.Ledger, "ledger/"),
+                    Budget = NormalizePrefix(prefixes.Budget, "budget/"),
+                    Ip = NormalizePrefix(prefixes.Ip, "ip/"),
+                    Messages = NormalizePrefix(prefixes.Messages, "messages/"),
+                    Backups = NormalizePrefix(prefixes.Backups, "backups/"),
+                },
+            },
+            Budget = preserveLocal?.Budget ?? new BudgetSettings(),
+            Rcon = new RconSettings
+            {
+                Port = preserveLocal?.Rcon.Port > 0 ? preserveLocal.Rcon.Port : 25575,
+                Password = rcon,
+            },
+        };
+    }
+
+    /// <summary>
+    /// Soft-validate for Connect existing. Missing required OCIDs are errors (skip stack).
+    /// Schema/version/mode mismatches are warnings (confirm, do not mutate).
+    /// <c>ssh_host</c> may be null.
+    /// </summary>
+    public IReadOnlyList<string> ValidateForConnect(out IReadOnlyList<string> warnings)
+    {
+        var errors = new List<string>();
+        var warns = new List<string>();
+
+        if (Version != DocumentVersion)
+        {
+            warns.Add(
+                $"Document version is {Version} (this Manager writes {DocumentVersion}). "
+                + "Connect will not modify the stack.");
+        }
+
+        if (InfraSchemaValue != InfraSchema)
+        {
+            warns.Add(
+                $"infra_schema is {InfraSchemaValue} (this Manager expects {InfraSchema}). "
+                + "Connect will not modify the stack.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(Mode)
+            && !string.Equals(Mode, ModeAlwaysFree, StringComparison.Ordinal))
+        {
+            warns.Add($"mode is '{Mode}' (MVP expects '{ModeAlwaysFree}').");
+        }
+
+        if (string.IsNullOrWhiteSpace(StackVersion))
+            errors.Add("stack_version is required.");
+        if (string.IsNullOrWhiteSpace(StackName))
+            errors.Add("stack_name is required.");
+        Require(errors, Region, "region");
+        Require(errors, TenancyId, "tenancy_id");
+        Require(errors, CompartmentId, "compartment_id");
+        Require(errors, Play.ReservedPublicIp, "play.reserved_public_ip");
+        Require(errors, Play.ReservedPublicIpId, "play.reserved_public_ip_id");
+        Require(errors, Game.ServerKind, "game.server_kind");
+        Require(errors, Game.MinecraftVersion, "game.minecraft_version");
+        Require(errors, Network.VcnId, "network.vcn_id");
+        Require(errors, Network.SubnetId, "network.subnet_id");
+        Require(errors, Network.SecurityListId, "network.security_list_id");
+        if (Network.MinecraftPort <= 0)
+            errors.Add("network.minecraft_port must be > 0.");
+        if (Network.SshPort <= 0)
+            errors.Add("network.ssh_port must be > 0.");
+        ValidateVm1(errors);
+        ValidateDoor(errors);
+        ValidateObjectStorage(errors);
+        if (ContainsSecretLeak(out var leak))
+            errors.Add(leak!);
+
+        warnings = warns;
+        return errors;
+    }
+
     public static bool IsSupportedSchema(int infraSchema) =>
         infraSchema == InfraSchema;
 
@@ -313,6 +492,17 @@ public sealed class InfraMetaDocument
 
     private static string? NullIfWhiteSpace(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private static string FirstNonEmpty(params string?[] values)
+    {
+        foreach (var value in values)
+        {
+            if (!string.IsNullOrWhiteSpace(value))
+                return value.Trim();
+        }
+
+        return "";
+    }
 
     private static string NormalizePrefix(string? value, string fallback)
     {

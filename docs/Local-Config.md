@@ -41,7 +41,24 @@ Included: current step, Always Free / residual / capacity flags, OCI profile + r
 
 Dry-run: set `MCMANAGER_TOFU_DRY_RUN=1` so Deploy uses a fake tofu runner and does **not** create OCI resources or overwrite `config.local.json`. Agents must use this (or not click Deploy). A real apply creates another Always Free A1 (product MVP **4 OCPU / 24 GB**; **TEMPORARY test default 2 / 12** — revert after 3.3). In the **same** tenancy as the live lab that competes for Ampere hours; a **separate** test tenancy does not.
 
-First-run: if `config.local.json` is missing, the app opens a chooser (Setup vs “I already have a stack”) instead of MainWindow. With a valid manage config, Setup is **Advanced → Deploy / repair infrastructure**. To walk first-run while a real config exists, point `MCMANAGER_CONFIG_DIR` at an empty directory.
+First-run: if `config.local.json` is missing, the app opens a chooser (Setup vs **Auto-detect infrastructure** vs “I already have a stack”) instead of MainWindow. Auto-detect is **button-gated** — the app does **not** probe OCI on launch. “I already have a stack” opens the manage UI without scanning (hand-seeded config). With a valid manage config, Setup and Auto-detect are on **Advanced**. To walk first-run while a real config exists, point `MCMANAGER_CONFIG_DIR` at an empty directory.
+
+## Connect existing (hydrate from `meta/infra.json`)
+
+Button-gated discovery (`ConnectExistingService`):
+
+1. Read `%USERPROFILE%\.oci\config` and try each usable profile (region + tenancy + loadable key). Sequential; 429 backoff via `OciSession`.
+2. List compartments; keep display name **`mcmgr`** **or** freeform tag **`mcmgr-domain=mc-server-compartment`**.
+3. In each candidate, look for `meta/infra.json` (prefer bucket `mcmgr-shared-data`, then other buckets in that compartment). Lab buckets may use another name — the object records the live bucket.
+4. Validate required OCIDs. Soft `infra_schema` / document-version mismatch → warn + extra confirm; Connect does **not** publish or mutate meta. Multiple matches → chooser (never first-hit-wins).
+5. On confirm: write `data/config.local.json` from meta (world_path / unit as recorded — lab may still be `/home/ubuntu/minecraft/server`; greenfield `/opt/mcmgr/`).
+6. If that file already exists: confirm overwrite first. Existing **SSH key path** and **RCON** on this PC are preserved; the operator is prompted to browse a private key only when none is present. OCI profile is the one that found the stack.
+
+**Never in meta / Object Storage:** SSH private key path, OCI config file path, RCON password.
+
+**Never invent:** RCON password, SSH key path. Cancel / none-found does not delete an existing seed.
+
+Optional targeted GetInstance/VNIC refresh fills a missing `ssh_host` from the recorded instance OCID — no tenancy-wide List of instances.
 
 ## Load path
 
@@ -78,7 +95,9 @@ Required for early API work:
 - `play.reserved_public_ip` (+ `reserved_public_ip_id` for IP move / diagnostics)
 - `object_storage.namespace`, `object_storage.bucket`
 
-When Connect existing / auto-detect lands, these should be hydratable from Object Storage **`meta/infra.json`** (full OCID set in lab `PRODUCT-IDEAS.md` / product [`Contracts-Object-Storage.md`](Contracts-Object-Storage.md)). Local file still holds SSH private key path, OCI profile, and RCON — not Object Storage.
+These fields are hydratable from Object Storage **`meta/infra.json`** (full OCID set in lab `PRODUCT-IDEAS.md` / product [`Contracts-Object-Storage.md`](Contracts-Object-Storage.md)). Local file still holds SSH private key path, OCI profile, and RCON — not Object Storage.
+
+**Connect existing (Phase 5):** First-run **Auto-detect infrastructure** and Advanced **Auto-detect infrastructure** hydrate `config.local.json` from `meta/infra.json` after a confirm (and overwrite confirm if a seed already exists). See [Connect existing](#connect-existing-hydrate-from-metainfrajson) above.
 
 **Manage MVP (Step 2.2):** Advanced tab can **Publish infra meta from local config** to write nested `meta/infra.json` v2 (and migrate a legacy flat v1 object). Refresh reads the bucket object back. Game fields (`server_kind` / `minecraft_version`) are editable on that tab until Setup owns them.
 

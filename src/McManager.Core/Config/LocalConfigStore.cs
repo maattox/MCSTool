@@ -145,6 +145,21 @@ public static class LocalConfigStore
         return loaded.Succeeded && loaded.Config is not null;
     }
 
+    /// <summary>Path to <c>config.local.json</c> if a data directory can be resolved.</summary>
+    public static string? GetConfigFilePath(string? dataDirectory = null)
+    {
+        dataDirectory ??= TryFindDataDirectory();
+        return dataDirectory is null
+            ? null
+            : Path.Combine(dataDirectory, ConfigFileName);
+    }
+
+    public static bool ConfigFileExists(string? dataDirectory = null)
+    {
+        var path = GetConfigFilePath(dataDirectory);
+        return path is not null && File.Exists(path);
+    }
+
     public static LocalConfigLoadResult Load()
     {
         var dataDir = TryFindDataDirectory();

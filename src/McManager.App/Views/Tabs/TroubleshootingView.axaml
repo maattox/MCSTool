@@ -22,43 +22,8 @@
         </Style>
     </UserControl.Styles>
 
-    <DockPanel Margin="16">
-        <Grid DockPanel.Dock="Bottom" RowDefinitions="Auto,Auto,*" MinHeight="168">
-            <TextBlock Text="Result log"
-                       FontWeight="SemiBold"
-                       Margin="0,12,0,4" />
-            <TextBlock Grid.Row="1"
-                       Text="{Binding StatusMessage}"
-                       TextWrapping="Wrap"
-                       Opacity="0.85"
-                       Margin="0,0,0,6" />
-            <Border Grid.Row="2"
-                    Classes="copyHost"
-                    MinHeight="120"
-                    BorderThickness="1"
-                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                    CornerRadius="4"
-                    ClipToBounds="True">
-                <Grid>
-                    <TextBox Text="{Binding ResultLog, Mode=OneWay}"
-                             IsReadOnly="True"
-                             AcceptsReturn="True"
-                             TextWrapping="Wrap"
-                             BorderThickness="0"
-                             FontFamily="Consolas,Courier New,monospace"
-                             FontSize="11"
-                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                             ScrollViewer.VerticalScrollBarVisibility="Auto" />
-                    <Button Classes="copyBtn"
-                            Content="Copy"
-                            Command="{Binding CopyResultLogCommand}"
-                            ToolTip.Tip="Copy result log"
-                            IsEnabled="{Binding !IsBusy}" />
-                </Grid>
-            </Border>
-        </Grid>
-
-        <ScrollViewer>
+    <Grid Margin="16" RowDefinitions="*,Auto">
+        <ScrollViewer Grid.Row="0">
             <StackPanel Spacing="16" MaxWidth="760">
                 <StackPanel Spacing="6">
                     <TextBlock Text="Troubleshooting"
@@ -188,5 +153,45 @@
                 </Border>
             </StackPanel>
         </ScrollViewer>
-    </DockPanel>
+
+        <Grid Grid.Row="1"
+              Height="176"
+              RowDefinitions="Auto,Auto,*"
+              Margin="0,8,0,0">
+            <TextBlock Text="Result log"
+                       FontWeight="SemiBold"
+                       Margin="0,0,0,4" />
+            <TextBlock Grid.Row="1"
+                       Text="{Binding StatusMessage}"
+                       TextWrapping="Wrap"
+                       TextTrimming="CharacterEllipsis"
+                       MaxLines="2"
+                       Opacity="0.85"
+                       Margin="0,0,0,6" />
+            <Border Grid.Row="2"
+                    Classes="copyHost"
+                    BorderThickness="1"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                    CornerRadius="4"
+                    ClipToBounds="True">
+                <Grid>
+                    <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                                  VerticalScrollBarVisibility="Auto">
+                        <TextBox Text="{Binding ResultLog, Mode=OneWay}"
+                                 IsReadOnly="True"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 BorderThickness="0"
+                                 FontFamily="Consolas,Courier New,monospace"
+                                 FontSize="11" />
+                    </ScrollViewer>
+                    <Button Classes="copyBtn"
+                            Content="Copy"
+                            Command="{Binding CopyResultLogCommand}"
+                            ToolTip.Tip="Copy result log"
+                            IsEnabled="{Binding !IsBusy}" />
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
 </UserControl>

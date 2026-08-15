@@ -107,6 +107,8 @@ The operator bucket previously contained a **legacy flat v1** object (`infra_sch
 
 MVP Connect existing may warn and require confirmation on an unsupported `infra_schema`; it must not silently mutate an incompatible stack. v1 may enforce compatibility more strictly.
 
+**Connect existing (Phase 5):** After the operator clicks **Auto-detect infrastructure** (first-run or Advanced — never on launch), Manager locates a product compartment + bucket, **reads** this object, and hydrates `data/config.local.json`. Prefer this object over rediscovering every OCID via tags. Targeted Get-by-OCID to refresh a stale `ssh_host` is allowed. Connect does not publish or migrate meta.
+
 ### Canonical shape
 
 ```json
@@ -657,7 +659,7 @@ No live objects were modified during review.
 
 **Idle timeout meaning (MVP Step 4.1 — no schema change):** `budget/config.json` `idle_timeout_minutes` stays the same key. Product intent now includes SoftStop when Minecraft is **not running**, not only when RCON `list` is empty. Do **not** add a second timeout field.
 
-1. **Step 2.2 (done):** canonical nested `meta/infra.json` v2 read/write + live legacy migration; unsupported newer schema rejected on read.
+1. **Step 2.2 (done):** canonical nested `meta/infra.json` v2 read/write + live legacy migration; unsupported newer schema rejected on **manage** read (`InfraMetaStore.GetAsync`). Connect existing uses a **lenient** parse (warn + confirm) and does not mutate the object.
 2. **DONE (Step 2.4):** VM1 `meta/oversized-world-backup.json` set/skip behavior in `vm_agent/world_backup.py`.
 3. **Step 2.4:** make door wake force-refresh/validate authoritative ledger+budget rather than relying only on flags/cache.
 4. **Step 2.4:** align door UTC/override/OCPU+GB accounting with Manager and VM1, or record an operator-approved deferral.
@@ -681,6 +683,8 @@ Product:
 
 - `src/McManager.Core/Usage/*`
 - `src/McManager.Core/Services/UsageBudgetStore.cs`
+- `src/McManager.Core/Services/InfraMetaStore.cs`
+- `src/McManager.Core/Services/ConnectExistingService.cs`
 - `src/McManager.Core/Services/ObjectStorageService.cs`
 - `src/McManager.Core/Services/BackupStore.cs`
 - `docs/Local-Config.md`

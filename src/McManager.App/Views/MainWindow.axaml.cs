@@ -1,5 +1,6 @@
 ﻿using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using McManager.App.ViewModels;
 
 namespace McManager.App.Views;
@@ -14,6 +15,22 @@ public partial class MainWindow : Window
         Activated += (_, _) => (DataContext as MainViewModel)?.SetWindowFocused(true);
         Deactivated += (_, _) => (DataContext as MainViewModel)?.SetWindowFocused(false);
         Closed += (_, _) => (DataContext as MainViewModel)?.Dispose();
+    }
+
+    /// <summary>After Connect-existing writes config, replace the current window with a fresh manage UI.</summary>
+    public static void ShowReplacing(Window current)
+    {
+        var main = new MainWindow
+        {
+            DataContext = new MainViewModel(),
+        };
+
+        if (Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            desktop.MainWindow = main;
+
+        main.Show();
+        if (!ReferenceEquals(current, main))
+            current.Close();
     }
 
     private void OnMainTabsSelectionChanged(object? sender, SelectionChangedEventArgs e)

@@ -19,6 +19,7 @@ public partial class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             // Existing manage config → MainWindow (do not hijack every launch with Setup).
+            // Connect-existing auto-detect is button-gated only (First-run / Advanced).
             desktop.MainWindow = LocalConfigStore.HasManageConfig()
                 ? new MainWindow { DataContext = new MainViewModel() }
                 : new FirstRunWindow();
