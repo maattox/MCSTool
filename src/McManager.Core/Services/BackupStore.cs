@@ -16,6 +16,34 @@ public sealed class WorldBackupInfo
             ? "—"
             : TimeCreated.Value.UtcDateTime.ToString("yyyy-MM-dd HH:mm") + " UTC";
 
+    public string TimeDisplayLocal =>
+        TimeCreated is null
+            ? "—"
+            : TimeCreated.Value.ToLocalTime().ToString("MMM d, yyyy, h:mm tt");
+
+    public string RelativeTimeDisplay => FormatRelative(TimeCreated);
+
+    public static string FormatRelative(DateTimeOffset? time)
+    {
+        if (time is null)
+            return "—";
+
+        var age = DateTimeOffset.Now - time.Value;
+        if (age.TotalSeconds < 45)
+            return "just now";
+        if (age.TotalMinutes < 60)
+            return $"{Math.Max(1, (int)age.TotalMinutes)} min ago";
+        if (age.TotalHours < 24)
+            return $"{Math.Max(1, (int)age.TotalHours)} hr ago";
+        if (age.TotalDays < 7)
+        {
+            var days = Math.Max(1, (int)age.TotalDays);
+            return days == 1 ? "1 day ago" : $"{days} days ago";
+        }
+
+        return time.Value.ToLocalTime().ToString("MMM d, yyyy");
+    }
+
     public static string FormatSize(long bytes)
     {
         const double kib = 1024.0;

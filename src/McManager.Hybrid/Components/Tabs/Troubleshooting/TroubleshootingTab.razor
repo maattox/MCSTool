@@ -1,0 +1,153 @@
+@inject TroubleshootingViewModel Vm
+@implements IDisposable
+
+<div style="display:flex;flex-direction:column;gap:16px;max-width:760px;">
+    <div>
+        <div style="font-size:16px;font-weight:600;">Troubleshooting</div>
+        <p style="margin:4px 0 0;font-size:13px;color:var(--text-secondary);">
+            One-click repairs for a stuck doorbell. Confirm before anything that moves the play IP. Idle disable and raw VM stop stay on Advanced / Danger Zone.
+        </p>
+    </div>
+
+    <div class="mcm-section-card">
+        <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
+            <span style="font-size:14px;font-weight:600;">Play address</span>
+            <button type="button"
+                    class="mcm-help"
+                    title="FN-ISSUE-1: $1 Function SoftStops VM1 and the door; Park play IP is the recovery.">
+                <i class="ti ti-help" aria-hidden="true"></i>
+                <span class="sr-only">About Play address</span>
+            </button>
+        </div>
+        <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);">
+            If friends cannot connect: if the game VM is running, put the reserved IP on it; otherwise start the doorbell VM and park the IP there. Also covers leftover after the $1 last-resort brake stops both VMs.
+        </p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+            <button type="button"
+                    disabled="@Vm.IsBusy"
+                    title="Moves the reserved play IP to the game VM if it is running, otherwise to the doorbell."
+                    @onclick="Vm.ParkPlayIpAsync">
+                Park reserved play IP
+            </button>
+            <button type="button"
+                    disabled="@Vm.IsBusy"
+                    title="Puts the secondary play IP back on the guest network if it is missing."
+                    @onclick="Vm.ReapplyNetplanAsync">
+                Re-apply play netplan
+            </button>
+        </div>
+    </div>
+
+    <div class="mcm-section-card">
+        <div style="font-size:14px;font-weight:600;margin-bottom:6px;">Doorbell state</div>
+        <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);">
+            Use Diagnose if the doorbell is stuck Starting after Minecraft is actually up. Diagnose is read-only. Reset does not move the IP.
+        </p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+            <button type="button" disabled="@Vm.IsBusy" @onclick="Vm.DiagnoseWaitForgeAsync">
+                Diagnose wait_forge
+            </button>
+            <button type="button" disabled="@Vm.IsBusy" @onclick="Vm.ResetDoorStateAsync">
+                Reset door state
+            </button>
+            <button type="button" disabled="@Vm.IsBusy" @onclick="Vm.UnstickDoorAsync">
+                Unstick after game is up
+            </button>
+        </div>
+    </div>
+
+    <div class="mcm-section-card">
+        <div style="font-size:14px;font-weight:600;margin-bottom:6px;">Budget / hours ledger</div>
+        <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);">
+            Refresh re-pulls the shared budget on the doorbell. Heal an open hours ledger only when the game VM is already stopped.
+        </p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+            <button type="button" disabled="@Vm.IsBusy" @onclick="Vm.RefreshOsBudgetAsync">
+                Refresh door OS budget
+            </button>
+            <button type="button" disabled="@Vm.IsBusy" @onclick="Vm.HealLedgerAsync">
+                Heal open ledger
+            </button>
+        </div>
+    </div>
+
+    <div class="mcm-section-card">
+        <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
+            <span style="font-size:14px;font-weight:600;">Game VM / idle timer</span>
+            <button type="button"
+                    class="mcm-help"
+                    title="OS-ISSUE-7: boot / Minecraft start force-enables the idle timer. Minecraft Restart is on the top bar.">
+                <i class="ti ti-help" aria-hidden="true"></i>
+                <span class="sr-only">About Game VM / idle timer</span>
+            </button>
+        </div>
+        <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);">
+            Minecraft Restart is on the top bar. Repair permissions uses the same install layout as Setup. Force-enable idle does not start Minecraft — a reboot already turns the timer back on.
+        </p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
+            <button type="button" disabled="@Vm.IsBusy" @onclick="Vm.ShowIdleStatusAsync">
+                Idle timer status
+            </button>
+            <button type="button" disabled="@Vm.IsBusy" @onclick="Vm.ForceEnableIdleAsync">
+                Force-enable idle timer
+            </button>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+            <button type="button" disabled="@Vm.IsBusy" @onclick="Vm.DiagnoseMinecraftAsync">
+                Minecraft CHDIR diagnosis
+            </button>
+            <button type="button" disabled="@Vm.IsBusy" @onclick="Vm.RepairPermissionsAsync">
+                Repair game permissions
+            </button>
+        </div>
+    </div>
+
+    <div class="mcm-section-card">
+        <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
+            <span style="font-size:14px;font-weight:600;">If the game VM hangs while stopping</span>
+            <button type="button"
+                    class="mcm-help"
+                    title="OS-ISSUE-5: guest ACPI SoftStop hang. In the Oracle Console, open the game VM and use Stop → Reset (or Force stop) if it stays Stopping.">
+                <i class="ti ti-help" aria-hidden="true"></i>
+                <span class="sr-only">About VM hang while stopping</span>
+            </button>
+        </div>
+        <p style="margin:0;font-size:13px;color:var(--text-secondary);">
+            That hang is not a Manager button. In the Oracle Console, open the game VM and use Stop → Reset (or Force stop) if it stays Stopping. Then Park play IP so the address returns to the doorbell. Heal the hours ledger only after the VM is Stopped.
+        </p>
+    </div>
+
+    <div>
+        <div style="font-size:14px;font-weight:600;margin-bottom:4px;">Result log</div>
+        @if (!string.IsNullOrWhiteSpace(Vm.StatusMessage))
+        {
+            <p style="margin:0 0 6px;opacity:0.85;font-size:13px;white-space:pre-wrap;">@Vm.StatusMessage</p>
+        }
+        <div class="mcm-section-card" style="position:relative;padding:0.75rem 1rem;">
+            <button type="button"
+                    class="mcm-copy-inline"
+                    disabled="@Vm.IsBusy"
+                    title="Copy result log"
+                    style="position:absolute;top:8px;right:8px;"
+                    @onclick="Vm.CopyResultLogAsync">
+                Copy
+            </button>
+            <pre style="margin:0;padding-right:4.5rem;font-family:var(--font-mono);font-size:11px;white-space:pre-wrap;word-break:break-word;max-height:160px;overflow:auto;">@Vm.ResultLog</pre>
+        </div>
+    </div>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Vm.PropertyChanged += OnVmChanged;
+    }
+
+    public void Dispose()
+    {
+        Vm.PropertyChanged -= OnVmChanged;
+    }
+
+    private void OnVmChanged(object? sender, PropertyChangedEventArgs e) =>
+        _ = InvokeAsync(StateHasChanged);
+}

@@ -1,6 +1,6 @@
 # Local operator config (gitignored)
 
-Avalonia manage MVP seeds connectivity from **local JSON**, not from lab private markdown at runtime.
+The Manager WinExe (`McManager.Hybrid`, WPF + BlazorWebView) seeds connectivity from **local JSON**, not from lab private markdown at runtime. Same schema regardless of UI host.
 
 ## Files
 
@@ -107,7 +107,7 @@ Lab private doc targets **4 OCPU / 24 GB**. Lab `config.json` may show a differe
 
 ## Sync discipline
 
-When you change OCI resources in Console or lab config, update `data/config.local.json` (and lab private markdown) in the same sitting so Avalonia and Python stay aligned.
+When you change OCI resources in Console or lab config, update `data/config.local.json` (and lab private markdown) in the same sitting so the Manager app and Python stay aligned.
 
 ## Later (after v1): deployment profiles
 

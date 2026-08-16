@@ -1,0 +1,195 @@
+@inject AdvancedViewModel Vm
+@implements IDisposable
+
+<div style="display:flex;flex-direction:column;gap:16px;max-width:760px;">
+    <div>
+        <div style="font-size:16px;font-weight:600;">Advanced / Danger Zone</div>
+        <p style="margin:4px 0 0;font-size:13px;color:var(--text-secondary);">
+            Technical VM and doorbell status, break-glass Compute, idle timer, and stack identity. Everyday Start / Stop stay on the top bar.
+        </p>
+    </div>
+
+    <div class="mcm-section-card">
+        <div style="display:flex;align-items:center;gap:4px;margin-bottom:10px;">
+            <span style="font-size:14px;font-weight:600;">Technical status</span>
+            <button type="button"
+                    class="mcm-help"
+                    title="The top of the window only shows whether Minecraft is Running or Stopped. Door / VM details live here.">
+                <i class="ti ti-help" aria-hidden="true"></i>
+                <span class="sr-only">About technical status</span>
+            </button>
+        </div>
+        <div style="display:grid;grid-template-columns:180px 1fr;gap:8px 12px;align-items:center;">
+            <span style="color:var(--text-muted);">Game VM (VM1)</span>
+            <span style="font-family:var(--font-mono);">@Vm.GameVmLifecycle</span>
+            <span style="color:var(--text-muted);">Door VM (VM2)</span>
+            <span style="font-family:var(--font-mono);">@Vm.DoorVmLifecycle</span>
+            <span style="color:var(--text-muted);">Door service</span>
+            <span style="font-family:var(--font-mono);">@Vm.DoorServiceState</span>
+        </div>
+    </div>
+
+    <div class="mcm-section-card">
+        <div style="font-size:14px;font-weight:600;margin-bottom:6px;">Infrastructure setup</div>
+        <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);">
+            Deploy a new Always Free stack, repair an existing one, or attach this PC to a stack that is already in your tenancy. Auto-detect never runs by itself — only when you click the button.
+        </p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+            <button type="button"
+                    title="Opens Setup. Resume or re-run from here after a finished Deploy page (do not click Deploy twice on the same finished page). Does not run OpenTofu from this button."
+                    @onclick="Vm.OpenSetup">
+                Deploy / repair infrastructure
+            </button>
+            <button type="button"
+                    disabled="@Vm.IsBusy"
+                    title="Looks for a product compartment and shared storage, then asks before writing local config."
+                    @onclick="Vm.AutoDetectAsync">
+                Auto-detect infrastructure
+            </button>
+        </div>
+    </div>
+
+    <div class="mcm-section-card">
+        <div style="font-size:14px;font-weight:600;margin-bottom:6px;">Break-glass VM power</div>
+        <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);">
+            These start or stop the game VM in Oracle Cloud and do not move the play IP. Everyday Start / Stop on the top bar are the doorbell-aware path friends should use.
+        </p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+            <button type="button"
+                    disabled="@Vm.IsBusy"
+                    title="OCI Compute start only. Does not move the reserved play IP."
+                    @onclick="Vm.BreakGlassStartAsync">
+                Raw VM Start
+            </button>
+            <button type="button"
+                    disabled="@Vm.IsBusy"
+                    title="OCI Compute stop only. Does not move the reserved play IP."
+                    @onclick="Vm.BreakGlassSoftStopAsync">
+                Raw VM SoftStop
+            </button>
+        </div>
+    </div>
+
+    <div class="mcm-danger-card">
+        <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
+            <span style="font-size:14px;font-weight:600;">Idle shutdown</span>
+            <button type="button"
+                    class="mcm-help"
+                    title="The idle timer shuts the game VM down when nobody is playing (or Minecraft is not running) so you stay on Always Free. Disable only for short tests. Starting Minecraft or rebooting the VM turns the timer back on.">
+                <i class="ti ti-help" aria-hidden="true"></i>
+                <span class="sr-only">About idle shutdown</span>
+            </button>
+        </div>
+        <p style="margin:0 0 12px;font-size:13px;color:var(--text-secondary);">
+            Automatically stops the server when nobody's online, and warns players before the daily budget runs out. Boot force-enables idle (OS-ISSUE-7).
+        </p>
+        <div style="display:grid;grid-template-columns:220px 1fr;gap:8px 12px;align-items:center;">
+            <label for="mcm-adv-idle-timeout">Idle timeout (minutes)</label>
+            <input id="mcm-adv-idle-timeout"
+                   type="text"
+                   class="mcm-num-input"
+                   style="width:10rem;"
+                   disabled="@Vm.IsBusy"
+                   @bind="Vm.EditIdleTimeout"
+                   @bind:event="oninput" />
+
+            <label for="mcm-adv-budget-warn">Budget warning lead time (minutes)</label>
+            <input id="mcm-adv-budget-warn"
+                   type="text"
+                   class="mcm-num-input"
+                   style="width:10rem;"
+                   disabled="@Vm.IsBusy"
+                   @bind="Vm.EditBudgetWarn"
+                   @bind:event="oninput" />
+
+            <span>Enabled</span>
+            <label class="mcm-checkbox-row" style="margin:0;" for="mcm-adv-idle-enabled">
+                <input id="mcm-adv-idle-enabled"
+                       type="checkbox"
+                       disabled="@Vm.IsBusy"
+                       @bind="Vm.EditIdleAgentEnabled" />
+                Automatically stop an empty or down server
+            </label>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">
+            <button type="button"
+                    disabled="@Vm.IsBusy"
+                    @onclick="Vm.RefreshIdleFromOsAsync">
+                Refresh from cloud
+            </button>
+            <button type="button"
+                    class="mcm-primary"
+                    disabled="@(!Vm.CanApplyIdle)"
+                    @onclick="Vm.ApplyIdleSettingsAsync">
+                Save changes
+            </button>
+        </div>
+    </div>
+
+    <div class="mcm-section-card">
+        <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
+            <span style="font-size:14px;font-weight:600;">Stack identity (shared storage)</span>
+            <button type="button"
+                    class="mcm-help"
+                    title="Publishes a description of this stack so another PC can Auto-detect it. Never includes SSH keys, API keys, or the RCON password.">
+                <i class="ti ti-help" aria-hidden="true"></i>
+                <span class="sr-only">About stack identity</span>
+            </button>
+        </div>
+        <p style="margin:0 0 12px;font-size:12px;opacity:0.85;font-family:var(--font-mono);white-space:pre-wrap;">@Vm.InfraSummary</p>
+        <div style="display:grid;grid-template-columns:200px 1fr;gap:8px 12px;align-items:center;">
+            <label for="mcm-adv-stack-version">stack_version</label>
+            <input id="mcm-adv-stack-version"
+                   type="text"
+                   disabled="@Vm.IsBusy"
+                   @bind="Vm.EditStackVersion"
+                   @bind:event="oninput" />
+
+            <label for="mcm-adv-server-kind">server_kind</label>
+            <input id="mcm-adv-server-kind"
+                   type="text"
+                   disabled="@Vm.IsBusy"
+                   @bind="Vm.EditServerKind"
+                   @bind:event="oninput" />
+
+            <label for="mcm-adv-mc-version">minecraft_version</label>
+            <input id="mcm-adv-mc-version"
+                   type="text"
+                   disabled="@Vm.IsBusy"
+                   @bind="Vm.EditMinecraftVersion"
+                   @bind:event="oninput" />
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">
+            <button type="button"
+                    disabled="@Vm.IsBusy"
+                    @onclick="Vm.RefreshInfraMetaAsync">
+                Refresh infra meta
+            </button>
+            <button type="button"
+                    class="mcm-primary"
+                    disabled="@(!Vm.CanPublishInfra)"
+                    @onclick="Vm.PublishInfraMetaAsync">
+                Save changes
+            </button>
+        </div>
+    </div>
+
+    <p style="margin:0;font-size:13px;color:var(--text-secondary);opacity:0.85;">@Vm.StatusMessage</p>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Vm.PropertyChanged += OnVmChanged;
+        Vm.OnTabSelected();
+    }
+
+    public void Dispose()
+    {
+        Vm.PropertyChanged -= OnVmChanged;
+        Vm.OnTabLeft();
+    }
+
+    private void OnVmChanged(object? sender, PropertyChangedEventArgs e) =>
+        _ = InvokeAsync(StateHasChanged);
+}

@@ -397,7 +397,7 @@ override.tf.json
 *_override.tf
 *_override.tf.json
 
-# Avalonia / publish leftovers
+# Publish leftovers
 publish/
 *.appx
 *.msix

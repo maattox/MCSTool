@@ -1,0 +1,254 @@
+# Happy-path guide
+
+This is the short path for a **Windows** admin who wants a **private Vanilla** Minecraft server for friends, hosted on **Oracle Cloud Infrastructure (OCI)** Always Free resources, managed from one desktop app.
+
+Friends always connect to the same **play IP**. When nobody is playing, a small always-on “doorbell” answers Minecraft pings and can wake the game computer. Idle and budget stops are meant to keep you inside Always Free. Access is **IP allowlist only** — not a public server.
+
+**Windows only** for this Manager. There is no macOS or Linux Manager in MVP.
+
+---
+
+## Cost: built for $0, not a hard guarantee
+
+This product is built to stay at **$0** using Oracle [Always Free resources](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm#compute). There is **no paid mode** in the app.
+
+Oracle still requires a **Pay As You Go (PAYG)** account for Ampere A1 capacity in many regions. PAYG means you *can* be billed if you leave Always Free. It is **not** permission to spend. Oracle’s docs say Always Free resources remain free after you upgrade; you are charged only for usage **above** those limits.
+
+**Last-resort $1 brake:** Setup creates a **$1 monthly compartment budget**. If actual spend ever reaches $1, an Oracle Function **SoftStops the computers** to halt further spend. That Function is not instant. Oracle bills when spend hits $1, and the Function can take several minutes, so you may see a **~$1–$2** charge **for that month**, then **no further charges** while the brake holds. This is **not** a perfect $0 guarantee.
+
+If that brake fires, wait for the next calendar month before turning the stack back on (Manager does not yet show a full-window lock for this — that is a later feature). Use **Troubleshooting** in Manager if the play IP is left on the wrong computer.
+
+Do **not** add paid shapes, extra volumes, load balancers, or public `0.0.0.0/0` game access.
+
+---
+
+## What you need
+
+| Item | Notes |
+|------|--------|
+| Windows 10/11 PC | Manager is a desktop WinExe (WebView2). |
+| [Evergreen WebView2](https://go.microsoft.com/fwlink/p/?LinkId=2124703) | The app tells you if this is missing. |
+| Oracle Cloud account | PAYG as needed (see below). Prefer the **home region**. |
+| API key files | `%USERPROFILE%\.oci\config` + PEM (not an SSH key). |
+| Auth Token | Optional in Setup, **needed** to install the $1 spend-brake Function image. |
+| Public IPv4 | Yours, and each friend’s, for the allowlist. Home IPs change. |
+| Minecraft Java Edition | Same **Vanilla** release you pick in Setup. |
+
+Until a Windows installer ships (MVP packaging step), run Manager from this repo — see [Install the Manager](#3-install-the-manager).
+
+---
+
+## 1. Create the Oracle Cloud account (PAYG as needed)
+
+1. Sign up at [cloud.oracle.com](https://cloud.oracle.com).
+2. Complete identity / payment verification Oracle asks for.
+3. If the account is **Free Tier only** and Ampere A1 will not create, **upgrade to Pay As You Go**. That is for **capacity eligibility**, not so you can spend.
+4. Stay in the tenancy **home region**. Always Free Ampere A1 and the tiny AMD Micro doorbell are home-region entitlements.
+
+Confirm current Always Free compute limits yourself:
+
+[Always Free compute resources](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm#compute)
+
+Oracle can change the Ampere envelope. Setup will ask you to confirm you understand the limits and the $1 residual before Deploy.
+
+---
+
+## 2. Put an API key and Auth Token on this PC
+
+Manager talks to Oracle with an **API signing key**. That is **not** the SSH key Setup generates later, and **not** the Auth Token.
+
+Official reference: [Required Keys and OCIDs](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm).
+
+### API signing key + `%USERPROFILE%\.oci\config`
+
+1. Create the folder if it does not exist: `%USERPROFILE%\.oci\`  
+   Example: `C:\Users\you\.oci\`
+2. In the Console, open the **Profile** menu (top right) → **User settings** (or **My profile**).
+3. Open **Tokens and keys** / **API Keys** → **Add API Key**.
+4. Prefer **Generate API key pair**. Download the **private** key into `%USERPROFILE%\.oci\` (for example `oci_api_key.pem`). Move it there if the browser saved it in Downloads.
+5. Click **Add**. Copy the **Configuration File Preview** snippet.
+6. Create or edit `%USERPROFILE%\.oci\config` (no `.txt` extension). Paste the snippet. Set `key_file` to the real private-key path, for example:
+
+```ini
+[DEFAULT]
+user=ocid1.user.oc1..<your-user>
+fingerprint=12:34:56:78:90:ab:cd:ef:12:34:56:78:90:ab:cd:ef
+key_file=C:\Users\you\.oci\oci_api_key.pem
+tenancy=ocid1.tenancy.oc1..<your-tenancy>
+region=us-sanjose-1
+```
+
+Use **your** home region, not a copy-paste from this example. `region` should match the region currently selected in the Console when the snippet was generated.
+
+7. Restrict the PEM so only your Windows user can read it. Do not commit it, email it, or put it in chat.
+
+If Oracle returns **401 NotAuthenticated** with a valid key, check that this PC’s clock is within **5 minutes** of real time.
+
+### Auth Token (for the $1 Function image)
+
+The Auth Token is a **separate** secret used to push the spend-brake Function image to Oracle Container Registry. It is **not** stored in `%USERPROFILE%\.oci\config`. Setup can keep it in **Windows Credential Manager** (`McManager/ocir`).
+
+Official reference: [Getting an Auth Token](https://docs.oracle.com/en-us/iaas/Content/Registry/Tasks/registrygettingauthtoken.htm).
+
+1. Profile menu → **User settings** / **My profile**.
+2. **Tokens and keys** → **Auth Tokens** → **Generate token**.
+3. Description example: `mc manager OCIR`.
+4. **Copy the token immediately** — Oracle will not show it again.
+5. You will paste it into Setup. You can skip Setup’s token page and finish later, but the last-resort Function image is not installed until a token is stored and Deploy can push it.
+
+Each user may have at most **two** Auth Tokens. If you lose it, generate a new one.
+
+---
+
+## 3. Install the Manager
+
+**When a Windows installer is available:** install it, then open **MC Manager**. That is the intended path (one app; Setup is inside it).
+
+**Until the installer ships**, from a checkout of this repo (requires [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)):
+
+```powershell
+dotnet restore src\McManager.slnx
+dotnet build src\McManager.slnx
+dotnet run --project src\McManager.Hybrid
+```
+
+Or open `src\McManager.slnx` in Visual Studio and run **McManager.Hybrid**.
+
+---
+
+## 4. Setup → Deploy
+
+On first launch with no local manage config, choose **Deploy a new stack (Setup)**.
+
+(If you already deployed from another PC, use **Find an existing stack** instead — see [Connect an existing stack](#connect-an-existing-stack).)
+
+Walk the wizard. You can close and resume later from **Advanced → Deploy / repair** (progress is saved locally; secrets are not).
+
+| Step | What to do |
+|------|------------|
+| Always Free | Open the Always Free docs link. Check all three boxes: stay on Always Free–eligible compute, understand the **$1 brake and possible ~$1–$2 residual**, understand capacity wait. |
+| OCI profile | Pick the profile from `%USERPROFILE%\.oci\config`. Confirm tenancy and **home region**. |
+| Compartment | Default: create compartment named **`mcmgr`**. Do not point a first deploy at a compartment that already has unrelated resources. |
+| Alert email | Where Oracle should email the $1 budget alert. |
+| SSH | **Generate a new key** (recommended). This is **not** the API key. The private key stays on disk; Setup does not put it in the resume file. |
+| Game | Vanilla only. Pick a **release** (default is latest release). Snapshots are Advanced. |
+| EULA | Open and accept the [Minecraft EULA](https://aka.ms/MinecraftEULA). Setup will not auto-accept it. |
+| Auth Token | Paste the token and **Store token**. Skip only if you accept that the Function image may not push this run. |
+| Summary | Confirm **your public IPv4** as `x.x.x.x/32`. Minecraft username is optional (not required to join). Read the plan. Check the create-resources box. Click **Deploy**. |
+
+**After Deploy starts:** Back and Deploy stay locked. Do not start a second Deploy. Resume / Re-Deploy is a separate Advanced action.
+
+**If Ampere A1 is out of capacity:** a window offers try again now, auto-retry every 5 minutes while the app stays open, or close and resume later. That wait does not spam Oracle’s API.
+
+Deploy creates the compartment, network, reserved play IP, game VM, doorbell VM, shared storage, IAM, and (when the token is present) the $1 budget Function, then installs Vanilla on the game VM. It can take a while. Leave the app open until the log shows success.
+
+---
+
+## 5. Allow friends, then play
+
+1. Open the **Whitelist** tab. Add each friend’s **current public IPv4** (name optional). Check **Admin** only for people who should also reach SSH / doorbell admin from that IP.
+2. Click **Save changes** so the cloud firewall actually updates. Join is gated by this list, **not** Minecraft’s in-game whitelist (Setup leaves that off).
+3. Copy the **Play IP** from the top bar. Give friends that address and the Vanilla version you chose. Port is the default Minecraft port (`25565`).
+4. Click **Start**. Status **Running** means the game itself is joinable. **Stopped** means they should wait or click Start again — first wake can take several minutes.
+5. Friends add a server in Minecraft Java using the play IP.
+
+When everyone is done, click **Stop** (doorbell-aware). If you forget, idle timeout (default **15 minutes** with nobody online, or if Minecraft is not running) SoftStops the game VM. Daily/monthly budgets can also refuse wake with a clear Minecraft kick/MOTD when the day’s hours are exhausted.
+
+**Your home IP changed?** Whitelist → detect or paste the new public IP → update the admin row.
+
+---
+
+## Day-to-day in Manager
+
+| Want | Where |
+|------|--------|
+| See if friends can join | Top bar **Status** (`Running` / `Stopped`) |
+| Copy the address | Top bar **Play IP** |
+| Wake / park the server | **Start** / **Stop** (not raw Compute on Advanced) |
+| Restart Minecraft only | **Restart** (game VM must already be up) |
+| Hours vs budget | Pinned usage cards + **Usage** tab |
+| World zip download / replace | **Server Management** (Object Storage; ~9.5 GB backup soft cap) |
+| Stuck play IP / doorbell | **Troubleshooting** (confirm-gated one-shots) |
+| Technical VM / doorbell state | **Advanced** |
+
+Do not disable the idle timer except for a short test. Booting the game VM turns it back on.
+
+---
+
+## Appendix A — SSH
+
+Setup’s SSH key is how Manager (and you, if needed) log into the Ubuntu VMs as `ubuntu`. It lives under `%USERPROFILE%\.ssh\` when generated (name like `mcmgr_ed25519_yyyyMMdd_HHmmss`).
+
+- **API key** (`%USERPROFILE%\.oci\*.pem`) = Oracle **control plane** (create VMs, firewall, storage).
+- **SSH key** = **inside** the VMs (install, restart Minecraft, repairs).
+- Never commit either. Never open SSH to `0.0.0.0/0`.
+
+Most admins never need a terminal. Prefer Manager **Troubleshooting** buttons over ad-hoc SSH. If you do SSH, many on-box files are root-owned (`Permission denied` as `ubuntu` is common) — use `sudo` or fix ownership; do not chmod the world to 777, and do not run Minecraft as `ubuntu`.
+
+---
+
+## Appendix B — Door (doorbell)
+
+Two computers share **one reserved public play IP**:
+
+- **Idle:** the tiny always-on doorbell VM holds the play IP. Minecraft pings get a message (MOTD). A connect from an allowlisted IP can **wake** the game VM and move the play IP there.
+- **Playable:** the Ampere game VM holds the play IP and runs Vanilla.
+- **Stop / idle timeout:** the game VM SoftStops (world backup on that path) and the IP returns to the doorbell.
+
+Wake reads the shared budget first. If the daily budget is exhausted, wake is refused with a clear kick/MOTD. The doorbell also reconciles “who should hold the IP” after crashes or a $1 Function stop.
+
+**Start** / **Stop** on the top bar are this doorbell-aware path. Advanced **Raw VM Start/Stop** do **not** move the play IP — friends will not follow that.
+
+If the IP is stuck on the wrong VM after a Function stop or a failed wake, use **Troubleshooting → park reserved play IP** (if the game VM is running, park on it; otherwise start the doorbell if needed and park there).
+
+---
+
+## Appendix C — Object Storage
+
+Setup creates a shared Standard-tier bucket (product name `mcmgr-shared-data`) used as the source of truth for:
+
+- Usage ledger and budget config
+- Stack identity (`meta/infra.json`) so another PC can connect
+- World backup zips (`backups/world-*.zip`)
+
+Always Free Object Storage on a paid/PAYG tenancy is small (**10 GB** Standard, **50,000 API requests/month** in Oracle’s current notes). The product keeps backups under about **9.5 GB** and avoids chatty refresh loops.
+
+A single world zip larger than the soft cap is **not** uploaded (an on-box flag is set). Manager does not yet offer a special SSH download UI for that case.
+
+Do not put SSH private keys, API keys, Auth Tokens, or RCON passwords in the bucket.
+
+---
+
+## Connect an existing stack
+
+On a **new PC** (or after reinstall):
+
+1. Repeat [API key](#api-signing-key--userprofileociconfig) on that PC (same tenancy).
+2. Open Manager with **no** local config → **Find an existing stack** (or Advanced **Auto-detect infrastructure**). The app does **not** scan Oracle on every launch.
+3. Confirm the summary (region, compartment, play IP). Multiple matches get a chooser.
+4. Point at the SSH **private** key when asked. RCON stays local-only.
+
+“I already have a stack” skips the scan — only use that if you already placed `config.local.json` by hand.
+
+---
+
+## If something is stuck
+
+Try **Troubleshooting** in Manager first (each action asks for confirm and shows a pasteable log):
+
+- Park reserved play IP
+- Diagnose / reset doorbell state
+- Start the doorbell VM (after a $1 Function stop)
+- Force-refresh doorbell budget cache
+- Repair game-tree permissions (CHDIR / Minecraft will not start)
+- Re-apply guest play-IP network config
+
+Guest ACPI SoftStop hang is **not** a silent button — use Oracle Console reset if the copy on that tab says so.
+
+Developer/operator SSH command dump (not required for the happy path): lab `docs/Operator-Troubleshooting.md` in the sibling tooling repo.
+
+---
+
+## Out of this guide (not MVP)
+
+Public game access, paid/spend mode, Paper/modded Setup, in-app modpack catalogs, macOS/Linux Manager, and a full-window $1 lock screen are **not** in this path.

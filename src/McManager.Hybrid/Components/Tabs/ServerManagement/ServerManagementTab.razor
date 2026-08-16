@@ -1,0 +1,118 @@
+@inject ServerManagementViewModel Vm
+@implements IDisposable
+
+<div>
+    <div style="display:grid;grid-template-columns:repeat(4, minmax(0,1fr));gap:12px;margin-bottom:1.25rem;">
+        <div class="mcm-info-card">
+            <div style="font-size:13px;color:var(--text-muted);">Server name</div>
+            <div style="font-size:16px;font-weight:500;margin-top:4px;">@Vm.ServerNameDisplay</div>
+        </div>
+        <div class="mcm-info-card">
+            <div style="font-size:13px;color:var(--text-muted);">Minecraft version</div>
+            <div style="font-size:16px;font-weight:500;margin-top:4px;">@Vm.MinecraftVersionDisplay</div>
+        </div>
+        <div class="mcm-info-card">
+            <div style="font-size:13px;color:var(--text-muted);">Last backup</div>
+            <div style="font-size:16px;font-weight:500;margin-top:4px;">@Vm.LastBackupDisplay</div>
+        </div>
+        <div class="mcm-info-card">
+            <div style="font-size:13px;color:var(--text-muted);">Backup storage</div>
+            <div style="font-size:16px;font-weight:500;margin-top:4px;">@Vm.BackupStorageDisplay</div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Vm.StatusMessage))
+    {
+        <p style="margin:0 0 8px;opacity:0.85;font-size:13px;white-space:pre-wrap;">@Vm.StatusMessage</p>
+    }
+    @if (!string.IsNullOrWhiteSpace(Vm.ProgressDisplay))
+    {
+        <p style="margin:0 0 12px;opacity:0.65;font-size:12px;">@Vm.ProgressDisplay</p>
+    }
+
+    <div class="mcm-section-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+            <div style="display:flex;align-items:center;gap:4px;">
+                <span style="font-size:14px;font-weight:500;">World backups</span>
+                <button type="button"
+                        class="mcm-help"
+                        title="Zipped world saves in shared cloud storage. Oldest backups are cleaned up on the server when space is tight. Replace copies a zip onto the live server and needs the game computer running.">
+                    <i class="ti ti-help" aria-hidden="true"></i>
+                    <span class="sr-only">About World backups</span>
+                </button>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button type="button"
+                        disabled="@Vm.IsBusy"
+                        title="Store a zip in cloud storage. This does not replace the live world until you use Replace."
+                        @onclick="Vm.UploadAsync">
+                    <i class="ti ti-upload" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
+                    Upload backup
+                </button>
+                <button type="button"
+                        disabled="@Vm.IsBusy"
+                        title="Download the newest backup zip to this PC."
+                        @onclick="Vm.DownloadLatestAsync">
+                    <i class="ti ti-download" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
+                    Download latest world save
+                </button>
+                <button type="button"
+                        disabled="@Vm.IsBusy"
+                        title="Requires the game computer to be running. Stops Minecraft, replaces the world, then starts it again."
+                        @onclick="Vm.ReplaceWorldAsync">
+                    Replace world
+                </button>
+            </div>
+        </div>
+
+        @foreach (var backup in Vm.Backups)
+        {
+            <div class="mcm-bk-row">
+                <div>
+                    <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@backup.FileName</div>
+                    <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">@backup.TimeDisplayLocal</div>
+                </div>
+                <div style="color:var(--text-muted);">@backup.SizeDisplay</div>
+                <div class="mcm-bk-actions">
+                    <button type="button"
+                            style="font-size:12px;padding:3px 8px;"
+                            disabled="@Vm.IsBusy"
+                            @onclick="@(() => Vm.DownloadBackupAsync(backup))">
+                        Download
+                    </button>
+                </div>
+            </div>
+        }
+
+        @if (Vm.HasObjectStorage && !string.IsNullOrWhiteSpace(Vm.SoftCapDisplay) && Vm.SoftCapDisplay != "—")
+        {
+            <p style="margin:10px 0 0;font-size:12px;color:var(--text-muted);">@Vm.SoftCapDisplay</p>
+        }
+    </div>
+
+    <p style="margin:12px 0 0;font-size:12px;color:var(--text-muted);">
+        Replace needs the server running. Upload while stopped only stores a zip — Start, then Replace to apply it.
+    </p>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Vm.PropertyChanged += OnVmChanged;
+        Vm.Backups.CollectionChanged += OnBackupsChanged;
+        _ = Vm.RefreshAsync();
+        _ = Vm.RefreshMinecraftVersionAsync();
+    }
+
+    public void Dispose()
+    {
+        Vm.PropertyChanged -= OnVmChanged;
+        Vm.Backups.CollectionChanged -= OnBackupsChanged;
+    }
+
+    private void OnVmChanged(object? sender, PropertyChangedEventArgs e) =>
+        _ = InvokeAsync(StateHasChanged);
+
+    private void OnBackupsChanged(object? sender, NotifyCollectionChangedEventArgs e) =>
+        _ = InvokeAsync(StateHasChanged);
+}

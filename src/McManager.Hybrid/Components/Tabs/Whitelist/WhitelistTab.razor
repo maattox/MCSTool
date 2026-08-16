@@ -1,0 +1,217 @@
+@inject WhitelistViewModel Vm
+@implements IDisposable
+
+<div>
+    <div style="margin-bottom:12px;">
+        <div style="display:flex;align-items:center;gap:4px;">
+            <span style="font-size:16px;font-weight:600;">Who can join</span>
+            <button type="button"
+                    class="mcm-help"
+                    title="Only these public IP addresses can connect. This is not Minecraft's in-game whitelist (that stays off). Admin also allows remote maintenance from that IP.">
+                <i class="ti ti-help" aria-hidden="true"></i>
+                <span class="sr-only">About Who can join</span>
+            </button>
+        </div>
+        <p style="margin:4px 0 0;font-size:13px;color:var(--text-secondary);">
+            Friends need an entry here before they can connect. Save changes writes the list on this PC and pushes it so the server uses it.
+        </p>
+    </div>
+
+    <div class="mcm-section-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <span style="font-size:14px;font-weight:500;">Allowed IPs</span>
+            <button type="button" disabled="@Vm.IsBusy" @onclick="OpenAddModal">
+                <i class="ti ti-plus" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
+                Add IP
+            </button>
+        </div>
+
+        <div class="mcm-wl-row" style="border-top:none;">
+            <span style="font-size:12px;color:var(--text-muted);">NAME</span>
+            <span style="font-size:12px;color:var(--text-muted);">IP</span>
+            <span style="font-size:12px;color:var(--text-muted);">ADMIN</span>
+            <span></span>
+        </div>
+
+        @foreach (var friend in Vm.Friends)
+        {
+            <div class="mcm-wl-row">
+                <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@friend.Name</span>
+                <span style="font-family:var(--font-mono);">@friend.Ip</span>
+                <input type="checkbox" checked="@friend.IsAdmin" disabled tabindex="-1" />
+                <div class="mcm-wl-actions">
+                    <button type="button" @onclick="@(() => OpenUpdateModal(friend))">Update</button>
+                    <button type="button"
+                            style="color:var(--text-danger);border-color:var(--border-danger);"
+                            @onclick="@(() => Vm.RemoveFriend(friend))">
+                        Remove
+                    </button>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div style="margin-top:12px;">
+        <button type="button"
+                class="mcm-primary"
+                disabled="@(!Vm.CanSaveChanges)"
+                @onclick="Vm.SaveChangesAsync">
+            Save changes
+        </button>
+    </div>
+
+    <div class="mcm-section-card" style="margin-top:12px;">
+        <div style="display:flex;align-items:center;gap:4px;margin-bottom:2px;">
+            <span style="font-size:14px;font-weight:500;">Your IP changed?</span>
+            <button type="button"
+                    class="mcm-help"
+                    title="Home internet IPs often change. Detect or paste your current public IP, then update the admin row. That writes the list and pushes it immediately.">
+                <i class="ti ti-help" aria-hidden="true"></i>
+                <span class="sr-only">About Your IP changed</span>
+            </button>
+        </div>
+        <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);">
+            If you suddenly cannot connect, detect or paste your current public IP, then update.
+        </p>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <input type="text"
+                   placeholder="Public IPv4"
+                   value="@Vm.AdminIpInput"
+                   disabled="@Vm.IsBusy"
+                   style="width:180px;background:var(--surface-1);border:0.5px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text-primary);font-size:13px;font-family:var(--font-sans);"
+                   @oninput="OnAdminIpInput" />
+            <button type="button" disabled="@Vm.IsBusy" @onclick="Vm.DetectPublicIpAsync">Detect IP</button>
+            <button type="button" disabled="@Vm.IsBusy" @onclick="Vm.UpdateAdminIpAsync">Update my IP</button>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Vm.StatusMessage))
+    {
+        <p style="margin:12px 0 0;opacity:0.85;font-size:13px;white-space:pre-wrap;">@Vm.StatusMessage</p>
+    }
+</div>
+
+@if (_modalOpen)
+{
+    <div class="mcm-modal-overlay open"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="mcm-wl-modal-title"
+         tabindex="-1"
+         @onclick="CloseModal"
+         @onkeydown="OnModalKeyDown">
+        <div class="mcm-modal-card" @onclick:stopPropagation="true">
+            <h2 id="mcm-wl-modal-title" class="mcm-modal-title">@(_isUpdate ? "Update entry" : "Add IP")</h2>
+            <div class="mcm-field">
+                <label for="mcm-wl-name">Name</label>
+                <input id="mcm-wl-name" type="text" placeholder="e.g. Jordan" @bind="_draftName" @bind:event="oninput" />
+            </div>
+            <div class="mcm-field">
+                <label for="mcm-wl-ip">IP address</label>
+                <input id="mcm-wl-ip" type="text" placeholder="e.g. 98.42.11.6" @bind="_draftIp" @bind:event="oninput" />
+            </div>
+            <div class="mcm-checkbox-row">
+                <input id="mcm-wl-admin" type="checkbox" @bind="_draftAdmin" />
+                <label for="mcm-wl-admin" style="margin:0;">Admin</label>
+            </div>
+            <div class="mcm-modal-actions">
+                <button type="button" @onclick="CloseModal">Cancel</button>
+                @if (_isUpdate)
+                {
+                    <button type="button" class="mcm-primary" disabled="@(!UpdateDraftChanged)" @onclick="SubmitModal">
+                        Update
+                    </button>
+                }
+                else
+                {
+                    <button type="button" class="mcm-primary" @onclick="SubmitModal">Add</button>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool _modalOpen;
+    private bool _isUpdate;
+    private FriendRowViewModel? _editing;
+    private string _draftName = "";
+    private string _draftIp = "";
+    private bool _draftAdmin;
+    private string _origName = "";
+    private string _origIp = "";
+    private bool _origAdmin;
+
+    private bool UpdateDraftChanged =>
+        !string.Equals(_draftName.Trim(), _origName, StringComparison.Ordinal)
+        || !string.Equals(_draftIp.Trim(), _origIp, StringComparison.Ordinal)
+        || _draftAdmin != _origAdmin;
+
+    protected override void OnInitialized()
+    {
+        Vm.PropertyChanged += OnVmChanged;
+        Vm.Friends.CollectionChanged += OnFriendsChanged;
+    }
+
+    public void Dispose()
+    {
+        Vm.PropertyChanged -= OnVmChanged;
+        Vm.Friends.CollectionChanged -= OnFriendsChanged;
+    }
+
+    private void OnVmChanged(object? sender, PropertyChangedEventArgs e) =>
+        _ = InvokeAsync(StateHasChanged);
+
+    private void OnFriendsChanged(object? sender, NotifyCollectionChangedEventArgs e) =>
+        _ = InvokeAsync(StateHasChanged);
+
+    private void OnAdminIpInput(ChangeEventArgs e) =>
+        Vm.AdminIpInput = e.Value?.ToString() ?? "";
+
+    private void OpenAddModal()
+    {
+        _isUpdate = false;
+        _editing = null;
+        _draftName = "";
+        _draftIp = "";
+        _draftAdmin = false;
+        _origName = "";
+        _origIp = "";
+        _origAdmin = false;
+        _modalOpen = true;
+    }
+
+    private void OpenUpdateModal(FriendRowViewModel friend)
+    {
+        _isUpdate = true;
+        _editing = friend;
+        _draftName = friend.Name;
+        _draftIp = friend.Ip;
+        _draftAdmin = friend.IsAdmin;
+        _origName = friend.Name;
+        _origIp = friend.Ip;
+        _origAdmin = friend.IsAdmin;
+        _modalOpen = true;
+    }
+
+    private void CloseModal()
+    {
+        _modalOpen = false;
+        _editing = null;
+    }
+
+    private void SubmitModal()
+    {
+        var ok = _isUpdate
+            ? Vm.TryUpdateFriend(_editing, _draftName, _draftIp, _draftAdmin)
+            : Vm.TryAddFriend(_draftName, _draftIp, _draftAdmin);
+        if (ok)
+            CloseModal();
+    }
+
+    private void OnModalKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+            CloseModal();
+    }
+}

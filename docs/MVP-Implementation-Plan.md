@@ -26,10 +26,10 @@
    - **Ask** whether to continue, pause, or adjust the plan
 5. **Never create git commits** (operator commits in Visual Studio). You may suggest a commit message.
 6. Do **not** implement v1 / later features from PRODUCT-IDEAS unless the operator asks.
-7. Do **not** put Avalonia product code in the lab repo. Lab changes are OK only when a step explicitly requires on-box / door / idle-agent / infra-doc updates.
+7. Do **not** put Manager UI in the lab repo. Lab changes are OK only when a step explicitly requires on-box / door / idle-agent / infra-doc updates. Phase B (Blazor Hybrid) is **DONE**; do not re-open Avalonia. When **NEXT** is Phase 7, implement from this file (not the Phase B archive except as reference).
 8. **Fix the product path, not only the test VM.** If troubleshooting the blank-tenancy / Setup deploy shows a bug caused by OpenTofu, IAM matching rules, cloud-init, SSH bootstrap, `onbox/mcmgr/`, `door_vm/`, or `vm_agent/` install: file it in lab `docs/Issues.md` **and** change the automated-deploy code in the same effort so the next greenfield run does not repeat it. Patching only the live test instance is not done. Example: SETUP-ISSUE-2 (door DG tag match + compartment-only `manage public-ips`) had to land in product HCL, not just a Console tweak.
 9. **`ubuntu` often cannot read/write the files you need.** Recurring pitfall (lab `docs/Agent-Deploy-Pitfalls.md`): `/etc/mccontrol/oci.env` is mode 600 root; `/opt/mcmgr/`, `/etc/mcmgr/`, `/etc/mc-manager/`, systemd units, and many scripts are root-owned. Before operating on a path as `ubuntu`, check permissions; use `sudo` or fix ownership/mode. Do not burn a session rediscovering `Permission denied`.
-10. **UI sketches in PRODUCT-IDEAS are not locked.** See [Phase 6](#phase-6--ui-polish) and lab `PRODUCT-IDEAS.md` → Manager UI. For UI-design work, use or offer the `find-skills` skill unless the operator already asked; also look at panels such as Pterodactyl for feature reference. **NuGet is allowed:** search and add packages to `McManager.App` for themes, icons, controls, fonts, or other UI needs. Do not feel restricted to Fluent or packages already in the solution. Phase 1’s “keep Fluent / no heavy polish” applied to **that** step only. Keep OCI SDK on Core; prefer OSS licenses; ask before paid/commercial packages; confirm large IA redesigns with the operator.
+10. **UI sketches in PRODUCT-IDEAS are not locked; operator UI notes override.** See [Phase 6](#phase-6--ui-polish), [Phase B](#phase-b--blazor-hybrid-ui), and lab `PRODUCT-IDEAS.md` → Manager UI. Do **not** build a mini-terminal / console status panel. Novice Status is Running/Stopped; technical VM/door status is on Advanced. For UI-design work, use or offer the `find-skills` skill unless the operator already asked; also look at panels such as Pterodactyl for feature reference. **NuGet is allowed** on the Manager UI project (`McManager.Hybrid`). Search for themes, icons, controls, fonts, or other UI needs. Do not add Avalonia / Semi / Material.Icons.Avalonia packages. Keep OCI SDK on Core; prefer OSS licenses; ask before paid/commercial packages; confirm large IA redesigns with the operator.
 
 ### Agent stop protocol
 
@@ -44,8 +44,11 @@ If blocked (missing OCIDs, unclear UX, cost risk), stop and ask — do not guess
 
 ```text
 Read docs/MVP-Implementation-Plan.md in OCI-mc-server. Implement only the step marked NEXT.
+Phase B (Blazor Hybrid UI) is DONE — do not re-open Avalonia. If a leftover Phase B note conflicts, this MVP plan wins for NEXT.
 When done: update the plan statuses, stop, tell me what you did, how to test, what’s next, and ask if I want to continue or adjust.
 Do not commit. Do not start the following large step unless I say so.
+Do not tofu apply / OCIR push / live SSH bootstrap.
+Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / Plan mode only if the NEXT step is marked PARALLEL-OK. Phase 7 steps are SEQUENTIAL — prompt in Agent mode. Include this same Agent-vs-Plan instruction in the prompt you give the operator for the following step.
 ```
 
 ---
@@ -81,14 +84,15 @@ Do not commit. Do not start the following large step unless I say so.
 | **3** | Setup wizard + OpenTofu greenfield | **DONE** |
 | **4** | Stabilize test stack + operator repair | **DONE** |
 | **5** | Connect-existing (auto-detect + meta) | **DONE** |
-| **6** | UI polish (novice-ready) | **TODO** — NEXT |
-| **7** | Guide + greenfield E2E proof | **TODO** |
+| **6** | UI polish (novice-ready) | **DONE** — Avalonia vehicle abandoned; goals transfer to Phase B |
+| **B** | Blazor Hybrid UI (replace Avalonia) | **DONE** |
+| **7** | Guide + greenfield E2E proof | **IN PROGRESS** — 7.1 DONE; NEXT = 7.2 |
 | **8** | Packaging, updates, closed beta | **TODO** |
 | **9** | MVP exit review | **TODO** |
 
-**Current NEXT step:** [Phase 6 — UI polish](#phase-6--ui-polish)
+**Current NEXT step:** [Phase 7 — Guide + greenfield E2E](#phase-7--guide--greenfield-e2e) / **Step 7.2** (SEQUENTIAL). Step **7.1** (happy-path guide) is **DONE**. Phase B cutover (**B13**) is **DONE**. Do **not** start Step 7.2 in the 7.1 session.
 
-Phases **1–3 are frozen** (do not rewrite those step bodies). Historical step changelogs that said “NEXT = Phase 4” meant Connect-existing at the time; that work is now **Phase 5**.
+Phases **1–3 are frozen** (do not rewrite those step bodies). Historical step changelogs that said “NEXT = Phase 4” meant Connect-existing at the time; that work is now **Phase 5**. Phase **6** stays DONE (Avalonia polish shipped, then operator rejected the stack as the UI vehicle). Phase **B** stays DONE (Blazor Hybrid is the WinExe).
 
 ---
 
@@ -673,15 +677,17 @@ Phases 0–3 stay **DONE**; do not rewrite them. Bootstrap/HCL fixes that belong
 
 ## Phase 6 — UI polish
 
-**Status:** NEXT  
+**Status:** DONE  
 
 **Do**
 
-- Novice-first copy, hover explanations (VM vs Minecraft), disabled-state clarity, error toasts, consistent layout.
-- **Mini-terminal** visual styling for the top-bar status panel (structure already from Phase 1).
+- Novice-first copy, hover explanations via **?** icons (not jargon paragraphs), disabled-state clarity, error toasts, consistent layout.
+- **Status card is not a terminal / console.** Novice fields: **Status** (`Running` / `Stopped` — Minecraft joinable), **Play IP**, **Players**. Door / VM1 / doorbell technical status belongs on **Advanced**.
+- Fill unused top-bar space with **pinned usage cards** (hours, not a gimmick chrome). HTML mockup is a density/hierarchy reference, not a feature-subset spec.
+- Start/Stop/Restart: grey only until first status load, or while a power action is in flight. Tab Object Storage polls must **not** disable those buttons.
 - Still Always Free–first messaging; no paid-mode UI.
-- Do **not** add bell / settings / overflow chrome here unless operator pulls v1 chrome forward — default remains **v1**.
-- **UI is not locked.** PRODUCT-IDEAS tab/layout notes are starting ideas. Use UI/software-design skills (`find-skills` unless the operator already directed it) and look at similar products (e.g. **Pterodactyl panel**) for what a server Manager should surface. Ask the operator before a large visual redesign. **Search and add NuGet packages** as needed (Avalonia themes, icon packs, extra controls, fonts, etc.) — do not stay on the Phase 1 Fluent default just because it is already referenced.
+- Do **not** add a full bell / settings / overflow notification center unless operator pulls v1 chrome forward. A compact title-bar placeholder icon is OK.
+- **UI is not locked.** PRODUCT-IDEAS tab/layout notes are starting ideas; **operator notes override**. Use UI/software-design skills (`find-skills` unless the operator already directed it) and look at similar products (e.g. **Pterodactyl panel**) for what a server Manager should surface. Ask the operator before a large visual redesign (removing/renaming/reordering tabs, sidebar, splitting Advanced vs Danger Zone). **Search and add NuGet packages** as needed (Avalonia themes, icon packs, extra controls, fonts, etc.) — do not stay on Fluent or Semi just because they are already referenced. Keep OCI SDK on Core; prefer OSS licenses; ask before paid/commercial packages.
 - **Setup Deploy log:** auto-scroll to the bottom on new text **unless** the user scrolled up; resume auto-scroll when they scroll back to the bottom.
 - **Setup deploy progress (if it can be implemented cleanly):** progress bar + **percent** from known stages (`apply_stage` / bootstrap-state). Add **timestamps** on deploy-log lines so later timed test deploys can feed an ETA. **Minutes remaining** is **not** required in the first polish pass — operator will time a few deploys (or hand timestamped logs to an agent) before a useful estimate.
 - **Setup lock after Deploy starts:** **Deploy** is not clickable once apply/bootstrap has started **or** after it has finished. Disable Back / previous wizard pages and any other control that could mutate the in-flight or completed deploy. Resume-later / Re-Deploy remains a **separate** explicit action (existing `apply_stage` behavior), not a second click of Deploy on the same finished page.
@@ -693,15 +699,53 @@ Phases 0–3 stay **DONE**; do not rewrite them. Bootstrap/HCL fixes that belong
 
 **Done when:** Operator accepts polish bar for MVP.
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-15 — **DONE.** Semi.Avalonia Dark + Material icons; mini-terminal top bar; Start/Stop/Restart hover + disabled reasons + toasts; novice tab/Setup copy. Setup deploy log timestamps + stick-to-bottom unless scrolled up; stage percent bar; Deploy/Back lock after start (Re-Deploy = new wizard from Advanced). Dry-run persist still leaves `apply_stage` unchanged. NEXT = Phase **7**. Do not start Phase 7 in this session.  
+2026-08-15 — Operator rejected mini-terminal look. Redesign (still Phase 6 polish, not Phase 7): Running/Stopped status card, pinned usage hours, Advanced technical VM/door status, custom title bar (Avalonia 12 `WindowDecorations=Full` + extended client area), power buttons no longer flash-disable on tab polls, Whitelist list-row overlap fix. NEXT remains Phase **7**. Do not start Phase 7 in this session.  
+2026-08-15 — Operator chose **Blazor Hybrid** before Phase 7. Phase 6 stays **DONE**; Avalonia polish is **abandoned as the UI vehicle**. Novice Status / pinned hours / Setup log-lock **goals transfer** to [Phase B](#phase-b--blazor-hybrid-ui). Do **not** start Phase 7.
+
+---
+
+## Phase B — Blazor Hybrid UI
+
+**Status:** DONE  
+**Living checklist (SoT for B0–B13):** [`Blazor-UI-Migration-Plan.md`](Blazor-UI-Migration-Plan.md)
+
+**Why this sits before Phase 7:** Avalonia visual iteration was slow and buggy (custom title bar, clipping, Semi hover/disabled, pinned-stat layout). The operator chose a **WPF + BlazorWebView** WinExe (HTML/CSS/Razor, existing `McManager.Core`) **before** Guide + greenfield E2E. Phase 6 Avalonia polish is abandoned as the UI vehicle; its product goals (Running/Stopped, pinned hours, Setup log behavior, feature parity) transfer here.
+
+**Do not implement Phase B from this section’s bullets.** Implement **only the step marked NEXT** in [`Blazor-UI-Migration-Plan.md`](Blazor-UI-Migration-Plan.md). Stop for operator feedback between B0–B13. Agents never commit. **B0–B13 are all DONE.**
+
+**Host (locked):** WPF + `Microsoft.AspNetCore.Components.WebView.Wpf`, `net8.0-windows`, native OS chrome, Evergreen WebView2. Not Blazor Server, not a browser, not MAUI, not Photino. Scaffold with `dotnet new wpf` (no VS wizard unless that template is missing). Avalonia `McManager.App` was **removed at B13**. The only WinExe is `McManager.Hybrid` (not renamed).
+
+**Current NEXT inside Phase B:** none. **B0–B13 are DONE.** One WinExe: `McManager.Hybrid`. Manage + first-run + Setup wizard are live (dry-run Deploy; no live `tofu apply`).
+
+**Out of this phase:** Phase 7 Guide/E2E, installer packaging, v1 PRODUCT-IDEAS, live `tofu apply`.
+
+**Changelog:** 2026-08-15 — **B13 DONE.** Phase B complete. Removed Avalonia `McManager.App` from slnx and deleted `src/McManager.App/`. One WinExe: `McManager.Hybrid` (not renamed). README / Local-Config / AGENTS / rules updated. `dotnet build` clean. **NEXT = Phase 7** (TODO). Do not start Phase 7 in this session.  
+2026-08-15 — **B12 DONE.** Hybrid Setup wizard (9 steps, resume JSON, Credential Manager token, deploy log timestamps/stick-to-bottom/percent, Deploy/Back lock, capacity wait). First-run/Advanced use the real wizard. Dry-run only. Avalonia App still in slnx. **NEXT = B13** (SEQUENTIAL). Do not start B13 in this session. Do not start Phase 7.  
+2026-08-15 — **B11 DONE.** Hybrid first-run + Connect-existing (button-gated Auto-detect; chooser; overwrite confirm; preserve SSH/RCON). Shared `ConnectExistingFlow` with Advanced. Avalonia App still in slnx. **NEXT = B12** (SEQUENTIAL). Do not start B12–B13 in this session. Do not start Phase 7.  
+2026-08-15 — **B10 DONE.** Hybrid Advanced / Danger Zone: technical VM/door status, break-glass Compute, idle OS-ISSUE-7, infra meta Refresh/Publish, Auto-detect, Setup stub (no tofu). Avalonia App still in slnx. **NEXT = B11** (SEQUENTIAL). Do not start B11–B13 in this session. Do not start Phase 7.  
+2026-08-15 — parent pasted B6–B9 DI + MainLayout; tabs visible; **NEXT = B10**. Do not start B10 in this session. Do not start Phase 7.  
+2026-08-15 — **B9 DONE.** Hybrid Troubleshooting tab: all Step 4.4 one-shots with Avalonia confirm gating; result log + `IClipboard` copy; OS-ISSUE-5 Console copy only; own `IsBusy` only. DI/layout snippets left for parent paste (did not edit `App.xaml.cs` / MainLayout). Avalonia App still in slnx. Do not start B10–B13 in this session. Do not start Phase 7.  
+2026-08-15 — **B7 DONE.** Hybrid Usage: dashboard + all Avalonia budget fields; remaining-in-month on this tab; dirty-gated Save/Publish with `IUiDialogs`; ~2 min poll while selected. DI/layout snippets left for parent paste (did not edit `App.xaml.cs` / MainLayout). Avalonia App still in slnx. Do not start B10–B13 or Phase 7 in this session.
+2026-08-15 — **B8 DONE.** Hybrid Server Management: four info cards, Object Storage list/download/upload (native `IFilePicker`), SSH replace when VM1 RUNNING, soft-cap messaging. No Wipe/Modding/Delete. DI/layout snippets left for parent paste (did not edit `App.xaml.cs` / MainLayout). Avalonia App still in slnx. Do not start B10–B13 or Phase 7 in this session.
+2026-08-15 — **B6 DONE.** Hybrid Whitelist: friends CRUD + Security List apply; Add-IP popup; hover row actions; dirty-gated Save; Detect/Update admin IP. DI/layout snippets left for parent paste (did not edit `App.xaml.cs` / MainLayout). Avalonia App still in slnx. **NEXT = B7 / B8 / B9** (PARALLEL-OK remaining; B10 sequential). Do not start B7–B13 in this session. Do not start Phase 7.  
+2026-08-15 — **B5 DONE.** Hybrid manage chrome live: novice Running/Stopped, door-aware Start/Stop, SSH Restart, pinned `UsageMath` leftover bank, toast, copy IP, door/OCI poll via `IUiClock`; Door/Compute/OciSession DI. Avalonia App still in slnx. **NEXT = B6** (B6–B9 PARALLEL-OK among themselves; B10 sequential). Do not start B6–B9 in this session. Do not start Phase 7.  
+2026-08-15 — **B4 DONE.** Hybrid loads `LocalConfigStore` / `ManagerLocalConfig` and shows reserved play IP; stub first-run when no manage config; no OCI on launch. Avalonia App still in slnx. **NEXT = B5.** Do not start B5 in this session. Do not start Phase 7.  
+2026-08-15 — **B3 DONE.** Hybrid `Ui/` host services (dialogs, pickers, clipboard, clock/dispatcher); WPF STA impls; Razor modal host; DEBUG probes. Avalonia App still in slnx. **NEXT = B4.** Do not start B4 in this session. Do not start Phase 7.  
+2026-08-15 — **B2 DONE.** Light warm-gray Hybrid layout shell (mockup chrome, placeholders, self-hosted fonts/icons, native WPF caption). Avalonia App still in slnx. **NEXT = B3.** Do not start B3 in this session. Do not start Phase 7.  
+2026-08-15 — **B1 DONE.** `McManager.Hybrid` WPF + BlazorWebView WinExe references Core; missing-WebView2 MessageBox; Avalonia App still in slnx. **NEXT = B2.** Do not start B2 in this session. Do not start Phase 7.  
+2026-08-15 — **B0 DONE.** Docs/agent rules retargeted to Blazor Hybrid (WPF + WebView2); historical Wails→Avalonia kept. **NEXT = B1.** Do not scaffold Hybrid in the B0 session. Do not start Phase 7.  
+2026-08-15 — Inserted before Phase 7. Living checklist created. **NEXT = B0.** Do not scaffold in the plan-creation session. Do not start Phase 7.
 
 ---
 
 ## Phase 7 — Guide + greenfield E2E
 
+Phase B cutover is **DONE**. Step **7.1** is **DONE**. **NEXT = Step 7.2** (SEQUENTIAL) when the operator asks. Do **not** start 7.2 in the 7.1 session.
+
 ### Step 7.1 — Happy-path guide
 
-**Status:** TODO  
+**Status:** DONE  
 
 **Do**
 
@@ -715,13 +759,13 @@ Phases 0–3 stay **DONE**; do not rewrite them. Bootstrap/HCL fixes that belong
 
 **Done when:** Guide checked into repo (e.g. `docs/Guide.md`).
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-15 — **DONE.** Added [`docs/Guide.md`](Guide.md): short Windows happy path (PAYG as needed, `%USERPROFILE%\.oci` API key + Auth Token, Always Free docs gate, **$1 brake + possible ~$1–$2 residual**, installer-or-`dotnet run` → Setup → whitelist → play). Appendix: SSH vs API key, doorbell/play IP, Object Storage, Connect-existing, Troubleshooting. Until Phase 8, run `McManager.Hybrid` from source. **NEXT = Step 7.2** (SEQUENTIAL). Do not start 7.2 in this session.
 
 ---
 
 ### Step 7.2 — Full greenfield E2E proof
 
-**Status:** TODO  
+**Status:** TODO — NEXT  
 
 **Do**
 
@@ -819,6 +863,7 @@ Phases 0–3 stay **DONE**; do not rewrite them. Bootstrap/HCL fixes that belong
 
 | Need | Where |
 |------|--------|
+| Happy-path user guide | [`Guide.md`](Guide.md) |
 | MVP / v1 intent | Lab `PRODUCT-IDEAS.md` |
 | Minecraft server install/upgrade mechanism (Vanilla/Paper/Fabric/NeoForge/Forge/Quilt/modpacks) | [`Minecraft-Server-Deployment-Blueprint.md`](Minecraft-Server-Deployment-Blueprint.md) |
 | Automated cloud infra (OpenTofu, Resource Manager reference capture, VM images, config hosting) | [`Automated-Infrastructure-Deployment.md`](Automated-Infrastructure-Deployment.md) |
@@ -829,7 +874,8 @@ Phases 0–3 stay **DONE**; do not rewrite them. Bootstrap/HCL fixes that belong
 | Operator SSH/OCI troubleshooting commands | Lab [`docs/Operator-Troubleshooting.md`](../../OCI-mc-server-manager/docs/Operator-Troubleshooting.md) |
 | Known bugs / quirks | Lab `docs/Issues.md` |
 | Deploy pitfalls (SSH/sudo; `ubuntu` permissions) | Lab `docs/Agent-Deploy-Pitfalls.md` |
-| Local Avalonia config | `docs/Local-Config.md` |
+| Local Manager config | `docs/Local-Config.md` |
+| Blazor Hybrid UI migration (before Phase 7) | [`Blazor-UI-Migration-Plan.md`](Blazor-UI-Migration-Plan.md) |
 | OCI API usage (429, waiters, thrift) | `docs/OCI-API-Usage.md` (lab twin: `OCI-mc-server-manager/docs/OCI-API-Usage.md`) |
 | Secrets / OCIDs (gitignored) | `data/config.local.json`; lab private markdown |
 
@@ -856,6 +902,25 @@ Phases 0–3 stay **DONE**; do not rewrite them. Bootstrap/HCL fixes that belong
 
 ## Plan changelog
 
+| 2026-08-15 | **Step 7.1 DONE.** Happy-path guide: [`docs/Guide.md`](Guide.md) (PAYG / `~/.oci` API key + Auth Token, Always Free confirmation, **$1 brake + ~$1–$2 residual**, Setup → play; SSH/door/OS appendix). **NEXT = Step 7.2** (SEQUENTIAL). Do not start 7.2 in this session. |
+| 2026-08-15 | **B13 DONE.** Phase B complete. Removed Avalonia `McManager.App` from slnx and deleted the project tree. One WinExe: `McManager.Hybrid` (not renamed). Docs/rules updated. `dotnet build` clean. **NEXT = Phase 7** (TODO). Do not start Phase 7 in this session. |
+| 2026-08-15 | **B12 DONE.** Hybrid Setup wizard (9 steps, resume JSON, Credential Manager token, deploy log timestamps/stick-to-bottom/percent, Deploy/Back lock, capacity wait). First-run/Advanced use the real wizard. Dry-run only. Avalonia App still builds. **NEXT = B13** (SEQUENTIAL). Do not start B13 in this session. Do not start Phase 7. |
+| 2026-08-15 | **B11 DONE.** Hybrid first-run + Connect-existing (button-gated Auto-detect; chooser; overwrite confirm; preserve SSH/RCON). Shared `ConnectExistingFlow` with Advanced. Avalonia App still builds. **NEXT = B12** (SEQUENTIAL). Do not start B12–B13 in this session. Do not start Phase 7. |
+| 2026-08-15 | **B10 DONE.** Hybrid Advanced / Danger Zone: technical VM/door status, break-glass Compute, idle OS-ISSUE-7, infra meta Refresh/Publish, Auto-detect, Setup stub (no tofu). Avalonia App still builds. **NEXT = B11** (SEQUENTIAL). Do not start B11–B13 in this session. Do not start Phase 7. |
+| 2026-08-15 | Parent pasted B6–B9 DI + MainLayout; tabs visible; **NEXT = B10**. Do not start B10 in this session. Do not start Phase 7. |
+| 2026-08-15 | **B8 DONE.** Hybrid Server Management: four info cards, Object Storage list/download/upload (native `IFilePicker`), SSH replace when VM1 RUNNING, soft-cap messaging. No Wipe/Modding/Delete. DI/layout snippets for parent paste. Avalonia App still builds. Do not start B10–B13 or Phase 7 in this session. |
+| 2026-08-15 | **B7 DONE.** Hybrid Usage dashboard/edit/publish (remaining-in-month on this tab; 2 min poll; dirty-gated Save). DI/layout snippets for parent paste. Avalonia App still builds. Do not start B10–B13 or Phase 7 in this session. |
+| 2026-08-15 | **B9 DONE.** Hybrid Troubleshooting one-shots (dedicated tab; confirm-gated; result log + copy). DI/layout snippets for parent paste. Avalonia App still builds. Do not start B10–B13 in this session. Do not start Phase 7. |
+| 2026-08-15 | **B6 DONE.** Hybrid Whitelist CRUD + Security List sync (Add-IP popup, hover actions, dirty-gated Save). DI/layout snippets for parent paste. Avalonia App still builds. **NEXT = B7 / B8 / B9** (PARALLEL-OK remaining; B10 sequential). Do not start B7–B13 in this session. Do not start Phase 7. |
+| 2026-08-15 | **B5 DONE.** Hybrid manage chrome live (status, power, pins, poll, toast); Door/Compute/OciSession DI. Avalonia App still builds. **NEXT = B6** (B6–B9 PARALLEL-OK among themselves; B10 sequential). Do not start B6–B9 in this session. Do not start Phase 7. |
+| 2026-08-15 | **B4 DONE.** Hybrid loads local config and shows reserved play IP; stub first-run when no manage config; no OCI on launch. Avalonia App still builds. **NEXT = B5.** Do not start B5 in this session. Do not start Phase 7. |
+| 2026-08-15 | **B3 DONE.** Hybrid `Ui/` host services (dialogs, pickers, clipboard, clock/dispatcher); WPF STA impls; Razor modal host; DEBUG probes. Avalonia App still builds. **NEXT = B4.** Do not start B4 in this session. Do not start Phase 7. |
+| 2026-08-15 | **B2 DONE.** Light warm-gray Hybrid layout shell (mockup chrome, placeholders, self-hosted fonts/icons). Avalonia App still builds. **NEXT = B3.** Do not start B3 in this session. Do not start Phase 7. |
+| 2026-08-15 | **B1 DONE.** `McManager.Hybrid` WPF + BlazorWebView host references Core; WebView2-missing MessageBox; Avalonia App still builds. **NEXT = B2.** Do not start B2 in this session. Do not start Phase 7. |
+| 2026-08-15 | **B0 DONE.** Agent rules + PRODUCT-IDEAS retargeted: Manager UI vehicle is Blazor Hybrid (WPF + WebView2). Historical Wails→Avalonia kept. **NEXT = B1.** Do not scaffold Hybrid. Do not start Phase 7. |
+| 2026-08-15 | Inserted **Phase B** (Blazor Hybrid UI: WPF + WebView2) **before** Phase 7. Avalonia polish abandoned as the UI vehicle; goals transfer to [`Blazor-UI-Migration-Plan.md`](Blazor-UI-Migration-Plan.md). **NEXT = B0.** Do not start Phase 7. Do not scaffold in the plan-creation session. |
+| 2026-08-15 | Phase **6** redesign (operator rejected mini-terminal): Running/Stopped novice status; pinned usage hours; Advanced technical VM/door status; custom title bar; no power-button flash on tab polls. NEXT remains Phase **7**. Do not start Phase 7 in this session. |
+| 2026-08-15 | Phase **6 DONE:** novice-ready UI polish (Semi Dark, mini-terminal, Setup log/progress/lock). NEXT = Phase **7** (Guide + greenfield E2E). Do not start Phase 7 in this session. |
 | 2026-08-15 | Phase **5 DONE:** Connect-existing auto-detect (button-gated; meta hydrate; chooser; local-only SSH/RCON). NEXT = Phase **6** (UI polish). Do not start Phase 6 in this session. |
 | 2026-08-15 | Step **4.3 DONE:** bootstrap/Re-Deploy write `white-list=false`; username optional; test VM1 product repair flipped leftover `true`. NEXT = Step **4.4**. |
 | 2026-08-15 | UI work: agents may search for and add NuGet packages (themes, icons, controls, etc.) — not restricted to Fluent / already-referenced libraries. |

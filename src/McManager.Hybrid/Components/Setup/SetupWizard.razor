@@ -1,0 +1,460 @@
+@inject SetupWizardViewModel Vm
+@inject HybridShell Shell
+@inject LocalConfigHost ConfigHost
+@inject IJSRuntime JS
+@implements IDisposable
+
+<div class="mcm-app mcm-wizard-app">
+    <header class="mcm-title-row">
+        <div class="mcm-wordmark">
+            <i class="ti ti-server-2" aria-hidden="true"></i>
+            <span>mc manager</span>
+        </div>
+        <span class="mcm-always-free">Always Free</span>
+    </header>
+
+    <div class="mcm-wizard">
+        <header class="mcm-wizard-header">
+            <h1>@Vm.StepTitle</h1>
+            <p>@Vm.StepSubtitle</p>
+        </header>
+
+        <div class="mcm-wizard-body">
+            @if (Vm.IsStepAlwaysFree)
+            {
+                <p class="mcm-wizard-kicker">Always Free first</p>
+                <p>
+                    This product uses Oracle Cloud Always Free resources (Ampere A1 game VM + a tiny doorbell VM). Confirm you understand the limits before continuing. There is no paid mode in this app.
+                </p>
+                <p>
+                    <button type="button" @onclick="Vm.OpenAlwaysFreeDocs">Open Always Free compute docs</button>
+                </p>
+                <label class="mcm-checkbox-row">
+                    <input type="checkbox"
+                           disabled="@(!Vm.CanMutateWizard)"
+                           @bind="Vm.AlwaysFreeConfirmed" />
+                    <span>I will stay on Always Free–eligible compute and accept that A1 capacity may be unavailable.</span>
+                </label>
+                <p class="mcm-wizard-hint">
+                    A $1 monthly budget is a last-resort brake that stops the VMs. Oracle may still bill a small residual (~$1–$2) after that brake fires. This is not a hard $0 guarantee.
+                </p>
+                <label class="mcm-checkbox-row">
+                    <input type="checkbox"
+                           disabled="@(!Vm.CanMutateWizard)"
+                           @bind="Vm.ResidualChargeDisclosed" />
+                    <span>I understand the $1 brake and possible ~$1–$2 residual charge.</span>
+                </label>
+                <p class="mcm-wizard-hint">
+                    If A1 Flex is out of capacity, a window will explain: try again now, auto-retry every 5 minutes, or resume later. It will not spam the Oracle API.
+                </p>
+                <label class="mcm-checkbox-row">
+                    <input type="checkbox"
+                           disabled="@(!Vm.CanMutateWizard)"
+                           @bind="Vm.CapacityWaitConsent" />
+                    <span>I understand capacity wait: try again now, auto-retry every 5 minutes, or resume later.</span>
+                </label>
+                @if (Vm.IsTofuDryRun)
+                {
+                    <p class="mcm-wizard-hint">This session has MCMANAGER_TOFU_DRY_RUN set. Deploy will not create Oracle resources.</p>
+                }
+            }
+            else if (Vm.IsStepOci)
+            {
+                <p>
+                    Choose the Oracle Cloud profile from this PC (~/.oci/config). Region and account details are read from that file so you can confirm this is the right tenancy. Prefer the tenancy home region so Always Free A1 / Micro eligibility applies.
+                </p>
+                <div class="mcm-field">
+                    <label for="mcm-setup-profile">OCI profile</label>
+                    <select id="mcm-setup-profile"
+                            disabled="@(!Vm.CanMutateWizard)"
+                            @bind="Vm.OciProfile">
+                        @foreach (var profile in Vm.Profiles)
+                        {
+                            <option value="@profile.Name">@profile</option>
+                        }
+                    </select>
+                </div>
+                <div class="mcm-field">
+                    <label for="mcm-setup-profile-details">Profile details (from ~/.oci/config)</label>
+                    <textarea id="mcm-setup-profile-details"
+                              class="mcm-wizard-mono"
+                              readonly
+                              rows="5">@Vm.ProfileDetailsText</textarea>
+                </div>
+            }
+            else if (Vm.IsStepCompartment)
+            {
+                <p>
+                    A new deploy creates a dedicated compartment named mcmgr. Repair or a disposable test can target an existing empty compartment instead.
+                </p>
+                <label class="mcm-radio-row">
+                    <input type="radio"
+                           name="mcm-setup-compartment"
+                           disabled="@(!Vm.CanMutateWizard)"
+                           checked="@Vm.CreateCompartment"
+                           @onchange="@(() => Vm.CreateCompartment = true)" />
+                    <span>Create compartment named mcmgr (default)</span>
+                </label>
+                <div class="mcm-field">
+                    <label for="mcm-setup-comp-name">Compartment name</label>
+                    <input id="mcm-setup-comp-name"
+                           type="text"
+                           placeholder="mcmgr"
+                           disabled="@(!Vm.CanMutateWizard || !Vm.CreateCompartment)"
+                           @bind="Vm.CompartmentName"
+                           @bind:event="oninput" />
+                </div>
+                <label class="mcm-radio-row">
+                    <input type="radio"
+                           name="mcm-setup-compartment"
+                           disabled="@(!Vm.CanMutateWizard)"
+                           checked="@Vm.UseExistingCompartment"
+                           @onchange="@(() => Vm.CreateCompartment = false)" />
+                    <span>Use an existing empty compartment OCID</span>
+                </label>
+                <div class="mcm-field">
+                    <label for="mcm-setup-comp-ocid">Existing compartment OCID</label>
+                    <input id="mcm-setup-comp-ocid"
+                           type="text"
+                           class="mcm-wizard-mono"
+                           placeholder="ocid1.compartment.oc1.."
+                           disabled="@(!Vm.CanMutateWizard || Vm.CreateCompartment)"
+                           @bind="Vm.ExistingCompartmentId"
+                           @bind:event="oninput" />
+                </div>
+            }
+            else if (Vm.IsStepAlertEmail)
+            {
+                <p>
+                    Where should Oracle send the $1 last-resort budget alert? Use a comma between addresses if more than one.
+                </p>
+                <div class="mcm-field">
+                    <label for="mcm-setup-email">Alert email</label>
+                    <input id="mcm-setup-email"
+                           type="text"
+                           placeholder="you@example.com"
+                           disabled="@(!Vm.CanMutateWizard)"
+                           @bind="Vm.AlertEmail"
+                           @bind:event="oninput" />
+                </div>
+            }
+            else if (Vm.IsStepSsh)
+            {
+                <p>
+                    Create a new SSH key on this PC, or import an existing public key. The private key stays on disk and is not saved in Setup's resume file.
+                </p>
+                <label class="mcm-radio-row">
+                    <input type="radio"
+                           name="mcm-setup-ssh"
+                           disabled="@(!Vm.CanMutateWizard)"
+                           checked="@Vm.SshGenerateMode"
+                           @onchange="@(() => Vm.SshGenerateMode = true)" />
+                    <span>Generate a new key</span>
+                </label>
+                <label class="mcm-radio-row">
+                    <input type="radio"
+                           name="mcm-setup-ssh"
+                           disabled="@(!Vm.CanMutateWizard)"
+                           checked="@Vm.SshImportMode"
+                           @onchange="@(() => Vm.SshGenerateMode = false)" />
+                    <span>Import an existing .pub</span>
+                </label>
+                <div class="mcm-wizard-actions">
+                    <button type="button"
+                            disabled="@(!Vm.CanMutateWizard)"
+                            @onclick="Vm.GenerateSshKeyAsync">
+                        Generate key
+                    </button>
+                    <button type="button"
+                            disabled="@(!Vm.CanMutateWizard)"
+                            @onclick="Vm.ImportSshKeyAsync">
+                        Import .pub…
+                    </button>
+                </div>
+                <div class="mcm-field">
+                    <label for="mcm-setup-ssh-pub">Public key</label>
+                    <textarea id="mcm-setup-ssh-pub"
+                              class="mcm-wizard-mono"
+                              rows="4"
+                              disabled="@(!Vm.CanMutateWizard)"
+                              @bind="Vm.SshPublicKey"
+                              @bind:event="oninput"></textarea>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(Vm.SshPublicKeyPath))
+                {
+                    <p class="mcm-wizard-hint mcm-wizard-mono">@Vm.SshPublicKeyPath</p>
+                }
+                @if (!string.IsNullOrWhiteSpace(Vm.SshFingerprint))
+                {
+                    <p class="mcm-wizard-hint mcm-wizard-mono">@Vm.SshFingerprint</p>
+                }
+            }
+            else if (Vm.IsStepGame)
+            {
+                <p>
+                    Setup installs Vanilla Minecraft only (no Paper, Forge, or modpacks). Pick a release; the server downloads the matching jar when it is created.
+                </p>
+                <label class="mcm-checkbox-row">
+                    <input type="checkbox"
+                           disabled="@(!Vm.CanMutateWizard)"
+                           @bind="Vm.VanillaConfirmed" />
+                    <span>I want a Vanilla Minecraft server (not Paper or modded).</span>
+                </label>
+                <label class="mcm-checkbox-row">
+                    <input type="checkbox"
+                           disabled="@(!Vm.CanMutateWizard)"
+                           @bind="Vm.IncludeSnapshots" />
+                    <span>Advanced: include snapshots</span>
+                </label>
+                <div class="mcm-field">
+                    <label for="mcm-setup-mc-version">Minecraft version</label>
+                    <select id="mcm-setup-mc-version"
+                            disabled="@(!Vm.CanMutateWizard)"
+                            @bind="Vm.MinecraftVersion">
+                        @if (!string.IsNullOrWhiteSpace(Vm.MinecraftVersion)
+                             && !Vm.VersionIds.Contains(Vm.MinecraftVersion))
+                        {
+                            <option value="@Vm.MinecraftVersion">@Vm.MinecraftVersion</option>
+                        }
+                        @foreach (var id in Vm.VersionIds)
+                        {
+                            <option value="@id">@id</option>
+                        }
+                    </select>
+                </div>
+                <p class="mcm-wizard-hint">@Vm.VersionCatalogNotes</p>
+            }
+            else if (Vm.IsStepEula)
+            {
+                <p>
+                    You must accept Mojang's Minecraft EULA. The installer writes eula.txt only if this is checked. This product will not auto-accept it for you.
+                </p>
+                <p>
+                    <button type="button" @onclick="Vm.OpenEula">Open Minecraft EULA</button>
+                </p>
+                <label class="mcm-checkbox-row">
+                    <input type="checkbox"
+                           disabled="@(!Vm.CanMutateWizard)"
+                           @bind="Vm.EulaAccepted" />
+                    <span>I accept the Minecraft EULA.</span>
+                </label>
+            }
+            else if (Vm.IsStepAuthToken)
+            {
+                <p>
+                    Optional. Needed later to push the spend-brake Function image. Stored in Windows Credential Manager, not in the Setup resume file. You can skip this and finish Setup.
+                </p>
+                <div class="mcm-field">
+                    <label for="mcm-setup-token">Auth Token (optional)</label>
+                    <input id="mcm-setup-token"
+                           type="password"
+                           autocomplete="off"
+                           placeholder="Auth Token (optional)"
+                           disabled="@(!Vm.CanMutateWizard)"
+                           @bind="Vm.AuthTokenInput"
+                           @bind:event="oninput" />
+                </div>
+                <div class="mcm-wizard-actions">
+                    <button type="button" @onclick="Vm.StoreAuthToken">Store token</button>
+                    <button type="button" @onclick="Vm.ClearAuthToken">Clear stored token</button>
+                </div>
+                <p class="mcm-wizard-hint">@Vm.AuthTokenStoredDisplay</p>
+            }
+            else if (Vm.IsStepSummary)
+            {
+                <p class="mcm-wizard-lead">
+                    Review the plan, confirm your public IP, check the boxes, then Deploy. If A1 is out of capacity, a window will explain retry options.
+                </p>
+                <fieldset class="mcm-wizard-fieldset" disabled="@(!Vm.CanMutateWizard)">
+                    <div class="mcm-field">
+                        <label for="mcm-setup-admin-cidr">Your public IP (cloud firewall allowlist)</label>
+                        <input id="mcm-setup-admin-cidr"
+                               type="text"
+                               placeholder="203.0.113.10/32"
+                               @bind="Vm.AdminCidr"
+                               @bind:event="oninput" />
+                    </div>
+                    <div class="mcm-field">
+                        <label for="mcm-setup-mc-user">Your Minecraft username (optional — later MOTD/ops; join is gated by the IP allowlist, not an in-game whitelist)</label>
+                        <input id="mcm-setup-mc-user"
+                               type="text"
+                               placeholder="Steve"
+                               @bind="Vm.AdminMinecraftUsername"
+                               @bind:event="oninput" />
+                    </div>
+                    <label class="mcm-checkbox-row">
+                        <input type="checkbox" @bind="Vm.CreateResourcesConfirmed" />
+                        <span>@Vm.CreateResourcesConfirmText</span>
+                    </label>
+                    @if (Vm.ShowReplaceConfigConfirm)
+                    {
+                        <label class="mcm-checkbox-row">
+                            <input type="checkbox" @bind="Vm.ReplaceConfigConfirmed" />
+                            <span>Replace config.local.json in this data folder after a successful deploy.</span>
+                        </label>
+                    }
+                </fieldset>
+
+                @if (Vm.IsPollingCapacity)
+                {
+                    <div class="mcm-section-card">@Vm.AutoRetryBannerText</div>
+                }
+
+                @if (Vm.ShowDeployProgress)
+                {
+                    <div class="mcm-wizard-progress">
+                        <div class="mcm-wizard-progress-row">
+                            <span>@Vm.DeployProgressCaption</span>
+                            <span class="mcm-wizard-mono">@Vm.DeployProgressPercentDisplay</span>
+                        </div>
+                        <div class="mcm-progress-track" role="progressbar"
+                             aria-valuemin="0"
+                             aria-valuemax="100"
+                             aria-valuenow="@((int)Math.Round(Vm.DeployProgressPercent))">
+                            <div class="mcm-progress-fill" style="width: @(Vm.DeployProgressPercent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%"></div>
+                        </div>
+                    </div>
+                }
+
+                <div class="mcm-wizard-log-block">
+                    <div class="mcm-wizard-log-label">
+                        <span>Plan summary</span>
+                        <button type="button" title="Copy plan summary" @onclick="Vm.CopyPlanSummaryAsync">Copy</button>
+                    </div>
+                    <pre class="mcm-wizard-log mcm-wizard-mono">@Vm.PlanSummaryText</pre>
+                </div>
+
+                <div class="mcm-wizard-log-block mcm-wizard-log-grow">
+                    <div class="mcm-wizard-log-label">
+                        <span>Deploy log</span>
+                        <button type="button" title="Copy deploy log" @onclick="Vm.CopyDeployLogAsync">Copy</button>
+                    </div>
+                    <pre id="mcm-deploy-log" class="mcm-wizard-log mcm-wizard-mono">@Vm.DeployLog</pre>
+                </div>
+            }
+        </div>
+
+        <footer class="mcm-wizard-footer">
+            <p class="mcm-wizard-status" title="@Vm.StatusMessage">@Vm.StatusMessage</p>
+            <div class="mcm-wizard-nav">
+                <button type="button"
+                        disabled="@(!Vm.CanGoBack)"
+                        title="Go to the previous step. Disabled after Deploy starts."
+                        @onclick="Vm.Back">
+                    Back
+                </button>
+                @if (!Vm.IsLastStep)
+                {
+                    <button type="button"
+                            class="mcm-primary"
+                            disabled="@(!Vm.CanGoNext)"
+                            @onclick="Vm.NextAsync">
+                        Next
+                    </button>
+                }
+                @if (Vm.ShowDeployButton)
+                {
+                    <button type="button"
+                            class="mcm-primary"
+                            disabled="@(!Vm.CanDeploy)"
+                            title="@Vm.DeployToolTip"
+                            @onclick="Vm.DeployAsync">
+                        Deploy
+                    </button>
+                }
+                @if (Vm.ShowCapacityOptionsButton)
+                {
+                    <button type="button" @onclick="Vm.ShowCapacityOptionsAsync">Retry options…</button>
+                }
+                @if (Vm.IsPollingCapacity)
+                {
+                    <button type="button" @onclick="Vm.StopCapacityPoll">Pause auto-retry</button>
+                }
+                <button type="button"
+                        disabled="@(!Vm.CanCloseWizard)"
+                        title="You can close while a deploy is not running. Resume later from Advanced → Deploy / repair."
+                        @onclick="Close">
+                    Close
+                </button>
+            </div>
+        </footer>
+    </div>
+</div>
+
+@if (Vm.CapacityDialogOpen)
+{
+    <div class="mcm-modal-overlay open"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="mcm-capacity-title"
+         @onclick="@(() => Vm.CompleteCapacityDialog(CapacityWaitChoice.Dismissed))">
+        <div class="mcm-modal-card is-wide" @onclick:stopPropagation="true">
+            <h2 id="mcm-capacity-title" class="mcm-modal-title">Always Free capacity unavailable</h2>
+            <p class="mcm-modal-body">@SetupWizardViewModel.CapacityWaitExplanation</p>
+            <div class="mcm-modal-actions mcm-capacity-actions">
+                <button type="button"
+                        class="mcm-primary"
+                        @onclick="@(() => Vm.CompleteCapacityDialog(CapacityWaitChoice.RetryNow))">
+                    Try again now
+                </button>
+                <button type="button"
+                        @onclick="@(() => Vm.CompleteCapacityDialog(CapacityWaitChoice.AutoRetry))">
+                    Auto-retry every 5 minutes
+                </button>
+                <button type="button"
+                        @onclick="@(() => Vm.CompleteCapacityDialog(CapacityWaitChoice.Dismissed))">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool _initialized;
+
+    protected override void OnInitialized()
+    {
+        Vm.PropertyChanged += OnVmChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_initialized)
+        {
+            _initialized = true;
+            await Vm.InitializeAsync();
+        }
+
+        if (Vm.IsStepSummary)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("mcmSetupLog.attach", "mcm-deploy-log");
+                await JS.InvokeVoidAsync("mcmSetupLog.scrollIfStuck", "mcm-deploy-log");
+            }
+            catch (Exception)
+            {
+                // WebView/script not ready yet.
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        Vm.PropertyChanged -= OnVmChanged;
+        Vm.PrepareToClose();
+    }
+
+    private void OnVmChanged(object? sender, PropertyChangedEventArgs e) =>
+        _ = InvokeAsync(StateHasChanged);
+
+    private void Close()
+    {
+        if (!Vm.CanCloseWizard)
+            return;
+        Vm.PrepareToClose();
+        ConfigHost.Reload();
+        Shell.CloseSetup();
+    }
+}

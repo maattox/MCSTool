@@ -1,0 +1,653 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+using McManager.Core.Config;
+using McManager.Core.Services;
+using McManager.Core.Usage;
+using McManager.Hybrid.Ui;
+
+namespace McManager.Hybrid.ViewModels;
+
+/// <summary>
+/// Manage chrome: novice status, door-aware power, pinned hours, poll, toast.
+/// Tab Object Storage work (B6–B10) must not set <see cref="_powerActionInFlight"/>.
+/// </summary>
+public sealed partial class MainViewModel : ObservableObject, IDisposable
+{
+    public const string Placeholder = "—";
+
+    private static readonly TimeSpan DoorPollInterval = TimeSpan.FromSeconds(15);
+    private static readonly TimeSpan OciPollInterval = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan BackgroundPollInterval = TimeSpan.FromMinutes(2);
+
+    private readonly LocalConfigHost _configHost;
+    private readonly ManageCloudServices _cloud;
+    private readonly IUiClock _clock;
+    private readonly IUiDispatcher _dispatcher;
+    private readonly IClipboard _clipboard;
+    private readonly WindowFocusBroker _focus;
+
+    private readonly ManagerLocalConfig? _config;
+    private readonly DoorClient? _door;
+    private readonly ComputeService? _compute;
+    private readonly UsageBudgetStore? _usageStore;
+    private readonly SshService _ssh;
+
+    private CancellationTokenSource? _pollCts;
+    private CancellationTokenSource? _toastCts;
+    private CancellationTokenSource? _copyLabelCts;
+    private DateTimeOffset _lastDoorPollUtc = DateTimeOffset.MinValue;
+    private DateTimeOffset _lastOciPollUtc = DateTimeOffset.MinValue;
+    private UsageLedgerDocument _pinLedger = UsageLedgerDocument.Empty();
+    private bool _windowFocused = true;
+    private bool _disposed;
+    private bool _chromeStarted;
+    private bool _hasInitialStatus;
+    private bool _powerActionInFlight;
+
+    public string Title { get; } = "mc manager";
+
+    [ObservableProperty]
+    private string _status = Placeholder;
+
+    [ObservableProperty]
+    private bool _statusIsRunning;
+
+    [ObservableProperty]
+    private string _playIp = Placeholder;
+
+    [ObservableProperty]
+    private string _playersDisplay = Placeholder;
+
+    [ObservableProperty]
+    private string _copyPlayIpLabel = "copy";
+
+    [ObservableProperty]
+    private string _vm1Lifecycle = Placeholder;
+
+    [ObservableProperty]
+    private string _doorState = Placeholder;
+
+    [ObservableProperty]
+    private string _actionFeedback = "";
+
+    [ObservableProperty]
+    private bool _configLoaded;
+
+    [ObservableProperty]
+    private bool _canStart;
+
+    [ObservableProperty]
+    private bool _canStop;
+
+    [ObservableProperty]
+    private bool _canRestart;
+
+    [ObservableProperty]
+    private string _toastMessage = "";
+
+    [ObservableProperty]
+    private bool _toastVisible;
+
+    [ObservableProperty]
+    private bool _toastIsError;
+
+    [ObservableProperty]
+    private string _pinTodayValue = Placeholder;
+
+    [ObservableProperty]
+    private string _pinTodayHint = "";
+
+    [ObservableProperty]
+    private double _pinTodayFraction;
+
+    [ObservableProperty]
+    private string _pinAvgValue = Placeholder;
+
+    [ObservableProperty]
+    private string _pinAvgHint = "";
+
+    [ObservableProperty]
+    private double _pinAvgFraction;
+
+    [ObservableProperty]
+    private string _pinMonthValue = Placeholder;
+
+    [ObservableProperty]
+    private string _pinMonthHint = "";
+
+    [ObservableProperty]
+    private double _pinMonthFraction;
+
+    [ObservableProperty]
+    private string _pinRolloverValue = Placeholder;
+
+    [ObservableProperty]
+    private string _pinRolloverHint = "";
+
+    [ObservableProperty]
+    private bool _pinRolloverPositive;
+
+    public bool HasPlayIp =>
+        !string.IsNullOrWhiteSpace(PlayIp) && PlayIp != Placeholder;
+
+    public string StartToolTip => CanStart
+        ? "Start the Minecraft server so friends can connect."
+        : StartDisabledReason;
+
+    public string StopToolTip => CanStop
+        ? "Save the world and shut the server down."
+        : StopDisabledReason;
+
+    public string RestartToolTip => CanRestart
+        ? "Restart Minecraft only. The game computer stays on."
+        : RestartDisabledReason;
+
+    private string StartDisabledReason
+    {
+        get
+        {
+            if (!_hasInitialStatus)
+                return "Waiting for the first status check.";
+            if (_powerActionInFlight)
+                return "Wait — a start, stop, or restart is already in progress.";
+            if (!ConfigLoaded)
+                return "Local config is missing or failed to load.";
+            if (DoorState is Placeholder or "unreachable")
+                return "Can't start: the wake service is unreachable. Try Troubleshooting if this lasts.";
+            if (string.Equals(DoorState, "PLAYABLE", StringComparison.OrdinalIgnoreCase))
+                return "Already running — friends can connect at the play IP.";
+            if (string.Equals(DoorState, "STARTING", StringComparison.OrdinalIgnoreCase))
+                return "Already starting. Wait until status is Running.";
+            return "Start is unavailable right now.";
+        }
+    }
+
+    private string StopDisabledReason
+    {
+        get
+        {
+            if (!_hasInitialStatus)
+                return "Waiting for the first status check.";
+            if (_powerActionInFlight)
+                return "Wait — a start, stop, or restart is already in progress.";
+            if (!ConfigLoaded)
+                return "Local config is missing or failed to load.";
+            return "Nothing to stop — the server is already off.";
+        }
+    }
+
+    private string RestartDisabledReason
+    {
+        get
+        {
+            if (!_hasInitialStatus)
+                return "Waiting for the first status check.";
+            if (_powerActionInFlight)
+                return "Wait — a start, stop, or restart is already in progress.";
+            if (!ConfigLoaded)
+                return "Local config is missing or failed to load.";
+            return "Can't restart Minecraft while the game computer is off. Use Start first.";
+        }
+    }
+
+    public MainViewModel(
+        LocalConfigHost configHost,
+        ManageCloudServices cloud,
+        IUiClock clock,
+        IUiDispatcher dispatcher,
+        IClipboard clipboard,
+        WindowFocusBroker focus)
+    {
+        _configHost = configHost;
+        _cloud = cloud;
+        _clock = clock;
+        _dispatcher = dispatcher;
+        _clipboard = clipboard;
+        _focus = focus;
+
+        _config = configHost.Config;
+        _door = cloud.Door;
+        _compute = cloud.Compute;
+        _usageStore = cloud.UsageStore;
+        _ssh = cloud.Ssh;
+        PlayIp = configHost.PlayIp;
+        ConfigLoaded = configHost.HasManageConfig && _config is not null;
+    }
+
+    /// <summary>
+    /// Begin poll + first status/pin load. Call from the manage layout only
+    /// (not first-run). Idempotent.
+    /// </summary>
+    public void StartChrome()
+    {
+        if (_disposed || _chromeStarted)
+            return;
+
+        _chromeStarted = true;
+        _windowFocused = _focus.IsFocused;
+        _focus.FocusChanged += OnWindowFocusChanged;
+
+        if (!ConfigLoaded || _config is null)
+        {
+            Status = "Stopped";
+            StatusIsRunning = false;
+            PlayersDisplay = Placeholder;
+            ShowToast(_configHost.LoadResult.Error ?? "Local config failed to load.", isError: true);
+            return;
+        }
+
+        ApplyPinnedUsage(BuildLocalFallbackPins());
+
+        if (!string.IsNullOrWhiteSpace(_cloud.SessionError))
+            ShowToast($"Cloud session failed: {_cloud.SessionError}", isError: true);
+        if (!string.IsNullOrWhiteSpace(_cloud.DoorError))
+            ShowToast($"Wake service client failed: {_cloud.DoorError}", isError: true);
+
+        StartPoller();
+        _ = RefreshStatusAsync(forceDoor: true, forceOci: true);
+        _ = RefreshPinsAsync();
+    }
+
+    public void SetWindowFocused(bool focused)
+    {
+        _windowFocused = focused;
+        if (focused)
+            _ = RefreshStatusAsync(forceDoor: true, forceOci: true);
+    }
+
+    public async Task StartAsync()
+    {
+        if (_door is null || _powerActionInFlight || !CanStart)
+            return;
+
+        _powerActionInFlight = true;
+        UpdateCommandFlags();
+        ActionFeedback = "Starting…";
+        ShowToast("Starting the game server…", isError: false);
+
+        try
+        {
+            var wake = await _door.WakeAsync();
+            if (!wake.Succeeded)
+            {
+                ActionFeedback = wake.Error ?? "Start failed.";
+                ShowToast(ActionFeedback, isError: true);
+                return;
+            }
+
+            ActionFeedback = "Start accepted — waiting until friends can connect…";
+            await WaitForDoorAsync(
+                s => s.IsPlayable || s.IsDegraded || s.IsBudgetExhausted,
+                TimeSpan.FromMinutes(20));
+        }
+        finally
+        {
+            _powerActionInFlight = false;
+            await RefreshStatusAsync(forceDoor: true, forceOci: true);
+        }
+    }
+
+    public async Task StopAsync()
+    {
+        if (_door is null || _powerActionInFlight || !CanStop)
+            return;
+
+        _powerActionInFlight = true;
+        UpdateCommandFlags();
+        ActionFeedback = "Stopping…";
+        ShowToast("Stopping the game server…", isError: false);
+
+        try
+        {
+            var stop = await _door.IdleEmptyAsync();
+            if (!stop.Succeeded)
+            {
+                ActionFeedback = stop.Error ?? "Stop failed.";
+                ShowToast(ActionFeedback, isError: true);
+                return;
+            }
+
+            ActionFeedback = "Stop accepted — waiting until the server is off…";
+            await WaitForDoorAsync(
+                s => s.IsIdle || s.IsDegraded || s.IsBudgetExhausted,
+                TimeSpan.FromMinutes(20));
+        }
+        finally
+        {
+            _powerActionInFlight = false;
+            await RefreshStatusAsync(forceDoor: true, forceOci: true);
+        }
+    }
+
+    public async Task RestartAsync()
+    {
+        if (_config is null || _powerActionInFlight || !CanRestart)
+            return;
+
+        _powerActionInFlight = true;
+        UpdateCommandFlags();
+        ActionFeedback = "Restarting Minecraft…";
+        ShowToast("Restarting Minecraft…", isError: false);
+
+        try
+        {
+            var result = await _ssh.RestartMinecraftAsync(_config.Vm1);
+            ActionFeedback = result.Succeeded
+                ? "Minecraft restarted."
+                : result.Error ?? "Restart failed.";
+            ShowToast(ActionFeedback, isError: !result.Succeeded);
+        }
+        finally
+        {
+            _powerActionInFlight = false;
+            UpdateCommandFlags();
+        }
+    }
+
+    public async Task CopyPlayIpAsync()
+    {
+        if (!HasPlayIp)
+        {
+            ActionFeedback = "No play IP to copy.";
+            ShowToast(ActionFeedback, isError: true);
+            return;
+        }
+
+        await _clipboard.SetTextAsync(PlayIp);
+        CopyPlayIpLabel = "copied";
+        _copyLabelCts?.Cancel();
+        _copyLabelCts?.Dispose();
+        var cts = new CancellationTokenSource();
+        _copyLabelCts = cts;
+        _ = RestoreCopyLabelAsync(cts.Token);
+        ActionFeedback = $"Copied play IP: {PlayIp}";
+        ShowToast("Copied play IP.", isError: false);
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+            return;
+        _disposed = true;
+        _focus.FocusChanged -= OnWindowFocusChanged;
+        _pollCts?.Cancel();
+        _pollCts?.Dispose();
+        _toastCts?.Cancel();
+        _toastCts?.Dispose();
+        _copyLabelCts?.Cancel();
+        _copyLabelCts?.Dispose();
+    }
+
+    partial void OnCanStartChanged(bool value) => NotifyPowerTooltips();
+    partial void OnCanStopChanged(bool value) => NotifyPowerTooltips();
+    partial void OnCanRestartChanged(bool value) => NotifyPowerTooltips();
+    partial void OnPlayIpChanged(string value) => OnPropertyChanged(nameof(HasPlayIp));
+
+    private void OnWindowFocusChanged(bool focused) =>
+        _ = _dispatcher.InvokeAsync(() => SetWindowFocused(focused));
+
+    private void StartPoller()
+    {
+        _pollCts = new CancellationTokenSource();
+        _ = RunPollLoopAsync(_pollCts.Token);
+    }
+
+    private async Task RunPollLoopAsync(CancellationToken cancellationToken)
+    {
+        using var timer = _clock.CreatePeriodicTimer(TimeSpan.FromSeconds(5));
+        try
+        {
+            while (await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false))
+            {
+                await _dispatcher.InvokeAsync(OnPollTickAsync, cancellationToken).ConfigureAwait(false);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private async Task OnPollTickAsync()
+    {
+        if (_disposed || _powerActionInFlight)
+            return;
+
+        var now = _clock.UtcNow;
+        var doorDue = now - _lastDoorPollUtc >= (_windowFocused ? DoorPollInterval : BackgroundPollInterval);
+        var ociDue = now - _lastOciPollUtc >= (_windowFocused ? OciPollInterval : BackgroundPollInterval);
+        if (!doorDue && !ociDue)
+            return;
+
+        await RefreshStatusAsync(forceDoor: doorDue, forceOci: ociDue);
+    }
+
+    private async Task RefreshStatusAsync(bool forceDoor, bool forceOci)
+    {
+        if (_config is null)
+            return;
+
+        DoorStatus? doorStatus = null;
+
+        if (forceDoor && _door is not null)
+        {
+            _lastDoorPollUtc = _clock.UtcNow;
+            var doorResult = await _door.GetStatusParsedAsync();
+            if (doorResult.Succeeded && doorResult.Value is not null)
+            {
+                doorStatus = doorResult.Value;
+                DoorState = doorStatus.Door;
+            }
+            else if (!string.IsNullOrWhiteSpace(doorResult.Error))
+            {
+                DoorState = "unreachable";
+                if (!_powerActionInFlight)
+                    ActionFeedback = doorResult.Error;
+            }
+        }
+
+        if (forceOci && _compute is not null)
+        {
+            _lastOciPollUtc = _clock.UtcNow;
+            var life = await _compute.GetLifecycleStateAsync(_config.Vm1.InstanceId);
+            if (life.Succeeded && life.Value is not null)
+            {
+                Vm1Lifecycle = life.Value;
+            }
+            else if (life.Error is not null)
+            {
+                if (!_powerActionInFlight)
+                    ActionFeedback = life.Error;
+            }
+        }
+
+        if (doorStatus is null && DoorState is not (Placeholder or "unreachable"))
+            doorStatus = new DoorStatus { Door = DoorState };
+
+        ApplyNoviceStatus(doorStatus);
+        _hasInitialStatus = true;
+        UpdateCommandFlags(doorStatus);
+    }
+
+    private void ApplyNoviceStatus(DoorStatus? door)
+    {
+        StatusIsRunning = door?.IsPlayable == true;
+        Status = StatusIsRunning ? "Running" : "Stopped";
+        if (!StatusIsRunning)
+            PlayersDisplay = Placeholder;
+    }
+
+    private void UpdateCommandFlags(DoorStatus? door = null)
+    {
+        door ??= DoorState is Placeholder or "unreachable"
+            ? null
+            : new DoorStatus { Door = DoorState };
+
+        var life = (Vm1Lifecycle ?? "").ToUpperInvariant();
+        var vmRunning = life == "RUNNING";
+        var allowPower = _hasInitialStatus && !_powerActionInFlight;
+
+        CanStart = allowPower
+                   && door is not null
+                   && !door.IsStarting
+                   && !door.IsPlayable;
+
+        CanStop = allowPower
+                  && (door is { IsPlayable: true } or { IsStarting: true } || vmRunning);
+
+        CanRestart = allowPower && vmRunning;
+        NotifyPowerTooltips();
+    }
+
+    private void NotifyPowerTooltips()
+    {
+        OnPropertyChanged(nameof(StartToolTip));
+        OnPropertyChanged(nameof(StopToolTip));
+        OnPropertyChanged(nameof(RestartToolTip));
+    }
+
+    /// <summary>
+    /// Chrome pin pull. Must not grey Start/Stop/Restart (not a power action;
+    /// later tab Object Storage polls must follow the same rule).
+    /// </summary>
+    private async Task RefreshPinsAsync()
+    {
+        if (_config is null)
+            return;
+
+        BudgetConfigDocument budget;
+        if (_usageStore is not null)
+        {
+            var pull = await _usageStore.PullAsync(forceLedger: true, _pinLedger);
+            if (!pull.Succeeded || pull.Value is null)
+                return;
+
+            _pinLedger = pull.Value.Ledger;
+            budget = pull.Value.Budget ?? BudgetConfigDocument.FromLocal(_config.Budget, _config.Vm1);
+        }
+        else
+        {
+            budget = BudgetConfigDocument.FromLocal(_config.Budget, _config.Vm1);
+        }
+
+        var report = UsageMath.ComputeBudgetReport(
+            _pinLedger,
+            budget.MonthlyOcpuTarget,
+            budget.MonthlyGbTarget,
+            budget.SoftOcpuCap,
+            budget.SoftGbCap);
+        ApplyPinnedUsage(PinnedUsageSnapshot.FromReport(report, ResolveShapeOcpus(budget.ShapeOcpus)));
+    }
+
+    private PinnedUsageSnapshot BuildLocalFallbackPins()
+    {
+        var budget = BudgetConfigDocument.FromLocal(_config!.Budget, _config.Vm1);
+        var report = UsageMath.ComputeBudgetReport(
+            _pinLedger,
+            budget.MonthlyOcpuTarget,
+            budget.MonthlyGbTarget,
+            budget.SoftOcpuCap,
+            budget.SoftGbCap);
+        return PinnedUsageSnapshot.FromReport(report, ResolveShapeOcpus(budget.ShapeOcpus));
+    }
+
+    private double ResolveShapeOcpus(double shapeOcpus)
+    {
+        if (shapeOcpus > 0)
+            return shapeOcpus;
+        if (_config is not null && _config.Vm1.ShapeOcpus > 0)
+            return _config.Vm1.ShapeOcpus;
+        return 4;
+    }
+
+    private void ApplyPinnedUsage(PinnedUsageSnapshot snap)
+    {
+        PinTodayValue = snap.TodayValue;
+        PinTodayHint = snap.TodayHint;
+        PinTodayFraction = snap.TodayFraction;
+        PinAvgValue = snap.AvgValue;
+        PinAvgHint = snap.AvgHint;
+        PinAvgFraction = snap.AvgFraction;
+        PinMonthValue = snap.MonthValue;
+        PinMonthHint = snap.MonthHint;
+        PinMonthFraction = snap.MonthFraction;
+        PinRolloverValue = snap.RolloverValue;
+        PinRolloverHint = snap.RolloverHint;
+        PinRolloverPositive = snap.RolloverPositive;
+    }
+
+    private void ShowToast(string message, bool isError)
+    {
+        ToastMessage = message;
+        ToastIsError = isError;
+        ToastVisible = !string.IsNullOrWhiteSpace(message);
+        _toastCts?.Cancel();
+        _toastCts?.Dispose();
+        if (!ToastVisible)
+            return;
+
+        var cts = new CancellationTokenSource();
+        _toastCts = cts;
+        var delay = TimeSpan.FromSeconds(isError ? 8 : 3.5);
+        _ = HideToastAfterAsync(delay, cts.Token);
+    }
+
+    private async Task HideToastAfterAsync(TimeSpan delay, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _clock.Delay(delay, cancellationToken).ConfigureAwait(false);
+            ToastVisible = false;
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private async Task RestoreCopyLabelAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _clock.Delay(TimeSpan.FromMilliseconds(1200), cancellationToken).ConfigureAwait(false);
+            CopyPlayIpLabel = "copy";
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private async Task WaitForDoorAsync(Func<DoorStatus, bool> predicate, TimeSpan timeout)
+    {
+        if (_door is null)
+            return;
+
+        var deadline = _clock.UtcNow + timeout;
+        var delaySeconds = 3.0;
+
+        while (_clock.UtcNow < deadline)
+        {
+            var result = await _door.GetStatusParsedAsync();
+            _lastDoorPollUtc = _clock.UtcNow;
+            if (result.Succeeded && result.Value is not null)
+            {
+                DoorState = result.Value.Door;
+                ApplyNoviceStatus(result.Value);
+                if (predicate(result.Value))
+                {
+                    ActionFeedback = result.Value.IsDegraded
+                        ? $"Wake service degraded: {result.Value.LastError}"
+                        : StatusIsRunning
+                            ? "Server is running."
+                            : "Server is stopped.";
+                    if (result.Value.IsDegraded || result.Value.IsBudgetExhausted)
+                        ShowToast(ActionFeedback, isError: true);
+                    return;
+                }
+            }
+
+            await _clock.Delay(TimeSpan.FromSeconds(Math.Min(delaySeconds, 15)));
+            delaySeconds = Math.Min(delaySeconds * 1.5, 15);
+        }
+
+        ActionFeedback = "Timed out waiting for the server to change state.";
+        ShowToast(ActionFeedback, isError: true);
+    }
+}

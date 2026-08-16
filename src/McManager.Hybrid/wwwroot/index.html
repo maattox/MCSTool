@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MC Server Manager</title>
+    <base href="/" />
+    <link href="css/fonts.css" rel="stylesheet" />
+    <link href="css/tabler-icons.css" rel="stylesheet" />
+    <link href="css/app.css" rel="stylesheet" />
+    <link href="McManager.Hybrid.styles.css" rel="stylesheet" />
+</head>
+
+<body>
+    <script>
+        window.mcmSetupLog = {
+            attach: function (id) {
+                var el = document.getElementById(id);
+                if (!el || el.dataset.mcmLogHooked === "1") {
+                    return;
+                }
+                el.dataset.mcmLogHooked = "1";
+                if (el.dataset.mcmStick !== "0") {
+                    el.dataset.mcmStick = "1";
+                }
+                el.addEventListener("scroll", function () {
+                    var gap = el.scrollHeight - el.scrollTop - el.clientHeight;
+                    el.dataset.mcmStick = gap <= 12 ? "1" : "0";
+                });
+            },
+            scrollIfStuck: function (id) {
+                var el = document.getElementById(id);
+                if (!el) {
+                    return;
+                }
+                this.attach(id);
+                if (el.dataset.mcmStick !== "0") {
+                    el.scrollTop = el.scrollHeight;
+                }
+            }
+        };
+    </script>
+    <div id="app">Loading...</div>
+
+    <div id="blazor-error-ui" data-nosnippet>
+        An unhandled error has occurred.
+        <a href="" class="reload">Reload</a>
+        <a class="dismiss">🗙</a>
+    </div>
+    <script src="_framework/blazor.webview.js"></script>
+</body>
+
+</html>

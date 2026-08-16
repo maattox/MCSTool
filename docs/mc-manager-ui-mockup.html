@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>mc manager — UI mockup</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/3.46.0/tabler-icons.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f13;
+    --surface-1: #15181d;
+    --surface-2: #1b1f26;
+    --border: #262b33;
+    --border-strong: #3a4048;
+    --border-danger: #5c2a2f;
+    --text-primary: #e7e9ec;
+    --text-secondary: #aab0ba;
+    --text-muted: #6b7280;
+    --text-success: #4ade80;
+    --text-danger: #f87171;
+    --text-accent: #60a5fa;
+    --fill-accent: #5b8def;
+    --fill-success: #34d399;
+    --fill-danger: #f87171;
+    --bg-danger: rgba(248,113,113,0.08);
+    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    margin: 0;
+    padding: 32px 16px;
+  }
+  .mcm-app {
+    max-width: 960px;
+    margin: 0 auto;
+    background: var(--bg);
+  }
+  button {
+    border: 0.5px solid var(--border-strong);
+    background: var(--surface-1);
+    color: var(--text-primary);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-family: var(--font-sans);
+    cursor: pointer;
+  }
+  button:hover { background: var(--surface-2); }
+  input { font-family: var(--font-sans); }
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+  }
+</style>
+</head>
+<body>
+<div class="mcm-app">
+
+<style>
+.mcm-srow{display:grid;grid-template-columns:70px 1fr;align-items:center;padding:3px 0;}
+.mcm-slabel{color:var(--text-muted);font-size:13px;}
+.mcm-sval{color:var(--text-primary);font-size:13px;}
+.mcm-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--fill-success);margin-right:6px;}
+.mcm-action-btn{flex:1;padding:12px 10px;font-size:14px;font-weight:500;border-radius:10px;display:flex;align-items:center;justify-content:center;gap:6px;}
+.mcm-btn-stop-on{background:transparent;border:1px solid var(--border-danger);color:var(--text-danger);}
+.mcm-btn-stop-off{background:transparent;border:1px solid var(--border);color:var(--text-muted);opacity:0.5;cursor:not-allowed;}
+.mcm-btn-start-on{background:transparent;border:1px solid var(--text-success);color:var(--text-success);}
+.mcm-btn-start-off{background:transparent;border:1px solid var(--border);color:var(--text-muted);opacity:0.5;cursor:not-allowed;}
+.mcm-btn-restart{background:var(--surface-1);border:1px solid var(--border-strong);color:var(--text-primary);}
+.mcm-mini-bar{height:3px;border-radius:2px;background:var(--surface-2);overflow:hidden;margin-top:8px;}
+.mcm-mini-bar-fill{height:100%;background:var(--fill-accent);}
+.mcm-wl-row{display:grid;grid-template-columns:1fr 1fr 56px 128px;align-items:center;padding:8px 0;border-top:0.5px solid var(--border);font-size:13px;}
+.mcm-wl-actions{opacity:0;display:flex;gap:6px;justify-content:flex-end;transition:opacity .12s;}
+.mcm-wl-row:hover .mcm-wl-actions{opacity:1;}
+.mcm-bk-row{display:grid;grid-template-columns:1fr auto auto;gap:16px;align-items:center;padding:9px 0;border-top:0.5px solid var(--border);font-size:13px;}
+.mcm-bk-actions{opacity:0;display:flex;gap:6px;transition:opacity .12s;}
+.mcm-bk-row:hover .mcm-bk-actions{opacity:1;}
+.mcm-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);display:none;align-items:center;justify-content:center;z-index:50;}
+.mcm-modal-overlay.open{display:flex;}
+.mcm-modal-card{background:var(--surface-2);border:0.5px solid var(--border);border-radius:12px;padding:1.25rem;width:340px;max-width:88%;max-height:78vh;overflow:auto;}
+.mcm-dropdown{position:absolute;top:34px;right:0;background:var(--surface-2);border:0.5px solid var(--border);border-radius:10px;padding:4px;display:none;min-width:150px;z-index:40;}
+.mcm-dropdown.open{display:block;}
+.mcm-dropdown button{display:block;width:100%;text-align:left;font-size:13px;padding:7px 10px;border:none;background:transparent;color:var(--text-secondary);border-radius:6px;}
+.mcm-dropdown button:hover{background:var(--surface-1);color:var(--text-primary);}
+.mcm-field label{font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;}
+.mcm-field input[type=text]{width:100%;background:var(--surface-1);border:0.5px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text-primary);font-size:13px;margin-bottom:12px;box-sizing:border-box;}
+.mcm-num-input{background:var(--surface-1);border:0.5px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text-primary);font-size:13px;width:80px;}
+.mcm-checkbox-row{display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:14px;}
+.mcm-usage-table{width:100%;border-collapse:collapse;font-size:13px;}
+.mcm-usage-table th{text-align:left;color:var(--text-muted);font-weight:400;font-size:12px;padding:7px 8px;border-bottom:0.5px solid var(--border);}
+.mcm-usage-table td{padding:7px 8px;border-bottom:0.5px solid var(--border);font-variant-numeric:tabular-nums;}
+.mcm-usage-table td:not(:first-child), .mcm-usage-table th:not(:first-child){text-align:right;}
+.mcm-primary{background:var(--fill-accent);color:#0b0d10;border:none;font-weight:500;}
+.mcm-primary[disabled]{opacity:0.35;cursor:not-allowed;background:var(--surface-1);color:var(--text-muted);}
+.mcm-notif{padding:10px 0;border-top:0.5px solid var(--border);position:relative;}
+.mcm-notif-date{position:absolute;top:10px;right:0;font-size:11px;color:var(--text-muted);}
+.mcm-statcard{background:var(--surface-1);border-radius:var(--radius);padding:0.85rem;}
+</style>
+
+<div style="max-width:960px; margin:0 auto; padding: 0.75rem 0;">
+<h2 class="sr-only">Mockup of the Minecraft server manager app, top section redesigned to match a Photoshop reference: compact status panel, three large action buttons, and four stat cards always visible</h2>
+
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+  <div style="display:flex;align-items:center;gap:8px;">
+    <i class="ti ti-server-2" style="font-size:18px;color:var(--text-secondary);" aria-hidden="true"></i>
+    <span style="font-size:15px;font-weight:500;">mc manager</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <button id="update-btn" style="font-size:12px;padding:3px 10px;height:auto;color:var(--text-secondary);"><i class="ti ti-sparkles" style="font-size:13px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>update available</button>
+    <button id="bell-btn" aria-label="Notifications" style="padding:5px 7px;height:auto;position:relative;"><i class="ti ti-bell" style="font-size:16px;" aria-hidden="true"></i><span style="position:absolute;top:4px;right:5px;width:6px;height:6px;border-radius:50%;background:var(--fill-danger);"></span></button>
+    <div style="position:relative;">
+      <button id="menu-btn" aria-label="Menu" style="padding:5px 7px;height:auto;"><i class="ti ti-menu-2" style="font-size:16px;" aria-hidden="true"></i></button>
+      <div class="mcm-dropdown" id="menu-dropdown">
+        <button data-menu="about">About</button>
+        <button data-menu="donate">Donate</button>
+        <button data-menu="troubleshooting">Troubleshooting</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="display:flex;gap:14px;align-items:stretch;flex-wrap:wrap;">
+  <div style="width:330px;flex-shrink:0;display:flex;flex-direction:column;gap:10px;">
+    <div style="background:var(--surface-1);border-radius:12px;padding:0.9rem 1.1rem;font-family:var(--font-mono);">
+      <div class="mcm-srow"><span class="mcm-slabel">status</span><span class="mcm-sval"><span class="mcm-dot" id="status-dot"></span><span id="status-text" style="color:var(--text-success);font-weight:500;">online</span></span></div>
+      <div class="mcm-srow"><span class="mcm-slabel">play ip</span><span class="mcm-sval">129.146.82.14 <button id="copy-btn" style="font-family:var(--font-sans);font-size:11px;padding:2px 7px;height:auto;margin-left:4px;"><i class="ti ti-copy" style="font-size:12px;vertical-align:-2px;" aria-hidden="true"></i> copy</button></span></div>
+      <div class="mcm-srow"><span class="mcm-slabel">players</span><span class="mcm-sval">2 / 10</span></div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button id="start-btn" class="mcm-action-btn"><i class="ti ti-player-play" style="font-size:16px;" aria-hidden="true"></i>Start</button>
+      <button id="stop-btn" class="mcm-action-btn"><i class="ti ti-player-stop" style="font-size:16px;" aria-hidden="true"></i>Stop</button>
+      <button id="restart-btn" class="mcm-action-btn mcm-btn-restart"><i class="ti ti-refresh" style="font-size:16px;" aria-hidden="true"></i>Restart</button>
+    </div>
+  </div>
+
+  <div style="flex:1;min-width:280px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+    <div class="mcm-statcard">
+      <div style="font-size:12px;color:var(--text-muted);">Daily avg uptime</div>
+      <div style="font-size:16px;font-weight:500;margin-top:4px;">6.2h <span style="font-size:12px;color:var(--text-muted);font-weight:400;">/ 6.5h budget</span></div>
+      <div class="mcm-mini-bar"><div class="mcm-mini-bar-fill" style="width:95%;"></div></div>
+    </div>
+    <div class="mcm-statcard">
+      <div style="font-size:12px;color:var(--text-muted);">Total usage this month</div>
+      <div style="font-size:16px;font-weight:500;margin-top:4px;">43% <span style="font-size:12px;color:var(--text-muted);font-weight:400;">of monthly cap</span></div>
+      <div class="mcm-mini-bar"><div class="mcm-mini-bar-fill" style="width:43%;"></div></div>
+    </div>
+    <div class="mcm-statcard">
+      <div style="font-size:12px;color:var(--text-muted);">Today's uptime</div>
+      <div style="font-size:16px;font-weight:500;margin-top:4px;">2.2h <span style="font-size:12px;color:var(--text-muted);font-weight:400;">/ 6.0h allowed</span></div>
+      <div class="mcm-mini-bar"><div class="mcm-mini-bar-fill" style="width:37%;"></div></div>
+    </div>
+    <div class="mcm-statcard">
+      <div style="font-size:12px;color:var(--text-muted);">Rollover bank</div>
+      <div style="font-size:16px;font-weight:500;margin-top:4px;color:var(--text-success);">+12.4h</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:8px;">unused budgeted hours saved</div>
+    </div>
+  </div>
+</div>
+
+<div style="display:flex;gap:4px;margin-top:1.25rem;border-bottom:0.5px solid var(--border);flex-wrap:wrap;">
+  <button class="tab-btn" data-tab="mgmt" style="border:none;border-radius:0;padding:8px 4px;margin-right:20px;font-size:14px;color:var(--text-primary);border-bottom:2px solid var(--fill-accent);font-weight:500;">Server management</button>
+  <button class="tab-btn" data-tab="whitelist" style="border:none;border-radius:0;padding:8px 4px;margin-right:20px;font-size:14px;color:var(--text-secondary);border-bottom:2px solid transparent;">Whitelist</button>
+  <button class="tab-btn" data-tab="advanced" style="border:none;border-radius:0;padding:8px 4px;margin-right:20px;font-size:14px;color:var(--text-secondary);border-bottom:2px solid transparent;">Advanced / danger zone</button>
+  <button class="tab-btn" data-tab="usage" style="border:none;border-radius:0;padding:8px 4px;font-size:14px;color:var(--text-secondary);border-bottom:2px solid transparent;">Usage</button>
+</div>
+
+<div id="panel-mgmt" style="padding-top:1.25rem;">
+  <div style="display:grid;grid-template-columns:repeat(4, minmax(0,1fr));gap:12px;margin-bottom:1.25rem;">
+    <div style="background:var(--surface-1);border-radius:var(--radius);padding:1rem;"><div style="font-size:13px;color:var(--text-muted);">Server name</div><div style="font-size:16px;font-weight:500;margin-top:4px;">Crafthouse</div></div>
+    <div style="background:var(--surface-1);border-radius:var(--radius);padding:1rem;"><div style="font-size:13px;color:var(--text-muted);">Minecraft version</div><div style="font-size:16px;font-weight:500;margin-top:4px;">1.21.1</div></div>
+    <div style="background:var(--surface-1);border-radius:var(--radius);padding:1rem;"><div style="font-size:13px;color:var(--text-muted);">Last backup</div><div style="font-size:16px;font-weight:500;margin-top:4px;">18 min ago</div></div>
+    <div style="background:var(--surface-1);border-radius:var(--radius);padding:1rem;"><div style="font-size:13px;color:var(--text-muted);">Backup storage</div><div style="font-size:16px;font-weight:500;margin-top:4px;">6.2 / 9.5 GB</div></div>
+  </div>
+  <div style="background:var(--surface-2);border:0.5px solid var(--border);border-radius:12px;padding:1rem 1.25rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+      <span style="font-size:14px;font-weight:500;">World backups</span>
+      <div style="display:flex;gap:8px;">
+        <button style="font-size:13px;"><i class="ti ti-upload" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>Upload backup</button>
+        <button style="font-size:13px;"><i class="ti ti-download" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>Download latest world save</button>
+      </div>
+    </div>
+    <div class="mcm-bk-row">
+      <div><div style="color:var(--text-primary);">backup-2026-08-14-0300.zip</div><div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Aug 14, 2026, 3:00 AM</div></div>
+      <div style="color:var(--text-muted);">1.9 GB</div>
+      <div class="mcm-bk-actions"><button style="font-size:12px;padding:3px 8px;">Download</button><button style="font-size:12px;padding:3px 8px;color:var(--text-danger);border-color:var(--border-danger);">Delete</button></div>
+    </div>
+    <div class="mcm-bk-row">
+      <div><div style="color:var(--text-primary);">backup-2026-08-13-0300.zip</div><div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Aug 13, 2026, 3:00 AM</div></div>
+      <div style="color:var(--text-muted);">1.9 GB</div>
+      <div class="mcm-bk-actions"><button style="font-size:12px;padding:3px 8px;">Download</button><button style="font-size:12px;padding:3px 8px;color:var(--text-danger);border-color:var(--border-danger);">Delete</button></div>
+    </div>
+    <div class="mcm-bk-row">
+      <div><div style="color:var(--text-primary);">backup-2026-08-12-0300.zip</div><div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Aug 12, 2026, 3:00 AM</div></div>
+      <div style="color:var(--text-muted);">1.8 GB</div>
+      <div class="mcm-bk-actions"><button style="font-size:12px;padding:3px 8px;">Download</button><button style="font-size:12px;padding:3px 8px;color:var(--text-danger);border-color:var(--border-danger);">Delete</button></div>
+    </div>
+  </div>
+</div>
+
+<div id="panel-whitelist" style="display:none;padding-top:1.25rem;">
+  <div style="background:var(--surface-2);border:0.5px solid var(--border);border-radius:12px;padding:1rem 1.25rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <span style="font-size:14px;font-weight:500;">Allowed IPs</span>
+      <div style="display:flex;gap:8px;">
+        <button id="add-ip-btn" style="font-size:13px;"><i class="ti ti-plus" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>Add IP</button>
+        <button id="add-range-btn" style="font-size:13px;"><i class="ti ti-plus" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>Add IP range</button>
+      </div>
+    </div>
+    <div class="mcm-wl-row" style="border-top:none;">
+      <span style="font-size:12px;color:var(--text-muted);">NAME</span>
+      <span style="font-size:12px;color:var(--text-muted);">IP / RANGE</span>
+      <span style="font-size:12px;color:var(--text-muted);">ADMIN</span>
+      <span></span>
+    </div>
+    <div id="wl-body"></div>
+  </div>
+  <div style="margin-top:12px;">
+    <button id="wl-save-btn" class="mcm-primary" disabled>Save changes</button>
+  </div>
+</div>
+
+<div id="panel-advanced" style="display:none;padding-top:1.25rem;">
+  <div style="background:var(--surface-1);border-radius:var(--radius);padding:1rem;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+    <div><div style="font-size:14px;font-weight:500;">Door VM</div><div style="font-size:13px;color:var(--text-secondary);margin-top:2px;">Small always-on VM that listens for connections and wakes the main VM.</div></div>
+    <div style="display:flex;gap:8px;"><button style="font-size:13px;">Stop</button><button style="font-size:13px;">Restart</button></div>
+  </div>
+  <div style="background:var(--surface-1);border-radius:var(--radius);padding:1rem;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+    <div><div style="font-size:14px;font-weight:500;">Main VM</div><div style="font-size:13px;color:var(--text-secondary);margin-top:2px;">The VM that actually runs the Minecraft server.</div></div>
+    <div style="display:flex;gap:8px;"><button style="font-size:13px;">Stop</button><button style="font-size:13px;">Restart</button></div>
+  </div>
+  <div style="background:var(--surface-1);border-radius:var(--radius);padding:1rem;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+    <div><div style="font-size:14px;font-weight:500;">Minecraft process</div><div style="font-size:13px;color:var(--text-secondary);margin-top:2px;">Restart just the game, keeping both VMs running.</div></div>
+    <button style="font-size:13px;">Restart Minecraft Server</button>
+  </div>
+
+  <div style="background:var(--surface-2);border:0.5px solid var(--border);border-radius:12px;padding:1rem 1.25rem;margin-bottom:16px;">
+    <div style="font-size:14px;font-weight:500;margin-bottom:2px;">Idle agent</div>
+    <div style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">Automatically stops the server when nobody's online, and warns players before the daily budget runs out.</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <span style="font-size:13px;">Enabled</span>
+      <label style="position:relative;display:inline-block;width:36px;height:20px;">
+        <input type="checkbox" id="idle-enabled" checked style="opacity:0;width:0;height:0;">
+        <span id="idle-toggle-track" style="position:absolute;inset:0;background:var(--fill-accent);border-radius:20px;transition:.15s;"></span>
+        <span id="idle-toggle-knob" style="position:absolute;top:2px;left:18px;width:16px;height:16px;background:#0b0d10;border-radius:50%;transition:.15s;"></span>
+      </label>
+    </div>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;">
+      <div><label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Idle timeout (minutes)</label><input type="number" class="mcm-num-input adv-field" value="15"></div>
+      <div><label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Budget warning lead time (minutes)</label><input type="number" class="mcm-num-input adv-field" value="10"></div>
+    </div>
+    <div style="margin-top:16px;"><button id="adv-save-btn" class="mcm-primary" disabled>Save changes</button></div>
+  </div>
+
+  <div style="background:var(--surface-1);border-radius:var(--radius);padding:1rem;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+    <div><div style="font-size:14px;font-weight:500;">Infrastructure setup</div><div style="font-size:13px;color:var(--text-secondary);margin-top:2px;">Re-creates or repairs cloud resources (VMs, firewall rules, storage bucket) if something's missing or misconfigured.</div></div>
+    <button style="font-size:13px;">Deploy / repair infrastructure</button>
+  </div>
+
+  <div style="height:0.5px;background:var(--border);margin:16px 0;"></div>
+  <div style="background:var(--bg-danger);border-radius:var(--radius);padding:1rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+    <div><div style="font-size:14px;font-weight:500;color:var(--text-danger);">Disable idle and budget guardrails</div><div style="font-size:13px;color:var(--text-danger);margin-top:2px;">Testing only. Doesn't survive a restart — the VM always re-enables guardrails on boot.</div></div>
+    <button style="font-size:13px;border-color:var(--border-danger);color:var(--text-danger);">Disable</button>
+  </div>
+</div>
+
+<div id="panel-usage" style="display:none;padding-top:1.25rem;">
+  <div style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">August 2026 &middot; day 14 of 31</div>
+
+  <table class="mcm-usage-table" style="margin-bottom:20px;">
+    <thead><tr><th></th><th>Server uptime (hrs)</th><th>OCPU (hrs)</th><th>Memory (hrs)</th></tr></thead>
+    <tbody>
+      <tr><td style="color:var(--text-muted);">Hard cap</td><td>200.0</td><td>100.0</td><td>400.0</td></tr>
+      <tr><td style="color:var(--text-muted);">Soft cap</td><td>180.0</td><td>90.0</td><td>360.0</td></tr>
+      <tr><td style="color:var(--text-primary);font-weight:500;">Used month-to-date</td><td>86.3</td><td>43.1</td><td>172.6</td></tr>
+    </tbody>
+  </table>
+
+  <div style="background:var(--surface-2);border:0.5px solid var(--border);border-radius:12px;padding:1rem 1.25rem;">
+    <div style="font-size:14px;font-weight:500;margin-bottom:2px;">Usage budget</div>
+    <div style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">More budget fields will likely be added here later.</div>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;">
+      <div><label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Monthly hard cap (OCPU hrs)</label><input type="number" class="mcm-num-input usage-field" value="100"></div>
+      <div><label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Monthly soft cap (OCPU hrs)</label><input type="number" class="mcm-num-input usage-field" value="90"></div>
+    </div>
+    <div style="margin-top:16px;"><button id="usage-save-btn" class="mcm-primary" disabled>Save changes</button></div>
+  </div>
+</div>
+
+</div>
+
+<div class="mcm-modal-overlay" id="modal-overlay">
+  <div class="mcm-modal-card" id="modal-card"></div>
+</div>
+
+</div>
+
+<script>
+(function(){
+const tabs = document.querySelectorAll('.tab-btn');
+const panels = { mgmt: document.getElementById('panel-mgmt'), whitelist: document.getElementById('panel-whitelist'), advanced: document.getElementById('panel-advanced'), usage: document.getElementById('panel-usage') };
+let currentTab = 'mgmt';
+let dirty = { whitelist:false, advanced:false, usage:false };
+let pendingTab = null;
+
+function setTabVisual(target){
+  tabs.forEach(b => { b.style.color='var(--text-secondary)'; b.style.fontWeight='400'; b.style.borderBottom='2px solid transparent'; });
+  const active = Array.from(tabs).find(b => b.dataset.tab === target);
+  active.style.color='var(--text-primary)'; active.style.fontWeight='500'; active.style.borderBottom='2px solid var(--fill-accent)';
+  Object.values(panels).forEach(p => p.style.display='none');
+  panels[target].style.display='block';
+  currentTab = target;
+}
+
+function trySwitch(target){
+  if (dirty[currentTab]) { pendingTab = target; openUnsavedModal(); return; }
+  setTabVisual(target);
+}
+
+tabs.forEach(btn => btn.addEventListener('click', () => trySwitch(btn.dataset.tab)));
+
+function openUnsavedModal(){
+  openModal('<div style="font-size:14px;font-weight:500;margin-bottom:8px;">Unsaved changes</div>' +
+    '<div style="font-size:13px;color:var(--text-secondary);margin-bottom:18px;">You have changes on this tab that haven\'t been saved yet. They won\'t take effect until you save them.</div>' +
+    '<div style="display:flex;flex-direction:column;gap:8px;">' +
+    '<button data-action="save-continue" class="mcm-primary" style="width:100%;">Save and continue</button>' +
+    '<button data-action="discard-continue" style="width:100%;">Discard changes</button>' +
+    '<button data-action="cancel" style="width:100%;">Cancel</button>' +
+    '</div>');
+}
+
+const overlay = document.getElementById('modal-overlay');
+const card = document.getElementById('modal-card');
+function openModal(html){ card.innerHTML = html; overlay.classList.add('open'); }
+function closeModal(){ overlay.classList.remove('open'); card.innerHTML=''; pendingTab=null; }
+overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+
+overlay.addEventListener('click', (e) => {
+  const action = e.target.closest('[data-action]');
+  if (!action) return;
+  const act = action.dataset.action;
+  if (act === 'save-continue') {
+    if (currentTab==='whitelist') { dirty.whitelist=false; document.getElementById('wl-save-btn').disabled=true; }
+    if (currentTab==='advanced') { dirty.advanced=false; document.getElementById('adv-save-btn').disabled=true; }
+    if (currentTab==='usage') { dirty.usage=false; document.getElementById('usage-save-btn').disabled=true; }
+    closeModal(); if (pendingTab) setTabVisual(pendingTab); pendingTab=null;
+  } else if (act === 'discard-continue') {
+    if (currentTab==='whitelist') { dirty.whitelist=false; document.getElementById('wl-save-btn').disabled=true; }
+    if (currentTab==='advanced') { dirty.advanced=false; document.getElementById('adv-save-btn').disabled=true; }
+    if (currentTab==='usage') { dirty.usage=false; document.getElementById('usage-save-btn').disabled=true; }
+    closeModal(); if (pendingTab) setTabVisual(pendingTab); pendingTab=null;
+  } else if (act === 'cancel') {
+    closeModal();
+  } else if (act === 'submit-add') {
+    const name = document.getElementById('modal-name').value.trim();
+    const val = document.getElementById('modal-value').value.trim();
+    const admin = document.getElementById('modal-admin').checked;
+    const isRange = action.dataset.isrange === '1';
+    if (name && val) { wlData.push({id: wlNextId++, name, value: val, isRange, admin}); renderWL(); markWLDirty(); }
+    closeModal();
+  } else if (act === 'submit-update') {
+    const id = parseInt(action.dataset.id, 10);
+    const item = wlData.find(w => w.id === id);
+    item.name = document.getElementById('modal-name').value.trim();
+    item.value = document.getElementById('modal-value').value.trim();
+    item.admin = document.getElementById('modal-admin').checked;
+    renderWL(); markWLDirty(); closeModal();
+  }
+});
+
+let wlData = [
+  {id:1, name:'Jordan', value:'98.42.11.6', isRange:false, admin:false},
+  {id:2, name:'Sam', value:'73.15.204.9', isRange:false, admin:false},
+  {id:3, name:'admin (this PC)', value:'104.28.9.201', isRange:false, admin:true}
+];
+let wlNextId = 4;
+function renderWL(){
+  const body = document.getElementById('wl-body');
+  body.innerHTML = wlData.map(w => (
+    '<div class="mcm-wl-row" data-id="' + w.id + '">' +
+      '<span style="color:var(--text-primary);">' + w.name + '</span>' +
+      '<span style="font-family:var(--font-mono);color:var(--text-secondary);">' + w.value + '</span>' +
+      '<span>' + (w.admin ? '<i class="ti ti-check" style="color:var(--text-accent);" aria-hidden="true"></i>' : '') + '</span>' +
+      '<span class="mcm-wl-actions">' +
+        '<button class="wl-update-btn" data-id="' + w.id + '" style="font-size:12px;padding:3px 8px;">Update</button>' +
+        '<button class="wl-remove-btn" data-id="' + w.id + '" style="font-size:12px;padding:3px 8px;color:var(--text-danger);border-color:var(--border-danger);">Remove</button>' +
+      '</span>' +
+    '</div>'
+  )).join('');
+}
+renderWL();
+function markWLDirty(){ dirty.whitelist = true; document.getElementById('wl-save-btn').disabled = false; }
+
+document.getElementById('wl-body').addEventListener('click', (e) => {
+  const rm = e.target.closest('.wl-remove-btn');
+  const up = e.target.closest('.wl-update-btn');
+  if (rm) { wlData = wlData.filter(w => w.id !== parseInt(rm.dataset.id,10)); renderWL(); markWLDirty(); }
+  else if (up) { openUpdateModal(parseInt(up.dataset.id,10)); }
+});
+
+document.getElementById('wl-save-btn').addEventListener('click', () => {
+  dirty.whitelist = false; document.getElementById('wl-save-btn').disabled = true;
+});
+
+document.getElementById('add-ip-btn').addEventListener('click', () => openAddModal(false));
+document.getElementById('add-range-btn').addEventListener('click', () => openAddModal(true));
+
+function openAddModal(isRange){
+  openModal(
+    '<div style="font-size:14px;font-weight:500;margin-bottom:14px;">' + (isRange ? 'Add IP range' : 'Add IP') + '</div>' +
+    '<div class="mcm-field"><label>Name</label><input type="text" id="modal-name" placeholder="e.g. Jordan"></div>' +
+    '<div class="mcm-field"><label>' + (isRange ? 'CIDR block' : 'IP address') + '</label><input type="text" id="modal-value" placeholder="' + (isRange ? 'e.g. 98.42.11.0/24' : 'e.g. 98.42.11.6') + '"></div>' +
+    '<div class="mcm-checkbox-row"><input type="checkbox" id="modal-admin"><label for="modal-admin" style="margin:0;">Admin</label></div>' +
+    '<div style="display:flex;gap:8px;">' +
+    '<button data-action="submit-add" data-isrange="' + (isRange ? '1' : '0') + '" class="mcm-primary" style="flex:1;">' + (isRange ? 'Add range' : 'Add') + '</button>' +
+    '<button data-action="cancel" style="flex:1;">Cancel</button>' +
+    '</div>'
+  );
+}
+
+function openUpdateModal(id){
+  const item = wlData.find(w => w.id === id);
+  openModal(
+    '<div style="font-size:14px;font-weight:500;margin-bottom:14px;">Update entry</div>' +
+    '<div class="mcm-field"><label>Name</label><input type="text" id="modal-name" value="' + item.name + '"></div>' +
+    '<div class="mcm-field"><label>' + (item.isRange ? 'CIDR block' : 'IP address') + '</label><input type="text" id="modal-value" value="' + item.value + '"></div>' +
+    '<div class="mcm-checkbox-row"><input type="checkbox" id="modal-admin" ' + (item.admin ? 'checked' : '') + '><label for="modal-admin" style="margin:0;">Admin</label></div>' +
+    '<div style="display:flex;gap:8px;">' +
+    '<button data-action="submit-update" data-id="' + id + '" id="modal-update-submit" class="mcm-primary" disabled style="flex:1;">Update</button>' +
+    '<button data-action="cancel" style="flex:1;">Cancel</button>' +
+    '</div>'
+  );
+  const origName = item.name, origVal = item.value, origAdmin = item.admin;
+  function checkChanged(){
+    const changed = document.getElementById('modal-name').value.trim() !== origName ||
+                     document.getElementById('modal-value').value.trim() !== origVal ||
+                     document.getElementById('modal-admin').checked !== origAdmin;
+    document.getElementById('modal-update-submit').disabled = !changed;
+  }
+  document.getElementById('modal-name').addEventListener('input', checkChanged);
+  document.getElementById('modal-value').addEventListener('input', checkChanged);
+  document.getElementById('modal-admin').addEventListener('change', checkChanged);
+}
+
+document.querySelectorAll('.adv-field').forEach(el => el.addEventListener('input', () => {
+  dirty.advanced = true; document.getElementById('adv-save-btn').disabled = false;
+}));
+document.getElementById('adv-save-btn').addEventListener('click', () => {
+  dirty.advanced = false; document.getElementById('adv-save-btn').disabled = true;
+});
+const idleCb = document.getElementById('idle-enabled');
+const idleTrack = document.getElementById('idle-toggle-track');
+const idleKnob = document.getElementById('idle-toggle-knob');
+function paintIdleToggle(){
+  idleTrack.style.background = idleCb.checked ? 'var(--fill-accent)' : 'var(--surface-1)';
+  idleKnob.style.left = idleCb.checked ? '18px' : '2px';
+}
+idleCb.addEventListener('change', () => { paintIdleToggle(); dirty.advanced = true; document.getElementById('adv-save-btn').disabled = false; });
+paintIdleToggle();
+
+document.querySelectorAll('.usage-field').forEach(el => el.addEventListener('input', () => {
+  dirty.usage = true; document.getElementById('usage-save-btn').disabled = false;
+}));
+document.getElementById('usage-save-btn').addEventListener('click', () => {
+  dirty.usage = false; document.getElementById('usage-save-btn').disabled = true;
+});
+
+const startBtn = document.getElementById('start-btn');
+const stopBtn = document.getElementById('stop-btn');
+const dot = document.getElementById('status-dot');
+const statusText = document.getElementById('status-text');
+let running = true;
+function paintRunState(){
+  if (running) {
+    dot.style.background='var(--fill-success)'; statusText.style.color='var(--text-success)'; statusText.textContent='online';
+    startBtn.className='mcm-action-btn mcm-btn-start-off'; startBtn.disabled=true;
+    stopBtn.className='mcm-action-btn mcm-btn-stop-on'; stopBtn.disabled=false;
+  } else {
+    dot.style.background='var(--text-muted)'; statusText.style.color='var(--text-muted)'; statusText.textContent='stopped';
+    startBtn.className='mcm-action-btn mcm-btn-start-on'; startBtn.disabled=false;
+    stopBtn.className='mcm-action-btn mcm-btn-stop-off'; stopBtn.disabled=true;
+  }
+}
+startBtn.addEventListener('click', () => { if (!startBtn.disabled) { running = true; paintRunState(); } });
+stopBtn.addEventListener('click', () => { if (!stopBtn.disabled) { running = false; paintRunState(); } });
+paintRunState();
+
+document.getElementById('copy-btn').addEventListener('click', (e) => {
+  e.currentTarget.innerHTML = '<i class="ti ti-check" style="font-size:12px;vertical-align:-2px;" aria-hidden="true"></i> copied';
+  setTimeout(() => { e.currentTarget.innerHTML = '<i class="ti ti-copy" style="font-size:12px;vertical-align:-2px;" aria-hidden="true"></i> copy'; }, 1200);
+});
+
+const menuBtn = document.getElementById('menu-btn');
+const menuDropdown = document.getElementById('menu-dropdown');
+menuBtn.addEventListener('click', (e) => { e.stopPropagation(); menuDropdown.classList.toggle('open'); });
+document.addEventListener('click', () => menuDropdown.classList.remove('open'));
+menuDropdown.addEventListener('click', (e) => {
+  const item = e.target.closest('[data-menu]');
+  if (!item) return;
+  menuDropdown.classList.remove('open');
+  const titles = { about: 'About', donate: 'Donate', troubleshooting: 'Troubleshooting' };
+  openModal('<div style="font-size:14px;font-weight:500;margin-bottom:10px;">' + titles[item.dataset.menu] + '</div>' +
+    '<div style="font-size:13px;color:var(--text-secondary);margin-bottom:18px;">Placeholder content — not decided yet.</div>' +
+    '<button data-action="cancel" style="width:100%;">Close</button>');
+});
+
+document.getElementById('bell-btn').addEventListener('click', () => {
+  const notifs = [
+    {date:'Aug 14, 3:14 AM', text:'Nightly backup completed (1.9 GB).'},
+    {date:'Aug 13, 9:02 PM', text:'Server auto-stopped after 15 minutes idle.'},
+    {date:'Aug 13, 3:00 AM', text:'Nightly backup completed (1.9 GB).'},
+    {date:'Aug 12, 8:47 PM', text:'Budget warning: 10 minutes of uptime remaining today.'}
+  ];
+  openModal('<div style="font-size:14px;font-weight:500;margin-bottom:8px;">Notifications</div>' +
+    '<div style="max-height:280px;overflow:auto;">' +
+    notifs.map(n => '<div class="mcm-notif"><span class="mcm-notif-date">' + n.date + '</span><div style="font-size:13px;padding-right:80px;">' + n.text + '</div></div>').join('') +
+    '</div>' +
+    '<button data-action="cancel" style="width:100%;margin-top:14px;">Close</button>');
+});
+})();
+</script>
+</body>
+</html>

@@ -1,10 +1,12 @@
-# MVP Implementation Progress — Avalonia Manager
+# MVP Implementation Progress — Avalonia Manager (archive)
 
-**Purpose:** Living notes on what has been **implemented** in the Avalonia product (`OCI-mc-server`) and its MVP contract/on-box phases, and how that work behaves today.  
-**Not authority for intent:** product goals still live in lab `PRODUCT-IDEAS.md` and the checklist in [`MVP-Implementation-Plan.md`](MVP-Implementation-Plan.md). This file records **as-built/as-frozen** behavior so agents and the operator do not rediscover completed steps.  
-**Update policy:** Append or revise sections when an MVP plan step completes. Broader docs (README, lab `VM-Software.md`, etc.) wait until the relevant exit gate / operator asks.
+**Phase B cutover (B13, 2026-08-15):** Avalonia `McManager.App` was **removed**. The only WinExe is [`McManager.Hybrid`](../src/McManager.Hybrid). This file is a **frozen as-built archive** of the Avalonia manage MVP — do not treat the run commands or “NEXT” snapshot below as current. Living checklist: [`MVP-Implementation-Plan.md`](MVP-Implementation-Plan.md) (**NEXT = Step 7.2**).
 
-**As of:** 2026-08-15 (Phases **1–3 DONE**; **NEXT = Step 4.4** — Manager troubleshooting one-shots; Step **4.3 DONE** in-game whitelist off; Step **4.2 DONE** permission contract / CHDIR; Step **4.1 DONE** idle SoftStop when Minecraft is down; Connect-existing is **Phase 5**).
+**Purpose:** Historical notes on what was **implemented** in the Avalonia product (`OCI-mc-server`) and its MVP contract/on-box phases.  
+**Not authority for intent:** product goals still live in lab `PRODUCT-IDEAS.md` and the checklist in [`MVP-Implementation-Plan.md`](MVP-Implementation-Plan.md).  
+**Update policy:** Do not append new MVP steps here; update the living MVP plan instead.
+
+**As of (frozen):** 2026-08-15 (Phases **1–3 DONE**; this snapshot stopped at Step **4.4**).
 
 ---
 
@@ -31,13 +33,13 @@
 | **4.1** | Idle SoftStop when Minecraft is down + wait_forge | **DONE** (`vm_agent/` + test VM1 SoftStop proof; CHDIR was 4.2) |
 | **4.2** | Comprehensive on-box permission model | **DONE** (`layout.sh` apply+verify; test VM1 `active` / door TCP OK) |
 | **4.3** | Bootstrap: disable Minecraft in-game whitelist | **DONE** |
-| 4.4 | Manager troubleshooting / one-shot repairs | **NEXT** |
-| 5+ | Connect-existing | TODO (was Phase 4) |
+| 4.4 | Manager troubleshooting / one-shot repairs | DONE (later than this snapshot) |
+| 5+ | Connect-existing | DONE (later than this snapshot) |
 
-**Run:**
+**Run (current):**
 
 ```powershell
-dotnet run --project "C:\Users\matto\Desktop\Minecraft Server\OCI-mc-server\src\McManager.App"
+dotnet run --project "C:\Users\matto\Desktop\Minecraft Server\OCI-mc-server\src\McManager.Hybrid"
 ```
 
 **Config:** gitignored `data/config.local.json` + `data/friends.local.json` at the **product repo root** (next to `AGENTS.md` / `config.local.example.json`), not under `src/`. See [`Local-Config.md`](Local-Config.md).

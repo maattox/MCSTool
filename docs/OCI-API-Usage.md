@@ -1,6 +1,6 @@
 # OCI API usage (developers & agents)
 
-**Audience:** anyone writing Avalonia Manager / Setup code that calls Oracle Cloud Infrastructure APIs (.NET OCI SDK, or raw REST).  
+**Audience:** anyone writing Manager / Setup code that calls Oracle Cloud Infrastructure APIs (.NET OCI SDK, or raw REST).  
 **Authority:** Oracle’s [REST APIs / Using the API](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/usingapi.htm) (read that page; this file is a product-oriented digest + Always Free constraints).  
 **Cost rule:** stay inside **Always Free–eligible** usage. Chatty or naïve polling can burn the Object Storage **~50,000 API requests/month** free allowance and trigger **429** throttling on other services.
 

@@ -34,4 +34,31 @@ public static class SetupApplyStage
 
     public static bool Reached(string? current, string required) =>
         IndexOf(current) >= IndexOf(required);
+
+    /// <summary>0–100 from known apply stages. <see cref="NotStarted"/> is 0; <see cref="ConfigWritten"/> is 100.</summary>
+    public static int Percent(string? stage)
+    {
+        var max = Order.Length - 1;
+        if (max <= 0)
+            return 0;
+        return (int)Math.Round(100.0 * IndexOf(stage) / max);
+    }
+
+    public static string DisplayName(string? stage) => (stage ?? "").Trim() switch
+    {
+        TofuApplied => "Cloud resources",
+        CloudInit => "Waiting for VMs",
+        Door => "Door software",
+        Vm1 => "Minecraft install",
+        OsMeta => "Shared storage",
+        Function => "Spend-brake Function",
+        ConfigWritten => "Saving local config",
+        _ => "Waiting to start",
+    };
+
+    public static SetupProgressUpdate Update(string stage, string? caption = null) =>
+        new(stage, Percent(stage), caption ?? DisplayName(stage));
 }
+
+/// <summary>UI-only deploy progress. Does not persist; dry-run may report 100% without changing apply_stage.</summary>
+public readonly record struct SetupProgressUpdate(string Stage, int Percent, string Caption);

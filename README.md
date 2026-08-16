@@ -2,11 +2,11 @@
 
 Windows desktop **Manager** for a private Minecraft stack on Oracle Cloud Infrastructure (OCI), aimed at **Always Free / $0** operation by default.
 
-This is the **official product repository**. The app is built with **.NET 8 + Avalonia**.
+This is the **official product repository**. The Manager UI is **.NET 8 + Blazor Hybrid** (WPF + WebView2): one WinExe, `McManager.Hybrid`. Layout and visual choices are **not locked**.
 
 ## Status
 
-Early scaffolding + local config seed. Living MVP checklist: [`docs/MVP-Implementation-Plan.md`](docs/MVP-Implementation-Plan.md) (current NEXT step is listed in that file’s progress dashboard).
+Manage + Setup are usable on the Blazor Hybrid WinExe. **Phase B** (Avalonia → Blazor Hybrid) is **DONE**. Happy-path user guide: [`docs/Guide.md`](docs/Guide.md). Living MVP checklist: [`docs/MVP-Implementation-Plan.md`](docs/MVP-Implementation-Plan.md) (**NEXT = Step 7.2** greenfield E2E — do not start until the operator asks). Phase B archive: [`docs/Blazor-UI-Migration-Plan.md`](docs/Blazor-UI-Migration-Plan.md).
 
 Licensing is **TBD** (no `LICENSE` file yet).
 
@@ -14,7 +14,7 @@ Licensing is **TBD** (no `LICENSE` file yet).
 
 | Project | Role |
 |---------|------|
-| [`src/McManager.App`](src/McManager.App) | Avalonia UI (WinExe) |
+| [`src/McManager.Hybrid`](src/McManager.Hybrid) | Manager UI WinExe (WPF + BlazorWebView) |
 | [`src/McManager.Core`](src/McManager.Core) | Domain / OCI / shared logic |
 | [`src/McManager.slnx`](src/McManager.slnx) | Solution |
 
@@ -25,8 +25,10 @@ Requirements: [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0).
 ```bash
 dotnet restore src/McManager.slnx
 dotnet build src/McManager.slnx
-dotnet run --project src/McManager.App
+dotnet run --project src/McManager.Hybrid
 ```
+
+`McManager.Hybrid` is a native WPF window (Evergreen WebView2; not a browser / not localhost). If WebView2 is missing, the app shows a MessageBox with the [Evergreen installer](https://go.microsoft.com/fwlink/p/?LinkId=2124703).
 
 Open `src/McManager.slnx` in Visual Studio or Cursor/VS Code with the C# extension.
 
@@ -40,7 +42,7 @@ OCI SDK call patterns (throttling, waiters, request thrift): [`docs/OCI-API-Usag
 
 | Repo | Role |
 |------|------|
-| **This repo (`OCI-mc-server`)** | Official Avalonia Manager (+ later Setup / OpenTofu) |
+| **This repo (`OCI-mc-server`)** | Official Manager (Blazor Hybrid UI + Core + Setup / OpenTofu) |
 | Sibling **`OCI-mc-server-manager`** (lab) | Python day-2 tool, `door_vm/` / `vm_agent/` SoT, infra docs, product planning |
 
 Deep infrastructure and product-intent docs live in the lab sibling (e.g. `Infrastructure-Information.md`, `PRODUCT-IDEAS.md`). Prefer that lab tree for live OCI/on-box truth while this product app is under construction.
@@ -70,4 +72,5 @@ Agents do **not** create commits — commit from Visual Studio when ready.
 
 ## Links
 
+- Happy-path guide: [`docs/Guide.md`](docs/Guide.md)
 - GitHub: [maattox/oci-mc-server](https://github.com/maattox/oci-mc-server)

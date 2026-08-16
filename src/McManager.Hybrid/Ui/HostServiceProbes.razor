@@ -1,0 +1,78 @@
+@inject IUiDialogs Dialogs
+@inject IClipboard Clipboard
+@inject IFilePicker FilePicker
+@inject IUiClock Clock
+@implements IDisposable
+
+<div class="mcm-host-probes" role="region" aria-label="DEBUG host service probes">
+    <span class="mcm-host-probes-label">DEBUG probes</span>
+    <button type="button" @onclick="ProveConfirmAsync">Confirm modal</button>
+    <button type="button" @onclick="ProveClipboardAsync">Copy clipboard</button>
+    <button type="button" @onclick="ProvePickerAsync">Native file picker</button>
+    <span class="mcm-host-probes-status">@_status</span>
+    <span class="mcm-host-probes-clock" title="IUiClock">@Clock.UtcNow.ToString("HH:mm:ss") UTC</span>
+</div>
+
+@code {
+    private string _status = "idle";
+    private CancellationTokenSource? _clockCts;
+
+    protected override void OnInitialized()
+    {
+        _clockCts = new CancellationTokenSource();
+        _ = TickClockAsync(_clockCts.Token);
+    }
+
+    public void Dispose()
+    {
+        _clockCts?.Cancel();
+        _clockCts?.Dispose();
+    }
+
+    private async Task TickClockAsync(CancellationToken cancellationToken)
+    {
+        using var timer = Clock.CreatePeriodicTimer(TimeSpan.FromSeconds(1));
+        try
+        {
+            while (await timer.WaitForNextTickAsync(cancellationToken))
+            {
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private async Task ProveConfirmAsync()
+    {
+        var ok = await Dialogs.ConfirmAsync(
+            "Probe confirm",
+            "This DEBUG confirm uses the Razor modal host. Cancel returns false; OK returns true.",
+            "OK");
+        _status = ok ? "Confirm: OK" : "Confirm: Cancel";
+    }
+
+    private async Task ProveClipboardAsync()
+    {
+        const string payload = "mc-manager-host-probe";
+        await Clipboard.SetTextAsync(payload);
+        var roundTrip = await Clipboard.GetTextAsync();
+        _status = string.Equals(roundTrip, payload, StringComparison.Ordinal)
+            ? "Clipboard: copied mc-manager-host-probe"
+            : "Clipboard: wrote text (read-back differed)";
+    }
+
+    private async Task ProvePickerAsync()
+    {
+        var path = await FilePicker.OpenFileAsync(new FilePickRequest
+        {
+            Title = "DEBUG: pick any file (nothing is uploaded)",
+            Filters =
+            [
+                new FileTypeFilter("All files", ".*"),
+            ],
+        });
+        _status = path is null ? "Picker: cancelled" : "Picker: " + path;
+    }
+}

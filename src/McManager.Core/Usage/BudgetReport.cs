@@ -14,6 +14,7 @@ public sealed class BudgetReport
     public double MonthOcpu { get; init; }
     public double MonthGb { get; init; }
     public double MonthUptime { get; init; }
+    public double TodayUptimeHours { get; init; }
     public double TodayOcpu { get; init; }
     public double TodayGb { get; init; }
     public double LeftoverOcpu { get; init; }

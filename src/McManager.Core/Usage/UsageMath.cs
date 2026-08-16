@@ -31,10 +31,12 @@ public static class UsageMath
         var monthUptime = rows.Sum(r => r.UptimeHours);
         double todayOcpu = 0;
         double todayGb = 0;
+        double todayUptime = 0;
         if (rows.Count > 0)
         {
             todayOcpu = rows[^1].OcpuHours;
             todayGb = rows[^1].GbHours;
+            todayUptime = rows[^1].UptimeHours;
         }
         var leftoverOcpu = rows.Take(Math.Max(0, rows.Count - 1)).Sum(r => r.LeftoverOcpuContrib);
         var leftoverGb = rows.Take(Math.Max(0, rows.Count - 1)).Sum(r => r.LeftoverGbContrib);
@@ -54,6 +56,7 @@ public static class UsageMath
             MonthOcpu = monthOcpu,
             MonthGb = monthGb,
             MonthUptime = monthUptime,
+            TodayUptimeHours = todayUptime,
             TodayOcpu = todayOcpu,
             TodayGb = todayGb,
             LeftoverOcpu = leftoverOcpu,

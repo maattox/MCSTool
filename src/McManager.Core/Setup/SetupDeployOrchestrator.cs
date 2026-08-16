@@ -70,8 +70,11 @@ public sealed class SetupDeployOrchestrator
     public async Task<SetupDeployResult> RunAsync(
         SetupWizardState state,
         IProgress<string>? log,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        IProgress<SetupProgressUpdate>? progress = null)
     {
+        ReportProgress(progress, SetupApplyStage.NotStarted, "Starting…");
+
         if (!state.EulaAccepted)
             return SetupDeployResult.Fail(state.ApplyStage, "EULA is not accepted.");
 
@@ -106,6 +109,7 @@ public sealed class SetupDeployOrchestrator
 
         if (!SetupApplyStage.Reached(stage, SetupApplyStage.TofuApplied))
         {
+            ReportProgress(progress, SetupApplyStage.NotStarted, "Creating cloud resources…");
             var init = await _tofu.InitAsync(infra, log, cancellationToken).ConfigureAwait(false);
             if (!init.Succeeded)
                 return SetupDeployResult.Fail(stage, "tofu init failed. See the deploy log.");
@@ -143,6 +147,7 @@ public sealed class SetupDeployOrchestrator
             outputs = parsed.Value;
             stage = SetupApplyStage.TofuApplied;
             PersistStage(state, stage);
+            ReportProgress(progress, stage);
         }
         else
         {
@@ -155,6 +160,10 @@ public sealed class SetupDeployOrchestrator
         {
             log?.Report("[dry-run] Skipping cloud-init wait, SSH bootstrap, Object Storage, and config.local.json write.");
             log?.Report("[dry-run] apply_stage left unchanged so a later real Deploy still runs tofu apply.");
+            ReportProgress(
+                progress,
+                SetupApplyStage.ConfigWritten,
+                "Dry-run complete (cloud bootstrap skipped)");
             return SetupDeployResult.Ok(
                 state.ApplyStage,
                 "Dry-run finished. No OCI resources were created and config.local.json was not written. "
@@ -165,6 +174,7 @@ public sealed class SetupDeployOrchestrator
 
         if (!SetupApplyStage.Reached(stage, SetupApplyStage.CloudInit))
         {
+            ReportProgress(progress, SetupApplyStage.CloudInit, "Waiting for VMs to finish setup…");
             var waitVm = await WaitRunningAsync(outputs, state, log, cancellationToken).ConfigureAwait(false);
             if (!waitVm.Succeeded)
                 return SetupDeployResult.Fail(stage, waitVm.Error ?? "Wait RUNNING failed.");
@@ -184,24 +194,29 @@ public sealed class SetupDeployOrchestrator
 
             stage = SetupApplyStage.CloudInit;
             PersistStage(state, stage);
+            ReportProgress(progress, stage);
         }
 
         if (!SetupApplyStage.Reached(stage, SetupApplyStage.Door))
         {
+            ReportProgress(progress, SetupApplyStage.Door, "Installing door software…");
             var door = await _bootstrap.DeployDoorAsync(outputs, state, log, cancellationToken).ConfigureAwait(false);
             if (!door.Succeeded)
                 return SetupDeployResult.Fail(stage, door.Error ?? "Door bootstrap failed.");
             stage = SetupApplyStage.Door;
             PersistStage(state, stage);
+            ReportProgress(progress, stage);
         }
 
         if (!SetupApplyStage.Reached(stage, SetupApplyStage.Vm1))
         {
+            ReportProgress(progress, SetupApplyStage.Vm1, "Installing Minecraft…");
             var vm1 = await _bootstrap.DeployVm1Async(outputs, state, log, cancellationToken).ConfigureAwait(false);
             if (!vm1.Succeeded)
                 return SetupDeployResult.Fail(stage, vm1.Error ?? "VM1 bootstrap failed.");
             stage = SetupApplyStage.Vm1;
             PersistStage(state, stage);
+            ReportProgress(progress, stage);
         }
 
         var running = await EnsureVm1RunningForSshAsync(outputs, state, log, cancellationToken)
@@ -239,6 +254,7 @@ public sealed class SetupDeployOrchestrator
 
         if (!SetupApplyStage.Reached(stage, SetupApplyStage.OsMeta))
         {
+            ReportProgress(progress, SetupApplyStage.OsMeta, "Writing shared storage…");
             log?.Report("Seeding Object Storage (budget/config.json, ledger/usage.json, meta/infra.json)…");
             var os = await SeedObjectStorageAsync(config, mcVersion, log, cancellationToken).ConfigureAwait(false);
             if (!os.Succeeded)
@@ -249,11 +265,13 @@ public sealed class SetupDeployOrchestrator
 
             stage = SetupApplyStage.OsMeta;
             PersistStage(state, stage);
+            ReportProgress(progress, stage);
         }
 
         string? fnSkip = null;
         if (!SetupApplyStage.Reached(stage, SetupApplyStage.Function))
         {
+            ReportProgress(progress, SetupApplyStage.Function, "Spend-brake Function…");
             var push = await OcirFunctionPublisher.TryPushAsync(outputs, state, log, cancellationToken)
                 .ConfigureAwait(false);
             if (push.Succeeded && !string.IsNullOrWhiteSpace(push.Value))
@@ -277,8 +295,10 @@ public sealed class SetupDeployOrchestrator
 
             stage = SetupApplyStage.Function;
             PersistStage(state, stage);
+            ReportProgress(progress, stage);
         }
 
+        ReportProgress(progress, SetupApplyStage.ConfigWritten, "Saving local config…");
         var saved = LocalConfigStore.SaveConfig(config);
         if (!saved.Succeeded)
             return SetupDeployResult.Fail(stage, saved.Error ?? "Failed to save config.local.json.");
@@ -286,6 +306,7 @@ public sealed class SetupDeployOrchestrator
         SeedAdminFriend(state);
         stage = SetupApplyStage.ConfigWritten;
         PersistStage(state, stage);
+        ReportProgress(progress, stage);
 
         return SetupDeployResult.Ok(
             stage,
@@ -452,5 +473,13 @@ public sealed class SetupDeployOrchestrator
     {
         state.ApplyStage = stage;
         SetupWizardStore.Save(state);
+    }
+
+    private static void ReportProgress(
+        IProgress<SetupProgressUpdate>? progress,
+        string stage,
+        string? caption = null)
+    {
+        progress?.Report(SetupApplyStage.Update(stage, caption));
     }
 }

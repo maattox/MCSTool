@@ -1,0 +1,74 @@
+@inject FirstRunViewModel Vm
+@implements IDisposable
+
+<div class="mcm-app">
+    <header class="mcm-title-row">
+        <div class="mcm-wordmark">
+            <i class="ti ti-server-2" aria-hidden="true"></i>
+            <span>mc manager</span>
+        </div>
+        <span class="mcm-always-free">Always Free</span>
+    </header>
+
+    <div class="mcm-firstrun">
+        <h1>Welcome</h1>
+        <p class="mcm-firstrun-hint">
+            This PC has no manage config yet. Deploy a new Always Free Minecraft stack, find a stack you already created, or open Manager if you already copied a config file here.
+        </p>
+
+        <div class="mcm-firstrun-actions">
+            <button type="button"
+                    disabled="@Vm.IsBusy"
+                    title="Walk through Always Free confirmation, then create the cloud computers and install Vanilla Minecraft."
+                    @onclick="Vm.OpenSetup">
+                Deploy a new stack (Setup)
+            </button>
+            <button type="button"
+                    disabled="@Vm.IsBusy"
+                    title="Looks at saved cloud logins and shared storage, then asks before saving local config. Never runs on launch."
+                    @onclick="Vm.DetectAsync">
+                Find an existing stack
+            </button>
+            <button type="button"
+                    disabled="@Vm.IsBusy"
+                    title="Opens Manager without scanning the cloud. Use this if you already placed config.local.json by hand."
+                    @onclick="Vm.OpenExistingStack">
+                I already have a stack
+            </button>
+        </div>
+
+        <p class="mcm-firstrun-note">
+            “I already have a stack” skips the cloud scan. Find an existing stack reads your saved logins, finds the product compartment, and fills config from shared storage after you confirm.
+        </p>
+        <p class="mcm-firstrun-note">Always Free — this product does not offer a paid mode.</p>
+
+        @if (!string.IsNullOrWhiteSpace(Vm.StatusMessage))
+        {
+            <p class="mcm-firstrun-status">@Vm.StatusMessage</p>
+        }
+
+        @if (Vm.ConfigHost.LoadFailed)
+        {
+            <p class="mcm-firstrun-error">@Vm.ConfigHost.LoadResult.Error</p>
+        }
+        else if (!string.IsNullOrWhiteSpace(Vm.ConfigHost.LoadResult.Error))
+        {
+            <p class="mcm-firstrun-note">@Vm.ConfigHost.LoadResult.Error</p>
+        }
+    </div>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Vm.PropertyChanged += OnVmChanged;
+    }
+
+    public void Dispose()
+    {
+        Vm.PropertyChanged -= OnVmChanged;
+    }
+
+    private void OnVmChanged(object? sender, PropertyChangedEventArgs e) =>
+        _ = InvokeAsync(StateHasChanged);
+}

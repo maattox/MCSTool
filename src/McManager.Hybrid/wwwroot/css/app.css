@@ -1,0 +1,995 @@
+/* Light warm-gray tokens remapped from the HTML mockup (do not ship the mockup's dark page).
+   Hierarchy matches docs/mc-manager-ui-mockup.html; colors are the light warm-gray product theme. */
+
+:root {
+    --bg: #e6e2d8;
+    --surface-1: #f7f4ee;
+    --surface-2: #eee9df;
+    --border: #c9c2b3;
+    --border-strong: #a89f8e;
+    --border-danger: #d4a3a3;
+    --text-primary: #2c3036;
+    --text-secondary: #5a616c;
+    --text-muted: #7a7468;
+    --text-success: #2f9e5f;
+    --text-danger: #c94c4c;
+    --text-accent: #3d6fbf;
+    --fill-accent: #3d6fbf;
+    --fill-success: #2f9e5f;
+    --fill-danger: #c94c4c;
+    --bg-danger: #f6e8e6;
+    --power-disabled-bg: #ddd8ce;
+    --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
+    --radius: 10px;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    color-scheme: light;
+    height: 100%;
+}
+
+html,
+body,
+#app {
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+button {
+    border: 0.5px solid var(--border-strong);
+    background: var(--surface-1);
+    color: var(--text-primary);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-family: var(--font-sans);
+    cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+    background: var(--surface-2);
+}
+
+button:disabled,
+button.mcm-btn-disabled {
+    background: var(--power-disabled-bg);
+    color: var(--text-muted);
+    border-color: var(--border);
+    cursor: not-allowed;
+    opacity: 1;
+    pointer-events: none;
+}
+
+button:disabled:hover,
+button.mcm-btn-disabled:hover {
+    background: var(--power-disabled-bg);
+    color: var(--text-muted);
+}
+
+.mcm-primary {
+    background: var(--fill-accent);
+    color: #fff;
+    border: none;
+    font-weight: 500;
+}
+
+.mcm-primary:hover:not(:disabled) {
+    background: var(--fill-accent);
+    filter: brightness(0.96);
+}
+
+.mcm-primary:disabled {
+    opacity: 1;
+    background: var(--power-disabled-bg);
+    color: var(--text-muted);
+    filter: none;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* --- App shell --- */
+
+.mcm-app {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 12px 16px 16px;
+    background: var(--bg);
+}
+
+.mcm-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    /* In-content wordmark only. Window min/max/close stay native WPF chrome. */
+}
+
+.mcm-wordmark {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 500;
+}
+
+.mcm-wordmark .ti {
+    font-size: 18px;
+    color: var(--text-secondary);
+}
+
+.mcm-always-free {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-accent);
+}
+
+.mcm-chrome {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.mcm-left {
+    width: 330px;
+    flex: 0 0 330px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.mcm-status-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.9rem 1.1rem;
+    font-family: var(--font-mono);
+}
+
+.mcm-srow {
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    align-items: center;
+    padding: 3px 0;
+}
+
+.mcm-slabel {
+    color: var(--text-muted);
+    font-size: 13px;
+    font-family: var(--font-sans);
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.mcm-sval {
+    color: var(--text-primary);
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.mcm-sval.is-placeholder {
+    color: var(--text-muted);
+}
+
+.mcm-sval.is-running {
+    color: var(--text-success);
+}
+
+.mcm-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    margin-right: 6px;
+    flex-shrink: 0;
+}
+
+.mcm-dot.is-running {
+    background: var(--fill-success);
+}
+
+.mcm-copy-inline {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    padding: 2px 7px;
+    height: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.mcm-help {
+    border: none;
+    background: transparent;
+    padding: 3px;
+    min-width: 22px;
+    min-height: 22px;
+    border-radius: 11px;
+    color: var(--text-muted);
+    line-height: 1;
+}
+
+.mcm-help:hover:not(:disabled) {
+    background: var(--surface-2);
+}
+
+.mcm-help .ti {
+    font-size: 13px;
+}
+
+.mcm-power-row {
+    display: flex;
+    gap: 8px;
+}
+
+.mcm-power-wrap {
+    flex: 1;
+    display: flex;
+}
+
+.mcm-power-wrap .mcm-action-btn {
+    width: 100%;
+}
+
+.mcm-action-btn {
+    flex: 1;
+    padding: 12px 10px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 48px;
+}
+
+.mcm-action-btn .ti {
+    font-size: 16px;
+}
+
+/* Grey + no hover when CanStart / CanStop / CanRestart is false. */
+.mcm-action-btn:disabled {
+    background: var(--power-disabled-bg);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    opacity: 1;
+    pointer-events: none;
+}
+
+.mcm-action-btn:disabled:hover {
+    background: var(--power-disabled-bg);
+    color: var(--text-muted);
+}
+
+.mcm-pins {
+    display: grid;
+    grid-template-columns: 200px 200px;
+    gap: 12px;
+    flex: 0 0 auto;
+    width: calc(200px * 2 + 12px);
+}
+
+.mcm-statcard {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.85rem;
+    width: 200px;
+    max-width: 200px;
+}
+
+.mcm-stat-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: var(--font-sans);
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.mcm-stat-metrics {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: max-content;
+    max-width: 100%;
+    margin-top: 4px;
+}
+
+.mcm-stat-line {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.mcm-stat-value {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.mcm-stat-value.is-placeholder {
+    color: var(--text-muted);
+}
+
+.mcm-stat-value.is-positive {
+    color: var(--text-success);
+}
+
+.mcm-stat-hint {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-muted);
+}
+
+.mcm-mini-bar {
+    height: 3px;
+    border-radius: 2px;
+    background: var(--surface-2);
+    overflow: hidden;
+    margin-top: 8px;
+    width: 100%;
+}
+
+.mcm-mini-bar-fill {
+    height: 100%;
+    background: var(--fill-accent);
+    width: 0%;
+}
+
+.mcm-stat-caption {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 8px;
+}
+
+.mcm-toast {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 30;
+    max-width: 420px;
+    padding: 10px 12px;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 13px;
+    color: var(--text-primary);
+    box-shadow: 0 4px 16px rgba(44, 48, 54, 0.12);
+}
+
+.mcm-toast.is-error {
+    background: var(--bg-danger);
+    border-color: var(--border-danger);
+    color: var(--text-danger);
+}
+
+/* --- Tabs --- */
+
+.mcm-tabs {
+    display: flex;
+    gap: 4px;
+    margin-top: 1.25rem;
+    border-bottom: 0.5px solid var(--border);
+    flex-wrap: wrap;
+}
+
+.mcm-tab {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    padding: 8px 4px;
+    margin-right: 20px;
+    font-size: 14px;
+    color: var(--text-secondary);
+    border-bottom: 2px solid transparent;
+    font-weight: 400;
+}
+
+.mcm-tab:hover:not(:disabled) {
+    background: transparent;
+    color: var(--text-primary);
+}
+
+.mcm-tab.is-active {
+    color: var(--text-primary);
+    font-weight: 500;
+    border-bottom-color: var(--fill-accent);
+}
+
+.mcm-tab-body {
+    flex: 1;
+    padding-top: 1.25rem;
+    min-height: 0;
+    overflow: auto;
+}
+
+.mcm-placeholder {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+}
+
+.mcm-placeholder-title {
+    margin: 0 0 6px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.mcm-placeholder-copy {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+/* First-run chooser (B11). */
+.mcm-firstrun {
+    max-width: 560px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.mcm-firstrun h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 600;
+}
+
+.mcm-firstrun-hint {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.mcm-firstrun-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.mcm-firstrun-actions button {
+    min-width: 300px;
+    text-align: left;
+}
+
+.mcm-firstrun-note {
+    margin: 0;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.mcm-firstrun-status {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+    opacity: 0.85;
+    white-space: pre-wrap;
+}
+
+.mcm-firstrun-error {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-danger);
+    white-space: pre-wrap;
+}
+
+/* --- Shared controls for later tab ports (light tokens; no Core wiring here) --- */
+
+.mcm-section-card {
+    background: var(--surface-2);
+    border: 0.5px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+}
+
+.mcm-info-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+}
+
+.mcm-danger-card {
+    background: var(--bg-danger);
+    border: 1px solid var(--border-danger);
+    border-radius: var(--radius);
+    padding: 1rem;
+}
+
+.mcm-wl-row,
+.mcm-bk-row {
+    display: grid;
+    align-items: center;
+    padding: 8px 0;
+    border-top: 0.5px solid var(--border);
+    font-size: 13px;
+}
+
+.mcm-wl-row {
+    grid-template-columns: 1fr 1fr 56px 128px;
+}
+
+.mcm-bk-row {
+    grid-template-columns: 1fr auto auto;
+    gap: 16px;
+    padding: 9px 0;
+}
+
+.mcm-wl-actions,
+.mcm-bk-actions {
+    opacity: 0;
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+    transition: opacity 0.12s;
+    pointer-events: none;
+}
+
+.mcm-wl-row:hover .mcm-wl-actions,
+.mcm-bk-row:hover .mcm-bk-actions {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.mcm-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(44, 48, 54, 0.35);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+}
+
+.mcm-modal-overlay.open {
+    display: flex;
+}
+
+.mcm-modal-card {
+    background: var(--surface-1);
+    border: 0.5px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    width: 340px;
+    max-width: 88%;
+    max-height: 78vh;
+    overflow: auto;
+}
+
+.mcm-modal-card.is-wide {
+    width: 480px;
+}
+
+.mcm-modal-title {
+    font-size: 15px;
+    font-weight: 500;
+    margin: 0 0 14px;
+}
+
+.mcm-modal-body {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 0 0 14px;
+    white-space: pre-wrap;
+}
+
+.mcm-modal-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.mcm-modal-choices {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0 0 14px;
+    max-height: 40vh;
+    overflow: auto;
+}
+
+.mcm-modal-choice {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    width: 100%;
+    text-align: left;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: var(--surface-1);
+}
+
+.mcm-modal-choice.is-selected {
+    border-color: var(--fill-accent);
+    background: var(--surface-2);
+}
+
+.mcm-modal-choice-label {
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.mcm-modal-choice-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* DEBUG host probes only (B3). Hidden in Release via UiHostProbes.Enabled. */
+.mcm-host-probes {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    z-index: 40;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: var(--surface-1);
+    border: 0.5px dashed var(--border-strong);
+    border-radius: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.mcm-host-probes-label {
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.mcm-host-probes-status {
+    flex: 1 1 160px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-primary);
+}
+
+.mcm-host-probes-clock {
+    font-family: var(--font-mono);
+    font-size: 11px;
+}
+
+.mcm-field label {
+    font-size: 12px;
+    color: var(--text-muted);
+    display: block;
+    margin-bottom: 4px;
+}
+
+.mcm-field input[type="text"] {
+    width: 100%;
+    background: var(--surface-1);
+    border: 0.5px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 8px;
+    color: var(--text-primary);
+    font-size: 13px;
+    margin-bottom: 12px;
+    font-family: var(--font-sans);
+}
+
+.mcm-num-input {
+    background: var(--surface-1);
+    border: 0.5px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 8px;
+    color: var(--text-primary);
+    font-size: 13px;
+    width: 80px;
+    font-family: var(--font-sans);
+}
+
+.mcm-checkbox-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 13px;
+    margin-bottom: 14px;
+}
+
+.mcm-checkbox-row input {
+    margin-top: 2px;
+}
+
+.mcm-radio-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 13px;
+    margin-bottom: 10px;
+}
+
+.mcm-radio-row input {
+    margin-top: 2px;
+}
+
+.mcm-field select,
+.mcm-field textarea,
+.mcm-field input[type="password"] {
+    width: 100%;
+    background: var(--surface-1);
+    border: 0.5px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 8px;
+    color: var(--text-primary);
+    font-size: 13px;
+    margin-bottom: 12px;
+    font-family: var(--font-sans);
+}
+
+.mcm-field select {
+    max-width: 28rem;
+}
+
+.mcm-field textarea {
+    resize: vertical;
+    min-height: 4.5rem;
+}
+
+.mcm-wizard-app {
+    height: 100%;
+    min-height: 100%;
+    overflow: hidden;
+}
+
+.mcm-wizard {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--surface-1);
+    border: 0.5px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.mcm-wizard-header {
+    padding: 14px 16px 12px;
+    border-bottom: 0.5px solid var(--border);
+}
+
+.mcm-wizard-header h1 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.mcm-wizard-header p {
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.mcm-wizard-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.mcm-wizard-body > p {
+    margin: 0 0 12px;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.mcm-wizard-kicker {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-accent);
+    margin: 0 0 8px !important;
+}
+
+.mcm-wizard-hint {
+    margin: 0 0 12px !important;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.mcm-wizard-lead {
+    font-weight: 600;
+}
+
+.mcm-wizard-mono {
+    font-family: var(--font-mono);
+    font-size: 12px;
+}
+
+.mcm-wizard-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.mcm-wizard-fieldset {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+}
+
+.mcm-wizard-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 8px 0 12px;
+}
+
+.mcm-wizard-progress-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 13px;
+}
+
+.mcm-progress-track {
+    height: 10px;
+    background: var(--surface-2);
+    border: 0.5px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.mcm-progress-fill {
+    height: 100%;
+    background: var(--fill-accent);
+    width: 0;
+}
+
+.mcm-wizard-log-block {
+    display: flex;
+    flex-direction: column;
+    min-height: 80px;
+    margin-top: 8px;
+}
+
+.mcm-wizard-log-grow {
+    flex: 1 1 auto;
+    min-height: 120px;
+}
+
+.mcm-wizard-log-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 4px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.mcm-wizard-log {
+    flex: 1 1 auto;
+    min-height: 80px;
+    margin: 0;
+    padding: 8px 10px;
+    background: var(--surface-2);
+    border: 0.5px solid var(--border);
+    border-radius: 8px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 11px;
+    color: var(--text-primary);
+}
+
+.mcm-wizard-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 16px;
+    border-top: 0.5px solid var(--border);
+}
+
+.mcm-wizard-status {
+    margin: 0;
+    flex: 1 1 auto;
+    min-width: 0;
+    max-height: 40px;
+    overflow: hidden;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.mcm-wizard-nav {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+    flex: 0 0 auto;
+}
+
+.mcm-capacity-actions {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.mcm-usage-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.mcm-usage-table th {
+    text-align: left;
+    color: var(--text-muted);
+    font-weight: 400;
+    font-size: 12px;
+    padding: 7px 8px;
+    border-bottom: 0.5px solid var(--border);
+}
+
+.mcm-usage-table td {
+    padding: 7px 8px;
+    border-bottom: 0.5px solid var(--border);
+    font-variant-numeric: tabular-nums;
+}
+
+.mcm-usage-table td:not(:first-child),
+.mcm-usage-table th:not(:first-child) {
+    text-align: right;
+}
+
+#blazor-error-ui {
+    background: #f6e8e6;
+    color: var(--text-danger);
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(44, 48, 54, 0.12);
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 0.75rem;
+    top: 0.5rem;
+}

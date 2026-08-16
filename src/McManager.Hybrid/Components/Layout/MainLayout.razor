@@ -1,0 +1,283 @@
+@using McManager.Hybrid.Components.Tabs.Whitelist
+@using McManager.Hybrid.Components.Tabs.Usage
+@using McManager.Hybrid.Components.Tabs.ServerManagement
+@using McManager.Hybrid.Components.Tabs.Advanced
+@using McManager.Hybrid.Components.Tabs.Troubleshooting
+@inject MainViewModel Vm
+@implements IDisposable
+
+<div class="mcm-app">
+    <header class="mcm-title-row">
+        <div class="mcm-wordmark">
+            <i class="ti ti-server-2" aria-hidden="true"></i>
+            <span>mc manager</span>
+        </div>
+        <span class="mcm-always-free">Always Free</span>
+    </header>
+
+    <section class="mcm-chrome" aria-label="Server status">
+        <div class="mcm-left">
+            <div class="mcm-status-card">
+                <div class="mcm-srow">
+                    <span class="mcm-slabel">
+                        Status
+                        <button type="button" class="mcm-help" title="Running means friends can join at the play IP. Stopped means the game is off — Start wakes it.">
+                            <i class="ti ti-help" aria-hidden="true"></i>
+                            <span class="sr-only">About Status</span>
+                        </button>
+                    </span>
+                    <span class="mcm-sval @(StatusClass)">
+                        <span class="mcm-dot @(Vm.StatusIsRunning ? "is-running" : null)" aria-hidden="true"></span>
+                        @Vm.Status
+                    </span>
+                </div>
+                <div class="mcm-srow">
+                    <span class="mcm-slabel">
+                        Play IP
+                        <button type="button" class="mcm-help" title="The address friends type in Minecraft. It stays the same whether the game is running or waiting to be woken.">
+                            <i class="ti ti-help" aria-hidden="true"></i>
+                            <span class="sr-only">About Play IP</span>
+                        </button>
+                    </span>
+                    <span class="mcm-sval @(Vm.HasPlayIp ? null : "is-placeholder")">
+                        @Vm.PlayIp
+                        <button type="button"
+                                class="mcm-copy-inline"
+                                disabled="@(!Vm.HasPlayIp)"
+                                title="@(Vm.HasPlayIp ? "Copy play IP" : "No play IP to copy.")"
+                                @onclick="Vm.CopyPlayIpAsync">
+                            <i class="ti ti-copy" aria-hidden="true"></i>
+                            @Vm.CopyPlayIpLabel
+                        </button>
+                    </span>
+                </div>
+                <div class="mcm-srow">
+                    <span class="mcm-slabel">
+                        Players
+                        <button type="button" class="mcm-help" title="Who is online, when the manager can see it. A dash means Minecraft is off, or the count isn't available yet.">
+                            <i class="ti ti-help" aria-hidden="true"></i>
+                            <span class="sr-only">About Players</span>
+                        </button>
+                    </span>
+                    <span class="mcm-sval @(IsPlaceholder(Vm.PlayersDisplay) ? "is-placeholder" : null)">@Vm.PlayersDisplay</span>
+                </div>
+            </div>
+
+            <div class="mcm-power-row">
+                <span class="mcm-power-wrap" title="@Vm.StartToolTip">
+                    <button type="button"
+                            class="mcm-action-btn"
+                            disabled="@(!Vm.CanStart)"
+                            @onclick="Vm.StartAsync">
+                        <i class="ti ti-player-play" aria-hidden="true"></i>
+                        Start
+                    </button>
+                </span>
+                <span class="mcm-power-wrap" title="@Vm.StopToolTip">
+                    <button type="button"
+                            class="mcm-action-btn"
+                            disabled="@(!Vm.CanStop)"
+                            @onclick="Vm.StopAsync">
+                        <i class="ti ti-player-stop" aria-hidden="true"></i>
+                        Stop
+                    </button>
+                </span>
+                <span class="mcm-power-wrap" title="@Vm.RestartToolTip">
+                    <button type="button"
+                            class="mcm-action-btn"
+                            disabled="@(!Vm.CanRestart)"
+                            @onclick="Vm.RestartAsync">
+                        <i class="ti ti-refresh" aria-hidden="true"></i>
+                        Restart
+                    </button>
+                </span>
+            </div>
+        </div>
+
+        <div class="mcm-pins">
+            <div class="mcm-statcard">
+                <div class="mcm-stat-label">
+                    Today's uptime
+                    <button type="button" class="mcm-help" title="How long the game computer has been on today, versus the daily slice of your monthly free hours.">
+                        <i class="ti ti-help" aria-hidden="true"></i>
+                        <span class="sr-only">About today's uptime</span>
+                    </button>
+                </div>
+                <div class="mcm-stat-metrics">
+                    <div class="mcm-stat-line">
+                        <span class="mcm-stat-value @(IsPlaceholder(Vm.PinTodayValue) ? "is-placeholder" : null)">@Vm.PinTodayValue</span>
+                        <span class="mcm-stat-hint">@(string.IsNullOrWhiteSpace(Vm.PinTodayHint) ? "—" : Vm.PinTodayHint)</span>
+                    </div>
+                    <div class="mcm-mini-bar" aria-hidden="true">
+                        <div class="mcm-mini-bar-fill" style="width: @ToPercent(Vm.PinTodayFraction)"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="mcm-statcard">
+                <div class="mcm-stat-label">
+                    This month
+                    <button type="button" class="mcm-help" title="Share of this month's free compute budget already used. Details and edits are on the Usage tab.">
+                        <i class="ti ti-help" aria-hidden="true"></i>
+                        <span class="sr-only">About this month</span>
+                    </button>
+                </div>
+                <div class="mcm-stat-metrics">
+                    <div class="mcm-stat-line">
+                        <span class="mcm-stat-value @(IsPlaceholder(Vm.PinMonthValue) ? "is-placeholder" : null)">@Vm.PinMonthValue</span>
+                        <span class="mcm-stat-hint">@(string.IsNullOrWhiteSpace(Vm.PinMonthHint) ? "—" : Vm.PinMonthHint)</span>
+                    </div>
+                    <div class="mcm-mini-bar" aria-hidden="true">
+                        <div class="mcm-mini-bar-fill" style="width: @ToPercent(Vm.PinMonthFraction)"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="mcm-statcard">
+                <div class="mcm-stat-label">
+                    Daily average
+                    <button type="button" class="mcm-help" title="Average hours the game computer has been on per day this month, versus today's allowed hours.">
+                        <i class="ti ti-help" aria-hidden="true"></i>
+                        <span class="sr-only">About daily average</span>
+                    </button>
+                </div>
+                <div class="mcm-stat-metrics">
+                    <div class="mcm-stat-line">
+                        <span class="mcm-stat-value @(IsPlaceholder(Vm.PinAvgValue) ? "is-placeholder" : null)">@Vm.PinAvgValue</span>
+                        <span class="mcm-stat-hint">@(string.IsNullOrWhiteSpace(Vm.PinAvgHint) ? "—" : Vm.PinAvgHint)</span>
+                    </div>
+                    <div class="mcm-mini-bar" aria-hidden="true">
+                        <div class="mcm-mini-bar-fill" style="width: @ToPercent(Vm.PinAvgFraction)"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="mcm-statcard">
+                <div class="mcm-stat-label">
+                    Rollover bank
+                    <button type="button" class="mcm-help" title="Unused daily hours saved from earlier days this month. This is not the hours still left in the month — that remaining figure is on the Usage tab.">
+                        <i class="ti ti-help" aria-hidden="true"></i>
+                        <span class="sr-only">About rollover bank</span>
+                    </button>
+                </div>
+                <div class="mcm-stat-metrics">
+                    <div class="mcm-stat-line">
+                        <span class="mcm-stat-value @(RolloverValueClass)">@Vm.PinRolloverValue</span>
+                    </div>
+                    <div class="mcm-stat-caption">unused hours from earlier days this month</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <nav class="mcm-tabs" role="tablist" aria-label="Manager sections">
+        <button type="button"
+                role="tab"
+                class="mcm-tab @TabClass("whitelist")"
+                aria-selected="@(IsTab("whitelist") ? "true" : "false")"
+                @onclick="@(() => SelectTab("whitelist"))">
+            Whitelist
+        </button>
+        <button type="button"
+                role="tab"
+                class="mcm-tab @TabClass("usage")"
+                aria-selected="@(IsTab("usage") ? "true" : "false")"
+                @onclick="@(() => SelectTab("usage"))">
+            Usage
+        </button>
+        <button type="button"
+                role="tab"
+                class="mcm-tab @TabClass("server")"
+                aria-selected="@(IsTab("server") ? "true" : "false")"
+                @onclick="@(() => SelectTab("server"))">
+            Server Management
+        </button>
+        <button type="button"
+                role="tab"
+                class="mcm-tab @TabClass("advanced")"
+                aria-selected="@(IsTab("advanced") ? "true" : "false")"
+                @onclick="@(() => SelectTab("advanced"))">
+            Advanced / Danger Zone
+        </button>
+        <button type="button"
+                role="tab"
+                class="mcm-tab @TabClass("troubleshooting")"
+                aria-selected="@(IsTab("troubleshooting") ? "true" : "false")"
+                @onclick="@(() => SelectTab("troubleshooting"))">
+            Troubleshooting
+        </button>
+    </nav>
+
+    <main class="mcm-tab-body" role="tabpanel">
+        @switch (_tab)
+        {
+            case "usage":
+                <UsageTab />
+                break;
+            case "server":
+                <ServerManagementTab />
+                break;
+            case "advanced":
+                <AdvancedTab />
+                break;
+            case "troubleshooting":
+                <TroubleshootingTab />
+                break;
+            default:
+                <WhitelistTab />
+                break;
+        }
+    </main>
+
+    @if (Vm.ToastVisible)
+    {
+        <div class="mcm-toast @(Vm.ToastIsError ? "is-error" : null)" role="status">@Vm.ToastMessage</div>
+    }
+</div>
+
+@code {
+    private string _tab = "whitelist";
+
+    protected override void OnInitialized()
+    {
+        Vm.PropertyChanged += OnVmChanged;
+        Vm.StartChrome();
+    }
+
+    public void Dispose()
+    {
+        Vm.PropertyChanged -= OnVmChanged;
+    }
+
+    private void OnVmChanged(object? sender, PropertyChangedEventArgs e) =>
+        _ = InvokeAsync(StateHasChanged);
+
+    private void SelectTab(string tab) => _tab = tab;
+
+    private bool IsTab(string tab) => string.Equals(_tab, tab, StringComparison.Ordinal);
+
+    private string TabClass(string tab) => IsTab(tab) ? "is-active" : string.Empty;
+
+    private static bool IsPlaceholder(string value) =>
+        string.IsNullOrWhiteSpace(value) || value == MainViewModel.Placeholder;
+
+    private string StatusClass
+    {
+        get
+        {
+            if (IsPlaceholder(Vm.Status))
+                return "is-placeholder";
+            return Vm.StatusIsRunning ? "is-running" : string.Empty;
+        }
+    }
+
+    private string RolloverValueClass
+    {
+        get
+        {
+            if (IsPlaceholder(Vm.PinRolloverValue))
+                return "is-placeholder";
+            return Vm.PinRolloverPositive ? "is-positive" : string.Empty;
+        }
+    }
+
+    private static string ToPercent(double fraction) =>
+        $"{Math.Clamp(fraction, 0, 1) * 100:0.#}%";
+}

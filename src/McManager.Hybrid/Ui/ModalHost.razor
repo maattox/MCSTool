@@ -1,0 +1,143 @@
+@inject UiDialogs Dialogs
+@implements IDisposable
+
+@if (Dialogs.Current is ConfirmSession confirm)
+{
+    <div class="mcm-modal-overlay open"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="mcm-modal-title"
+         tabindex="-1"
+         @ref="_overlay"
+         @onclick="Dialogs.Dismiss"
+         @onkeydown="OnKeyDown">
+        <div class="mcm-modal-card" @onclick:stopPropagation="true">
+            <h2 id="mcm-modal-title" class="mcm-modal-title">@confirm.Title</h2>
+            <p class="mcm-modal-body">@confirm.Message</p>
+            <div class="mcm-modal-actions">
+                <button type="button" @onclick="Dialogs.Dismiss">Cancel</button>
+                <button type="button" class="mcm-primary" @onclick="@(() => Dialogs.CompleteConfirm(true))">
+                    @confirm.ConfirmButtonText
+                </button>
+            </div>
+        </div>
+    </div>
+}
+else if (Dialogs.Current is InfoSession info)
+{
+    <div class="mcm-modal-overlay open"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="mcm-modal-title"
+         tabindex="-1"
+         @ref="_overlay"
+         @onclick="Dialogs.Dismiss"
+         @onkeydown="OnKeyDown">
+        <div class="mcm-modal-card" @onclick:stopPropagation="true">
+            <h2 id="mcm-modal-title" class="mcm-modal-title">@info.Title</h2>
+            <p class="mcm-modal-body">@info.Message</p>
+            <div class="mcm-modal-actions">
+                <button type="button" class="mcm-primary" @onclick="Dialogs.CompleteInfo">OK</button>
+            </div>
+        </div>
+    </div>
+}
+else if (Dialogs.Current is ChooseSession choose)
+{
+    <div class="mcm-modal-overlay open"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="mcm-modal-title"
+         tabindex="-1"
+         @ref="_overlay"
+         @onclick="Dialogs.Dismiss"
+         @onkeydown="OnKeyDown">
+        <div class="mcm-modal-card is-wide" @onclick:stopPropagation="true">
+            <h2 id="mcm-modal-title" class="mcm-modal-title">@choose.Title</h2>
+            <p class="mcm-modal-body">@choose.Message</p>
+            <div class="mcm-modal-choices" role="listbox" aria-label="Choices">
+                @foreach (var choice in choose.Choices)
+                {
+                    var selected = string.Equals(choice.Id, _selectedId, StringComparison.Ordinal);
+                    <button type="button"
+                            role="option"
+                            aria-selected="@(selected ? "true" : "false")"
+                            class="mcm-modal-choice @(selected ? "is-selected" : null)"
+                            @onclick="@(() => Select(choice.Id))">
+                        <span class="mcm-modal-choice-label">@choice.Label</span>
+                        @if (!string.IsNullOrWhiteSpace(choice.Description))
+                        {
+                            <span class="mcm-modal-choice-desc">@choice.Description</span>
+                        }
+                    </button>
+                }
+            </div>
+            <div class="mcm-modal-actions">
+                <button type="button" @onclick="Dialogs.Dismiss">Cancel</button>
+                <button type="button"
+                        class="mcm-primary"
+                        disabled="@string.IsNullOrEmpty(_selectedId)"
+                        @onclick="@(() => Dialogs.CompleteChoose(_selectedId))">
+                    Continue
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private ElementReference _overlay;
+    private string? _selectedId;
+    private DialogSession? _lastSession;
+
+    protected override void OnInitialized()
+    {
+        Dialogs.CurrentChanged += OnCurrentChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Dialogs.Current is not null)
+        {
+            try
+            {
+                await _overlay.FocusAsync();
+            }
+            catch (InvalidOperationException)
+            {
+                // Element not in the tree yet.
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        Dialogs.CurrentChanged -= OnCurrentChanged;
+    }
+
+    private void OnCurrentChanged()
+    {
+        _ = InvokeAsync(() =>
+        {
+            if (!ReferenceEquals(Dialogs.Current, _lastSession))
+            {
+                _lastSession = Dialogs.Current;
+                _selectedId = Dialogs.Current is ChooseSession choose && choose.Choices.Count > 0
+                    ? choose.Choices[0].Id
+                    : null;
+            }
+
+            StateHasChanged();
+        });
+    }
+
+    private void Select(string id) => _selectedId = id;
+
+    private void OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+        {
+            Dialogs.Dismiss();
+        }
+    }
+}

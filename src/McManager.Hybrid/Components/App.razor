@@ -1,0 +1,35 @@
+@inject HybridShell Shell
+@implements IDisposable
+
+@if (Shell.Page == HybridShell.PageKind.FirstRun)
+{
+    <FirstRun />
+}
+else if (Shell.Page == HybridShell.PageKind.Setup)
+{
+    <SetupWizard />
+}
+else
+{
+    <MainLayout />
+}
+<ModalHost />
+@if (UiHostProbes.Enabled)
+{
+    <HostServiceProbes />
+}
+
+@code {
+    protected override void OnInitialized()
+    {
+        Shell.PropertyChanged += OnShellChanged;
+    }
+
+    public void Dispose()
+    {
+        Shell.PropertyChanged -= OnShellChanged;
+    }
+
+    private void OnShellChanged(object? sender, PropertyChangedEventArgs e) =>
+        _ = InvokeAsync(StateHasChanged);
+}
