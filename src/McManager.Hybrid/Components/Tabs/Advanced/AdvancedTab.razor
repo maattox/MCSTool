@@ -1,11 +1,11 @@
 @inject AdvancedViewModel Vm
 @implements IDisposable
 
-<div style="display:flex;flex-direction:column;gap:16px;max-width:760px;">
+<div style="display:flex;flex-direction:column;gap:16px;max-width:100%;">
     <div>
         <div style="font-size:16px;font-weight:600;">Advanced / Danger Zone</div>
         <p style="margin:4px 0 0;font-size:13px;color:var(--text-secondary);">
-            Technical VM and doorbell status, break-glass Compute, idle timer, and stack identity. Everyday Start / Stop stay on the top bar.
+            Technical VM and doorbell status, break-glass Compute, idle timer, stack identity, and stack teardown. Everyday Start / Stop stay on the top bar.
         </p>
     </div>
 
@@ -126,6 +126,28 @@
         </div>
     </div>
 
+    <div class="mcm-danger-card">
+        <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
+            <span style="font-size:14px;font-weight:600;">Delete infrastructure</span>
+            <button type="button"
+                    class="mcm-help"
+                    title="Removes only the product stack this Manager deployed (OpenTofu state on this PC). Does not delete your Oracle tenancy or Oracle’s default account resources.">
+                <i class="ti ti-help" aria-hidden="true"></i>
+                <span class="sr-only">About delete infrastructure</span>
+            </button>
+        </div>
+        <p style="margin:0 0 12px;font-size:13px;color:var(--text-secondary);">
+            Tear down the Always Free stack so you can run Setup again on this tenancy. World backups in shared storage are deleted. This does not close your Oracle account.
+        </p>
+        <button type="button"
+                class="mcm-danger-btn"
+                disabled="@Vm.IsBusy"
+                title="Opens a confirm window. Type confirm, then watch OpenTofu delete the stack. The window stays open until Oracle finishes."
+                @onclick="Vm.OpenDestroyInfrastructure">
+            Delete infrastructure
+        </button>
+    </div>
+
     <div class="mcm-section-card">
         <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
             <span style="font-size:14px;font-weight:600;">Stack identity (shared storage)</span>
@@ -175,6 +197,17 @@
     </div>
 
     <p style="margin:0;font-size:13px;color:var(--text-secondary);opacity:0.85;">@Vm.StatusMessage</p>
+
+    @if (UiHostProbes.Enabled)
+    {
+        <div class="mcm-section-card">
+            <div style="font-size:14px;font-weight:600;margin-bottom:6px;">DEBUG host probes</div>
+            <p style="margin:0 0 8px;font-size:13px;color:var(--text-secondary);">
+                Debug builds only. Confirms the confirm modal, clipboard, and native file picker still work.
+            </p>
+            <HostServiceProbes />
+        </div>
+    }
 </div>
 
 @code {

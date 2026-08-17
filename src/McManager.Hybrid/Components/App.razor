@@ -14,10 +14,7 @@ else
     <MainLayout />
 }
 <ModalHost />
-@if (UiHostProbes.Enabled)
-{
-    <HostServiceProbes />
-}
+<DestroyInfrastructureDialog />
 
 @code {
     protected override void OnInitialized()

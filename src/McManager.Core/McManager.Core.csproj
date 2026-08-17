@@ -11,6 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="OCI.DotNetSDK.Artifacts" Version="144.0.0" />
     <PackageReference Include="OCI.DotNetSDK.Common" Version="144.0.0" />
     <PackageReference Include="OCI.DotNetSDK.Core" Version="144.0.0" />
     <PackageReference Include="OCI.DotNetSDK.Identity" Version="144.0.0" />

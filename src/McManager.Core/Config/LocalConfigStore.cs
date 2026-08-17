@@ -251,6 +251,37 @@ public static class LocalConfigStore
 
         return warnings;
     }
+
+    /// <summary>
+    /// Removes stack-local Manager files after a successful tofu destroy.
+    /// Does not touch <c>friends.local.json</c>, <c>~/.oci</c>, SSH keys, or Credential Manager.
+    /// </summary>
+    public static ServiceResult DeleteManageConfigAndWizard(string? dataDirectory = null)
+    {
+        dataDirectory ??= TryFindDataDirectory();
+        if (dataDirectory is null)
+            return ServiceResult.Ok();
+
+        var errors = new List<string>();
+        TryDeleteFile(Path.Combine(dataDirectory, ConfigFileName), errors);
+        TryDeleteFile(Path.Combine(dataDirectory, WizardStateFileName), errors);
+        return errors.Count == 0
+            ? ServiceResult.Ok()
+            : ServiceResult.Fail(string.Join("; ", errors));
+    }
+
+    private static void TryDeleteFile(string path, List<string> errors)
+    {
+        try
+        {
+            if (File.Exists(path))
+                File.Delete(path);
+        }
+        catch (Exception ex)
+        {
+            errors.Add($"{Path.GetFileName(path)}: {ex.Message}");
+        }
+    }
 }
 
 public sealed class LocalConfigLoadResult

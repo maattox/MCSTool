@@ -36,7 +36,7 @@
                 <span style="font-size:14px;font-weight:500;">World backups</span>
                 <button type="button"
                         class="mcm-help"
-                        title="Zipped world saves in shared cloud storage. Oldest backups are cleaned up on the server when space is tight. Replace copies a zip onto the live server and needs the game computer running.">
+                        title="Zipped world saves in shared cloud storage. Oldest backups are cleaned up on the server when space is tight. Replace copies a zip onto the live server and needs the server running.">
                     <i class="ti ti-help" aria-hidden="true"></i>
                     <span class="sr-only">About World backups</span>
                 </button>
@@ -58,7 +58,7 @@
                 </button>
                 <button type="button"
                         disabled="@Vm.IsBusy"
-                        title="Requires the game computer to be running. Stops Minecraft, replaces the world, then starts it again."
+                        title="Requires the server to be running. Stops Minecraft, replaces the world, then starts it again."
                         @onclick="Vm.ReplaceWorldAsync">
                     Replace world
                 </button>

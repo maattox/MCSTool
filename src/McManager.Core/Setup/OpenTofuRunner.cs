@@ -49,6 +49,42 @@ public sealed class OpenTofuRunner : IOpenTofuRunner
             log,
             cancellationToken);
 
+    public Task<TofuCommandResult> PlanDestroyAsync(
+        string infraDirectory,
+        TofuWorkspace workspace,
+        IProgress<string>? log,
+        CancellationToken cancellationToken = default) =>
+        RunAsync(
+            infraDirectory,
+            [
+                "plan",
+                "-destroy",
+                "-input=false",
+                "-no-color",
+                $"-state={workspace.StatePath}",
+                $"-var-file={workspace.VarFilePath}",
+            ],
+            log,
+            cancellationToken);
+
+    public Task<TofuCommandResult> DestroyAsync(
+        string infraDirectory,
+        TofuWorkspace workspace,
+        IProgress<string>? log,
+        CancellationToken cancellationToken = default) =>
+        RunAsync(
+            infraDirectory,
+            [
+                "destroy",
+                "-auto-approve",
+                "-input=false",
+                "-no-color",
+                $"-state={workspace.StatePath}",
+                $"-var-file={workspace.VarFilePath}",
+            ],
+            log,
+            cancellationToken);
+
     private async Task<TofuCommandResult> RunAsync(
         string infraDirectory,
         IReadOnlyList<string> args,

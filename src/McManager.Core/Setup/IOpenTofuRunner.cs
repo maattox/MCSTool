@@ -46,4 +46,16 @@ public interface IOpenTofuRunner
         TofuWorkspace workspace,
         IProgress<string>? log,
         CancellationToken cancellationToken = default);
+
+    Task<TofuCommandResult> PlanDestroyAsync(
+        string infraDirectory,
+        TofuWorkspace workspace,
+        IProgress<string>? log,
+        CancellationToken cancellationToken = default);
+
+    Task<TofuCommandResult> DestroyAsync(
+        string infraDirectory,
+        TofuWorkspace workspace,
+        IProgress<string>? log,
+        CancellationToken cancellationToken = default);
 }

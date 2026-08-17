@@ -74,6 +74,7 @@ public partial class App : Application
         services.AddSingleton<ServerManagementViewModel>();
         services.AddSingleton<TroubleshootingViewModel>();
         services.AddSingleton<AdvancedViewModel>();
+        services.AddSingleton<DestroyInfrastructureViewModel>();
         services.AddTransient<SetupWizardViewModel>();
     }
 

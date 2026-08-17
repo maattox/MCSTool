@@ -1,0 +1,135 @@
+@inject DestroyInfrastructureViewModel Vm
+@inject IJSRuntime JS
+@implements IDisposable
+
+@if (!Vm.IsOpen)
+{
+    return;
+}
+
+<div class="mcm-modal-overlay mcm-destroy-overlay open"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="mcm-destroy-title"
+     tabindex="-1"
+     @onclick="OnOverlayClick"
+     @onkeydown="OnKeyDown">
+    <div class="mcm-modal-card mcm-destroy-card" @onclick:stopPropagation="true">
+        <h2 id="mcm-destroy-title" class="mcm-modal-title">@Vm.Title</h2>
+
+        @if (Vm.ShowConfirm)
+        {
+            <p class="mcm-modal-body">
+                This deletes the Minecraft stack this Manager deployed: both computers, the network, the reserved play IP, shared storage (including world backups in the cloud), IAM, budget, and Function wiring.
+            </p>
+            <p class="mcm-modal-body">
+                Only OpenTofu-managed product resources are removed. Oracle’s default tenancy resources stay. This does not close your Oracle account — you would still sign in to the OCI Console in a browser to delete the tenancy itself.
+            </p>
+            <p class="mcm-modal-body">
+                Worlds that exist only in the cloud are gone. Downloaded zips on this PC, your API key, SSH keys, and the friends list stay.
+            </p>
+            @if (Vm.IsTofuDryRun)
+            {
+                <p class="mcm-modal-body mcm-destroy-dry">Dry-run is on. Delete will log the steps and will not call Oracle or erase local config.</p>
+            }
+            <label class="mcm-destroy-confirm-label" for="mcm-destroy-confirm">
+                Type <span class="mcm-wizard-mono">@DestroyInfrastructureViewModel.ConfirmPhrase</span> to enable Delete
+            </label>
+            <input id="mcm-destroy-confirm"
+                   type="text"
+                   class="mcm-destroy-confirm-input"
+                   autocomplete="off"
+                   spellcheck="false"
+                   @bind="Vm.TypedConfirm"
+                   @bind:event="oninput" />
+            <div class="mcm-modal-actions">
+                <button type="button" @onclick="Vm.Close">Cancel</button>
+                <button type="button"
+                        class="mcm-danger-btn"
+                        disabled="@(!Vm.CanStartDestroy)"
+                        @onclick="Vm.StartDestroyAsync">
+                    Delete infrastructure
+                </button>
+            </div>
+        }
+        else
+        {
+            <p class="mcm-modal-body">@Vm.ProgressCaption</p>
+            <div class="mcm-wizard-progress">
+                <div class="mcm-wizard-progress-row">
+                    <span>Progress</span>
+                    <span class="mcm-wizard-mono">@Vm.ProgressPercentDisplay</span>
+                </div>
+                <div class="mcm-progress-track" role="progressbar"
+                     aria-valuemin="0"
+                     aria-valuemax="100"
+                     aria-valuenow="@((int)Math.Round(Vm.ProgressPercent))">
+                    <div class="mcm-progress-fill @(Vm.Phase == DestroyInfrastructurePhase.Failed ? "is-danger" : null)"
+                         style="width: @(Vm.ProgressPercent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%"></div>
+                </div>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Vm.ResultMessage) && Vm.IsFinished)
+            {
+                <p class="mcm-modal-body">@Vm.ResultMessage</p>
+            }
+            <div class="mcm-wizard-log-block mcm-wizard-log-grow">
+                <div class="mcm-wizard-log-label">
+                    <span>Deletion log</span>
+                </div>
+                <pre id="mcm-destroy-log" class="mcm-wizard-log mcm-wizard-mono">@Vm.LogText</pre>
+            </div>
+            <div class="mcm-modal-actions">
+                <button type="button"
+                        class="mcm-primary"
+                        disabled="@(!Vm.CanClose)"
+                        title="@(Vm.CanClose ? null : "Wait until Oracle finishes deleting, or until the log shows a failure.")"
+                        @onclick="Vm.Close">
+                    @Vm.CloseButtonText
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Vm.PropertyChanged += OnVmChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!Vm.ShowProgress)
+            return;
+
+        try
+        {
+            await JS.InvokeVoidAsync("mcmSetupLog.attach", "mcm-destroy-log");
+            await JS.InvokeVoidAsync("mcmSetupLog.scrollIfStuck", "mcm-destroy-log");
+        }
+        catch (Exception)
+        {
+            // WebView/script not ready yet.
+        }
+    }
+
+    public void Dispose()
+    {
+        Vm.PropertyChanged -= OnVmChanged;
+    }
+
+    private void OnVmChanged(object? sender, PropertyChangedEventArgs e) =>
+        _ = InvokeAsync(StateHasChanged);
+
+    private void OnOverlayClick()
+    {
+        if (Vm.CanClose)
+            Vm.Close();
+    }
+
+    private void OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape" && Vm.CanClose)
+            Vm.Close();
+    }
+}

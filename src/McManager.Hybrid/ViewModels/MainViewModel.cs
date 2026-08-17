@@ -138,7 +138,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         : StopDisabledReason;
 
     public string RestartToolTip => CanRestart
-        ? "Restart Minecraft only. The game computer stays on."
+        ? "Restart Minecraft only. The server stays on."
         : RestartDisabledReason;
 
     private string StartDisabledReason
@@ -185,7 +185,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 return "Wait — a start, stop, or restart is already in progress.";
             if (!ConfigLoaded)
                 return "Local config is missing or failed to load.";
-            return "Can't restart Minecraft while the game computer is off. Use Start first.";
+            return "Can't restart Minecraft while the server is off. Use Start first.";
         }
     }
 
@@ -245,6 +245,22 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         StartPoller();
         _ = RefreshStatusAsync(forceDoor: true, forceOci: true);
         _ = RefreshPinsAsync();
+    }
+
+    /// <summary>
+    /// Stop poll when leaving manage (e.g. after destroy). <see cref="StartChrome"/>
+    /// can run again if manage is shown later in this process.
+    /// </summary>
+    public void StopChrome()
+    {
+        if (!_chromeStarted)
+            return;
+
+        _chromeStarted = false;
+        _focus.FocusChanged -= OnWindowFocusChanged;
+        _pollCts?.Cancel();
+        _pollCts?.Dispose();
+        _pollCts = null;
     }
 
     public void SetWindowFocused(bool focused)

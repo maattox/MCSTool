@@ -5,6 +5,7 @@ using Oci.Common;
 using Oci.Common.Auth;
 using Oci.Common.Retry;
 using Oci.Common.Waiters;
+using Oci.ArtifactsService;
 using Oci.CoreService;
 using Oci.IdentityService;
 using Oci.ObjectstorageService;
@@ -22,6 +23,7 @@ public sealed class OciSession : IDisposable
     public IdentityClient Identity { get; }
     public VirtualNetworkClient VirtualNetwork { get; }
     public ObjectStorageClient ObjectStorage { get; }
+    public ArtifactsClient Artifacts { get; }
 
     /// <summary>Shared retry config for per-call overrides when needed.</summary>
     public RetryConfiguration RetryConfiguration { get; }
@@ -32,6 +34,7 @@ public sealed class OciSession : IDisposable
         IdentityClient identity,
         VirtualNetworkClient virtualNetwork,
         ObjectStorageClient objectStorage,
+        ArtifactsClient artifacts,
         RetryConfiguration retryConfiguration)
     {
         _authProvider = authProvider;
@@ -39,6 +42,7 @@ public sealed class OciSession : IDisposable
         Identity = identity;
         VirtualNetwork = virtualNetwork;
         ObjectStorage = objectStorage;
+        Artifacts = artifacts;
         RetryConfiguration = retryConfiguration;
     }
 
@@ -114,14 +118,16 @@ public sealed class OciSession : IDisposable
             var identity = new IdentityClient(authProvider, clientConfig);
             var virtualNetwork = new VirtualNetworkClient(authProvider, clientConfig);
             var objectStorage = new ObjectStorageClient(authProvider, clientConfig);
+            var artifacts = new ArtifactsClient(authProvider, clientConfig);
 
             compute.SetRegion(region);
             identity.SetRegion(region);
             virtualNetwork.SetRegion(region);
             objectStorage.SetRegion(region);
+            artifacts.SetRegion(region);
 
             return ServiceResult<OciSession>.Ok(
-                new OciSession(authProvider, compute, identity, virtualNetwork, objectStorage, retry));
+                new OciSession(authProvider, compute, identity, virtualNetwork, objectStorage, artifacts, retry));
         }
         catch (Exception ex)
         {
@@ -135,5 +141,6 @@ public sealed class OciSession : IDisposable
         Identity.Dispose();
         VirtualNetwork.Dispose();
         ObjectStorage.Dispose();
+        Artifacts.Dispose();
     }
 }

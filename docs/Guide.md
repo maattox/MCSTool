@@ -2,7 +2,7 @@
 
 This is the short path for a **Windows** admin who wants a **private Vanilla** Minecraft server for friends, hosted on **Oracle Cloud Infrastructure (OCI)** Always Free resources, managed from one desktop app.
 
-Friends always connect to the same **play IP**. When nobody is playing, a small always-on “doorbell” answers Minecraft pings and can wake the game computer. Idle and budget stops are meant to keep you inside Always Free. Access is **IP allowlist only** — not a public server.
+Friends always connect to the same **play IP**. When nobody is playing, a small always-on “doorbell” answers Minecraft pings and can wake the server. Idle and budget stops are meant to keep you inside Always Free. Access is **IP allowlist only** — not a public server.
 
 **Windows only** for this Manager. There is no macOS or Linux Manager in MVP.
 
@@ -244,6 +244,20 @@ Try **Troubleshooting** in Manager first (each action asks for confirm and shows
 - Re-apply guest play-IP network config
 
 Guest ACPI SoftStop hang is **not** a silent button — use Oracle Console reset if the copy on that tab says so.
+
+## Tear down and redeploy (greenfield E2E)
+
+To wipe the **product stack** on a test tenancy and run Setup again:
+
+1. In Manager, open **Advanced / Danger Zone**.
+2. Click **Delete infrastructure**.
+3. Read the warning. Type **`confirm`** (lowercase) to enable Delete. This does **not** close your Oracle account.
+4. Keep the window open. The log and percent stay until Oracle finishes deleting (often several minutes). Close is disabled until it succeeds or fails.
+5. After success: close Manager fully, reopen it, then run Setup.
+
+Only resources this Manager deployed (OpenTofu state on **this PC**) are removed. Oracle default tenancy resources stay. World backups in the cloud go away; the friends list on this PC, API key, and SSH keys stay.
+
+If Delete says there is no OpenTofu state, this PC did not deploy the stack (or the `%LOCALAPPDATA%\McManager\tofu` folder is missing). Do not delete random compartments in the Console unless you know they are the product `mcmgr` stack.
 
 Developer/operator SSH command dump (not required for the happy path): lab `docs/Operator-Troubleshooting.md` in the sibling tooling repo.
 

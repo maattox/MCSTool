@@ -169,3 +169,9 @@ A1 host capacity is probed with `CreateComputeCapacityReport` before apply (no V
 ## Explicitly out of this module
 
 Setup wizard UI, `tofu apply` orchestration, SSH bootstrap (`onbox/mcmgr`, `door_vm`, `vm_agent`), OCIR Auth Token / `fn push`, seeding Object Storage JSON, writing `data/config.local.json`, `schema.yaml`, custom images, instance configs, importing the live Forge lab.
+
+## Destroy (Manager Danger Zone)
+
+Manager **Advanced / Danger Zone → Delete infrastructure** runs `tofu destroy` against `%LOCALAPPDATA%\McManager\tofu\<stack-id>\` (never this folder’s `terraform.tfvars`). It empties the product bucket and `mcmgr-fn/softstop` images first, lifts bucket `prevent_destroy` via a gitignored override for that run only, then waits until OpenTofu reports OCI deletion finished.
+
+That path does **not** delete the Oracle tenancy or resources that were never in tofu state. Manual CLI destroy from this directory is still operator-only and still blocked by `prevent_destroy` on the bucket until that override exists.

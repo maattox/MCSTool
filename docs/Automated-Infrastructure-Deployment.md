@@ -550,16 +550,16 @@ App updates (GitHub Releases of the Manager) are independent. A newer app must s
 
 ### 12.4 Destroy
 
-**MVP:** no polished Destroy UI. Bucket modules may use `prevent_destroy` so a stray `tofu destroy` cannot wipe world backups.
+**MVP (pulled forward for Step 7.2):** Manager **Advanced / Danger Zone → Delete infrastructure**. `tofu destroy` against `%LOCALAPPDATA%\McManager\tofu\<stack-id>\` is the only bulk delete (OpenTofu-managed product resources only — not the Oracle tenancy, not default tenancy leftovers). UX:
 
-**v1:** Manager **Danger Zone** exposes **delete all cloud infrastructure** (lab `PRODUCT-IDEAS.md`). `tofu destroy` (or the equivalent product-owned teardown of everything OpenTofu manages) is the only safe bulk delete. UX:
+- Warning popup: VMs, network, reserved play IP, Object Storage **including backups**, IAM/budget/Function the product created.  
+- This **does not** delete the Oracle **tenancy**. Copy says the user has to log in to the **OCI Console in a browser** to delete the tenancy/account if they want that.  
+- User types **`confirm`** (lowercase, exact) before Delete enables.  
+- Window stays open with a log + percent until `tofu destroy` returns (OpenTofu waits for OCI deletion).  
+- Lift `prevent_destroy` on the bucket only as part of that confirmed path (temporary gitignored `zz_mcmgr_destroy_override.tf` in `infra/modules/storage/`). Empty the bucket and product OCIR images first so destroy is not blocked.  
+- After success: delete `data/config.local.json`, `data/setup-wizard.local.json`, and the LocalAppData tofu workspace. Keep `friends.local.json`, `~/.oci`, SSH keys, Credential Manager, and downloaded zips on the PC.
 
-- Warning popup: VMs, network, reserved play IP, Object Storage **including backups**, and other product resources in the stack compartment go away.  
-- This **does not** delete the Oracle **tenancy**. Copy must say the user has to log in to the **OCI Console in a browser** to delete the tenancy/account if they want that.  
-- User types **`confirm`** in a text box before the Delete button enables.  
-- Lift `prevent_destroy` on the bucket only as part of that confirmed path (or destroy the bucket explicitly after the typed confirmation) — never on a one-click control.
-
-Worlds that exist only in Object Storage are deleted with the bucket; local Manager copies and any previously downloaded zips on the admin PC are unaffected.
+Worlds that exist only in Object Storage are deleted with the bucket. No tofu state on this PC → the button fails closed (does not List-and-wipe the tenancy).
 
 ---
 

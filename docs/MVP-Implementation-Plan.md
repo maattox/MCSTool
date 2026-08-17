@@ -86,11 +86,11 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 | **5** | Connect-existing (auto-detect + meta) | **DONE** |
 | **6** | UI polish (novice-ready) | **DONE** — Avalonia vehicle abandoned; goals transfer to Phase B |
 | **B** | Blazor Hybrid UI (replace Avalonia) | **DONE** |
-| **7** | Guide + greenfield E2E proof | **IN PROGRESS** — 7.1 DONE; NEXT = 7.2 |
+| **7** | Guide + greenfield E2E proof | **IN PROGRESS** — 7.1 DONE; destroy UI shipped; NEXT = 7.2 operator E2E |
 | **8** | Packaging, updates, closed beta | **TODO** |
 | **9** | MVP exit review | **TODO** |
 
-**Current NEXT step:** [Phase 7 — Guide + greenfield E2E](#phase-7--guide--greenfield-e2e) / **Step 7.2** (SEQUENTIAL). Step **7.1** (happy-path guide) is **DONE**. Phase B cutover (**B13**) is **DONE**. Do **not** start Step 7.2 in the 7.1 session.
+**Current NEXT step:** [Phase 7 — Guide + greenfield E2E](#phase-7--guide--greenfield-e2e) / **Step 7.2** (SEQUENTIAL) — operator E2E on a fresh stack. Destroy UI is in Manager (Danger Zone). Step **7.1** (happy-path guide) is **DONE**. Phase B cutover (**B13**) is **DONE**. Do **not** start Step 8 until 7.2 is signed off.
 
 Phases **1–3 are frozen** (do not rewrite those step bodies). Historical step changelogs that said “NEXT = Phase 4” meant Connect-existing at the time; that work is now **Phase 5**. Phase **6** stays DONE (Avalonia polish shipped, then operator rejected the stack as the UI vehicle). Phase **B** stays DONE (Blazor Hybrid is the WinExe).
 
@@ -699,7 +699,9 @@ Phases 0–3 stay **DONE**; do not rewrite them. Bootstrap/HCL fixes that belong
 
 **Done when:** Operator accepts polish bar for MVP.
 
-**Changelog:** 2026-08-15 — **DONE.** Semi.Avalonia Dark + Material icons; mini-terminal top bar; Start/Stop/Restart hover + disabled reasons + toasts; novice tab/Setup copy. Setup deploy log timestamps + stick-to-bottom unless scrolled up; stage percent bar; Deploy/Back lock after start (Re-Deploy = new wizard from Advanced). Dry-run persist still leaves `apply_stage` unchanged. NEXT = Phase **7**. Do not start Phase 7 in this session.  
+**Changelog:** 2026-08-17 — Operator Hybrid layout polish: tab-body scrollbar in the right window gutter (thin overlay-style thumb); tab cards stay chrome-width; `MinWidth` remeasures WebView2 client. NEXT remains **Step 7.2**. Do not start 7.2 unless asked.  
+2026-08-16 — Operator Hybrid polish (post-Phase-B): twilight-granite + copper theme (light warm-gray rejected); equal-height pinned stats; filled Start/Stop/Restart; Running=green / Stopped=red; status-field `?` removed; DEBUG probes on Advanced; default/`MinWidth` hugs chrome, extra width centers the shell. NEXT remains **Step 7.2**. Do not start 7.2 unless asked.  
+2026-08-15 — **DONE.** Semi.Avalonia Dark + Material icons; mini-terminal top bar; Start/Stop/Restart hover + disabled reasons + toasts; novice tab/Setup copy. Setup deploy log timestamps + stick-to-bottom unless scrolled up; stage percent bar; Deploy/Back lock after start (Re-Deploy = new wizard from Advanced). Dry-run persist still leaves `apply_stage` unchanged. NEXT = Phase **7**. Do not start Phase 7 in this session.  
 2026-08-15 — Operator rejected mini-terminal look. Redesign (still Phase 6 polish, not Phase 7): Running/Stopped status card, pinned usage hours, Advanced technical VM/door status, custom title bar (Avalonia 12 `WindowDecorations=Full` + extended client area), power buttons no longer flash-disable on tab polls, Whitelist list-row overlap fix. NEXT remains Phase **7**. Do not start Phase 7 in this session.  
 2026-08-15 — Operator chose **Blazor Hybrid** before Phase 7. Phase 6 stays **DONE**; Avalonia polish is **abandoned as the UI vehicle**. Novice Status / pinned hours / Setup log-lock **goals transfer** to [Phase B](#phase-b--blazor-hybrid-ui). Do **not** start Phase 7.
 
@@ -721,6 +723,8 @@ Phases 0–3 stay **DONE**; do not rewrite them. Bootstrap/HCL fixes that belong
 **Out of this phase:** Phase 7 Guide/E2E, installer packaging, v1 PRODUCT-IDEAS, live `tofu apply`.
 
 **Changelog:** 2026-08-15 — **B13 DONE.** Phase B complete. Removed Avalonia `McManager.App` from slnx and deleted `src/McManager.App/`. One WinExe: `McManager.Hybrid` (not renamed). README / Local-Config / AGENTS / rules updated. `dotnet build` clean. **NEXT = Phase 7** (TODO). Do not start Phase 7 in this session.  
+2026-08-17 — Operator Hybrid layout polish (not a new B-step / not Step 7.2): tab-body scrollbar in the right window gutter so overflowing tabs stay chrome-width; thin overlay-style thumb; `MinWidth` remeasures WebView2 client for even left/right pads. **NEXT remains Step 7.2.** Do not start 7.2 unless asked.  
+2026-08-16 — Operator Hybrid polish (not a new B-step): twilight-granite + copper theme; equal-height pins; filled power buttons; Running/Stopped colors; status `?` removed; DEBUG probes on Advanced; window default/`MinWidth` hugs chrome, extra width centers the shell. **NEXT remains Step 7.2.** Do not start 7.2 unless asked.  
 2026-08-15 — **B12 DONE.** Hybrid Setup wizard (9 steps, resume JSON, Credential Manager token, deploy log timestamps/stick-to-bottom/percent, Deploy/Back lock, capacity wait). First-run/Advanced use the real wizard. Dry-run only. Avalonia App still in slnx. **NEXT = B13** (SEQUENTIAL). Do not start B13 in this session. Do not start Phase 7.  
 2026-08-15 — **B11 DONE.** Hybrid first-run + Connect-existing (button-gated Auto-detect; chooser; overwrite confirm; preserve SSH/RCON). Shared `ConnectExistingFlow` with Advanced. Avalonia App still in slnx. **NEXT = B12** (SEQUENTIAL). Do not start B12–B13 in this session. Do not start Phase 7.  
 2026-08-15 — **B10 DONE.** Hybrid Advanced / Danger Zone: technical VM/door status, break-glass Compute, idle OS-ISSUE-7, infra meta Refresh/Publish, Auto-detect, Setup stub (no tofu). Avalonia App still in slnx. **NEXT = B11** (SEQUENTIAL). Do not start B11–B13 in this session. Do not start Phase 7.  
@@ -741,7 +745,7 @@ Phases 0–3 stay **DONE**; do not rewrite them. Bootstrap/HCL fixes that belong
 
 ## Phase 7 — Guide + greenfield E2E
 
-Phase B cutover is **DONE**. Step **7.1** is **DONE**. **NEXT = Step 7.2** (SEQUENTIAL) when the operator asks. Do **not** start 7.2 in the 7.1 session.
+Phase B cutover is **DONE**. Step **7.1** is **DONE**. Destroy UI for teardown is **in Manager**. **NEXT = Step 7.2** (SEQUENTIAL) operator E2E sign-off. Do **not** start Phase 8 until 7.2 is signed off.
 
 ### Step 7.1 — Happy-path guide
 
@@ -765,20 +769,23 @@ Phase B cutover is **DONE**. Step **7.1** is **DONE**. **NEXT = Step 7.2** (SEQU
 
 ### Step 7.2 — Full greenfield E2E proof
 
-**Status:** TODO — NEXT  
+**Status:** TODO — NEXT (destroy UI ready; operator test pending)
 
 **Do**
 
 - Destroy/recreate or second-compartment proof of Setup → manage → friend wake → idle stop → backup.
 - Record results / gaps in this plan.
 
+**Teardown (shipped 2026-08-17, not the E2E itself):** Manager **Advanced / Danger Zone → Delete infrastructure**. Typed lowercase `confirm`; popup stays open with log + percent until `tofu destroy` returns (OpenTofu waits for OCI). Deletes OpenTofu-managed product resources only (LocalAppData state), then `config.local.json` + wizard resume + tofu workspace. Does **not** delete the Oracle tenancy, `friends.local.json`, `~/.oci`, or SSH keys. Agents must not click Delete / run `tofu destroy`. See [`Guide.md`](Guide.md) → Tear down and redeploy, [`Automated-Infrastructure-Deployment.md`](Automated-Infrastructure-Deployment.md) §12.4.
+
 **Test**
 
 - All MVP success criteria checkboxes exercised on the fresh stack.
+- Before that: Delete infrastructure on the existing test tenancy stack → window reports completion → Console shows product VMs/VCN/bucket gone → Setup can deploy again.
 
 **Done when:** Operator signs off E2E.
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-17 — Prerequisite only: Danger Zone **Delete infrastructure** (typed `confirm`, log + percent, `tofu destroy`, local stack files). **7.2 E2E is still the operator test.** NEXT remains 7.2. Do not start Phase 8.
 
 ---
 
@@ -902,6 +909,11 @@ Phase B cutover is **DONE**. Step **7.1** is **DONE**. **NEXT = Step 7.2** (SEQU
 
 ## Plan changelog
 
+| 2026-08-17 | Step **7.2 prerequisite:** Manager Danger Zone **Delete infrastructure** (typed `confirm`; log + percent until `tofu destroy` finishes; OpenTofu-managed resources only; then local config/wizard/tofu workspace). **7.2 E2E still operator-owned.** NEXT remains 7.2. Do not start Phase 8. |
+| 2026-08-17 | Manage tab-body scrollbar in the right window gutter (thin overlay-style thumb); tab cards stay aligned to the chrome row; `MinWidth` remeasures WebView2 client. **NEXT remains Step 7.2.** |
+| 2026-08-16 | Hybrid accent → cobalt; Usage tab hero metrics + grouped budget; “game computer” → “server” in UI help copy. |
+| 2026-08-16 | Window default/`MinWidth` hugs the chrome row; extra width centers the fixed Hybrid shell (no stretch). |
+| 2026-08-16 | Operator UI polish on `McManager.Hybrid` (not Step 7.2): twilight-granite + copper theme (light warm-gray rejected); equal-height pinned stats; filled power buttons; Running/Stopped colors; status `?` icons removed; DEBUG probes moved to Advanced. **NEXT remains Step 7.2.** Do not start 7.2 unless asked. |
 | 2026-08-15 | **Step 7.1 DONE.** Happy-path guide: [`docs/Guide.md`](Guide.md) (PAYG / `~/.oci` API key + Auth Token, Always Free confirmation, **$1 brake + ~$1–$2 residual**, Setup → play; SSH/door/OS appendix). **NEXT = Step 7.2** (SEQUENTIAL). Do not start 7.2 in this session. |
 | 2026-08-15 | **B13 DONE.** Phase B complete. Removed Avalonia `McManager.App` from slnx and deleted the project tree. One WinExe: `McManager.Hybrid` (not renamed). Docs/rules updated. `dotnet build` clean. **NEXT = Phase 7** (TODO). Do not start Phase 7 in this session. |
 | 2026-08-15 | **B12 DONE.** Hybrid Setup wizard (9 steps, resume JSON, Credential Manager token, deploy log timestamps/stick-to-bottom/percent, Deploy/Back lock, capacity wait). First-run/Advanced use the real wizard. Dry-run only. Avalonia App still builds. **NEXT = B13** (SEQUENTIAL). Do not start B13 in this session. Do not start Phase 7. |

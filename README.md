@@ -6,7 +6,7 @@ This is the **official product repository**. The Manager UI is **.NET 8 + Blazor
 
 ## Status
 
-Manage + Setup are usable on the Blazor Hybrid WinExe. **Phase B** (Avalonia → Blazor Hybrid) is **DONE**. Happy-path user guide: [`docs/Guide.md`](docs/Guide.md). Living MVP checklist: [`docs/MVP-Implementation-Plan.md`](docs/MVP-Implementation-Plan.md) (**NEXT = Step 7.2** greenfield E2E — do not start until the operator asks). Phase B archive: [`docs/Blazor-UI-Migration-Plan.md`](docs/Blazor-UI-Migration-Plan.md).
+Manage + Setup are usable on the Blazor Hybrid WinExe. **Phase B** (Avalonia → Blazor Hybrid) is **DONE**. Happy-path user guide: [`docs/Guide.md`](docs/Guide.md). Living MVP checklist: [`docs/MVP-Implementation-Plan.md`](docs/MVP-Implementation-Plan.md) (**NEXT = Step 7.2** greenfield E2E). Danger Zone can **Delete infrastructure** (`tofu destroy` of the product stack only) so a test tenancy can be wiped before that E2E. Phase B archive: [`docs/Blazor-UI-Migration-Plan.md`](docs/Blazor-UI-Migration-Plan.md).
 
 Licensing is **TBD** (no `LICENSE` file yet).
 

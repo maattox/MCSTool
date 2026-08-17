@@ -32,4 +32,11 @@ public interface IObjectStorageService
         string contentType = "application/octet-stream",
         IProgress<long>? progress = null,
         CancellationToken cancellationToken = default);
+
+    Task<ServiceResult> DeleteObjectAsync(
+        string objectName,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Deletes every object in the configured bucket (paginated). Empty prefix.</summary>
+    Task<ServiceResult<int>> DeleteAllObjectsAsync(CancellationToken cancellationToken = default);
 }

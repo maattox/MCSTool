@@ -41,4 +41,26 @@ public sealed class RecordingOpenTofuRunner : IOpenTofuRunner
         File.WriteAllText(workspace.OutputsPath, CannedOutputJson);
         return Task.FromResult(TofuCommandResult.Ok(CannedOutputJson));
     }
+
+    public Task<TofuCommandResult> PlanDestroyAsync(
+        string infraDirectory,
+        TofuWorkspace workspace,
+        IProgress<string>? log,
+        CancellationToken cancellationToken = default)
+    {
+        Commands.Add("plan-destroy");
+        log?.Report("[dry-run] tofu plan -destroy skipped — no OCI.");
+        return Task.FromResult(TofuCommandResult.Ok("Plan: 0 to add, 0 to change, 12 to destroy."));
+    }
+
+    public Task<TofuCommandResult> DestroyAsync(
+        string infraDirectory,
+        TofuWorkspace workspace,
+        IProgress<string>? log,
+        CancellationToken cancellationToken = default)
+    {
+        Commands.Add("destroy");
+        log?.Report("[dry-run] tofu destroy skipped — no cloud resources deleted.");
+        return Task.FromResult(TofuCommandResult.Ok("Destroy complete! Resources: 0 destroyed."));
+    }
 }

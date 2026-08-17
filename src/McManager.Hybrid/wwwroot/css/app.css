@@ -1,27 +1,34 @@
-/* Light warm-gray tokens remapped from the HTML mockup (do not ship the mockup's dark page).
-   Hierarchy matches docs/mc-manager-ui-mockup.html; colors are the light warm-gray product theme. */
+/* Twilight granite + cobalt accent. Operator rejected the B2 light warm-gray theme
+   and later asked to replace the copper accent with blue.
+   night-granite #161a21, panel #1e242e, bone #e7ebf0, cobalt #4d8ef5, moss #3dbd74, redstone #e05a52. */
 
 :root {
-    --bg: #e6e2d8;
-    --surface-1: #f7f4ee;
-    --surface-2: #eee9df;
-    --border: #c9c2b3;
-    --border-strong: #a89f8e;
-    --border-danger: #d4a3a3;
-    --text-primary: #2c3036;
-    --text-secondary: #5a616c;
-    --text-muted: #7a7468;
-    --text-success: #2f9e5f;
-    --text-danger: #c94c4c;
-    --text-accent: #3d6fbf;
-    --fill-accent: #3d6fbf;
+    --bg: #161a21;
+    --surface-1: #1e242e;
+    --surface-2: #262d38;
+    --border: #323a48;
+    --border-strong: #4a5466;
+    --border-danger: #7a3a3a;
+    --text-primary: #e7ebf0;
+    --text-secondary: #9aa4b2;
+    --text-muted: #6e7888;
+    --text-success: #3dbd74;
+    --text-danger: #e05a52;
+    --text-accent: #8bb4ff;
+    --fill-accent: #4d8ef5;
     --fill-success: #2f9e5f;
     --fill-danger: #c94c4c;
-    --bg-danger: #f6e8e6;
-    --power-disabled-bg: #ddd8ce;
+    --bg-danger: #2a1c1c;
+    --power-disabled-bg: #2a303a;
     --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
     --font-mono: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
     --radius: 10px;
+    /* Status 330 + gap 14 + pins 410. Keep in sync with MainWindow.AppShellWidthDip. */
+    --app-chrome-width: 754px;
+    --app-pad-x: 16px;
+    --app-shell-width: calc(var(--app-chrome-width) + 2 * var(--app-pad-x));
+    /* Thin overlay-style thumb; lives in the right window gutter, not the tab cards. */
+    --tab-scrollbar-size: 8px;
 }
 
 *,
@@ -31,7 +38,7 @@
 }
 
 html {
-    color-scheme: light;
+    color-scheme: dark;
     height: 100%;
 }
 
@@ -40,6 +47,12 @@ body,
 #app {
     height: 100%;
     margin: 0;
+    overflow: hidden;
+}
+
+#app {
+    display: flex;
+    flex-direction: column;
 }
 
 body {
@@ -63,6 +76,11 @@ button {
 
 button:hover:not(:disabled) {
     background: var(--surface-2);
+}
+
+button:focus-visible {
+    outline: 2px solid var(--fill-accent);
+    outline-offset: 2px;
 }
 
 button:disabled,
@@ -115,11 +133,40 @@ button.mcm-btn-disabled:hover {
 /* --- App shell --- */
 
 .mcm-app {
-    min-height: 100%;
+    width: 100%;
+    max-width: var(--app-shell-width);
+    flex: 1 1 auto;
+    min-height: 0;
+    margin-inline: auto;
     display: flex;
     flex-direction: column;
-    padding: 12px 16px 16px;
+    padding: 12px var(--app-pad-x) 16px;
     background: var(--bg);
+    overflow: hidden;
+}
+
+/*
+ * Manage shell: left/right window padding are real grid gutters, not flex padding.
+ * Tab overflow uses the right gutter so a scrollbar cannot shrink the chrome column.
+ */
+.mcm-app-manage {
+    display: grid;
+    grid-template-columns: var(--app-pad-x) minmax(0, var(--app-chrome-width)) var(--app-pad-x);
+    grid-template-rows: auto auto auto minmax(0, 1fr);
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.mcm-app-manage > * {
+    grid-column: 2;
+    min-width: 0;
+}
+
+.mcm-app-manage .mcm-chrome,
+.mcm-app-manage .mcm-tabs {
+    width: 100%;
+    max-width: var(--app-chrome-width);
 }
 
 .mcm-title-row {
@@ -127,6 +174,7 @@ button.mcm-btn-disabled:hover {
     align-items: center;
     justify-content: space-between;
     margin-bottom: 12px;
+    flex-shrink: 0;
     /* In-content wordmark only. Window min/max/close stay native WPF chrome. */
 }
 
@@ -152,8 +200,10 @@ button.mcm-btn-disabled:hover {
 .mcm-chrome {
     display: flex;
     gap: 14px;
-    align-items: flex-start;
-    flex-wrap: wrap;
+    align-items: stretch;
+    flex-wrap: nowrap;
+    flex-shrink: 0;
+    width: var(--app-chrome-width);
 }
 
 .mcm-left {
@@ -203,6 +253,12 @@ button.mcm-btn-disabled:hover {
 
 .mcm-sval.is-running {
     color: var(--text-success);
+    font-weight: 600;
+}
+
+.mcm-sval.is-stopped {
+    color: var(--text-danger);
+    font-weight: 600;
 }
 
 .mcm-dot {
@@ -217,6 +273,10 @@ button.mcm-btn-disabled:hover {
 
 .mcm-dot.is-running {
     background: var(--fill-success);
+}
+
+.mcm-dot.is-stopped {
+    background: var(--fill-danger);
 }
 
 .mcm-copy-inline {
@@ -266,13 +326,39 @@ button.mcm-btn-disabled:hover {
     flex: 1;
     padding: 12px 10px;
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600;
     border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 6px;
     min-height: 48px;
+    border: 1px solid transparent;
+    color: #fff;
+}
+
+.mcm-action-btn-start:not(:disabled) {
+    background: var(--fill-success);
+}
+
+.mcm-action-btn-start:hover:not(:disabled) {
+    background: #278a52;
+}
+
+.mcm-action-btn-stop:not(:disabled) {
+    background: var(--fill-danger);
+}
+
+.mcm-action-btn-stop:hover:not(:disabled) {
+    background: #b03f3f;
+}
+
+.mcm-action-btn-restart:not(:disabled) {
+    background: var(--fill-accent);
+}
+
+.mcm-action-btn-restart:hover:not(:disabled) {
+    background: #3c7ae0;
 }
 
 .mcm-action-btn .ti {
@@ -293,21 +379,32 @@ button.mcm-btn-disabled:hover {
     color: var(--text-muted);
 }
 
+.mcm-pins-slot {
+    position: relative;
+    flex: 0 0 auto;
+    width: calc(200px * 2 + 10px);
+    min-height: 0;
+}
+
 .mcm-pins {
+    position: absolute;
+    inset: 0;
     display: grid;
     grid-template-columns: 200px 200px;
-    gap: 12px;
-    flex: 0 0 auto;
-    width: calc(200px * 2 + 12px);
+    grid-template-rows: 1fr 1fr;
+    gap: 10px;
 }
 
 .mcm-statcard {
     background: var(--surface-1);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 0.85rem;
-    width: 200px;
-    max-width: 200px;
+    padding: 0.55rem 0.8rem;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .mcm-stat-label {
@@ -338,6 +435,7 @@ button.mcm-btn-disabled:hover {
     font-size: 16px;
     font-weight: 500;
     color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
 }
 
 .mcm-stat-value.is-placeholder {
@@ -359,7 +457,7 @@ button.mcm-btn-disabled:hover {
     border-radius: 2px;
     background: var(--surface-2);
     overflow: hidden;
-    margin-top: 8px;
+    margin-top: 6px;
     width: 100%;
 }
 
@@ -367,12 +465,6 @@ button.mcm-btn-disabled:hover {
     height: 100%;
     background: var(--fill-accent);
     width: 0%;
-}
-
-.mcm-stat-caption {
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-top: 8px;
 }
 
 .mcm-toast {
@@ -387,7 +479,7 @@ button.mcm-btn-disabled:hover {
     border-radius: 10px;
     font-size: 13px;
     color: var(--text-primary);
-    box-shadow: 0 4px 16px rgba(44, 48, 54, 0.12);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
 .mcm-toast.is-error {
@@ -396,44 +488,121 @@ button.mcm-btn-disabled:hover {
     color: var(--text-danger);
 }
 
-/* --- Tabs --- */
-
+/* Trial: equal-width segmented tabs aligned to the chrome row. */
 .mcm-tabs {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
     gap: 4px;
+    width: var(--app-chrome-width);
     margin-top: 1.25rem;
-    border-bottom: 0.5px solid var(--border);
-    flex-wrap: wrap;
+    padding: 4px;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    flex-shrink: 0;
 }
 
 .mcm-tab {
-    border: none;
-    border-radius: 0;
+    border: 1px solid transparent;
+    border-radius: 8px;
     background: transparent;
-    padding: 8px 4px;
-    margin-right: 20px;
-    font-size: 14px;
+    padding: 8px 6px;
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.25;
     color: var(--text-secondary);
-    border-bottom: 2px solid transparent;
-    font-weight: 400;
+    font-weight: 500;
+    min-width: 0;
+    white-space: normal;
+    text-align: center;
 }
 
 .mcm-tab:hover:not(:disabled) {
-    background: transparent;
+    background: var(--surface-2);
     color: var(--text-primary);
 }
 
 .mcm-tab.is-active {
     color: var(--text-primary);
-    font-weight: 500;
-    border-bottom-color: var(--fill-accent);
+    font-weight: 600;
+    background: var(--surface-2);
+    border-color: var(--fill-accent);
 }
 
 .mcm-tab-body {
-    flex: 1;
+    flex: 1 1 auto;
     padding-top: 1.25rem;
     min-height: 0;
-    overflow: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.mcm-app-manage .mcm-tab-body {
+    grid-column: 2 / 4;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--text-muted) 22%, transparent) transparent;
+}
+
+.mcm-app-manage .mcm-tab-body:hover,
+.mcm-app-manage .mcm-tab-body:focus-within {
+    scrollbar-color: color-mix(in srgb, var(--text-muted) 55%, transparent) transparent;
+}
+
+.mcm-app-manage > .mcm-toast {
+    grid-column: 1 / -1;
+    grid-row: 1;
+}
+
+.mcm-tab-body-inner {
+    box-sizing: border-box;
+    width: min(var(--app-chrome-width), calc(100% - var(--app-pad-x) + var(--tab-scrollbar-size)));
+}
+
+.mcm-app-manage .mcm-tab-body::-webkit-scrollbar {
+    width: var(--tab-scrollbar-size);
+}
+
+.mcm-app-manage .mcm-tab-body::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+.mcm-app-manage .mcm-tab-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.mcm-app-manage .mcm-tab-body::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+.mcm-app-manage .mcm-tab-body::-webkit-scrollbar-thumb {
+    background-color: color-mix(in srgb, var(--text-muted) 28%, transparent);
+    background-clip: padding-box;
+    border: 2px solid transparent;
+    border-radius: 999px;
+}
+
+.mcm-app-manage .mcm-tab-body:hover::-webkit-scrollbar-thumb,
+.mcm-app-manage .mcm-tab-body:focus-within::-webkit-scrollbar-thumb {
+    background-color: color-mix(in srgb, var(--text-muted) 55%, transparent);
+}
+
+.mcm-app-manage .mcm-tab-body::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in srgb, var(--text-secondary) 80%, transparent);
+    border-width: 1px;
+}
+
+.mcm-app-manage .mcm-tab-body::-webkit-scrollbar-thumb:active {
+    background-color: color-mix(in srgb, var(--text-secondary) 92%, transparent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .mcm-app-manage .mcm-tab-body::-webkit-scrollbar-thumb {
+        transition: background-color 160ms ease-out;
+    }
 }
 
 .mcm-placeholder {
@@ -531,6 +700,69 @@ button.mcm-btn-disabled:hover {
     padding: 1rem;
 }
 
+.mcm-danger-btn {
+    background: var(--fill-danger);
+    color: #fff;
+    border: none;
+    font-weight: 500;
+}
+
+.mcm-danger-btn:hover:not(:disabled) {
+    background: var(--fill-danger);
+    filter: brightness(0.96);
+}
+
+.mcm-danger-btn:disabled {
+    opacity: 1;
+    background: var(--power-disabled-bg);
+    color: var(--text-muted);
+    filter: none;
+}
+
+.mcm-modal-card.mcm-destroy-card {
+    width: 640px;
+    max-width: 92%;
+    max-height: 86vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.mcm-destroy-confirm-label {
+    display: block;
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 0 0 6px;
+}
+
+.mcm-destroy-confirm-input {
+    width: 100%;
+    background: var(--surface-2);
+    border: 0.5px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-family: var(--font-mono);
+    margin-bottom: 14px;
+}
+
+.mcm-destroy-dry {
+    color: var(--text-accent) !important;
+}
+
+.mcm-progress-fill.is-danger {
+    background: var(--fill-danger);
+}
+
+.mcm-destroy-overlay {
+    z-index: 60;
+}
+
+.mcm-destroy-card .mcm-wizard-log-grow {
+    min-height: 180px;
+    max-height: 42vh;
+}
+
 .mcm-wl-row,
 .mcm-bk-row {
     display: grid;
@@ -569,7 +801,8 @@ button.mcm-btn-disabled:hover {
 .mcm-modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(44, 48, 54, 0.35);
+    background: rgba(8, 10, 14, 0.62);
+    overscroll-behavior: contain;
     display: none;
     align-items: center;
     justify-content: center;
@@ -650,21 +883,13 @@ button.mcm-btn-disabled:hover {
     color: var(--text-muted);
 }
 
-/* DEBUG host probes only (B3). Hidden in Release via UiHostProbes.Enabled. */
+/* DEBUG host probes (B3). Debug builds only; lives on Advanced, not a global overlay. */
 .mcm-host-probes {
-    position: fixed;
-    left: 12px;
-    right: 12px;
-    bottom: 12px;
-    z-index: 40;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 8px;
-    padding: 8px 10px;
-    background: var(--surface-1);
-    border: 0.5px dashed var(--border-strong);
-    border-radius: 8px;
+    padding: 8px 0 0;
     font-size: 12px;
     color: var(--text-muted);
 }
@@ -766,8 +991,6 @@ button.mcm-btn-disabled:hover {
 }
 
 .mcm-wizard-app {
-    height: 100%;
-    min-height: 100%;
     overflow: hidden;
 }
 
@@ -974,11 +1197,183 @@ button.mcm-btn-disabled:hover {
     text-align: right;
 }
 
+.mcm-usage {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.mcm-usage-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.mcm-usage-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.mcm-usage-status {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.mcm-usage-lead {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.45;
+}
+
+.mcm-usage-hero {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.mcm-usage-metric {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.85rem 1rem;
+}
+
+.mcm-usage-metric-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.mcm-usage-metric-value {
+    margin-top: 6px;
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+    line-height: 1.15;
+}
+
+.mcm-usage-metric-value.is-positive {
+    color: var(--text-success);
+}
+
+.mcm-usage-metric-value.is-warn {
+    color: var(--text-danger);
+}
+
+.mcm-usage-metric-hint {
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.35;
+}
+
+.mcm-usage-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 20px;
+}
+
+.mcm-usage-detail {
+    min-width: 0;
+}
+
+.mcm-usage-detail-label {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.mcm-usage-detail-value {
+    margin-top: 4px;
+    font-size: 13px;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.mcm-usage-detail-value.is-warn {
+    color: var(--text-danger);
+    font-weight: 600;
+}
+
+.mcm-usage-meta {
+    margin: 0;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.mcm-usage-fieldset {
+    margin: 0 0 18px;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+}
+
+.mcm-usage-fieldset:last-of-type {
+    margin-bottom: 0;
+}
+
+.mcm-usage-fieldset-title {
+    margin: 0 0 4px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.mcm-usage-fieldset-hint {
+    margin: 0 0 10px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.mcm-usage-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 16px;
+}
+
+.mcm-usage-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.mcm-usage-field-label {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.mcm-usage-field .mcm-num-input,
+.mcm-usage-field input[type="text"] {
+    width: 100%;
+    margin: 0;
+}
+
+.mcm-usage-check {
+    grid-column: 1 / -1;
+    margin: 4px 0 0;
+}
+
 #blazor-error-ui {
-    background: #f6e8e6;
+    background: var(--bg-danger);
     color: var(--text-danger);
     bottom: 0;
-    box-shadow: 0 -1px 2px rgba(44, 48, 54, 0.12);
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.35);
     display: none;
     left: 0;
     padding: 0.6rem 1.25rem 0.7rem 1.25rem;

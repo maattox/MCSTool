@@ -9,7 +9,8 @@ namespace McManager.Hybrid.ViewModels;
 
 /// <summary>
 /// Advanced / Danger Zone: technical VM/door status, break-glass Compute, idle
-/// timeout/enable, infra meta publish, Auto-detect, Deploy/repair → Setup wizard.
+/// timeout/enable, infra meta publish, Auto-detect, Deploy/repair → Setup wizard,
+/// typed-confirm delete infrastructure.
 /// Own <see cref="IsBusy"/> only — does not grey Start/Stop/Restart.
 /// </summary>
 public sealed partial class AdvancedViewModel : ObservableObject
@@ -23,6 +24,7 @@ public sealed partial class AdvancedViewModel : ObservableObject
     private readonly HybridShell _shell;
     private readonly MainViewModel _main;
     private readonly ConnectExistingFlow _connectExisting;
+    private readonly DestroyInfrastructureViewModel _destroy;
 
     private BudgetConfigDocument? _lastBudget;
     private InfraMetaDocument? _lastInfra;
@@ -84,7 +86,8 @@ public sealed partial class AdvancedViewModel : ObservableObject
         IUiDialogs dialogs,
         HybridShell shell,
         MainViewModel main,
-        ConnectExistingFlow connectExisting)
+        ConnectExistingFlow connectExisting,
+        DestroyInfrastructureViewModel destroy)
     {
         _config = configHost.Config;
         _compute = cloud.Compute;
@@ -94,6 +97,7 @@ public sealed partial class AdvancedViewModel : ObservableObject
         _shell = shell;
         _main = main;
         _connectExisting = connectExisting;
+        _destroy = destroy;
 
         if (_config is not null && cloud.Session is not null)
         {
@@ -122,6 +126,13 @@ public sealed partial class AdvancedViewModel : ObservableObject
     {
         // Opens the Setup wizard. This button does not tofu apply.
         _shell.OpenSetup();
+    }
+
+    public void OpenDestroyInfrastructure()
+    {
+        if (IsBusy)
+            return;
+        _destroy.Open();
     }
 
     public async Task AutoDetectAsync()

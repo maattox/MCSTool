@@ -43,6 +43,8 @@ public sealed class HybridShell : INotifyPropertyChanged
 
     public void EnterManage() => Page = PageKind.Manage;
 
+    public void EnterFirstRun() => Page = PageKind.FirstRun;
+
     public void OpenSetup()
     {
         // Does not tofu apply — Deploy inside the wizard is a separate click

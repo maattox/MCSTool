@@ -1,6 +1,6 @@
 # mc manager — UI Design Specification
 
-**Status (2026-08-15):** Visual **reference** for Phase B Blazor Hybrid (WPF + WebView2), not an Avalonia implementation brief. Do **not** scaffold Avalonia from this file. Layout and tokens here are **not locked**; operator notes override. Prefer [`mc-manager-ui-mockup.html`](mc-manager-ui-mockup.html) + [`Blazor-UI-Migration-Plan.md`](Blazor-UI-Migration-Plan.md) (light warm-gray theme from B2). Historical body below still says Avalonia because that was the original target.
+**Status (2026-08-16):** Visual **reference** for Phase B Blazor Hybrid (WPF + WebView2), not an Avalonia implementation brief. Do **not** scaffold Avalonia from this file. Layout and tokens here are **not locked**; operator notes override. Prefer [`mc-manager-ui-mockup.html`](mc-manager-ui-mockup.html) for hierarchy. **Live product theme** is twilight granite + cobalt accent in `src/McManager.Hybrid/wwwroot/css/app.css` (operator rejected the B2 light warm-gray remap, then copper accent). Historical body below still says Avalonia because that was the original target.
 
 This document describes the mockup design for the "mc manager" desktop
 app (a Minecraft server management tool). The mockup
@@ -8,9 +8,7 @@ was built and iterated on as an HTML/CSS/JS prototype; this spec translates that
 design into requirements for the real Manager UI, including notes
 on where the two platforms diverge.
 
-**Target window size:** 960 × 640 px (default). Layout should be as fluid as
-reasonably possible above/below this, but 960×640 is the size to design and test
-against first.
+**Target window size (live Hybrid):** default and minimum width hug the manage chrome (status + 2×2 pins, ~786 DIP client + native frame). Extra width **centers** a fixed-size shell — do not stretch cards, tabs, or fields. Height remains ~720 default / 560 minimum. Long tabs scroll **inside the tab body**; the status/pins/tab strip stay put. The tab-body scrollbar sits in the **right window gutter** (thin overlay-style thumb) so tab cards stay the same width as the chrome row whether they overflow or not. `MainWindow` remeasures the WebView2 client on load so min-width cannot clip that gutter. Historical 960×640 mockup notes below are not the shipped window.
 
 ---
 
@@ -50,8 +48,10 @@ you (the implementing agent) need to make a judgment call not covered explicitly
 
 These are the exact values used in the HTML prototype's standalone export.
 Treat them as a starting, internally-consistent palette — not a locked brand
-identity — but keep them unless there's a reason to change them, since all the
-component-level color decisions below assume this palette.
+identity. **Live Hybrid CSS** (`src/McManager.Hybrid/wwwroot/css/app.css`) uses
+a later operator-approved **twilight granite + cobalt** set (`bg`
+`#161a21`, `surface-1` `#1e242e`, cobalt accent `#4d8ef5`, moss `#3dbd74`,
+redstone `#e05a52`). Prefer those tokens when editing the shipped UI.
 
 | Token | Value | Usage |
 |---|---|---|
@@ -106,9 +106,8 @@ border, `text-primary` text, `8px` corner radius.
   hamburger menu icon.
 - **Top section:** a two-column row. Left column is a **fixed ~330px** wide
   block containing the status panel card and the three action buttons stacked
-  below it. Right column is **flexible width**, filling the remaining space
-  with a 2×2 grid of stat cards. At 960px total width this puts the left
-  column at roughly 34% and the right column at roughly 66%.
+  below it. Right column is a **fixed** 2×2 of 200px pin cards (not flexible).
+  Live Hybrid default/min window hugs that row; wider windows center the shell.
 - **Tab bar:** four tabs, underline-style active indicator (2px, `fill-accent`
   color), inactive tabs in `text-muted`.
 - **Tab content area:** swaps based on selected tab; only one tab's content is
@@ -442,14 +441,11 @@ in Avalonia. Row-width stability comes from the fixed-width *containers*
 the Grid columns already covered.
 
 ### 10.11 Window sizing
-Set the main `Window`'s default size to `Width="960" Height="640"`. Build the
-internal layout with proportion-friendly containers (`Grid` with star-sized
-columns/rows, `WrapPanel` where wrapping is acceptable) rather than hardcoded
-pixel values throughout, matching the "mostly fluid, tuned for 960×640"
-approach used in the mockup. The one concrete ratio to carry over: the
-top-section left column (status panel + buttons) is fixed at **330px**, with
-the stat-card grid taking the remaining space — roughly a 330:630 (~34%/66%)
-split at the 960px target width.
+**Live Hybrid:** `MainWindow` default and `MinWidth` hug the CSS `--app-shell-width` (786 DIP client: chrome 754 + 16px pad each side). After load, `FitWidthToWebView` uses the real WebView2 client width because `WindowNonClientFrameThickness` can undershoot and clip the right gutter. Extra width **centers** the fixed shell; stretching must not grow cards, tabs, or fields. Height default 720 / min 560.
+
+**Manage tab scroll:** `.mcm-app-manage` is a three-column grid (left pad | chrome column | right pad). `.mcm-tab-body` spans the chrome column plus the right pad so a thin, rounded, hover-brightening scrollbar lives in that gutter instead of eating card width. Tab cards stay aligned to the status/pins row and tab strip. First-run and Setup keep the older padded flex shell (no manage gutter).
+
+Historical mockup note (not shipped): `Width="960" Height="640"`, left column 330px with stat cards taking leftover width.
 
 ---
 

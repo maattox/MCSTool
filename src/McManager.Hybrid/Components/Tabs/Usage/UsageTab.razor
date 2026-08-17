@@ -1,11 +1,11 @@
 @inject UsageViewModel Vm
 @implements IDisposable
 
-<div>
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px;">
+<div class="mcm-usage">
+    <div class="mcm-usage-head">
         <div>
-            <div style="font-size:16px;font-weight:600;">Free hours</div>
-            <p style="margin:4px 0 0;font-size:13px;color:var(--text-secondary);opacity:0.85;">@Vm.StatusMessage</p>
+            <h2 class="mcm-usage-title">Free hours</h2>
+            <p class="mcm-usage-status">@Vm.StatusMessage</p>
         </div>
         <button type="button"
                 disabled="@Vm.IsBusy"
@@ -15,161 +15,205 @@
         </button>
     </div>
 
-    <p style="margin:0 0 16px;font-size:13px;color:var(--text-secondary);">
-        How much free cloud time the game computer has used. Saving here updates the budget that refuses a start when you are out of hours.
+    <p class="mcm-usage-lead">
+        How much free cloud time the server has used. Saving a budget below is what refuses a start when you are out of hours.
     </p>
 
-    <div class="mcm-section-card">
-        <table class="mcm-usage-table">
-            <tbody>
-                <tr>
-                    <td style="color:var(--text-muted);">Month (UTC)</td>
-                    <td>@Vm.MonthLabel</td>
-                </tr>
-                <tr>
-                    <td style="color:var(--text-muted);">
-                        Monthly targets
-                        <button type="button"
-                                class="mcm-help"
-                                title="Oracle Always Free is billed in OCPU-hours and memory-hours. Wall-clock hours ≈ OCPU-hours ÷ CPUs.">
-                            <i class="ti ti-help" aria-hidden="true"></i>
-                            <span class="sr-only">About monthly targets</span>
-                        </button>
-                    </td>
-                    <td>@Vm.MonthlyTargetsDisplay</td>
-                </tr>
-                <tr>
-                    <td style="color:var(--text-muted);">Soft caps</td>
-                    <td>@Vm.SoftCapsDisplay</td>
-                </tr>
-                <tr>
-                    <td style="color:var(--text-muted);">Used this month</td>
-                    <td>@Vm.MtdDisplay</td>
-                </tr>
-                <tr>
-                    <td style="color:var(--text-muted);">Hours left this month</td>
-                    <td>@Vm.RemainingDisplay</td>
-                </tr>
-                <tr>
-                    <td style="color:var(--text-muted);">Avg hours/day</td>
-                    <td>@Vm.AvgHoursDisplay</td>
-                </tr>
-                <tr>
-                    <td style="color:var(--text-muted);">
-                        Rollover bank
-                        <button type="button"
-                                class="mcm-help"
-                                title="Unused daily allowance from days that already ended this month, converted to wall-clock hours. Not the same as hours still left in the month.">
-                            <i class="ti ti-help" aria-hidden="true"></i>
-                            <span class="sr-only">About rollover bank</span>
-                        </button>
-                    </td>
-                    <td>@Vm.LeftoverDisplay</td>
-                </tr>
-                <tr>
-                    <td style="color:var(--text-muted);">Today vs daily</td>
-                    <td>@Vm.TodayDisplay</td>
-                </tr>
-                <tr>
-                    <td style="color:var(--text-muted);">Soft cap hit</td>
-                    <td>@Vm.SoftCapHitDisplay</td>
-                </tr>
-            </tbody>
-        </table>
+    <div class="mcm-usage-hero">
+        <div class="mcm-usage-metric">
+            <div class="mcm-usage-metric-label">Hours left this month</div>
+            <div class="mcm-usage-metric-value">@Vm.RemainingHoursValue</div>
+            <div class="mcm-usage-metric-hint">Wall-clock time still in this month’s cap — not the rollover bank</div>
+        </div>
+        <div class="mcm-usage-metric">
+            <div class="mcm-usage-metric-label">Used this month</div>
+            <div class="mcm-usage-metric-value">@Vm.UsedHoursValue</div>
+            <div class="mcm-usage-metric-hint">How long the server has been on since the 1st (UTC)</div>
+        </div>
+        <div class="mcm-usage-metric">
+            <div class="mcm-usage-metric-label">Today</div>
+            <div class="mcm-usage-metric-value @(Vm.TodayOverDaily ? "is-warn" : null)">@Vm.TodayHoursValue</div>
+            <div class="mcm-usage-metric-hint">@(string.IsNullOrWhiteSpace(Vm.TodayHoursHint) ? "—" : Vm.TodayHoursHint)</div>
+        </div>
+        <div class="mcm-usage-metric">
+            <div class="mcm-usage-metric-label">
+                Rollover bank
+                <button type="button"
+                        class="mcm-help"
+                        title="Unused daily hours saved from earlier days this month. This is not the hours still left in the month.">
+                    <i class="ti ti-help" aria-hidden="true"></i>
+                    <span class="sr-only">About rollover bank</span>
+                </button>
+            </div>
+            <div class="mcm-usage-metric-value @(Vm.RolloverHoursPositive ? "is-positive" : null)">@Vm.RolloverHoursValue</div>
+            <div class="mcm-usage-metric-hint">Unused hours from earlier days this month</div>
+        </div>
     </div>
 
-    <p style="margin:8px 0 16px;opacity:0.65;font-size:12px;">Last refresh: @Vm.LastRefreshDisplay</p>
+    <div class="mcm-section-card">
+        <div class="mcm-usage-fieldset-title">Cloud details</div>
+        <p class="mcm-usage-fieldset-hint">
+            Always Free is counted in CPU-hours and memory-hours. Wall-clock hours above are those figures divided by the server’s CPUs.
+        </p>
+        <div class="mcm-usage-details">
+            <div class="mcm-usage-detail">
+                <div class="mcm-usage-detail-label">Month (UTC)</div>
+                <div class="mcm-usage-detail-value">@Vm.MonthLabel</div>
+            </div>
+            <div class="mcm-usage-detail">
+                <div class="mcm-usage-detail-label">Average per day</div>
+                <div class="mcm-usage-detail-value">@Vm.AvgHoursDisplay</div>
+            </div>
+            <div class="mcm-usage-detail">
+                <div class="mcm-usage-detail-label">
+                    Monthly targets
+                    <button type="button"
+                            class="mcm-help"
+                            title="Oracle Always Free is billed in OCPU-hours and memory-hours. Wall-clock hours ≈ OCPU-hours ÷ CPUs.">
+                        <i class="ti ti-help" aria-hidden="true"></i>
+                        <span class="sr-only">About monthly targets</span>
+                    </button>
+                </div>
+                <div class="mcm-usage-detail-value">@Vm.MonthlyTargetsDisplay</div>
+            </div>
+            <div class="mcm-usage-detail">
+                <div class="mcm-usage-detail-label">Soft caps</div>
+                <div class="mcm-usage-detail-value">@Vm.SoftCapsDisplay</div>
+            </div>
+            <div class="mcm-usage-detail">
+                <div class="mcm-usage-detail-label">Used (cloud units)</div>
+                <div class="mcm-usage-detail-value">@Vm.MtdDisplay</div>
+            </div>
+            <div class="mcm-usage-detail">
+                <div class="mcm-usage-detail-label">Today (cloud units)</div>
+                <div class="mcm-usage-detail-value">@Vm.TodayDisplay</div>
+            </div>
+            <div class="mcm-usage-detail">
+                <div class="mcm-usage-detail-label">Rollover (cloud units)</div>
+                <div class="mcm-usage-detail-value">@Vm.LeftoverDisplay</div>
+            </div>
+            <div class="mcm-usage-detail">
+                <div class="mcm-usage-detail-label">Soft cap hit</div>
+                <div class="mcm-usage-detail-value @(Vm.HitSoftCap ? "is-warn" : null)">@Vm.SoftCapHitDisplay</div>
+            </div>
+        </div>
+        <p class="mcm-usage-meta" style="margin-top:12px;">Last refresh: @Vm.LastRefreshDisplay</p>
+    </div>
 
     <div class="mcm-section-card">
-        <div style="font-size:14px;font-weight:500;margin-bottom:2px;">Usage budget</div>
-        <p style="margin:0 0 14px;font-size:13px;color:var(--text-secondary);">
+        <div style="font-size:14px;font-weight:600;margin-bottom:2px;">Usage budget</div>
+        <p class="mcm-usage-fieldset-hint">
             These numbers stay inside Always Free. To turn the idle timer on or off, use Advanced / Danger Zone.
         </p>
 
-        <div style="display:grid;grid-template-columns:200px 1fr;gap:8px 12px;align-items:center;">
-            <label for="mcm-usage-monthly-ocpu">Monthly OCPU target</label>
-            <input id="mcm-usage-monthly-ocpu"
-                   type="text"
-                   class="mcm-num-input"
-                   style="width:10rem;"
-                   disabled="@Vm.IsBusy"
-                   @bind="Vm.EditMonthlyOcpu"
-                   @bind:event="oninput" />
+        <fieldset class="mcm-usage-fieldset">
+            <div class="mcm-usage-fieldset-title">Monthly allowance</div>
+            <p class="mcm-usage-fieldset-hint">The free CPU-hours and memory-hours the server may use this month.</p>
+            <div class="mcm-usage-fields">
+                <label class="mcm-usage-field" for="mcm-usage-monthly-ocpu">
+                    <span class="mcm-usage-field-label">Monthly CPU-hours</span>
+                    <input id="mcm-usage-monthly-ocpu"
+                           type="text"
+                           class="mcm-num-input"
+                           disabled="@Vm.IsBusy"
+                           @bind="Vm.EditMonthlyOcpu"
+                           @bind:event="oninput" />
+                </label>
+                <label class="mcm-usage-field" for="mcm-usage-monthly-gb">
+                    <span class="mcm-usage-field-label">Monthly memory-hours</span>
+                    <input id="mcm-usage-monthly-gb"
+                           type="text"
+                           class="mcm-num-input"
+                           disabled="@Vm.IsBusy"
+                           @bind="Vm.EditMonthlyGb"
+                           @bind:event="oninput" />
+                </label>
+            </div>
+        </fieldset>
 
-            <label for="mcm-usage-monthly-gb">Monthly GB target</label>
-            <input id="mcm-usage-monthly-gb"
-                   type="text"
-                   class="mcm-num-input"
-                   style="width:10rem;"
-                   disabled="@Vm.IsBusy"
-                   @bind="Vm.EditMonthlyGb"
-                   @bind:event="oninput" />
+        <fieldset class="mcm-usage-fieldset">
+            <div class="mcm-usage-fieldset-title">Soft caps</div>
+            <p class="mcm-usage-fieldset-hint">Warn and idle-stop before you fully spend the monthly allowance.</p>
+            <div class="mcm-usage-fields">
+                <label class="mcm-usage-field" for="mcm-usage-soft-ocpu">
+                    <span class="mcm-usage-field-label">Soft CPU-hour cap</span>
+                    <input id="mcm-usage-soft-ocpu"
+                           type="text"
+                           class="mcm-num-input"
+                           disabled="@Vm.IsBusy"
+                           @bind="Vm.EditSoftOcpu"
+                           @bind:event="oninput" />
+                </label>
+                <label class="mcm-usage-field" for="mcm-usage-soft-gb">
+                    <span class="mcm-usage-field-label">Soft memory-hour cap</span>
+                    <input id="mcm-usage-soft-gb"
+                           type="text"
+                           class="mcm-num-input"
+                           disabled="@Vm.IsBusy"
+                           @bind="Vm.EditSoftGb"
+                           @bind:event="oninput" />
+                </label>
+            </div>
+        </fieldset>
 
-            <label for="mcm-usage-soft-ocpu">Soft OCPU cap</label>
-            <input id="mcm-usage-soft-ocpu"
-                   type="text"
-                   class="mcm-num-input"
-                   style="width:10rem;"
-                   disabled="@Vm.IsBusy"
-                   @bind="Vm.EditSoftOcpu"
-                   @bind:event="oninput" />
+        <fieldset class="mcm-usage-fieldset">
+            <div class="mcm-usage-fieldset-title">Idle warnings</div>
+            <p class="mcm-usage-fieldset-hint">How long the server can sit empty, and how far ahead to warn players about the daily cap.</p>
+            <div class="mcm-usage-fields">
+                <label class="mcm-usage-field" for="mcm-usage-idle">
+                    <span class="mcm-usage-field-label">Idle timeout (minutes)</span>
+                    <input id="mcm-usage-idle"
+                           type="text"
+                           class="mcm-num-input"
+                           disabled="@Vm.IsBusy"
+                           @bind="Vm.EditIdleTimeout"
+                           @bind:event="oninput" />
+                </label>
+                <label class="mcm-usage-field" for="mcm-usage-warn">
+                    <span class="mcm-usage-field-label">Warn players (minutes before cap)</span>
+                    <input id="mcm-usage-warn"
+                           type="text"
+                           class="mcm-num-input"
+                           disabled="@Vm.IsBusy"
+                           @bind="Vm.EditBudgetWarn"
+                           @bind:event="oninput" />
+                </label>
+                <label class="mcm-checkbox-row mcm-usage-check" style="margin:0;" for="mcm-usage-idle-agent">
+                    <input id="mcm-usage-idle-agent"
+                           type="checkbox"
+                           disabled="@Vm.IsBusy"
+                           @bind="Vm.EditIdleAgentEnabled" />
+                    Keep auto-stop enabled when saving
+                </label>
+            </div>
+        </fieldset>
 
-            <label for="mcm-usage-soft-gb">Soft GB cap</label>
-            <input id="mcm-usage-soft-gb"
-                   type="text"
-                   class="mcm-num-input"
-                   style="width:10rem;"
-                   disabled="@Vm.IsBusy"
-                   @bind="Vm.EditSoftGb"
-                   @bind:event="oninput" />
+        <fieldset class="mcm-usage-fieldset">
+            <div class="mcm-usage-fieldset-title">Server size</div>
+            <p class="mcm-usage-fieldset-hint">Used to convert CPU-hours into the wall-clock hours shown above. Match the live server.</p>
+            <div class="mcm-usage-fields">
+                <label class="mcm-usage-field" for="mcm-usage-shape-ocpu">
+                    <span class="mcm-usage-field-label">Server CPUs</span>
+                    <input id="mcm-usage-shape-ocpu"
+                           type="text"
+                           class="mcm-num-input"
+                           disabled="@Vm.IsBusy"
+                           @bind="Vm.EditShapeOcpus"
+                           @bind:event="oninput" />
+                </label>
+                <label class="mcm-usage-field" for="mcm-usage-shape-mem">
+                    <span class="mcm-usage-field-label">Server memory (GB)</span>
+                    <input id="mcm-usage-shape-mem"
+                           type="text"
+                           class="mcm-num-input"
+                           disabled="@Vm.IsBusy"
+                           @bind="Vm.EditShapeMemory"
+                           @bind:event="oninput" />
+                </label>
+            </div>
+        </fieldset>
 
-            <label for="mcm-usage-idle">Idle timeout (min)</label>
-            <input id="mcm-usage-idle"
-                   type="text"
-                   class="mcm-num-input"
-                   style="width:10rem;"
-                   disabled="@Vm.IsBusy"
-                   @bind="Vm.EditIdleTimeout"
-                   @bind:event="oninput" />
-
-            <label for="mcm-usage-warn">Budget warn (min)</label>
-            <input id="mcm-usage-warn"
-                   type="text"
-                   class="mcm-num-input"
-                   style="width:10rem;"
-                   disabled="@Vm.IsBusy"
-                   @bind="Vm.EditBudgetWarn"
-                   @bind:event="oninput" />
-
-            <label for="mcm-usage-shape-ocpu">Shape OCPUs</label>
-            <input id="mcm-usage-shape-ocpu"
-                   type="text"
-                   class="mcm-num-input"
-                   style="width:10rem;"
-                   disabled="@Vm.IsBusy"
-                   @bind="Vm.EditShapeOcpus"
-                   @bind:event="oninput" />
-
-            <label for="mcm-usage-shape-mem">Shape memory GB</label>
-            <input id="mcm-usage-shape-mem"
-                   type="text"
-                   class="mcm-num-input"
-                   style="width:10rem;"
-                   disabled="@Vm.IsBusy"
-                   @bind="Vm.EditShapeMemory"
-                   @bind:event="oninput" />
-
-            <span>Idle agent enabled</span>
-            <label class="mcm-checkbox-row" style="margin:0;" for="mcm-usage-idle-agent">
-                <input id="mcm-usage-idle-agent"
-                       type="checkbox"
-                       disabled="@Vm.IsBusy"
-                       @bind="Vm.EditIdleAgentEnabled" />
-                Keep auto-stop enabled when saving
-            </label>
-        </div>
-
-        <div style="margin-top:16px;">
+        <div style="margin-top:4px;">
             <button type="button"
                     class="mcm-primary"
                     disabled="@(!Vm.CanPublish)"

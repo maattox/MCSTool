@@ -8,12 +8,12 @@
         mc:Ignorable="d"
         Title="MC Server Manager"
         Height="720"
-        Width="960"
+        Width="802"
         MinHeight="560"
-        MinWidth="880"
-        Background="#E6E2D8">
+        MinWidth="802"
+        Background="#161A21">
     <Grid>
-        <blazor:BlazorWebView HostPage="wwwroot\index.html" Services="{DynamicResource services}">
+        <blazor:BlazorWebView x:Name="HostView" HostPage="wwwroot\index.html" Services="{DynamicResource services}">
             <blazor:BlazorWebView.RootComponents>
                 <blazor:RootComponent Selector="#app" ComponentType="{x:Type components:App}" />
             </blazor:BlazorWebView.RootComponents>

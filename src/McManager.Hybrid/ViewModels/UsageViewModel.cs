@@ -64,6 +64,9 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
     private string _softCapHitDisplay = "—";
 
     [ObservableProperty]
+    private bool _hitSoftCap;
+
+    [ObservableProperty]
     private string _editMonthlyOcpu = "";
 
     [ObservableProperty]
@@ -95,6 +98,27 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     private string _remainingDisplay = "—";
+
+    [ObservableProperty]
+    private string _remainingHoursValue = "—";
+
+    [ObservableProperty]
+    private string _usedHoursValue = "—";
+
+    [ObservableProperty]
+    private string _todayHoursValue = "—";
+
+    [ObservableProperty]
+    private string _todayHoursHint = "";
+
+    [ObservableProperty]
+    private string _rolloverHoursValue = "—";
+
+    [ObservableProperty]
+    private bool _rolloverHoursPositive;
+
+    [ObservableProperty]
+    private bool _todayOverDaily;
 
     public bool HasObjectStorage => _store is not null;
 
@@ -281,9 +305,19 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
             $"{report.TodayOcpu:F1} / {report.DailyOcpuAllowance:F1} OCPU-h"
             + (report.OcpuOverDaily ? " (over daily)" : "");
         SoftCapHitDisplay = report.HitSoftCap ? "Yes — soft cap hit" : "No";
+        HitSoftCap = report.HitSoftCap;
         var shape = ResolveShapeOcpus(shapeOcpus);
+        var dailyHours = report.DailyOcpuAllowance / shape;
         var remainingHours = Math.Max(0, report.MonthlyOcpuTarget - report.MonthOcpu) / shape;
+        var rolloverHours = report.LeftoverOcpu / shape;
         RemainingDisplay = $"{remainingHours:F1}h left this month (not rollover)";
+        RemainingHoursValue = $"{remainingHours:F1}h";
+        UsedHoursValue = $"{report.MonthUptime:F1}h";
+        TodayHoursValue = $"{report.TodayUptimeHours:F1}h";
+        TodayHoursHint = $"/ {dailyHours:F1}h allowed today";
+        TodayOverDaily = report.OcpuOverDaily;
+        RolloverHoursValue = $"{(rolloverHours >= 0 ? "+" : "")}{rolloverHours:F1}h";
+        RolloverHoursPositive = rolloverHours > 0.05;
         CopyPins(PinnedUsageSnapshot.FromReport(report, shape));
     }
 
