@@ -17,7 +17,7 @@ The bucket is the shared source of truth for actors that are not always connecte
 - **VM1** — primary usage-ledger, lease, and backup writer.
 - **Door** — budget/ledger reader before wake; rare ledger repair writer while VM1 is `STOPPED`; **v1:** read spend-brake lock flag and refuse VM1 wake while it is set.
 - **Setup / Connect existing** — infrastructure metadata writer/reader.
-- **$1 budget Function (v1)** — writer of the spend-brake lock flag; not an MVP actor in this contract.
+- **$1 budget Function (v1)** — sole **writer** of `meta/spend-brake-triggered.json` on a real threshold alert (not RESET). Function PUT is Step 2.2; this contract freeze does not deploy it.
 
 Dirty flags are pull hints, not the source of truth. The **target contract** requires a safety-critical action (especially door wake) to fetch or validate authoritative data rather than trusting only a stale flag/cache. The deployed door is currently flag-aware and can reuse a cache when bits are clear; closing that gap belongs to Step 2.4.
 
@@ -72,7 +72,7 @@ These are normative rules for new Phase 2+ work. Existing lab/product code does 
 | `meta/infra.json` | canonical **2** | Setup; Manager infra-publish/upgrade | Manager / Connect existing; diagnostics | **Live nested v2** after Step 2.2 migration |
 | `meta/flags.json` | 1 | Shared protocol (last modifier) | Manager, VM1, door | Live |
 | `meta/oversized-world-backup.json` | 1 | VM1 backup agent | Manager | **Live set/skip (Step 2.4)**; Manager UX / clear flow remains v1 |
-| `meta/spend-brake-triggered.json` | TBD | $1 budget Function sets; Manager clears | Manager, door (v1) | **Reserved v1** — exact key/shape TBD; see lab PRODUCT-IDEAS $1 spend-brake lock |
+| `meta/spend-brake-triggered.json` | 1 | $1 budget Function sets/replaces; Manager is the only clearer (DELETE) | Manager, door | **Frozen v1** (Step 2.1). Function PUT = Step 2.2; door honor = 2.3; Manager overlay = 2.4 |
 | `meta/world-restore-request.json` | 1 | Manager requests; VM1 updates outcome | VM1, Manager | Reserved contract for flag-driven restore; current MVP uses SSH fallback |
 | `meta/backup-upload-lock.json` | 1 | Manager or VM1 active uploader | Manager, VM1 | Reserved coordination contract; not implemented |
 | `ledger/usage.json` | 2 | VM1; door only for STOPPED orphan heal | Manager, door, VM1 boot | Live |
@@ -574,21 +574,44 @@ Semantics:
 - No v1 dirty-flag category is added; consumers GET this small object at the relevant UI/action boundary.
 - The flag must not include the world contents, SSH paths/keys, or credentials.
 
-### `meta/spend-brake-triggered.json` — reserved v1 $1 budget lock (key TBD)
+### `meta/spend-brake-triggered.json` — v1 $1 budget lock (frozen)
 
-**Not an MVP contract.** Product intent: lab `PRODUCT-IDEAS.md` ($1 spend-brake lock). Exact object key and JSON shape are **TBD at v1 implementation** — this filename is a sketch so agents do not invent a second flag.
+Exact key frozen by this contract (V1 Step 2.1). Product intent: lab `PRODUCT-IDEAS.md` ($1 spend-brake lock). Do **not** invent a second lock object.
 
-Intended semantics (do not implement under the MVP plan):
+```json
+{
+  "version": 1,
+  "triggered_at": "2026-08-17T21:00:00Z",
+  "updated_at": "2026-08-17T21:00:00Z",
+  "source": "budget_function",
+  "alert_type": "ACTUAL",
+  "reason": "compartment_budget_threshold"
+}
+```
 
-- **Existence** of the object means the $1 last-resort compartment budget has fired this period.
-- **Writer:** the budget Function sets/replaces it when handling a real threshold alert (not RESET).
-- **Clearer:** Manager only, after the admin types the exact confirmation statement and Start succeeds.
-- **Readers:** Manager (full-window warning; block Start); door (refuse VM1 wake while present), if the door is left running.
-- Absence means no known spend-brake lock.
-- No new dirty-flag category required if consumers GET this small object at Manager open / Start / door wake (same pattern as oversized-world).
-- Must not contain secrets, card details, or live OCIDs beyond what `meta/infra.json` already holds.
+| Field | Required | Notes |
+|-------|----------|--------|
+| `version` | yes | Integer; current **1**. Readers that cannot parse a newer version still treat **presence** as locked. |
+| `triggered_at` | yes (well-formed) | UTC ISO 8601 (`YYYY-MM-DDTHH:MM:SSZ`) when the Function wrote or last replaced the object. Used later for a “new month?” hint only — **never** auto-clear. |
+| `updated_at` | no | Defaults to `triggered_at`. |
+| `source` | no | Writer identity. Function must use `budget_function`. |
+| `alert_type` | no | Optional copy of Events `triggeredAlertType` (e.g. `ACTUAL`). Must **not** be `RESET`. |
+| `reason` | no | Machine-readable cause. Default `compartment_budget_threshold`. |
 
-Do **not** freeze this key in `infra_schema` until v1 implementation chooses the final name.
+Semantics:
+
+- **Existence** of the object means the $1 last-resort compartment budget has fired this period. That is the lock. Absence means no known spend-brake lock.
+- **Fail closed:** a present object is locked even if JSON is malformed or `version` is newer than the reader supports. Transport / auth Get failures are **errors**, not unlocked.
+- **Writer:** the $1 budget Function **sets/replaces** the object when handling a real threshold alert. Ignore budget **RESET** — do not write or delete the object on RESET. A second alert may overwrite (idempotent PUT). Production Function write is Step **2.2** (no live `fn push` in 2.1).
+- **Clearer:** Manager **only**, via **DELETE**, after the admin types the exact confirmation statement from PRODUCT-IDEAS and Start/reconcile succeeds (Step **2.4**). Missing-object DELETE is success. Do **not** auto-clear at calendar-month rollover. Do **not** write `status: "cleared"` — unlocked = object gone.
+- **Readers:** Manager (full-window warning; block Start until typed confirm) and the door (refuse **START VM1** while present, same poll discipline as the budget gate). Door honor is Step **2.3**.
+- **Not** a dirty-flag category. Consumers GET this small object at Manager open / Start / door wake (same pattern as oversized-world).
+- **Not** an OpenTofu / Setup seed object. Do not create or delete it from IaC.
+- **Not** a field of `meta/infra.json`. Freezing this key does **not** bump `infra_schema`.
+- This object does **not** encode whether the Function SoftStopped the door Micro. That policy is Step **2.2**.
+- Must not contain secrets, card details, confirmation-sentence text, or live OCIDs (those stay in `meta/infra.json` if needed).
+
+Core helpers: `SpendBrakeLockDocument` + `SpendBrakeLockStore` (get / put / delete). Manager production code must use PUT only for tests or DEBUG fixtures — never to *set* the live lock.
 
 ### `meta/world-restore-request.json` — reserved restore request v1
 
@@ -636,6 +659,7 @@ Current SSH fallback is happy-path tested but not yet equivalent to the target a
 | Backup ZIPs | Read; manual upload/SSH replace | **Primary upload/evict** | None | Marker seed |
 | Backup upload lock | Acquire/release for upload | Acquire/release for backup/evict | None | None |
 | Oversized backup flag | Read; future clear UX | **Write/block** | None | None |
+| Spend-brake lock | **Only clearer** (DELETE after typed confirm — Step 2.4) | None | Read; refuse VM1 wake (Step 2.3) | None (not a tofu/seed object; Function is the writer) |
 | World restore request | Write/read outcome; SSH fallback today | Future apply/outcome write | None | None |
 
 ---
@@ -680,6 +704,7 @@ No live objects were modified during review.
 13. Hybrid whitelist writes local `friends.local.json` and applies the Security List. `ip/allowlist.json` is updated on Save **when that object already exists** (V1 Step 1.2). `ip` may be a single IPv4 or an IPv4 CIDR prefix.
 14. Prefixes are fixed for `infra_schema: 2`; the prefix map is configuration/discovery data, not permission to change hardcoded deployed actors independently. A prefix change requires coordinated actor updates plus an `infra_schema` bump.
 15. Lease fields are all required properties (nullable where shown). A VM1 helper implements the configured 900-second stale test, but no active caller was found; deployed door heal does not enforce age and uses the heartbeat only after OCI reports VM1 `STOPPED`.
+16. **DONE (V1 Step 2.1):** `meta/spend-brake-triggered.json` key + v1 JSON shape are frozen. Function PUT, door honor, and Manager overlay remain Steps 2.2–2.4. Live Function still does not write this object.
 
 ---
 
@@ -694,6 +719,8 @@ Product:
 - `src/McManager.Core/Services/ObjectStorageService.cs`
 - `src/McManager.Core/Services/BackupStore.cs`
 - `src/McManager.Core/Services/AllowlistStore.cs`
+- `src/McManager.Core/Services/SpendBrakeLockStore.cs`
+- `src/McManager.Core/Usage/SpendBrakeLockDocument.cs`
 - `src/McManager.Core/Config/FriendRules.cs`
 - `docs/Local-Config.md`
 
