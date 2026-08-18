@@ -40,7 +40,6 @@ public sealed class SecurityListService : ISecurityListService
         int sshPort,
         int doorHttpPort,
         string? adminName = null,
-        string? accessMode = null,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(securityListId))
@@ -58,8 +57,7 @@ public sealed class SecurityListService : ISecurityListService
                 minecraftPort,
                 sshPort,
                 doorHttpPort,
-                adminName,
-                accessMode);
+                adminName);
 
             await _session.VirtualNetwork.UpdateSecurityList(
                 new UpdateSecurityListRequest
@@ -76,7 +74,6 @@ public sealed class SecurityListService : ISecurityListService
             {
                 PreservedRuleCount = plan.Preserved.Count,
                 OwnedRuleCount = plan.Owned.Count,
-                PublicMinecraft = plan.PublicMinecraft,
             });
         }
         catch (Exception ex)

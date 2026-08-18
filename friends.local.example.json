@@ -1,6 +1,5 @@
 {
   "schema_version": 1,
-  "mode": "private",
   "friends": [
     {
       "id": "00000000-0000-0000-0000-000000000000",
@@ -13,13 +12,6 @@
       "name": "example-cgnat",
       "ip": "172.56.0.0/16",
       "is_admin": false
-    }
-  ],
-  "blacklist": [
-    {
-      "id": "00000000-0000-0000-0000-000000000002",
-      "name": "example-blocked",
-      "ip": "198.51.100.7"
     }
   ]
 }

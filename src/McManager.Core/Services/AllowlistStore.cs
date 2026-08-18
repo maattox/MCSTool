@@ -6,7 +6,7 @@ namespace McManager.Core.Services;
 
 /// <summary>
 /// Reads/writes Object Storage <c>ip/allowlist.json</c> when that object already exists.
-/// Does not create the object (Setup / later IP-mode work owns first seed).
+/// Does not create the object (Setup / bucket seed owns first write).
 /// </summary>
 public sealed class AllowlistStore
 {
@@ -67,8 +67,12 @@ public sealed class AllowlistStore
 
         doc.Version = doc.Version <= 0 ? 1 : doc.Version;
         if (string.IsNullOrWhiteSpace(doc.ModeNote)
-            || doc.ModeNote.Contains("MVP uses private", StringComparison.OrdinalIgnoreCase))
-            doc.ModeNote = "Allowlist is applied only when ip/mode.json is private.";
+            || doc.ModeNote.Contains("MVP uses private", StringComparison.OrdinalIgnoreCase)
+            || doc.ModeNote.Contains("ip/mode.json is private", StringComparison.OrdinalIgnoreCase))
+        {
+            doc.ModeNote =
+                "Product is private-only. This allowlist is always applied. ip/mode.json is withdrawn.";
+        }
         doc.UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
         doc.Entries = friends.ToList();
 

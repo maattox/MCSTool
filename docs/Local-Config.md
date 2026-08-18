@@ -7,14 +7,15 @@ The Manager WinExe (`McManager.Hybrid`, WPF + BlazorWebView) seeds connectivity 
 | Path | Git | Role |
 |------|-----|------|
 | [`config.local.example.json`](../config.local.example.json) | Tracked | Schema template (placeholders) |
-| [`friends.local.example.json`](../friends.local.example.json) | Tracked | Whitelist template (`ip` = IPv4 or IPv4 CIDR; optional `mode` + `blacklist`) |
+| [`friends.local.example.json`](../friends.local.example.json) | Tracked | Whitelist template (`ip` = IPv4 or IPv4 CIDR) |
 | `data/config.local.json` | **Ignored** | Live OCIDs / SSH / Object Storage / budgets |
 | `data/friends.local.json` | **Ignored** | Live Desired List seed |
 | `data/setup-wizard.local.json` | **Ignored** | Setup wizard resume (step index + fields; **no** Auth Token, **no** SSH private key) |
+| `data/sample-packs/` | **Ignored** | Operator-local sample `.mrpack` / CurseForge zips for Phase 4 pack-import work — see [`Sample-Packs.md`](Sample-Packs.md). **Not** CI fixtures. |
 
 Copy examples into `data/` and fill values, or keep the operator-seeded files already present on this machine.
 
-`friends.local.json` may include `mode` (`private` or `public`, default **private**) and `blacklist` (`id` / `name` / `ip` entries). Missing or invalid `mode` is never treated as public. The Manager also writes the same mode + blacklist to Object Storage `ip/mode.json` when that object already exists. Public mode in this file does **not** rewrite the Security List until a later step.
+`friends.local.json` is the local allowlist (friends + admin flags). Public mode and blacklist are **rejected** — do not add `mode` or `blacklist` as product fields. Leftover keys in an existing file are ignored; Save strips them. The Manager writes `ip/allowlist.json` when that object already exists. There is no live writer for `ip/mode.json`.
 
 ## Sources of truth when refreshing seeds
 
@@ -112,6 +113,10 @@ Lab private doc targets **4 OCPU / 24 GB**. Lab `config.json` may show a differe
 ## Sync discipline
 
 When you change OCI resources in Console or lab config, update `data/config.local.json` (and lab private markdown) in the same sitting so the Manager app and Python stay aligned.
+
+## Sample modpacks (Phase 4)
+
+Gitignored [`data/sample-packs/`](../data/sample-packs/) holds homemade parser fixtures plus a few real published exports on this PC. Tracked instructions, gotchas, and the “pause and ask the operator to download a pack” rule: [`Sample-Packs.md`](Sample-Packs.md). Do not commit those archives. CI stays on `tests/fixtures/`.
 
 ## Later (after v1): deployment profiles
 

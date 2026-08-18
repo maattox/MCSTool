@@ -7,7 +7,8 @@ namespace McManager.Core.Services;
 /// Builds the full Security List ingress set for one rewrite.
 /// <see cref="Oci.CoreService.Requests.UpdateSecurityListRequest"/> replaces the entire
 /// ingress list — preserve ICMP and other non-owned rules; never emit SSH/door from
-/// <c>0.0.0.0/0</c>. Public mode opens only Minecraft 25565 TCP/UDP to the world.
+/// <c>0.0.0.0/0</c>. Minecraft is private allowlist only (CIDR or <c>/32</c>).
+/// Leftover world-open Minecraft rules are treated as managed and stripped.
 /// </summary>
 public static class SecurityListIngressPlanner
 {
@@ -20,10 +21,8 @@ public static class SecurityListIngressPlanner
         int minecraftPort,
         int sshPort,
         int doorHttpPort,
-        string? adminName,
-        string? accessMode)
+        string? adminName)
     {
-        var publicMinecraft = IpAccessMode.IsPublic(accessMode);
         var ownedDescriptions = friends
             .SelectMany(f => new[] { f.Name.Trim(), f.Ip.Trim() })
             .Where(n => !string.IsNullOrWhiteSpace(n))
@@ -47,14 +46,12 @@ public static class SecurityListIngressPlanner
             minecraftPort,
             sshPort,
             doorHttpPort,
-            adminName,
-            publicMinecraft);
+            adminName);
 
         return new SecurityListIngressPlan
         {
             Preserved = preserved,
             Owned = owned,
-            PublicMinecraft = publicMinecraft,
         };
     }
 
@@ -113,22 +110,9 @@ public static class SecurityListIngressPlanner
         int minecraftPort,
         int sshPort,
         int doorHttpPort,
-        string? adminName,
-        bool publicMinecraft)
+        string? adminName)
     {
         var owned = new List<IngressSecurityRule>();
-        if (publicMinecraft)
-        {
-            owned.Add(MakeTcpRule(
-                FriendRules.PublicMinecraftSource,
-                minecraftPort,
-                FriendRules.PublicMinecraftDescription));
-            owned.Add(MakeUdpRule(
-                FriendRules.PublicMinecraftSource,
-                minecraftPort,
-                FriendRules.PublicMinecraftDescription));
-        }
-
         foreach (var friend in friends)
         {
             if (string.IsNullOrWhiteSpace(friend.Ip))
@@ -136,12 +120,9 @@ public static class SecurityListIngressPlanner
             if (!FriendRules.TryNormalizeAllowlistSource(friend.Ip, out var source, out _))
                 continue;
 
-            if (!publicMinecraft)
-            {
-                var mcDesc = FriendRules.McDescription(friend.Name, source.Stored);
-                owned.Add(MakeTcpRule(source.Cidr, minecraftPort, mcDesc));
-                owned.Add(MakeUdpRule(source.Cidr, minecraftPort, mcDesc));
-            }
+            var mcDesc = FriendRules.McDescription(friend.Name, source.Stored);
+            owned.Add(MakeTcpRule(source.Cidr, minecraftPort, mcDesc));
+            owned.Add(MakeUdpRule(source.Cidr, minecraftPort, mcDesc));
 
             if (!friend.IsAdmin)
                 continue;
@@ -192,7 +173,6 @@ public sealed class SecurityListIngressPlan
 {
     public required IReadOnlyList<IngressSecurityRule> Preserved { get; init; }
     public required IReadOnlyList<IngressSecurityRule> Owned { get; init; }
-    public required bool PublicMinecraft { get; init; }
 
     public IReadOnlyList<IngressSecurityRule> Ingress =>
         Preserved.Concat(Owned).ToList();

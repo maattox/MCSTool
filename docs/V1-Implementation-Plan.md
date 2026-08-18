@@ -25,7 +25,7 @@
    - **Stop.** Do not start the next large step unless the operator says to continue.
 4. In the chat reply: what was done, how to test, what the next step will be, ask whether to continue / pause / adjust.
 5. **Never create git commits** (operator commits in Visual Studio). You may suggest a commit message.
-6. Do **not** implement **after v1** / **later** PRODUCT-IDEAS items (Players tab, start checklist, maintenance IP, multi-deploy, pack replace, Quilt Setup entry, Purpur, PTY console, macOS/Linux Manager).
+6. Do **not** implement **after v1** / **later** PRODUCT-IDEAS items (Players tab, start checklist, maintenance IP, multi-deploy, pack replace, Quilt Setup entry, Purpur, PTY console, macOS/Linux Manager). An **in-app mod/modpack browser** is **rejected** (not after-v1) — users import a local pack file only; do not build it. **Public Minecraft / public-private toggle / blacklist** is **rejected** (not after-v1) — private allowlist only; do not rebuild it.
 7. Do **not** put Manager UI in the lab repo. On-box source (`door_vm/`, `vm_agent/`, `functions/shutdown_vm/`) lives **in this repo**. Lab changes are OK for lab docs / Python Manager only. Phase B (Blazor Hybrid) is **DONE**; do not re-open Avalonia.
 8. **Fix the product path, not only the test VM.** If you change a test VM or a **TESTING** cloud resource, make the **same** change in the local deployment SoT in the same session (`onbox/mcmgr/`, `infra/`, `door_vm/`, `vm_agent/`, `functions/shutdown_vm/`, Manager/Setup code here). The next greenfield Setup must pick it up. Patching only the live test instance is not done.
 9. **`ubuntu` Permission denied** — `sudo` or fix owner/mode ([`docs/Agent-Deploy-Pitfalls.md`](Agent-Deploy-Pitfalls.md)).
@@ -47,13 +47,13 @@ Each step is sized for **one** agent session (~256K tokens) after workspace rule
 Between **large steps** (Phase / Step headings below), always stop for operator feedback.  
 **Small sub-bullets** inside one step may be completed together if they are required to make that step testable.
 
-If blocked (missing OCIDs, unclear UX, cost risk, CurseForge ToS), stop and ask — do not guess in a way that opens `0.0.0.0/0` (except the confirm-gated **Step 3.2** public mode) or accrues spend.
+If blocked (missing OCIDs, unclear UX, cost risk, CurseForge ToS), stop and ask — do not guess in a way that opens `0.0.0.0/0` or accrues spend.
 
 ### Test stack access (OCI + SSH)
 
 Agents **may** manage the **test** stack with OCI APIs and the OCI CLI, and **may SSH both test VMs**, when that is useful for the current NEXT step (inspect, reproduce, install, edit scripts/services, restart units, pull logs, exercise wake/idle, etc.).
 
-**$0 is non-negotiable.** Do not take any action that would bill the tenancy: no paid shapes, extra block volumes, load balancers, extra reserved IPs, paid logging, leaving Always Free, or other spend. Always Free–eligible start/stop, Security List edits that stay private (except Step **3.2** confirm-gated public mode), Object Storage of existing ledger/meta/backups, and SSH to the existing test VMs are in bounds. If an action might charge, **stop and ask**.
+**$0 is non-negotiable.** Do not take any action that would bill the tenancy: no paid shapes, extra block volumes, load balancers, extra reserved IPs, paid logging, leaving Always Free, or other spend. Always Free–eligible start/stop, Security List edits that stay **private** (allowlist CIDRs/`/32`s only — never Minecraft `0.0.0.0/0`), Object Storage of existing ledger/meta/backups, and SSH to the existing test VMs are in bounds. If an action might charge, **stop and ask**.
 
 | Item | Value |
 |------|--------|
@@ -112,7 +112,7 @@ More idle copy-paste: lab [`docs/Operator-Troubleshooting.md`](../../OCI-mc-serv
 
 - `tofu apply` / `tofu plan` / `tofu destroy` / deleting the compartment / `docker push` / `fn push` to OCIR unless the operator **explicitly** authorizes that command in the session.
 - Using **`DEFAULT`**, touching the live **Forge lab** tenancy, or SSH with any key other than the one named above.
-- Opening `0.0.0.0/0` except confirm-gated Step **3.2**.
+- Opening `0.0.0.0/0` on Minecraft, SSH, or door admin.
 - Committing secrets, filled `oci.env`, or live OCIDs.
 - Wizard Deploy that would `tofu apply` (keep `MCMANAGER_TOFU_DRY_RUN=1` unless the operator authorizes a real apply).
 
@@ -135,9 +135,13 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 
 ## V1 goal (from PRODUCT-IDEAS)
 
-> Flexible product on the same Always Free doorbell: private-by-default with optional public mode, CIDR allowlists, spend-brake lock, Paper + file-imported modpacks, Danger Zone isolated from power-user Advanced, then **one** installer and GitHub updates.
+> Flexible product on the same Always Free doorbell: **private allowlist only**, CIDR prefixes, spend-brake lock, Paper + file-imported modpacks, Danger Zone isolated from power-user Advanced, then **one** installer and GitHub updates.
 
-**Explicitly out of this plan (after v1 / later):** Players tab, Start progress checklist, maintenance / reserved-IP controls, multi-deploy profiles, change/replace modpack, full per-day budget calendar, Quilt as a Setup entry point, Purpur/Folia, in-app mod catalog, interactive PTY console, macOS/Linux Manager.
+**Explicitly out of this plan (after v1 / later):** Players tab, Start progress checklist, maintenance / reserved-IP controls, multi-deploy profiles, change/replace modpack, full per-day budget calendar, Quilt as a Setup entry point, Purpur/Folia, interactive PTY console, macOS/Linux Manager.
+
+**Rejected (will not be implemented, not after-v1):** in-app mod / modpack browser (browse, search, trending, download-a-pack, pick-by-name/URL/ID). Users create or download pack files themselves and select them in Setup or Manager.
+
+**Rejected (will not be implemented, not after-v1):** public Minecraft (`0.0.0.0/0`), a public/private Manager toggle, and a blacklist. Private allowlist only (CIDR from Step 1.2 stays).
 
 **Already shipped in MVP (do not rebuild):** Delete-infrastructure UI (typed `confirm`); Troubleshooting one-shots; Vanilla Setup; Connect-existing; Hybrid WinExe.
 
@@ -149,15 +153,15 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 |-------|--------|--------|
 | **1** | Manager shell (Advanced/Danger split, CIDR, wipe world) | **DONE** |
 | **2** | $1 spend-brake lock (Function flag, door, Manager overlay) | **DONE** |
-| **3** | IP Management (public/private + blacklist) | **NEXT** = Step **3.3** |
-| **4** | Setup game types (Paper, loaders, pack import) | TODO |
+| **3** | Remove public/blacklist (was IP Management public mode) | **DONE** |
+| **4** | Setup game types (Paper, loaders, pack import) | **NEXT** = Step **4.1** |
 | **5** | Server Management modding inspect + re-download pack | TODO |
 | **6** | Top-bar chrome + oversized-world SSH UX | TODO |
 | **7** | Remaining v1 (resize, console, storage, Connect version) | TODO |
 | **8** | Paid / spend mode (**last** product feature) | TODO |
 | **9** | Packaging, updates, launch (old MVP Phase 8–9) | TODO — **do not start** until Phases 1–8 are DONE or the operator skips 8 |
 
-**Current NEXT step:** [Step 3.3](#step-33--blacklist-in-public-mode). **Do not start Step 3.3** until the operator asks.
+**Current NEXT step:** [Step 4.1](#step-41--paper-fill-v3-client--fixtures-core-only). **Do not start Step 4.1** until the operator asks.
 
 ---
 
@@ -372,86 +376,74 @@ Split so Function, door, and Manager each get their own window.
 
 ---
 
-## Phase 3 — IP Management (public / private)
+## Phase 3 — Public / blacklist withdrawn
 
-**Note:** Step **3.2** is the one v1 step allowed to write Minecraft `0.0.0.0/0` — **only** after in-app confirm, never as Setup default. Preserve SSH / non-Minecraft rules (full-replace caution).
+Operator 2026-08-18: **public Minecraft, the public/private toggle, and blacklist are rejected** (PRODUCT-IDEAS). Private allowlist + CIDR (Step **1.2**) stay. Never write Minecraft `0.0.0.0/0`. Preserve SSH / non-Minecraft rules on every Security List rewrite.
 
 ### Step 3.1 — Mode + blacklist persist (no SL rewrite yet)
 
-**Status:** DONE  
+**Status:** WITHDRAWN (code still present until 3.4)  
 **Depends on:** 1.2 (friends list / allowlist objects)
 
-**Read first**
+Shipped 2026-08-17 then product-rejected. Historical notes only — do not extend.
 
-- Lab `PRODUCT-IDEAS.md` → **IP Management (v1)** only  
-- `src/McManager.Hybrid/Components/Tabs/Whitelist/WhitelistTab.razor`  
-- `src/McManager.Hybrid/ViewModels/WhitelistViewModel.cs`  
-- Existing Object Storage allowlist types in Core (open only those)
-
-**Do**
-
-- Persist **mode** (`private` \| `public`) and a **blacklist** list locally + Object Storage (`ip/mode.json` / `ip/allowlist.json` as already sketched).  
-- Toggle labeled **Make server public** / **Make server private** with an aggressive confirm before public. When public, show notice that the allowlist is not applied; when private, notice that blacklist applies only in public mode.  
-- Toggle must **not** rewrite the Security List yet (stub / disable Apply-public until 3.2). Do not open `0.0.0.0/0` in this step.
-
-**Test**
-
-- `dotnet build`; toggle persists; live Security List unchanged.
-
-**Done when:** Mode + blacklist persist; SL still private `/32` (and CIDR from 1.2).
-
-**Changelog:** 2026-08-17 — Whitelist **Make server public** / **Make server private** with aggressive confirm before public. Mode + blacklist persist in `friends.local.json` and Object Storage `ip/mode.json` when present (missing/invalid mode = private). Public notice + blacklist “applies only in public mode.” **Apply public access** disabled; Security List not rewritten; no `0.0.0.0/0`.
+**Changelog:** 2026-08-17 — Whitelist **Make server public** / **Make server private** with aggressive confirm before public. Mode + blacklist persist in `friends.local.json` and Object Storage `ip/mode.json` when present. Public notice + blacklist panel. **Apply public access** disabled; Security List not rewritten; no `0.0.0.0/0`. **2026-08-18 — WITHDRAWN.**
 
 ---
 
 ### Step 3.2 — Security List public / private rewrite
 
-**Status:** DONE  
+**Status:** WITHDRAWN (code still present until 3.4)  
 **Depends on:** 3.1
 
-**Read first**
+Shipped 2026-08-17 then product-rejected. The **private** path in `SecurityListIngressPlanner` is still needed (CIDR allowlist). Do not delete the planner; 3.4 removes only the public branch.
 
-- Lab `PRODUCT-IDEAS.md` → **IP Management (v1)** → “OCI Security List reality”  
-- Core Security List apply used by whitelist (same files as 1.2)  
-- Lab `docs/OCI-API-Usage.md` — UpdateSecurityList replace-all caution (short)
-
-**Do**
-
-- Decide **rewrite one list** vs **two lists + swap** (prefer rewrite unless swap is clearly cleaner).  
-- **Public:** Minecraft 25565 TCP/UDP from `0.0.0.0/0`; **preserve** SSH admin `/32`s, ICMP, and non-owned rules.  
-- **Private:** restore allowlist CIDRs/`/32`s. Confirm dialog already in 3.1 must run before public apply.
-
-**Test**
-
-- `dotnet build`; unit or dry description of the ingress set for public vs private. Live apply only with operator OK on the **test** tenancy.
-
-**Done when:** Toggle actually switches Minecraft ingress; SSH is never `0.0.0.0/0`.
-
-**Changelog:** 2026-08-17 — Rewrite **one** Security List (not two-list swap). Public: Minecraft 25565 TCP/UDP from `0.0.0.0/0`; SSH/door stay admin `/32`s (or own-admin CIDR); ICMP and non-owned rules preserved. Private: restore allowlist CIDRs/`/32`s and strip world-open Minecraft. Toggle confirm (3.1) runs before public apply; Save while public re-applies the public set. Core `SecurityListIngressPlanner` + unit tests. No live test-tenancy apply.
+**Changelog:** 2026-08-17 — Rewrite **one** Security List. Public: Minecraft 25565 TCP/UDP from `0.0.0.0/0`; SSH never world-open; private restores allowlist. Planner + unit tests. **No live test-tenancy apply.** **2026-08-18 — WITHDRAWN.**
 
 ---
 
 ### Step 3.3 — Blacklist in public mode
 
-**Status:** NEXT  
+**Status:** CANCELLED  
 **Depends on:** 3.2
+
+Never implemented. OCI Security Lists have no deny. Do not ship a CIDR invert. Public/blacklist are **rejected** (not deferred).
+
+**Changelog:** 2026-08-18 — **CANCELLED.** Research: SL/NSG allow-only; invert forbidden; paid Network Firewall out. Product is private allowlist only.
+
+---
+
+### Step 3.4 — Remove public mode + blacklist code
+
+**Status:** DONE  
+**Depends on:** docs already updated (PRODUCT-IDEAS rejected public/blacklist; this file)
 
 **Read first**
 
-- Lab `PRODUCT-IDEAS.md` → **IP Management (v1)** blacklist + SL reality  
-- The Core rewrite from 3.2 (only those files)
+- Lab `PRODUCT-IDEAS.md` → **Rejected** table (public/blacklist row) + heading **IP Management (v1)** only  
+- `src/McManager.Hybrid/Components/Tabs/Whitelist/WhitelistTab.razor`  
+- `src/McManager.Hybrid/ViewModels/WhitelistViewModel.cs`  
+- `src/McManager.Core/Services/SecurityListIngressPlanner.cs`  
+- `src/McManager.Core/Config/FriendsLocalFile.cs`  
+- Core `IpModeStore` (open only that file)
 
 **Do**
 
-- When public, apply blacklist as explicitly denied Minecraft sources if a **simple, correct** Security List approach exists. If it requires synthesizing “world minus these CIDRs,” **stop and ask** — do not ship an error-prone invert.
+- Remove the **Make server public / private** toggle, public notices, and the **Blacklist** panel from Hybrid.  
+- Remove `mode` / `blacklist` persist from Manager save paths. Stop PUTting `ip/mode.json`. Ignore leftover `mode`/`blacklist` keys in `friends.local.json` (or strip them on save). Update `friends.local.example.json`.  
+- Remove the **public** Minecraft `0.0.0.0/0` branch from `SecurityListIngressPlanner` / `ApplyFriendsAsync`. **Keep** the planner for **private** allowlist CIDR/`/32` apply (Step 1.2). Do not revert CIDR.  
+- Delete leftover types/tests that exist only for public mode or blacklist (`BlacklistRowViewModel`, public planner tests, `IpAccessMode.Public`, etc.).  
+- Optional **TESTING** check (no `tofu apply`): `GetSecurityList` — if Minecraft 25565 is `0.0.0.0/0`, apply the private allowlist and say so. 3.2 claimed no live apply; this is only a safety net.  
+- Do **not** start Phase 4. Lab Python seed of `ip/mode.json` may stay as an unused leftover unless a one-line comment is cheap.
 
 **Test**
 
-- `dotnet build`; if shipped, adding a blacklist IP while public updates ingress as designed.
+- `dotnet build src/McManager.slnx` and Core tests that still apply (planner private + CIDR; friends file without requiring mode/blacklist).  
+- Whitelist tab: add `/32` and CIDR, Save; no public toggle; no blacklist UI.
 
-**Done when:** Either blacklist works in public mode, or the UI states it is unavailable pending a later mechanism (operator-approved deferral noted in this changelog).
+**Done when:** Manager is private-only; no public SL code path; CIDR allowlist still works; `ip/mode.json` is not a live writer.
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-18 — Removed Hybrid public/private toggle, public notices, and Blacklist panel. Save strips leftover `mode`/`blacklist` keys; no `ip/mode.json` PUT. Planner kept for private CIDR/`/32` allowlist; public `0.0.0.0/0` Minecraft branch deleted. TESTING GetSecurityList: no world-open 25565 (no apply). **NEXT = Step 4.1**. Do not start 4.1 unless asked.
 
 ---
 
@@ -461,9 +453,11 @@ Split so Function, door, and Manager each get their own window.
 
 Each installer step: Core metadata client + `onbox/mcmgr/` module + generic unit/manifest — **one platform per step**.
 
+**Sample packs:** CI uses tiny tracked fixtures under `tests/fixtures/` (blueprint §15). Operator-local real/homemade archives live in gitignored `data/sample-packs/` — see [`Sample-Packs.md`](Sample-Packs.md) (gotchas + which file for 4.7–4.12). If a needed format/loader is missing, **pause and ask the operator to download it**. **Do not** add an in-app pack browser (that feature is **rejected**).
+
 ### Step 4.1 — Paper Fill v3 client + fixtures (Core only)
 
-**Status:** TODO  
+**Status:** NEXT  
 **Depends on:** Phase 1 (no hard code dep)
 
 **Read first**
@@ -621,7 +615,8 @@ Each installer step: Core metadata client + `onbox/mcmgr/` module + generic unit
 **Read first**
 
 - Blueprint **§22** and **§2.4** only  
-- Lab `PRODUCT-IDEAS.md` → **Modded branch** (file picker / no catalog)
+- Lab `PRODUCT-IDEAS.md` → **Modded branch** (file picker / no catalog)  
+- [`Sample-Packs.md`](Sample-Packs.md) (operator-local archives; gotcha: FO/`env.server`)
 
 **Do**
 
@@ -630,7 +625,7 @@ Each installer step: Core metadata client + `onbox/mcmgr/` module + generic unit
 
 **Test**
 
-- Offline fixture `.mrpack` (tiny) in repo tests.
+- Offline fixture `.mrpack` (tiny) in repo tests (`tests/fixtures/`). Optional: `data/sample-packs/homemade/fabric-strip.mrpack` on this PC (correct Sodium `unsupported` tag — do **not** use Fabulously Optimized / OptiFine for Fabric as the strip test).
 
 **Done when:** Analyzer returns a confirmable summary without installing.
 
@@ -655,7 +650,7 @@ Each installer step: Core metadata client + `onbox/mcmgr/` module + generic unit
 
 **Test**
 
-- Fixture pack install into a temp dir (no live VM required).
+- Fixture pack install into a temp dir (no live VM required). Prefer `data/sample-packs/homemade/fabric-strip.mrpack` (real CDN URLs) when that folder exists; see [`Sample-Packs.md`](Sample-Packs.md).
 
 **Done when:** Server-side mods land; client-only jars do not; original archive is retained locally.
 
@@ -678,7 +673,7 @@ Each installer step: Core metadata client + `onbox/mcmgr/` module + generic unit
 
 **Test**
 
-- Fixture zip; `dotnet build`.
+- Fixture zip; `dotnet build`. Operator-local: `data/sample-packs/homemade/manual-server.zip` ([`Sample-Packs.md`](Sample-Packs.md)). If a CurseForge Server Files zip is needed and missing, pause and ask the operator.
 
 **Done when:** Manual zip is a second import adapter, not a rewrite of 4.8.
 
@@ -755,7 +750,7 @@ Each installer step: Core metadata client + `onbox/mcmgr/` module + generic unit
 
 **Test**
 
-- Fixture manifest resolve with a mocked API; no catalog UI.
+- Fixture manifest resolve with a mocked API; no catalog UI. Operator-local synthetic zip + real FO export: [`Sample-Packs.md`](Sample-Packs.md). Infinite Horizons is a valid 1.20.1 Forge *shape* but too large for routine tests.
 
 **Done when:** CurseForge file-import works **or** this step is explicitly deferred in the changelog with the ToS blocker.
 
@@ -1155,7 +1150,7 @@ Former MVP Phase **8–9**. **Do not start** until Phases **1–7** are DONE and
 
 **Do**
 
-- One consistency pass: Paper/Modded Setup, public mode warnings, spend-brake lock, installer vs run-from-source. Do not invent features.
+- One consistency pass: Paper/Modded Setup, private allowlist (no public mode), spend-brake lock, installer vs run-from-source. Do not invent features.
 
 **Test**
 
@@ -1227,12 +1222,13 @@ Former MVP Phase **8–9**. **Do not start** until Phases **1–7** are DONE and
 - Full per-day budget calendar  
 - Quilt as a Setup entry point (detect-only is OK in 4.7)  
 - Purpur / Folia / hybrids  
-- In-app Modrinth/CurseForge/FTB **catalog / browse / search**  
+- **Rejected:** in-app Modrinth/CurseForge/FTB **catalog / browse / search / download-a-pack** (users import a local file; this is not an after-v1 feature)  
+- **Rejected:** public Minecraft / public-private toggle / blacklist (private allowlist only; this is not an after-v1 feature)  
 - Interactive Java **PTY** console  
 - macOS / Linux Manager  
 - Event-driven door handback as primary  
 - Silent OCI probing on startup  
-- Public game access **except** confirm-gated Step **3.2**  
+- Public game access (`0.0.0.0/0` on 25565 / 22 / 8080)  
 - Paid OCI services / spend **except** Phase **8** when the operator continues  
 
 ---
@@ -1241,6 +1237,10 @@ Former MVP Phase **8–9**. **Do not start** until Phases **1–7** are DONE and
 
 | Date | Note |
 |------|------|
+| 2026-08-18 | **Step 3.4 DONE.** Manager private-only: no public toggle/blacklist UI; no `ip/mode.json` writer; planner keeps CIDR allowlist and strips leftover world-open Minecraft. TESTING SL was already private. **NEXT = Step 4.1**. Do not start 4.1 unless asked. |
+| 2026-08-18 | **Public/blacklist rejected.** Step **3.3 CANCELLED**. Steps **3.1–3.2 WITHDRAWN**. Docs updated. **NEXT = Step 3.4** (remove 3.1/3.2 code; keep CIDR). Do not start 3.4 unless asked. |
+| 2026-08-18 | In-app mod/modpack browser marked **rejected** (not after-v1). Users import a local pack file only. **NEXT remains Step 3.3.** |
+| 2026-08-18 | Operator-local sample packs: gitignored `data/sample-packs/` + tracked [`Sample-Packs.md`](Sample-Packs.md). CI stays on `tests/fixtures/`. Agents missing a pack format **pause and ask the operator**. **NEXT remains Step 3.3.** |
 | 2026-08-18 | **On-box SoT moved** into this repo: `door_vm/`, `vm_agent/`, `functions/shutdown_vm/`, plus `docs/Agent-Deploy-Pitfalls.md`. Lab trees are pointer READMEs. Setup `ProductPaths` no longer requires a lab checkout. **NEXT remains Step 3.3.** |
 | 2026-08-17 | **Step 3.2 DONE.** One-list rewrite: public Minecraft `0.0.0.0/0` TCP/UDP; SSH never world-open; private restores allowlist; 3.1 confirm before public apply. Planner unit tests; no live SL apply. **NEXT = Step 3.3**. Do not start 3.3 unless asked. |
 | 2026-08-17 | **Step 3.1 DONE.** Persist `private`/`public` + blacklist locally (`friends.local.json`) and `ip/mode.json` when present; public confirm; Apply-public stub; SL unchanged. **NEXT = Step 3.2**. Do not start 3.2 unless asked. |

@@ -831,15 +831,6 @@ button.mcm-btn-disabled:hover {
     grid-template-columns: 1fr 1fr 56px 128px;
 }
 
-.mcm-bl-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr 88px;
-    align-items: center;
-    padding: 8px 0;
-    border-top: 0.5px solid var(--border);
-    font-size: 13px;
-}
-
 .mcm-bk-row {
     grid-template-columns: 1fr auto auto;
     gap: 16px;
@@ -857,7 +848,6 @@ button.mcm-btn-disabled:hover {
 }
 
 .mcm-wl-row:hover .mcm-wl-actions,
-.mcm-bl-row:hover .mcm-wl-actions,
 .mcm-bk-row:hover .mcm-bk-actions {
     opacity: 1;
     pointer-events: auto;

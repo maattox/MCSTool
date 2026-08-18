@@ -15,6 +15,5 @@ public interface ISecurityListService
         int sshPort,
         int doorHttpPort,
         string? adminName = null,
-        string? accessMode = null,
         CancellationToken cancellationToken = default);
 }

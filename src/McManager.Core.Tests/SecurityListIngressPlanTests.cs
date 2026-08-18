@@ -42,16 +42,14 @@ public sealed class SecurityListIngressPlanTests
             McPort,
             SshPort,
             DoorPort,
-            adminName: "Admin",
-            accessMode: IpAccessMode.Private);
+            adminName: "Admin");
 
-        Assert.False(plan.PublicMinecraft);
         Assert.Contains(plan.Preserved, SameIcmp);
         Assert.Single(plan.Preserved);
 
         Assert.True(HasMc(plan.Owned, "203.0.113.10/32", "Alice"));
         Assert.True(HasMc(plan.Owned, "198.51.100.7/32", "Admin"));
-        Assert.False(HasMc(plan.Owned, FriendRules.PublicMinecraftSource, FriendRules.PublicMinecraftDescription));
+        Assert.DoesNotContain(plan.Owned, r => IsMinecraft(r) && FriendRules.IsWorldOpenCidr(r.Source));
 
         Assert.True(HasTcp(plan.Owned, "198.51.100.7/32", SshPort, FriendRules.SshDescription("Admin")));
         Assert.True(HasTcp(plan.Owned, "198.51.100.7/32", DoorPort, FriendRules.DoorDescription("Admin")));
@@ -67,40 +65,12 @@ public sealed class SecurityListIngressPlanTests
             McPort,
             SshPort,
             DoorPort,
-            adminName: "Admin",
-            accessMode: IpAccessMode.Private);
+            adminName: "Admin");
 
         Assert.True(HasMc(plan.Owned, "172.56.0.0/16", "Jordan"));
         Assert.False(HasMc(plan.Owned, "172.56.0.0/32", "Jordan"));
         Assert.True(HasTcp(plan.Owned, "198.51.100.7/32", SshPort, FriendRules.SshDescription("Admin")));
         Assert.DoesNotContain(plan.Owned, r => IsSshOrDoor(r) && r.Source == "172.56.0.0/16");
-    }
-
-    [Fact]
-    public void Public_opens_minecraft_world_and_keeps_ssh_admin_only()
-    {
-        var icmp = IcmpRule();
-        var plan = SecurityListIngressPlanner.Build(
-            [icmp],
-            [Alice, Admin],
-            McPort,
-            SshPort,
-            DoorPort,
-            adminName: "Admin",
-            accessMode: IpAccessMode.Public);
-
-        Assert.True(plan.PublicMinecraft);
-        Assert.Contains(plan.Preserved, SameIcmp);
-        Assert.True(HasMc(plan.Owned, FriendRules.PublicMinecraftSource, FriendRules.PublicMinecraftDescription));
-        Assert.False(HasMc(plan.Owned, "203.0.113.10/32", "Alice"));
-        Assert.False(HasMc(plan.Owned, "198.51.100.7/32", "Admin"));
-
-        Assert.True(HasTcp(plan.Owned, "198.51.100.7/32", SshPort, FriendRules.SshDescription("Admin")));
-        Assert.True(HasTcp(plan.Owned, "198.51.100.7/32", DoorPort, FriendRules.DoorDescription("Admin")));
-        Assert.DoesNotContain(plan.Ingress, r => IsSshOrDoor(r) && FriendRules.IsWorldOpenCidr(r.Source));
-        Assert.DoesNotContain(
-            plan.Owned,
-            r => IsMinecraft(r) && !FriendRules.IsWorldOpenCidr(r.Source));
     }
 
     [Fact]
@@ -110,13 +80,13 @@ public sealed class SecurityListIngressPlanTests
         {
             IcmpRule(),
             SecurityListIngressPlanner.MakeTcpRule(
-                FriendRules.PublicMinecraftSource,
+                "0.0.0.0/0",
                 McPort,
                 "someone edited this description"),
             SecurityListIngressPlanner.MakeUdpRule(
-                FriendRules.PublicMinecraftSource,
+                "0.0.0.0/0",
                 McPort,
-                FriendRules.PublicMinecraftDescription),
+                "mc-whitelist:public"),
             SecurityListIngressPlanner.MakeTcpRule(
                 "198.51.100.7/32",
                 SshPort,
@@ -129,10 +99,8 @@ public sealed class SecurityListIngressPlanTests
             McPort,
             SshPort,
             DoorPort,
-            adminName: "Admin",
-            accessMode: IpAccessMode.Private);
+            adminName: "Admin");
 
-        Assert.False(plan.PublicMinecraft);
         Assert.Contains(plan.Preserved, SameIcmp);
         Assert.DoesNotContain(plan.Ingress, r => IsMinecraft(r) && FriendRules.IsWorldOpenCidr(r.Source));
         Assert.True(HasMc(plan.Owned, "203.0.113.10/32", "Alice"));
@@ -141,48 +109,16 @@ public sealed class SecurityListIngressPlanTests
     }
 
     [Fact]
-    public void Public_strips_prior_friend_minecraft_rules()
+    public void Apply_result_summary_is_private_only()
     {
-        var existing = new[]
-        {
-            IcmpRule(),
-            SecurityListIngressPlanner.MakeTcpRule("203.0.113.10/32", McPort, "Alice"),
-            SecurityListIngressPlanner.MakeUdpRule("203.0.113.10/32", McPort, "Alice"),
-        };
-
-        var plan = SecurityListIngressPlanner.Build(
-            existing,
-            [Alice, Admin],
-            McPort,
-            SshPort,
-            DoorPort,
-            adminName: "Admin",
-            accessMode: IpAccessMode.Public);
-
-        Assert.Contains(plan.Preserved, SameIcmp);
-        Assert.DoesNotContain(plan.Ingress, r => r.Source == "203.0.113.10/32" && IsMinecraft(r));
-        Assert.True(HasMc(plan.Owned, FriendRules.PublicMinecraftSource, FriendRules.PublicMinecraftDescription));
-    }
-
-    [Fact]
-    public void Apply_result_summary_names_public_minecraft()
-    {
-        var publicResult = new SecurityListApplyResult
-        {
-            PreservedRuleCount = 2,
-            OwnedRuleCount = 4,
-            PublicMinecraft = true,
-        };
-        Assert.Contains("0.0.0.0/0", publicResult.Summary, StringComparison.Ordinal);
-        Assert.Contains("SSH is not world-open", publicResult.Summary, StringComparison.Ordinal);
-
-        var privateResult = new SecurityListApplyResult
+        var result = new SecurityListApplyResult
         {
             PreservedRuleCount = 2,
             OwnedRuleCount = 6,
-            PublicMinecraft = false,
         };
-        Assert.DoesNotContain("0.0.0.0/0", privateResult.Summary, StringComparison.Ordinal);
+        Assert.DoesNotContain("0.0.0.0/0", result.Summary, StringComparison.Ordinal);
+        Assert.Contains("preserved 2", result.Summary, StringComparison.Ordinal);
+        Assert.Contains("wrote 6", result.Summary, StringComparison.Ordinal);
     }
 
     private static IngressSecurityRule IcmpRule() =>

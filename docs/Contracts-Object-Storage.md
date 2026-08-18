@@ -78,8 +78,8 @@ These are normative rules for new Phase 2+ work. Existing lab/product code does 
 | `ledger/usage.json` | 2 | VM1; door only for STOPPED orphan heal | Manager, door, VM1 boot | Live |
 | `ledger/lease.json` | 1 | VM1 heartbeat; door clears after STOPPED heal | VM1 boot, door heal, diagnostics | Live |
 | `budget/config.json` | 1 | Manager; VM1 may patch detected shape / boot safety | Door, VM1, Manager | Live |
-| `ip/allowlist.json` | 1 | Manager | Future product consumers | Seeded/live; Hybrid Save updates when present. `ip` = IPv4 or IPv4 CIDR. Applied only while mode is private. |
-| `ip/mode.json` | 1 | Manager | Future product consumers | Seeded/live; Hybrid persists `private` \| `public` + blacklist when present. Missing/invalid mode = private. SL rewrite of public is Step 3.2. |
+| `ip/allowlist.json` | 1 | Manager | Future product consumers | Seeded/live; Hybrid Save updates when present. `ip` = IPv4 or IPv4 CIDR. **Always applied** (product is private-only). |
+| `ip/mode.json` | 1 | — (withdrawn) | — | **Withdrawn 2026-08-18.** Public/blacklist rejected. Step 3.1 wrote it; Step **3.4** stopped the Manager writer. Leftover objects in buckets may remain unused. |
 | `messages/chat.json` | 1 | Manager | VM1 agent | Seeded/live; rich editor deferred |
 | `backups/.keep` | text | Setup/seed | None | Optional marker |
 | `backups/world-<UTC>.zip` | ZIP | VM1 backup agent; Manager manual upload | Manager | Live |
@@ -441,7 +441,7 @@ The deployed door currently uses America/Los_Angeles day windows, ignores `daily
 {
   "version": 1,
   "updated_at": "2026-08-11T00:00:00Z",
-  "mode_note": "Allowlist is applied only when ip/mode.json is private.",
+  "mode_note": "Product is private-only. This allowlist is always applied. ip/mode.json is withdrawn.",
   "entries": [
     {
       "id": "<UUID>",
@@ -465,27 +465,11 @@ The deployed door currently uses America/Los_Angeles day windows, ignores `daily
 - Manager is the intended writer. Hybrid Save updates this object **only when it already exists** in the bucket (does not create it).
 - This is the shared IP SoT when present. Hybrid always applies the Security List from local `friends.local.json`.
 
-## `ip/mode.json` — access mode v1
+## `ip/mode.json` — withdrawn
 
-```json
-{
-  "version": 1,
-  "updated_at": "2026-08-11T00:00:00Z",
-  "mode": "private",
-  "blacklist": [
-    {
-      "id": "<UUID>",
-      "name": "blocked",
-      "ip": "198.51.100.7"
-    }
-  ]
-}
-```
+**Withdrawn 2026-08-18.** Public Minecraft, a public/private toggle, and blacklist are **rejected**. Do not treat this object as a product contract.
 
-- `mode` is `private` or `public`. Missing, empty, or any other value is **private**. No actor may interpret a missing/invalid mode as public.
-- `blacklist` is a list of single IPv4 hosts (`id`, optional `name`, `ip` without `/32`). Used when mode is public (Security List deny is Step **3.3**). Ignored while private.
-- Manager is the intended writer. Hybrid updates this object **only when it already exists** (does not create it). Local SoT is `friends.local.json` (`mode` + `blacklist`).
-- **Step 3.1:** Manager persists mode + blacklist; it does **not** rewrite the Security List. Public Minecraft `0.0.0.0/0` is Step **3.2**.
+A leftover object may still exist in some buckets from V1 Step 3.1 (`version`, `updated_at`, `mode`, `blacklist`). Step **3.4** stops the Manager from reading or PUTting it. Actors must ignore it. Do not create it on greenfield Setup.
 
 ---
 
@@ -710,7 +694,7 @@ No live objects were modified during review.
 10. Flag-driven `meta/world-restore-request.json` apply is not implemented; SSH replacement is the current fallback.
 11. The upload lock is not implemented; current Manager/VM1 List+PUT operations can race and exceed the aggregate cap. Current VM1 eviction accepts any `.zip` under `backups/`, not only canonical `world-*.zip`.
 12. Current SSH world replace lacks archive preflight and rollback after extraction failure.
-13. Hybrid whitelist writes local `friends.local.json` (friends + `mode` + `blacklist`) and applies the Security List **allowlist** (still private). `ip/allowlist.json` and `ip/mode.json` are updated on Save / mode toggle **when those objects already exist** (V1 Steps 1.2 and 3.1). `ip` on the allowlist may be a single IPv4 or an IPv4 CIDR prefix. Public SL rewrite is Step 3.2.
+13. Hybrid whitelist writes local `friends.local.json` (friends only) and applies the Security List **allowlist**. `ip/allowlist.json` is updated on Save **when that object already exists** (V1 Step 1.2). `ip` may be a single IPv4 or an IPv4 CIDR prefix. `ip/mode.json` is **withdrawn** (public/blacklist rejected; Step 3.4 removed the writer).
 14. Prefixes are fixed for `infra_schema: 2`; the prefix map is configuration/discovery data, not permission to change hardcoded deployed actors independently. A prefix change requires coordinated actor updates plus an `infra_schema` bump.
 15. Lease fields are all required properties (nullable where shown). A VM1 helper implements the configured 900-second stale test, but no active caller was found; deployed door heal does not enforce age and uses the heartbeat only after OCI reports VM1 `STOPPED`.
 16. **DONE (V1 Steps 2.1–2.4):** `meta/spend-brake-triggered.json` key + v1 JSON shape are frozen. Tracked Function PUTs the object and SoftStops VM1 only. Door wake GETs the object and refuses START while it is present. Manager shows a full-window overlay on open, blocks Start until the exact PRODUCT-IDEAS confirmation sentence, then parks the play IP (Troubleshooting path), DELETEs the lock, refreshes door OS cache, and Wakes (idle/daily/monthly gates still apply). Live Function image still does not write this object until an authorized `fn push`. Live door needs redeploy from `door_vm/`.
