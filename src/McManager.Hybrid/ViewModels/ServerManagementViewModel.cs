@@ -2,8 +2,10 @@ using System.Collections.ObjectModel;
 using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using McManager.Core.Config;
+using McManager.Core.Notifications;
 using McManager.Core.Services;
 using McManager.Core.Setup;
+using McManager.Core.Usage;
 using McManager.Hybrid.Ui;
 
 namespace McManager.Hybrid.ViewModels;
@@ -20,6 +22,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject
     private ManagerLocalConfig? _config;
     private BackupStore? _backups;
     private InfraMetaStore? _infra;
+    private OversizedWorldBackupStore? _oversizedWorld;
     private ISshService _ssh = null!;
     private readonly LocalConfigHost _configHost;
     private readonly ManageCloudServices _cloud;
@@ -27,6 +30,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject
     private readonly IFilePicker _filePicker;
     private readonly IUiDialogs _dialogs;
     private readonly MainViewModel _main;
+    private readonly NotificationCenter _notices;
     private string? _sessionError;
     private long _currentBackupBytes;
     private string _dataDirectory = "";
@@ -81,6 +85,14 @@ public sealed partial class ServerManagementViewModel : ObservableObject
     [ObservableProperty]
     private string _moddingHint = "";
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DownloadLatestTitle))]
+    [NotifyPropertyChangedFor(nameof(DownloadLatestButtonLabel))]
+    private bool _oversizedWorldBlocked;
+
+    [ObservableProperty]
+    private string _oversizedBanner = "";
+
     public bool HasObjectStorage => _backups is not null;
 
     public bool AnyBusy => IsBusy || IsModdingBusy;
@@ -99,13 +111,24 @@ public sealed partial class ServerManagementViewModel : ObservableObject
 
     public string ModdingHelpTitle => ModdingPanelLogic.HelpTitle;
 
+    public string DownloadLatestTitle =>
+        OversizedWorldBackupUx.DownloadLatestTitle(
+            OversizedWorldBlocked,
+            OversizedWorldBackupUx.Vm1IsRunning(_main.Vm1Lifecycle));
+
+    public string DownloadLatestButtonLabel =>
+        OversizedWorldBackupUx.DownloadLatestButtonLabel(OversizedWorldBlocked);
+
+    public string WorldBackupsHelpTitle => OversizedWorldBackupUx.HelpTitle;
+
     public ServerManagementViewModel(
         LocalConfigHost configHost,
         ManageCloudServices cloud,
         ManageSession session,
         IFilePicker filePicker,
         IUiDialogs dialogs,
-        MainViewModel main)
+        MainViewModel main,
+        NotificationCenter notices)
     {
         _configHost = configHost;
         _cloud = cloud;
@@ -113,6 +136,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject
         _filePicker = filePicker;
         _dialogs = dialogs;
         _main = main;
+        _notices = notices;
 
         BindFromHost();
         _session.Reloaded += OnSessionReloaded;
@@ -132,11 +156,14 @@ public sealed partial class ServerManagementViewModel : ObservableObject
         _dataDirectory = _configHost.LoadResult.DataDirectory ?? "";
         _backups = null;
         _infra = null;
+        _oversizedWorld = null;
         ServerNameDisplay = "—";
         MinecraftVersionDisplay = "—";
         LastBackupDisplay = "—";
         BackupStorageDisplay = "—";
         SoftCapDisplay = "—";
+        OversizedWorldBlocked = false;
+        OversizedBanner = "";
         Backups.Clear();
         SelectedBackup = null;
         _currentBackupBytes = 0;
@@ -154,6 +181,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject
             var os = new ObjectStorageService(_cloud.Session, _config.ObjectStorage);
             _backups = new BackupStore(os, _config.ObjectStorage);
             _infra = new InfraMetaStore(os, _config.ObjectStorage.Prefixes);
+            _oversizedWorld = new OversizedWorldBackupStore(os, _config.ObjectStorage.Prefixes);
             SoftCapDisplay = _backups.FormatSoftCapLine(0);
             BackupStorageDisplay = $"0.0 / {_backups.SoftCapGb:0.#} GB";
         }
@@ -186,6 +214,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject
 
         try
         {
+            await RefreshOversizedFlagAsync();
             var result = await _backups.ListWorldBackupsAsync();
             if (!result.Succeeded || result.Value is null)
             {
@@ -194,9 +223,11 @@ public sealed partial class ServerManagementViewModel : ObservableObject
             }
 
             ApplyBackupList(result.Value, preserveSelection: true);
-            StatusMessage = Backups.Count == 0
-                ? "No world backups stored yet."
-                : $"Listed {Backups.Count} backup(s). Select one to download.";
+            StatusMessage = OversizedWorldBlocked
+                ? "Automatic cloud backups are paused. Download latest copies the live world over SSH."
+                : (Backups.Count == 0
+                    ? "No world backups stored yet."
+                    : $"Listed {Backups.Count} backup(s). Select one to download.");
         }
         finally
         {
@@ -208,7 +239,17 @@ public sealed partial class ServerManagementViewModel : ObservableObject
 
     public Task DownloadBackupAsync(WorldBackupInfo? backup) => DownloadToPickerAsync(backup);
 
-    public Task DownloadLatestAsync() => DownloadToPickerAsync(Backups.FirstOrDefault());
+    public async Task DownloadLatestAsync()
+    {
+        await RefreshOversizedFlagAsync();
+        if (OversizedWorldBlocked)
+        {
+            await DownloadLiveWorldViaSshAsync();
+            return;
+        }
+
+        await DownloadToPickerAsync(Backups.FirstOrDefault());
+    }
 
     public async Task UploadAsync()
     {
@@ -613,6 +654,81 @@ public sealed partial class ServerManagementViewModel : ObservableObject
         if (!string.IsNullOrWhiteSpace(pack.MinecraftVersion))
             bits.Add("Minecraft " + pack.MinecraftVersion.Trim());
         return bits.Count == 0 ? pack.SuggestedDownloadFileName : string.Join(" · ", bits);
+    }
+
+    public async Task RefreshOversizedFlagAsync()
+    {
+        if (_oversizedWorld is null)
+        {
+            ApplyOversizedRead(null);
+            return;
+        }
+
+        var got = await _oversizedWorld.GetAsync();
+        if (!got.Succeeded || got.Value is null)
+            return;
+
+        ApplyOversizedRead(got.Value);
+    }
+
+    private void ApplyOversizedRead(OversizedWorldBackupReadResult? read)
+    {
+        OversizedWorldBlocked = OversizedWorldBackupUx.IsBlocked(read);
+        OversizedBanner = OversizedWorldBackupUx.Banner(read);
+        OnPropertyChanged(nameof(DownloadLatestTitle));
+        OnPropertyChanged(nameof(DownloadLatestButtonLabel));
+        if (read is not null)
+            OversizedWorldBackupUx.SyncBell(_notices, read);
+    }
+
+    private async Task DownloadLiveWorldViaSshAsync()
+    {
+        if (IsBusy)
+            return;
+
+        if (_config is null)
+        {
+            StatusMessage = "Local config is missing.";
+            return;
+        }
+
+        if (!OversizedWorldBackupUx.Vm1IsRunning(_main.Vm1Lifecycle))
+        {
+            StatusMessage = OversizedWorldBackupUx.StartVmFirstMessage;
+            return;
+        }
+
+        var localPath = await _filePicker.SaveFileAsync(new FileSaveRequest
+        {
+            Title = "Download live world (SSH)",
+            FileName = OversizedWorldBackupUx.SuggestedFileName(),
+            DefaultExtension = "zip",
+            Filters = [ZipFilter, AllFilesFilter],
+        });
+
+        if (string.IsNullOrWhiteSpace(localPath))
+        {
+            StatusMessage = "Download cancelled.";
+            return;
+        }
+
+        IsBusy = true;
+        StatusMessage = "Copying the live world over SSH…";
+        ProgressDisplay = "0 B";
+
+        try
+        {
+            var progress = new Progress<long>(bytes =>
+                ProgressDisplay = WorldBackupInfo.FormatSize(bytes));
+            var result = await _ssh.DownloadLiveWorldZipAsync(_config.Vm1, localPath, progress);
+            StatusMessage = result.Succeeded
+                ? $"Saved live world to {localPath}. It was not uploaded to cloud storage."
+                : result.Error ?? "SSH world download failed.";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     private async Task DownloadToPickerAsync(WorldBackupInfo? backup)

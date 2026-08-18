@@ -84,6 +84,31 @@ public sealed class NotificationCenterTests
     }
 
     [Fact]
+    public void PostOnce_dedupes_by_kind()
+    {
+        var center = new NotificationCenter();
+        var first = center.PostOnce(NotificationKinds.OversizedWorld, "One", "a");
+        var second = center.PostOnce(NotificationKinds.OversizedWorld, "Two", "b");
+        Assert.NotNull(first);
+        Assert.Null(second);
+        Assert.Equal(1, center.Count);
+        Assert.Equal("One", center.Snapshot()[0].Title);
+        Assert.True(center.HasKind(NotificationKinds.OversizedWorld));
+    }
+
+    [Fact]
+    public void DismissByKind_removes_matching_items()
+    {
+        var center = new NotificationCenter();
+        center.Post("Keep", "", kind: "other");
+        center.PostOnce(NotificationKinds.OversizedWorld, "Drop", "x");
+        Assert.Equal(1, center.DismissByKind(NotificationKinds.OversizedWorld));
+        Assert.Equal(1, center.Count);
+        Assert.Equal("Keep", center.Snapshot()[0].Title);
+        Assert.False(center.HasKind(NotificationKinds.OversizedWorld));
+    }
+
+    [Fact]
     public void Snapshot_is_a_copy()
     {
         var center = new NotificationCenter();

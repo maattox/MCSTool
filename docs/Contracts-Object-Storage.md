@@ -71,7 +71,7 @@ These are normative rules for new Phase 2+ work. Existing lab/product code does 
 |------------|---------|----------------------------|---------|--------|
 | `meta/infra.json` | canonical **2** | Setup; Manager infra-publish/upgrade | Manager / Connect existing; diagnostics | **Live nested v2** after Step 2.2 migration |
 | `meta/flags.json` | 1 | Shared protocol (last modifier) | Manager, VM1, door | Live |
-| `meta/oversized-world-backup.json` | 1 | VM1 backup agent | Manager | **Live set/skip (Step 2.4)**; Manager UX / clear flow remains v1 |
+| `meta/oversized-world-backup.json` | 1 | VM1 backup agent | Manager | **Live set/skip (Step 2.4)**; Manager bell + SSH download = **V1 Step 6.3 DONE**. Typed clear UX still later. |
 | `meta/spend-brake-triggered.json` | 1 | $1 budget Function sets/replaces; Manager is the only clearer (DELETE) | Manager, door | **Frozen v1.** Function PUT = 2.2 (not live-pushed). Door honor = 2.3 (source). **Manager overlay = 2.4 DONE.** |
 | `meta/world-restore-request.json` | 1 | Manager requests; VM1 updates outcome | VM1, Manager | Reserved contract for flag-driven restore; current MVP uses SSH fallback |
 | `meta/backup-upload-lock.json` | 1 | Manager or VM1 active uploader | Manager, VM1 | Reserved coordination contract; not implemented |
@@ -562,8 +562,8 @@ Semantics:
 - **Existence** with `status: "blocked"` means automatic Object Storage world backups are blocked because one archive cannot fit safely.
 - VM1 writes/replaces it before returning from the doomed upload path and skips later automatic OS backup attempts while it exists.
 - Absence means no known oversized-world block.
-- Clear operation is deletion after an operator resolves/accepts the condition; future Manager v1 provides the confirmation UX. A successful explicit on-box backup that proves the archive fits may also delete a stale object.
-- Manager v1 checks this key at startup and when Server Management refreshes. MVP Phase 2 may implement only VM1 set/skip behavior.
+- Clear operation is deletion after an operator resolves/accepts the condition; a dedicated typed-clear UX is still later. DEBUG Advanced can PUT/DELETE a fixture. A successful explicit on-box backup that proves the archive fits may also delete a stale object.
+- Manager checks this key at startup (bell) and when Server Management refreshes. While blocked, **Download latest world save** streams the live world over SSH (`world_backup.py --stream-stdout`) and does **not** PUT the zip to Object Storage. Per-row downloads of existing `backups/world-*.zip` objects stay on the Object Storage path.
 - No v1 dirty-flag category is added; consumers GET this small object at the relevant UI/action boundary.
 - The flag must not include the world contents, SSH paths/keys, or credentials.
 
@@ -683,7 +683,7 @@ No live objects were modified during review.
 **Idle timeout meaning (MVP Step 4.1 — no schema change):** `budget/config.json` `idle_timeout_minutes` stays the same key. Product intent now includes SoftStop when Minecraft is **not running**, not only when RCON `list` is empty. Do **not** add a second timeout field.
 
 1. **Step 2.2 (done):** canonical nested `meta/infra.json` v2 read/write + live legacy migration; unsupported newer schema rejected on **manage** read (`InfraMetaStore.GetAsync`). Connect existing uses a **lenient** parse (warn + confirm) and does not mutate the object.
-2. **DONE (Step 2.4):** VM1 `meta/oversized-world-backup.json` set/skip behavior in `vm_agent/world_backup.py`.
+2. **DONE (Step 2.4):** VM1 `meta/oversized-world-backup.json` set/skip behavior in `vm_agent/world_backup.py`. **DONE (V1 Step 6.3):** Manager bell + SSH live-world download (no OS PUT). Typed clear UX still later.
 3. **Step 2.4:** make door wake force-refresh/validate authoritative ledger+budget rather than relying only on flags/cache.
 4. **Step 2.4:** align door UTC/override/OCPU+GB accounting with Manager and VM1, or record an operator-approved deferral.
 5. Conditional writes are robust for the ledger but not consistently applied to budget/flags/other shared JSON.

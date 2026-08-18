@@ -402,6 +402,31 @@ button.mcm-btn-disabled:hover {
     color: var(--text-primary);
 }
 
+.mcm-oversized-banner {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    border: 0.5px solid var(--border-strong);
+    border-left: 3px solid var(--fill-accent);
+    border-radius: var(--radius);
+    background: var(--surface-2);
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.mcm-oversized-banner > .ti {
+    color: var(--text-accent);
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.mcm-oversized-banner p {
+    margin: 0;
+    min-width: 0;
+}
+
 .mcm-overflow {
     position: relative;
     z-index: 36;

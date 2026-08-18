@@ -21,6 +21,16 @@ public interface ISshService
         Vm1Settings vm1,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Stream a live world zip from VM1 to <paramref name="localZipPath"/> (stdout of
+    /// <c>world_backup.py --stream-stdout</c>). Does not upload to Object Storage.
+    /// </summary>
+    Task<ServiceResult> DownloadLiveWorldZipAsync(
+        Vm1Settings vm1,
+        string localZipPath,
+        IProgress<long>? progress = null,
+        CancellationToken cancellationToken = default);
+
     Task<ServiceResult> ApplyIdleSettingsAsync(
         Vm1Settings vm1,
         bool idleAgentEnabled,
@@ -46,6 +56,8 @@ public sealed class SshService : ISshService
     private const string RemoteAgentConfig = "/etc/mc-manager/config.json";
     private const string RemoteAgentConfigTmp = "/tmp/mc-manager-config-patch.json";
     private const string IdleWatchTimer = "mc-idle-watch.timer";
+    private const string RemoteWorldBackupScript = "/opt/mc-manager/world_backup.py";
+    private static readonly TimeSpan LiveWorldZipTimeout = TimeSpan.FromHours(3);
 
     private static readonly JsonSerializerOptions JsonWriteOptions = new()
     {
@@ -67,6 +79,13 @@ public sealed class SshService : ISshService
         Vm1Settings vm1,
         CancellationToken cancellationToken = default) =>
         Task.Run(() => WipeWorld(vm1), cancellationToken);
+
+    public Task<ServiceResult> DownloadLiveWorldZipAsync(
+        Vm1Settings vm1,
+        string localZipPath,
+        IProgress<long>? progress = null,
+        CancellationToken cancellationToken = default) =>
+        Task.Run(() => DownloadLiveWorldZip(vm1, localZipPath, progress), cancellationToken);
 
     public Task<ServiceResult> ApplyIdleSettingsAsync(
         Vm1Settings vm1,
@@ -253,6 +272,105 @@ public sealed class SshService : ISshService
                     TryStartUnit(client, unit);
                 return ServiceResult.Fail($"SSH world wipe failed: {ex.Message}");
             }
+        }
+    }
+
+    private static ServiceResult DownloadLiveWorldZip(
+        Vm1Settings vm1,
+        string localZipPath,
+        IProgress<long>? progress)
+    {
+        if (string.IsNullOrWhiteSpace(localZipPath))
+            return ServiceResult.Fail("Local zip path is empty.");
+
+        var destDir = Path.GetDirectoryName(localZipPath);
+        if (!string.IsNullOrEmpty(destDir))
+            Directory.CreateDirectory(destDir);
+
+        if (!TryOpenSsh(vm1, out var client, out _, out var error))
+            return ServiceResult.Fail(error!);
+
+        // sudo python3 -u: config is root:600; unbuffered so the zip starts flowing immediately.
+        var remote =
+            "sudo python3 -u "
+            + EscapeShellArg(RemoteWorldBackupScript)
+            + " --stream-stdout";
+
+        using (client)
+        {
+            try
+            {
+                var cmd = client.CreateCommand(remote);
+                cmd.CommandTimeout = LiveWorldZipTimeout;
+                var asyncResult = cmd.BeginExecute();
+                long total = 0;
+                try
+                {
+                    using var local = new FileStream(
+                        localZipPath,
+                        FileMode.Create,
+                        FileAccess.Write,
+                        FileShare.None,
+                        64 * 1024);
+                    var stdout = cmd.OutputStream;
+                    var buffer = new byte[64 * 1024];
+                    int n;
+                    while ((n = stdout.Read(buffer, 0, buffer.Length)) > 0)
+                    {
+                        local.Write(buffer, 0, n);
+                        total += n;
+                        progress?.Report(total);
+                    }
+                }
+                catch
+                {
+                    TryDeleteLocal(localZipPath);
+                    throw;
+                }
+
+                cmd.EndExecute(asyncResult);
+                var exit = cmd.ExitStatus ?? -1;
+                var stderr = (cmd.Error ?? "").Trim();
+                if (exit != 0)
+                {
+                    TryDeleteLocal(localZipPath);
+                    var hint = string.IsNullOrEmpty(stderr)
+                        ? $"Is {RemoteWorldBackupScript} deployed with --stream-stdout? Redeploy the idle agent."
+                        : stderr;
+                    return ServiceResult.Fail(
+                        $"Live world zip over SSH failed (exit {exit}): {hint}");
+                }
+
+                if (total < 22)
+                {
+                    TryDeleteLocal(localZipPath);
+                    return ServiceResult.Fail(
+                        "SSH world download did not produce a zip. "
+                        + (string.IsNullOrEmpty(stderr)
+                            ? "Is the world folder present on the game VM?"
+                            : stderr));
+                }
+
+                return ServiceResult.Ok();
+            }
+            catch (Exception ex)
+            {
+                TryDeleteLocal(localZipPath);
+                return ServiceResult.Fail($"SSH world download failed: {ex.Message}");
+            }
+        }
+    }
+
+    private static void TryDeleteLocal(string path)
+    {
+        try
+        {
+            if (File.Exists(path))
+                File.Delete(path);
+        }
+        catch
+        {
+            // Best-effort; caller already has the primary error.
         }
     }
 

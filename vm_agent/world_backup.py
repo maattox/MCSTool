@@ -153,14 +153,20 @@ def live_world_quiesce(cfg: dict[str, Any]) -> Iterator[str]:
             off_resp = rcon.command("save-off")
         except (OSError, RconError) as exc:
             raise RconError(f"RCON save-off failed: {exc}") from exc
-        print(f"RCON save-off: {(off_resp or '').strip()[:200]}")
+        print(
+            f"RCON save-off: {(off_resp or '').strip()[:200]}",
+            file=sys.stderr,
+        )
         save_off_ok = True
         try:
             try:
                 flush_resp = rcon.command("save-all flush")
             except (OSError, RconError) as exc:
                 raise RconError(f"RCON save-all flush failed: {exc}") from exc
-            print(f"RCON save-all flush: {(flush_resp or '').strip()[:400]}")
+            print(
+                f"RCON save-all flush: {(flush_resp or '').strip()[:400]}",
+                file=sys.stderr,
+            )
             settle = _flush_settle(cfg)
             if settle:
                 time.sleep(settle)
@@ -172,7 +178,10 @@ def live_world_quiesce(cfg: dict[str, Any]) -> Iterator[str]:
             if save_off_ok:
                 try:
                     on_resp = rcon.command("save-on")
-                    print(f"RCON save-on: {(on_resp or '').strip()[:200]}")
+                    print(
+                        f"RCON save-on: {(on_resp or '').strip()[:200]}",
+                        file=sys.stderr,
+                    )
                 except Exception as exc:  # noqa: BLE001
                     print(
                         f"CRITICAL: RCON save-on failed after live backup "
@@ -409,6 +418,64 @@ def ensure_work_dir_space(wdir: str, src_dir: str) -> None:
         )
 
 
+class _CountingWriter:
+    """Binary write wrapper that reports itself as unseekable (zip to stdout)."""
+
+    def __init__(self, inner: Any) -> None:
+        self.inner = inner
+        self.bytes = 0
+
+    def write(self, data: bytes) -> int:
+        n = self.inner.write(data)
+        wrote = n if n is not None else len(data)
+        self.bytes += wrote
+        return wrote
+
+    def flush(self) -> None:
+        flush = getattr(self.inner, "flush", None)
+        if callable(flush):
+            flush()
+
+    def close(self) -> None:
+        self.flush()
+
+    def readable(self) -> bool:
+        return False
+
+    def writable(self) -> bool:
+        return True
+
+    def seekable(self) -> bool:
+        return False
+
+    def tell(self) -> int:
+        return self.bytes
+
+
+def zip_world_folder_to_stream(src_dir: str, dest: Any) -> int:
+    """Zip ``src_dir`` contents (world-folder relative) into an unseekable stream.
+
+    Returns compressed bytes written. Skips ``.lock`` / ``.tmp`` like
+    :func:`zip_world_folder`. Status must go to stderr — stdout is the zip.
+    """
+    counter = dest if isinstance(dest, _CountingWriter) else _CountingWriter(dest)
+    with zipfile.ZipFile(
+        counter,
+        "w",
+        compression=zipfile.ZIP_DEFLATED,
+        compresslevel=1,
+        allowZip64=True,
+    ) as zf:
+        for root, _dirs, files in os.walk(src_dir):
+            for name in files:
+                if name.endswith(".lock") or name.endswith(".tmp"):
+                    continue
+                full = os.path.join(root, name)
+                arc = os.path.relpath(full, start=src_dir).replace("\\", "/")
+                zf.write(full, arcname=arc)
+    return int(counter.bytes)
+
+
 def zip_world_folder(src_dir: str, dest_zip: str) -> int:
     """Zip ``src_dir`` contents into ``dest_zip``. Returns archive size in bytes."""
     parent = os.path.dirname(dest_zip)
@@ -610,37 +677,100 @@ def backup_world_to_object_storage(
         cleanup_work_dir(wdir)
 
 
+def stream_world_zip(
+    cfg: dict[str, Any],
+    *,
+    mode: BackupMode = "auto",
+    dest: Any | None = None,
+) -> int:
+    """Zip the configured world to ``dest`` (default: stdout). Never uploads.
+
+    Used by Manager SSH **Download World Save** when the oversized-world flag is
+    set. Does **not** check that flag (OS upload skip is a different path) and
+    does not require ``backup_enabled``. Live RCON quiesce when the unit is up.
+    """
+    src = world_path(cfg)
+    if not os.path.isdir(src):
+        raise FileNotFoundError(
+            f"World path not found: {src} "
+            "(set world_path in /etc/mc-manager/config.json)"
+        )
+
+    resolved = resolve_backup_mode(cfg, mode)
+    out = dest if dest is not None else sys.stdout.buffer
+    print(
+        f"Streaming world zip {src} to stdout (mode={resolved}) ...",
+        file=sys.stderr,
+    )
+
+    def _do_zip() -> int:
+        return zip_world_folder_to_stream(src, out)
+
+    if resolved == "live":
+        with live_world_quiesce(cfg):
+            zip_bytes = _do_zip()
+    else:
+        zip_bytes = _do_zip()
+
+    print(
+        f"Streamed world zip: {zip_bytes} bytes "
+        f"({zip_bytes / (1024**3):.2f} GiB) mode={resolved}.",
+        file=sys.stderr,
+    )
+    return zip_bytes
+
+
+def _load_config(config_path: str | None = None) -> dict[str, Any]:
+    path = config_path or os.environ.get(
+        "MC_MANAGER_CONFIG", "/etc/mc-manager/config.json"
+    )
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
 def backup_from_config(
     config_path: str | None = None,
     *,
     mode: BackupMode = "auto",
 ) -> str:
-    path = config_path or os.environ.get(
-        "MC_MANAGER_CONFIG", "/etc/mc-manager/config.json"
-    )
-    with open(path, "r", encoding="utf-8") as f:
-        cfg = json.load(f)
-    return backup_world_to_object_storage(cfg, mode=mode)
+    return backup_world_to_object_storage(_load_config(config_path), mode=mode)
 
 
 def main() -> int:
+    args = [a.strip() for a in sys.argv[1:]]
+    if any(a in ("-h", "--help") for a in args):
+        print(
+            "Usage: world_backup.py [auto|live|cold]\n"
+            "       world_backup.py --stream-stdout [auto|live|cold]\n"
+            "  auto  - live if minecraft unit active, else cold (default)\n"
+            "  live  - save-off / save-all flush / zip / save-on / upload\n"
+            "  cold  - zip without RCON (server should be stopped)\n"
+            "  --stream-stdout  zip the world to stdout (no Object Storage upload;\n"
+            "                   Manager oversized-world SSH download). Logs on stderr."
+        )
+        return 0
+
+    stream = False
+    if "--stream-stdout" in args:
+        stream = True
+        args = [a for a in args if a != "--stream-stdout"]
+
     mode: BackupMode = "auto"
-    if len(sys.argv) > 1:
-        arg = sys.argv[1].strip().lower()
+    if args:
+        arg = args[0].strip().lower()
         if arg in ("auto", "live", "cold"):
             mode = arg  # type: ignore[assignment]
-        elif arg in ("-h", "--help"):
-            print(
-                "Usage: world_backup.py [auto|live|cold]\n"
-                "  auto  - live if minecraft unit active, else cold (default)\n"
-                "  live  - save-off / save-all flush / zip / save-on / upload\n"
-                "  cold  - zip without RCON (server should be stopped)"
-            )
-            return 0
         else:
             print(f"Unknown mode {arg!r}; use auto|live|cold", file=sys.stderr)
             return 2
+        if len(args) > 1:
+            print(f"Unexpected extra argument {args[1]!r}", file=sys.stderr)
+            return 2
+
     try:
+        if stream:
+            stream_world_zip(_load_config(), mode=mode)
+            return 0
         print(backup_from_config(mode=mode))
         return 0
     except Exception as exc:  # noqa: BLE001

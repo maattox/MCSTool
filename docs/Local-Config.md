@@ -123,7 +123,7 @@ Imported packs the Manager actually installed are copied to **`data/imported-pac
 
 **Program settings (gear):** resolved paths for the data folder, `config.local.json`, `%LOCALAPPDATA%\McManager\tofu`, and the Oracle API config file. The update-check checkbox writes `%LOCALAPPDATA%\McManager\app-settings.json` (`check_for_updates`, default on). No GitHub request runs until Phase 9.
 
-**Notifications (bell):** in-memory this session only (not a file). Later steps post into the same list; Debug builds can post a sample from Advanced → DEBUG host probes.
+**Notifications (bell):** in-memory this session only (not a file). Manager posts when `meta/oversized-world-backup.json` is present (world too large for cloud backup). Debug builds can post a sample, or PUT/clear an oversized-world fixture, from Advanced → DEBUG host probes.
 
 ## Later (after v1): deployment profiles
 

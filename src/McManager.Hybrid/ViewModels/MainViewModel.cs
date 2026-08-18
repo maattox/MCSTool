@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using McManager.Core.Config;
+using McManager.Core.Notifications;
 using McManager.Core.Services;
 using McManager.Core.Usage;
 using McManager.Hybrid.Ui;
@@ -25,12 +26,14 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private readonly IUiDispatcher _dispatcher;
     private readonly IClipboard _clipboard;
     private readonly WindowFocusBroker _focus;
+    private readonly NotificationCenter _notices;
 
     private ManagerLocalConfig? _config;
     private DoorClient? _door;
     private ComputeService? _compute;
     private UsageBudgetStore? _usageStore;
     private SpendBrakeLockStore? _spendBrake;
+    private OversizedWorldBackupStore? _oversizedWorld;
     private TroubleshootingService? _troubleshooting;
     private SshService _ssh = null!;
     private bool _resumeChromeAfterReload;
@@ -246,7 +249,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         IUiClock clock,
         IUiDispatcher dispatcher,
         IClipboard clipboard,
-        WindowFocusBroker focus)
+        WindowFocusBroker focus,
+        NotificationCenter notices)
     {
         _configHost = configHost;
         _cloud = cloud;
@@ -255,6 +259,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _dispatcher = dispatcher;
         _clipboard = clipboard;
         _focus = focus;
+        _notices = notices;
 
         BindFromHost();
         _session.ClientsRebuilding += OnClientsRebuilding;
@@ -288,6 +293,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _compute = _cloud.Compute;
         _usageStore = _cloud.UsageStore;
         _spendBrake = _cloud.SpendBrakeLock;
+        _oversizedWorld = _cloud.OversizedWorldBackup;
         _ssh = _cloud.Ssh;
         _troubleshooting = _config is not null
             ? new TroubleshootingService(_config, _ssh, _compute, _door)
@@ -353,6 +359,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _ = RefreshStatusAsync(forceDoor: true, forceOci: true);
         _ = RefreshPinsAsync();
         _ = RefreshSpendBrakeLockAsync();
+        _ = RefreshOversizedWorldFlagAsync();
     }
 
     /// <summary>
@@ -535,6 +542,51 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         SpendBrakeUnlockStatus = "";
         ShowToast("DEBUG: spend-brake lock deleted (no Start).", isError: false);
         await RefreshSpendBrakeLockAsync();
+    }
+
+    public async Task RefreshOversizedWorldFlagAsync()
+    {
+        if (_oversizedWorld is null)
+            return;
+
+        var got = await _oversizedWorld.GetAsync();
+        if (!got.Succeeded || got.Value is null)
+            return;
+
+        OversizedWorldBackupUx.SyncBell(_notices, got.Value);
+    }
+
+    public async Task DebugPutOversizedWorldFixtureAsync()
+    {
+        if (!UiHostProbes.Enabled || _oversizedWorld is null)
+            return;
+        var put = await _oversizedWorld.PutAsync(
+            OversizedWorldBackupDocument.CreateBlocked(
+                archiveSizeBytes: 12_000_000_000,
+                softCapBytes: 10_200_547_328));
+        if (!put.Succeeded)
+        {
+            ShowToast(put.Error ?? "DEBUG: could not PUT oversized-world fixture.", isError: true);
+            return;
+        }
+
+        ShowToast("DEBUG: oversized-world flag fixture written.", isError: false);
+        await RefreshOversizedWorldFlagAsync();
+    }
+
+    public async Task DebugClearOversizedWorldAsync()
+    {
+        if (!UiHostProbes.Enabled || _oversizedWorld is null)
+            return;
+        var cleared = await _oversizedWorld.ClearAsync();
+        if (!cleared.Succeeded)
+        {
+            ShowToast(cleared.Error ?? "DEBUG: could not DELETE oversized-world flag.", isError: true);
+            return;
+        }
+
+        ShowToast("DEBUG: oversized-world flag deleted.", isError: false);
+        await RefreshOversizedWorldFlagAsync();
     }
 
     private async Task WakeGameServerAsync()

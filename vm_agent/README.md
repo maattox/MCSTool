@@ -19,7 +19,7 @@ Redeploy to the VM (`/opt/mc-manager`) after changing this tree. Door Phase 4 de
 2. **Lease heartbeat (Phase 5)** — while Minecraft is active, refresh `ledger/lease.json` about every 5 minutes (does not dirty ledger flags)  
 3. **Boot ledger** — `mc-boot-ledger.service` → **force-enable idle agent** (timer + local/OS `idle_agent_enabled=true`) → **force-pull** OS ledger + lease → merge → close prior opens (lease / list-boots) → repair `stop_uncertain` → fill missing boots → **detect live shape** → open boot interval + lease → publish; sync shape to local config + OS `budget/config.json`  
 4. **Object Storage** — publish `ledger/usage.json` (with `revision`); dirty manager + door flags; publish `ledger/lease.json`; upload `backups/world-*.zip`  
-5. **Live world backup (ready for scheduled use)** — `world_backup.py live` / `mode=auto` while unit active: RCON `save-off` → `save-all flush` → zip → `save-on` (always) → upload → delete local. SoftStop uses **cold** after stop.  
+5. **Live world backup (ready for scheduled use)** — `world_backup.py live` / `mode=auto` while unit active: RCON `save-off` → `save-all flush` → zip → `save-on` (always) → upload → delete local. SoftStop uses **cold** after stop. **`--stream-stdout`** zips the world to stdout (no Object Storage PUT) for Manager oversized-world SSH download.  
 
 Intervals always include **`ocpus`** / **`memory_gb`** from **live guest detection** (config is fallback only), so totals stay correct after Console/Manager resize. Mid-session shape change (rare) closes the open interval and opens a new one.
 
@@ -49,7 +49,7 @@ RCON stays **localhost only** (`25575`).
 |------|------|
 | `idle_watch.py` | Idle / soft-cap stop; lease heartbeat; cold world backup; publish retries before SoftStop |
 | `record_boot.py` | Boot force-enable idle + force-pull → merge → reconcile → repair → start + lease → publish |
-| `world_backup.py` | Cold + **live** (save-off/flush/save-on) zip → OS soft-cap eviction → multipart upload |
+| `world_backup.py` | Cold + **live** zip → OS upload; **`--stream-stdout`** zip to stdout (no OS PUT) |
 | `ledger.py` | Interval math, list-boots reconcile, repair, merge |
 | `lease.py` | Lease open / heartbeat / clear helpers |
 | `shape_detect.py` | Live OCPU / memory detection from `/proc` |

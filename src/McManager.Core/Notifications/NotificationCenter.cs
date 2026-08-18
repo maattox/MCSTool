@@ -85,6 +85,50 @@ public sealed class NotificationCenter
         return item;
     }
 
+    /// <summary>
+    /// Posts only when no existing item has the same non-empty <paramref name="kind"/>.
+    /// Empty kind always posts (same as <see cref="Post"/>).
+    /// </summary>
+    public AppNotification? PostOnce(
+        string kind,
+        string title,
+        string body,
+        NotificationSeverity severity = NotificationSeverity.Info)
+    {
+        var trimmedKind = (kind ?? "").Trim();
+        if (trimmedKind.Length == 0)
+            return Post(title, body, severity);
+
+        lock (_gate)
+        {
+            foreach (var item in _items)
+            {
+                if (string.Equals(item.Kind, trimmedKind, StringComparison.Ordinal))
+                    return null;
+            }
+        }
+
+        return Post(title, body, severity, trimmedKind);
+    }
+
+    public bool HasKind(string kind)
+    {
+        var trimmed = (kind ?? "").Trim();
+        if (trimmed.Length == 0)
+            return false;
+
+        lock (_gate)
+        {
+            foreach (var item in _items)
+            {
+                if (string.Equals(item.Kind, trimmed, StringComparison.Ordinal))
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
     public bool Dismiss(string id)
     {
         if (string.IsNullOrWhiteSpace(id))
@@ -104,6 +148,29 @@ public sealed class NotificationCenter
         }
 
         if (removed)
+            RaiseChanged();
+        return removed;
+    }
+
+    public int DismissByKind(string kind)
+    {
+        var trimmed = (kind ?? "").Trim();
+        if (trimmed.Length == 0)
+            return 0;
+
+        var removed = 0;
+        lock (_gate)
+        {
+            for (var i = _items.Count - 1; i >= 0; i--)
+            {
+                if (!string.Equals(_items[i].Kind, trimmed, StringComparison.Ordinal))
+                    continue;
+                _items.RemoveAt(i);
+                removed++;
+            }
+        }
+
+        if (removed > 0)
             RaiseChanged();
         return removed;
     }

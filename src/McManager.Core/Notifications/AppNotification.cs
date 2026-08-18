@@ -47,4 +47,5 @@ public sealed class AppNotification
 public static class NotificationKinds
 {
     public const string Debug = "debug";
+    public const string OversizedWorld = "oversized-world";
 }

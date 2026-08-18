@@ -156,12 +156,12 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 | **3** | Remove public/blacklist (was IP Management public mode) | **DONE** |
 | **4** | Setup game types (Paper, loaders, pack import) | **DONE** (Step **4.12** deferred) |
 | **5** | Server Management modding inspect + re-download pack | **DONE** |
-| **6** | Top-bar chrome + oversized-world SSH UX | **NEXT** = Step **6.3** |
-| **7** | Remaining v1 (resize, console, storage, Connect version) | TODO |
+| **6** | Top-bar chrome + oversized-world SSH UX | **DONE** |
+| **7** | Remaining v1 (resize, console, storage, Connect version) | **NEXT** = Step **7.1** |
 | **8** | Paid / spend mode (**last** product feature) | TODO |
 | **9** | Packaging, updates, launch (old MVP Phase 8–9) | TODO — **do not start** until Phases 1–8 are DONE or the operator skips 8 |
 
-**Current NEXT step:** [Step 6.3](#step-63--oversized-world-ssh-download--bell). **Do not start Step 6.3** until the operator asks.
+**Current NEXT step:** [Step 7.1](#step-71--vm1-shape-scaling-danger-zone). **Do not start Step 7.1** until the operator asks.
 
 ---
 
@@ -844,7 +844,7 @@ Historical **Do** (not to be started): import a user-supplied CurseForge client 
 
 ### Step 6.3 — Oversized-world SSH download + bell
 
-**Status:** NEXT  
+**Status:** DONE  
 **Depends on:** 6.2
 
 **Read first**
@@ -864,7 +864,7 @@ Historical **Do** (not to be started): import a user-supplied CurseForge client 
 
 **Done when:** Flag → bell + SSH download offer when VM1 is up.
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-18 — Detect `meta/oversized-world-backup.json` on Manager open and Server Management refresh; bell posts once while blocked. **Download latest world save** streams the live world over SSH (`world_backup.py --stream-stdout`) when VM1 is RUNNING and does not PUT the zip to Object Storage; Start-first copy when VM1 is down. Per-row cloud backups still download from Object Storage. DEBUG PUT/clear fixture. Core store + UX tests. **NEXT = Step 7.1**. Do not start 7.1 unless asked.
 
 ---
 
@@ -872,7 +872,7 @@ Historical **Do** (not to be started): import a user-supplied CurseForge client 
 
 ### Step 7.1 — VM1 shape scaling (Danger Zone)
 
-**Status:** TODO  
+**Status:** NEXT  
 **Depends on:** 1.1
 
 **Read first**
@@ -1241,6 +1241,7 @@ Former MVP Phase **8–9**. **Do not start** until Phases **1–7** are DONE and
 
 | Date | Note |
 |------|------|
+| 2026-08-18 | **Step 6.3 DONE.** Oversized-world flag → bell + Server Management SSH live-world download (no OS PUT). DEBUG fixture. **NEXT = Step 7.1**. Do not start 7.1 unless asked. |
 | 2026-08-18 | **Step 6.2 DONE.** Title-row bell + dismissible notification list; Core `NotificationCenter` channel (session-only); DEBUG fake post. **NEXT = Step 6.3**. Do not start 6.3 unless asked. |
 | 2026-08-18 | **Step 6.1 DONE.** Title-row gear (paths + update-check placeholder) and overflow (About, GitHub). No bell. Native OS chrome. **NEXT = Step 6.2**. Do not start 6.2 unless asked. |
 | 2026-08-18 | **Step 5.1 DONE.** Server Management Modding: Vanilla/Paper empty state; inspect live `mods/` (SSH); **Download pack** = original `data/imported-packs/` archive (never zip VM1 `mods/`). Guide note. **NEXT = Step 6.1**. Do not start 6.1 unless asked. |
