@@ -192,24 +192,44 @@
             else if (Vm.IsStepGame)
             {
                 <p>
-                    Setup installs Vanilla Minecraft only (no Paper, Forge, or modpacks). Pick a release; the server downloads the matching jar when it is created.
+                    Default Vanilla is the official Mojang server. Optimized Vanilla uses Paper for smoother multiplayer — it is not a modpack, and friends still join with the same Minecraft Java version.
                 </p>
-                <label class="mcm-checkbox-row">
-                    <input type="checkbox"
+                <p class="mcm-wizard-hint">Modded packs are a later Setup choice. This step stays Vanilla-family only.</p>
+                <label class="mcm-radio-row">
+                    <input type="radio"
+                           name="mcm-setup-vanilla-flavor"
                            disabled="@(!Vm.CanMutateWizard)"
-                           @bind="Vm.VanillaConfirmed" />
-                    <span>I want a Vanilla Minecraft server (not Paper or modded).</span>
+                           checked="@Vm.VanillaFlavorIsDefault"
+                           @onchange="@(() => Vm.SelectDefaultVanilla())" />
+                    <span>
+                        Default Vanilla
+                        <span class="mcm-radio-note">Official Mojang jar. Same path as before.</span>
+                    </span>
                 </label>
-                <label class="mcm-checkbox-row">
-                    <input type="checkbox"
+                <label class="mcm-radio-row">
+                    <input type="radio"
+                           name="mcm-setup-vanilla-flavor"
                            disabled="@(!Vm.CanMutateWizard)"
-                           @bind="Vm.IncludeSnapshots" />
-                    <span>Advanced: include snapshots</span>
+                           checked="@Vm.VanillaFlavorIsOptimized"
+                           @onchange="@(() => Vm.SelectOptimizedVanilla())" />
+                    <span>
+                        Optimized Vanilla (Paper)
+                        <span class="mcm-radio-note">Better multiplayer performance. Not Forge or Fabric mods.</span>
+                    </span>
                 </label>
+                @if (Vm.ShowSnapshotToggle)
+                {
+                    <label class="mcm-checkbox-row">
+                        <input type="checkbox"
+                               disabled="@(!Vm.CanMutateWizard)"
+                               @bind="Vm.IncludeSnapshots" />
+                        <span>Advanced: include snapshots</span>
+                    </label>
+                }
                 <div class="mcm-field">
                     <label for="mcm-setup-mc-version">Minecraft version</label>
                     <select id="mcm-setup-mc-version"
-                            disabled="@(!Vm.CanMutateWizard)"
+                            disabled="@(!Vm.CanMutateWizard || Vm.VersionIds.Count == 0)"
                             @bind="Vm.MinecraftVersion">
                         @if (!string.IsNullOrWhiteSpace(Vm.MinecraftVersion)
                              && !Vm.VersionIds.Contains(Vm.MinecraftVersion))

@@ -16,6 +16,7 @@ public static class InfraPlanSummary
         var version = string.IsNullOrWhiteSpace(state.MinecraftVersion)
             ? "(not chosen yet)"
             : state.MinecraftVersion;
+        var flavor = SetupVanillaFlavor.PlanLabel(state.VanillaFlavor);
 
         var region = string.IsNullOrWhiteSpace(state.OciRegion) ? "(from ~/.oci)" : state.OciRegion;
         var profile = string.IsNullOrWhiteSpace(state.OciProfile) ? "DEFAULT" : state.OciProfile;
@@ -38,7 +39,7 @@ public static class InfraPlanSummary
             + $"  Budget alert email: {email}\n"
             + $"  SSH: {ssh}\n"
             + $"  Game computer size: {shape} ({hours})\n"
-            + $"  Game: Vanilla {version} (EULA {(state.EulaAccepted ? "accepted" : "not accepted")})\n"
+            + $"  Game: {flavor} {version} (EULA {(state.EulaAccepted ? "accepted" : "not accepted")})\n"
             + $"  OCIR Auth Token stored: {(state.AuthTokenStored ? "yes (Windows Credential Manager McManager/ocir)" : "no — optional until Function push")}\n\n"
             + "OpenTofu will create (on confirmed Deploy)\n"
             + "  • Compartment mcmgr (unless using an existing OCID)\n"

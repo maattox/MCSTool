@@ -62,6 +62,13 @@ public sealed class SetupWizardState
     [JsonPropertyName("vanilla_confirmed")]
     public bool VanillaConfirmed { get; set; }
 
+    /// <summary>
+    /// Vanilla branch: <c>default</c> (Mojang) or <c>optimized</c> (Paper).
+    /// Missing/unknown values normalize to default.
+    /// </summary>
+    [JsonPropertyName("vanilla_flavor")]
+    public string VanillaFlavor { get; set; } = SetupVanillaFlavor.Default;
+
     [JsonPropertyName("include_snapshots")]
     public bool IncludeSnapshots { get; set; }
 

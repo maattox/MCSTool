@@ -236,6 +236,7 @@ public sealed class SetupDeployOrchestrator
             rcon = (secret.Value ?? "").Trim();
 
         string? mcVersion = state.MinecraftVersion;
+        var serverKind = SetupVanillaFlavor.ToDistribution(state.VanillaFlavor);
         var manifest = await _bootstrap.PullGameManifestAsync(outputs, state, cancellationToken).ConfigureAwait(false);
         if (manifest.Succeeded && !string.IsNullOrWhiteSpace(manifest.Value))
         {
@@ -244,6 +245,12 @@ public sealed class SetupDeployOrchestrator
                 using var doc = JsonDocument.Parse(manifest.Value);
                 if (doc.RootElement.TryGetProperty("minecraft_version", out var v))
                     mcVersion = v.GetString() ?? mcVersion;
+                if (doc.RootElement.TryGetProperty("distribution", out var d))
+                {
+                    var dist = d.GetString();
+                    if (!string.IsNullOrWhiteSpace(dist))
+                        serverKind = dist;
+                }
             }
             catch
             {
@@ -257,7 +264,7 @@ public sealed class SetupDeployOrchestrator
         {
             ReportProgress(progress, SetupApplyStage.OsMeta, "Writing shared storage…");
             log?.Report("Seeding Object Storage (budget/config.json, ledger/usage.json, meta/infra.json)…");
-            var os = await SeedObjectStorageAsync(config, mcVersion, log, cancellationToken).ConfigureAwait(false);
+            var os = await SeedObjectStorageAsync(config, mcVersion, serverKind, log, cancellationToken).ConfigureAwait(false);
             if (!os.Succeeded)
             {
                 log?.Report("Object Storage seed failed: " + (os.Error ?? "unknown error"));
@@ -393,6 +400,7 @@ public sealed class SetupDeployOrchestrator
     private static async Task<ServiceResult> SeedObjectStorageAsync(
         ManagerLocalConfig config,
         string? minecraftVersion,
+        string? serverKind,
         IProgress<string>? log,
         CancellationToken cancellationToken)
     {
@@ -423,7 +431,7 @@ public sealed class SetupDeployOrchestrator
         var pubMeta = await infraStore.PublishFromLocalAsync(
             config,
             stackVersion: InfraMetaDocument.DefaultStackVersion,
-            serverKind: "vanilla",
+            serverKind: string.IsNullOrWhiteSpace(serverKind) ? "vanilla" : serverKind.Trim(),
             minecraftVersion: minecraftVersion ?? "unspecified",
             cancellationToken: cancellationToken).ConfigureAwait(false);
         if (!pubMeta.Succeeded)

@@ -11,6 +11,7 @@ namespace McManager.Core.Setup;
 public sealed class PaperFillV3Client
 {
     public const string ProjectUrl = "https://fill.papermc.io/v3/projects/paper";
+    public const string EmbeddedProjectFixtureName = "McManager.Core.Setup.paper-fill-v3-project.json";
     public const string UserAgent = "McManager/0.1 (https://github.com/maattox/oci-mc-server)";
     public const string StableChannel = "STABLE";
     public const string ServerDefaultDownloadKey = "server:default";
@@ -51,6 +52,34 @@ public sealed class PaperFillV3Client
         return project is null
             ? ServiceResult<PaperFillProject>.Fail("Fill v3 project JSON deserialized to null.")
             : ServiceResult<PaperFillProject>.Ok(project);
+    }
+
+    /// <summary>
+    /// Setup Optimized Vanilla picker: live Fill v3 project list, else bundled fixture.
+    /// </summary>
+    public async Task<PaperCatalogResult> LoadProjectCatalogAsync(CancellationToken cancellationToken = default)
+    {
+        var live = await GetProjectAsync(cancellationToken).ConfigureAwait(false);
+        if (live.Succeeded && live.Value is not null)
+            return new PaperCatalogResult(live.Value, fromFixture: false, notes: "Loaded from Fill v3.");
+
+        var fixture = LoadEmbeddedProjectFixture();
+        var reason = string.IsNullOrWhiteSpace(live.Error) ? "Fill v3 unavailable" : live.Error.TrimEnd('.');
+        return new PaperCatalogResult(
+            fixture,
+            fromFixture: true,
+            notes: $"{reason}. Using bundled Paper version fixture.");
+    }
+
+    public static PaperFillProject LoadEmbeddedProjectFixture()
+    {
+        var assembly = typeof(PaperFillV3Client).Assembly;
+        using var stream = assembly.GetManifestResourceStream(EmbeddedProjectFixtureName)
+            ?? throw new InvalidOperationException($"Embedded fixture missing: {EmbeddedProjectFixtureName}");
+        using var reader = new StreamReader(stream);
+        var json = reader.ReadToEnd();
+        return ParseProject(json)
+            ?? throw new InvalidOperationException("Paper project fixture deserialized to null.");
     }
 
     public async Task<ServiceResult<PaperFillVersionDocument>> GetVersionAsync(
@@ -249,6 +278,20 @@ public sealed class PaperFillV3Client
 
         return ServiceResult<string>.Ok(json);
     }
+}
+
+public sealed class PaperCatalogResult
+{
+    public PaperCatalogResult(PaperFillProject project, bool fromFixture, string notes)
+    {
+        Project = project;
+        FromFixture = fromFixture;
+        Notes = notes;
+    }
+
+    public PaperFillProject Project { get; }
+    public bool FromFixture { get; }
+    public string Notes { get; }
 }
 
 public sealed class PaperResolvedBuild

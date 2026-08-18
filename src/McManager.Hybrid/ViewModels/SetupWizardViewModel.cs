@@ -18,9 +18,9 @@ public enum CapacityWaitChoice
 
 /// <summary>
 /// Nine-step Setup wizard (Always Free → OCI → compartment → email → SSH →
-/// Vanilla → EULA → Auth Token → summary). No Window Host — pickers/clipboard/
-/// dialogs/clock via B3 interfaces. Does not tofu apply unless the operator
-/// clicks Deploy; agents use <c>MCMANAGER_TOFU_DRY_RUN=1</c>.
+/// Vanilla (Default vs Optimized/Paper) → EULA → Auth Token → summary). No Window Host —
+/// pickers/clipboard/dialogs/clock via B3 interfaces. Does not tofu apply unless the
+/// operator clicks Deploy; agents use <c>MCMANAGER_TOFU_DRY_RUN=1</c>.
 /// </summary>
 public sealed partial class SetupWizardViewModel : ObservableObject
 {
@@ -47,12 +47,16 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     private readonly IUiClock _clock;
     private readonly IUiDispatcher _dispatcher;
     private readonly MojangVersionCatalog _catalog = new();
+    private readonly PaperFillV3Client _paperCatalog = new();
     private readonly List<OciConfigProfile> _profiles = [];
     private readonly List<string> _versionIds = [];
     private readonly StringBuilder _logBuffer = new();
     private readonly object _logLock = new();
 
     private MojangVersionManifest? _manifest;
+    private PaperFillProject? _paperProject;
+    private string _mojangCatalogNotes = "";
+    private string _paperCatalogNotes = "";
     private CancellationTokenSource? _logFlushCts;
     private CancellationTokenSource? _elapsedCts;
     private CancellationTokenSource? _capacityCts;
@@ -121,6 +125,9 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _vanillaConfirmed;
+
+    [ObservableProperty]
+    private string _vanillaFlavor = SetupVanillaFlavor.Default;
 
     [ObservableProperty]
     private bool _includeSnapshots;
@@ -335,6 +342,18 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         Vm1MemoryGb = Vm1ShapeChoice.SmallerMemoryGb;
     }
 
+    public bool VanillaFlavorIsDefault =>
+        !SetupVanillaFlavor.IsOptimized(VanillaFlavor);
+
+    public bool VanillaFlavorIsOptimized =>
+        SetupVanillaFlavor.IsOptimized(VanillaFlavor);
+
+    public bool ShowSnapshotToggle => VanillaFlavorIsDefault;
+
+    public void SelectDefaultVanilla() => VanillaFlavor = SetupVanillaFlavor.Default;
+
+    public void SelectOptimizedVanilla() => VanillaFlavor = SetupVanillaFlavor.Optimized;
+
     public string StepTitle => CurrentStep switch
     {
         0 => "Always Free",
@@ -342,7 +361,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         2 => "Compartment",
         3 => "Budget alert email",
         4 => "SSH key",
-        5 => "Minecraft (Vanilla)",
+        5 => "Minecraft",
         6 => "Mojang EULA",
         7 => "Optional Auth Token",
         8 => "Review and deploy",
@@ -895,38 +914,85 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     {
         try
         {
-            var result = await _catalog.LoadAsync().ConfigureAwait(true);
-            _manifest = result.Manifest;
-            VersionCatalogNotes = result.Notes;
-            RebuildVersionList(keepSelection: true);
+            var mojang = await _catalog.LoadAsync().ConfigureAwait(true);
+            _manifest = mojang.Manifest;
+            _mojangCatalogNotes = mojang.Notes;
         }
         catch (Exception ex)
         {
-            VersionCatalogNotes = $"Version catalog failed: {ex.Message}";
+            _mojangCatalogNotes = $"Version catalog failed: {ex.Message}";
         }
+
+        try
+        {
+            var paper = await _paperCatalog.LoadProjectCatalogAsync().ConfigureAwait(true);
+            _paperProject = paper.Project;
+            _paperCatalogNotes = paper.Notes;
+        }
+        catch (Exception ex)
+        {
+            _paperCatalogNotes = $"Paper version list failed: {ex.Message}";
+        }
+
+        RebuildVersionList(keepSelection: true);
     }
 
     private void RebuildVersionList(bool keepSelection)
     {
-        if (_manifest is null)
-            return;
-
         var previous = keepSelection
             ? (string.IsNullOrWhiteSpace(MinecraftVersion) ? _resumeMinecraftVersion : MinecraftVersion)
             : "";
-        var filtered = MojangVersionCatalog.Filter(_manifest, IncludeSnapshots);
         _versionIds.Clear();
+
+        if (VanillaFlavorIsOptimized)
+        {
+            VersionCatalogNotes = string.IsNullOrWhiteSpace(_paperCatalogNotes)
+                ? "Paper versions (Optimized Vanilla)."
+                : _paperCatalogNotes;
+            if (_paperProject is null)
+            {
+                OnPropertyChanged(nameof(VersionIds));
+                return;
+            }
+
+            foreach (var id in PaperFillV3Client.FlattenVersionIds(_paperProject))
+                _versionIds.Add(id);
+
+            var target = !string.IsNullOrWhiteSpace(previous) && _versionIds.Contains(previous)
+                ? previous
+                : PaperFillV3Client.DefaultVersionId(_paperProject);
+            ApplyVersionSelection(target);
+            return;
+        }
+
+        if (_manifest is null)
+        {
+            VersionCatalogNotes = string.IsNullOrWhiteSpace(_mojangCatalogNotes)
+                ? "Loading Minecraft versions…"
+                : _mojangCatalogNotes;
+            OnPropertyChanged(nameof(VersionIds));
+            return;
+        }
+
+        VersionCatalogNotes = _mojangCatalogNotes;
+        var filtered = MojangVersionCatalog.Filter(_manifest, IncludeSnapshots);
         foreach (var v in filtered)
             _versionIds.Add(v.Id);
-        OnPropertyChanged(nameof(VersionIds));
 
-        var target = !string.IsNullOrWhiteSpace(previous) && _versionIds.Contains(previous)
+        var mojangTarget = !string.IsNullOrWhiteSpace(previous) && _versionIds.Contains(previous)
             ? previous
             : MojangVersionCatalog.DefaultVersionId(_manifest);
+        ApplyVersionSelection(mojangTarget);
+    }
+
+    private void ApplyVersionSelection(string? target)
+    {
+        OnPropertyChanged(nameof(VersionIds));
         MinecraftVersion = target ?? "";
         if (!string.IsNullOrWhiteSpace(MinecraftVersion))
             _resumeMinecraftVersion = MinecraftVersion;
-        Persist();
+        if (_navReady)
+            Persist();
     }
 
     private void LoadProfiles()
@@ -973,6 +1039,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         SshPublicKey = state.SshPublicKey;
         SshFingerprint = state.SshFingerprint;
         VanillaConfirmed = state.VanillaConfirmed;
+        VanillaFlavor = SetupVanillaFlavor.Normalize(state.VanillaFlavor);
         IncludeSnapshots = state.IncludeSnapshots;
         MinecraftVersion = state.MinecraftVersion;
         _resumeMinecraftVersion = state.MinecraftVersion;
@@ -1004,7 +1071,8 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         SshPublicKeyPath = SshPublicKeyPath,
         SshPublicKey = SshPublicKey,
         SshFingerprint = SshFingerprint,
-        VanillaConfirmed = VanillaConfirmed,
+        VanillaConfirmed = true,
+        VanillaFlavor = SetupVanillaFlavor.Normalize(VanillaFlavor),
         IncludeSnapshots = IncludeSnapshots,
         MinecraftVersion = string.IsNullOrWhiteSpace(MinecraftVersion)
             ? _resumeMinecraftVersion
@@ -1027,7 +1095,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             : ExistingCompartmentId.Trim().StartsWith("ocid1.compartment.", StringComparison.Ordinal),
         3 => AlertEmail.Contains('@', StringComparison.Ordinal),
         4 => SshKeyHelper.LooksLikePublicKey(SshPublicKey),
-        5 => VanillaConfirmed && !string.IsNullOrWhiteSpace(
+        5 => !string.IsNullOrWhiteSpace(
             string.IsNullOrWhiteSpace(MinecraftVersion) ? _resumeMinecraftVersion : MinecraftVersion),
         6 => EulaAccepted,
         7 => true,
@@ -1058,6 +1126,16 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     }
 
     partial void OnIncludeSnapshotsChanged(bool value) => RebuildVersionList(keepSelection: true);
+
+    partial void OnVanillaFlavorChanged(string value)
+    {
+        VanillaConfirmed = true;
+        OnPropertyChanged(nameof(VanillaFlavorIsDefault));
+        OnPropertyChanged(nameof(VanillaFlavorIsOptimized));
+        OnPropertyChanged(nameof(ShowSnapshotToggle));
+        if (_navReady)
+            RebuildVersionList(keepSelection: true);
+    }
 
     protected override void OnPropertyChanged(PropertyChangedEventArgs e)
     {
@@ -1103,6 +1181,9 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             case nameof(CreateResourcesConfirmText):
             case nameof(Vm1ShapeIsDefault):
             case nameof(Vm1ShapeIsSmaller):
+            case nameof(VanillaFlavorIsDefault):
+            case nameof(VanillaFlavorIsOptimized):
+            case nameof(ShowSnapshotToggle):
             case nameof(Profiles):
             case nameof(VersionIds):
             case nameof(CapacityDialogOpen):
@@ -1143,6 +1224,9 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         OnPropertyChanged(nameof(CreateResourcesConfirmText));
         OnPropertyChanged(nameof(Vm1ShapeIsDefault));
         OnPropertyChanged(nameof(Vm1ShapeIsSmaller));
+        OnPropertyChanged(nameof(VanillaFlavorIsDefault));
+        OnPropertyChanged(nameof(VanillaFlavorIsOptimized));
+        OnPropertyChanged(nameof(ShowSnapshotToggle));
         OnPropertyChanged(nameof(UseExistingCompartment));
         OnPropertyChanged(nameof(SshImportMode));
         OnPropertyChanged(nameof(AuthTokenStoredDisplay));

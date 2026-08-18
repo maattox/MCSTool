@@ -94,13 +94,14 @@ public sealed class SetupBootstrapService
 
         var key = TofuApplyOutputs.PrivateKeyPath(state);
         var version = state.MinecraftVersion.Trim();
+        var distribution = SetupVanillaFlavor.ToDistribution(state.VanillaFlavor);
         var eula = state.EulaAccepted;
         return Task.Run(
             () =>
             {
                 try
                 {
-                    return DeployVm1(onbox, agent, outputs, key, version, eula, log);
+                    return DeployVm1(onbox, agent, outputs, key, version, distribution, eula, log);
                 }
                 catch (Exception ex)
                 {
@@ -486,11 +487,16 @@ public sealed class SetupBootstrapService
         TofuApplyOutputs outputs,
         string keyPath,
         string minecraftVersion,
+        string distribution,
         bool eulaAccepted,
         IProgress<string>? log)
     {
         if (!eulaAccepted)
             return ServiceResult.Fail("EULA was not accepted; refusing to run bootstrap.");
+
+        var dist = string.Equals(distribution, SetupVanillaFlavor.DistributionPaper, StringComparison.OrdinalIgnoreCase)
+            ? SetupVanillaFlavor.DistributionPaper
+            : SetupVanillaFlavor.DistributionVanilla;
 
         using var client = Connect(outputs.Vm1SshHost, outputs.SshUser, keyPath);
 
@@ -512,13 +518,13 @@ public sealed class SetupBootstrapService
         WriteAgentConfig(client, outputs, log);
 
         const string onboxStaging = "/tmp/mcmgr-onbox";
-        log?.Report($"onbox src: {onbox}");
+        log?.Report($"onbox src: {onbox} DISTRIBUTION={dist} MINECRAFT_VERSION={minecraftVersion}");
         Exec(client, $"rm -rf {onboxStaging} && mkdir -p {onboxStaging}", TimeSpan.FromSeconds(30), log);
         UploadTree(client, onbox, onboxStaging, log);
         var driver =
             "set -euo pipefail; "
             + $"find {onboxStaging} -type f \\( -name '*.sh' -o -name '*.in' -o -name '*.py' \\) -exec sed -i 's/\\r$//' {{}} +; "
-            + $"export EULA_ACCEPTED=true MINECRAFT_VERSION={ShQuote(minecraftVersion)} DISTRIBUTION=vanilla HOME=/home/ubuntu; "
+            + $"export EULA_ACCEPTED=true MINECRAFT_VERSION={ShQuote(minecraftVersion)} DISTRIBUTION={ShQuote(dist)} HOME=/home/ubuntu; "
             + $"sudo -E bash {onboxStaging}/common/driver.sh";
         Exec(client, "bash -c " + ShQuote(driver), TimeSpan.FromMinutes(20), log);
 

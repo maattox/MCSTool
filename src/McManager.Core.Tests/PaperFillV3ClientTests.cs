@@ -178,6 +178,42 @@ public sealed class PaperFillV3ClientTests
         Assert.DoesNotContain(PaperFillV3Client.LegacyV2Host, PaperFillV3Client.BuildsUrl(Mc12110));
     }
 
+    [Fact]
+    public void Embedded_project_fixture_matches_tracked_json()
+    {
+        var embedded = PaperFillV3Client.LoadEmbeddedProjectFixture();
+        var fromFile = PaperFillV3Client.ParseProject(Read("paper-fill-v3-project.json"));
+        Assert.NotNull(fromFile);
+        Assert.Equal(PaperFillV3Client.FlattenVersionIds(fromFile), PaperFillV3Client.FlattenVersionIds(embedded));
+    }
+
+    [Fact]
+    public async Task Project_catalog_uses_live_fill_v3_when_available()
+    {
+        var handler = new MapHandler();
+        handler.Map(PaperFillV3Client.ProjectUrl, Read("paper-fill-v3-project.json"));
+        using var http = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(5) };
+        var client = new PaperFillV3Client(http);
+
+        var catalog = await client.LoadProjectCatalogAsync();
+        Assert.False(catalog.FromFixture);
+        Assert.Contains("Fill v3", catalog.Notes, StringComparison.Ordinal);
+        Assert.Equal("26.2", PaperFillV3Client.DefaultVersionId(catalog.Project));
+    }
+
+    [Fact]
+    public async Task Project_catalog_falls_back_to_embedded_fixture_when_live_fails()
+    {
+        var handler = new MapHandler();
+        using var http = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(5) };
+        var client = new PaperFillV3Client(http);
+
+        var catalog = await client.LoadProjectCatalogAsync();
+        Assert.True(catalog.FromFixture);
+        Assert.Contains("bundled", catalog.Notes, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("26.2", PaperFillV3Client.DefaultVersionId(catalog.Project));
+    }
+
     private static string Read(string fileName)
     {
         var path = Path.Combine(

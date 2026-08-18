@@ -8,6 +8,9 @@
     <EmbeddedResource Include="..\..\tests\fixtures\game-metadata\mojang-version-manifest-v2.json">
       <LogicalName>McManager.Core.Setup.mojang-version-manifest-v2.json</LogicalName>
     </EmbeddedResource>
+    <EmbeddedResource Include="..\..\tests\fixtures\game-metadata\paper-fill-v3-project.json">
+      <LogicalName>McManager.Core.Setup.paper-fill-v3-project.json</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 
   <ItemGroup>
