@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Text;
 using CommunityToolkit.Mvvm.ComponentModel;
 using McManager.Core.Config;
@@ -18,9 +19,9 @@ public enum CapacityWaitChoice
 
 /// <summary>
 /// Nine-step Setup wizard (Always Free → OCI → compartment → email → SSH →
-/// Vanilla (Default vs Optimized/Paper) → EULA → Auth Token → summary). No Window Host —
-/// pickers/clipboard/dialogs/clock via B3 interfaces. Does not tofu apply unless the
-/// operator clicks Deploy; agents use <c>MCMANAGER_TOFU_DRY_RUN=1</c>.
+/// game (Vanilla Default/Paper or Modded pack file) → EULA → Auth Token → summary).
+/// No Window Host — pickers/clipboard/dialogs/clock via B3 interfaces. Does not
+/// tofu apply unless the operator clicks Deploy; agents use <c>MCMANAGER_TOFU_DRY_RUN=1</c>.
 /// </summary>
 public sealed partial class SetupWizardViewModel : ObservableObject
 {
@@ -37,6 +38,8 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     public const string DeployDurationHint =
         "Creating the cloud computers and installing Minecraft often takes a long time. Leave this window open until it finishes.";
+
+    public const long PackDropMaxBytes = 512L * 1024 * 1024;
 
     private static readonly TimeSpan LogFlushPeriod = TimeSpan.FromMilliseconds(250);
     private static readonly TimeSpan ElapsedTickPeriod = TimeSpan.FromSeconds(1);
@@ -127,6 +130,9 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     private bool _vanillaConfirmed;
 
     [ObservableProperty]
+    private string _serverType = SetupServerType.Vanilla;
+
+    [ObservableProperty]
     private string _vanillaFlavor = SetupVanillaFlavor.Default;
 
     [ObservableProperty]
@@ -137,6 +143,45 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     [ObservableProperty]
     private string _versionCatalogNotes = "Loading Minecraft versions…";
+
+    [ObservableProperty]
+    private bool _isAnalyzingPack;
+
+    [ObservableProperty]
+    private string _packAnalyzeCaption = "";
+
+    [ObservableProperty]
+    private string _packPath = "";
+
+    [ObservableProperty]
+    private string _packKind = "";
+
+    [ObservableProperty]
+    private string _packName = "";
+
+    [ObservableProperty]
+    private string _packVersionId = "";
+
+    [ObservableProperty]
+    private string _packLoader = "";
+
+    [ObservableProperty]
+    private string _packLoaderVersion = "";
+
+    [ObservableProperty]
+    private string _packSummary = "";
+
+    [ObservableProperty]
+    private string _packBlockReason = "";
+
+    [ObservableProperty]
+    private bool _packCanContinue;
+
+    [ObservableProperty]
+    private bool _packConfirmed;
+
+    [ObservableProperty]
+    private bool _clientPackAcknowledged;
 
     [ObservableProperty]
     private bool _eulaAccepted;
@@ -348,11 +393,35 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     public bool VanillaFlavorIsOptimized =>
         SetupVanillaFlavor.IsOptimized(VanillaFlavor);
 
-    public bool ShowSnapshotToggle => VanillaFlavorIsDefault;
+    public bool ServerTypeIsVanilla => SetupServerType.IsVanilla(ServerType);
+
+    public bool ServerTypeIsModded => SetupServerType.IsModded(ServerType);
+
+    public bool ShowVanillaGameOptions => ServerTypeIsVanilla;
+
+    public bool ShowModdedGameOptions => ServerTypeIsModded;
+
+    public bool ShowSnapshotToggle => ServerTypeIsVanilla && VanillaFlavorIsDefault;
+
+    public string PackFileNameDisplay =>
+        string.IsNullOrWhiteSpace(PackPath) ? "" : Path.GetFileName(PackPath);
+
+    public bool ShowPackSummary =>
+        ServerTypeIsModded
+        && !IsAnalyzingPack
+        && (!string.IsNullOrWhiteSpace(PackSummary) || !string.IsNullOrWhiteSpace(PackBlockReason));
+
+    public bool ShowPackConfirmChecks => ShowPackSummary && PackCanContinue;
+
+    public string ClientPackCopy => SetupPackImport.ClientPackCopy;
 
     public void SelectDefaultVanilla() => VanillaFlavor = SetupVanillaFlavor.Default;
 
     public void SelectOptimizedVanilla() => VanillaFlavor = SetupVanillaFlavor.Optimized;
+
+    public void SelectVanillaServer() => ServerType = SetupServerType.Vanilla;
+
+    public void SelectModdedServer() => ServerType = SetupServerType.Modded;
 
     public string StepTitle => CurrentStep switch
     {
@@ -376,6 +445,14 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     {
         await LoadVersionsAsync().ConfigureAwait(true);
         await DetectAdminIpAsync().ConfigureAwait(true);
+        if (ServerTypeIsModded && !string.IsNullOrWhiteSpace(PackPath) && File.Exists(PackPath))
+            await AnalyzePackPathAsync(PackPath, keepConfirm: true).ConfigureAwait(true);
+        else if (ServerTypeIsModded && !string.IsNullOrWhiteSpace(PackPath) && !File.Exists(PackPath))
+        {
+            PackBlockReason = "The pack file is missing. Choose it again.";
+            PackCanContinue = false;
+            PackConfirmed = false;
+        }
     }
 
     public void Back()
@@ -447,6 +524,129 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         }
     }
 
+    public async Task PickPackAsync()
+    {
+        if (IsDeployLocked || IsAnalyzingPack)
+            return;
+
+        var path = await _picker.OpenFileAsync(new FilePickRequest
+        {
+            Title = "Choose a modpack file (.mrpack or server-pack zip)",
+            Filters =
+            [
+                new FileTypeFilter("Modpack archives", ".mrpack", ".zip"),
+                new FileTypeFilter("Modrinth pack", ".mrpack"),
+                new FileTypeFilter("Zip archives", ".zip"),
+                new FileTypeFilter("All files", ".*"),
+            ],
+        }).ConfigureAwait(true);
+
+        if (string.IsNullOrWhiteSpace(path))
+            return;
+
+        await AnalyzePackPathAsync(path, keepConfirm: false).ConfigureAwait(true);
+    }
+
+    public async Task ImportDroppedPackAsync(string fileName, Stream content)
+    {
+        if (IsDeployLocked || IsAnalyzingPack || content is null)
+            return;
+
+        var safeName = Path.GetFileName(fileName);
+        if (string.IsNullOrWhiteSpace(safeName))
+            safeName = "dropped-pack.zip";
+
+        var dir = Path.Combine(Path.GetTempPath(), "mcmgr-setup-drop");
+        Directory.CreateDirectory(dir);
+        var dest = Path.Combine(dir, safeName);
+        try
+        {
+            await using (var fs = new FileStream(dest, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                await content.CopyToAsync(fs).ConfigureAwait(true);
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = "Could not save the dropped pack: " + ex.Message;
+            return;
+        }
+
+        await AnalyzePackPathAsync(dest, keepConfirm: false).ConfigureAwait(true);
+    }
+
+    public void ClearPack()
+    {
+        if (IsDeployLocked)
+            return;
+        PackPath = "";
+        PackKind = "";
+        PackName = "";
+        PackVersionId = "";
+        PackLoader = "";
+        PackLoaderVersion = "";
+        PackSummary = "";
+        PackBlockReason = "";
+        PackCanContinue = false;
+        PackConfirmed = false;
+        ClientPackAcknowledged = false;
+        PackAnalyzeCaption = "";
+        StatusMessage = "Pack cleared. Choose a .mrpack or server-pack zip.";
+        Persist();
+    }
+
+    public async Task AnalyzePackPathAsync(string path, bool keepConfirm)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+            return;
+
+        IsAnalyzingPack = true;
+        PackAnalyzeCaption = "Analyzing modpack…";
+        PackBlockReason = "";
+        PackSummary = "";
+        PackCanContinue = false;
+        if (!keepConfirm)
+        {
+            PackConfirmed = false;
+            ClientPackAcknowledged = false;
+        }
+
+        StatusMessage = "Analyzing modpack…";
+        try
+        {
+            var result = await Task.Run(() => SetupPackImport.AnalyzeFile(path)).ConfigureAwait(true);
+            if (!result.Succeeded || result.Value is null)
+            {
+                PackPath = path;
+                PackSummary = "";
+                PackCanContinue = false;
+                PackConfirmed = false;
+                PackBlockReason = result.Error ?? "Could not analyze this file.";
+                StatusMessage = PackBlockReason;
+                Persist();
+                return;
+            }
+
+            ApplyPackPreview(result.Value, keepConfirm);
+            StatusMessage = result.Value.CanContinue
+                ? "Review the pack summary, then confirm before continuing."
+                : (result.Value.BlockReason ?? "This pack cannot be installed.");
+            Persist();
+        }
+        catch (Exception ex)
+        {
+            PackCanContinue = false;
+            PackConfirmed = false;
+            PackBlockReason = "Analyze failed: " + ex.Message;
+            StatusMessage = PackBlockReason;
+        }
+        finally
+        {
+            IsAnalyzingPack = false;
+            PackAnalyzeCaption = "";
+        }
+    }
+
     public async Task ImportSshKeyAsync()
     {
         if (IsDeployLocked)
@@ -476,6 +676,53 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         ApplySsh(imported.Value);
         StatusMessage = $"Imported {imported.Value.Path}";
         Persist();
+    }
+
+    private void ApplyPackPreview(SetupPackPreview preview, bool keepConfirm)
+    {
+        PackPath = preview.SourcePath;
+        PackKind = preview.Kind;
+        PackName = preview.PackName;
+        PackVersionId = preview.VersionId ?? "";
+        PackLoader = preview.Loader;
+        PackLoaderVersion = preview.LoaderVersion;
+        PackSummary = preview.ConfirmableSummary;
+        PackBlockReason = preview.BlockReason ?? "";
+        PackCanContinue = preview.CanContinue;
+        if (!preview.CanContinue)
+        {
+            PackConfirmed = false;
+            ClientPackAcknowledged = false;
+            return;
+        }
+
+        MinecraftVersion = preview.MinecraftVersion;
+        _resumeMinecraftVersion = preview.MinecraftVersion;
+        if (keepConfirm && PackConfirmed && ClientPackAcknowledged)
+            RetainCurrentPack();
+        else if (!keepConfirm)
+        {
+            PackConfirmed = false;
+            ClientPackAcknowledged = false;
+        }
+    }
+
+    private void RetainCurrentPack()
+    {
+        if (string.IsNullOrWhiteSpace(PackPath) || !File.Exists(PackPath) || !PackCanContinue)
+            return;
+        var dataDir = LocalConfigStore.TryFindDataDirectory();
+        if (string.IsNullOrWhiteSpace(dataDir))
+            return;
+        var retained = ImportedPackArchiveStore.Retain(
+            PackPath,
+            PackName,
+            string.IsNullOrWhiteSpace(PackVersionId) ? null : PackVersionId,
+            PackLoader,
+            MinecraftVersion,
+            dataDir);
+        if (!retained.Succeeded)
+            StatusMessage = retained.Error ?? "Could not keep a local copy of the pack.";
     }
 
     public void StoreAuthToken()
@@ -939,6 +1186,13 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     private void RebuildVersionList(bool keepSelection)
     {
+        if (ServerTypeIsModded)
+        {
+            VersionCatalogNotes = "Minecraft version comes from the pack you import.";
+            OnPropertyChanged(nameof(VersionIds));
+            return;
+        }
+
         var previous = keepSelection
             ? (string.IsNullOrWhiteSpace(MinecraftVersion) ? _resumeMinecraftVersion : MinecraftVersion)
             : "";
@@ -1039,10 +1293,20 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         SshPublicKey = state.SshPublicKey;
         SshFingerprint = state.SshFingerprint;
         VanillaConfirmed = state.VanillaConfirmed;
+        ServerType = SetupServerType.Normalize(state.ServerType);
         VanillaFlavor = SetupVanillaFlavor.Normalize(state.VanillaFlavor);
         IncludeSnapshots = state.IncludeSnapshots;
         MinecraftVersion = state.MinecraftVersion;
         _resumeMinecraftVersion = state.MinecraftVersion;
+        PackPath = state.PackPath;
+        PackKind = state.PackKind;
+        PackName = state.PackName;
+        PackVersionId = state.PackVersionId;
+        PackLoader = state.PackLoader;
+        PackLoaderVersion = state.PackLoaderVersion;
+        PackSummary = state.PackSummary;
+        PackConfirmed = state.PackConfirmed;
+        ClientPackAcknowledged = state.ClientPackAcknowledged;
         EulaAccepted = state.EulaAccepted;
         AuthTokenStored = state.AuthTokenStored;
         AdminCidr = state.AdminCidr;
@@ -1072,11 +1336,21 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         SshPublicKey = SshPublicKey,
         SshFingerprint = SshFingerprint,
         VanillaConfirmed = true,
+        ServerType = SetupServerType.Normalize(ServerType),
         VanillaFlavor = SetupVanillaFlavor.Normalize(VanillaFlavor),
         IncludeSnapshots = IncludeSnapshots,
         MinecraftVersion = string.IsNullOrWhiteSpace(MinecraftVersion)
             ? _resumeMinecraftVersion
             : MinecraftVersion,
+        PackPath = PackPath,
+        PackKind = PackKind,
+        PackName = PackName,
+        PackVersionId = PackVersionId,
+        PackLoader = PackLoader,
+        PackLoaderVersion = PackLoaderVersion,
+        PackSummary = PackSummary,
+        PackConfirmed = PackConfirmed,
+        ClientPackAcknowledged = ClientPackAcknowledged,
         EulaAccepted = EulaAccepted,
         AuthTokenStored = AuthTokenStored,
         AdminCidr = AdminCidr,
@@ -1095,8 +1369,14 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             : ExistingCompartmentId.Trim().StartsWith("ocid1.compartment.", StringComparison.Ordinal),
         3 => AlertEmail.Contains('@', StringComparison.Ordinal),
         4 => SshKeyHelper.LooksLikePublicKey(SshPublicKey),
-        5 => !string.IsNullOrWhiteSpace(
-            string.IsNullOrWhiteSpace(MinecraftVersion) ? _resumeMinecraftVersion : MinecraftVersion),
+        5 => SetupServerType.IsModded(ServerType)
+            ? PackConfirmed
+                && ClientPackAcknowledged
+                && PackCanContinue
+                && !string.IsNullOrWhiteSpace(
+                    string.IsNullOrWhiteSpace(MinecraftVersion) ? _resumeMinecraftVersion : MinecraftVersion)
+            : !string.IsNullOrWhiteSpace(
+                string.IsNullOrWhiteSpace(MinecraftVersion) ? _resumeMinecraftVersion : MinecraftVersion),
         6 => EulaAccepted,
         7 => true,
         _ => false,
@@ -1133,8 +1413,33 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         OnPropertyChanged(nameof(VanillaFlavorIsDefault));
         OnPropertyChanged(nameof(VanillaFlavorIsOptimized));
         OnPropertyChanged(nameof(ShowSnapshotToggle));
-        if (_navReady)
+        if (_navReady && ServerTypeIsVanilla)
             RebuildVersionList(keepSelection: true);
+    }
+
+    partial void OnServerTypeChanged(string value)
+    {
+        OnPropertyChanged(nameof(ServerTypeIsVanilla));
+        OnPropertyChanged(nameof(ServerTypeIsModded));
+        OnPropertyChanged(nameof(ShowVanillaGameOptions));
+        OnPropertyChanged(nameof(ShowModdedGameOptions));
+        OnPropertyChanged(nameof(ShowSnapshotToggle));
+        OnPropertyChanged(nameof(ShowPackSummary));
+        OnPropertyChanged(nameof(ShowPackConfirmChecks));
+        if (_navReady && ServerTypeIsVanilla)
+            RebuildVersionList(keepSelection: true);
+    }
+
+    partial void OnPackConfirmedChanged(bool value)
+    {
+        if (value && ClientPackAcknowledged)
+            RetainCurrentPack();
+    }
+
+    partial void OnClientPackAcknowledgedChanged(bool value)
+    {
+        if (value && PackConfirmed)
+            RetainCurrentPack();
     }
 
     protected override void OnPropertyChanged(PropertyChangedEventArgs e)
@@ -1184,6 +1489,14 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             case nameof(VanillaFlavorIsDefault):
             case nameof(VanillaFlavorIsOptimized):
             case nameof(ShowSnapshotToggle):
+            case nameof(ServerTypeIsVanilla):
+            case nameof(ServerTypeIsModded):
+            case nameof(ShowVanillaGameOptions):
+            case nameof(ShowModdedGameOptions):
+            case nameof(PackFileNameDisplay):
+            case nameof(ShowPackSummary):
+            case nameof(ShowPackConfirmChecks):
+            case nameof(ClientPackCopy):
             case nameof(Profiles):
             case nameof(VersionIds):
             case nameof(CapacityDialogOpen):
@@ -1227,6 +1540,13 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         OnPropertyChanged(nameof(VanillaFlavorIsDefault));
         OnPropertyChanged(nameof(VanillaFlavorIsOptimized));
         OnPropertyChanged(nameof(ShowSnapshotToggle));
+        OnPropertyChanged(nameof(ServerTypeIsVanilla));
+        OnPropertyChanged(nameof(ServerTypeIsModded));
+        OnPropertyChanged(nameof(ShowVanillaGameOptions));
+        OnPropertyChanged(nameof(ShowModdedGameOptions));
+        OnPropertyChanged(nameof(PackFileNameDisplay));
+        OnPropertyChanged(nameof(ShowPackSummary));
+        OnPropertyChanged(nameof(ShowPackConfirmChecks));
         OnPropertyChanged(nameof(UseExistingCompartment));
         OnPropertyChanged(nameof(SshImportMode));
         OnPropertyChanged(nameof(AuthTokenStoredDisplay));

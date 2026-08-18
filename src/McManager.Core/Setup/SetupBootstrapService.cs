@@ -93,15 +93,13 @@ public sealed class SetupBootstrapService
         }
 
         var key = TofuApplyOutputs.PrivateKeyPath(state);
-        var version = state.MinecraftVersion.Trim();
-        var distribution = SetupVanillaFlavor.ToDistribution(state.VanillaFlavor);
         var eula = state.EulaAccepted;
         return Task.Run(
             () =>
             {
                 try
                 {
-                    return DeployVm1(onbox, agent, outputs, key, version, distribution, eula, log);
+                    return DeployVm1(onbox, agent, outputs, key, state, eula, log);
                 }
                 catch (Exception ex)
                 {
@@ -486,17 +484,27 @@ public sealed class SetupBootstrapService
         string agent,
         TofuApplyOutputs outputs,
         string keyPath,
-        string minecraftVersion,
-        string distribution,
+        SetupWizardState state,
         bool eulaAccepted,
         IProgress<string>? log)
     {
         if (!eulaAccepted)
             return ServiceResult.Fail("EULA was not accepted; refusing to run bootstrap.");
 
-        var dist = string.Equals(distribution, SetupVanillaFlavor.DistributionPaper, StringComparison.OrdinalIgnoreCase)
-            ? SetupVanillaFlavor.DistributionPaper
-            : SetupVanillaFlavor.DistributionVanilla;
+        var minecraftVersion = state.MinecraftVersion.Trim();
+        var dist = SetupPackImport.ToDistribution(state);
+        if (!SetupPackImport.IsOnboxDistribution(dist))
+        {
+            return ServiceResult.Fail(
+                "Setup cannot bootstrap this game type (need Vanilla, Paper, Fabric, Forge, or NeoForge).");
+        }
+
+        if (SetupServerType.IsModded(state.ServerType)
+            && (string.IsNullOrWhiteSpace(state.PackPath) || !File.Exists(state.PackPath)))
+        {
+            return ServiceResult.Fail(
+                "Modded Setup needs the pack file you confirmed. The original path is missing — pick the pack again.");
+        }
 
         using var client = Connect(outputs.Vm1SshHost, outputs.SshUser, keyPath);
 
@@ -518,15 +526,26 @@ public sealed class SetupBootstrapService
         WriteAgentConfig(client, outputs, log);
 
         const string onboxStaging = "/tmp/mcmgr-onbox";
+        var loaderPin = SetupPackImport.LoaderPin(state.PackLoader, state.PackLoaderVersion);
+        var pinExport = loaderPin is { } pin
+            ? $" {pin.Name}={ShQuote(pin.Value)}"
+            : "";
         log?.Report($"onbox src: {onbox} DISTRIBUTION={dist} MINECRAFT_VERSION={minecraftVersion}");
         Exec(client, $"rm -rf {onboxStaging} && mkdir -p {onboxStaging}", TimeSpan.FromSeconds(30), log);
         UploadTree(client, onbox, onboxStaging, log);
         var driver =
             "set -euo pipefail; "
             + $"find {onboxStaging} -type f \\( -name '*.sh' -o -name '*.in' -o -name '*.py' \\) -exec sed -i 's/\\r$//' {{}} +; "
-            + $"export EULA_ACCEPTED=true MINECRAFT_VERSION={ShQuote(minecraftVersion)} DISTRIBUTION={ShQuote(dist)} HOME=/home/ubuntu; "
+            + $"export EULA_ACCEPTED=true MINECRAFT_VERSION={ShQuote(minecraftVersion)} DISTRIBUTION={ShQuote(dist)}{pinExport} HOME=\"${{HOME:-/home/ubuntu}}\"; "
             + $"sudo -E bash {onboxStaging}/common/driver.sh";
         Exec(client, "bash -c " + ShQuote(driver), TimeSpan.FromMinutes(20), log);
+
+        if (SetupServerType.IsModded(state.ServerType))
+        {
+            var pack = InstallModdedPack(client, onboxStaging, state, log);
+            if (!pack.Succeeded)
+                return pack;
+        }
 
         var health = WaitRcon(client, log);
         if (!health.Succeeded)
@@ -534,6 +553,102 @@ public sealed class SetupBootstrapService
 
         log?.Report("VM1 bootstrap finished.");
         return ServiceResult.Ok();
+    }
+
+    private static ServiceResult InstallModdedPack(
+        SshClient client,
+        string onboxStaging,
+        SetupWizardState state,
+        IProgress<string>? log)
+    {
+        var dataDir = LocalConfigStore.TryFindDataDirectory();
+        var dest = Path.Combine(Path.GetTempPath(), "mcmgr-setup-pack-" + Guid.NewGuid().ToString("N"));
+        log?.Report("Installing server-side pack files on this PC, then copying them to the game VM…");
+
+        try
+        {
+            if (string.Equals(state.PackKind, SetupPackImport.KindMrpack, StringComparison.OrdinalIgnoreCase)
+                || Path.GetExtension(state.PackPath).Equals(".mrpack", StringComparison.OrdinalIgnoreCase))
+            {
+                var installer = new MrpackInstaller();
+                var result = installer.InstallAsync(state.PackPath, dest, dataDir).GetAwaiter().GetResult();
+                if (!result.Succeeded)
+                    return ServiceResult.Fail(result.Error ?? "Modrinth pack install failed.");
+                log?.Report(result.Value!.Summary);
+            }
+            else
+            {
+                var result = ManualServerPackInstaller.Install(state.PackPath, dest, dataDir);
+                if (!result.Succeeded)
+                    return ServiceResult.Fail(result.Error ?? "Server-pack zip install failed.");
+                log?.Report(result.Value!.Summary);
+            }
+
+            return CopyStagedPackToVm1(client, onboxStaging, dest, log);
+        }
+        finally
+        {
+            try
+            {
+                if (Directory.Exists(dest))
+                    Directory.Delete(dest, recursive: true);
+            }
+            catch (IOException)
+            {
+                // temp leftover is fine
+            }
+        }
+    }
+
+    private static ServiceResult CopyStagedPackToVm1(
+        SshClient client,
+        string onboxStaging,
+        string localDest,
+        IProgress<string>? log)
+    {
+        const string remoteStaging = "/tmp/mcmgr-pack";
+        Exec(client, $"rm -rf {remoteStaging} && mkdir -p {remoteStaging}", TimeSpan.FromSeconds(30), log);
+        UploadPackTree(client, localDest, remoteStaging, log);
+        Exec(
+            client,
+            "sudo bash -c " + ShQuote(
+                "set -euo pipefail; "
+                + "HOME=\"${HOME:-/home/ubuntu}\"; "
+                + "systemctl stop minecraft || true; "
+                + $"cp -a {remoteStaging}/. /opt/mcmgr/server/; "
+                + $"bash {onboxStaging}/repair-permissions.sh; "
+                + "systemctl start minecraft"),
+            TimeSpan.FromMinutes(10),
+            log);
+        log?.Report("Copied server-side pack files to /opt/mcmgr/server (kept bootstrap eula.txt and server.properties).");
+        return ServiceResult.Ok();
+    }
+
+    private static void UploadPackTree(SshClient client, string localDir, string remoteDir, IProgress<string>? log)
+    {
+        using var sftp = new SftpClient(client.ConnectionInfo);
+        sftp.Connect();
+        var skipped = 0;
+        var uploaded = 0;
+        foreach (var file in Directory.EnumerateFiles(localDir, "*", SearchOption.AllDirectories))
+        {
+            var rel = Path.GetRelativePath(localDir, file).Replace('\\', '/');
+            var name = Path.GetFileName(file);
+            if (name.Equals("eula.txt", StringComparison.OrdinalIgnoreCase)
+                || name.Equals("server.properties", StringComparison.OrdinalIgnoreCase))
+            {
+                skipped++;
+                continue;
+            }
+
+            var remote = remoteDir + "/" + rel;
+            var parent = remote[..remote.LastIndexOf('/')];
+            EnsureRemoteDir(sftp, parent);
+            UploadFile(sftp, file, remote);
+            uploaded++;
+        }
+
+        log?.Report($"uploaded pack files ({uploaded} files, skipped {skipped} eula/properties) → {remoteDir}");
     }
 
     private static void WriteAgentConfig(SshClient client, TofuApplyOutputs o, IProgress<string>? log)

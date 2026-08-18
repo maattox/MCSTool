@@ -63,6 +63,12 @@ public sealed class SetupWizardState
     public bool VanillaConfirmed { get; set; }
 
     /// <summary>
+    /// Setup branch: <c>vanilla</c> or <c>modded</c>. Missing/unknown → vanilla.
+    /// </summary>
+    [JsonPropertyName("server_type")]
+    public string ServerType { get; set; } = SetupServerType.Vanilla;
+
+    /// <summary>
     /// Vanilla branch: <c>default</c> (Mojang) or <c>optimized</c> (Paper).
     /// Missing/unknown values normalize to default.
     /// </summary>
@@ -74,6 +80,35 @@ public sealed class SetupWizardState
 
     [JsonPropertyName("minecraft_version")]
     public string MinecraftVersion { get; set; } = "";
+
+    /// <summary>Local path of the imported pack archive (Modded branch). Not a secret.</summary>
+    [JsonPropertyName("pack_path")]
+    public string PackPath { get; set; } = "";
+
+    /// <summary><c>mrpack</c> or <c>manual_zip</c>.</summary>
+    [JsonPropertyName("pack_kind")]
+    public string PackKind { get; set; } = "";
+
+    [JsonPropertyName("pack_name")]
+    public string PackName { get; set; } = "";
+
+    [JsonPropertyName("pack_version_id")]
+    public string PackVersionId { get; set; } = "";
+
+    [JsonPropertyName("pack_loader")]
+    public string PackLoader { get; set; } = "";
+
+    [JsonPropertyName("pack_loader_version")]
+    public string PackLoaderVersion { get; set; } = "";
+
+    [JsonPropertyName("pack_summary")]
+    public string PackSummary { get; set; } = "";
+
+    [JsonPropertyName("pack_confirmed")]
+    public bool PackConfirmed { get; set; }
+
+    [JsonPropertyName("client_pack_acknowledged")]
+    public bool ClientPackAcknowledged { get; set; }
 
     [JsonPropertyName("eula_accepted")]
     public bool EulaAccepted { get; set; }

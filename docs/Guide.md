@@ -32,7 +32,7 @@ Do **not** add paid shapes, extra volumes, or load balancers. Setup never opens 
 | API key files | `%USERPROFILE%\.oci\config` + PEM (not an SSH key). |
 | Auth Token | Optional in Setup, **needed** to install the $1 spend-brake Function image. |
 | Public IPv4 | Yours, and each friend’s, for the allowlist. Home IPs change. |
-| Minecraft Java Edition | Same release you pick in Setup (Default Vanilla or Optimized Vanilla / Paper). |
+| Minecraft Java Edition | Same release Setup chooses: Vanilla/Paper picker, or the version declared in a Modded pack. Friends on a Modded server also need **that same exported pack file**. |
 
 Until a Windows installer ships (MVP packaging step), run Manager from this repo — see [Install the Manager](#3-install-the-manager).
 
@@ -131,7 +131,7 @@ Walk the wizard. You can close and resume later from **Advanced → Deploy / rep
 | Compartment | Default: create compartment named **`mcmgr`**. Do not point a first deploy at a compartment that already has unrelated resources. |
 | Alert email | Where Oracle should email the $1 budget alert. |
 | SSH | **Generate a new key** (recommended). This is **not** the API key. The private key stays on disk; Setup does not put it in the resume file. |
-| Game | **Default Vanilla** (official Mojang) or **Optimized Vanilla** (Paper). Then pick a **release** (default is the catalog’s latest). Snapshots are Advanced and apply only to Default Vanilla. Paper’s list hides Minecraft versions Paper does not build. Paper is a faster server, not a Forge/Fabric modpack. |
+| Game | **Vanilla** or **Modded**. Vanilla: **Default Vanilla** (official Mojang) or **Optimized Vanilla** (Paper), then pick a **release**. Snapshots are Advanced and apply only to Default Vanilla. Paper’s list hides versions Paper does not build. Paper is a faster server, not a Forge/Fabric modpack. **Modded:** choose a local **`.mrpack` or server-pack zip** (file picker or drag-and-drop). Setup analyzes it and shows name, Minecraft version, loader, Java, and file counts. Confirm, and tell friends they must install **that same exported pack** — keep the file (Manager also saves a copy). There is no pack search box. CurseForge *client* exports are refused until a later step. Quilt packs are detected but not installable yet. |
 | EULA | Open and accept the [Minecraft EULA](https://aka.ms/MinecraftEULA). Setup will not auto-accept it. |
 | Auth Token | Paste the token and **Store token**. Skip only if you accept that the Function image may not push this run. |
 | Summary | Confirm **your public IPv4** as `x.x.x.x/32`. Pick the game computer size (**4 OCPU / 24 GB** recommended, or **2 OCPU / 12 GB**). Read the plan. Check the create-resources box. Click **Deploy**. |
@@ -142,7 +142,7 @@ Walk the wizard. You can close and resume later from **Advanced → Deploy / rep
 
 **If Ampere A1 is out of capacity:** a window offers try again now, auto-retry every 5 minutes while the app stays open, or close and resume later. That wait does not spam Oracle’s API.
 
-Deploy creates the compartment, network, reserved play IP, game VM, doorbell VM, shared storage, IAM, and (when the token is present) the $1 budget Function, then installs the chosen Default Vanilla or Paper server on the game VM. It can take a while. Leave the app open until the log shows success.
+Deploy creates the compartment, network, reserved play IP, game VM, doorbell VM, shared storage, IAM, and (when the token is present) the $1 budget Function, then installs the chosen Default Vanilla, Paper, or Modded (loader + server-side mods) server on the game VM. It can take a while. Leave the app open until the log shows success.
 
 ---
 
@@ -280,6 +280,6 @@ Developer/operator SSH command dump (not required for the happy path): lab `docs
 
 ## Out of this guide (not MVP)
 
-Public game access, paid/spend mode, **Modded** Setup (pack import), macOS/Linux Manager, and a full-window $1 lock screen are **not** in this MVP path (several of those are v1). Setup **does** offer Optimized Vanilla (Paper) next to Default Vanilla.
+Public game access, paid/spend mode, macOS/Linux Manager, and a full-window $1 lock screen are **not** in this MVP path (several of those are v1). Setup offers Vanilla (Default or Paper) and **Modded** pack import (local file only).
 
-**In-app modpack browse/download is rejected** and will not ship later either. Users obtain a pack file themselves (Modrinth, CurseForge, etc.) and import it with the file picker.
+**In-app modpack browse/download is rejected** and will not ship later either. Users obtain a pack file themselves (Modrinth, CurseForge, etc.) and import it with the file picker or drag-and-drop.

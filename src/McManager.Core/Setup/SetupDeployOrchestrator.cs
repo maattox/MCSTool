@@ -159,6 +159,16 @@ public sealed class SetupDeployOrchestrator
         if (_dryRun)
         {
             log?.Report("[dry-run] Skipping cloud-init wait, SSH bootstrap, Object Storage, and config.local.json write.");
+            if (SetupServerType.IsModded(state.ServerType))
+            {
+                log?.Report(
+                    $"[dry-run] Modded pack: {state.PackName} / {state.PackLoader} {state.PackLoaderVersion} / MC {state.MinecraftVersion} "
+                    + $"(would install server-side files from {state.PackPath}).");
+            }
+            else
+            {
+                log?.Report($"[dry-run] Game: {SetupVanillaFlavor.PlanLabel(state.VanillaFlavor)} {state.MinecraftVersion}.");
+            }
             log?.Report("[dry-run] apply_stage left unchanged so a later real Deploy still runs tofu apply.");
             ReportProgress(
                 progress,
@@ -236,7 +246,9 @@ public sealed class SetupDeployOrchestrator
             rcon = (secret.Value ?? "").Trim();
 
         string? mcVersion = state.MinecraftVersion;
-        var serverKind = SetupVanillaFlavor.ToDistribution(state.VanillaFlavor);
+        var serverKind = SetupServerType.IsModded(state.ServerType)
+            ? SetupServerType.Modded
+            : SetupVanillaFlavor.ToDistribution(state.VanillaFlavor);
         var manifest = await _bootstrap.PullGameManifestAsync(outputs, state, cancellationToken).ConfigureAwait(false);
         if (manifest.Succeeded && !string.IsNullOrWhiteSpace(manifest.Value))
         {

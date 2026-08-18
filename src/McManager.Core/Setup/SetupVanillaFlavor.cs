@@ -2,9 +2,9 @@ namespace McManager.Core.Setup;
 
 /// <summary>
 /// Setup Vanilla branch: Default (Mojang jar) vs Optimized (Paper).
-/// Modded is a later step — this is not a server-type toggle.
-/// Forge is not a Vanilla-branch choice and is not offered next to NeoForge;
-/// packs that declare Forge use the on-box <c>DISTRIBUTION=forge</c> module.
+/// Server type Vanilla vs Modded is <see cref="SetupServerType"/>. Forge is not a
+/// Vanilla-branch choice and is not offered next to NeoForge; packs that declare
+/// Forge use the on-box <c>DISTRIBUTION=forge</c> module.
 /// </summary>
 public static class SetupVanillaFlavor
 {

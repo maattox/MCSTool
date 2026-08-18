@@ -1221,6 +1221,87 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     width: 0;
 }
 
+.mcm-progress-fill.mcm-progress-indeterminate {
+    width: 40%;
+    animation: mcm-progress-slide 1.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mcm-progress-fill.mcm-progress-indeterminate {
+        animation: none;
+        width: 100%;
+        opacity: 0.55;
+    }
+}
+
+@keyframes mcm-progress-slide {
+    0% { transform: translateX(-120%); }
+    100% { transform: translateX(280%); }
+}
+
+.mcm-pack-drop {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-height: 108px;
+    margin: 4px 0 12px;
+    padding: 16px 12px;
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    background: var(--surface-2);
+    text-align: center;
+}
+
+.mcm-pack-drop:hover,
+.mcm-pack-drop:focus-within {
+    border-color: var(--text-accent);
+}
+
+.mcm-pack-drop.is-busy {
+    opacity: 0.7;
+}
+
+.mcm-pack-drop .ti {
+    font-size: 22px;
+    color: var(--text-accent);
+}
+
+.mcm-pack-drop-title {
+    margin: 0 !important;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.mcm-pack-drop-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.mcm-pack-drop-input:disabled {
+    cursor: not-allowed;
+}
+
+.mcm-pack-summary {
+    max-height: 180px;
+    flex: 0 0 auto;
+    min-height: 64px;
+    margin-bottom: 12px;
+}
+
+.mcm-wizard-error {
+    margin: 0 0 8px !important;
+    font-size: 13px;
+    color: var(--text-danger);
+    white-space: pre-wrap;
+}
+
 .mcm-wizard-log-stack {
     display: flex;
     flex-direction: column;

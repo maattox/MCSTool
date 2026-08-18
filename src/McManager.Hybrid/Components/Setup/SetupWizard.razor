@@ -192,57 +192,154 @@
             else if (Vm.IsStepGame)
             {
                 <p>
-                    Default Vanilla is the official Mojang server. Optimized Vanilla uses Paper for smoother multiplayer — it is not a modpack, and friends still join with the same Minecraft Java version.
+                    Vanilla is the official Mojang server or Paper. Modded installs a pack file you already exported — there is no in-app pack search.
                 </p>
-                <p class="mcm-wizard-hint">Modded packs are a later Setup choice. This step stays Vanilla-family only.</p>
                 <label class="mcm-radio-row">
                     <input type="radio"
-                           name="mcm-setup-vanilla-flavor"
+                           name="mcm-setup-server-type"
                            disabled="@(!Vm.CanMutateWizard)"
-                           checked="@Vm.VanillaFlavorIsDefault"
-                           @onchange="@(() => Vm.SelectDefaultVanilla())" />
+                           checked="@Vm.ServerTypeIsVanilla"
+                           @onchange="@(() => Vm.SelectVanillaServer())" />
                     <span>
-                        Default Vanilla
-                        <span class="mcm-radio-note">Official Mojang jar. Same path as before.</span>
+                        Vanilla
+                        <span class="mcm-radio-note">Default Mojang jar or Optimized Vanilla (Paper). Friends join with the same Java version.</span>
                     </span>
                 </label>
                 <label class="mcm-radio-row">
                     <input type="radio"
-                           name="mcm-setup-vanilla-flavor"
+                           name="mcm-setup-server-type"
                            disabled="@(!Vm.CanMutateWizard)"
-                           checked="@Vm.VanillaFlavorIsOptimized"
-                           @onchange="@(() => Vm.SelectOptimizedVanilla())" />
+                           checked="@Vm.ServerTypeIsModded"
+                           @onchange="@(() => Vm.SelectModdedServer())" />
                     <span>
-                        Optimized Vanilla (Paper)
-                        <span class="mcm-radio-note">Better multiplayer performance. Not Forge or Fabric mods.</span>
+                        Modded
+                        <span class="mcm-radio-note">Choose a local .mrpack or server-pack zip. Not a catalog.</span>
                     </span>
                 </label>
-                @if (Vm.ShowSnapshotToggle)
+
+                @if (Vm.ShowVanillaGameOptions)
                 {
-                    <label class="mcm-checkbox-row">
-                        <input type="checkbox"
+                    <p class="mcm-wizard-hint">Paper is a faster server, not a Forge or Fabric modpack.</p>
+                    <label class="mcm-radio-row">
+                        <input type="radio"
+                               name="mcm-setup-vanilla-flavor"
                                disabled="@(!Vm.CanMutateWizard)"
-                               @bind="Vm.IncludeSnapshots" />
-                        <span>Advanced: include snapshots</span>
+                               checked="@Vm.VanillaFlavorIsDefault"
+                               @onchange="@(() => Vm.SelectDefaultVanilla())" />
+                        <span>
+                            Default Vanilla
+                            <span class="mcm-radio-note">Official Mojang jar. Same path as before.</span>
+                        </span>
                     </label>
+                    <label class="mcm-radio-row">
+                        <input type="radio"
+                               name="mcm-setup-vanilla-flavor"
+                               disabled="@(!Vm.CanMutateWizard)"
+                               checked="@Vm.VanillaFlavorIsOptimized"
+                               @onchange="@(() => Vm.SelectOptimizedVanilla())" />
+                        <span>
+                            Optimized Vanilla (Paper)
+                            <span class="mcm-radio-note">Better multiplayer performance. Not Forge or Fabric mods.</span>
+                        </span>
+                    </label>
+                    @if (Vm.ShowSnapshotToggle)
+                    {
+                        <label class="mcm-checkbox-row">
+                            <input type="checkbox"
+                                   disabled="@(!Vm.CanMutateWizard)"
+                                   @bind="Vm.IncludeSnapshots" />
+                            <span>Advanced: include snapshots</span>
+                        </label>
+                    }
+                    <div class="mcm-field">
+                        <label for="mcm-setup-mc-version">Minecraft version</label>
+                        <select id="mcm-setup-mc-version"
+                                disabled="@(!Vm.CanMutateWizard || Vm.VersionIds.Count == 0)"
+                                @bind="Vm.MinecraftVersion">
+                            @if (!string.IsNullOrWhiteSpace(Vm.MinecraftVersion)
+                                 && !Vm.VersionIds.Contains(Vm.MinecraftVersion))
+                            {
+                                <option value="@Vm.MinecraftVersion">@Vm.MinecraftVersion</option>
+                            }
+                            @foreach (var id in Vm.VersionIds)
+                            {
+                                <option value="@id">@id</option>
+                            }
+                        </select>
+                    </div>
+                    <p class="mcm-wizard-hint">@Vm.VersionCatalogNotes</p>
                 }
-                <div class="mcm-field">
-                    <label for="mcm-setup-mc-version">Minecraft version</label>
-                    <select id="mcm-setup-mc-version"
-                            disabled="@(!Vm.CanMutateWizard || Vm.VersionIds.Count == 0)"
-                            @bind="Vm.MinecraftVersion">
-                        @if (!string.IsNullOrWhiteSpace(Vm.MinecraftVersion)
-                             && !Vm.VersionIds.Contains(Vm.MinecraftVersion))
+
+                @if (Vm.ShowModdedGameOptions)
+                {
+                    <p>
+                        Export the pack on Modrinth, CurseForge, or another tool first. Then choose that file here. Friends must install <strong>that same exported pack</strong> on their PCs.
+                    </p>
+                    <div class="mcm-pack-drop @(Vm.IsAnalyzingPack ? "is-busy" : "")"
+                         aria-label="Drop a modpack file">
+                        <InputFile class="mcm-pack-drop-input"
+                                   OnChange="OnPackInputAsync"
+                                   accept=".mrpack,.zip"
+                                   disabled="@(!Vm.CanMutateWizard || Vm.IsAnalyzingPack)" />
+                        <i class="ti ti-file-zip" aria-hidden="true"></i>
+                        <p class="mcm-pack-drop-title">Drop a .mrpack or server-pack zip here</p>
+                        <p class="mcm-wizard-hint">Very large packs: use Choose pack file so Windows can pass the path.</p>
+                    </div>
+                    <div class="mcm-wizard-actions">
+                        <button type="button"
+                                disabled="@(!Vm.CanMutateWizard || Vm.IsAnalyzingPack)"
+                                @onclick="Vm.PickPackAsync">
+                            Choose pack file…
+                        </button>
+                        @if (!string.IsNullOrWhiteSpace(Vm.PackPath))
                         {
-                            <option value="@Vm.MinecraftVersion">@Vm.MinecraftVersion</option>
+                            <button type="button"
+                                    disabled="@(!Vm.CanMutateWizard || Vm.IsAnalyzingPack)"
+                                    @onclick="Vm.ClearPack">
+                                Clear pack
+                            </button>
                         }
-                        @foreach (var id in Vm.VersionIds)
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(Vm.PackFileNameDisplay))
+                    {
+                        <p class="mcm-wizard-hint mcm-wizard-mono">@Vm.PackFileNameDisplay</p>
+                    }
+                    @if (Vm.IsAnalyzingPack)
+                    {
+                        <div class="mcm-wizard-progress">
+                            <div class="mcm-wizard-progress-row">
+                                <span>@Vm.PackAnalyzeCaption</span>
+                            </div>
+                            <div class="mcm-progress-track" role="progressbar" aria-busy="true" aria-valuemin="0" aria-valuemax="100">
+                                <div class="mcm-progress-fill mcm-progress-indeterminate"></div>
+                            </div>
+                        </div>
+                    }
+                    @if (Vm.ShowPackSummary)
+                    {
+                        @if (!string.IsNullOrWhiteSpace(Vm.PackBlockReason))
                         {
-                            <option value="@id">@id</option>
+                            <p class="mcm-wizard-error">@Vm.PackBlockReason</p>
                         }
-                    </select>
-                </div>
-                <p class="mcm-wizard-hint">@Vm.VersionCatalogNotes</p>
+                        <pre class="mcm-wizard-log mcm-wizard-mono mcm-slim-scroll mcm-pack-summary">@Vm.PackSummary</pre>
+                    }
+                    @if (Vm.ShowPackConfirmChecks)
+                    {
+                        <p class="mcm-wizard-hint">@Vm.ClientPackCopy</p>
+                        <label class="mcm-checkbox-row">
+                            <input type="checkbox"
+                                   disabled="@(!Vm.CanMutateWizard)"
+                                   @bind="Vm.PackConfirmed" />
+                            <span>Use this pack on the server (server-side mods only; client-only files are skipped).</span>
+                        </label>
+                        <label class="mcm-checkbox-row">
+                            <input type="checkbox"
+                                   disabled="@(!Vm.CanMutateWizard)"
+                                   @bind="Vm.ClientPackAcknowledged" />
+                            <span>I will give friends this same exported pack. I will keep the file (Manager also saves a copy for later re-download).</span>
+                        </label>
+                    }
+                }
             }
             else if (Vm.IsStepEula)
             {
@@ -493,6 +590,27 @@
     {
         Vm.PropertyChanged -= OnVmChanged;
         Vm.PrepareToClose();
+    }
+
+    private async Task OnPackInputAsync(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file is null)
+            return;
+
+        try
+        {
+            await using var stream = file.OpenReadStream(SetupWizardViewModel.PackDropMaxBytes);
+            await Vm.ImportDroppedPackAsync(file.Name, stream);
+        }
+        catch (IOException ex)
+        {
+            Vm.StatusMessage = "Could not read the dropped file. Use Choose pack file for large packs. " + ex.Message;
+        }
+        catch (InvalidOperationException ex)
+        {
+            Vm.StatusMessage = "Drop failed. Use Choose pack file. " + ex.Message;
+        }
     }
 
     private void OnVmChanged(object? sender, PropertyChangedEventArgs e) =>

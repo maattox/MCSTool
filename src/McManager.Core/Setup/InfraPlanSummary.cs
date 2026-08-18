@@ -16,7 +16,7 @@ public static class InfraPlanSummary
         var version = string.IsNullOrWhiteSpace(state.MinecraftVersion)
             ? "(not chosen yet)"
             : state.MinecraftVersion;
-        var flavor = SetupVanillaFlavor.PlanLabel(state.VanillaFlavor);
+        var flavor = SetupPackImport.PlanLabel(state);
 
         var region = string.IsNullOrWhiteSpace(state.OciRegion) ? "(from ~/.oci)" : state.OciRegion;
         var profile = string.IsNullOrWhiteSpace(state.OciProfile) ? "DEFAULT" : state.OciProfile;
