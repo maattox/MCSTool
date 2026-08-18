@@ -20,7 +20,7 @@ Do **not** point default CI at `data/sample-packs/`. That folder is absent on a 
 
 - `fabric-strip.mrpack` — Fabric 1.21.1; Fabric API + Lithium `env.server=required`, Sodium `unsupported`.
 - `manual-server.zip` — unstructured `mods/` + `config/` (Step 4.9).
-- `curseforge-synthetic.zip` — fake CurseForge export shape. **Do not** call the live CurseForge API with its placeholder file IDs.
+- `curseforge-synthetic.zip` — fake CurseForge **client-export** shape (manifest IDs, no jars). **Do not** call the live CurseForge API. Step 4.12 is deferred; Setup refuses this shape.
 
 `real/` (published exports; Minecraft **1.21.1** unless the filename says otherwise):
 
@@ -33,7 +33,7 @@ There is **no** CurseForge “Server Files” zip in the set. Mega-packs (Better
 
 ## Gotchas
 
-1. **Fabulously Optimized and OptiFine for Fabric mark every file `env.server = required`**, including obvious client-only mods. They are **not** a valid “strip using `env.server`” test. Use `homemade/fabric-strip.mrpack` (and BlockFront, which tags Sodium `unsupported` correctly). CurseForge FO is still a valid **4.12 export-shape** sample; client-only detection there needs the heuristic list (blueprint §23.3 / §24.3), not `env.server`.
+1. **Fabulously Optimized and OptiFine for Fabric mark every file `env.server = required`**, including obvious client-only mods. They are **not** a valid “strip using `env.server`” test. Use `homemade/fabric-strip.mrpack` (and BlockFront, which tags Sodium `unsupported` correctly). The CurseForge FO *client* export is **not** a v1 import target (Step 4.12 deferred). If a **Server Files** zip is added later, that is the 4.9 path.
 2. **Infinite Horizons (Forge 1.20.1) is ~305 mods / ~20 MB.** Correct argfile-era Forge export, too heavy for routine parser tests. Confirm the 1.20.1 shape once, then use homemade + the 1.12.2 pack for day-to-day work.
 
 ## Which file for which V1 step
@@ -42,8 +42,8 @@ There is **no** CurseForge “Server Files” zip in the set. Mega-packs (Better
 |------|-----|
 | 4.7 analyze `.mrpack` | `homemade/fabric-strip.mrpack`, then one small real Modrinth pack |
 | 4.8 install `.mrpack` | `fabric-strip.mrpack` (real CDN URLs) into a **temp dir** — not the live Forge lab |
-| 4.9 manual zip | `homemade/manual-server.zip` |
-| 4.12 CurseForge | Synthetic zip + **mocked** API in tests; real FO export on this PC only if ToS / API key work is approved |
+| 4.9 manual zip | `homemade/manual-server.zip` (CurseForge **Server Files** if the operator adds one) |
+| 4.12 CurseForge API | **Deferred** — do **not** call the live CurseForge API; do not implement a mocked resolver unless the operator reopens 4.12 |
 
 Live **test** VM1: at most one small Fabric or NeoForge pack; disable idle for the session; never the live Forge lab.
 

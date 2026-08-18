@@ -131,7 +131,7 @@ Walk the wizard. You can close and resume later from **Advanced → Deploy / rep
 | Compartment | Default: create compartment named **`mcmgr`**. Do not point a first deploy at a compartment that already has unrelated resources. |
 | Alert email | Where Oracle should email the $1 budget alert. |
 | SSH | **Generate a new key** (recommended). This is **not** the API key. The private key stays on disk; Setup does not put it in the resume file. |
-| Game | **Vanilla** or **Modded**. Vanilla: **Default Vanilla** (official Mojang) or **Optimized Vanilla** (Paper), then pick a **release**. Snapshots are Advanced and apply only to Default Vanilla. Paper’s list hides versions Paper does not build. Paper is a faster server, not a Forge/Fabric modpack. **Modded:** choose a local **`.mrpack` or server-pack zip** (file picker or drag-and-drop). Setup analyzes it and shows name, Minecraft version, loader, Java, and file counts. Confirm two checkboxes, including that you will give friends the **same exported pack**. There is no pack search box. CurseForge *client* exports are refused until a later step. Quilt packs are detected but not installable yet. Details: [Modded: friends need the client pack](#modded-friends-need-the-client-pack). |
+| Game | **Vanilla** or **Modded**. Vanilla: **Default Vanilla** (official Mojang) or **Optimized Vanilla** (Paper), then pick a **release**. Snapshots are Advanced and apply only to Default Vanilla. Paper’s list hides versions Paper does not build. Paper is a faster server, not a Forge/Fabric modpack. **Modded:** choose a local **`.mrpack` or server-pack zip** (file picker or drag-and-drop). Setup analyzes it and shows name, Minecraft version, loader, Java, and file counts. Confirm two checkboxes, including that you will give friends the **same exported pack**. There is no pack search box. Prefer a **Modrinth `.mrpack`**, or a CurseForge **Server Files** zip (the jars are already inside). CurseForge *client* exports (manifest IDs, no jars) are refused — download Server Files from that pack’s CurseForge page instead. Quilt packs are detected but not installable yet. Details: [Modded: friends need the client pack](#modded-friends-need-the-client-pack). |
 | EULA | Open and accept the [Minecraft EULA](https://aka.ms/MinecraftEULA). Setup will not auto-accept it. |
 | Auth Token | Paste the token and **Store token**. Skip only if you accept that the Function image may not push this run. |
 | Summary | Confirm **your public IPv4** as `x.x.x.x/32`. Pick the game computer size (**4 OCPU / 24 GB** recommended, or **2 OCPU / 12 GB**). Read the plan. Check the create-resources box. Click **Deploy**. |
@@ -150,11 +150,13 @@ Deploy creates the compartment, network, reserved play IP, game VM, doorbell VM,
 
 A **Modded** server is **not playable** until friends install the **same exported pack file** you chose in Setup. Vanilla Minecraft (and a different pack, or a different version of the same pack) cannot join.
 
-- Keep that file. Manager also saves a copy on this PC so you can share it later.
+- Keep that file. Manager also saves a copy on this PC; **Server Management → Download pack** copies that original archive (not a zip of server mods).
 - Tell friends the pack **name**, **Minecraft version**, and **loader** (Fabric / Forge / NeoForge) shown in Setup, and give them the original export.
 - This app **cannot** rebuild a client pack from the `mods/` folder on the game computer. Setup installs **server-side** mods only and skips client-only files, so a zip of the live server mods is **not** a playable pack for friends.
 
 Next is not available in Setup until you check that you will give friends this same pack. The same reminder appears on the Review page before Deploy.
+
+**CurseForge files:** if the zip is a *client* export (a `manifest.json` of project/file IDs and no mod jars), Setup will refuse it. On that pack’s CurseForge page, download **Server Files** (jars already inside) and import that zip — or use a Modrinth `.mrpack` when the pack exists there. This app does not call the CurseForge API and does not reconstruct missing jars.
 
 ---
 
@@ -186,11 +188,14 @@ When everyone is done, click **Stop** (doorbell-aware). If you forget, idle time
 | Restart Minecraft only | **Restart** (game VM must already be up) |
 | Hours vs budget | Pinned usage cards + **Usage** tab |
 | World zip download / replace / wipe | **Server Management** (Object Storage; ~9.5 GB backup soft cap) |
+| Inspect mods / re-download imported pack | **Server Management** → **Modding** (original Setup file on this PC; not a zip of server mods) |
 | Stuck play IP / doorbell | **Troubleshooting** (confirm-gated one-shots) |
 | Technical VM / doorbell state | **Advanced** |
 | Turn idle timer off / delete the stack | **Danger Zone** |
 
 **Wipe world** on **Server Management** deletes only the live save on the game VM so the next **Start** generates a new world. Cloud backups, mods, and `server.properties` are not deleted. Download a world save first if you might want the current world back. The game VM must be running; Minecraft is stopped for the wipe and left stopped until you Start.
+
+**Modding** on the same tab: Vanilla and Paper show a short “not a modded server” note. On a Modded stack you can inspect the server-side files in `mods/` (game VM must be running) and **Download pack** — that copies the **original imported archive** saved on this PC, not a zip of the live server mods (that zip would not work for friends). If the original file is missing from this PC, Manager cannot rebuild a client pack.
 
 **Advanced vs Danger Zone:** Advanced is power-user tools (technical status, Deploy/repair, break-glass VM power, idle **timeout**, stack identity). **Danger Zone** is a separate tab for turning the idle timer **off** (testing only — boot / Minecraft start turns it back on) and **Delete infrastructure**. Troubleshooting stays its own tab.
 
@@ -294,4 +299,4 @@ Developer/operator SSH command dump (not required for the happy path): lab `docs
 
 Public game access, paid/spend mode, macOS/Linux Manager, and a full-window $1 lock screen are **not** in this MVP path (several of those are v1). Setup offers Vanilla (Default or Paper) and **Modded** pack import (local file only).
 
-**In-app modpack browse/download is rejected** and will not ship later either. Users obtain a pack file themselves (Modrinth, CurseForge, etc.) and import it with the file picker or drag-and-drop.
+**In-app modpack browse/download is rejected** and will not ship later either. Users obtain a pack file themselves (Modrinth `.mrpack`, CurseForge **Server Files** zip, etc.) and import it with the file picker or drag-and-drop. CurseForge client-export API import is not in this path.

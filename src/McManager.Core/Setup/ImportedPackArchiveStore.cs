@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using McManager.Core.Services;
 
 namespace McManager.Core.Setup;
@@ -16,6 +17,11 @@ public static class ImportedPackArchiveStore
     private static readonly JsonSerializerOptions JsonWriteOptions = new()
     {
         WriteIndented = true,
+    };
+
+    private static readonly JsonSerializerOptions JsonReadOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
     };
 
     public static string FolderNameFor(string packName, string? versionId)
@@ -76,7 +82,7 @@ public static class ImportedPackArchiveStore
             var destPath = Path.Combine(destDir, ArchiveFileNameFor(sourceArchivePath));
             File.Copy(sourceArchivePath, destPath, overwrite: true);
 
-            var sidecar = new ImportedPackArchiveSidecar(
+            var sidecar = new ImportedPackArchiveInfo(
                 packName,
                 versionId,
                 loader,
@@ -94,6 +100,93 @@ public static class ImportedPackArchiveStore
         {
             return ServiceResult<string>.Fail($"Cannot retain the original pack archive: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Latest retained original archive under <c>data/imported-packs/</c>.
+    /// Looks in each folder for <c>original.*</c> so a moved data directory still works.
+    /// </summary>
+    public static ImportedPackArchiveInfo? TryFindLatest(string? dataDirectory)
+    {
+        var all = List(dataDirectory);
+        return all.Count == 0
+            ? null
+            : all.OrderByDescending(a => a.RetainedAt)
+                .ThenByDescending(a => a.ArchivePath, StringComparer.OrdinalIgnoreCase)
+                .First();
+    }
+
+    public static IReadOnlyList<ImportedPackArchiveInfo> List(string? dataDirectory)
+    {
+        if (string.IsNullOrWhiteSpace(dataDirectory))
+            return [];
+
+        var root = Path.Combine(dataDirectory, DirectoryName);
+        if (!Directory.Exists(root))
+            return [];
+
+        var list = new List<ImportedPackArchiveInfo>();
+        foreach (var dir in Directory.EnumerateDirectories(root))
+        {
+            if (TryReadFolder(dir, out var info) && info is not null)
+                list.Add(info);
+        }
+
+        return list;
+    }
+
+    private static bool TryReadFolder(string destDir, out ImportedPackArchiveInfo? info)
+    {
+        info = null;
+        try
+        {
+            var sidecarPath = Path.Combine(destDir, SidecarFileName);
+            ImportedPackArchiveInfo? sidecar = null;
+            if (File.Exists(sidecarPath))
+            {
+                sidecar = JsonSerializer.Deserialize<ImportedPackArchiveInfo>(
+                    File.ReadAllText(sidecarPath),
+                    JsonReadOptions);
+            }
+
+            var archivePath = ResolveArchivePath(destDir, sidecar?.ArchivePath);
+            if (string.IsNullOrWhiteSpace(archivePath) || !File.Exists(archivePath))
+                return false;
+
+            var sourceName = sidecar?.SourceFileName;
+            if (string.IsNullOrWhiteSpace(sourceName))
+                sourceName = Path.GetFileName(archivePath);
+
+            info = new ImportedPackArchiveInfo(
+                string.IsNullOrWhiteSpace(sidecar?.PackName) ? "pack" : sidecar.PackName,
+                sidecar?.VersionId,
+                sidecar?.Loader ?? "",
+                sidecar?.MinecraftVersion ?? "",
+                sourceName,
+                sidecar?.RetainedAtUtc ?? "",
+                archivePath);
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
+        {
+            return false;
+        }
+    }
+
+    private static string? ResolveArchivePath(string destDir, string? sidecarPath)
+    {
+        if (!string.IsNullOrWhiteSpace(sidecarPath) && File.Exists(sidecarPath))
+            return sidecarPath;
+
+        foreach (var path in Directory.EnumerateFiles(destDir, "original.*"))
+        {
+            var name = Path.GetFileName(path);
+            if (name.Equals(SidecarFileName, StringComparison.OrdinalIgnoreCase))
+                continue;
+            return path;
+        }
+
+        return null;
     }
 
     internal static string SanitizeSegment(string value)
@@ -116,11 +209,22 @@ public static class ImportedPackArchiveStore
     }
 }
 
-internal sealed record ImportedPackArchiveSidecar(
+public sealed record ImportedPackArchiveInfo(
     string PackName,
     string? VersionId,
     string Loader,
     string MinecraftVersion,
     string SourceFileName,
     string RetainedAtUtc,
-    string ArchivePath);
+    string ArchivePath)
+{
+    [JsonIgnore]
+    public DateTimeOffset RetainedAt =>
+        DateTimeOffset.TryParse(RetainedAtUtc, out var parsed) ? parsed : DateTimeOffset.MinValue;
+
+    [JsonIgnore]
+    public string SuggestedDownloadFileName =>
+        string.IsNullOrWhiteSpace(SourceFileName)
+            ? Path.GetFileName(ArchivePath)
+            : SourceFileName.Trim();
+}

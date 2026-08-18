@@ -154,14 +154,14 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 | **1** | Manager shell (Advanced/Danger split, CIDR, wipe world) | **DONE** |
 | **2** | $1 spend-brake lock (Function flag, door, Manager overlay) | **DONE** |
 | **3** | Remove public/blacklist (was IP Management public mode) | **DONE** |
-| **4** | Setup game types (Paper, loaders, pack import) | **NEXT** = Step **4.12** |
-| **5** | Server Management modding inspect + re-download pack | TODO |
-| **6** | Top-bar chrome + oversized-world SSH UX | TODO |
+| **4** | Setup game types (Paper, loaders, pack import) | **DONE** (Step **4.12** deferred) |
+| **5** | Server Management modding inspect + re-download pack | **DONE** |
+| **6** | Top-bar chrome + oversized-world SSH UX | **NEXT** = Step **6.1** |
 | **7** | Remaining v1 (resize, console, storage, Connect version) | TODO |
 | **8** | Paid / spend mode (**last** product feature) | TODO |
 | **9** | Packaging, updates, launch (old MVP Phase 8–9) | TODO — **do not start** until Phases 1–8 are DONE or the operator skips 8 |
 
-**Current NEXT step:** [Step 4.12](#step-412--curseforge-pack-import-gated). **Do not start Step 4.12** until the operator asks.
+**Current NEXT step:** [Step 6.1](#step-61--overflow-menu--settings-gear). **Do not start Step 6.1** until the operator asks.
 
 ---
 
@@ -449,11 +449,11 @@ Never implemented. OCI Security Lists have no deny. Do not ship a CIDR invert. P
 
 ## Phase 4 — Setup game types
 
-**Order:** Paper (Optimized Vanilla) first, then loader modules, then pack import. **No in-app catalog** (blueprint §2.4). Quilt = detected loader value only, not a Setup radio. CurseForge is its **own** step (4.12).
+**Order:** Paper (Optimized Vanilla) first, then loader modules, then pack import. **No in-app catalog** (blueprint §2.4). Quilt = detected loader value only, not a Setup radio. CurseForge **Server Files** zips (jars already in the archive) use the Step **4.9** manual adapter. CurseForge **API** client-export import is **not** a v1 code path — Step **4.12** is deferred.
 
 Each installer step: Core metadata client + `onbox/mcmgr/` module + generic unit/manifest — **one platform per step**.
 
-**Sample packs:** CI uses tiny tracked fixtures under `tests/fixtures/` (blueprint §15). Operator-local real/homemade archives live in gitignored `data/sample-packs/` — see [`Sample-Packs.md`](Sample-Packs.md) (gotchas + which file for 4.7–4.12). If a needed format/loader is missing, **pause and ask the operator to download it**. **Do not** add an in-app pack browser (that feature is **rejected**).
+**Sample packs:** CI uses tiny tracked fixtures under `tests/fixtures/` (blueprint §15). Operator-local real/homemade archives live in gitignored `data/sample-packs/` — see [`Sample-Packs.md`](Sample-Packs.md) (gotchas + which file for 4.7–4.11). If a needed format/loader is missing, **pause and ask the operator to download it**. **Do not** add an in-app pack browser (that feature is **rejected**).
 
 ### Step 4.1 — Paper Fill v3 client + fixtures (Core only)
 
@@ -734,7 +734,7 @@ Each installer step: Core metadata client + `onbox/mcmgr/` module + generic unit
 
 ### Step 4.12 — CurseForge pack import (gated)
 
-**Status:** TODO  
+**Status:** DEFERRED (ToS / API-key custody)  
 **Depends on:** 4.10
 
 **Read first**
@@ -742,19 +742,22 @@ Each installer step: Core metadata client + `onbox/mcmgr/` module + generic unit
 - Blueprint **§23** only (ToS, API key custody, no cache/proxy, no competing catalog)  
 - Lab `PRODUCT-IDEAS.md` → Modded branch CurseForge row
 
-**Do**
+**Decision (operator 2026-08-18)** — docs only; **do not implement** an API client.
 
-- Import a **user-supplied** CurseForge export zip. Use the API **only** to resolve download URLs for files **already named** in that manifest.  
-- Stop and ask if key custody / ToS still blocks shipping. Do not embed a user-extractable API key on VM1.  
-- Client-only heuristic (CurseForge has no per-file server marker) — warn loudly.
+- **Do not** apply for, bundle, or ship a CurseForge API key (not in git, not in the WinExe, not on VM1, not in an Always Free Function “relay”). A product-owned key in an open-source desktop app is extractable → sharing the key, which the [3rd Party API Terms](https://support.curseforge.com/en/support/solutions/articles/9000207405-curse-forge-3rd-party-api-terms-and-conditions) forbid. A shared proxy conflicts with the no-proxy clause and **$0**.
+- **Do not** drop CurseForge as a *file format*. Step **4.9** already imports a zip whose jars are in the archive, including CurseForge **Server Files**.
+- CurseForge **client** exports (`manifest.json` with `projectID`/`fileID` and no jars) stay **refused**. Guide copy: download **Server Files** from that pack’s CurseForge page, or use a Modrinth `.mrpack` if one exists. Do not tell users “Modrinth only.”
+- Revisit only if the operator later wants an **operator-owned** key in Windows Credential Manager, with all API + CDN downloads on the **admin PC** (never VM1), no API JSON cache, no catalog UI.
+
+Historical **Do** (not to be started): import a user-supplied CurseForge client export; API only to resolve URLs already named in that manifest; client-only heuristic; stop if key custody / ToS blocked. That last gate fired.
 
 **Test**
 
-- Fixture manifest resolve with a mocked API; no catalog UI. Operator-local synthetic zip + real FO export: [`Sample-Packs.md`](Sample-Packs.md). Infinite Horizons is a valid 1.20.1 Forge *shape* but too large for routine tests.
+- Docs: Guide + PRODUCT-IDEAS + this changelog match the decision. No live CurseForge API. No `tofu apply`.
 
 **Done when:** CurseForge file-import works **or** this step is explicitly deferred in the changelog with the ToS blocker.
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-18 — **DEFERRED.** No CurseForge API key in v1. Keep Server Files / filled-zip import (4.9). Refuse client exports; Guide points at Server Files or Modrinth `.mrpack`. Not rejected (unlike catalog). **NEXT = Step 5.1**. Do not start 5.1 unless asked.
 
 ---
 
@@ -762,7 +765,7 @@ Each installer step: Core metadata client + `onbox/mcmgr/` module + generic unit
 
 ### Step 5.1 — Inspect mods + re-download imported pack
 
-**Status:** TODO  
+**Status:** DONE  
 **Depends on:** 4.10
 
 **Read first**
@@ -783,7 +786,7 @@ Each installer step: Core metadata client + `onbox/mcmgr/` module + generic unit
 
 **Done when:** Inspect + original-archive download exist; no catalog.
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-18 — Server Management **Modding** section: Vanilla/Paper empty state; Modded lists live `mods/` via SSH (inspect-only) and **Download pack** copies `data/imported-packs/` original archive (never a zip of VM1 `mods/`). Missing local archive disables download with a reconstruct warning. Guide note. **NEXT = Step 6.1**. Do not start 6.1 unless asked.
 
 ---
 
@@ -791,7 +794,7 @@ Each installer step: Core metadata client + `onbox/mcmgr/` module + generic unit
 
 ### Step 6.1 — Overflow menu + settings gear
 
-**Status:** TODO  
+**Status:** NEXT  
 **Depends on:** 1.1
 
 **Read first**
@@ -1221,6 +1224,7 @@ Former MVP Phase **8–9**. **Do not start** until Phases **1–7** are DONE and
 - Day-2 **change/replace modpack**  
 - Full per-day budget calendar  
 - Quilt as a Setup entry point (detect-only is OK in 4.7)  
+- **Deferred (ToS):** CurseForge **API** client-export import (project/file ID resolve). Server Files zip import (4.9) stays. Not rejected.  
 - Purpur / Folia / hybrids  
 - **Rejected:** in-app Modrinth/CurseForge/FTB **catalog / browse / search / download-a-pack** (users import a local file; this is not an after-v1 feature)  
 - **Rejected:** public Minecraft / public-private toggle / blacklist (private allowlist only; this is not an after-v1 feature)  
@@ -1237,6 +1241,8 @@ Former MVP Phase **8–9**. **Do not start** until Phases **1–7** are DONE and
 
 | Date | Note |
 |------|------|
+| 2026-08-18 | **Step 5.1 DONE.** Server Management Modding: Vanilla/Paper empty state; inspect live `mods/` (SSH); **Download pack** = original `data/imported-packs/` archive (never zip VM1 `mods/`). Guide note. **NEXT = Step 6.1**. Do not start 6.1 unless asked. |
+| 2026-08-18 | **Step 4.12 DEFERRED** (ToS / key custody). No product CurseForge API key; keep Server Files zip via 4.9; client exports stay refused (Guide: Server Files or Modrinth `.mrpack`). **NEXT = Step 5.1**. Do not start 5.1 unless asked. |
 | 2026-08-18 | **Step 4.11 DONE.** Dedicated client-pack notice in Setup (Game + Review) + Guide section: not playable until friends have the same exported pack; cannot rebuild from server `mods/`. **NEXT = Step 4.12**. Do not start 4.12 unless asked. |
 | 2026-08-18 | **Step 4.10 DONE.** Setup Modded branch: Vanilla vs Modded radios; file picker + drop (no catalog); analyze/confirm; client-pack copy; bootstrap loader + server-side pack files. Guide note. **NEXT = Step 4.11**. Do not start 4.11 unless asked. |
 | 2026-08-18 | **Step 4.8 DONE.** Modrinth `.mrpack` server-side install: Core `MrpackInstaller` (plain GET of index URLs, strip client-only, fail on unclear side, overrides copy, hash verify); retain original under `data/imported-packs/`; DEBUG temp-dir probe. No catalog, no wizard. **NEXT = Step 4.9**. Do not start 4.9 unless asked. |

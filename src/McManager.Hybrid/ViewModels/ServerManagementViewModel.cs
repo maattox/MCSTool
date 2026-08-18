@@ -3,6 +3,7 @@ using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using McManager.Core.Config;
 using McManager.Core.Services;
+using McManager.Core.Setup;
 using McManager.Hybrid.Ui;
 
 namespace McManager.Hybrid.ViewModels;
@@ -28,8 +29,12 @@ public sealed partial class ServerManagementViewModel : ObservableObject
     private readonly MainViewModel _main;
     private string? _sessionError;
     private long _currentBackupBytes;
+    private string _dataDirectory = "";
+    private ImportedPackArchiveInfo? _localPack;
 
     public ObservableCollection<WorldBackupInfo> Backups { get; } = [];
+
+    public ObservableCollection<string> ModFiles { get; } = [];
 
     [ObservableProperty]
     private WorldBackupInfo? _selectedBackup;
@@ -58,7 +63,41 @@ public sealed partial class ServerManagementViewModel : ObservableObject
     [ObservableProperty]
     private string _backupStorageDisplay = "—";
 
+    [ObservableProperty]
+    private bool _isModdedServer;
+
+    [ObservableProperty]
+    private bool _hasLocalPackArchive;
+
+    [ObservableProperty]
+    private bool _isModdingBusy;
+
+    [ObservableProperty]
+    private string _packIdentityDisplay = "";
+
+    [ObservableProperty]
+    private string _moddingSummary = "";
+
+    [ObservableProperty]
+    private string _moddingHint = "";
+
     public bool HasObjectStorage => _backups is not null;
+
+    public bool AnyBusy => IsBusy || IsModdingBusy;
+
+    public bool CanDownloadPack =>
+        ModdingPanelLogic.CanDownloadPack(IsModdedServer, HasLocalPackArchive) && !AnyBusy;
+
+    public string DownloadPackTitle =>
+        CanDownloadPack
+            ? "Save a copy of the original pack file imported in Setup (not a zip of server mods)."
+            : ModdingPanelLogic.DownloadDisabledReason(IsModdedServer, HasLocalPackArchive);
+
+    public string VanillaEmptyState => ModdingPanelLogic.VanillaEmptyState;
+
+    public string MissingArchiveMessage => ModdingPanelLogic.MissingArchiveMessage;
+
+    public string ModdingHelpTitle => ModdingPanelLogic.HelpTitle;
 
     public ServerManagementViewModel(
         LocalConfigHost configHost,
@@ -79,13 +118,18 @@ public sealed partial class ServerManagementViewModel : ObservableObject
         _session.Reloaded += OnSessionReloaded;
     }
 
-    private void OnSessionReloaded(object? sender, EventArgs e) => BindFromHost();
+    private void OnSessionReloaded(object? sender, EventArgs e)
+    {
+        BindFromHost();
+        _ = RefreshMinecraftVersionAsync();
+    }
 
     private void BindFromHost()
     {
         _config = _configHost.Config;
         _ssh = _cloud.Ssh;
         _sessionError = _cloud.SessionError;
+        _dataDirectory = _configHost.LoadResult.DataDirectory ?? "";
         _backups = null;
         _infra = null;
         ServerNameDisplay = "—";
@@ -96,6 +140,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject
         Backups.Clear();
         SelectedBackup = null;
         _currentBackupBytes = 0;
+        ResetModdingState();
 
         if (_config is not null)
         {
@@ -119,6 +164,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject
                 : _sessionError)
             : "Open this tab to list world backups.";
         OnPropertyChanged(nameof(HasObjectStorage));
+        BindLocalPack();
     }
 
     public async Task RefreshAsync()
@@ -364,15 +410,209 @@ public sealed partial class ServerManagementViewModel : ObservableObject
 
     public async Task RefreshMinecraftVersionAsync()
     {
+        BindLocalPack();
         if (_infra is null)
+        {
+            ApplyServerKind(null);
             return;
+        }
 
         var read = await _infra.GetAsync();
         if (!read.Succeeded || read.Value?.Document is null)
+        {
+            ApplyServerKind(null);
+            return;
+        }
+
+        var doc = read.Value.Document;
+        var version = doc.Game.MinecraftVersion;
+        MinecraftVersionDisplay = string.IsNullOrWhiteSpace(version) ? "—" : version.Trim();
+        ApplyServerKind(doc.Game.ServerKind);
+        await RefreshLiveModsAsync();
+    }
+
+    public async Task RefreshLiveModsAsync()
+    {
+        if (!IsModdedServer)
+            return;
+        if (IsModdingBusy)
+            return;
+        if (_config is null)
+        {
+            ModdingHint = "Local config is missing.";
+            return;
+        }
+
+        var lifeRaw = _main.Vm1Lifecycle ?? "";
+        var life = lifeRaw.ToUpperInvariant();
+        if (life != "RUNNING")
+        {
+            ModFiles.Clear();
+            ModdingSummary = "";
+            ModdingHint = ModdingPanelLogic.VmStoppedHint;
+            return;
+        }
+
+        IsModdingBusy = true;
+        ModdingHint = "Listing mods on the game VM…";
+        try
+        {
+            var run = await _ssh.RunCommandAsync(
+                SshTarget.FromVm1(_config.Vm1),
+                ServerModsInspect.RemoteCommand);
+            if (!run.Succeeded)
+            {
+                ModFiles.Clear();
+                ModdingSummary = "";
+                ModdingHint = run.Error ?? "Could not list mods on the game VM.";
+                return;
+            }
+
+            if (!ServerModsInspect.TryParse(run.Output, out var inspect, out var parseError))
+            {
+                ModFiles.Clear();
+                ModdingSummary = "";
+                ModdingHint = parseError ?? "Could not parse the mods listing.";
+                return;
+            }
+
+            ModFiles.Clear();
+            foreach (var name in inspect.FileNames)
+                ModFiles.Add(name);
+            ModdingSummary = inspect.SummaryLine();
+            ModdingHint = inspect.ModsDirectoryMissing
+                ? "No mods folder on the server yet."
+                : (ModFiles.Count == 0 ? "No files in mods/." : "");
+        }
+        finally
+        {
+            IsModdingBusy = false;
+        }
+    }
+
+    public async Task DownloadPackAsync()
+    {
+        if (AnyBusy)
             return;
 
-        var version = read.Value.Document.Game.MinecraftVersion;
-        MinecraftVersionDisplay = string.IsNullOrWhiteSpace(version) ? "—" : version.Trim();
+        if (!IsModdedServer)
+        {
+            ModdingHint = ModdingPanelLogic.VanillaEmptyState;
+            return;
+        }
+
+        BindLocalPack();
+        if (_localPack is null || !File.Exists(_localPack.ArchivePath))
+        {
+            HasLocalPackArchive = false;
+            ModdingHint = ModdingPanelLogic.MissingArchiveMessage;
+            NotifyModdingCommands();
+            return;
+        }
+
+        var suggested = _localPack.SuggestedDownloadFileName;
+        var ext = Path.GetExtension(suggested).TrimStart('.');
+        if (string.IsNullOrWhiteSpace(ext))
+            ext = "zip";
+
+        var filters = new List<FileTypeFilter>();
+        if (ext.Equals("mrpack", StringComparison.OrdinalIgnoreCase))
+            filters.Add(new FileTypeFilter("Modrinth pack", ".mrpack"));
+        else
+            filters.Add(new FileTypeFilter("ZIP files", ".zip"));
+        filters.Add(AllFilesFilter);
+
+        var localPath = await _filePicker.SaveFileAsync(new FileSaveRequest
+        {
+            Title = "Download imported pack",
+            FileName = suggested,
+            DefaultExtension = ext,
+            Filters = filters,
+        });
+
+        if (string.IsNullOrWhiteSpace(localPath))
+        {
+            StatusMessage = "Download pack cancelled.";
+            return;
+        }
+
+        IsBusy = true;
+        StatusMessage = "Copying original imported pack…";
+        ProgressDisplay = "";
+        var archivePath = _localPack.ArchivePath;
+        try
+        {
+            await Task.Run(() => File.Copy(archivePath, localPath, overwrite: true));
+            StatusMessage = $"Saved original pack to {localPath}";
+            ModdingHint = "This is the original imported file, not a zip of server mods.";
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            StatusMessage = "Could not copy the original pack: " + ex.Message;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private void BindLocalPack()
+    {
+        _localPack = ImportedPackArchiveStore.TryFindLatest(_dataDirectory);
+        HasLocalPackArchive = _localPack is not null && File.Exists(_localPack.ArchivePath);
+        PackIdentityDisplay = HasLocalPackArchive && _localPack is not null
+            ? FormatPackIdentity(_localPack)
+            : "";
+        NotifyModdingCommands();
+    }
+
+    private void ApplyServerKind(string? serverKind)
+    {
+        IsModdedServer = ModdingPanelLogic.IsModdedServerKind(serverKind);
+        if (!IsModdedServer)
+        {
+            ModFiles.Clear();
+            ModdingSummary = "";
+            ModdingHint = ModdingPanelLogic.VanillaEmptyState;
+        }
+
+        NotifyModdingCommands();
+    }
+
+    private void ResetModdingState()
+    {
+        _localPack = null;
+        IsModdedServer = false;
+        HasLocalPackArchive = false;
+        PackIdentityDisplay = "";
+        ModdingSummary = "";
+        ModdingHint = "";
+        ModFiles.Clear();
+        NotifyModdingCommands();
+    }
+
+    private void NotifyModdingCommands()
+    {
+        OnPropertyChanged(nameof(AnyBusy));
+        OnPropertyChanged(nameof(CanDownloadPack));
+        OnPropertyChanged(nameof(DownloadPackTitle));
+    }
+
+    partial void OnIsBusyChanged(bool value) => NotifyModdingCommands();
+
+    partial void OnIsModdingBusyChanged(bool value) => NotifyModdingCommands();
+
+    private static string FormatPackIdentity(ImportedPackArchiveInfo pack)
+    {
+        var bits = new List<string>();
+        if (!string.IsNullOrWhiteSpace(pack.PackName))
+            bits.Add(pack.PackName.Trim());
+        var loader = ServerModsInspectResult.DisplayLoader(pack.Loader);
+        if (!string.IsNullOrWhiteSpace(loader))
+            bits.Add(loader);
+        if (!string.IsNullOrWhiteSpace(pack.MinecraftVersion))
+            bits.Add("Minecraft " + pack.MinecraftVersion.Trim());
+        return bits.Count == 0 ? pack.SuggestedDownloadFileName : string.Join(" · ", bits);
     }
 
     private async Task DownloadToPickerAsync(WorldBackupInfo? backup)

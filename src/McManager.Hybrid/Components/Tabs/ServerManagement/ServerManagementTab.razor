@@ -30,6 +30,72 @@
         <p style="margin:0 0 12px;opacity:0.65;font-size:12px;">@Vm.ProgressDisplay</p>
     }
 
+    <div class="mcm-section-card" style="margin-bottom:1.25rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+            <div style="display:flex;align-items:center;gap:4px;">
+                <span style="font-size:14px;font-weight:500;">Modding</span>
+                <button type="button"
+                        class="mcm-help"
+                        title="@Vm.ModdingHelpTitle">
+                    <i class="ti ti-help" aria-hidden="true"></i>
+                    <span class="sr-only">About Modding</span>
+                </button>
+            </div>
+            @if (Vm.IsModdedServer)
+            {
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <button type="button"
+                            disabled="@(!Vm.CanDownloadPack)"
+                            title="@Vm.DownloadPackTitle"
+                            @onclick="Vm.DownloadPackAsync">
+                        <i class="ti ti-download" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
+                        Download pack
+                    </button>
+                    <button type="button"
+                            disabled="@Vm.AnyBusy"
+                            title="List server-side mods on the game VM. Requires the VM running."
+                            @onclick="Vm.RefreshLiveModsAsync">
+                        <i class="ti ti-refresh" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
+                        Refresh list
+                    </button>
+                </div>
+            }
+        </div>
+
+        @if (!Vm.IsModdedServer)
+        {
+            <p style="margin:0;font-size:13px;color:var(--text-muted);">@Vm.VanillaEmptyState</p>
+        }
+        else
+        {
+            @if (!string.IsNullOrWhiteSpace(Vm.PackIdentityDisplay))
+            {
+                <p style="margin:0 0 8px;font-size:13px;">@Vm.PackIdentityDisplay</p>
+            }
+            @if (!Vm.HasLocalPackArchive)
+            {
+                <p style="margin:0 0 8px;font-size:13px;color:var(--text-muted);">@Vm.MissingArchiveMessage</p>
+            }
+            @if (!string.IsNullOrWhiteSpace(Vm.ModdingSummary))
+            {
+                <p style="margin:0 0 8px;font-size:13px;color:var(--text-secondary);">@Vm.ModdingSummary</p>
+            }
+            @if (!string.IsNullOrWhiteSpace(Vm.ModdingHint))
+            {
+                <p style="margin:0 0 8px;font-size:13px;color:var(--text-muted);">@Vm.ModdingHint</p>
+            }
+            @if (Vm.ModFiles.Count > 0)
+            {
+                <div class="mcm-mod-list">
+                    @foreach (var name in Vm.ModFiles)
+                    {
+                        <div class="mcm-mod-row">@name</div>
+                    }
+                </div>
+            }
+        }
+    </div>
+
     <div class="mcm-section-card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
             <div style="display:flex;align-items:center;gap:4px;">
@@ -43,14 +109,14 @@
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
                 <button type="button"
-                        disabled="@Vm.IsBusy"
+                        disabled="@Vm.AnyBusy"
                         title="Store a zip in cloud storage. This does not replace the live world until you use Replace."
                         @onclick="Vm.UploadAsync">
                     <i class="ti ti-upload" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
                     Upload backup
                 </button>
                 <button type="button"
-                        disabled="@Vm.IsBusy"
+                        disabled="@Vm.AnyBusy"
                         title="Download the newest backup zip to this PC."
                         @onclick="Vm.DownloadLatestAsync">
                     <i class="ti ti-download" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
@@ -58,13 +124,13 @@
                 </button>
                 <button type="button"
                         class="mcm-danger-btn"
-                        disabled="@Vm.IsBusy"
+                        disabled="@Vm.AnyBusy"
                         title="Deletes the live world on the game VM. Cloud backups, mods, and server.properties stay. Requires the server running. Download a world save first if you might want this world back."
                         @onclick="Vm.WipeWorldAsync">
                     Wipe world
                 </button>
                 <button type="button"
-                        disabled="@Vm.IsBusy"
+                        disabled="@Vm.AnyBusy"
                         title="Requires the server to be running. Stops Minecraft, replaces the world, then starts it again."
                         @onclick="Vm.ReplaceWorldAsync">
                     Replace world
@@ -83,7 +149,7 @@
                 <div class="mcm-bk-actions">
                     <button type="button"
                             style="font-size:12px;padding:3px 8px;"
-                            disabled="@Vm.IsBusy"
+                            disabled="@Vm.AnyBusy"
                             @onclick="@(() => Vm.DownloadBackupAsync(backup))">
                         Download
                     </button>
@@ -107,6 +173,7 @@
     {
         Vm.PropertyChanged += OnVmChanged;
         Vm.Backups.CollectionChanged += OnBackupsChanged;
+        Vm.ModFiles.CollectionChanged += OnModsChanged;
         _ = Vm.RefreshAsync();
         _ = Vm.RefreshMinecraftVersionAsync();
     }
@@ -115,11 +182,15 @@
     {
         Vm.PropertyChanged -= OnVmChanged;
         Vm.Backups.CollectionChanged -= OnBackupsChanged;
+        Vm.ModFiles.CollectionChanged -= OnModsChanged;
     }
 
     private void OnVmChanged(object? sender, PropertyChangedEventArgs e) =>
         _ = InvokeAsync(StateHasChanged);
 
     private void OnBackupsChanged(object? sender, NotifyCollectionChangedEventArgs e) =>
+        _ = InvokeAsync(StateHasChanged);
+
+    private void OnModsChanged(object? sender, NotifyCollectionChangedEventArgs e) =>
         _ = InvokeAsync(StateHasChanged);
 }
