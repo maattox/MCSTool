@@ -1,0 +1,23 @@
+{
+  "state_path": "/var/lib/mccontrol/state.json",
+  "ledger_path": "/var/lib/mccontrol/ledger.json",
+  "oci_dir": "/opt/mccontrol/oci",
+  "oci_env_file": "/etc/mccontrol/oci.env",
+  "web_root": "/opt/mccontrol/web/static",
+  "icons_dir": "/opt/mccontrol/assets/icons",
+  "bind_host": "0.0.0.0",
+  "http_port": 8080,
+  "mc_port": 25565,
+  "daily_ocpu_limit": 45,
+  "ocpus": 4,
+  "vm1_private_ip": "10.0.0.42",
+  "enable_mcdoor": true,
+  "enable_http": true,
+  "keepalive_enabled": true,
+  "keepalive_interval_sec": 7200,
+  "keepalive_burst_sec": 750,
+  "object_storage_enabled": true,
+  "os_ledger_cache_path": "/var/lib/mccontrol/os-cache/usage.json",
+  "os_budget_cache_path": "/var/lib/mccontrol/os-cache/budget.json",
+  "os_spend_brake_cache_path": "/var/lib/mccontrol/os-cache/spend-brake-triggered.json"
+}

@@ -1,0 +1,12 @@
+[Unit]
+Description=Run mccontrol VM1 stop reconciler every minute
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=1min
+AccuracySec=15s
+Persistent=true
+Unit=mccontrol-reconcile.service
+
+[Install]
+WantedBy=timers.target

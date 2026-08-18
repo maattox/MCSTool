@@ -1,0 +1,11 @@
+[Unit]
+Description=Minecraft idle/budget watchdog (oneshot)
+After=network-online.target minecraft.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+Environment=MC_MANAGER_CONFIG=/etc/mc-manager/config.json
+Environment=PYTHONPATH=/opt/mc-manager/lib
+ExecStart=/opt/mc-manager/venv/bin/python /opt/mc-manager/bin/idle_watch.py
+User=root

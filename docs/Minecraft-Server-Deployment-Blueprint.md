@@ -4,7 +4,7 @@
 
 **Scope:** This document is the **single source of truth** for the on-box "game layer" contract described only briefly in lab [`PRODUCT-IDEAS.md`](../../OCI-mc-server-manager/PRODUCT-IDEAS.md#vanilla-server-bootstrap-mvp) and [`PRODUCT-IDEAS.md`](../../OCI-mc-server-manager/PRODUCT-IDEAS.md#setup-game-types-v1). Where this document and PRODUCT-IDEAS disagree on **staging** (MVP vs v1 vs later), PRODUCT-IDEAS wins and this document should be corrected. Where they disagree on **mechanism** (exact APIs, schema field names, directory layout), this document is authoritative and PRODUCT-IDEAS should be updated to link here instead of re-describing details.
 
-**Audience:** developers and coding agents implementing Setup/OpenTofu, SSH bootstrap scripts, the Manager (`OCI-mc-server` / `McManager.Core`), and the on-box idle agent (`vm_agent/`) in the lab repo.
+**Audience:** developers and coding agents implementing Setup/OpenTofu, SSH bootstrap scripts, the Manager (`OCI-mc-server` / `McManager.Core`), and the on-box idle agent (`vm_agent/` in this repo).
 
 **Non-goals:** this document does not decide Manager UI copy/flow (see PRODUCT-IDEAS "Setup game types (v1)"), does not re-litigate budget/idle/door design (see `Infrastructure-Information.md`, `Contracts-Object-Storage.md`), and does not implement anything beyond MVP Vanilla by itself — it is written so v1/later work does not have to re-research or redesign the contract.
 

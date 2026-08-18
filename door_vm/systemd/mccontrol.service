@@ -1,0 +1,17 @@
+[Unit]
+Description=MCControl doorbell and budget control plane (VM2)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/mccontrol
+Environment=TZ=America/Los_Angeles
+EnvironmentFile=-/etc/mccontrol/oci.env
+ExecStart=/opt/mccontrol/build/mccontrol /etc/mccontrol/config.json
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

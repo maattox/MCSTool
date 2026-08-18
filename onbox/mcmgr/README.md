@@ -2,7 +2,7 @@
 
 **Authority:** mechanism details live in [`docs/Minecraft-Server-Deployment-Blueprint.md`](../../docs/Minecraft-Server-Deployment-Blueprint.md). This tree is the **executable** Vanilla (MVP) bootstrap Phase 3 will upload and run over SSH.
 
-**Not** the idle agent (`/opt/mc-manager` stays in the lab `vm_agent/` tree). **Not** a copy of the operator’s live Forge lab under `/home/ubuntu/minecraft`.
+**Not** the idle agent (`/opt/mc-manager` stays in this repo’s `vm_agent/` tree). **Not** a copy of the operator’s live Forge lab under `/home/ubuntu/minecraft`.
 
 ## Layout
 
@@ -72,7 +72,7 @@ Requires: root, `curl`, `sha1sum`, `apt-get` (Adoptium) or network for Adoptium 
 
 ## Phase 3 SSH upload notes
 
-Follow lab [`Agent-Deploy-Pitfalls.md`](../../../OCI-mc-server-manager/docs/Agent-Deploy-Pitfalls.md):
+Follow [`Agent-Deploy-Pitfalls.md`](../../docs/Agent-Deploy-Pitfalls.md):
 
 1. SFTP as `ubuntu` into a **ubuntu-writable** staging dir under `/tmp/...` (do not `sudo mkdir` then SFTP into it).
 2. Strip **CRLF** on scripts authored on Windows before `bash`.

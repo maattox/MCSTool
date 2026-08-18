@@ -58,7 +58,7 @@ public static class OcirFunctionPublisher
         if (funcDir is null)
         {
             return ServiceResult<string>.Fail(
-                "Lab functions/shutdown_vm/ not found (sibling OCI-mc-server-manager).");
+                "Product functions/shutdown_vm/ not found (expected OCI-mc-server/functions/shutdown_vm).");
         }
 
         var region = string.IsNullOrWhiteSpace(outputs.Region) ? state.OciRegion : outputs.Region;

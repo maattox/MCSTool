@@ -1,0 +1,11 @@
+[Unit]
+Description=Reconcile mccontrol when VM1 was stopped outside the door
+After=network-online.target mccontrol.service
+Wants=network-online.target mccontrol.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/mccontrol/oci.env
+Environment=PATH=/home/ubuntu/bin:/usr/bin:/bin
+Environment=OCI_CLI_AUTH=instance_principal
+ExecStart=/opt/mccontrol/scripts/reconcile_vm1.sh

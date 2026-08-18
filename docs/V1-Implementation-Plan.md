@@ -4,7 +4,8 @@
 **Product intent authority:** lab [`PRODUCT-IDEAS.md`](../../OCI-mc-server-manager/PRODUCT-IDEAS.md) (v1 table). When this plan and PRODUCT-IDEAS disagree on *what* v1 means, **PRODUCT-IDEAS wins** — update this file.  
 **MVP archive:** [`MVP-Implementation-Plan.md`](MVP-Implementation-Plan.md) — Phases **0–7 DONE**. Packaging (old Phase 8 / Step 8.1) is **deferred** to [Phase 9](#phase-9--packaging-updates-launch) of **this** file.  
 **Suggested narrative:** lab [`docs/Development-Steps.md`](../../OCI-mc-server-manager/docs/Development-Steps.md).  
-**Live infra / on-box SoT:** lab repo (`Infrastructure-Information.md`, `door_vm/`, `vm_agent/`, `docs/VM-Software.md`).  
+**Live infra docs:** lab repo (`Infrastructure-Information.md`, `docs/VM-Software.md`).  
+**On-box SoT:** **this repo** (`door_vm/`, `vm_agent/`, `functions/shutdown_vm/`, `onbox/mcmgr/`).  
 **Code SoT for Manager:** **this repo** (`OCI-mc-server`).
 
 **Cost rule:** keep OCI spend at **$0** (Always Free–eligible) unless the operator explicitly accepts paid changes. **Paid / spend mode is Phase 8** — last product feature, not a side quest.
@@ -25,9 +26,9 @@
 4. In the chat reply: what was done, how to test, what the next step will be, ask whether to continue / pause / adjust.
 5. **Never create git commits** (operator commits in Visual Studio). You may suggest a commit message.
 6. Do **not** implement **after v1** / **later** PRODUCT-IDEAS items (Players tab, start checklist, maintenance IP, multi-deploy, pack replace, Quilt Setup entry, Purpur, PTY console, macOS/Linux Manager).
-7. Do **not** put Manager UI in the lab repo. Lab changes are OK only when a step names `door_vm/`, `vm_agent/`, `functions/shutdown_vm/`, or a lab doc. Phase B (Blazor Hybrid) is **DONE**; do not re-open Avalonia.
-8. **Fix the product path, not only the test VM.** If you change a test VM or a **TESTING** cloud resource, make the **same** change in the local deployment SoT in the same session (`onbox/mcmgr/`, `infra/`, Manager/Setup code here; lab `door_vm/`, `vm_agent/`, `functions/shutdown_vm/` when those are the source). The next greenfield Setup must pick it up. Patching only the live test instance is not done.
-9. **`ubuntu` Permission denied** — `sudo` or fix owner/mode (lab `docs/Agent-Deploy-Pitfalls.md`).
+7. Do **not** put Manager UI in the lab repo. On-box source (`door_vm/`, `vm_agent/`, `functions/shutdown_vm/`) lives **in this repo**. Lab changes are OK for lab docs / Python Manager only. Phase B (Blazor Hybrid) is **DONE**; do not re-open Avalonia.
+8. **Fix the product path, not only the test VM.** If you change a test VM or a **TESTING** cloud resource, make the **same** change in the local deployment SoT in the same session (`onbox/mcmgr/`, `infra/`, `door_vm/`, `vm_agent/`, `functions/shutdown_vm/`, Manager/Setup code here). The next greenfield Setup must pick it up. Patching only the live test instance is not done.
+9. **`ubuntu` Permission denied** — `sudo` or fix owner/mode ([`docs/Agent-Deploy-Pitfalls.md`](Agent-Deploy-Pitfalls.md)).
 10. **UI sketches are not locked; operator notes override.** For UI-design work, use or offer `find-skills` unless already asked. **NuGet is allowed** on `McManager.Hybrid`. Do not add Avalonia packages. Keep OCI SDK on Core.
 11. If this step changes a user-visible Setup or manage path, add a **short** paragraph to [`Guide.md`](Guide.md) in the same step. Do not rewrite the whole Guide.
 12. **Test-stack OCI + SSH is allowed** for V1 work — see [Test stack access](#test-stack-access-oci--ssh). Stay at **$0**. Do **not** use the `DEFAULT` OCI profile or the live Forge lab. If you use VM1, start it when STOPPED, **disable idle** while you work, and **re-enable idle** when you finish.
@@ -62,7 +63,7 @@ Agents **may** manage the **test** stack with OCI APIs and the OCI CLI, and **ma
 | SSH user | `ubuntu` |
 | SSH private key | `%USERPROFILE%\.ssh\mcmgr_ed25519_20260817_125552` — **same key for both** test VMs |
 | Hosts / OCIDs / IPs | Gitignored `data/config.local.json` (lab private markdown only if needed). **Do not copy live OCIDs, IPs, Auth Tokens, or key material into tracked docs or chat dumps.** |
-| `ubuntu` permissions | Recurring `Permission denied` on `/etc/mcmgr`, `/etc/mccontrol/oci.env`, systemd units. Use `sudo` or fix mode/owner. Read lab [`docs/Agent-Deploy-Pitfalls.md`](../../OCI-mc-server-manager/docs/Agent-Deploy-Pitfalls.md) before SSH deploy edits. |
+| `ubuntu` permissions | Recurring `Permission denied` on `/etc/mcmgr`, `/etc/mccontrol/oci.env`, systemd units. Use `sudo` or fix mode/owner. Read [`docs/Agent-Deploy-Pitfalls.md`](Agent-Deploy-Pitfalls.md) before SSH deploy edits. |
 
 **Allowed**
 
@@ -122,7 +123,7 @@ More idle copy-paste: lab [`docs/Operator-Troubleshooting.md`](../../OCI-mc-serv
 ```text
 Read docs/V1-Implementation-Plan.md in OCI-mc-server. Implement only the step marked NEXT.
 MVP Phases 0–7 are DONE. Packaging (old Step 8.1) is deferred until V1 Phase 9. Phase B (Blazor Hybrid UI) is DONE — do not re-open Avalonia.
-You MAY use OCI CLI/API with profile TESTING (not DEFAULT) and SSH both test VMs with %USERPROFILE%\.ssh\mcmgr_ed25519_20260817_125552. Stay at $0. If you change a test VM or TESTING cloud resource, make the same change in the local deployment SoT (onbox/, infra/, door_vm/, vm_agent/, etc.).
+You MAY use OCI CLI/API with profile TESTING (not DEFAULT) and SSH both test VMs with %USERPROFILE%\.ssh\mcmgr_ed25519_20260817_125552. Stay at $0. If you change a test VM or TESTING cloud resource, make the same change in the local deployment SoT (onbox/, infra/, door_vm/, vm_agent/, functions/shutdown_vm/).
 If you need VM1 and it is STOPPED, START it, then disable the idle agent so it does not SoftStop while you work. If VM1 is already RUNNING, confirm idle is off before other work. When you finish, turn the idle agent back on. Minecraft boot force-enables idle (OS-ISSUE-7) — disable again after a game start.
 When done: update the V1 plan statuses, stop, tell me what you did, how to test, what’s next, and ask if I want to continue or adjust.
 Do not commit. Do not start the following large step unless I say so.
@@ -1240,6 +1241,7 @@ Former MVP Phase **8–9**. **Do not start** until Phases **1–7** are DONE and
 
 | Date | Note |
 |------|------|
+| 2026-08-18 | **On-box SoT moved** into this repo: `door_vm/`, `vm_agent/`, `functions/shutdown_vm/`, plus `docs/Agent-Deploy-Pitfalls.md`. Lab trees are pointer READMEs. Setup `ProductPaths` no longer requires a lab checkout. **NEXT remains Step 3.3.** |
 | 2026-08-17 | **Step 3.2 DONE.** One-list rewrite: public Minecraft `0.0.0.0/0` TCP/UDP; SSH never world-open; private restores allowlist; 3.1 confirm before public apply. Planner unit tests; no live SL apply. **NEXT = Step 3.3**. Do not start 3.3 unless asked. |
 | 2026-08-17 | **Step 3.1 DONE.** Persist `private`/`public` + blacklist locally (`friends.local.json`) and `ip/mode.json` when present; public confirm; Apply-public stub; SL unchanged. **NEXT = Step 3.2**. Do not start 3.2 unless asked. |
 | 2026-08-17 | **Step 2.4 DONE.** Manager full-window spend-brake overlay; exact typed confirm; park-IP + DELETE lock + OS-refresh + Wake (gates still apply). Core `SpendBrakeLockUx` tests. **NEXT = Step 3.1**. Do not start 3.1 unless asked. |

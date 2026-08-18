@@ -56,7 +56,7 @@ public sealed class SetupBootstrapService
         if (src is null)
         {
             return Task.FromResult(ServiceResult.Fail(
-                "Lab door_vm/ not found. Expected sibling OCI-mc-server-manager/door_vm (not development/)."));
+                "Product door_vm/ not found. Expected OCI-mc-server/door_vm (not lab development/)."));
         }
 
         var key = TofuApplyOutputs.PrivateKeyPath(state);
@@ -89,7 +89,7 @@ public sealed class SetupBootstrapService
         if (agent is null)
         {
             return Task.FromResult(ServiceResult.Fail(
-                "Lab vm_agent/ not found. Expected sibling OCI-mc-server-manager/vm_agent."));
+                "Product vm_agent/ not found. Expected OCI-mc-server/vm_agent."));
         }
 
         var key = TofuApplyOutputs.PrivateKeyPath(state);

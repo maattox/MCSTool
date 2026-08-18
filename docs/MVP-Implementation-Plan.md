@@ -3,7 +3,8 @@
 **Status:** **Archive for Phases 0–7 (DONE).** Agents implementing product features must follow [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) (**NEXT = Step 1.1**). Packaging (this file’s Phase 8 / Step 8.1) is **deferred** until V1 Phase 9.  
 **Product intent authority:** lab [`PRODUCT-IDEAS.md`](../../OCI-mc-server-manager/PRODUCT-IDEAS.md) (MVP section). When this plan and PRODUCT-IDEAS disagree on *what* MVP means, **PRODUCT-IDEAS wins** — update this file.  
 **Suggested narrative order:** lab [`docs/Development-Steps.md`](../../OCI-mc-server-manager/docs/Development-Steps.md).  
-**Live infra / on-box SoT:** lab repo (`Infrastructure-Information.md`, `door_vm/`, `vm_agent/`, `docs/VM-Software.md`).  
+**Live infra docs:** lab repo (`Infrastructure-Information.md`, `docs/VM-Software.md`).  
+**On-box SoT:** **this repo** (`door_vm/`, `vm_agent/`, `functions/shutdown_vm/`, `onbox/mcmgr/`).  
 **Code SoT for Manager:** **this repo** (`OCI-mc-server`).
 
 **Cost rule:** keep OCI spend at **$0** (Always Free–eligible) unless the operator explicitly accepts paid changes.
@@ -519,7 +520,7 @@ Phases 0–3 stay **DONE**; do not rewrite them. Bootstrap/HCL fixes that belong
 
 - **Product decision (operator 2026-08-15):** the idle agent **must SoftStop VM1 when Minecraft is not running**, using the **same idle timeout** as the empty-server path (default 15 minutes). Today’s `idle_watch.py` early-return (`Minecraft inactive; nothing to do.`) is **wrong** for product intent — not merely a log-line curiosity.
 - **Implement in lab SoT and on the test VM — both required:**
-  1. Change lab [`vm_agent/idle_watch.py`](../../OCI-mc-server-manager/vm_agent/idle_watch.py) (tracked SoT). Door Phase 4 deploy **does not** push VM1.
+  1. Change product [`vm_agent/idle_watch.py`](../vm_agent/idle_watch.py) (tracked SoT). Door Phase 4 deploy **does not** push VM1.
   2. **Redeploy the idle agent** to the blank-tenancy test VM1 (`/opt/mc-manager` + timer) so live behavior matches git. Updating only the PC checkout is **not done.** Updating only the test VM without `vm_agent/` is **not done.**
 - **Semantics to implement:**
   - SoftStop after `idle_timeout_minutes` if **either** (a) Minecraft is `active` and RCON `list` shows no players, **or** (b) the `minecraft_unit` is **not** `active` (stopped, failed, crash-loop / CHDIR storm).
@@ -567,7 +568,7 @@ Phases 0–3 stay **DONE**; do not rewrite them. Bootstrap/HCL fixes that belong
   - Door VM: same class of “created as ubuntu/root, later run as another user” — do not expand into a door rewrite, but do not ignore an identical pattern if bootstrap creates `/opt/mccontrol` wrong.
 - **Do not** “fix” by running Minecraft as `ubuntu` or `chmod 0777`. Keep `User=mcmgr`.
 - Add a bootstrap **verify** step (or `namei -l` / `systemd-analyze` check) that fails the install if `mcmgr` cannot `chdir` + exec Java, so this cannot ship green again.
-- Update lab [`docs/Operator-Troubleshooting.md`](../../OCI-mc-server-manager/docs/Operator-Troubleshooting.md) + [`docs/Agent-Deploy-Pitfalls.md`](../../OCI-mc-server-manager/docs/Agent-Deploy-Pitfalls.md) with the contract (not only the CHDIR symptom).
+- Update lab [`docs/Operator-Troubleshooting.md`](../../OCI-mc-server-manager/docs/Operator-Troubleshooting.md) + product [`docs/Agent-Deploy-Pitfalls.md`](Agent-Deploy-Pitfalls.md) with the contract (not only the CHDIR symptom).
 - Fix **product code** (`onbox/mcmgr/`, Setup bootstrap if it mkdirs outside layout.sh). A Console/`chmod` on the test VM is only a temporary operator workaround.
 
 **Test**

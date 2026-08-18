@@ -398,6 +398,9 @@ override.tf.json
 *_override.tf
 *_override.tf.json
 
+# Door C build output (Makefile BUILD=build)
+door_vm/build/
+
 # Publish leftovers
 publish/
 *.appx

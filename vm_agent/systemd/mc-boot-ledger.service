@@ -1,0 +1,14 @@
+[Unit]
+Description=Record Minecraft boot in usage ledger
+After=minecraft.service
+Requires=minecraft.service
+
+[Service]
+Type=oneshot
+Environment=MC_MANAGER_CONFIG=/etc/mc-manager/config.json
+Environment=PYTHONPATH=/opt/mc-manager/lib
+ExecStart=/opt/mc-manager/venv/bin/python /opt/mc-manager/bin/record_boot.py
+User=root
+
+[Install]
+WantedBy=minecraft.service

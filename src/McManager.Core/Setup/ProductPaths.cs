@@ -2,7 +2,7 @@ using McManager.Core.Config;
 
 namespace McManager.Core.Setup;
 
-/// <summary>Resolves product <c>infra/</c>, <c>onbox/</c>, and lab sibling trees. Does not copy lab SoT into this repo.</summary>
+/// <summary>Resolves product <c>infra/</c>, <c>onbox/</c>, <c>door_vm/</c>, <c>vm_agent/</c>, and <c>functions/shutdown_vm/</c>.</summary>
 public static class ProductPaths
 {
     public const string TofuDryRunEnvVar = "MCMANAGER_TOFU_DRY_RUN";
@@ -59,35 +59,35 @@ public static class ProductPaths
         if (product is null)
             return null;
         var sibling = Path.GetFullPath(Path.Combine(product, "..", "OCI-mc-server-manager"));
-        if (Directory.Exists(Path.Combine(sibling, "door_vm")))
+        if (File.Exists(Path.Combine(sibling, "PRODUCT-IDEAS.md")))
             return sibling;
         return null;
     }
 
     public static string? FindDoorVmDirectory()
     {
-        var lab = FindLabRepoRoot();
-        if (lab is null)
+        var root = FindProductRepoRoot();
+        if (root is null)
             return null;
-        var door = Path.Combine(lab, "door_vm");
+        var door = Path.Combine(root, "door_vm");
         return File.Exists(Path.Combine(door, "Makefile")) ? door : null;
     }
 
     public static string? FindVmAgentDirectory()
     {
-        var lab = FindLabRepoRoot();
-        if (lab is null)
+        var root = FindProductRepoRoot();
+        if (root is null)
             return null;
-        var agent = Path.Combine(lab, "vm_agent");
+        var agent = Path.Combine(root, "vm_agent");
         return File.Exists(Path.Combine(agent, "install.sh")) ? agent : null;
     }
 
     public static string? FindFunctionDirectory()
     {
-        var lab = FindLabRepoRoot();
-        if (lab is null)
+        var root = FindProductRepoRoot();
+        if (root is null)
             return null;
-        var fn = Path.Combine(lab, "functions", "shutdown_vm");
+        var fn = Path.Combine(root, "functions", "shutdown_vm");
         return File.Exists(Path.Combine(fn, "func.py")) ? fn : null;
     }
 

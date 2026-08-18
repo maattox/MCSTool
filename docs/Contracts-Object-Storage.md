@@ -3,7 +3,7 @@
 **Status:** Frozen target contract for MVP Phase 2 (2026-08-11); known deployed-code deviations are listed explicitly.  
 **Scope:** Shared Object Storage data used by the Manager, VM1 idle/backup agent, door, Setup, and Connect existing.  
 **Product intent authority:** lab [`PRODUCT-IDEAS.md`](../../OCI-mc-server-manager/PRODUCT-IDEAS.md).  
-**Live implementation authority:** lab `vm_agent/`, `door_vm/`, Object Storage Phase 1–5 docs, and this product's `McManager.Core` DTOs.
+**Live implementation authority:** product `vm_agent/`, `door_vm/`, lab Object Storage Phase 1–5 docs, and this product's `McManager.Core` DTOs.
 
 This document defines object names, JSON shapes, writer ownership, dirty flags, and compatibility rules. It contains placeholders only—never copy live OCIDs, public IPs, credentials, private keys, Auth Tokens, or RCON passwords into this tracked file.
 
@@ -736,8 +736,8 @@ Product:
 
 Lab/on-box:
 
-- `app/object_storage.py`, `app/os_sync.py`, `app/usage.py`
-- `vm_agent/ledger.py`, `vm_agent/lease.py`, `vm_agent/os_publish.py`, `vm_agent/world_backup.py`
-- `door_vm/oci/pull_os_budget.sh`, `door_vm/oci/heal_os_ledger.sh`
-- `docs/Object-Storage-Phase1.md` through `Object-Storage-Phase5.md`
+- Lab `app/object_storage.py`, `app/os_sync.py`, `app/usage.py`
+- Product `vm_agent/ledger.py`, `vm_agent/lease.py`, `vm_agent/os_publish.py`, `vm_agent/world_backup.py`
+- Product `door_vm/oci/pull_os_budget.sh`, `door_vm/oci/heal_os_ledger.sh`
+- Lab `docs/Object-Storage-Phase1.md` through `Object-Storage-Phase5.md`
 - `PRODUCT-IDEAS.md` — sync model, infra meta, oversized-world intent, v1 $1 spend-brake lock
