@@ -22,7 +22,7 @@
             <div>
                 <span style="font-size:14px;font-weight:500;">Access</span>
                 <p style="margin:4px 0 0;font-size:13px;color:var(--text-secondary);">
-                    @(Vm.IsPublic ? "Public mode (saved)." : "Private — allowlist only.")
+                    @(Vm.IsPublic ? "Public — Minecraft is open on the internet." : "Private — allowlist only.")
                 </p>
             </div>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -32,12 +32,6 @@
                         @onclick="Vm.ToggleAccessModeAsync">
                     @Vm.ModeToggleLabel
                 </button>
-                <button type="button"
-                        disabled="@(!Vm.CanApplyPublicAccess || Vm.IsBusy)"
-                        title="Not available yet. The Security List stays private."
-                        @onclick="Vm.ApplyPublicAccessAsync">
-                    Apply public access
-                </button>
             </div>
         </div>
     </div>
@@ -46,10 +40,9 @@
     {
         <div class="mcm-danger-card" style="margin-bottom:12px;">
             <p style="margin:0;font-size:13px;line-height:1.45;">
-                The allowlist is <strong>not applied</strong> while the server is public. Switch back with
-                <strong>Make server private</strong>.
-                Opening the cloud firewall to the internet is <strong>not applied yet</strong> —
-                friends still need an allowlist entry to join. <strong>Apply public access</strong> is disabled until a later update.
+                The allowlist is <strong>not applied</strong> while the server is public. Minecraft on the play IP
+                is reachable from the internet (25565 TCP/UDP). SSH and doorbell admin stay limited to admin IPs.
+                Switch back with <strong>Make server private</strong>.
             </p>
         </div>
     }

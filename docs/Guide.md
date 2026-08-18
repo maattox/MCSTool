@@ -2,7 +2,7 @@
 
 This is the short path for a **Windows** admin who wants a **private Vanilla** Minecraft server for friends, hosted on **Oracle Cloud Infrastructure (OCI)** Always Free resources, managed from one desktop app.
 
-Friends always connect to the same **play IP**. When nobody is playing, a small always-on “doorbell” answers Minecraft pings and can wake the server. Idle and budget stops are meant to keep you inside Always Free. Access is **IP allowlist only** — not a public server.
+Friends always connect to the same **play IP**. When nobody is playing, a small always-on “doorbell” answers Minecraft pings and can wake the server. Idle and budget stops are meant to keep you inside Always Free. Access is **IP allowlist** by default — not a public server unless you confirm **Make server public**.
 
 **Windows only** for this Manager. There is no macOS or Linux Manager in MVP.
 
@@ -18,7 +18,7 @@ Oracle still requires a **Pay As You Go (PAYG)** account for Ampere A1 capacity 
 
 If that brake fires, friends who ping the play IP see a **MONTHLY SPEND BRAKE FIRED** message (not the daily budget one). Wait for the next calendar month, then open Manager. The app fills the window with a warning; Start stays blocked until you type the exact confirmation sentence (copy-paste is allowed). Confirming starts the doorbell if needed, parks the play IP, clears the lock, then tries a normal Start — idle and daily/monthly free-hour limits still apply. The lock is not cleared automatically at month rollover. Use **Troubleshooting** if the play IP is left on the wrong computer.
 
-Do **not** add paid shapes, extra volumes, load balancers, or public `0.0.0.0/0` game access.
+Do **not** add paid shapes, extra volumes, or load balancers. Setup never opens Minecraft to the whole internet; **Make server public** on Whitelist can, only after a strong confirm.
 
 ---
 
@@ -153,7 +153,7 @@ Deploy creates the compartment, network, reserved play IP, game VM, doorbell VM,
 
 If a friend’s home address keeps changing but a **prefix** stays stable (for example they are always `172.56.x.x`), open **Add IP** → **Advanced** and enter a CIDR such as `172.56.0.0/16` instead of a single address. That prefix is written on the Minecraft (25565) rules only. SSH / doorbell admin stay a single `/32` unless you are editing **your own** admin row. Prefixes `/0`–`/8` are rejected as too wide; anything wider than one host shows a warning. IPv4 only.
 
-The server starts **private** (allowlist only). **Make server public** asks for a strong confirm and saves that choice on this PC (and in shared storage when `ip/mode.json` already exists). It does **not** open the cloud firewall yet — **Apply public access** stays disabled. While public mode is saved, a notice explains that the allowlist will not apply once public access is on; expand **Blacklist** to store IPs to deny in public mode (saved with **Save changes**; not used while private). Stay private unless you understand the risk.
+The server starts **private** (allowlist only). **Make server public** asks for a strong confirm, then rewrites the cloud firewall so Minecraft 25565 TCP/UDP is open from `0.0.0.0/0`. SSH and doorbell admin stay limited to your admin IPs. While public, a notice explains that the allowlist is not applied; **Save changes** keeps that public Minecraft opening (and still updates admin SSH). **Make server private** restores the allowlist. Expand **Blacklist** to store IPs to deny in public mode (saved with **Save changes**; denying them in the firewall is a later step). Stay private unless you understand the risk.
 3. Copy the **Play IP** from the top bar. Give friends that address and the Vanilla version you chose. Port is the default Minecraft port (`25565`).
 4. Click **Start**. Status **Running** means the game itself is joinable. **Stopped** means they should wait or click Start again — first wake can take several minutes.
 5. Friends add a server in Minecraft Java using the play IP.

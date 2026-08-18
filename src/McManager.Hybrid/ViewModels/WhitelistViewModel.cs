@@ -10,9 +10,9 @@ namespace McManager.Hybrid.ViewModels;
 
 /// <summary>
 /// Whitelist tab: local friends CRUD + Security List apply, plus access mode and
-/// blacklist persist (no Security List rewrite for public mode in this step).
-/// Dialogs for add/update stay in Razor; public-mode confirm uses <see cref="IUiDialogs"/>.
-/// Does not touch manage-chrome power-in-flight.
+/// blacklist persist. Public mode rewrites Minecraft 25565 to 0.0.0.0/0 after confirm;
+/// SSH/door stay admin-only. Dialogs for add/update stay in Razor; public-mode confirm
+/// uses <see cref="IUiDialogs"/>. Does not touch manage-chrome power-in-flight.
 /// </summary>
 public sealed partial class WhitelistViewModel : ObservableObject
 {
@@ -53,9 +53,6 @@ public sealed partial class WhitelistViewModel : ObservableObject
 
     public string ModeToggleLabel =>
         IsPublic ? "Make server private" : "Make server public";
-
-    /// <summary>Step 3.2 wires this. Always false in 3.1 so the Security List stays private.</summary>
-    public bool CanApplyPublicAccess => false;
 
     public WhitelistViewModel(
         LocalConfigHost configHost,
@@ -227,6 +224,8 @@ public sealed partial class WhitelistViewModel : ObservableObject
         if (IsBusy)
             return;
 
+        var previous = IpAccessMode.Normalize(AccessMode);
+        string target;
         if (!IsPublic)
         {
             var confirmed = await _dialogs.ConfirmAsync(
@@ -242,27 +241,52 @@ public sealed partial class WhitelistViewModel : ObservableObject
                 return;
             }
 
-            AccessMode = IpAccessMode.Public;
+            target = IpAccessMode.Public;
         }
         else
         {
-            AccessMode = IpAccessMode.Private;
+            target = IpAccessMode.Private;
         }
 
+        AccessMode = target;
         if (!SaveFriendsLocal())
         {
-            AccessMode = IpAccessMode.Normalize(_configHost.LoadResult.Friends?.Mode);
+            AccessMode = previous;
             return;
         }
 
-        await PublishModeAsync();
-    }
+        IsBusy = true;
+        try
+        {
+            var applied = await ApplySecurityListUnlockedAsync(target);
+            if (applied is null)
+            {
+                AccessMode = previous;
+                SaveFriendsLocal();
+                return;
+            }
 
-    public Task ApplyPublicAccessAsync()
-    {
-        StatusMessage =
-            "Apply public access is not available yet. The Security List was not changed.";
-        return Task.CompletedTask;
+            var extra = await TryPublishModeUnlockedAsync();
+            CaptureSavedFingerprint();
+            if (IpAccessMode.IsPublic(target))
+            {
+                StatusMessage =
+                    "Public mode applied. Minecraft 25565 TCP/UDP is open from the internet. "
+                    + "SSH and doorbell stay limited to admin IPs."
+                    + (string.IsNullOrWhiteSpace(extra) ? "" : "\n" + extra);
+            }
+            else
+            {
+                StatusMessage =
+                    "Private mode applied. The allowlist is the live Minecraft firewall. "
+                    + "Blacklist applies only in public mode."
+                    + (string.IsNullOrWhiteSpace(extra) ? "" : "\n" + extra);
+            }
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     public async Task DetectPublicIpAsync()
@@ -352,38 +376,14 @@ public sealed partial class WhitelistViewModel : ObservableObject
             return;
 
         IsBusy = true;
-        StatusMessage = "Applying allowlist…";
-
         try
         {
-            if (_config is null)
-            {
-                StatusMessage = "Local config is missing.";
+            var applied = await ApplySecurityListUnlockedAsync(AccessMode);
+            if (applied is null)
                 return;
-            }
 
-            if (_securityList is null)
-            {
-                StatusMessage = _sessionError ?? "Cloud session failed.";
-                return;
-            }
-
+            var summary = applied.Summary;
             var friends = Friends.Select(f => f.ToEntry()).ToList();
-            var result = await _securityList.ApplyFriendsAsync(
-                friends,
-                _config.Network.SecurityListId,
-                _config.Network.MinecraftPort,
-                _config.Network.SshPort,
-                _config.Door.HttpPort,
-                _config.AdminName);
-
-            if (!result.Succeeded)
-            {
-                StatusMessage = result.Error ?? "Sync failed.";
-                return;
-            }
-
-            var summary = result.Value?.Summary ?? "Saved and applied.";
             if (_allowlistStore is not null)
             {
                 var os = await _allowlistStore.PublishIfPresentAsync(friends);
@@ -403,13 +403,6 @@ public sealed partial class WhitelistViewModel : ObservableObject
             if (!string.IsNullOrWhiteSpace(mode))
                 summary += "\n" + mode;
 
-            if (IsPublic)
-            {
-                summary +=
-                    "\nPublic mode is saved; the cloud firewall is still the private allowlist "
-                    + "(Apply public access is not available yet).";
-            }
-
             StatusMessage = summary;
         }
         finally
@@ -418,33 +411,41 @@ public sealed partial class WhitelistViewModel : ObservableObject
         }
     }
 
-    private async Task PublishModeAsync()
+    private async Task<SecurityListApplyResult?> ApplySecurityListUnlockedAsync(string mode)
     {
-        if (IsBusy)
-            return;
+        StatusMessage = IpAccessMode.IsPublic(mode)
+            ? "Applying public Minecraft access…"
+            : "Applying allowlist…";
 
-        IsBusy = true;
-        try
+        if (_config is null)
         {
-            var extra = await TryPublishModeUnlockedAsync();
-            if (IsPublic)
-            {
-                StatusMessage =
-                    "Public mode saved on this PC. The cloud firewall is still private (allowlist only). "
-                    + "Apply public access is disabled until a later update."
-                    + (string.IsNullOrWhiteSpace(extra) ? "" : "\n" + extra);
-            }
-            else
-            {
-                StatusMessage =
-                    "Private mode saved. The allowlist is the live firewall. Blacklist applies only in public mode."
-                    + (string.IsNullOrWhiteSpace(extra) ? "" : "\n" + extra);
-            }
+            StatusMessage = "Local config is missing.";
+            return null;
         }
-        finally
+
+        if (_securityList is null)
         {
-            IsBusy = false;
+            StatusMessage = _sessionError ?? "Cloud session failed.";
+            return null;
         }
+
+        var friends = Friends.Select(f => f.ToEntry()).ToList();
+        var result = await _securityList.ApplyFriendsAsync(
+            friends,
+            _config.Network.SecurityListId,
+            _config.Network.MinecraftPort,
+            _config.Network.SshPort,
+            _config.Door.HttpPort,
+            _config.AdminName,
+            mode);
+
+        if (!result.Succeeded)
+        {
+            StatusMessage = result.Error ?? "Security List update failed.";
+            return null;
+        }
+
+        return result.Value;
     }
 
     private async Task<string?> TryPublishModeUnlockedAsync()

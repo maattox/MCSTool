@@ -29,6 +29,12 @@ public static class FriendRules
     public const string SshAccessSuffix = " SSH access";
     public const string DoorAccessSuffix = " door access";
 
+    /// <summary>Minecraft 25565 source when access mode is public. Never used for SSH/door.</summary>
+    public const string PublicMinecraftSource = "0.0.0.0/0";
+
+    /// <summary>Owned description for public Minecraft rules (matches <see cref="McTagPrefix"/>).</summary>
+    public const string PublicMinecraftDescription = McTagPrefix + "public";
+
     /// <summary>Minecraft CIDR floor: reject /0 through /8 (inclusive).</summary>
     public const int MinMinecraftPrefixLength = 9;
 
@@ -220,6 +226,12 @@ public static class FriendRules
             return true;
 
         return Ipv4Regex.IsMatch(s);
+    }
+
+    public static bool IsWorldOpenCidr(string? source)
+    {
+        var s = source?.Trim();
+        return s is "0.0.0.0/0" or "::/0";
     }
 
     private static uint PrefixMask(int prefix) =>

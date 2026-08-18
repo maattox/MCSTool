@@ -148,7 +148,7 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 |-------|--------|--------|
 | **1** | Manager shell (Advanced/Danger split, CIDR, wipe world) | **DONE** |
 | **2** | $1 spend-brake lock (Function flag, door, Manager overlay) | **DONE** |
-| **3** | IP Management (public/private + blacklist) | **NEXT** = Step **3.2** |
+| **3** | IP Management (public/private + blacklist) | **NEXT** = Step **3.3** |
 | **4** | Setup game types (Paper, loaders, pack import) | TODO |
 | **5** | Server Management modding inspect + re-download pack | TODO |
 | **6** | Top-bar chrome + oversized-world SSH UX | TODO |
@@ -156,7 +156,7 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 | **8** | Paid / spend mode (**last** product feature) | TODO |
 | **9** | Packaging, updates, launch (old MVP Phase 8–9) | TODO — **do not start** until Phases 1–8 are DONE or the operator skips 8 |
 
-**Current NEXT step:** [Step 3.2](#step-32--security-list-public--private-rewrite). **Do not start Step 3.2** until the operator asks.
+**Current NEXT step:** [Step 3.3](#step-33--blacklist-in-public-mode). **Do not start Step 3.3** until the operator asks.
 
 ---
 
@@ -405,7 +405,7 @@ Split so Function, door, and Manager each get their own window.
 
 ### Step 3.2 — Security List public / private rewrite
 
-**Status:** NEXT  
+**Status:** DONE  
 **Depends on:** 3.1
 
 **Read first**
@@ -426,13 +426,13 @@ Split so Function, door, and Manager each get their own window.
 
 **Done when:** Toggle actually switches Minecraft ingress; SSH is never `0.0.0.0/0`.
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-17 — Rewrite **one** Security List (not two-list swap). Public: Minecraft 25565 TCP/UDP from `0.0.0.0/0`; SSH/door stay admin `/32`s (or own-admin CIDR); ICMP and non-owned rules preserved. Private: restore allowlist CIDRs/`/32`s and strip world-open Minecraft. Toggle confirm (3.1) runs before public apply; Save while public re-applies the public set. Core `SecurityListIngressPlanner` + unit tests. No live test-tenancy apply.
 
 ---
 
 ### Step 3.3 — Blacklist in public mode
 
-**Status:** TODO  
+**Status:** NEXT  
 **Depends on:** 3.2
 
 **Read first**
@@ -1240,6 +1240,7 @@ Former MVP Phase **8–9**. **Do not start** until Phases **1–7** are DONE and
 
 | Date | Note |
 |------|------|
+| 2026-08-17 | **Step 3.2 DONE.** One-list rewrite: public Minecraft `0.0.0.0/0` TCP/UDP; SSH never world-open; private restores allowlist; 3.1 confirm before public apply. Planner unit tests; no live SL apply. **NEXT = Step 3.3**. Do not start 3.3 unless asked. |
 | 2026-08-17 | **Step 3.1 DONE.** Persist `private`/`public` + blacklist locally (`friends.local.json`) and `ip/mode.json` when present; public confirm; Apply-public stub; SL unchanged. **NEXT = Step 3.2**. Do not start 3.2 unless asked. |
 | 2026-08-17 | **Step 2.4 DONE.** Manager full-window spend-brake overlay; exact typed confirm; park-IP + DELETE lock + OS-refresh + Wake (gates still apply). Core `SpendBrakeLockUx` tests. **NEXT = Step 3.1**. Do not start 3.1 unless asked. |
 | 2026-08-17 | **Step 2.3 DONE.** Door GETs `meta/spend-brake-triggered.json` on wake pull; presence refuses START (`SPEND_BRAKE` MOTD/kick distinct from daily). Fail closed on non-404 GET. No extra Python. Live door still needs redeploy. **NEXT = Step 2.4**. Do not start 2.4 unless asked. |
