@@ -7,21 +7,42 @@ namespace McManager.Hybrid;
 /// <summary>
 /// Optional OCI / door clients for the manage chrome. Built from local config only —
 /// constructing an <see cref="OciSession"/> does not probe the API.
+/// Call <see cref="Rebuild"/> after <see cref="LocalConfigHost.Reload"/> so Setup
+/// Close / Connect-existing do not keep a first-run empty session.
 /// </summary>
-public sealed class ManageCloudServices
+public sealed class ManageCloudServices : IDisposable
 {
-    public OciSession? Session { get; }
-    public ComputeService? Compute { get; }
-    public DoorClient? Door { get; }
-    public UsageBudgetStore? UsageStore { get; }
-    public SshService Ssh { get; } = new();
+    private readonly LocalConfigHost _configHost;
+    private bool _disposed;
 
-    public string? SessionError { get; }
-    public string? DoorError { get; }
+    public OciSession? Session { get; private set; }
+    public ComputeService? Compute { get; private set; }
+    public DoorClient? Door { get; private set; }
+    public UsageBudgetStore? UsageStore { get; private set; }
+    public SshService Ssh { get; private set; } = new();
+
+    public string? SessionError { get; private set; }
+    public string? DoorError { get; private set; }
 
     public ManageCloudServices(LocalConfigHost configHost)
     {
-        var config = configHost.Config;
+        _configHost = configHost;
+        Rebuild();
+    }
+
+    /// <summary>
+    /// Drop the previous session/door clients and build new ones from
+    /// <see cref="LocalConfigHost.Config"/> (or clear them when config is gone).
+    /// </summary>
+    public void Rebuild()
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        DisposeClients();
+        SessionError = null;
+        DoorError = null;
+        Ssh = new();
+
+        var config = _configHost.Config;
         if (config is null)
             return;
 
@@ -46,5 +67,23 @@ public sealed class ManageCloudServices
         {
             DoorError = ex.Message;
         }
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+            return;
+        _disposed = true;
+        DisposeClients();
+    }
+
+    private void DisposeClients()
+    {
+        Door?.Dispose();
+        Door = null;
+        Session?.Dispose();
+        Session = null;
+        Compute = null;
+        UsageStore = null;
     }
 }

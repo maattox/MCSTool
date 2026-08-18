@@ -23,8 +23,10 @@ public sealed class SetupBootstrapService
         while (true)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            // SETUP-ISSUE-5: /etc/mcmgr is 0750 root:mcmgr. ubuntu test -f cannot traverse it
+            // (Permission denied → WAIT forever) even after cloud-init wrote the marker.
             var probe = await Task.Run(
-                () => RunOnce(host, user, keyPath, $"test -f {ShQuote(remoteMarker)} && echo OK || echo WAIT", TimeSpan.FromSeconds(30)),
+                () => RunOnce(host, user, keyPath, CloudInitProbeCommand(remoteMarker), TimeSpan.FromSeconds(30)),
                 cancellationToken).ConfigureAwait(false);
             if (probe.Succeeded && (probe.Value ?? "").Contains("OK", StringComparison.Ordinal))
             {
@@ -110,8 +112,8 @@ public sealed class SetupBootstrapService
 
     /// <summary>
     /// Idempotent post-bootstrap: secondary play netplan, door oci.env Object Storage vars,
-    /// managed server.properties (in-game whitelist off), optional whitelist.json seed,
-    /// clear sticky DEGRADED. Safe to re-run when apply_stage is already vm1.
+    /// managed server.properties (in-game whitelist off), reserved play IP on VM1 + PLAYABLE.
+    /// Safe to re-run when apply_stage is already vm1.
     /// </summary>
     public Task<ServiceResult> EnsureGuestRuntimeAsync(
         TofuApplyOutputs outputs,
@@ -120,14 +122,14 @@ public sealed class SetupBootstrapService
         CancellationToken cancellationToken = default)
     {
         var key = TofuApplyOutputs.PrivateKeyPath(state);
-        var mcName = state.AdminMinecraftUsername;
         return Task.Run(
             () =>
             {
                 try
                 {
                     EnsureDoorRuntime(outputs, key, log);
-                    EnsureVm1Runtime(outputs, key, mcName, log);
+                    EnsureVm1Runtime(outputs, key, log);
+                    PromotePlayableAfterVm1(outputs, key, log);
                     return ServiceResult.Ok();
                 }
                 catch (Exception ex)
@@ -249,7 +251,7 @@ public sealed class SetupBootstrapService
 
     private static void EnsureDoorRuntime(TofuApplyOutputs outputs, string keyPath, IProgress<string>? log)
     {
-        log?.Report("Repairing door runtime (oci.env, play netplan, clear DEGRADED)…");
+        log?.Report("Repairing door runtime (oci.env, play netplan)…");
         using var client = Connect(outputs.DoorSshHost, outputs.SshUser, keyPath);
         var env = BuildDoorEnv(outputs);
         UploadText(client, "/tmp/mcmgr-door-oci.env", env);
@@ -264,58 +266,124 @@ public sealed class SetupBootstrapService
             log);
         PatchDoorConfig(client, outputs, log);
         ApplyPlayNetplan(client, outputs.DoorSecondaryPrivateIp, "door", log);
-        var doorSrc = ProductPaths.FindDoorVmDirectory();
-        if (doorSrc is not null)
-        {
-            var pull = Path.Combine(doorSrc, "oci", "pull_os_budget.sh");
-            if (File.Exists(pull))
-            {
-                UploadFile(client, pull, "/tmp/pull_os_budget.sh", log);
-                Exec(
-                    client,
-                    "sudo bash -c " + ShQuote(
-                        "sed -i 's/\\r$//' /tmp/pull_os_budget.sh; "
-                        + "install -m 755 /tmp/pull_os_budget.sh /opt/mccontrol/oci/pull_os_budget.sh; "
-                        + "rm -f /tmp/pull_os_budget.sh"),
-                    TimeSpan.FromSeconds(20),
-                    log);
-            }
-        }
+        InstallDoorOciOrScript(client, doorSrc: ProductPaths.FindDoorVmDirectory(), log);
         Exec(
             client,
             "sudo bash -c " + ShQuote(
                 "set -euo pipefail; "
-                + "systemctl stop mccontrol.service 2>/dev/null || true; "
-                + "python3 - <<'PY'\n"
-                + "import json, os\n"
-                + "path='/var/lib/mccontrol/state.json'\n"
-                + "s={}\n"
-                + "if os.path.exists(path):\n"
-                + "    s=json.load(open(path))\n"
-                + "s['door_state']='DOOR_IDLE'\n"
-                + "s['last_error']=''\n"
-                + "s['session_started_at']=None\n"
-                + "s['hard_stop_deadline']=None\n"
-                + "os.makedirs('/var/lib/mccontrol', exist_ok=True)\n"
-                + "json.dump(s, open(path,'w'), indent=2)\n"
-                + "open(path,'a').write('\\n')\n"
-                + "print('door_state=DOOR_IDLE')\n"
-                + "PY\n"
-                + "systemctl start mccontrol.service"),
+                + "systemctl restart mccontrol.service"),
             TimeSpan.FromSeconds(45),
             log);
         log?.Report("Door runtime repaired.");
     }
 
+    /// <summary>
+    /// After VM1 netplan + Minecraft are up: reserved play IP → VM1, door PLAYABLE.
+    /// Must not force DOOR_IDLE with the IP still on the door (black hole / MOTD-only).
+    /// </summary>
+    private static void PromotePlayableAfterVm1(
+        TofuApplyOutputs outputs,
+        string keyPath,
+        IProgress<string>? log)
+    {
+        log?.Report("Parking reserved play IP on VM1 (game is up)…");
+        using var client = Connect(outputs.DoorSshHost, outputs.SshUser, keyPath);
+        InstallDoorOciOrScript(client, doorSrc: ProductPaths.FindDoorVmDirectory(), log);
+        Exec(
+            client,
+            "sudo bash /opt/mccontrol/scripts/promote_playable.sh",
+            TimeSpan.FromMinutes(5),
+            log);
+        log?.Report("Reserved play IP is on VM1; door PLAYABLE.");
+    }
+
+    private static void InstallDoorOciOrScript(
+        SshClient client,
+        string? doorSrc,
+        IProgress<string>? log)
+    {
+        if (doorSrc is null)
+            return;
+
+        InstallDoorFile(
+            client,
+            Path.Combine(doorSrc, "oci", "pull_os_budget.sh"),
+            "/tmp/pull_os_budget.sh",
+            "/opt/mccontrol/oci/pull_os_budget.sh",
+            log);
+        InstallDoorFile(
+            client,
+            Path.Combine(doorSrc, "oci", "start_vm1.sh"),
+            "/tmp/start_vm1.sh",
+            "/opt/mccontrol/oci/start_vm1.sh",
+            log);
+        InstallDoorFile(
+            client,
+            Path.Combine(doorSrc, "oci", "wait_forge.sh"),
+            "/tmp/wait_forge.sh",
+            "/opt/mccontrol/oci/wait_forge.sh",
+            log);
+        InstallDoorFile(
+            client,
+            Path.Combine(doorSrc, "oci", "ip_to_vm1.sh"),
+            "/tmp/ip_to_vm1.sh",
+            "/opt/mccontrol/oci/ip_to_vm1.sh",
+            log);
+        InstallDoorFile(
+            client,
+            Path.Combine(doorSrc, "oci", "ip_to_vm2.sh"),
+            "/tmp/ip_to_vm2.sh",
+            "/opt/mccontrol/oci/ip_to_vm2.sh",
+            log);
+        InstallDoorFile(
+            client,
+            Path.Combine(doorSrc, "oci", "stop_vm1.sh"),
+            "/tmp/stop_vm1.sh",
+            "/opt/mccontrol/oci/stop_vm1.sh",
+            log);
+        InstallDoorFile(
+            client,
+            Path.Combine(doorSrc, "scripts", "promote_playable.sh"),
+            "/tmp/promote_playable.sh",
+            "/opt/mccontrol/scripts/promote_playable.sh",
+            log);
+        InstallDoorFile(
+            client,
+            Path.Combine(doorSrc, "scripts", "reconcile_vm1.sh"),
+            "/tmp/reconcile_vm1.sh",
+            "/opt/mccontrol/scripts/reconcile_vm1.sh",
+            log);
+    }
+
+    private static void InstallDoorFile(
+        SshClient client,
+        string localPath,
+        string tmpRemote,
+        string destRemote,
+        IProgress<string>? log)
+    {
+        if (!File.Exists(localPath))
+            return;
+        UploadFile(client, localPath, tmpRemote, log);
+        Exec(
+            client,
+            "sudo bash -c " + ShQuote(
+                "sed -i 's/\\r$//' " + tmpRemote + "; "
+                + "install -m 755 " + tmpRemote + " " + destRemote + "; "
+                + "rm -f " + tmpRemote),
+            TimeSpan.FromSeconds(20),
+            log);
+    }
+
     private static void EnsureVm1Runtime(
         TofuApplyOutputs outputs,
         string keyPath,
-        string? minecraftUsername,
         IProgress<string>? log)
     {
-        log?.Report("Repairing VM1 runtime (play netplan, server.properties, whitelist)…");
+        log?.Report("Repairing VM1 runtime (play netplan, host firewall, server.properties)…");
         using var client = Connect(outputs.Vm1SshHost, outputs.SshUser, keyPath);
         ApplyPlayNetplan(client, outputs.Vm1SecondaryPrivateIp, "vm1", log);
+        EnsureVm1HostFirewall(client, log);
         Exec(
             client,
             "sudo bash -c " + ShQuote(
@@ -325,7 +393,6 @@ public sealed class SetupBootstrapService
             log);
         var onboxStaging = UploadOnboxRepairHelpers(client, log);
         ApplyManagedProperties(client, onboxStaging, log);
-        SeedWhitelist(client, minecraftUsername, log);
         RepairPermissions(client, onboxStaging, log);
         log?.Report("VM1 runtime repaired.");
     }
@@ -342,6 +409,30 @@ public sealed class SetupBootstrapService
 
         var script = GuestPlayNetplan.BuildApplyScript(secondaryIp);
         Exec(client, "sudo bash -c " + ShQuote(script), TimeSpan.FromSeconds(45), log);
+    }
+
+    /// <summary>
+    /// Oracle images ship netfilter-persistent (SSH-only REJECT) which Conflicts
+    /// with firewalld. Cloud-init enables firewalld; after reboot the Oracle
+    /// rules win unless netfilter-persistent is masked.
+    /// </summary>
+    private static void EnsureVm1HostFirewall(SshClient client, IProgress<string>? log)
+    {
+        log?.Report("Ensuring firewalld owns the host filter (25565 + SSH)…");
+        Exec(
+            client,
+            "sudo bash -c " + ShQuote(
+                "set -euo pipefail; "
+                + "systemctl disable --now netfilter-persistent 2>/dev/null || true; "
+                + "systemctl mask netfilter-persistent 2>/dev/null || true; "
+                + "systemctl unmask firewalld 2>/dev/null || true; "
+                + "systemctl enable --now firewalld; "
+                + "firewall-cmd --permanent --add-service=ssh; "
+                + "firewall-cmd --permanent --add-port=25565/tcp; "
+                + "firewall-cmd --permanent --add-port=25565/udp; "
+                + "firewall-cmd --reload"),
+            TimeSpan.FromSeconds(45),
+            log);
     }
 
     private static string UploadOnboxRepairHelpers(SshClient client, IProgress<string>? log)
@@ -387,72 +478,6 @@ public sealed class SetupBootstrapService
             "sudo bash " + onboxStaging + "/repair-permissions.sh",
             TimeSpan.FromMinutes(2),
             log);
-    }
-
-    private static void SeedWhitelist(SshClient client, string? minecraftUsername, IProgress<string>? log)
-    {
-        if (!MinecraftUsername.IsValid(minecraftUsername))
-        {
-            log?.Report("No admin Minecraft username; skipping optional whitelist.json seed (joins use OCI Security List).");
-            return;
-        }
-
-        var name = MinecraftUsername.Normalize(minecraftUsername!);
-        var py =
-            "import json, os, ssl, urllib.request, uuid as uuidlib\n"
-            + $"name={JsonString(name)}\n"
-            + "uid=None\n"
-            + "try:\n"
-            + "    url='https://api.mojang.com/users/profiles/minecraft/'+name\n"
-            + "    ctx=ssl.create_default_context()\n"
-            + "    with urllib.request.urlopen(url, context=ctx, timeout=15) as r:\n"
-            + "        raw=json.load(r)\n"
-            + "    hid=raw.get('id') or ''\n"
-            + "    if len(hid)==32:\n"
-            + "        uid=str(uuidlib.UUID(hid))\n"
-            + "except Exception as ex:\n"
-            + "    print('UUID lookup failed:', ex)\n"
-            + "entry={'name': name}\n"
-            + "if uid: entry['uuid']=uid\n"
-            + "path='/opt/mcmgr/server/whitelist.json'\n"
-            + "os.makedirs(os.path.dirname(path), exist_ok=True)\n"
-            + "json.dump([entry], open(path,'w'), indent=2)\n"
-            + "open(path,'a').write('\\n')\n"
-            + "os.chmod(path, 0o640)\n"
-            + "try:\n"
-            + "    import pwd, grp\n"
-            + "    os.chown(path, pwd.getpwnam('mcmgr').pw_uid, grp.getgrnam('mcmgr').gr_gid)\n"
-            + "except Exception:\n"
-            + "    pass\n"
-            + "print('whitelist.json', name, uid or '(no uuid)')\n";
-        UploadText(client, "/tmp/mcmgr-seed-whitelist.py", py);
-        Exec(
-            client,
-            "sudo bash -c " + ShQuote(
-                "set -euo pipefail; "
-                + "python3 /tmp/mcmgr-seed-whitelist.py; "
-                + "rm -f /tmp/mcmgr-seed-whitelist.py"),
-            TimeSpan.FromMinutes(2),
-            log);
-
-        var rcon =
-            "sudo python3 - <<'PY'\n"
-            + "import socket,struct,sys\n"
-            + $"name={JsonString(name)}\n"
-            + "pw=open('/etc/mcmgr/rcon.secret').read().strip()\n"
-            + "def pkt(k,p):\n"
-            + " b=struct.pack('<ii',1,k)+p.encode()+b'\\x00\\x00'\n"
-            + " return struct.pack('<i',len(b))+b\n"
-            + "s=socket.create_connection(('127.0.0.1',25575),timeout=5)\n"
-            + "s.sendall(pkt(3,pw)); s.recv(4096)\n"
-            + "s.sendall(pkt(2,'whitelist add '+name)); data=s.recv(4096)\n"
-            + "s.sendall(pkt(2,'whitelist reload')); s.recv(4096)\n"
-            + "s.close()\n"
-            + "sys.stdout.buffer.write(data)\n"
-            + "PY";
-        var result = ExecAllowFail(client, rcon, TimeSpan.FromSeconds(20));
-        if (!string.IsNullOrWhiteSpace(result))
-            log?.Report(Truncate(result.Trim(), 500));
     }
 
     private static ServiceResult DeployVm1(
@@ -752,6 +777,14 @@ public sealed class SetupBootstrapService
         return ext is ".sh" or ".py" or ".c" or ".h" or ".json" or ".service" or ".timer"
             or ".in" or ".txt" or ".md" or ".yml" or ".yaml" or ".env" or ".example";
     }
+
+    /// <summary>
+    /// Probe as root. The VM1 marker lives under <c>/etc/mcmgr</c> (0750 root:mcmgr);
+    /// SSH user ubuntu is not in that group (SETUP-ISSUE-5). <c>sudo -n</c> avoids a
+    /// password prompt hang on non-interactive SSH.
+    /// </summary>
+    internal static string CloudInitProbeCommand(string remoteMarker) =>
+        $"sudo -n test -f {ShQuote(remoteMarker)} && echo OK || echo WAIT";
 
     private static string ShQuote(string value) => "'" + value.Replace("'", "'\\''") + "'";
 

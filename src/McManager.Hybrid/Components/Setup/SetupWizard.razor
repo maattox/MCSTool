@@ -1,6 +1,6 @@
 @inject SetupWizardViewModel Vm
 @inject HybridShell Shell
-@inject LocalConfigHost ConfigHost
+@inject ManageSession Session
 @inject IJSRuntime JS
 @implements IDisposable
 
@@ -19,7 +19,7 @@
             <p>@Vm.StepSubtitle</p>
         </header>
 
-        <div class="mcm-wizard-body">
+        <div class="mcm-wizard-body mcm-slim-scroll">
             @if (Vm.IsStepAlwaysFree)
             {
                 <p class="mcm-wizard-kicker">Always Free first</p>
@@ -274,14 +274,29 @@
                                @bind="Vm.AdminCidr"
                                @bind:event="oninput" />
                     </div>
-                    <div class="mcm-field">
-                        <label for="mcm-setup-mc-user">Your Minecraft username (optional — later MOTD/ops; join is gated by the IP allowlist, not an in-game whitelist)</label>
-                        <input id="mcm-setup-mc-user"
-                               type="text"
-                               placeholder="Steve"
-                               @bind="Vm.AdminMinecraftUsername"
-                               @bind:event="oninput" />
-                    </div>
+                    <p class="mcm-wizard-hint">Game computer size (Always Free Ampere A1). This is chosen once at deploy — not a later resize.</p>
+                    <label class="mcm-radio-row">
+                        <input type="radio"
+                               name="mcm-setup-vm1-shape"
+                               disabled="@(!Vm.CanMutateWizard)"
+                               checked="@Vm.Vm1ShapeIsDefault"
+                               @onchange="@(() => Vm.SelectDefaultVm1Shape())" />
+                        <span>
+                            4 OCPU / 24 GB (recommended)
+                            <span class="mcm-radio-note">More room for players and later mods. Uses Always Free hours faster while the game computer is on.</span>
+                        </span>
+                    </label>
+                    <label class="mcm-radio-row">
+                        <input type="radio"
+                               name="mcm-setup-vm1-shape"
+                               disabled="@(!Vm.CanMutateWizard)"
+                               checked="@Vm.Vm1ShapeIsSmaller"
+                               @onchange="@(() => Vm.SelectSmallerVm1Shape())" />
+                        <span>
+                            2 OCPU / 12 GB
+                            <span class="mcm-radio-note">Smaller Always Free size. Vanilla can often stay on all month; less room if you add mods or more players later.</span>
+                        </span>
+                    </label>
                     <label class="mcm-checkbox-row">
                         <input type="checkbox" @bind="Vm.CreateResourcesConfirmed" />
                         <span>@Vm.CreateResourcesConfirmText</span>
@@ -300,12 +315,24 @@
                     <div class="mcm-section-card">@Vm.AutoRetryBannerText</div>
                 }
 
+                <p class="mcm-wizard-duration">@SetupWizardViewModel.DeployDurationHint</p>
+
                 @if (Vm.ShowDeployProgress)
                 {
                     <div class="mcm-wizard-progress">
                         <div class="mcm-wizard-progress-row">
                             <span>@Vm.DeployProgressCaption</span>
-                            <span class="mcm-wizard-mono">@Vm.DeployProgressPercentDisplay</span>
+                            <span class="mcm-wizard-progress-meta">
+                                @if (Vm.ShowDeployElapsed)
+                                {
+                                    <span class="mcm-wizard-elapsed">@Vm.DeployElapsedDisplay</span>
+                                }
+                                @if (Vm.ShowDeployRemaining)
+                                {
+                                    <span class="mcm-wizard-remaining">@Vm.DeployRemainingDisplay</span>
+                                }
+                                <span class="mcm-wizard-mono">@Vm.DeployProgressPercentDisplay</span>
+                            </span>
                         </div>
                         <div class="mcm-progress-track" role="progressbar"
                              aria-valuemin="0"
@@ -316,20 +343,22 @@
                     </div>
                 }
 
-                <div class="mcm-wizard-log-block">
-                    <div class="mcm-wizard-log-label">
-                        <span>Plan summary</span>
-                        <button type="button" title="Copy plan summary" @onclick="Vm.CopyPlanSummaryAsync">Copy</button>
+                <div class="mcm-wizard-log-stack">
+                    <div class="mcm-wizard-log-block mcm-wizard-plan-block">
+                        <div class="mcm-wizard-log-label">
+                            <span>Plan summary</span>
+                            <button type="button" title="Copy plan summary" @onclick="Vm.CopyPlanSummaryAsync">Copy</button>
+                        </div>
+                        <pre class="mcm-wizard-log mcm-wizard-mono mcm-slim-scroll">@Vm.PlanSummaryText</pre>
                     </div>
-                    <pre class="mcm-wizard-log mcm-wizard-mono">@Vm.PlanSummaryText</pre>
-                </div>
 
-                <div class="mcm-wizard-log-block mcm-wizard-log-grow">
-                    <div class="mcm-wizard-log-label">
-                        <span>Deploy log</span>
-                        <button type="button" title="Copy deploy log" @onclick="Vm.CopyDeployLogAsync">Copy</button>
+                    <div class="mcm-wizard-log-block mcm-wizard-log-grow">
+                        <div class="mcm-wizard-log-label">
+                            <span>Deploy log</span>
+                            <button type="button" title="Copy deploy log" @onclick="Vm.CopyDeployLogAsync">Copy</button>
+                        </div>
+                        <pre id="mcm-deploy-log" class="mcm-wizard-log mcm-wizard-mono mcm-slim-scroll">@Vm.DeployLog</pre>
                     </div>
-                    <pre id="mcm-deploy-log" class="mcm-wizard-log mcm-wizard-mono">@Vm.DeployLog</pre>
                 </div>
             }
         </div>
@@ -454,7 +483,7 @@
         if (!Vm.CanCloseWizard)
             return;
         Vm.PrepareToClose();
-        ConfigHost.Reload();
+        Session.ReloadFromDisk();
         Shell.CloseSetup();
     }
 }

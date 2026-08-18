@@ -36,7 +36,7 @@
                 <span style="font-size:14px;font-weight:500;">World backups</span>
                 <button type="button"
                         class="mcm-help"
-                        title="Zipped world saves in shared cloud storage. Oldest backups are cleaned up on the server when space is tight. Replace copies a zip onto the live server and needs the server running.">
+                        title="Zipped world saves in shared cloud storage. Oldest backups are cleaned up on the server when space is tight. Replace copies a zip onto the live server. Wipe world deletes only the live save (not these backups) and needs the server running.">
                     <i class="ti ti-help" aria-hidden="true"></i>
                     <span class="sr-only">About World backups</span>
                 </button>
@@ -55,6 +55,13 @@
                         @onclick="Vm.DownloadLatestAsync">
                     <i class="ti ti-download" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
                     Download latest world save
+                </button>
+                <button type="button"
+                        class="mcm-danger-btn"
+                        disabled="@Vm.IsBusy"
+                        title="Deletes the live world on the game VM. Cloud backups, mods, and server.properties stay. Requires the server running. Download a world save first if you might want this world back."
+                        @onclick="Vm.WipeWorldAsync">
+                    Wipe world
                 </button>
                 <button type="button"
                         disabled="@Vm.IsBusy"
@@ -91,7 +98,7 @@
     </div>
 
     <p style="margin:12px 0 0;font-size:12px;color:var(--text-muted);">
-        Replace needs the server running. Upload while stopped only stores a zip — Start, then Replace to apply it.
+        Replace and Wipe world need the server running. Wipe deletes only the live save — cloud backups stay. Download a world save first if you might want this world back. Upload while stopped only stores a zip — Start, then Replace to apply it.
     </p>
 </div>
 

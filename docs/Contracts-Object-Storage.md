@@ -78,7 +78,7 @@ These are normative rules for new Phase 2+ work. Existing lab/product code does 
 | `ledger/usage.json` | 2 | VM1; door only for STOPPED orphan heal | Manager, door, VM1 boot | Live |
 | `ledger/lease.json` | 1 | VM1 heartbeat; door clears after STOPPED heal | VM1 boot, door heal, diagnostics | Live |
 | `budget/config.json` | 1 | Manager; VM1 may patch detected shape / boot safety | Door, VM1, Manager | Live |
-| `ip/allowlist.json` | 1 | Manager | Future product consumers | Seeded/live; Avalonia Phase 1 still syncs Security List directly |
+| `ip/allowlist.json` | 1 | Manager | Future product consumers | Seeded/live; Hybrid Save updates when present. `ip` = IPv4 or IPv4 CIDR |
 | `ip/mode.json` | 1 | Manager | Future product consumers | Seeded/live; MVP mode fixed `private` |
 | `messages/chat.json` | 1 | Manager | VM1 agent | Seeded/live; rich editor deferred |
 | `backups/.keep` | text | Setup/seed | None | Optional marker |
@@ -265,6 +265,8 @@ There is no `backups` category in v1. Adding it now is unsafe because current no
 
 VM1 is the primary writer. Door writes only to close orphaned open intervals after OCI reports VM1 **`STOPPED`**. Manager Phase 1 is a reader; lab Testing2 supports manual publish.
 
+**Destroy:** `tofu destroy` of the product stack deletes this bucket (including `ledger/usage.json`); a later Setup seeds a new empty ledger and does not restore prior intervals. Oracle Always Free OCPU-hours for the calendar month still include the destroyed VMs. MVP has no ledger import. See [`Guide.md`](Guide.md) → Tear down and [`Automated-Infrastructure-Deployment.md`](Automated-Infrastructure-Deployment.md) §12.4.
+
 ```json
 {
   "version": 2,
@@ -446,18 +448,22 @@ The deployed door currently uses America/Los_Angeles day windows, ignores `daily
       "name": "Friend",
       "ip": "203.0.113.10",
       "is_admin": false
+    },
+    {
+      "id": "<UUID>",
+      "name": "CgnatFriend",
+      "ip": "172.56.0.0/16",
+      "is_admin": false
     }
   ]
 }
 ```
 
-- `ip` is a single IPv4 address; Security List synchronization converts it to `/32`.
-- `name` is optional display/description text.
-- `is_admin` controls SSH/door-admin rule ownership in the Manager.
-- Manager is the intended writer.
-- This is the future shared IP SoT. Avalonia Phase 1 currently reads/writes local `friends.local.json` and applies the Security List directly; it does not yet publish this object.
-
-**v1 evolution (do not change the MVP contract yet):** lab `PRODUCT-IDEAS.md` Allowlist CIDR ranges lets an allowlist entry be a **CIDR prefix** (e.g. `172.56.0.0/16`) instead of a single host, for friends on dynamic/CGNAT IPs. Exact JSON shape (`ip` vs a new `cidr` field) is frozen at v1 implementation — until then, `ip` remains one IPv4 address. CIDR is intended for Minecraft 25565; SSH/door admin rules stay `/32` unless the admin is explicitly editing their own admin entry.
+- `ip` is a single IPv4 address **or** an IPv4 CIDR prefix (e.g. `172.56.0.0/16`). Hosts are stored without a `/32` suffix; prefixes `/9`–`/31` are stored as `network/prefix`. `/0`–`/8` are rejected.
+- `name` is optional display/description text (Security List Minecraft rule description).
+- `is_admin` controls SSH/door-admin rule ownership in the Manager. CIDR prefixes apply to **Minecraft 25565 TCP/UDP** only. SSH / door `:8080` stay `/32` unless the operator is editing **their own** admin entry.
+- Manager is the intended writer. Hybrid Save updates this object **only when it already exists** in the bucket (does not create it).
+- This is the shared IP SoT when present. Hybrid always applies the Security List from local `friends.local.json`.
 
 ## `ip/mode.json` — access mode v1
 
@@ -671,7 +677,7 @@ No live objects were modified during review.
 10. Flag-driven `meta/world-restore-request.json` apply is not implemented; SSH replacement is the current fallback.
 11. The upload lock is not implemented; current Manager/VM1 List+PUT operations can race and exceed the aggregate cap. Current VM1 eviction accepts any `.zip` under `backups/`, not only canonical `world-*.zip`.
 12. Current SSH world replace lacks archive preflight and rollback after extraction failure.
-13. Avalonia whitelist currently uses local config + Security List directly; shared IP objects remain future contract surfaces. **v1** may extend entries to CIDR prefixes (`PRODUCT-IDEAS.md`); do not change the MVP single-IPv4 `ip` field until that work.
+13. Hybrid whitelist writes local `friends.local.json` and applies the Security List. `ip/allowlist.json` is updated on Save **when that object already exists** (V1 Step 1.2). `ip` may be a single IPv4 or an IPv4 CIDR prefix.
 14. Prefixes are fixed for `infra_schema: 2`; the prefix map is configuration/discovery data, not permission to change hardcoded deployed actors independently. A prefix change requires coordinated actor updates plus an `infra_schema` bump.
 15. Lease fields are all required properties (nullable where shown). A VM1 helper implements the configured 900-second stale test, but no active caller was found; deployed door heal does not enforce age and uses the heartbeat only after OCI reports VM1 `STOPPED`.
 
@@ -687,6 +693,8 @@ Product:
 - `src/McManager.Core/Services/ConnectExistingService.cs`
 - `src/McManager.Core/Services/ObjectStorageService.cs`
 - `src/McManager.Core/Services/BackupStore.cs`
+- `src/McManager.Core/Services/AllowlistStore.cs`
+- `src/McManager.Core/Config/FriendRules.cs`
 - `docs/Local-Config.md`
 
 Lab/on-box:

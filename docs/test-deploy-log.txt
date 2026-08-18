@@ -1,0 +1,1053 @@
+3:45]           + source      = "10.0.0.0/16"
+[18:33:45]           + source_type = "CIDR_BLOCK"
+[18:33:45]           + stateless   = false
+[18:33:45]           + icmp_options {
+[18:33:45]               + code = -1
+[18:33:45]               + type = 3
+[18:33:45]             }
+[18:33:45]         }
+[18:33:45]       + ingress_security_rules {
+[18:33:45]           + description = (known after apply)
+[18:33:45]           + protocol    = "1"
+[18:33:45]           + source      = "0.0.0.0/0"
+[18:33:45]           + source_type = "CIDR_BLOCK"
+[18:33:45]           + stateless   = false
+[18:33:45]           + icmp_options {
+[18:33:45]               + code = 4
+[18:33:45]               + type = 3
+[18:33:45]             }
+[18:33:45]         }
+[18:33:45]     }
+[18:33:45]   # module.network.oci_core_subnet.public will be created
+[18:33:45]   + resource "oci_core_subnet" "public" {
+[18:33:45]       + availability_domain        = (known after apply)
+[18:33:45]       + cidr_block                 = "10.0.0.0/24"
+[18:33:45]       + compartment_id             = (known after apply)
+[18:33:45]       + defined_tags               = (known after apply)
+[18:33:45]       + dhcp_options_id            = (known after apply)
+[18:33:45]       + display_name               = "mcmgr-subnet-public"
+[18:33:45]       + dns_label                  = "public"
+[18:33:45]       + freeform_tags              = (known after apply)
+[18:33:45]       + id                         = (known after apply)
+[18:33:45]       + ipv4cidr_blocks            = (known after apply)
+[18:33:45]       + ipv6cidr_block             = (known after apply)
+[18:33:45]       + ipv6cidr_blocks            = (known after apply)
+[18:33:45]       + ipv6virtual_router_ip      = (known after apply)
+[18:33:45]       + prohibit_internet_ingress  = false
+[18:33:45]       + prohibit_public_ip_on_vnic = false
+[18:33:45]       + route_table_id             = (known after apply)
+[18:33:45]       + security_list_ids          = (known after apply)
+[18:33:45]       + state                      = (known after apply)
+[18:33:45]       + subnet_domain_name         = (known after apply)
+[18:33:45]       + time_created               = (known after apply)
+[18:33:45]       + vcn_id                     = (known after apply)
+[18:33:45]       + virtual_router_ip          = (known after apply)
+[18:33:45]       + virtual_router_mac         = (known after apply)
+[18:33:45]     }
+[18:33:45]   # module.network.oci_core_vcn.mcmgr will be created
+[18:33:45]   + resource "oci_core_vcn" "mcmgr" {
+[18:33:45]       + byoipv6cidr_blocks               = (known after apply)
+[18:33:45]       + cidr_block                       = (known after apply)
+[18:33:45]       + cidr_blocks                      = [
+[18:33:45]           + "10.0.0.0/16",
+[18:33:45]         ]
+[18:33:45]       + compartment_id                   = (known after apply)
+[18:33:45]       + default_dhcp_options_id          = (known after apply)
+[18:33:45]       + default_route_table_id           = (known after apply)
+[18:33:45]       + default_security_list_id         = (known after apply)
+[18:33:45]       + defined_tags                     = (known after apply)
+[18:33:45]       + display_name                     = "mcmgr-vcn"
+[18:33:45]       + dns_label                        = "mcmgr"
+[18:33:45]       + freeform_tags                    = (known after apply)
+[18:33:45]       + id                               = (known after apply)
+[18:33:45]       + ipv6cidr_blocks                  = (known after apply)
+[18:33:45]       + ipv6private_cidr_blocks          = (known after apply)
+[18:33:45]       + is_ipv6enabled                   = false
+[18:33:45]       + is_oracle_gua_allocation_enabled = (known after apply)
+[18:33:45]       + security_attributes              = (known after apply)
+[18:33:45]       + state                            = (known after apply)
+[18:33:45]       + time_created                     = (known after apply)
+[18:33:45]       + vcn_domain_name                  = (known after apply)
+[18:33:45]       + byoipv6cidr_details (known after apply)
+[18:33:45]     }
+[18:33:45]   # module.storage.oci_objectstorage_bucket.shared will be created
+[18:33:45]   + resource "oci_objectstorage_bucket" "shared" {
+[18:33:45]       + access_type                  = "NoPublicAccess"
+[18:33:45]       + approximate_count            = (known after apply)
+[18:33:45]       + approximate_size             = (known after apply)
+[18:33:45]       + auto_tiering                 = "Disabled"
+[18:33:45]       + bucket_id                    = (known after apply)
+[18:33:45]       + bucket_scope                 = (known after apply)
+[18:33:45]       + compartment_id               = (known after apply)
+[18:33:45]       + created_by                   = (known after apply)
+[18:33:45]       + defined_tags                 = (known after apply)
+[18:33:45]       + etag                         = (known after apply)
+[18:33:45]       + freeform_tags                = (known after apply)
+[18:33:45]       + id                           = (known after apply)
+[18:33:45]       + is_bucket_key_enabled        = (known after apply)
+[18:33:45]       + is_read_only                 = (known after apply)
+[18:33:45]       + kms_key_id                   = (known after apply)
+[18:33:45]       + name                         = "mcmgr-shared-data"
+[18:33:45]       + namespace                    = "axylzb4tj233"
+[18:33:45]       + object_events_enabled        = false
+[18:33:45]       + object_lifecycle_policy_etag = (known after apply)
+[18:33:45]       + replication_enabled          = (known after apply)
+[18:33:45]       + storage_tier                 = "Standard"
+[18:33:45]       + time_created                 = (known after apply)
+[18:33:45]       + versioning                   = "Disabled"
+[18:33:45]     }
+[18:33:45] Plan: 21 to add, 0 to change, 0 to destroy.
+[18:33:45] Changes to Outputs:
+[18:33:45]   + budget_id                    = (known after apply)
+[18:33:45]   + compartment_id               = (known after apply)
+[18:33:45]   + door_display_name            = "mcmgr-door"
+[18:33:45]   + door_http_port               = 8080
+[18:33:45]   + door_instance_id             = (known after apply)
+[18:33:45]   + door_primary_private_ip      = (known after apply)
+[18:33:45]   + door_secondary_private_ip    = (known after apply)
+[18:33:45]   + door_secondary_private_ip_id = (known after apply)
+[18:33:45]   + door_ssh_host                = (known after apply)
+[18:33:45]   + infra_meta_skeleton          = {
+[18:33:45]       + budget_brake   = {
+[18:33:45]           + budget_id   = (known after apply)
+[18:33:45]           + function_id = null
+[18:33:45]         }
+[18:33:45]       + compartment_id = (known after apply)
+[18:33:45]       + door           = {
+[18:33:45]           + display_name            = "mcmgr-door"
+[18:33:45]           + http_port               = 8080
+[18:33:45]           + instance_id             = (known after apply)
+[18:33:45]           + primary_private_ip      = (known after apply)
+[18:33:45]           + secondary_private_ip    = (known after apply)
+[18:33:45]           + secondary_private_ip_id = (known after apply)
+[18:33:45]           + ssh_host                = (known after apply)
+[18:33:45]           + ssh_user                = "ubuntu"
+[18:33:45]         }
+[18:33:45]       + game           = {
+[18:33:45]           + minecraft_version = "unspecified"
+[18:33:45]           + server_jar_sha1   = null
+[18:33:45]           + server_kind       = "vanilla"
+[18:33:45]         }
+[18:33:45]       + infra_schema   = 2
+[18:33:45]       + mode           = "always_free"
+[18:33:45]       + network        = {
+[18:33:45]           + minecraft_port   = 25565
+[18:33:45]           + security_list_id = (known after apply)
+[18:33:45]           + ssh_port         = 22
+[18:33:45]           + subnet_id        = (known after apply)
+[18:33:45]           + vcn_id           = (known after apply)
+[18:33:45]         }
+[18:33:45]       + object_storage = {
+[18:33:45]           + backup_enabled = true
+[18:33:45]           + bucket         = "mcmgr-shared-data"
+[18:33:45]           + bucket_id      = (known after apply)
+[18:33:45]           + namespace      = "axylzb4tj233"
+[18:33:45]           + prefixes       = {
+[18:33:45]               + backups  = "backups/"
+[18:33:45]               + budget   = "budget/"
+[18:33:45]               + ip       = "ip/"
+[18:33:45]               + ledger   = "ledger/"
+[18:33:45]               + messages = "messages/"
+[18:33:45]               + meta     = "meta/"
+[18:33:45]             }
+[18:33:45]           + soft_cap_gb    = 9.5
+[18:33:45]         }
+[18:33:45]       + play           = {
+[18:33:45]           + reserved_public_ip    = (known after apply)
+[18:33:45]           + reserved_public_ip_id = (known after apply)
+[18:33:45]         }
+[18:33:45]       + region         = "us-sanjose-1"
+[18:33:45]       + ssh            = {
+[18:33:45]           + private_key_location   = "admin_pc_only"
+[18:33:45]           + public_key_fingerprint = null
+[18:33:45]         }
+[18:33:45]       + stack_name     = "mcmgr"
+[18:33:45]       + stack_version  = "0.1.0"
+[18:33:45]       + tenancy_id     = "ocid1.tenancy.oc1..aaaaaaaadpltah3whsejr3a6e3qja7s3s6jlaqhwe5nnbp56gk3juo3mydza"
+[18:33:45]       + version        = 2
+[18:33:45]       + vm1            = {
+[18:33:45]           + display_name            = "mcmgr-vm1"
+[18:33:45]           + instance_id             = (known after apply)
+[18:33:45]           + minecraft_unit          = "minecraft"
+[18:33:45]           + primary_private_ip      = (known after apply)
+[18:33:45]           + secondary_private_ip    = (known after apply)
+[18:33:45]           + secondary_private_ip_id = (known after apply)
+[18:33:45]           + shape                   = "VM.Standard.A1.Flex"
+[18:33:45]           + shape_memory_gb         = 12
+[18:33:45]           + shape_ocpus             = 2
+[18:33:45]           + ssh_host                = (known after apply)
+[18:33:45]           + ssh_user                = "ubuntu"
+[18:33:45]           + world_path              = "/opt/mcmgr/server/world"
+[18:33:45]         }
+[18:33:45]     }
+[18:33:45]   + minecraft_unit               = "minecraft"
+[18:33:45]   + object_storage_bucket        = "mcmgr-shared-data"
+[18:33:45]   + object_storage_bucket_id     = (known after apply)
+[18:33:45]   + object_storage_namespace     = "axylzb4tj233"
+[18:33:45]   + play_reserved_public_ip      = (known after apply)
+[18:33:45]   + play_reserved_public_ip_id   = (known after apply)
+[18:33:45]   + region                       = "us-sanjose-1"
+[18:33:45]   + security_list_id             = (known after apply)
+[18:33:45]   + ssh_user                     = "ubuntu"
+[18:33:45]   + subnet_id                    = (known after apply)
+[18:33:45]   + tenancy_id                   = "ocid1.tenancy.oc1..aaaaaaaadpltah3whsejr3a6e3qja7s3s6jlaqhwe5nnbp56gk3juo3mydza"
+[18:33:45]   + ubuntu_image_ocid_door       = "ocid1.image.oc1.us-sanjose-1.aaaaaaaagghcxlejyuf43f2fwdm3eojbjxuzqla6hhsaqih45vvghauykopq"
+[18:33:45]   + ubuntu_image_ocid_vm1        = "ocid1.image.oc1.us-sanjose-1.aaaaaaaa7nxridotwlvin7mvmt6dd47heh3y75jszcsb2k7dwqj3gh6dwsea"
+[18:33:45]   + vcn_id                       = (known after apply)
+[18:33:45]   + vm1_display_name             = "mcmgr-vm1"
+[18:33:45]   + vm1_instance_id              = (known after apply)
+[18:33:45]   + vm1_memory_gb                = 12
+[18:33:45]   + vm1_ocpus                    = 2
+[18:33:45]   + vm1_primary_private_ip       = (known after apply)
+[18:33:45]   + vm1_secondary_private_ip     = (known after apply)
+[18:33:45]   + vm1_secondary_private_ip_id  = (known after apply)
+[18:33:45]   + vm1_shape                    = "VM.Standard.A1.Flex"
+[18:33:45]   + vm1_ssh_host                 = (known after apply)
+[18:33:45]   + world_path                   = "/opt/mcmgr/server/world"
+[18:33:46] module.compartment.oci_identity_compartment.mcmgr[0]: Creating...
+[18:33:56] module.compartment.oci_identity_compartment.mcmgr[0]: Still creating... [10s elapsed]
+[18:34:05] module.compartment.oci_identity_compartment.mcmgr[0]: Creation complete after 19s [id=ocid1.compartment.oc1..aaaaaaaatjctcmmltp2bbxc7f3w6qplyra76f57rryyup7ewv3sabm3zqhfq]
+[18:34:05] module.iam.oci_identity_dynamic_group.fn: Creating...
+[18:34:05] module.iam.oci_identity_dynamic_group.instances: Creating...
+[18:34:05] module.budget_brake.oci_artifacts_container_repository.softstop: Creating...
+[18:34:05] module.budget_brake.oci_budget_budget.one_usd: Creating...
+[18:34:05] module.storage.oci_objectstorage_bucket.shared: Creating...
+[18:34:05] module.network.oci_core_vcn.mcmgr: Creating...
+[18:34:05] module.storage.oci_objectstorage_bucket.shared: Creation complete after 1s [id=n/axylzb4tj233/b/mcmgr-shared-data]
+[18:34:05] module.budget_brake.oci_artifacts_container_repository.softstop: Creation complete after 1s [id=ocid1.containerrepo.oc1.us-sanjose-1.0.axylzb4tj233.aaaaaaaaspc7zmamk5esc5s6labs7yzeqpb46cmj4qfwujoxqwexm7mcng5q]
+[18:34:05] module.budget_brake.oci_budget_budget.one_usd: Creation complete after 1s [id=ocid1.budget.oc1.us-sanjose-1.amaaaaaastuhlhaas3kr6bd6culdsjrpzvkg2ftqczhv6n7skwbliukdeo7q]
+[18:34:05] module.budget_brake.oci_budget_alert_rule.one_usd: Creating...
+[18:34:05] module.iam.oci_identity_dynamic_group.fn: Creation complete after 1s [id=ocid1.dynamicgroup.oc1..aaaaaaaa535y3gm3v7hpcolo4pesup35mvncruue3sdz6tqhi3bvoxnys22q]
+[18:34:06] module.iam.oci_identity_dynamic_group.instances: Creation complete after 1s [id=ocid1.dynamicgroup.oc1..aaaaaaaapei7q5eetpydm5lx2qmsf7z2bhcqi2sdyianbao53iqu3h6grfma]
+[18:34:06] module.budget_brake.oci_budget_alert_rule.one_usd: Creation complete after 0s [id=ocid1.alertrule.oc1.us-sanjose-1.amaaaaaastuhlhaareelanfz3agz5i65skkuxdu2igiisom4iefccav7ictq]
+[18:34:06] module.network.oci_core_vcn.mcmgr: Creation complete after 1s [id=ocid1.vcn.oc1.us-sanjose-1.amaaaaaastuhlhaakwxsggafcpml2vqguy7shvl64nj4bnusx57dxb55pfvq]
+[18:34:06] module.network.oci_core_internet_gateway.mcmgr: Creating...
+[18:34:06] module.network.oci_core_security_list.mcmgr: Creating...
+[18:34:06] module.network.oci_core_internet_gateway.mcmgr: Creation complete after 1s [id=ocid1.internetgateway.oc1.us-sanjose-1.aaaaaaaar5tqnmu6rnmek4rrbqq5wlt2skvlfjsxwfil2et5gvwzol75sacq]
+[18:34:06] module.network.oci_core_default_route_table.public: Creating...
+[18:34:06] module.network.oci_core_security_list.mcmgr: Creation complete after 1s [id=ocid1.securitylist.oc1.us-sanjose-1.aaaaaaaay2e3uqbpqduju5enftr7wpdf2gbwy72lluo3auz7ji3gnoh725kq]
+[18:34:06] module.network.oci_core_default_route_table.public: Creation complete after 0s [id=ocid1.routetable.oc1.us-sanjose-1.aaaaaaaat7gxgd5ugclooa4qdo75h7sgn4vopz3cf4b6gfffmftzsofbjwpa]
+[18:34:06] module.network.oci_core_subnet.public: Creating...
+[18:34:09] module.network.oci_core_subnet.public: Creation complete after 2s [id=ocid1.subnet.oc1.us-sanjose-1.aaaaaaaa2jivkaeojo3bbh727b7nerghknoxzv6cjr6o23bdrli5xs7pxgoq]
+[18:34:09] module.budget_brake.oci_functions_application.app: Creating...
+[18:34:09] module.compute.oci_core_instance.door: Creating...
+[18:34:09] module.compute.oci_core_instance.vm1: Creating...
+[18:34:09] module.budget_brake.oci_functions_application.app: Creation complete after 1s [id=ocid1.fnapp.oc1.us-sanjose-1.amaaaaaastuhlhaawo247e3otzzglbjcajyg7v3aexwduqli7cze6gm4g4dq]
+[18:34:19] module.compute.oci_core_instance.door: Still creating... [10s elapsed]
+[18:34:19] module.compute.oci_core_instance.vm1: Still creating... [10s elapsed]
+[18:34:29] module.compute.oci_core_instance.vm1: Still creating... [20s elapsed]
+[18:34:29] module.compute.oci_core_instance.door: Still creating... [20s elapsed]
+[18:34:39] module.compute.oci_core_instance.door: Still creating... [30s elapsed]
+[18:34:39] module.compute.oci_core_instance.vm1: Still creating... [30s elapsed]
+[18:34:49] module.compute.oci_core_instance.vm1: Still creating... [40s elapsed]
+[18:34:49] module.compute.oci_core_instance.door: Still creating... [40s elapsed]
+[18:34:54] module.compute.oci_core_instance.vm1: Creation complete after 45s [id=ocid1.instance.oc1.us-sanjose-1.anzwuljrstuhlhacrvmvrkoqxnw5s6xul6hbiqtkubvf5k4dtrv73wv2cbfa]
+[18:34:54] module.compute.data.oci_core_vnic_attachments.vm1: Reading...
+[18:34:54] module.compute.oci_core_instance.door: Creation complete after 45s [id=ocid1.instance.oc1.us-sanjose-1.anzwuljrstuhlhacfbfxog4pngmvluzytel7hqrccheczxvtr5pxk6cv6ifq]
+[18:34:54] module.compute.data.oci_core_vnic_attachments.door: Reading...
+[18:34:54] module.iam.oci_identity_dynamic_group.door: Creating...
+[18:34:54] module.compute.data.oci_core_vnic_attachments.vm1: Read complete after 0s [id=CoreVnicAttachmentsDataSource-3710133941]
+[18:34:54] module.compute.data.oci_core_vnic.vm1: Reading...
+[18:34:54] module.compute.data.oci_core_vnic_attachments.door: Read complete after 0s [id=CoreVnicAttachmentsDataSource-1255434057]
+[18:34:54] module.compute.data.oci_core_vnic.door: Reading...
+[18:34:54] module.compute.data.oci_core_vnic.vm1: Read complete after 1s [id=ocid1.vnic.oc1.us-sanjose-1.abzwuljrgk7x4uittqbl6qbbulwruyyntifhgjz5dw3brxoauhaisu55eizq]
+[18:34:54] module.compute.oci_core_private_ip.vm1_play: Creating...
+[18:34:54] module.compute.data.oci_core_vnic.door: Read complete after 1s [id=ocid1.vnic.oc1.us-sanjose-1.abzwuljreifv22p4nvc5ozyhre43bjxoolduroz43gd7rp6by5hcqd2olu5a]
+[18:34:54] module.compute.oci_core_private_ip.door_play: Creating...
+[18:34:54] module.iam.oci_identity_dynamic_group.door: Creation complete after 1s [id=ocid1.dynamicgroup.oc1..aaaaaaaac6zzaqtwgbb6idkdpopqzi6w6xedd77axawqseanxnuk4dddfpiq]
+[18:34:54] module.iam.oci_identity_policy.door_ip: Creating...
+[18:34:54] module.iam.oci_identity_policy.stack: Creating...
+[18:34:55] module.iam.oci_identity_policy.door_ip: Creation complete after 0s [id=ocid1.policy.oc1..aaaaaaaa4wprjccd52sz72b47absw7pzenudsbj2gwgew7dx3jx6qi6qiola]
+[18:34:55] module.compute.oci_core_private_ip.vm1_play: Creation complete after 0s [id=ocid1.privateip.oc1.us-sanjose-1.aaaaaaaaycxcfpjjrbgoktjme47cdwlto6vg5dyesdkiyfjrmd63x7dromwa]
+[18:34:55] module.compute.oci_core_private_ip.door_play: Creation complete after 0s [id=ocid1.privateip.oc1.us-sanjose-1.aaaaaaaa43olkgfbsyd3w3xpiask6mxaojbokusd2yig3z3ffdwwlizwjnzq]
+[18:34:55] module.compute.oci_core_public_ip.play: Creating...
+[18:34:55] module.iam.oci_identity_policy.stack: Creation complete after 0s [id=ocid1.policy.oc1..aaaaaaaauqyfjcfezt3vbab46bghws5taa3gjftmfwfz4fk54n5x266cwi6q]
+[18:34:55] module.compute.oci_core_public_ip.play: Creation complete after 1s [id=ocid1.publicip.oc1.us-sanjose-1.amaaaaaastuhlhaa32akq3qqfz2gkxjilw6ixuzpmnov3bxfphev76innkla]
+[18:34:56] Apply complete! Resources: 21 added, 0 changed, 0 destroyed.
+[18:34:56] Outputs:
+[18:34:56] budget_id = "ocid1.budget.oc1.us-sanjose-1.amaaaaaastuhlhaas3kr6bd6culdsjrpzvkg2ftqczhv6n7skwbliukdeo7q"
+[18:34:56] compartment_id = "ocid1.compartment.oc1..aaaaaaaatjctcmmltp2bbxc7f3w6qplyra76f57rryyup7ewv3sabm3zqhfq"
+[18:34:56] door_display_name = "mcmgr-door"
+[18:34:56] door_http_port = 8080
+[18:34:56] door_instance_id = "ocid1.instance.oc1.us-sanjose-1.anzwuljrstuhlhacfbfxog4pngmvluzytel7hqrccheczxvtr5pxk6cv6ifq"
+[18:34:56] door_primary_private_ip = "10.0.0.249"
+[18:34:56] door_secondary_private_ip = "10.0.0.102"
+[18:34:56] door_secondary_private_ip_id = "ocid1.privateip.oc1.us-sanjose-1.aaaaaaaa43olkgfbsyd3w3xpiask6mxaojbokusd2yig3z3ffdwwlizwjnzq"
+[18:34:56] door_ssh_host = "163.192.17.85"
+[18:34:56] infra_meta_skeleton = {
+[18:34:56]   "budget_brake" = {
+[18:34:56]     "budget_id" = "ocid1.budget.oc1.us-sanjose-1.amaaaaaastuhlhaas3kr6bd6culdsjrpzvkg2ftqczhv6n7skwbliukdeo7q"
+[18:34:56]     "function_id" = null
+[18:34:56]   }
+[18:34:56]   "compartment_id" = "ocid1.compartment.oc1..aaaaaaaatjctcmmltp2bbxc7f3w6qplyra76f57rryyup7ewv3sabm3zqhfq"
+[18:34:56]   "door" = {
+[18:34:56]     "display_name" = "mcmgr-door"
+[18:34:56]     "http_port" = 8080
+[18:34:56]     "instance_id" = "ocid1.instance.oc1.us-sanjose-1.anzwuljrstuhlhacfbfxog4pngmvluzytel7hqrccheczxvtr5pxk6cv6ifq"
+[18:34:56]     "primary_private_ip" = "10.0.0.249"
+[18:34:56]     "secondary_private_ip" = "10.0.0.102"
+[18:34:56]     "secondary_private_ip_id" = "ocid1.privateip.oc1.us-sanjose-1.aaaaaaaa43olkgfbsyd3w3xpiask6mxaojbokusd2yig3z3ffdwwlizwjnzq"
+[18:34:56]     "ssh_host" = "163.192.17.85"
+[18:34:56]     "ssh_user" = "ubuntu"
+[18:34:56]   }
+[18:34:56]   "game" = {
+[18:34:56]     "minecraft_version" = "unspecified"
+[18:34:56]     "server_jar_sha1" = null
+[18:34:56]     "server_kind" = "vanilla"
+[18:34:56]   }
+[18:34:56]   "infra_schema" = 2
+[18:34:56]   "mode" = "always_free"
+[18:34:56]   "network" = {
+[18:34:56]     "minecraft_port" = 25565
+[18:34:56]     "security_list_id" = "ocid1.securitylist.oc1.us-sanjose-1.aaaaaaaay2e3uqbpqduju5enftr7wpdf2gbwy72lluo3auz7ji3gnoh725kq"
+[18:34:56]     "ssh_port" = 22
+[18:34:56]     "subnet_id" = "ocid1.subnet.oc1.us-sanjose-1.aaaaaaaa2jivkaeojo3bbh727b7nerghknoxzv6cjr6o23bdrli5xs7pxgoq"
+[18:34:56]     "vcn_id" = "ocid1.vcn.oc1.us-sanjose-1.amaaaaaastuhlhaakwxsggafcpml2vqguy7shvl64nj4bnusx57dxb55pfvq"
+[18:34:56]   }
+[18:34:56]   "object_storage" = {
+[18:34:56]     "backup_enabled" = true
+[18:34:56]     "bucket" = "mcmgr-shared-data"
+[18:34:56]     "bucket_id" = "ocid1.bucket.oc1.us-sanjose-1.aaaaaaaagvhidj4ccrzwvhufvvj3aawhf2ovwkje3p6ijfvdikivjo3fjska"
+[18:34:56]     "namespace" = "axylzb4tj233"
+[18:34:56]     "prefixes" = {
+[18:34:56]       "backups" = "backups/"
+[18:34:56]       "budget" = "budget/"
+[18:34:56]       "ip" = "ip/"
+[18:34:56]       "ledger" = "ledger/"
+[18:34:56]       "messages" = "messages/"
+[18:34:56]       "meta" = "meta/"
+[18:34:56]     }
+[18:34:56]     "soft_cap_gb" = 9.5
+[18:34:56]   }
+[18:34:56]   "play" = {
+[18:34:56]     "reserved_public_ip" = "147.224.32.89"
+[18:34:56]     "reserved_public_ip_id" = "ocid1.publicip.oc1.us-sanjose-1.amaaaaaastuhlhaa32akq3qqfz2gkxjilw6ixuzpmnov3bxfphev76innkla"
+[18:34:56]   }
+[18:34:56]   "region" = "us-sanjose-1"
+[18:34:56]   "ssh" = {
+[18:34:56]     "private_key_location" = "admin_pc_only"
+[18:34:56]     "public_key_fingerprint" = null
+[18:34:56]   }
+[18:34:56]   "stack_name" = "mcmgr"
+[18:34:56]   "stack_version" = "0.1.0"
+[18:34:56]   "tenancy_id" = "ocid1.tenancy.oc1..aaaaaaaadpltah3whsejr3a6e3qja7s3s6jlaqhwe5nnbp56gk3juo3mydza"
+[18:34:56]   "version" = 2
+[18:34:56]   "vm1" = {
+[18:34:56]     "display_name" = "mcmgr-vm1"
+[18:34:56]     "instance_id" = "ocid1.instance.oc1.us-sanjose-1.anzwuljrstuhlhacrvmvrkoqxnw5s6xul6hbiqtkubvf5k4dtrv73wv2cbfa"
+[18:34:56]     "minecraft_unit" = "minecraft"
+[18:34:56]     "primary_private_ip" = "10.0.0.196"
+[18:34:56]     "secondary_private_ip" = "10.0.0.246"
+[18:34:56]     "secondary_private_ip_id" = "ocid1.privateip.oc1.us-sanjose-1.aaaaaaaaycxcfpjjrbgoktjme47cdwlto6vg5dyesdkiyfjrmd63x7dromwa"
+[18:34:56]     "shape" = "VM.Standard.A1.Flex"
+[18:34:56]     "shape_memory_gb" = 12
+[18:34:56]     "shape_ocpus" = 2
+[18:34:56]     "ssh_host" = "147.224.38.164"
+[18:34:56]     "ssh_user" = "ubuntu"
+[18:34:56]     "world_path" = "/opt/mcmgr/server/world"
+[18:34:56]   }
+[18:34:56] }
+[18:34:56] minecraft_unit = "minecraft"
+[18:34:56] object_storage_bucket = "mcmgr-shared-data"
+[18:34:56] object_storage_bucket_id = "ocid1.bucket.oc1.us-sanjose-1.aaaaaaaagvhidj4ccrzwvhufvvj3aawhf2ovwkje3p6ijfvdikivjo3fjska"
+[18:34:56] object_storage_namespace = "axylzb4tj233"
+[18:34:56] play_reserved_public_ip = "147.224.32.89"
+[18:34:56] play_reserved_public_ip_id = "ocid1.publicip.oc1.us-sanjose-1.amaaaaaastuhlhaa32akq3qqfz2gkxjilw6ixuzpmnov3bxfphev76innkla"
+[18:34:56] region = "us-sanjose-1"
+[18:34:56] security_list_id = "ocid1.securitylist.oc1.us-sanjose-1.aaaaaaaay2e3uqbpqduju5enftr7wpdf2gbwy72lluo3auz7ji3gnoh725kq"
+[18:34:56] ssh_user = "ubuntu"
+[18:34:56] subnet_id = "ocid1.subnet.oc1.us-sanjose-1.aaaaaaaa2jivkaeojo3bbh727b7nerghknoxzv6cjr6o23bdrli5xs7pxgoq"
+[18:34:56] tenancy_id = "ocid1.tenancy.oc1..aaaaaaaadpltah3whsejr3a6e3qja7s3s6jlaqhwe5nnbp56gk3juo3mydza"
+[18:34:56] ubuntu_image_ocid_door = "ocid1.image.oc1.us-sanjose-1.aaaaaaaagghcxlejyuf43f2fwdm3eojbjxuzqla6hhsaqih45vvghauykopq"
+[18:34:56] ubuntu_image_ocid_vm1 = "ocid1.image.oc1.us-sanjose-1.aaaaaaaa7nxridotwlvin7mvmt6dd47heh3y75jszcsb2k7dwqj3gh6dwsea"
+[18:34:56] vcn_id = "ocid1.vcn.oc1.us-sanjose-1.amaaaaaastuhlhaakwxsggafcpml2vqguy7shvl64nj4bnusx57dxb55pfvq"
+[18:34:56] vm1_display_name = "mcmgr-vm1"
+[18:34:56] vm1_instance_id = "ocid1.instance.oc1.us-sanjose-1.anzwuljrstuhlhacrvmvrkoqxnw5s6xul6hbiqtkubvf5k4dtrv73wv2cbfa"
+[18:34:56] vm1_memory_gb = 12
+[18:34:56] vm1_ocpus = 2
+[18:34:56] vm1_primary_private_ip = "10.0.0.196"
+[18:34:56] vm1_secondary_private_ip = "10.0.0.246"
+[18:34:56] vm1_secondary_private_ip_id = "ocid1.privateip.oc1.us-sanjose-1.aaaaaaaaycxcfpjjrbgoktjme47cdwlto6vg5dyesdkiyfjrmd63x7dromwa"
+[18:34:56] vm1_shape = "VM.Standard.A1.Flex"
+[18:34:56] vm1_ssh_host = "147.224.38.164"
+[18:34:56] world_path = "/opt/mcmgr/server/world"
+[18:34:56] $ tofu output -json -state=C:\Users\matto\AppData\Local\McManager\tofu\mcmgr\terraform.tfstate -no-color
+[18:34:56] {
+[18:34:56]   "budget_id": {
+[18:34:56]     "sensitive": false,
+[18:34:56]     "type": "string",
+[18:34:56]     "value": "ocid1.budget.oc1.us-sanjose-1.amaaaaaastuhlhaas3kr6bd6culdsjrpzvkg2ftqczhv6n7skwbliukdeo7q"
+[18:34:56]   },
+[18:34:56]   "compartment_id": {
+[18:34:56]     "sensitive": false,
+[18:34:56]     "type": "string",
+[18:34:56]     "value": "ocid1.compartment.oc1..aaaaaaaatjctcmmltp2bbxc7f3w6qplyra76f57rryyup7ewv3sabm3zqhfq"
+[18:34:56]   },
+[18:34:56]   "door_display_name": {
+[18:34:56]     "sensitive": false,
+[18:34:56]     "type": "string",
+[18:34:56]     "value": "mcmgr-door"
+[18:34:56]   },
+[18:34:56]   "door_http_port": {
+[18:34:56]     "sensitive": false,
+[18:34:56]     "type": "number",
+[18:34:56]     "value": 8080
+[18:34:56]   },
+[18:34:56]   "door_instance_id": {
+[18:34:56]     "sensitive": false,
+[18:34:56]     "type": "string",
+[18:34:56]     "value": "ocid1.instance.oc1.us-sanjose-1.anzwuljrstuhlhacfbfxog4pngmvluzytel7hqrccheczxvtr5pxk6cv6ifq"
+[18:34:56]   },
+[18:34:56]   "door_primary_private_ip": {
+[18:34:56]     "sensitive": false,
+[18:34:56]     "type": "string",
+[18:34:56]     "value": "10.0.0.249"
+[18:34:56]   },
+[18:34:56]   "door_secondary_private_ip": {
+[18:34:56]     "sensitive": false,
+[18:34:56]     "type": "string",
+[18:34:56]     "value": "10.0.0.102"
+[18:34:56]   },
+[18:34:56]   "door_secondary_private_ip_id": {
+[18:34:56]     "sensitive": false,
+[18:34:56]     "type": "string",
+[18:34:56]     "value": "ocid1.privateip.oc1.us-sanjose-1.aaaaaaaa43olkgfbsyd3w3xpiask6mxaojbokusd2yig3z3ffdwwlizwjnzq"
+[18:34:56]   },
+[18:34:56]   "door_ssh_host": {
+[18:34:56]     "sensitive": false,
+[18:34:56]     "type": "string",
+[18:34:56]     "value": "163.192.17.85"
+[18:34:56]   },
+[18:34:56]   "infra_meta_skeleton": {
+[18:34:56]     "sensitive": false,
+[18:34:56]     "type": [
+[18:34:56]       "object",
+[18:34:56]       {
+[18:34:56]         "budget_brake": [
+[18:34:56]           "object",
+[18:34:56]           {
+[18:34:56]             "budget_id": "string",
+[18:34:56]             "function_id": "dynamic"
+[18:34:56]           }
+[18:34:56]         ],
+[18:34:56]         "compartment_id": "string",
+[18:34:56]         "door": [
+[18:34:56]           "object",
+[18:34:56]           {
+[18:34:56]             "display_name": "string",
+[18:34:56]             "http_port": "number",
+[18:34:56]             "instance_id": "string",
+[18:34:56]             "primary_private_ip": "string",
+[18:34:56]             "secondary_private_ip": "string",
+[18:34:56]             "secondary_private_ip_id": "string",
+[18:34:56]             "ssh_host": "string",
+[18:34:56]             "ssh_user": "string"
+[18:34:56]           }
+[18:34:56]         ],
+[18:34:56]         "game": [
+[18:34:56]           "object",
+[18:34:56]           {
+[18:34:56]             "minecraft_version": "string",
+[18:34:56]             "server_jar_sha1": "dynamic",
+[18:34:56]             "server_kind": "string"
+[18:34:56]           }
+[18:34:56]         ],
+[18:34:56]         "infra_schema": "number",
+[18:34:56]         "mode": "string",
+[18:34:56]         "network": [
+[18:34:56]           "object",
+[18:34:56]           {
+[18:34:56]             "minecraft_port": "number",
+[18:34:56]             "security_list_id": "string",
+[18:34:56]             "ssh_port": "number",
+[18:34:56]             "subnet_id": "string",
+[18:34:56]             "vcn_id": "string"
+[18:34:56]           }
+[18:34:56]         ],
+[18:34:56]         "object_storage": [
+[18:34:56]           "object",
+[18:34:56]           {
+[18:34:56]             "backup_enabled": "bool",
+[18:34:56]             "bucket": "string",
+[18:34:56]             "bucket_id": "string",
+[18:34:56]             "namespace": "string",
+[18:34:56]             "prefixes": [
+[18:34:56]               "object",
+[18:34:56]               {
+[18:34:56]                 "backups": "string",
+[18:34:56]                 "budget": "string",
+[18:34:56]                 "ip": "string",
+[18:34:56]                 "ledger": "string",
+[18:34:56]                 "messages": "string",
+[18:34:56]                 "meta": "string"
+[18:34:56]               }
+[18:34:56]             ],
+[18:34:56]             "soft_cap_gb": "number"
+[18:34:56]           }
+[18:34:56]         ],
+[18:34:56]         "play": [
+[18:34:56]           "object",
+[18:34:56]           {
+[18:34:56]             "reserved_public_ip": "string",
+[18:34:56]             "reserved_public_ip_id": "string"
+[18:34:56]           }
+[18:34:56]         ],
+[18:34:56]         "region": "string",
+[18:34:56]         "ssh": [
+[18:34:56]           "object",
+[18:34:56]           {
+[18:34:56]             "private_key_location": "string",
+[18:34:56]             "public_key_fingerprint": "dynamic"
+[18:34:56]           }
+[18:34:56]         ],
+[18:34:56]         "stack_name": "string",
+[18:34:56]         "stack_version": "string",
+[18:34:56]         "tenancy_id": "string",
+[18:34:56]         "version": "number",
+[18:34:56]         "vm1": [
+[18:34:56]           "object",
+[18:34:56]           {
+[18:34:56]             "display_name": "string",
+[18:34:56]             "instance_id": "string",
+[18:34:56]             "minecraft_unit": "string",
+[18:34:56]             "primary_private_ip": "string",
+[18:34:56]             "secondary_private_ip": "string",
+[18:34:56]             "secondary_private_ip_id": "string",
+[18:34:56]             "shape": "string",
+[18:34:56]             "shape_memory_gb": "number",
+[18:34:56]             "shape_ocpus": "number",
+[18:34:56]             "ssh_host": "string",
+[18:34:56]             "ssh_user": "string",
+[18:34:56]             "world_path": "string"
+[18:34:56]           }
+[18:34:56]         ]
+[18:34:56]       }
+[18:34:56]     ],
+[18:34:56]     "value": {
+[18:34:56]       "budget_brake": {
+[18:34:56]         "budget_id": "ocid1.budget.oc1.us-sanjose-1.amaaaaaastuhlhaas3kr6bd6culdsjrpzvkg2ftqczhv6n7skwbliukdeo7q",
+[18:34:56]         "function_id": null
+[18:34:56]       },
+[18:34:56]       "compartment_id": "ocid1.compartment.oc1..aaaaaaaatjctcmmltp2bbxc7f3w6qplyra76f57rryyup7ewv3sabm3zqhfq",
+[18:34:56]       "door": {
+[18:34:56]         "display_name": "mcmgr-door",
+[18:34:56]         "http_port": 8080,
+[18:34:56]         "instance_id": "ocid1.instance.oc1.us-sanjose-1.anzwuljrstuhlhacfbfxog4pngmvluzytel7hqrccheczxvtr5pxk6cv6ifq",
+[18:34:56]         "primary_private_ip": "10.0.0.249",
+[18:34:56]         "secondary_private_ip": "10.0.0.102",
+[18:34:56]         "secondary_private_ip_id": "ocid1.privateip.oc1.us-sanjose-1.aaaaaaaa43olkgfbsyd3w3xpiask6mxaojbokusd2yig3z3ffdwwlizwjnzq",
+[18:34:56]         "ssh_host": "163.192.17.85",
+[18:34:56]         "ssh_user": "ubuntu"
+[18:34:56]       },
+[18:34:56]       "game": {
+[18:34:56]         "minecraft_version": "unspecified",
+[18:34:56]         "server_jar_sha1": null,
+[18:34:56]         "server_kind": "vanilla"
+[18:34:56]       },
+[18:34:56]       "infra_schema": 2,
+[18:34:56]       "mode": "always_free",
+[18:34:56]       "network": {
+[18:34:56]         "minecraft_port": 25565,
+[18:34:56]         "security_list_id": "ocid1.securitylist.oc1.us-sanjose-1.aaaaaaaay2e3uqbpqduju5enftr7wpdf2gbwy72lluo3auz7ji3gnoh725kq",
+[18:34:56]         "ssh_port": 22,
+[18:34:56]         "subnet_id": "ocid1.subnet.oc1.us-sanjose-1.aaaaaaaa2jivkaeojo3bbh727b7nerghknoxzv6cjr6o23bdrli5xs7pxgoq",
+[18:34:56]         "vcn_id": "ocid1.vcn.oc1.us-sanjose-1.amaaaaaastuhlhaakwxsggafcpml2vqguy7shvl64nj4bnusx57dxb55pfvq"
+[18:34:56]       },
+[18:34:56]       "object_storage": {
+[18:34:56]         "backup_enabled": true,
+[18:34:56]         "bucket": "mcmgr-shared-data",
+[18:34:56]         "bucket_id": "ocid1.bucket.oc1.us-sanjose-1.aaaaaaaagvhidj4ccrzwvhufvvj3aawhf2ovwkje3p6ijfvdikivjo3fjska",
+[18:34:56]         "namespace": "axylzb4tj233",
+[18:34:56]         "prefixes": {
+[18:34:56]           "backups": "backups/",
+[18:34:56]           "budget": "budget/",
+[18:34:56]           "ip": "ip/",
+[18:34:56]           "ledger": "ledger/",
+[18:34:56]           "messages": "messages/",
+[18:34:56]           "meta": "meta/"
+[18:34:56]         },
+[18:34:56]         "soft_cap_gb": 9.5
+[18:34:56]       },
+[18:34:56]       "play": {
+[18:34:56]         "reserved_public_ip": "147.224.32.89",
+[18:34:56]         "reserved_public_ip_id": "ocid1.publicip.oc1.us-sanjose-1.amaaaaaastuhlhaa32akq3qqfz2gkxjilw6ixuzpmnov3bxfphev76innkla"
+[18:34:56]       },
+[18:34:56]       "region": "us-sanjose-1",
+[18:34:56]       "ssh": {
+[18:34:56]         "private_key_location": "admin_pc_only",
+[18:34:56]         "public_key_fingerprint": null
+[18:34:56]       },
+[18:34:56]       "stack_name": "mcmgr",
+[18:34:56]       "stack_version": "0.1.0",
+[18:34:56]       "tenancy_id": "ocid1.tenancy.oc1..aaaaaaaadpltah3whsejr3a6e3qja7s3s6jlaqhwe5nnbp56gk3juo3mydza",
+[18:34:56]       "version": 2,
+[18:34:56]       "vm1": {
+[18:34:56]         "display_name": "mcmgr-vm1",
+[18:34:56]         "instance_id": "ocid1.instance.oc1.us-sanjose-1.anzwuljrstuhlhacrvmvrkoqxnw5s6xul6hbiqtkubvf5k4dtrv73wv2cbfa",
+[18:34:56]         "minecraft_unit": "minecraft",
+[18:34:56]         "primary_private_ip": "10.0.0.196",
+[18:34:56]         "secondary_private_ip": "10.0.0.246",
+[18:34:56]         "secondary_private_ip_id": "ocid1.privateip.oc1.us-sanjose-1.aaaaaaaaycxcfpjjrbgoktjme47cdwlto6vg5dyesdkiyfjrmd63x7dromwa",
+[18:34:56]         "shape": "VM.Standard.A1.Flex",
+[18:34:56]         "shape_memory_gb": 12,
+[18:34:56]         "shape_ocpus": 2,
+[18:34:56]         "ssh_host": "147.224.38.164",
+[18:34:56]         "ssh_user": "ubuntu",
+[18:34:56]         "world_path": "/opt/mcmgr/server/world"
+[18:34:56]       }
+[18:34:56]     }
+[18:34:56]   },
+[18:34:56]   "minecraft_unit": {
+[18:34:56]     "sensitive": false,
+[18:34:56]     "type": "string",
+[18:34:56]     "value": "minecraft"
+[18:34:56]   },
+[18:34:56]   "object_storage_bucket": {
+[18:34:56]     "sensitive": false,
+[18:34:56]     "type": "string",
+[18:34:56]     "value": "mcmgr-shared-data"
+[18:34:56]   },
+[18:34:56]   "object_storage_bucket_id": {
+[18:34:56]     "sensitive": false,
+[18:34:56]     "type": "string",
+[18:34:56]     "value": "ocid1.bucket.oc1.us-sanjose-1.aaaaaaaagvhidj4ccrzwvhufvvj3aawhf2ovwkje3p6ijfvdikivjo3fjska"
+[18:34:56]   },
+[18:34:56]   "object_storage_namespace": {
+[18:34:56]     "sensitive": false,
+[18:34:56]     "type": "string",
+[18:34:56]     "value": "axylzb4tj233"
+[18:34:56]   },
+[18:34:56]   "play_reserved_public_ip": {
+[18:34:56]     "sensitive": false,
+[18:34:56]     "type": "string",
+[18:34:56]     "value": "147.224.32.89"
+[18:34:56]   },
+[18:34:56]   "play_reserved_public_ip_id": {
+[18:34:56]     "sensitive": false,
+[18:34:56]     "type": "string",
+[18:34:56]     "value": "ocid1.publicip.oc1.us-sanjose-1.amaaaaaastuhlhaa32akq3qqfz2gkxjilw6ixuzpmnov3bxfphev76innkla"
+[18:34:56]   },
+[18:34:56]   "region": {
+[18:34:56]     "sensitive": false,
+[18:34:56]     "type": "string",
+[18:34:56]     "value": "us-sanjose-1"
+[18:34:56]   },
+[18:34:56]   "security_list_id": {
+[18:34:56]     "sensitive": false,
+[18:34:56]     "type": "string",
+[18:34:56]     "value": "ocid1.securitylist.oc1.us-sanjose-1.aaaaaaaay2e3uqbpqduju5enftr7wpdf2gbwy72lluo3auz7ji3gnoh725kq"
+[18:34:56]   },
+[18:34:56]   "ssh_user": {
+[18:34:56]     "sensitive": false,
+[18:34:56]     "type": "string",
+[18:34:56]     "value": "ubuntu"
+[18:34:56]   },
+[18:34:56]   "subnet_id": {
+[18:34:56]     "sensitive": false,
+[18:34:56]     "type": "string",
+[18:34:56]     "value": "ocid1.subnet.oc1.us-sanjose-1.aaaaaaaa2jivkaeojo3bbh727b7nerghknoxzv6cjr6o23bdrli5xs7pxgoq"
+[18:34:56]   },
+[18:34:56]   "tenancy_id": {
+[18:34:56]     "sensitive": false,
+[18:34:56]     "type": "string",
+[18:34:56]     "value": "ocid1.tenancy.oc1..aaaaaaaadpltah3whsejr3a6e3qja7s3s6jlaqhwe5nnbp56gk3juo3mydza"
+[18:34:56]   },
+[18:34:56]   "ubuntu_image_ocid_door": {
+[18:34:56]     "sensitive": false,
+[18:34:56]     "type": "string",
+[18:34:56]     "value": "ocid1.image.oc1.us-sanjose-1.aaaaaaaagghcxlejyuf43f2fwdm3eojbjxuzqla6hhsaqih45vvghauykopq"
+[18:34:56]   },
+[18:34:56]   "ubuntu_image_ocid_vm1": {
+[18:34:56]     "sensitive": false,
+[18:34:56]     "type": "string",
+[18:34:56]     "value": "ocid1.image.oc1.us-sanjose-1.aaaaaaaa7nxridotwlvin7mvmt6dd47heh3y75jszcsb2k7dwqj3gh6dwsea"
+[18:34:56]   },
+[18:34:56]   "vcn_id": {
+[18:34:56]     "sensitive": false,
+[18:34:56]     "type": "string",
+[18:34:56]     "value": "ocid1.vcn.oc1.us-sanjose-1.amaaaaaastuhlhaakwxsggafcpml2vqguy7shvl64nj4bnusx57dxb55pfvq"
+[18:34:56]   },
+[18:34:56]   "vm1_display_name": {
+[18:34:56]     "sensitive": false,
+[18:34:56]     "type": "string",
+[18:34:56]     "value": "mcmgr-vm1"
+[18:34:56]   },
+[18:34:56]   "vm1_instance_id": {
+[18:34:56]     "sensitive": false,
+[18:34:56]     "type": "string",
+[18:34:56]     "value": "ocid1.instance.oc1.us-sanjose-1.anzwuljrstuhlhacrvmvrkoqxnw5s6xul6hbiqtkubvf5k4dtrv73wv2cbfa"
+[18:34:56]   },
+[18:34:56]   "vm1_memory_gb": {
+[18:34:56]     "sensitive": false,
+[18:34:56]     "type": "number",
+[18:34:56]     "value": 12
+[18:34:56]   },
+[18:34:56]   "vm1_ocpus": {
+[18:34:56]     "sensitive": false,
+[18:34:56]     "type": "number",
+[18:34:56]     "value": 2
+[18:34:56]   },
+[18:34:56]   "vm1_primary_private_ip": {
+[18:34:56]     "sensitive": false,
+[18:34:56]     "type": "string",
+[18:34:56]     "value": "10.0.0.196"
+[18:34:56]   },
+[18:34:56]   "vm1_secondary_private_ip": {
+[18:34:56]     "sensitive": false,
+[18:34:56]     "type": "string",
+[18:34:56]     "value": "10.0.0.246"
+[18:34:56]   },
+[18:34:56]   "vm1_secondary_private_ip_id": {
+[18:34:56]     "sensitive": false,
+[18:34:56]     "type": "string",
+[18:34:56]     "value": "ocid1.privateip.oc1.us-sanjose-1.aaaaaaaaycxcfpjjrbgoktjme47cdwlto6vg5dyesdkiyfjrmd63x7dromwa"
+[18:34:56]   },
+[18:34:56]   "vm1_shape": {
+[18:34:56]     "sensitive": false,
+[18:34:56]     "type": "string",
+[18:34:56]     "value": "VM.Standard.A1.Flex"
+[18:34:56]   },
+[18:34:56]   "vm1_ssh_host": {
+[18:34:56]     "sensitive": false,
+[18:34:56]     "type": "string",
+[18:34:56]     "value": "147.224.38.164"
+[18:34:56]   },
+[18:34:56]   "world_path": {
+[18:34:56]     "sensitive": false,
+[18:34:56]     "type": "string",
+[18:34:56]     "value": "/opt/mcmgr/server/world"
+[18:34:56]   }
+[18:34:56] }
+[18:34:56] Waiting for VM1 RUNNING…
+[18:34:56] Waiting for door RUNNING…
+[18:35:13] waiting for /etc/mcmgr/cloud-init-done on 147.224.38.164…
+[18:35:16] waiting for /etc/mcmgr/cloud-init-done on 147.224.38.164…
+[18:35:23] waiting for /etc/mcmgr/cloud-init-done on 147.224.38.164…
+[18:35:35] waiting for /etc/mcmgr/cloud-init-done on 147.224.38.164…
+[18:36:00] cloud-init ready: /etc/mcmgr/cloud-init-done
+[18:36:12] waiting for /etc/mcmgr-door/cloud-init-done on 163.192.17.85…
+[18:36:17] waiting for /etc/mcmgr-door/cloud-init-done on 163.192.17.85…
+[18:36:24] waiting for /etc/mcmgr-door/cloud-init-done on 163.192.17.85…
+[18:36:37] waiting for /etc/mcmgr-door/cloud-init-done on 163.192.17.85…
+[18:37:02] waiting for /etc/mcmgr-door/cloud-init-done on 163.192.17.85…
+[18:37:34] waiting for /etc/mcmgr-door/cloud-init-done on 163.192.17.85…
+[18:38:05] waiting for /etc/mcmgr-door/cloud-init-done on 163.192.17.85…
+[18:38:38] waiting for /etc/mcmgr-door/cloud-init-done on 163.192.17.85…
+[18:39:10] waiting for /etc/mcmgr-door/cloud-init-done on 163.192.17.85…
+[18:39:45] waiting for /etc/mcmgr-door/cloud-init-done on 163.192.17.85…
+[18:40:16] cloud-init ready: /etc/mcmgr-door/cloud-init-done
+[18:40:16] Door src: C:\Users\matto\Desktop\Minecraft Server\OCI-mc-server-manager\door_vm
+[18:40:17] > rm -rf /tmp/mcmgr-door-setup && mkdir -p /tmp/mcmgr-door-setup
+[18:40:34] uploaded C:\Users\matto\Desktop\Minecraft Server\OCI-mc-server-manager\door_vm → /tmp/mcmgr-door-setup
+[18:40:35] > bash -c 'set -euo pipefail; export HOME="${HOME:-/home/ubuntu}"; ST='\''/tmp/mcmgr-door-setup'\''; find "$ST" -type f \( -name '\''*.sh'\'' -o -name '\''*.service'\'' -o -name '\''…
+[18:45:18] Hit:1 http://security.ubuntu.com/ubuntu jammy-security InRelease
+[18:45:18] Hit:2 http://us-sanjose-1-ad-1.clouds.archive.ubuntu.com/ubuntu jammy InRelease
+[18:45:18] Hit:3 http://us-sanjose-1-ad-1.clouds.archive.ubuntu.com/ubuntu jammy-updates InRelease
+[18:45:18] Hit:4 http://us-sanjose-1-ad-1.clouds.archive.ubuntu.com/ubuntu jammy-backports InRelease
+[18:45:18] Reading package lists...
+[18:45:18] Reading package lists...
+[18:45:18] Building dependency tree...
+[18:45:18] Reading state information...
+[18:45:18] iptables-persistent is already the newest version (1.0.16).
+[18:45:18] curl is already the newest version (7.81.0-1ubuntu1.25).
+[18:45:18] curl set to manually installed.
+[18:45:18] git is already the newest version (1:2.34.1-1ubuntu1.17).
+[18:45:18] git set to manually installed.
+[18:45:18] The following additional packages will be installed:
+[18:45:18]   bzip2 cpp cpp-11 dpkg-dev fakeroot fontconfig-config fonts-dejavu-core g++
+[18:45:18]   g++-11 gcc gcc-11 gcc-11-base javascript-common libalgorithm-diff-perl
+[18:45:18]   libalgorithm-diff-xs-perl libalgorithm-merge-perl libasan6 libatomic1
+[18:45:18]   libc-dev-bin libc-devtools libc6 libc6-dev libcc1-0 libcrypt-dev libdeflate0
+[18:45:18]   libdpkg-perl libexpat1-dev libfakeroot libfile-fcntllock-perl libfontconfig1
+[18:45:18]   libgcc-11-dev libgd3 libgomp1 libisl23 libitm1 libjbig0 libjpeg-turbo8
+[18:45:18]   libjpeg8 libjs-jquery libjs-sphinxdoc libjs-underscore liblsan0 libmpc3
+[18:45:18]   libnsl-dev libpython3-dev libpython3.10 libpython3.10-dev
+[18:45:18]   libpython3.10-minimal libpython3.10-stdlib libquadmath0 libssl3
+[18:45:18]   libstdc++-11-dev libtiff5 libtirpc-dev libtsan0 libubsan1 libwebp7 libxpm4
+[18:45:18]   linux-libc-dev lto-disabled-list make manpages-dev python3.10 python3.10-dev
+[18:45:18]   python3.10-minimal rpcsvc-proto zlib1g-dev
+[18:45:18] Suggested packages:
+[18:45:18]   bzip2-doc cpp-doc gcc-11-locales debian-keyring g++-multilib g++-11-multilib
+[18:45:18]   gcc-11-doc gcc-multilib autoconf automake libtool flex bison gdb gcc-doc
+[18:45:18]   gcc-11-multilib apache2 | lighttpd | httpd glibc-doc bzr libgd-tools
+[18:45:18]   libssl-doc libstdc++-11-doc make-doc python3.10-venv python3.10-doc
+[18:45:18]   binfmt-support
+[18:45:18] Recommended packages:
+[18:45:18]   libnss-nis libnss-nisplus
+[18:45:18] The following NEW packages will be installe…
+[18:45:18] ==> Installing packages
+[18:45:18] ==> Installing OCI CLI (Oracle installer, accept-all-defaults)
+[18:45:18] 
+######################################################################## 100.0%
+[18:45:18] debconf: unable to initialize frontend: Dialog
+[18:45:18] debconf: (Dialog frontend will not work on a dumb terminal, an emacs shell buffer, or without a controlling terminal.)
+[18:45:18] debconf: falling back to frontend: Readline
+[18:45:18] debconf: unable to initialize frontend: Readline
+[18:45:18] debconf: (This frontend requires a controlling tty.)
+[18:45:18] debconf: falling back to frontend: Teletype
+[18:45:18] dpkg-preconfigure: unable to re-open stdin:
+[18:45:18] <string>:1: DeprecationWarning: The distutils package is deprecated and slated for removal in Python 3.12. Use setuptools or check PEP 632 for potential alternatives
+[18:45:18] <string>:1: DeprecationWarning: The distutils.sysconfig module is deprecated, use sysconfig instead
+[18:45:18] ==> OCI CLI: 3.90.2
+[18:45:18] ==> Building mccontrol
+[18:45:18] src/mc_proto.c: In function ‘recv_exact’:
+[18:45:18] src/mc_proto.c:146:21: warning: implicit declaration of function ‘recv’ [-Wimplicit-function-declaration]
+[18:45:18]   146 |     ssize_t chunk = recv(fd, buf + got, n - got, 0);
+[18:45:18]       |                     ^~~~
+[18:45:18] src/control.c: In function ‘soft_cap_exhausted_unlocked.part.0’:
+[18:45:18] src/control.c:174:42: warning: ‘%02d’ directive output may be truncated writing between 2 and 10 bytes into a region of size between 0 and 8 [-Wformat-truncation=]
+[18:45:18]   174 |     snprintf(buf, sizeof buf, "%04d-%02d-%02d", year, month, d);
+[18:45:18]       |                                          ^~~~
+[18:45:18] src/control.c:174:31: note: directive argument in the range [1, 2147483647]
+[18:45:18]   174 |     snprintf(buf, sizeof buf, "%04d-%02d-%02d", year, month, d);
+[18:45:18]       |                               ^~~~~~~~~~~~~~~~
+[18:45:18] In file included from /usr/include/stdio.h:894,
+[18:45:18]                  from src/control.c:4:
+[18:45:18] /usr/include/x86_64-linux-gnu/bits/stdio2.h:71:10: note: ‘__builtin___snprintf_chk’ output between 11 and 35 bytes into a destination of size 16
+[18:45:18]    71 |   return __builtin___snprintf_chk (__s, __n, __USE_FORTIFY_LEVEL - 1,
+[18:45:18]       |   …
+[18:45:21] > sudo bash -c 'python3 /tmp/mcmgr-patch-door-cfg.py && rm -f /tmp/mcmgr-patch-door-cfg.py'
+[18:45:22] Door bootstrap finished.
+[18:45:22] Idle agent src: C:\Users\matto\Desktop\Minecraft Server\OCI-mc-server-manager\vm_agent
+[18:45:22] > rm -rf /tmp/mc-manager-deploy && mkdir -p /tmp/mc-manager-deploy
+[18:45:23] put idle_watch.py
+[18:45:24] put ledger.py
+[18:45:25] put lease.py
+[18:45:26] put shape_detect.py
+[18:45:26] put rcon_client.py
+[18:45:27] put os_publish.py
+[18:45:28] put world_backup.py
+[18:45:29] put graceful_stop.sh
+[18:45:30] put record_boot.py
+[18:45:30] put install.sh
+[18:45:31] put config.example.json
+[18:45:32] put mc-idle-watch.service
+[18:45:33] put mc-idle-watch.timer
+[18:45:33] put mc-boot-ledger.service
+[18:45:33] > sudo bash -c 'set -euo pipefail; mkdir -p /opt/mc-manager /etc/mc-manager /var/lib/mc-manager; cp -a /tmp/mc-manager-deploy/. /opt/mc-manager/; sed -i '\''s/\r$//'\'' /opt/mc-manag…
+[18:46:27] Preconfiguring packages ...
+[18:46:27] (Reading database ... 
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 69529 files and directories currently installed.)
+[18:46:27] Preparing to unpack .../libc6_2.35-0ubuntu3.14_arm64.deb ...
+[18:46:27] Unpacking libc6:arm64 (2.35-0ubuntu3.14) over (2.35-0ubuntu3.13) ...
+[18:46:27] Setting up libc6:arm64 (2.35-0ubuntu3.14) ...
+[18:46:27] (Reading database ... 
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 69529 files and directories currently installed.)
+[18:46:27] Preparing to unpack .../00-libpython3.10_3.10.12-1~22.04.16_arm64.deb ...
+[18:46:27] Unpacking libpython3.10:arm64 (3.10.12-1~22.04.16) over (3.10.12-1~22.04.15) ...
+[18:46:27] Preparing to unpack .../01-python3.10_3.10.12-1~22.04.16_arm64.deb ...
+[18:46:27] Unpacking python3.10 (3.10.12-1~22.04.16) over (3.10.12-1~22.04.15) ...
+[18:46:27] Preparing to unpack .../02-libpython3.10-stdlib_3.10.12-1~22.04.16_arm64.deb ...
+[18:46:27] Unpacking libpython3.10-stdlib:arm64 (3.10.12-1~22.04.16) over (3.10.12-1~22.04.15) ...
+[18:46:27] Preparing to unpack .../03-python3.10-minimal_3.10.12-1~22.04.16_arm64.deb ...
+[18:46:27] Unpackin…
+[18:46:27] Created symlink /etc/systemd/system/timers.target.wants/mc-idle-watch.timer → /etc/systemd/system/mc-idle-watch.timer.
+[18:46:27] Created symlink /etc/systemd/system/minecraft.service.wants/mc-boot-ledger.service → /etc/systemd/system/mc-boot-ledger.service.
+[18:46:27] Unit /etc/systemd/system/mc-boot-ledger.service is added as a dependency to a non-existent unit minecraft.service.
+[18:46:27] Failed to start mc-boot-ledger.service: Unit minecraft.service not found.
+[18:46:28] > sudo bash -c 'cp /tmp/mc-manager-config.json /etc/mc-manager/config.json && chown root:root /etc/mc-manager/config.json && chmod 640 /etc/mc-manager/config.json && rm -f /tmp/mc-ma…
+[18:46:29] onbox src: C:\Users\matto\Desktop\Minecraft Server\OCI-mc-server\onbox\mcmgr
+[18:46:29] > rm -rf /tmp/mcmgr-onbox && mkdir -p /tmp/mcmgr-onbox
+[18:46:35] uploaded C:\Users\matto\Desktop\Minecraft Server\OCI-mc-server\onbox\mcmgr → /tmp/mcmgr-onbox
+[18:46:35] > bash -c 'set -euo pipefail; find /tmp/mcmgr-onbox -type f \( -name '\''*.sh'\'' -o -name '\''*.in'\'' \) -exec sed -i '\''s/\r$//'\'' {} +; export EULA_ACCEPTED=true MINECRAFT_VERS…
+[18:46:40] Reading package lists...
+[18:46:40] Building dependency tree...
+[18:46:40] Reading state information...
+[18:46:40] [mcmgr] layout: ensuring mcmgr system user/group
+[18:46:40] [mcmgr] layout: applying §5 permission contract under /opt/mcmgr
+[18:46:40] [mcmgr] vanilla: 26.2 jar ready java_major=25
+[18:46:40] E: Unable to locate package temurin-25-jre-headless
+[18:46:40] [mcmgr] java: apt path failed; trying Adoptium REST archive fallback
+[18:46:40] [mcmgr] java: ready major=25 source=adoptium_api_archive exe=/usr/lib/jvm/temurin-25-jre-arm64/bin/java
+[18:46:40] [mcmgr] eula: accepted at 2026-08-18T01:46:40Z for 26.2
+[18:46:40] [mcmgr] rcon: generated /etc/mcmgr/rcon.secret
+[18:46:40] [mcmgr] server.properties: managed keys applied
+[18:46:40] [mcmgr] server.properties: managed keys applied
+[18:46:40] Created symlink /etc/systemd/system/multi-user.target.wants/minecraft.service → /etc/systemd/system/minecraft.service.
+[18:46:40] [mcmgr] unit: wrote /etc/systemd/system/minecraft.service
+[18:46:40] [mcmgr] manifest: wrote /etc/mcmgr/game-manifest.json
+[18:46:40] [mcmgr] idle_agent_sync: patched /etc/mc-manager/config.json from game-manifest
+[18:46:40] [mcmgr] layout: applying §5 permission contract under /opt/mcmgr
+[18:46:40] [mcmgr] layout: patched unit /etc/systemd/system/minecraft.service
+[18:46:40] [mcmgr] layout: verifying §5 contract (fail closed)
+[18:46:40] [mcmgr] layout: verify ok (mcmgr can chdir + exec java)
+[18:46:40] [mcmgr] SUCCESS: Vanilla 26.2 bootstrap complete
+[18:46:40] [mcmgr]   server_dir=/opt/mcmgr/server
+[18:46:40] [mcmgr]   manifest=/etc/mcmgr/game-manifest.json
+[18:46:40] [mcmgr]   unit=/etc/systemd/system/minecraft.service
+[18:46:40] RCON not ready yet (minecraft=active); retry 1/12…
+[18:46:51] RCON not ready yet (minecraft=active); retry 2/12…
+[18:47:01] RCON not ready yet (minecraft=active); retry 3/12…
+[18:47:11] RCON list succeeded.
+[18:47:11] VM1 bootstrap finished.
+[18:47:11] Waiting for VM1 RUNNING…
+[18:47:12] Repairing door runtime (oci.env, play netplan)…
+[18:47:15] > sudo bash -c 'set -euo pipefail; install -m 600 /tmp/mcmgr-door-oci.env /etc/mccontrol/oci.env; rm -f /tmp/mcmgr-door-oci.env; grep -q ^HOME= /etc/mccontrol/oci.env || echo HOME=/h…
+[18:47:16] > sudo bash -c 'python3 /tmp/mcmgr-patch-door-cfg.py && rm -f /tmp/mcmgr-patch-door-cfg.py'
+[18:47:16] > sudo bash -c 'set -euo pipefail
+[18:47:16] IP=10.0.0.102
+[18:47:16] IFACE=$(ip -o -4 route show default | awk '\''{print $5}'\'' | head -1)
+[18:47:16] if [ -z "$IFACE" ]; then echo '\''ERROR: no default interface'…
+[18:47:18] play netplan: ens3 10.0.0.102/24
+[18:47:18]     inet 10.0.0.102/24 brd 10.0.0.255 scope global secondary ens3
+[18:47:18] ** (generate:5705): WARNING **: 01:47:17.778: Permissions for /run/netplan/ens3.yaml are too open. Netplan configuration should NOT be accessible by others.
+[18:47:18] ** (process:5704): WARNING **: 01:47:18.882: Permissions for /run/netplan/ens3.yaml are too open. Netplan configuration should NOT be accessible by others.
+[18:47:18] ** (process:5704): WARNING **: 01:47:19.191: Permissions for /run/netplan/ens3.yaml are too open. Netplan configuration should NOT be accessible by others.
+[18:47:18] ** (process:5704): WARNING **: 01:47:19.192: Permissions for /run/netplan/ens3.yaml are too open. Netplan configuration should NOT be accessible by others.
+[18:47:19] put pull_os_budget.sh
+[18:47:19] > sudo bash -c 'sed -i '\''s/\r$//'\'' /tmp/pull_os_budget.sh; install -m 755 /tmp/pull_os_budget.sh /opt/mccontrol/oci/pull_os_budget.sh; rm -f /tmp/pull_os_budget.sh'
+[18:47:19] put start_vm1.sh
+[18:47:20] > sudo bash -c 'sed -i '\''s/\r$//'\'' /tmp/start_vm1.sh; install -m 755 /tmp/start_vm1.sh /opt/mccontrol/oci/start_vm1.sh; rm -f /tmp/start_vm1.sh'
+[18:47:20] put wait_forge.sh
+[18:47:20] > sudo bash -c 'sed -i '\''s/\r$//'\'' /tmp/wait_forge.sh; install -m 755 /tmp/wait_forge.sh /opt/mccontrol/oci/wait_forge.sh; rm -f /tmp/wait_forge.sh'
+[18:47:21] put ip_to_vm1.sh
+[18:47:21] > sudo bash -c 'sed -i '\''s/\r$//'\'' /tmp/ip_to_vm1.sh; install -m 755 /tmp/ip_to_vm1.sh /opt/mccontrol/oci/ip_to_vm1.sh; rm -f /tmp/ip_to_vm1.sh'
+[18:47:22] put ip_to_vm2.sh
+[18:47:22] > sudo bash -c 'sed -i '\''s/\r$//'\'' /tmp/ip_to_vm2.sh; install -m 755 /tmp/ip_to_vm2.sh /opt/mccontrol/oci/ip_to_vm2.sh; rm -f /tmp/ip_to_vm2.sh'
+[18:47:24] put stop_vm1.sh
+[18:47:24] > sudo bash -c 'sed -i '\''s/\r$//'\'' /tmp/stop_vm1.sh; install -m 755 /tmp/stop_vm1.sh /opt/mccontrol/oci/stop_vm1.sh; rm -f /tmp/stop_vm1.sh'
+[18:47:25] put promote_playable.sh
+[18:47:25] > sudo bash -c 'sed -i '\''s/\r$//'\'' /tmp/promote_playable.sh; install -m 755 /tmp/promote_playable.sh /opt/mccontrol/scripts/promote_playable.sh; rm -f /tmp/promote_playable.sh'
+[18:47:26] put reconcile_vm1.sh
+[18:47:26] > sudo bash -c 'sed -i '\''s/\r$//'\'' /tmp/reconcile_vm1.sh; install -m 755 /tmp/reconcile_vm1.sh /opt/mccontrol/scripts/reconcile_vm1.sh; rm -f /tmp/reconcile_vm1.sh'
+[18:47:27] > sudo bash -c 'set -euo pipefail; systemctl restart mccontrol.service'
+[18:47:27] Door runtime repaired.
+[18:47:27] Repairing VM1 runtime (play netplan, server.properties)…
+[18:47:27] > sudo bash -c 'set -euo pipefail
+[18:47:27] IP=10.0.0.246
+[18:47:27] IFACE=$(ip -o -4 route show default | awk '\''{print $5}'\'' | head -1)
+[18:47:27] if [ -z "$IFACE" ]; then echo '\''ERROR: no default interface'…
+[18:47:28] play netplan: enp0s6 10.0.0.246/24
+[18:47:28]     inet 10.0.0.246/24 brd 10.0.0.255 scope global secondary enp0s6
+[18:47:28] ** (generate:6406): WARNING **: 01:47:28.805: Permissions for /run/netplan/enp0s6.yaml are too open. Netplan configuration should NOT be accessible by others.
+[18:47:28] ** (process:6405): WARNING **: 01:47:29.029: Permissions for /run/netplan/enp0s6.yaml are too open. Netplan configuration should NOT be accessible by others.
+[18:47:28] ** (process:6405): WARNING **: 01:47:29.111: Permissions for /run/netplan/enp0s6.yaml are too open. Netplan configuration should NOT be accessible by others.
+[18:47:28] ** (process:6405): WARNING **: 01:47:29.111: Permissions for /run/netplan/enp0s6.yaml are too open. Netplan configuration should NOT be accessible by others.
+[18:47:28] > sudo bash -c 'systemctl reset-failed mc-boot-ledger.service 2>/dev/null || true; systemctl start mc-boot-ledger.service 2>/dev/null || true'
+[18:47:34] > rm -rf /tmp/mcmgr-onbox && mkdir -p /tmp/mcmgr-onbox/common
+[18:47:35] put repair-server-properties.sh
+[18:47:36] put repair-permissions.sh
+[18:47:37] put env.sh
+[18:47:37] put layout.sh
+[18:47:38] put server_properties.sh
+[18:47:38] > sed -i 's/\r$//' /tmp/mcmgr-onbox/repair-server-properties.sh /tmp/mcmgr-onbox/repair-permissions.sh /tmp/mcmgr-onbox/common/*.sh
+[18:47:38] Applying managed server.properties (in-game whitelist off)…
+[18:47:38] > sudo bash /tmp/mcmgr-onbox/repair-server-properties.sh
+[18:47:38] [mcmgr] server.properties: managed keys applied
+[18:47:38] [mcmgr] repair-server-properties: managed keys applied
+[18:47:38] > sudo bash /tmp/mcmgr-onbox/repair-permissions.sh
+[18:47:39] [mcmgr] layout: ensuring mcmgr system user/group
+[18:47:39] [mcmgr] layout: applying §5 permission contract under /opt/mcmgr
+[18:47:39] [mcmgr] layout: patched unit /etc/systemd/system/minecraft.service
+[18:47:39] [mcmgr] layout: verifying §5 contract (fail closed)
+[18:47:39] [mcmgr] layout: verify ok (mcmgr can chdir + exec java)
+[18:47:39] [mcmgr] repair-permissions: contract applied; unit not started (operator/driver decides)
+[18:47:39] VM1 runtime repaired.
+[18:47:39] Parking reserved play IP on VM1 (game is up)…
+[18:47:41] put pull_os_budget.sh
+[18:47:41] > sudo bash -c 'sed -i '\''s/\r$//'\'' /tmp/pull_os_budget.sh; install -m 755 /tmp/pull_os_budget.sh /opt/mccontrol/oci/pull_os_budget.sh; rm -f /tmp/pull_os_budget.sh'
+[18:47:41] put start_vm1.sh
+[18:47:41] > sudo bash -c 'sed -i '\''s/\r$//'\'' /tmp/start_vm1.sh; install -m 755 /tmp/start_vm1.sh /opt/mccontrol/oci/start_vm1.sh; rm -f /tmp/start_vm1.sh'
+[18:47:42] put wait_forge.sh
+[18:47:42] > sudo bash -c 'sed -i '\''s/\r$//'\'' /tmp/wait_forge.sh; install -m 755 /tmp/wait_forge.sh /opt/mccontrol/oci/wait_forge.sh; rm -f /tmp/wait_forge.sh'
+[18:47:43] put ip_to_vm1.sh
+[18:47:43] > sudo bash -c 'sed -i '\''s/\r$//'\'' /tmp/ip_to_vm1.sh; install -m 755 /tmp/ip_to_vm1.sh /opt/mccontrol/oci/ip_to_vm1.sh; rm -f /tmp/ip_to_vm1.sh'
+[18:47:44] put ip_to_vm2.sh
+[18:47:44] > sudo bash -c 'sed -i '\''s/\r$//'\'' /tmp/ip_to_vm2.sh; install -m 755 /tmp/ip_to_vm2.sh /opt/mccontrol/oci/ip_to_vm2.sh; rm -f /tmp/ip_to_vm2.sh'
+[18:47:45] put stop_vm1.sh
+[18:47:45] > sudo bash -c 'sed -i '\''s/\r$//'\'' /tmp/stop_vm1.sh; install -m 755 /tmp/stop_vm1.sh /opt/mccontrol/oci/stop_vm1.sh; rm -f /tmp/stop_vm1.sh'
+[18:47:46] put promote_playable.sh
+[18:47:46] > sudo bash -c 'sed -i '\''s/\r$//'\'' /tmp/promote_playable.sh; install -m 755 /tmp/promote_playable.sh /opt/mccontrol/scripts/promote_playable.sh; rm -f /tmp/promote_playable.sh'
+[18:47:47] put reconcile_vm1.sh
+[18:47:47] > sudo bash -c 'sed -i '\''s/\r$//'\'' /tmp/reconcile_vm1.sh; install -m 755 /tmp/reconcile_vm1.sh /opt/mccontrol/scripts/reconcile_vm1.sh; rm -f /tmp/reconcile_vm1.sh'
+[18:47:47] > sudo bash /opt/mccontrol/scripts/promote_playable.sh
+[18:47:56] promote_playable: moving reserved IP to VM1 (before flipping PLAYABLE)
+[18:47:56] {
+[18:47:56]   "data": {
+[18:47:56]     "assigned-entity-id": "ocid1.privateip.oc1.us-sanjose-1.aaaaaaaaycxcfpjjrbgoktjme47cdwlto6vg5dyesdkiyfjrmd63x7dromwa",
+[18:47:56]     "assigned-entity-type": "PRIVATE_IP",
+[18:47:56]     "availability-domain": null,
+[18:47:56]     "compartment-id": "ocid1.compartment.oc1..aaaaaaaatjctcmmltp2bbxc7f3w6qplyra76f57rryyup7ewv3sabm3zqhfq",
+[18:47:56]     "defined-tags": {
+[18:47:56]       "Oracle-Tags": {
+[18:47:56]         "CreatedBy": "default/mmarsh7of9@gmail.com",
+[18:47:56]         "CreatedOn": "2026-08-18T01:34:56.466Z"
+[18:47:56]       }
+[18:47:56]     },
+[18:47:56]     "display-name": "mcmgr-play-ip",
+[18:47:56]     "freeform-tags": {},
+[18:47:56]     "id": "ocid1.publicip.oc1.us-sanjose-1.amaaaaaastuhlhaa32akq3qqfz2gkxjilw6ixuzpmnov3bxfphev76innkla",
+[18:47:56]     "ip-address": "147.224.32.89",
+[18:47:56]     "lifecycle-state": "ASSIGNED",
+[18:47:56]     "lifetime": "RESERVED",
+[18:47:56]     "private-ip-id": "ocid1.privateip.oc1.us-sanjose-1.aaaaaaaaycxcfpjjrbgoktjme47cdwlto6vg5dyesdkiyfjrmd63x7dromwa",
+[18:47:56]     "public-ip-pool-id": null,
+[18:47:56]     "scope": "REGION",
+[18:47:56]     "time-created": "2026-08-18T01:34:56.640000+00:00"
+[18:47:56]   },
+[18:47:56]   "etag": "59cf8507"
+[18:47:56] }
+[18:47:56] before: door_state='DOOR_IDLE' last_error=''
+[18:47:56] after:  door_state=PLAYABLE
+[18:47:56] {
+[18:47:56]   "door": "PLAYABLE",
+[18:47:56]   "used_ocpu_hours": 0.000000,
+[18:47:56]   "remaining_ocpu_hours": 45.000000,
+[18:47:56]   "daily_limit_ocpu_hours": 45,
+[18:47:56]   "ocpus": 2.0,
+[18:47:56]   "idle_timeout_minutes": 15,
+[18:47:56]   "la_day": "2026-08-17",
+[18:47:56]   "reset_at_utc": "2026-08-18T07:00:00Z",
+[18:47:56]   "session_started_at": "2026-08-18T01:47:56Z",
+[18:47:56]   "hard_stop_deadline": null,
+[18:47:56]   "keepalive_enabled": true,
+[18:47:56]   "last_keepalive_at": null,
+[18:47:56]   "next_keepalive_at": "2026-08-18T03:47:56Z",
+[18:47:56]   "last_error": "",
+[18:47:56]   "wake_in_progress": false
+[18:47:56] }
+[18:47:56] promote_playable: done
+[18:47:56] Reserved play IP is on VM1; door PLAYABLE.
+[18:47:57] Seeding Object Storage (budget/config.json, ledger/usage.json, meta/infra.json)…
+[18:47:57] Published budget/config.json, ledger/usage.json, and meta/infra.json.
+[18:47:57] Set MCMANAGER_OCIR_USERNAME to <namespace>/<username> for docker login. Function/Events stay skipped.

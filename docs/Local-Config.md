@@ -7,7 +7,7 @@ The Manager WinExe (`McManager.Hybrid`, WPF + BlazorWebView) seeds connectivity 
 | Path | Git | Role |
 |------|-----|------|
 | [`config.local.example.json`](../config.local.example.json) | Tracked | Schema template (placeholders) |
-| [`friends.local.example.json`](../friends.local.example.json) | Tracked | Whitelist template |
+| [`friends.local.example.json`](../friends.local.example.json) | Tracked | Whitelist template (`ip` = IPv4 or IPv4 CIDR) |
 | `data/config.local.json` | **Ignored** | Live OCIDs / SSH / Object Storage / budgets |
 | `data/friends.local.json` | **Ignored** | Live Desired List seed |
 | `data/setup-wizard.local.json` | **Ignored** | Setup wizard resume (step index + fields; **no** Auth Token, **no** SSH private key) |
@@ -26,7 +26,7 @@ Do **not** copy Auth Tokens into `config.local.json` (OCIR only; Manager uses `~
 
 `McManager.Core.Config.SetupWizardStore` reads/writes `data/setup-wizard.local.json` (same data directory as manage config). Saved on each Next/Back/Close.
 
-Included: current step, Always Free / residual / capacity flags, OCI profile + region, compartment strategy, alert email, SSH **public** path/line/fingerprint (Generate creates `%USERPROFILE%\.ssh\mcmgr_ed25519_yyyyMMdd_HHmmss`, not a reused default name), Vanilla + version **id**, EULA flag, whether a token was stored, **admin `/32` CIDR**, **admin Minecraft username** (optional — later MOTD/ops; **not** required to join). In-game `white-list` is **off**; OCI Security List is the allowlist. Also **`apply_stage`**, optional Function image after OCIR push.
+Included: current step, Always Free / residual / capacity flags, OCI profile + region, compartment strategy, alert email, SSH **public** path/line/fingerprint (Generate creates `%USERPROFILE%\.ssh\mcmgr_ed25519_yyyyMMdd_HHmmss`, not a reused default name), Vanilla + version **id**, EULA flag, whether a token was stored, **admin `/32` CIDR**, **VM1 OCPUs / memory** (`2`/`12` or `4`/`24`; default **4 / 24**). In-game `white-list` is **off**; OCI Security List is the allowlist. Also **`apply_stage`**, optional Function image after OCIR push.
 
 **Not** included: Auth Token secret, SSH private key, tenancy OCID, jar URL/sha1.
 
@@ -35,13 +35,13 @@ Included: current step, Always Free / residual / capacity flags, OCI profile + r
 - `data/config.local.json` after a successful (non-dry-run) Deploy — **replaces** an existing manage seed in that data directory (wizard confirms first). Prefer `MCMANAGER_CONFIG_DIR` pointing at a **new empty folder** so the lab Manager config stays intact.
 - OpenTofu `terraform.tfvars` + `terraform.tfstate` under `%LOCALAPPDATA%\McManager\tofu\<stack-id>\` (not the repo, not the shared bucket). **Never** writes [`infra/terraform.tfvars`](../infra/terraform.tfvars). Manual `tofu import` / `plan` for that stack must `-state`/`-var-file` those LocalAppData files while the working directory is repo `infra/` (PowerShell: quote `-state="$state"`).
 - `friends.local.json` with the admin `/32` **only if that file is empty**.
-- Guest netplan (`/etc/netplan/99-mcmgr-play.yaml`) for the secondary play IP; managed `server.properties` with **`white-list=false`** / **`enforce-whitelist=false`** (OCI Security List is the allowlist). Optional `whitelist.json` seed if the wizard username is filled (not required to join).
+- Guest netplan (`/etc/netplan/99-mcmgr-play.yaml`) for the secondary play IP; managed `server.properties` with **`white-list=false`** / **`enforce-whitelist=false`** (OCI Security List is the allowlist). Setup does **not** seed `whitelist.json` from a Minecraft username.
 
-**Re-Deploy:** if `apply_stage` is already `vm1` (or later), Deploy re-runs guest repair (netplan, door env, managed `server.properties` whitelist-off, optional `whitelist.json` seed) and can start a STOPPED VM1 — it does **not** re-`tofu apply`. Players use `play.reserved_public_ip`, not `vm1.ssh_host` / `door.ssh_host`.
+**Re-Deploy:** if `apply_stage` is already `vm1` (or later), Deploy re-runs guest repair (netplan, door env, managed `server.properties` whitelist-off) and can start a STOPPED VM1 — it does **not** re-`tofu apply`. Players use `play.reserved_public_ip`, not `vm1.ssh_host` / `door.ssh_host`.
 
-**Delete infrastructure (Danger Zone):** typed `confirm`, then OpenTofu `destroy` of the LocalAppData stack only. After success the app removes `config.local.json`, `setup-wizard.local.json`, and `%LOCALAPPDATA%\McManager\tofu\<stack-id>\`. It keeps `friends.local.json`, `~/.oci`, SSH keys, and Credential Manager. Close Manager and reopen before a fresh Setup. No tofu state on this PC → destroy refuses (it will not scan-and-wipe the tenancy).
+**Delete infrastructure (Danger Zone):** typed `confirm`, then OpenTofu `destroy` of the LocalAppData stack only. After success the app removes `config.local.json`, `setup-wizard.local.json`, and `%LOCALAPPDATA%\McManager\tofu\<stack-id>\`. It keeps `friends.local.json`, `~/.oci`, SSH keys, and Credential Manager. Close Manager and reopen before a fresh Setup. No tofu state on this PC → destroy refuses (it will not scan-and-wipe the tenancy). The product Object Storage bucket (including `ledger/usage.json` and world backups) is destroyed with the stack; a later Setup seeds a new empty ledger. Oracle Always Free hours for the current month are not reset — see [`Guide.md`](Guide.md) → Tear down and redeploy.
 
-Dry-run: set `MCMANAGER_TOFU_DRY_RUN=1` so Deploy uses a fake tofu runner and does **not** create OCI resources or overwrite `config.local.json`. Agents must use this (or not click Deploy). A real apply creates another Always Free A1 (product MVP **4 OCPU / 24 GB**; **TEMPORARY test default 2 / 12** — revert after 3.3). In the **same** tenancy as the live lab that competes for Ampere hours; a **separate** test tenancy does not.
+Dry-run: set `MCMANAGER_TOFU_DRY_RUN=1` so Deploy uses a fake tofu runner and does **not** create OCI resources or overwrite `config.local.json`. Agents must use this (or not click Deploy). A real apply creates another Always Free A1 (Setup default **4 OCPU / 24 GB**, or **2 / 12** if chosen). In the **same** tenancy as the live lab that competes for Ampere hours; a **separate** test tenancy does not.
 
 First-run: if `config.local.json` is missing, the app opens a chooser (Setup vs **Auto-detect infrastructure** vs “I already have a stack”) instead of MainWindow. Auto-detect is **button-gated** — the app does **not** probe OCI on launch. “I already have a stack” opens the manage UI without scanning (hand-seeded config). With a valid manage config, Setup and Auto-detect are on **Advanced**. To walk first-run while a real config exists, point `MCMANAGER_CONFIG_DIR` at an empty directory.
 

@@ -24,9 +24,12 @@ public static class InfraPlanSummary
             ? (string.IsNullOrWhiteSpace(state.SshPublicKeyPath) ? "(no key yet)" : state.SshPublicKeyPath)
             : state.SshFingerprint;
 
+        var shape = Vm1ShapeChoice.Format(state.Vm1Ocpus, state.Vm1MemoryGb);
+        var hours = Vm1ShapeChoice.HoursHint(state.Vm1Ocpus, state.Vm1MemoryGb);
+
         return
             "OpenTofu apply from this window creates Always Free resources (state under %LOCALAPPDATA%\\McManager\\tofu). "
-            + "TEMPORARY test shape: VM1 is 2 OCPU / 12 GB (revert infra defaults to 4/24 after the 3.3 test). "
+            + $"VM1 is {shape} ({hours}). "
             + "A second A1 in the same tenancy as an existing lab stack competes for Always Free hours. Deploy writes config.local.json after success.\n\n"
             + "Chosen variables\n"
             + $"  OCI profile: {profile}\n"
@@ -34,13 +37,14 @@ public static class InfraPlanSummary
             + $"  {compartment}\n"
             + $"  Budget alert email: {email}\n"
             + $"  SSH: {ssh}\n"
+            + $"  Game computer size: {shape} ({hours})\n"
             + $"  Game: Vanilla {version} (EULA {(state.EulaAccepted ? "accepted" : "not accepted")})\n"
             + $"  OCIR Auth Token stored: {(state.AuthTokenStored ? "yes (Windows Credential Manager McManager/ocir)" : "no — optional until Function push")}\n\n"
             + "OpenTofu will create (on confirmed Deploy)\n"
             + "  • Compartment mcmgr (unless using an existing OCID)\n"
             + "  • VCN mcmgr-vcn (10.0.0.0/16), IGW, public route table\n"
             + "  • Public subnet mcmgr-subnet-public + Security List mcmgr-sl\n"
-            + "  • VM1 mcmgr-vm1 — VM.Standard.A1.Flex 2 OCPU / 12 GB (TEMPORARY test; product MVP is 4/24)\n"
+            + $"  • VM1 mcmgr-vm1 — VM.Standard.A1.Flex {shape}\n"
             + "  • Door mcmgr-door — VM.Standard.E2.1.Micro\n"
             + "  • Reserved play IP mcmgr-play-ip + secondary VNICS (mcmgr-vm1-play, mcmgr-door-play)\n"
             + "  • Object Storage bucket mcmgr-shared-data\n"

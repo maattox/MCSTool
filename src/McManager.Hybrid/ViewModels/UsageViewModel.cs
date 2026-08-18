@@ -16,11 +16,15 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
 {
     private static readonly TimeSpan PollInterval = TimeSpan.FromMinutes(2);
 
-    private readonly ManagerLocalConfig? _config;
-    private readonly UsageBudgetStore? _store;
+    private ManagerLocalConfig? _config;
+    private UsageBudgetStore? _store;
+    private readonly LocalConfigHost _configHost;
+    private readonly ManageCloudServices _cloud;
+    private readonly ManageSession _session;
     private readonly IUiClock _clock;
     private readonly IUiDialogs _dialogs;
     private readonly MainViewModel? _main;
+    private bool _resumeWatchingAfterReload;
 
     private UsageLedgerDocument _ledger = UsageLedgerDocument.Empty();
     private CancellationTokenSource? _pollCts;
@@ -127,17 +131,55 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
     public UsageViewModel(
         LocalConfigHost configHost,
         ManageCloudServices cloud,
+        ManageSession session,
         IUiClock clock,
         IUiDialogs dialogs,
         MainViewModel? main = null)
     {
-        _config = configHost.Config;
-        _store = cloud.UsageStore;
+        _configHost = configHost;
+        _cloud = cloud;
+        _session = session;
         _clock = clock;
         _dialogs = dialogs;
         _main = main;
+        BindFromHost();
+        _session.ClientsRebuilding += OnClientsRebuilding;
+        _session.Reloaded += OnSessionReloaded;
+    }
+
+    private void OnClientsRebuilding(object? sender, EventArgs e)
+    {
+        _resumeWatchingAfterReload = _pollCts is not null;
+        StopWatching();
+    }
+
+    private void OnSessionReloaded(object? sender, EventArgs e)
+    {
+        BindFromHost();
+        if (!_resumeWatchingAfterReload)
+            return;
+        _resumeWatchingAfterReload = false;
+        StartWatching();
+    }
+
+    private void BindFromHost()
+    {
+        _config = _configHost.Config;
+        _store = _cloud.UsageStore;
+        _ledger = UsageLedgerDocument.Empty();
+        _seededEdit = false;
         SeedEditFromLocal();
         ApplyReportFromLocalFallback();
+        OnPropertyChanged(nameof(HasObjectStorage));
+        OnPropertyChanged(nameof(CanPublish));
+        if (_store is null)
+        {
+            StatusMessage = _config is null
+                ? "Local config isn't loaded. Showing default budget numbers only."
+                : "Shared hours storage isn't available. Showing local budget numbers only.";
+        }
+        else
+            StatusMessage = "Open this tab to refresh hours used.";
     }
 
     /// <summary>Start the ~2 min poll and pull once. Call when the tab component is created.</summary>
@@ -497,6 +539,8 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
         if (_disposed)
             return;
         _disposed = true;
+        _session.ClientsRebuilding -= OnClientsRebuilding;
+        _session.Reloaded -= OnSessionReloaded;
         StopWatching();
     }
 }

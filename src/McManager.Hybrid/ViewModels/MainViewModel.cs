@@ -20,16 +20,18 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     private readonly LocalConfigHost _configHost;
     private readonly ManageCloudServices _cloud;
+    private readonly ManageSession _session;
     private readonly IUiClock _clock;
     private readonly IUiDispatcher _dispatcher;
     private readonly IClipboard _clipboard;
     private readonly WindowFocusBroker _focus;
 
-    private readonly ManagerLocalConfig? _config;
-    private readonly DoorClient? _door;
-    private readonly ComputeService? _compute;
-    private readonly UsageBudgetStore? _usageStore;
-    private readonly SshService _ssh;
+    private ManagerLocalConfig? _config;
+    private DoorClient? _door;
+    private ComputeService? _compute;
+    private UsageBudgetStore? _usageStore;
+    private SshService _ssh = null!;
+    private bool _resumeChromeAfterReload;
 
     private CancellationTokenSource? _pollCts;
     private CancellationTokenSource? _toastCts;
@@ -42,6 +44,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private bool _chromeStarted;
     private bool _hasInitialStatus;
     private bool _powerActionInFlight;
+    private PowerActionKind _powerAction = PowerActionKind.None;
 
     public string Title { get; } = "mc manager";
 
@@ -129,8 +132,22 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public bool HasPlayIp =>
         !string.IsNullOrWhiteSpace(PlayIp) && PlayIp != Placeholder;
 
+    public string StartButtonLabel =>
+        _powerAction == PowerActionKind.Start ? "Starting…" : "Start";
+
+    public string StopButtonLabel =>
+        _powerAction == PowerActionKind.Stop ? "Stopping…" : "Stop";
+
+    public string RestartButtonLabel =>
+        _powerAction == PowerActionKind.Restart ? "Restarting…" : "Restart";
+
+    public bool StatusIsBusy =>
+        Status is "Starting…" or "Stopping…" or "Restarting…";
+
     public string StartToolTip => CanStart
-        ? "Start the Minecraft server so friends can connect."
+        ? (string.Equals(DoorState, "DEGRADED", StringComparison.OrdinalIgnoreCase)
+            ? "The game computer is on but not joinable. Start retries the wake path."
+            : "Start the Minecraft server so friends can connect.")
         : StartDisabledReason;
 
     public string StopToolTip => CanStop
@@ -151,12 +168,14 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 return "Wait — a start, stop, or restart is already in progress.";
             if (!ConfigLoaded)
                 return "Local config is missing or failed to load.";
+            if (Vm1IsRunning
+                || string.Equals(DoorState, "PLAYABLE", StringComparison.OrdinalIgnoreCase))
+                return "The server is already on. Use Stop or Restart.";
+            if (Vm1IsComingUp
+                || string.Equals(DoorState, "STARTING", StringComparison.OrdinalIgnoreCase))
+                return "Already starting. Wait until status is Running.";
             if (DoorState is Placeholder or "unreachable")
                 return "Can't start: the wake service is unreachable. Try Troubleshooting if this lasts.";
-            if (string.Equals(DoorState, "PLAYABLE", StringComparison.OrdinalIgnoreCase))
-                return "Already running — friends can connect at the play IP.";
-            if (string.Equals(DoorState, "STARTING", StringComparison.OrdinalIgnoreCase))
-                return "Already starting. Wait until status is Running.";
             return "Start is unavailable right now.";
         }
     }
@@ -192,6 +211,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public MainViewModel(
         LocalConfigHost configHost,
         ManageCloudServices cloud,
+        ManageSession session,
         IUiClock clock,
         IUiDispatcher dispatcher,
         IClipboard clipboard,
@@ -199,18 +219,64 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         _configHost = configHost;
         _cloud = cloud;
+        _session = session;
         _clock = clock;
         _dispatcher = dispatcher;
         _clipboard = clipboard;
         _focus = focus;
 
-        _config = configHost.Config;
-        _door = cloud.Door;
-        _compute = cloud.Compute;
-        _usageStore = cloud.UsageStore;
-        _ssh = cloud.Ssh;
-        PlayIp = configHost.PlayIp;
-        ConfigLoaded = configHost.HasManageConfig && _config is not null;
+        BindFromHost();
+        _session.ClientsRebuilding += OnClientsRebuilding;
+        _session.Reloaded += OnSessionReloaded;
+    }
+
+    private void OnClientsRebuilding(object? sender, EventArgs e)
+    {
+        _resumeChromeAfterReload = _chromeStarted;
+        if (_chromeStarted)
+            StopChrome();
+    }
+
+    private void OnSessionReloaded(object? sender, EventArgs e)
+    {
+        BindFromHost();
+        if (!_resumeChromeAfterReload)
+            return;
+        _resumeChromeAfterReload = false;
+        StartChrome();
+    }
+
+    /// <summary>
+    /// Capture the current <see cref="LocalConfigHost"/> / cloud clients (after
+    /// <see cref="ManageSession.ReloadFromDisk"/> or first construction).
+    /// </summary>
+    private void BindFromHost()
+    {
+        _config = _configHost.Config;
+        _door = _cloud.Door;
+        _compute = _cloud.Compute;
+        _usageStore = _cloud.UsageStore;
+        _ssh = _cloud.Ssh;
+        PlayIp = _configHost.PlayIp;
+        ConfigLoaded = _configHost.HasManageConfig && _config is not null;
+        _hasInitialStatus = false;
+        _pinLedger = UsageLedgerDocument.Empty();
+        _powerActionInFlight = false;
+        _powerAction = PowerActionKind.None;
+        CanStart = false;
+        CanStop = false;
+        CanRestart = false;
+        if (!ConfigLoaded)
+        {
+            Status = Placeholder;
+            StatusIsRunning = false;
+            PlayersDisplay = Placeholder;
+            Vm1Lifecycle = Placeholder;
+            DoorState = Placeholder;
+        }
+
+        NotifyPowerTooltips();
+        NotifyPowerButtonCaptions();
     }
 
     /// <summary>
@@ -275,8 +341,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         if (_door is null || _powerActionInFlight || !CanStart)
             return;
 
-        _powerActionInFlight = true;
-        UpdateCommandFlags();
+        BeginPowerAction(PowerActionKind.Start);
         ActionFeedback = "Starting…";
         ShowToast("Starting the game server…", isError: false);
 
@@ -293,11 +358,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             ActionFeedback = "Start accepted — waiting until friends can connect…";
             await WaitForDoorAsync(
                 s => s.IsPlayable || s.IsDegraded || s.IsBudgetExhausted,
-                TimeSpan.FromMinutes(20));
+                TimeSpan.FromMinutes(30));
         }
         finally
         {
-            _powerActionInFlight = false;
+            EndPowerAction();
             await RefreshStatusAsync(forceDoor: true, forceOci: true);
         }
     }
@@ -307,8 +372,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         if (_door is null || _powerActionInFlight || !CanStop)
             return;
 
-        _powerActionInFlight = true;
-        UpdateCommandFlags();
+        BeginPowerAction(PowerActionKind.Stop);
         ActionFeedback = "Stopping…";
         ShowToast("Stopping the game server…", isError: false);
 
@@ -324,12 +388,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
             ActionFeedback = "Stop accepted — waiting until the server is off…";
             await WaitForDoorAsync(
-                s => s.IsIdle || s.IsDegraded || s.IsBudgetExhausted,
+                s => !s.StopInProgress && (s.IsIdle || s.IsDegraded || s.IsBudgetExhausted),
                 TimeSpan.FromMinutes(20));
         }
         finally
         {
-            _powerActionInFlight = false;
+            EndPowerAction();
             await RefreshStatusAsync(forceDoor: true, forceOci: true);
         }
     }
@@ -339,9 +403,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         if (_config is null || _powerActionInFlight || !CanRestart)
             return;
 
-        _powerActionInFlight = true;
-        UpdateCommandFlags();
-        ActionFeedback = "Restarting Minecraft…";
+        BeginPowerAction(PowerActionKind.Restart);
+        ActionFeedback = "Restarting…";
         ShowToast("Restarting Minecraft…", isError: false);
 
         try
@@ -354,7 +417,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         }
         finally
         {
-            _powerActionInFlight = false;
+            EndPowerAction();
+            ApplyNoviceStatus(CachedDoorStatus());
             UpdateCommandFlags();
         }
     }
@@ -384,6 +448,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         if (_disposed)
             return;
         _disposed = true;
+        _session.ClientsRebuilding -= OnClientsRebuilding;
+        _session.Reloaded -= OnSessionReloaded;
         _focus.FocusChanged -= OnWindowFocusChanged;
         _pollCts?.Cancel();
         _pollCts?.Dispose();
@@ -485,6 +551,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     private void ApplyNoviceStatus(DoorStatus? door)
     {
+        if (_powerActionInFlight)
+        {
+            ApplyInProgressStatus();
+            return;
+        }
+
         StatusIsRunning = door?.IsPlayable == true;
         Status = StatusIsRunning ? "Running" : "Stopped";
         if (!StatusIsRunning)
@@ -493,24 +565,64 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     private void UpdateCommandFlags(DoorStatus? door = null)
     {
-        door ??= DoorState is Placeholder or "unreachable"
+        door ??= CachedDoorStatus();
+
+        var allowPower = _hasInitialStatus && !_powerActionInFlight;
+        var degraded = door?.IsDegraded == true;
+        var alreadyOn = !degraded && (Vm1IsRunning || door?.IsPlayable == true);
+        var starting = !degraded && (Vm1IsComingUp || door?.IsStarting == true);
+
+        CanStart = allowPower && door is not null && !alreadyOn && !starting;
+        CanStop = allowPower && (alreadyOn || starting || degraded);
+        CanRestart = allowPower && Vm1IsRunning;
+        NotifyPowerTooltips();
+    }
+
+    private DoorStatus? CachedDoorStatus() =>
+        DoorState is Placeholder or "unreachable"
             ? null
             : new DoorStatus { Door = DoorState };
 
-        var life = (Vm1Lifecycle ?? "").ToUpperInvariant();
-        var vmRunning = life == "RUNNING";
-        var allowPower = _hasInitialStatus && !_powerActionInFlight;
+    private bool Vm1IsRunning =>
+        string.Equals(Vm1Lifecycle, "RUNNING", StringComparison.OrdinalIgnoreCase);
 
-        CanStart = allowPower
-                   && door is not null
-                   && !door.IsStarting
-                   && !door.IsPlayable;
+    private bool Vm1IsComingUp
+    {
+        get
+        {
+            var life = (Vm1Lifecycle ?? "").ToUpperInvariant();
+            return life is "STARTING" or "PROVISIONING";
+        }
+    }
 
-        CanStop = allowPower
-                  && (door is { IsPlayable: true } or { IsStarting: true } || vmRunning);
+    private void BeginPowerAction(PowerActionKind kind)
+    {
+        _powerAction = kind;
+        _powerActionInFlight = true;
+        ApplyInProgressStatus();
+        UpdateCommandFlags();
+        NotifyPowerButtonCaptions();
+    }
 
-        CanRestart = allowPower && vmRunning;
-        NotifyPowerTooltips();
+    private void EndPowerAction()
+    {
+        _powerAction = PowerActionKind.None;
+        _powerActionInFlight = false;
+        NotifyPowerButtonCaptions();
+    }
+
+    private void ApplyInProgressStatus()
+    {
+        StatusIsRunning = false;
+        Status = _powerAction switch
+        {
+            PowerActionKind.Start => "Starting…",
+            PowerActionKind.Stop => "Stopping…",
+            PowerActionKind.Restart => "Restarting…",
+            _ => Status
+        };
+        if (!StatusIsRunning)
+            PlayersDisplay = Placeholder;
     }
 
     private void NotifyPowerTooltips()
@@ -518,6 +630,22 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(StartToolTip));
         OnPropertyChanged(nameof(StopToolTip));
         OnPropertyChanged(nameof(RestartToolTip));
+    }
+
+    private void NotifyPowerButtonCaptions()
+    {
+        OnPropertyChanged(nameof(StartButtonLabel));
+        OnPropertyChanged(nameof(StopButtonLabel));
+        OnPropertyChanged(nameof(RestartButtonLabel));
+        OnPropertyChanged(nameof(StatusIsBusy));
+    }
+
+    private enum PowerActionKind
+    {
+        None,
+        Start,
+        Stop,
+        Restart
     }
 
     /// <summary>
@@ -650,7 +778,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 {
                     ActionFeedback = result.Value.IsDegraded
                         ? $"Wake service degraded: {result.Value.LastError}"
-                        : StatusIsRunning
+                        : result.Value.IsPlayable
                             ? "Server is running."
                             : "Server is stopped.";
                     if (result.Value.IsDegraded || result.Value.IsBudgetExhausted)

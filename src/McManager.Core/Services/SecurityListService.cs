@@ -42,6 +42,7 @@ public sealed class SecurityListService : ISecurityListService
         int minecraftPort,
         int sshPort,
         int doorHttpPort,
+        string? adminName = null,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(securityListId))
@@ -53,8 +54,8 @@ public sealed class SecurityListService : ISecurityListService
                 new GetSecurityListRequest { SecurityListId = securityListId },
                 cancellationToken: cancellationToken);
 
-            var friendNames = friends
-                .Select(f => f.Name.Trim())
+            var ownedDescriptions = friends
+                .SelectMany(f => new[] { f.Name.Trim(), f.Ip.Trim() })
                 .Where(n => !string.IsNullOrWhiteSpace(n))
                 .ToHashSet(StringComparer.Ordinal);
 
@@ -62,7 +63,7 @@ public sealed class SecurityListService : ISecurityListService
             foreach (var rule in getResponse.SecurityList.IngressSecurityRules ?? [])
             {
                 var desc = rule.Description ?? "";
-                if (FriendRules.IsOwnedDescription(desc, friendNames))
+                if (FriendRules.IsOwnedDescription(desc, ownedDescriptions))
                     continue;
 
                 if (IsLegacyManagedRule(rule, minecraftPort, sshPort, doorHttpPort))
@@ -71,7 +72,7 @@ public sealed class SecurityListService : ISecurityListService
                 preserved.Add(rule);
             }
 
-            var owned = BuildOwnedRules(friends, minecraftPort, sshPort, doorHttpPort);
+            var owned = BuildOwnedRules(friends, minecraftPort, sshPort, doorHttpPort, adminName);
             var newIngress = preserved.Concat(owned).ToList();
 
             await _session.VirtualNetwork.UpdateSecurityList(
@@ -137,27 +138,32 @@ public sealed class SecurityListService : ISecurityListService
         IReadOnlyList<FriendEntry> friends,
         int minecraftPort,
         int sshPort,
-        int doorHttpPort)
+        int doorHttpPort,
+        string? adminName)
     {
         var owned = new List<IngressSecurityRule>();
         foreach (var friend in friends)
         {
             if (string.IsNullOrWhiteSpace(friend.Ip))
                 continue;
+            if (!FriendRules.TryNormalizeAllowlistSource(friend.Ip, out var source, out _))
+                continue;
 
-            var ip = FriendRules.NormalizeIp(friend.Ip);
-            var cidr = FriendRules.ToCidr(ip);
-            var mcDesc = FriendRules.McDescription(friend.Name, ip);
-
-            owned.Add(MakeTcpRule(cidr, minecraftPort, mcDesc));
-            owned.Add(MakeUdpRule(cidr, minecraftPort, mcDesc));
+            var mcDesc = FriendRules.McDescription(friend.Name, source.Stored);
+            owned.Add(MakeTcpRule(source.Cidr, minecraftPort, mcDesc));
+            owned.Add(MakeUdpRule(source.Cidr, minecraftPort, mcDesc));
 
             if (!friend.IsAdmin)
                 continue;
 
-            var label = string.IsNullOrWhiteSpace(friend.Name) ? ip : friend.Name.Trim();
-            owned.Add(MakeTcpRule(cidr, sshPort, FriendRules.SshDescription(label)));
-            owned.Add(MakeTcpRule(cidr, doorHttpPort, FriendRules.DoorDescription(label)));
+            var allowAdminPrefix = FriendRules.IsPrimaryAdmin(friend, adminName, friends);
+            var adminCidr = FriendRules.ToAdminCidr(source.Stored, allowAdminPrefix);
+            if (adminCidr is null)
+                continue;
+
+            var label = string.IsNullOrWhiteSpace(friend.Name) ? source.Stored : friend.Name.Trim();
+            owned.Add(MakeTcpRule(adminCidr, sshPort, FriendRules.SshDescription(label)));
+            owned.Add(MakeTcpRule(adminCidr, doorHttpPort, FriendRules.DoorDescription(label)));
         }
 
         return owned;

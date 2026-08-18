@@ -14,7 +14,12 @@ else
     <MainLayout />
 }
 <ModalHost />
-<DestroyInfrastructureDialog />
+@* Destroy dialog is Manage-only so first-run/Setup do not construct MainViewModel
+   before config.local.json exists. ReloadFromDisk still rebinds if they already were. *@
+@if (Shell.Page == HybridShell.PageKind.Manage)
+{
+    <DestroyInfrastructureDialog />
+}
 
 @code {
     protected override void OnInitialized()

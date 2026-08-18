@@ -82,11 +82,11 @@ public sealed class SetupDeployOrchestrator
         if (cidr is null)
             return SetupDeployResult.Fail(state.ApplyStage, "Admin public IP /32 is required.");
 
-        if (!MinecraftUsername.IsMissingOrValid(state.AdminMinecraftUsername))
+        if (!Vm1ShapeChoice.IsAllowed(state.Vm1Ocpus, state.Vm1MemoryGb))
         {
             return SetupDeployResult.Fail(
                 state.ApplyStage,
-                "Admin Minecraft username must be empty or 3–16 letters, digits, or underscore (optional; joins use OCI Security List).");
+                "VM1 size must be 2 OCPU / 12 GB or 4 OCPU / 24 GB.");
         }
 
         var infra = ProductPaths.FindInfraDirectory();
@@ -147,7 +147,7 @@ public sealed class SetupDeployOrchestrator
             outputs = parsed.Value;
             stage = SetupApplyStage.TofuApplied;
             PersistStage(state, stage);
-            ReportProgress(progress, stage);
+            ReportProgress(progress, stage, complete: true);
         }
         else
         {
@@ -163,7 +163,8 @@ public sealed class SetupDeployOrchestrator
             ReportProgress(
                 progress,
                 SetupApplyStage.ConfigWritten,
-                "Dry-run complete (cloud bootstrap skipped)");
+                "Dry-run complete (cloud bootstrap skipped)",
+                complete: true);
             return SetupDeployResult.Ok(
                 state.ApplyStage,
                 "Dry-run finished. No OCI resources were created and config.local.json was not written. "
@@ -194,7 +195,7 @@ public sealed class SetupDeployOrchestrator
 
             stage = SetupApplyStage.CloudInit;
             PersistStage(state, stage);
-            ReportProgress(progress, stage);
+            ReportProgress(progress, stage, complete: true);
         }
 
         if (!SetupApplyStage.Reached(stage, SetupApplyStage.Door))
@@ -205,7 +206,7 @@ public sealed class SetupDeployOrchestrator
                 return SetupDeployResult.Fail(stage, door.Error ?? "Door bootstrap failed.");
             stage = SetupApplyStage.Door;
             PersistStage(state, stage);
-            ReportProgress(progress, stage);
+            ReportProgress(progress, stage, complete: true);
         }
 
         if (!SetupApplyStage.Reached(stage, SetupApplyStage.Vm1))
@@ -216,7 +217,7 @@ public sealed class SetupDeployOrchestrator
                 return SetupDeployResult.Fail(stage, vm1.Error ?? "VM1 bootstrap failed.");
             stage = SetupApplyStage.Vm1;
             PersistStage(state, stage);
-            ReportProgress(progress, stage);
+            ReportProgress(progress, stage, complete: true);
         }
 
         var running = await EnsureVm1RunningForSshAsync(outputs, state, log, cancellationToken)
@@ -265,7 +266,7 @@ public sealed class SetupDeployOrchestrator
 
             stage = SetupApplyStage.OsMeta;
             PersistStage(state, stage);
-            ReportProgress(progress, stage);
+            ReportProgress(progress, stage, complete: true);
         }
 
         string? fnSkip = null;
@@ -295,7 +296,7 @@ public sealed class SetupDeployOrchestrator
 
             stage = SetupApplyStage.Function;
             PersistStage(state, stage);
-            ReportProgress(progress, stage);
+            ReportProgress(progress, stage, complete: true);
         }
 
         ReportProgress(progress, SetupApplyStage.ConfigWritten, "Saving local config…");
@@ -306,7 +307,7 @@ public sealed class SetupDeployOrchestrator
         SeedAdminFriend(state);
         stage = SetupApplyStage.ConfigWritten;
         PersistStage(state, stage);
-        ReportProgress(progress, stage);
+        ReportProgress(progress, stage, complete: true);
 
         return SetupDeployResult.Ok(
             stage,
@@ -478,8 +479,11 @@ public sealed class SetupDeployOrchestrator
     private static void ReportProgress(
         IProgress<SetupProgressUpdate>? progress,
         string stage,
-        string? caption = null)
+        string? caption = null,
+        bool complete = false)
     {
-        progress?.Report(SetupApplyStage.Update(stage, caption));
+        progress?.Report(complete
+            ? SetupApplyStage.Completed(stage, caption)
+            : SetupApplyStage.Starting(stage, caption));
     }
 }

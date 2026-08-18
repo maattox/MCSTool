@@ -115,11 +115,16 @@ public sealed class DoorClient : IDoorClient, IDisposable
         try
         {
             using var content = new StringContent("{}", Encoding.UTF8, "application/json");
-            using var response = await _http.PostAsync("api/idle-empty", content, cancellationToken);
+            /* Door stop is async (202) like wake; keep the long client so an
+             * older synchronous mccontrol still finishes SoftStop + IP handback. */
+            using var response = await _longHttp.PostAsync("api/idle-empty", content, cancellationToken);
             var body = await response.Content.ReadAsStringAsync(cancellationToken);
 
-            if (response.IsSuccessStatusCode)
+            if (response.StatusCode == System.Net.HttpStatusCode.Accepted
+                || response.IsSuccessStatusCode)
+            {
                 return ServiceResult.Ok();
+            }
 
             return ServiceResult.Fail(FormatHttpError("POST /api/idle-empty", response.StatusCode, body));
         }

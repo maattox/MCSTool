@@ -23,8 +23,8 @@ public sealed partial class DestroyInfrastructureViewModel : ObservableObject
 
     private static readonly TimeSpan LogFlushPeriod = TimeSpan.FromMilliseconds(250);
 
-    private readonly LocalConfigHost _configHost;
     private readonly HybridShell _shell;
+    private readonly ManageSession _session;
     private readonly MainViewModel _main;
     private readonly IUiClock _clock;
     private readonly IUiDispatcher _dispatcher;
@@ -96,14 +96,14 @@ public sealed partial class DestroyInfrastructureViewModel : ObservableObject
     public bool IsTofuDryRun { get; } = ProductPaths.IsTofuDryRun();
 
     public DestroyInfrastructureViewModel(
-        LocalConfigHost configHost,
         HybridShell shell,
+        ManageSession session,
         MainViewModel main,
         IUiClock clock,
         IUiDispatcher dispatcher)
     {
-        _configHost = configHost;
         _shell = shell;
+        _session = session;
         _main = main;
         _clock = clock;
         _dispatcher = dispatcher;
@@ -135,7 +135,7 @@ public sealed partial class DestroyInfrastructureViewModel : ObservableObject
         if (Phase == DestroyInfrastructurePhase.Succeeded)
         {
             _main.StopChrome();
-            _configHost.Reload();
+            _session.ReloadFromDisk();
             _shell.EnterFirstRun();
         }
     }

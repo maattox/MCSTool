@@ -25,12 +25,17 @@ public partial class FriendRowViewModel : ObservableObject
             IsAdmin = entry.IsAdmin,
         };
 
-    public FriendEntry ToEntry() =>
-        new()
+    public FriendEntry ToEntry()
+    {
+        var ip = FriendRules.TryNormalizeAllowlistSource(Ip, out var source, out _)
+            ? source.Stored
+            : Ip.Trim();
+        return new FriendEntry
         {
             Id = Id,
             Name = Name.Trim(),
-            Ip = FriendRules.NormalizeIp(Ip),
+            Ip = ip,
             IsAdmin = IsAdmin,
         };
+    }
 }

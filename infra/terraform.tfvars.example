@@ -22,8 +22,8 @@ existing_compartment_id = ""
 # compartment_name = "mcmgr"
 # vcn_cidr         = "10.0.0.0/16"
 # subnet_cidr      = "10.0.0.0/24"
-# vm1_ocpus        = 4   # product MVP target; TEMPORARY test default in variables.tf is 2 — revert after 3.3 test
-# vm1_memory_gb    = 24  # product MVP target; TEMPORARY test default in variables.tf is 12 — revert after 3.3 test
+# vm1_ocpus        = 4   # Setup picker: 4/24 (default) or 2/12
+# vm1_memory_gb    = 24
 # bucket_name      = "mcmgr-shared-data"
 # function_image   = ""   # Step 3.3: region.ocir.io/<ns>/mcmgr-fn/softstop:<tag>
 # softstop_instance_ids = []  # empty = both VM1 and door

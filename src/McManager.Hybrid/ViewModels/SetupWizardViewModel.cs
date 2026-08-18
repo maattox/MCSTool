@@ -35,7 +35,11 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         + "Try again now, or auto-retry every 5 minutes while Setup stays open. Auto-retry checks capacity first and stays silent on later failures.\n\n"
         + "Close returns to Setup so you can pause later or resume another time.";
 
+    public const string DeployDurationHint =
+        "Creating the cloud computers and installing Minecraft often takes a long time. Leave this window open until it finishes.";
+
     private static readonly TimeSpan LogFlushPeriod = TimeSpan.FromMilliseconds(250);
+    private static readonly TimeSpan ElapsedTickPeriod = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan CapacityPollPeriod = TimeSpan.FromMinutes(5);
 
     private readonly IFilePicker _picker;
@@ -50,7 +54,14 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     private MojangVersionManifest? _manifest;
     private CancellationTokenSource? _logFlushCts;
+    private CancellationTokenSource? _elapsedCts;
     private CancellationTokenSource? _capacityCts;
+    private DateTimeOffset? _elapsedRunningSince;
+    private TimeSpan _elapsedAccumulated;
+    private bool _elapsedStarted;
+    private string _progressStage = SetupApplyStage.NotStarted;
+    private bool _progressStageComplete;
+    private DateTimeOffset? _progressStageStartedAt;
     private TaskCompletionSource<CapacityWaitChoice>? _capacityChoice;
     private string _functionImage = "";
     private string _resumeMinecraftVersion = "";
@@ -133,7 +144,10 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     private string _adminCidr = "";
 
     [ObservableProperty]
-    private string _adminMinecraftUsername = "";
+    private int _vm1Ocpus = Vm1ShapeChoice.DefaultOcpus;
+
+    [ObservableProperty]
+    private int _vm1MemoryGb = Vm1ShapeChoice.DefaultMemoryGb;
 
     [ObservableProperty]
     private string _applyStage = SetupApplyStage.NotStarted;
@@ -209,7 +223,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         ShowDeployButton
         && EulaAccepted
         && TfvarsWriter.NormalizeAdminCidr(AdminCidr) is not null
-        && MinecraftUsername.IsMissingOrValid(AdminMinecraftUsername)
+        && Vm1ShapeChoice.IsAllowed(Vm1Ocpus, Vm1MemoryGb)
         && !IsBusy
         && !IsDeployLocked
         && CreateResourcesConfirmed
@@ -220,7 +234,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         && !IsBusy
         && EulaAccepted
         && TfvarsWriter.NormalizeAdminCidr(AdminCidr) is not null
-        && MinecraftUsername.IsMissingOrValid(AdminMinecraftUsername);
+        && Vm1ShapeChoice.IsAllowed(Vm1Ocpus, Vm1MemoryGb);
 
     public bool CanCloseWizard => !IsBusy;
 
@@ -230,6 +244,30 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         IsLastStep && (IsBusy || IsDeployLocked || DeployProgressPercent > 0);
 
     public string DeployProgressPercentDisplay => $"{(int)Math.Round(DeployProgressPercent)}%";
+
+    public bool ShowDeployElapsed => _elapsedStarted;
+
+    public string DeployElapsedDisplay => FormatDeployElapsed(CurrentDeployElapsed());
+
+    public bool ShowDeployRemaining =>
+        IsBusy
+        && _elapsedStarted
+        && !IsTofuDryRun
+        && !CapacityWaiting
+        && !(_progressStageComplete
+             && string.Equals(_progressStage, SetupApplyStage.ConfigWritten, StringComparison.Ordinal));
+
+    public string DeployRemainingDisplay
+    {
+        get
+        {
+            var remaining = SetupApplyStage.EstimateRemaining(
+                _progressStage,
+                CurrentStageElapsed(),
+                _progressStageComplete);
+            return SetupApplyStage.FormatRemaining(remaining);
+        }
+    }
 
     public string DeployToolTip =>
         IsDeployLocked
@@ -252,7 +290,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     public string CreateResourcesConfirmText =>
         IsTofuDryRun
             ? "I understand this is a dry-run (no Oracle resources and config.local.json will not be written)."
-            : "Create Always Free game VM + doorbell VM + reserved play IP in the selected tenancy.";
+            : $"Create Always Free game VM ({Vm1ShapeChoice.Format(Vm1Ocpus, Vm1MemoryGb)}) + doorbell VM + reserved play IP in the selected tenancy.";
 
     public string AutoRetryBannerText =>
         "Auto-retrying every 5 minutes until A1 capacity is available. Failures stay silent. Use Pause auto-retry to stop.";
@@ -277,6 +315,24 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     {
         get => !SshGenerateMode;
         set => SshGenerateMode = !value;
+    }
+
+    public bool Vm1ShapeIsDefault =>
+        Vm1Ocpus == Vm1ShapeChoice.DefaultOcpus && Vm1MemoryGb == Vm1ShapeChoice.DefaultMemoryGb;
+
+    public bool Vm1ShapeIsSmaller =>
+        Vm1Ocpus == Vm1ShapeChoice.SmallerOcpus && Vm1MemoryGb == Vm1ShapeChoice.SmallerMemoryGb;
+
+    public void SelectDefaultVm1Shape()
+    {
+        Vm1Ocpus = Vm1ShapeChoice.DefaultOcpus;
+        Vm1MemoryGb = Vm1ShapeChoice.DefaultMemoryGb;
+    }
+
+    public void SelectSmallerVm1Shape()
+    {
+        Vm1Ocpus = Vm1ShapeChoice.SmallerOcpus;
+        Vm1MemoryGb = Vm1ShapeChoice.SmallerMemoryGb;
     }
 
     public string StepTitle => CurrentStep switch
@@ -335,6 +391,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     {
         StopCapacityPoll();
         StopLogFlushTimer();
+        PauseDeployElapsed();
         CapacityDialogOpen = false;
         _capacityChoice?.TrySetResult(CapacityWaitChoice.Dismissed);
         Persist();
@@ -501,7 +558,12 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         IsDeployLocked = true;
         IsBusy = true;
         StatusMessage = IsTofuDryRun ? "Dry-run deploy (no Oracle Cloud)…" : "Deploying…";
-        ApplyProgress(SetupApplyStage.Update(SetupApplyStage.NotStarted, "Starting…"));
+        DeployProgressPercent = 0;
+        _progressStage = SetupApplyStage.NotStarted;
+        _progressStageComplete = false;
+        _progressStageStartedAt = null;
+        ApplyProgress(SetupApplyStage.Starting(SetupApplyStage.NotStarted, "Starting…"));
+        BeginDeployElapsed();
         StartLogFlushTimer();
         try
         {
@@ -552,6 +614,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         finally
         {
             StopLogFlushTimer();
+            PauseDeployElapsed();
             IsBusy = false;
         }
 
@@ -563,10 +626,17 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     {
         void Apply()
         {
-            DeployProgressPercent = update.Percent;
+            _progressStage = update.Stage;
+            _progressStageComplete = update.StageComplete;
+            _progressStageStartedAt = _clock.UtcNow;
+            var next = update.StageComplete
+                ? update.Percent
+                : SetupApplyStage.PercentInProgress(update.Stage, TimeSpan.Zero);
+            DeployProgressPercent = Math.Max(DeployProgressPercent, next);
             DeployProgressCaption = string.IsNullOrWhiteSpace(update.Caption)
                 ? SetupApplyStage.DisplayName(update.Stage)
                 : update.Caption;
+            NotifyDeployProgressTick();
         }
 
         if (_dispatcher.CheckAccess())
@@ -601,6 +671,102 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         _logFlushCts?.Cancel();
         _logFlushCts?.Dispose();
         _logFlushCts = null;
+    }
+
+    private void BeginDeployElapsed()
+    {
+        _elapsedStarted = true;
+        _elapsedRunningSince ??= _clock.UtcNow;
+        StartElapsedTicker();
+        NotifyDeployProgressTick();
+    }
+
+    private void PauseDeployElapsed()
+    {
+        if (_elapsedRunningSince is DateTimeOffset start)
+        {
+            var next = _elapsedAccumulated + (_clock.UtcNow - start);
+            _elapsedAccumulated = next < TimeSpan.Zero ? TimeSpan.Zero : next;
+            _elapsedRunningSince = null;
+        }
+
+        StopElapsedTicker();
+        NotifyDeployProgressTick();
+    }
+
+    private void StartElapsedTicker()
+    {
+        if (_elapsedCts is not null)
+            return;
+        _elapsedCts = new CancellationTokenSource();
+        _ = RunElapsedTickLoopAsync(_elapsedCts.Token);
+    }
+
+    private void StopElapsedTicker()
+    {
+        _elapsedCts?.Cancel();
+        _elapsedCts?.Dispose();
+        _elapsedCts = null;
+    }
+
+    private TimeSpan CurrentDeployElapsed()
+    {
+        var value = _elapsedAccumulated;
+        if (_elapsedRunningSince is DateTimeOffset start)
+            value += _clock.UtcNow - start;
+        return value < TimeSpan.Zero ? TimeSpan.Zero : value;
+    }
+
+    private TimeSpan CurrentStageElapsed()
+    {
+        if (_progressStageStartedAt is not DateTimeOffset start)
+            return TimeSpan.Zero;
+        var value = _clock.UtcNow - start;
+        return value < TimeSpan.Zero ? TimeSpan.Zero : value;
+    }
+
+    internal static string FormatDeployElapsed(TimeSpan elapsed)
+    {
+        if (elapsed < TimeSpan.Zero)
+            elapsed = TimeSpan.Zero;
+        var totalSeconds = (int)Math.Floor(elapsed.TotalSeconds);
+        var hours = totalSeconds / 3600;
+        var minutes = (totalSeconds % 3600) / 60;
+        var seconds = totalSeconds % 60;
+        return hours > 0
+            ? $"Time elapsed: {hours}:{minutes:D2}:{seconds:D2}"
+            : $"Time elapsed: {minutes}:{seconds:D2}";
+    }
+
+    private void NotifyDeployProgressTick()
+    {
+        if (!_progressStageComplete)
+        {
+            var interpolated = SetupApplyStage.PercentInProgress(_progressStage, CurrentStageElapsed());
+            if (interpolated > DeployProgressPercent)
+                DeployProgressPercent = interpolated;
+        }
+
+        OnPropertyChanged(nameof(ShowDeployElapsed));
+        OnPropertyChanged(nameof(DeployElapsedDisplay));
+        OnPropertyChanged(nameof(ShowDeployRemaining));
+        OnPropertyChanged(nameof(DeployRemainingDisplay));
+    }
+
+    private async Task RunElapsedTickLoopAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var timer = _clock.CreatePeriodicTimer(ElapsedTickPeriod);
+            while (await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false))
+            {
+                await _dispatcher.InvokeAsync(NotifyDeployProgressTick, cancellationToken).ConfigureAwait(false);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // stopped
+        }
     }
 
     private async Task RunLogFlushLoopAsync(CancellationToken cancellationToken)
@@ -813,7 +979,9 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         EulaAccepted = state.EulaAccepted;
         AuthTokenStored = state.AuthTokenStored;
         AdminCidr = state.AdminCidr;
-        AdminMinecraftUsername = state.AdminMinecraftUsername;
+        var shape = Vm1ShapeChoice.Normalize(state.Vm1Ocpus, state.Vm1MemoryGb);
+        Vm1Ocpus = shape.Ocpus;
+        Vm1MemoryGb = shape.MemoryGb;
         ApplyStage = string.IsNullOrWhiteSpace(state.ApplyStage)
             ? SetupApplyStage.NotStarted
             : state.ApplyStage;
@@ -844,7 +1012,8 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         EulaAccepted = EulaAccepted,
         AuthTokenStored = AuthTokenStored,
         AdminCidr = AdminCidr,
-        AdminMinecraftUsername = AdminMinecraftUsername,
+        Vm1Ocpus = Vm1ShapeChoice.Normalize(Vm1Ocpus, Vm1MemoryGb).Ocpus,
+        Vm1MemoryGb = Vm1ShapeChoice.Normalize(Vm1Ocpus, Vm1MemoryGb).MemoryGb,
         ApplyStage = ApplyStage,
         FunctionImage = _functionImage,
     };
@@ -922,12 +1091,18 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             case nameof(ShowCapacityOptionsButton):
             case nameof(ShowReplaceConfigConfirm):
             case nameof(ShowDeployProgress):
+            case nameof(ShowDeployElapsed):
+            case nameof(DeployElapsedDisplay):
+            case nameof(ShowDeployRemaining):
+            case nameof(DeployRemainingDisplay):
             case nameof(CanCloseWizard):
             case nameof(CanMutateWizard):
             case nameof(DeployToolTip):
             case nameof(DeployProgressPercentDisplay):
             case nameof(ProfileDetailsText):
             case nameof(CreateResourcesConfirmText):
+            case nameof(Vm1ShapeIsDefault):
+            case nameof(Vm1ShapeIsSmaller):
             case nameof(Profiles):
             case nameof(VersionIds):
             case nameof(CapacityDialogOpen):
@@ -958,12 +1133,16 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         OnPropertyChanged(nameof(ShowCapacityOptionsButton));
         OnPropertyChanged(nameof(ShowReplaceConfigConfirm));
         OnPropertyChanged(nameof(ShowDeployProgress));
+        OnPropertyChanged(nameof(ShowDeployRemaining));
+        OnPropertyChanged(nameof(DeployRemainingDisplay));
         OnPropertyChanged(nameof(CanCloseWizard));
         OnPropertyChanged(nameof(CanMutateWizard));
         OnPropertyChanged(nameof(DeployToolTip));
         OnPropertyChanged(nameof(DeployProgressPercentDisplay));
         OnPropertyChanged(nameof(ProfileDetailsText));
         OnPropertyChanged(nameof(CreateResourcesConfirmText));
+        OnPropertyChanged(nameof(Vm1ShapeIsDefault));
+        OnPropertyChanged(nameof(Vm1ShapeIsSmaller));
         OnPropertyChanged(nameof(UseExistingCompartment));
         OnPropertyChanged(nameof(SshImportMode));
         OnPropertyChanged(nameof(AuthTokenStoredDisplay));

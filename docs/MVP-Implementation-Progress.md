@@ -1,10 +1,10 @@
 # MVP Implementation Progress — Avalonia Manager (archive)
 
-**Phase B cutover (B13, 2026-08-15):** Avalonia `McManager.App` was **removed**. The only WinExe is [`McManager.Hybrid`](../src/McManager.Hybrid). This file is a **frozen as-built archive** of the Avalonia manage MVP — do not treat the run commands or “NEXT” snapshot below as current. Living checklist: [`MVP-Implementation-Plan.md`](MVP-Implementation-Plan.md) (**NEXT = Step 7.2**).
+**Phase B cutover (B13, 2026-08-15):** Avalonia `McManager.App` was **removed**. The only WinExe is [`McManager.Hybrid`](../src/McManager.Hybrid). This file is a **frozen as-built archive** of the Avalonia manage MVP — do not treat the run commands or “NEXT” snapshot below as current. Living checklist: [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) (**NEXT = Step 1.1**). MVP archive: [`MVP-Implementation-Plan.md`](MVP-Implementation-Plan.md) (Phases 0–7 **DONE**).
 
 **Purpose:** Historical notes on what was **implemented** in the Avalonia product (`OCI-mc-server`) and its MVP contract/on-box phases.  
 **Not authority for intent:** product goals still live in lab `PRODUCT-IDEAS.md` and the checklist in [`MVP-Implementation-Plan.md`](MVP-Implementation-Plan.md).  
-**Update policy:** Do not append new MVP steps here; update the living MVP plan instead.
+**Update policy:** Do not append new feature steps here. New product work: [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md). MVP as-built: [`MVP-Implementation-Plan.md`](MVP-Implementation-Plan.md).
 
 **As of (frozen):** 2026-08-15 (Phases **1–3 DONE**; this snapshot stopped at Step **4.4**).
 
@@ -882,7 +882,7 @@ Product tree [`infra/`](../infra/) (OpenTofu, provider `oracle/oci` **8.27.0** l
 | Root `versions.tf` / `providers.tf` / `variables.tf` / `main.tf` / `outputs.tf` | `config_file_profile` from `~/.oci`; documented wizard-bound variables |
 | `modules/compartment` | Create `mcmgr` + tag `mcmgr-domain=mc-server-compartment`, or use `existing_compartment_id` |
 | `modules/network` | VCN `10.0.0.0/16`, public subnet, IGW, dedicated `mcmgr-sl` (no NAT/IPv6/NSG) |
-| `modules/compute` | VM1 A1 Flex (product 4/24; **TEMPORARY test default 2/12**) aarch64 + door E2.1.Micro x86; secondaries; reserved IP on door secondary |
+| `modules/compute` | VM1 A1 Flex (Setup **4/24** default or **2/12**) aarch64 + door E2.1.Micro x86; secondaries; reserved IP on door secondary |
 | `modules/storage` | Private Standard `mcmgr-shared-data`; `prevent_destroy`; no objects |
 | `modules/iam` | 3 DGs (compartment/tag match) + bucket-scoped policies |
 | `modules/budget_brake` | $1 budget + email; Functions app + OCIR repo; Function/Events gated on `function_image` |
@@ -960,7 +960,7 @@ Writing `infra/terraform.tfvars`; invoking tofu; SSH bootstrap; seeding Object S
 | `LocalConfigStore.SaveConfig` | Maps tofu outputs: SSH hosts = ephemeral primaries; play IP = reserved; key = private sibling of wizard `.pub`; RCON from VM1 only (never meta) |
 | `MCMANAGER_TOFU_DRY_RUN=1` | Uses fake runner; skips wait/SSH/OS/config write |
 
-`apply_stage` in wizard JSON: `not_started` → `tofu_applied` → `cloud_init` → `door` → `vm1` → `os_meta` → `function` → `config_written`. Re-Deploy skips completed tofu stages. At `vm1` or later, Re-Deploy re-runs guest repair (netplan, door `oci.env` OS vars, managed `server.properties` whitelist-off, optional `whitelist.json` seed) and can start a STOPPED VM1 without `tofu apply`. On-box Vanilla resume remains `/var/lib/mcmgr/bootstrap-state.json`.
+`apply_stage` in wizard JSON: `not_started` → `tofu_applied` → `cloud_init` → `door` → `vm1` → `os_meta` → `function` → `config_written`. Re-Deploy skips completed tofu stages. At `vm1` or later, Re-Deploy re-runs guest repair (netplan, door `oci.env` OS vars, managed `server.properties` whitelist-off) and can start a STOPPED VM1 without `tofu apply`. On-box Vanilla resume remains `/var/lib/mcmgr/bootstrap-state.json`.
 
 ### Blank-tenancy test lessons (2026-08-14)
 
@@ -976,7 +976,7 @@ Writing `infra/terraform.tfvars`; invoking tofu; SSH bootstrap; seeding Object S
 | Manual `tofu import` “no configuration files” / literal `$infra` | LocalAppData has state only; PowerShell `-flag=$var` does not expand | `cd` repo `infra/`; `-state="$state"` `-var-file="$vars"`; see `infra/README.md` |
 | Guest “restart required” / 22.04 vs 24.04 | cloud-init `package_update` only | **Do not** `apt upgrade` / `do-release-upgrade` |
 
-Players join the **reserved play IP**, not the ephemeral SSH addresses. **TEMPORARY** VM1 OpenTofu default remains **2/12** until reverted to **4/24**.
+Players join the **reserved play IP**, not the ephemeral SSH addresses. Setup VM1 size is **4/24** by default (picker may choose **2/12**). HCL defaults are 4/24.
 
 ### Out of scope (3.3)
 
@@ -1032,7 +1032,7 @@ Through Step **3.3** (code + operator blank-tenancy test 2026-08-14):
 - State/tfvars path is `%LOCALAPPDATA%\McManager\tofu` (repo `infra/terraform.tfvars` untouched by Setup)
 - Dry-run via `MCMANAGER_TOFU_DRY_RUN=1` does not create OCI resources or overwrite `config.local.json`
 - Operator apply on a **separate PAYG test tenancy** reached Vanilla up, idle SoftStop, Object Storage seed, door **PLAYABLE** on the reserved play IP (after IAM/netplan/whitelist/seed fixes)
-- **TEMPORARY:** `infra/variables.tf` VM1 defaults are **2 OCPU / 12 GB** for the blank-tenancy 3.3 test — **revert to 4 / 24** after the test. Wizard plan/confirm copy matches. Product MVP shape remains 4/24 until Setup offers a picker (PRODUCT-IDEAS).
+- **2026-08-17 F3:** Setup picker writes `vm1_ocpus` / `vm1_memory_gb` (**4/24** default or **2/12**). `infra/variables.tf` defaults restored to **4 / 24**. Minecraft username is not collected.
 
 Through Step **4.3** (2026-08-15):
 
@@ -1059,6 +1059,7 @@ Through Step **4.3** (2026-08-15):
 
 ## Changelog (this file)
 
+| 2026-08-17 | Findings **F3:** Setup VM1 2/12 vs 4/24 picker; username removed; HCL defaults 4/24. |
 | 2026-08-15 | Step **4.3 DONE:** bootstrap/Re-Deploy write `white-list=false`; username optional; test VM1 product repair. NEXT = Step 4.4. |
 | 2026-08-15 | UI: Fluent is as-built Phase 1; agents may add NuGet themes/icons/controls later (not a lock). |
 | 2026-08-15 | Step **4.2 DONE:** §5 layout apply+verify; test VM1 Minecraft `active` without CHDIR; door TCP OK. NEXT = Step 4.3. |

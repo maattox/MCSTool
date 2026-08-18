@@ -1,6 +1,6 @@
 # MVP Implementation Plan
 
-**Status:** Living checklist for agents and the operator.  
+**Status:** **Archive for Phases 0–7 (DONE).** Agents implementing product features must follow [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) (**NEXT = Step 1.1**). Packaging (this file’s Phase 8 / Step 8.1) is **deferred** until V1 Phase 9.  
 **Product intent authority:** lab [`PRODUCT-IDEAS.md`](../../OCI-mc-server-manager/PRODUCT-IDEAS.md) (MVP section). When this plan and PRODUCT-IDEAS disagree on *what* MVP means, **PRODUCT-IDEAS wins** — update this file.  
 **Suggested narrative order:** lab [`docs/Development-Steps.md`](../../OCI-mc-server-manager/docs/Development-Steps.md).  
 **Live infra / on-box SoT:** lab repo (`Infrastructure-Information.md`, `door_vm/`, `vm_agent/`, `docs/VM-Software.md`).  
@@ -14,41 +14,42 @@
 
 ## How agents must use this file
 
-1. **Read this file first** (especially [Progress dashboard](#progress-dashboard) and [Agent stop protocol](#agent-stop-protocol)).  
-2. Implement **only the single next incomplete large step** marked **NEXT** (or the first **TODO** in the current phase if none is marked NEXT).  
-3. After finishing that large step:
-   - Update this file: mark the step **DONE**, set the following step to **NEXT**, note date + short notes in the step’s changelog line.
-   - **Stop.** Do not start the next large step in the same session unless the operator explicitly says to continue.
-4. In the chat reply to the operator:
-   - Summarize **what was just done**
-   - List **how to test** it
-   - State **what the next step will be**
-   - **Ask** whether to continue, pause, or adjust the plan
-5. **Never create git commits** (operator commits in Visual Studio). You may suggest a commit message.
-6. Do **not** implement v1 / later features from PRODUCT-IDEAS unless the operator asks.
-7. Do **not** put Manager UI in the lab repo. Lab changes are OK only when a step explicitly requires on-box / door / idle-agent / infra-doc updates. Phase B (Blazor Hybrid) is **DONE**; do not re-open Avalonia. When **NEXT** is Phase 7, implement from this file (not the Phase B archive except as reference).
-8. **Fix the product path, not only the test VM.** If troubleshooting the blank-tenancy / Setup deploy shows a bug caused by OpenTofu, IAM matching rules, cloud-init, SSH bootstrap, `onbox/mcmgr/`, `door_vm/`, or `vm_agent/` install: file it in lab `docs/Issues.md` **and** change the automated-deploy code in the same effort so the next greenfield run does not repeat it. Patching only the live test instance is not done. Example: SETUP-ISSUE-2 (door DG tag match + compartment-only `manage public-ips`) had to land in product HCL, not just a Console tweak.
-9. **`ubuntu` often cannot read/write the files you need.** Recurring pitfall (lab `docs/Agent-Deploy-Pitfalls.md`): `/etc/mccontrol/oci.env` is mode 600 root; `/opt/mcmgr/`, `/etc/mcmgr/`, `/etc/mc-manager/`, systemd units, and many scripts are root-owned. Before operating on a path as `ubuntu`, check permissions; use `sudo` or fix ownership/mode. Do not burn a session rediscovering `Permission denied`.
-10. **UI sketches in PRODUCT-IDEAS are not locked; operator UI notes override.** See [Phase 6](#phase-6--ui-polish), [Phase B](#phase-b--blazor-hybrid-ui), and lab `PRODUCT-IDEAS.md` → Manager UI. Do **not** build a mini-terminal / console status panel. Novice Status is Running/Stopped; technical VM/door status is on Advanced. For UI-design work, use or offer the `find-skills` skill unless the operator already asked; also look at panels such as Pterodactyl for feature reference. **NuGet is allowed** on the Manager UI project (`McManager.Hybrid`). Search for themes, icons, controls, fonts, or other UI needs. Do not add Avalonia / Semi / Material.Icons.Avalonia packages. Keep OCI SDK on Core; prefer OSS licenses; ask before paid/commercial packages; confirm large IA redesigns with the operator.
+**Living execution is [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md).** This file stays as the MVP as-built record (Phases 0–7). Frozen step bodies below that say “do not implement v1” are **historical** — superseded by the V1 plan.
+
+1. **Read [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) first** (protocol + dashboard + the single NEXT step). Do not implement from this MVP file unless the operator is explicitly fixing an MVP regression.  
+2. Step **7.2** is **DONE**; [`E2E-7.2-Findings.md`](E2E-7.2-Findings.md) is historical. Do **not** start this file’s Step **8.1** (installer) — that work is V1 plan **Phase 9**.  
+3. **Never create git commits** (operator commits in Visual Studio). You may suggest a commit message.
+4. Implement v1 features **only** as the V1 plan NEXT step. Do **not** implement **after v1** / later PRODUCT-IDEAS items.
+5. Do **not** put Manager UI in the lab repo. Phase B (Blazor Hybrid) is **DONE**; do not re-open Avalonia.
+6. **Fix the product path, not only the test VM.** If troubleshooting the blank-tenancy / Setup deploy shows a bug caused by OpenTofu, IAM matching rules, cloud-init, SSH bootstrap, `onbox/mcmgr/`, `door_vm/`, or `vm_agent/` install: file it in lab `docs/Issues.md` **and** change the automated-deploy code in the same effort so the next greenfield run does not repeat it. Patching only the live test instance is not done. Example: SETUP-ISSUE-2 (door DG tag match + compartment-only `manage public-ips`) had to land in product HCL, not just a Console tweak.
+7. **`ubuntu` often cannot read/write the files you need.** Recurring pitfall (lab `docs/Agent-Deploy-Pitfalls.md`): `/etc/mccontrol/oci.env` is mode 600 root; `/opt/mcmgr/`, `/etc/mcmgr/`, `/etc/mc-manager/`, systemd units, and many scripts are root-owned. Before operating on a path as `ubuntu`, check permissions; use `sudo` or fix ownership/mode. Do not burn a session rediscovering `Permission denied`.
+8. **UI sketches in PRODUCT-IDEAS are not locked; operator UI notes override.** See [Phase 6](#phase-6--ui-polish), [Phase B](#phase-b--blazor-hybrid-ui), and lab `PRODUCT-IDEAS.md` → Manager UI. Do **not** build a mini-terminal / console status panel. Novice Status is Running/Stopped; technical VM/door status is on Advanced. For UI-design work, use or offer the `find-skills` skill unless the operator already asked; also look at panels such as Pterodactyl for feature reference. **NuGet is allowed** on the Manager UI project (`McManager.Hybrid`). Search for themes, icons, controls, fonts, or other UI needs. Do not add Avalonia / Semi / Material.Icons.Avalonia packages. Keep OCI SDK on Core; prefer OSS licenses; ask before paid/commercial packages; confirm large IA redesigns with the operator.
 
 ### Agent stop protocol
+
+**Use [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md)** for new work. Historical MVP protocol (Phases 0–7):
 
 Between **large steps** (Phase / Step headings below), always stop for operator feedback.  
 **Small sub-bullets** inside one large step may be completed together in one session if they are required to make that step testable.
 
 If blocked (missing OCIDs, unclear UX, cost risk), stop and ask — do not guess in a way that opens `0.0.0.0/0` or accrues spend.
 
-**Cloud apply is operator-only.** Agents must not run `tofu apply` / `tofu plan` / `tofu destroy` against any tenancy, must not `docker push` / `fn push` to OCIR, and must not SSH-bootstrap the live lab VMs. Allowed checks: `dotnet build`, `tofu validate` in `infra/`, wizard Deploy only with `MCMANAGER_TOFU_DRY_RUN=1` (fake runner). A real apply creates a second Always Free A1 (product MVP 4/24; **TEMPORARY test default 2/12** — revert `infra/variables.tf` after the 3.3 test). Same-tenancy as the lab competes for hours; a blank test tenancy does not.
+**Cloud apply is operator-only.** Agents must not run `tofu apply` / `tofu plan` / `tofu destroy` against any tenancy, must not `docker push` / `fn push` to OCIR, and must not SSH-bootstrap the live **lab** (Forge) VMs. Allowed checks: `dotnet build`, `tofu validate` in `infra/`, wizard Deploy only with `MCMANAGER_TOFU_DRY_RUN=1` (fake runner). A real apply creates a second Always Free A1 (Setup default **4/24**, or **2/12** if chosen). Same-tenancy as the lab competes for hours; a blank test tenancy does not.
+
+**Historical — Step 7.2 findings (DONE):** that work used OCI CLI/API profile **`TESTING`** (not `DEFAULT`) and SSH to the **test** VMs. Agents still must not `tofu apply` / `tofu destroy` / OCIR push unless the operator explicitly authorizes it.
 
 ### Operator prompt (copy-paste for a new agent)
 
+Use the prompt in [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md). Historical MVP prompt (do not use):
+
 ```text
-Read docs/MVP-Implementation-Plan.md in OCI-mc-server. Implement only the step marked NEXT.
-Phase B (Blazor Hybrid UI) is DONE — do not re-open Avalonia. If a leftover Phase B note conflicts, this MVP plan wins for NEXT.
-When done: update the plan statuses, stop, tell me what you did, how to test, what’s next, and ask if I want to continue or adjust.
+Read docs/V1-Implementation-Plan.md in OCI-mc-server. Implement only the step marked NEXT.
+MVP Phases 0–7 are DONE. Packaging (old Step 8.1) is deferred until V1 Phase 9. Phase B (Blazor Hybrid UI) is DONE — do not re-open Avalonia.
+You MAY use OCI CLI/API with profile TESTING (not DEFAULT) and SSH both test VMs with %USERPROFILE%\.ssh\mcmgr_ed25519_20260817_125552. Stay at $0. If you change a test VM or TESTING cloud resource, make the same change in the local deployment SoT.
+If you need VM1 and it is STOPPED, START it, then disable idle. If VM1 is already RUNNING, confirm idle is off. When you finish, turn idle back on.
+When done: update the V1 plan statuses, stop, tell me what you did, how to test, what’s next, and ask if I want to continue or adjust.
 Do not commit. Do not start the following large step unless I say so.
-Do not tofu apply / OCIR push / live SSH bootstrap.
-Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / Plan mode only if the NEXT step is marked PARALLEL-OK. Phase 7 steps are SEQUENTIAL — prompt in Agent mode. Include this same Agent-vs-Plan instruction in the prompt you give the operator for the following step.
+Do not tofu apply / OCIR push unless I explicitly authorize it.
 ```
 
 ---
@@ -59,16 +60,16 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 
 **MVP success criteria**
 
-- [ ] Friend can wake and play on reserved play IP  
-- [ ] Empty / budget SoftStop works (no players **or** Minecraft not running, after idle timeout)  
-- [ ] Door refuses wake when daily budget exhausted (clear MOTD/kick)  
-- [ ] Admin can whitelist and repair SSH allow IP without Console  
-- [ ] In-game Minecraft `white-list` is **off**; OCI Security List is the allowlist  
-- [ ] Operator can recover a stuck reserved play IP / doorbell from Manager (Troubleshooting one-shots)  
-- [ ] World backups under ~9.5 GB Object Storage policy  
-- [ ] Setup survives capacity wait and can resume  
-- [ ] Single Windows installer → one Manager app (Setup integrated)  
-- [ ] App can check GitHub Releases for updates + show release notes  
+- [x] Friend can wake and play on reserved play IP  
+- [x] Empty / budget SoftStop works (no players **or** Minecraft not running, after idle timeout)  
+- [x] Door refuses wake when daily budget exhausted (clear MOTD/kick) — live in lab `door_vm/`  
+- [x] Admin can whitelist and repair SSH allow IP without Console  
+- [x] In-game Minecraft `white-list` is **off**; OCI Security List is the allowlist  
+- [x] Operator can recover a stuck reserved play IP / doorbell from Manager (Troubleshooting one-shots, Step 4.4)  
+- [x] World backups under ~9.5 GB Object Storage policy  
+- [x] Setup survives capacity wait and can resume (wizard + Guide)  
+- [ ] Single Windows installer → one Manager app (Setup integrated) — **deferred to V1 plan Phase 9**  
+- [ ] App can check GitHub Releases for updates + show release notes — **deferred to V1 plan Phase 9**  
 
 **Explicitly out of MVP:** public game access, paid/spend mode, modded UI / Optimized Vanilla (Paper) / pack analyze, per-day budget sculpting, usage-API 48h reconcile Function, rich MOTD editor, interactive PTY console, event-driven door handback, macOS/Linux Manager, VPN / Distant Horizons engineering, silent OCI probing on startup, notification-center / settings / overflow chrome, oversized-world SSH download UX, Players tab, **$1 spend-brake lock UX** (Function OS flag + full-window warning + typed confirmation — v1), **Start progress checklist** (after v1). Guide/Setup **must** still disclose the possible ~$1–$2 residual if the $1 Function fires.
 
@@ -86,11 +87,11 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 | **5** | Connect-existing (auto-detect + meta) | **DONE** |
 | **6** | UI polish (novice-ready) | **DONE** — Avalonia vehicle abandoned; goals transfer to Phase B |
 | **B** | Blazor Hybrid UI (replace Avalonia) | **DONE** |
-| **7** | Guide + greenfield E2E proof | **IN PROGRESS** — 7.1 DONE; destroy UI shipped; NEXT = 7.2 operator E2E |
-| **8** | Packaging, updates, closed beta | **TODO** |
-| **9** | MVP exit review | **TODO** |
+| **7** | Guide + greenfield E2E proof | **DONE** — 7.1 + 7.2 |
+| **8** | Packaging, updates, closed beta | **DEFERRED** — moved to [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Phase 9 |
+| **9** | MVP exit review | **DEFERRED** — folded into V1 plan Step 9.5 (v1 exit) after v1 features |
 
-**Current NEXT step:** [Phase 7 — Guide + greenfield E2E](#phase-7--guide--greenfield-e2e) / **Step 7.2** (SEQUENTIAL) — operator E2E on a fresh stack. Destroy UI is in Manager (Danger Zone). Step **7.1** (happy-path guide) is **DONE**. Phase B cutover (**B13**) is **DONE**. Do **not** start Step 8 until 7.2 is signed off.
+**Current NEXT (product work):** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) **Step 1.1**. This file has **no** active NEXT. Step **7.2** is **DONE**. Do **not** start this file’s Step **8.1**.
 
 Phases **1–3 are frozen** (do not rewrite those step bodies). Historical step changelogs that said “NEXT = Phase 4” meant Connect-existing at the time; that work is now **Phase 5**. Phase **6** stays DONE (Avalonia polish shipped, then operator rejected the stack as the UI vehicle). Phase **B** stays DONE (Blazor Hybrid is the WinExe).
 
@@ -745,7 +746,7 @@ Phases 0–3 stay **DONE**; do not rewrite them. Bootstrap/HCL fixes that belong
 
 ## Phase 7 — Guide + greenfield E2E
 
-Phase B cutover is **DONE**. Step **7.1** is **DONE**. Destroy UI for teardown is **in Manager**. **NEXT = Step 7.2** (SEQUENTIAL) operator E2E sign-off. Do **not** start Phase 8 until 7.2 is signed off.
+Phase B cutover is **DONE**. Step **7.1** is **DONE**. Step **7.2** is **DONE**. Destroy UI for teardown is **in Manager**. Packaging (this file’s Phase 8) is **deferred** to [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Phase 9. Product **NEXT = V1 Step 1.1**.
 
 ### Step 7.1 — Happy-path guide
 
@@ -769,14 +770,17 @@ Phase B cutover is **DONE**. Step **7.1** is **DONE**. Destroy UI for teardown i
 
 ### Step 7.2 — Full greenfield E2E proof
 
-**Status:** TODO — NEXT (destroy UI ready; operator test pending)
+**Status:** DONE  
+
+**Child checklist (implement from here, one section per agent):** [`E2E-7.2-Findings.md`](E2E-7.2-Findings.md)
 
 **Do**
 
 - Destroy/recreate or second-compartment proof of Setup → manage → friend wake → idle stop → backup.
-- Record results / gaps in this plan.
+- Record results / gaps in this plan **and** the findings child file.
+- Work remaining after the first E2E is **only** the findings sections (Setup UX, config reload, power buttons, door/play-IP, idle handback, flaky Start, docs). Do not treat “operator deployed once” as DONE.
 
-**Teardown (shipped 2026-08-17, not the E2E itself):** Manager **Advanced / Danger Zone → Delete infrastructure**. Typed lowercase `confirm`; popup stays open with log + percent until `tofu destroy` returns (OpenTofu waits for OCI). Deletes OpenTofu-managed product resources only (LocalAppData state), then `config.local.json` + wizard resume + tofu workspace. Does **not** delete the Oracle tenancy, `friends.local.json`, `~/.oci`, or SSH keys. Agents must not click Delete / run `tofu destroy`. See [`Guide.md`](Guide.md) → Tear down and redeploy, [`Automated-Infrastructure-Deployment.md`](Automated-Infrastructure-Deployment.md) §12.4.
+**Teardown (shipped 2026-08-17, not the E2E itself):** Manager **Advanced / Danger Zone → Delete infrastructure**. Typed lowercase `confirm`; popup stays open with log + percent until `tofu destroy` returns (OpenTofu waits for OCI). Deletes OpenTofu-managed product resources only (LocalAppData state), then `config.local.json` + wizard resume + tofu workspace. Does **not** delete the Oracle tenancy, `friends.local.json`, `~/.oci`, or SSH keys. Destroy also wipes the product bucket (`ledger/usage.json` + world backups); a new Setup seeds a zero ledger while Oracle’s monthly Always Free hours already include the old VMs. Agents must not click Delete / run `tofu destroy`. See [`Guide.md`](Guide.md) → Tear down and redeploy, [`Automated-Infrastructure-Deployment.md`](Automated-Infrastructure-Deployment.md) §12.4.
 
 **Test**
 
@@ -785,11 +789,25 @@ Phase B cutover is **DONE**. Step **7.1** is **DONE**. Destroy UI for teardown i
 
 **Done when:** Operator signs off E2E.
 
-**Changelog:** 2026-08-17 — Prerequisite only: Danger Zone **Delete infrastructure** (typed `confirm`, log + percent, `tofu destroy`, local stack files). **7.2 E2E is still the operator test.** NEXT remains 7.2. Do not start Phase 8.
+**Changelog:** 2026-08-18 — **DONE.** Second greenfield E2E (operator play path) + Stop timeout fix (**DOOR-ISSUE-9**, async idle-empty) + host firewall persist (**SETUP-ISSUE-7**, mask `netfilter-persistent` so firewalld keeps 25565 after SoftStop reboot). **NEXT = Step 8.1**. Do not start Phase 8 unless asked.  
+2026-08-17 — Findings **F9 DONE** (Start-after-idle: wait for VM1 RUNNING before wait_forge; DEGRADED recover/retry). See [`E2E-7.2-Findings.md`](E2E-7.2-Findings.md). Do not mark 7.2 DONE. Do not start Phase 8.  
+2026-08-17 — Findings **F8 DONE** (idle/equivalent SoftStop parks reserved play IP on a listening door; `stop_vm1` already-down no-op). See [`E2E-7.2-Findings.md`](E2E-7.2-Findings.md). **NEXT = F9.** Do not mark 7.2 DONE. Do not start Phase 8.  
+2026-08-17 — Findings **F7 DONE** (Setup parks reserved play IP on VM1 when the game is already up; wake START-on-RUNNING no-op; mcdoor I/O timeouts). See [`E2E-7.2-Findings.md`](E2E-7.2-Findings.md). **NEXT = F8.** Do not mark 7.2 DONE. Do not start Phase 8.  
+2026-08-17 — Findings **F6 DONE** (Guide + destroy/contract docs: destroy+redeploy resets the usage ledger mid-month; Oracle Always Free hours do not). See [`E2E-7.2-Findings.md`](E2E-7.2-Findings.md). **NEXT = F7.** Do not mark 7.2 DONE. Do not start Phase 8.  
+2026-08-17 — Findings **F5 DONE** (Start disabled when VM1 is already on; Status/buttons show Starting… / Stopping… / Restarting… in flight). See [`E2E-7.2-Findings.md`](E2E-7.2-Findings.md). **NEXT = F6.** Do not mark 7.2 DONE. Do not start Phase 8.  
+2026-08-17 — Findings **F4 DONE** (Setup Close / Connect-existing reload `config.local.json` and rebuild manage clients without restart). See [`E2E-7.2-Findings.md`](E2E-7.2-Findings.md). **NEXT = F5.** Do not mark 7.2 DONE. Do not start Phase 8.  
+2026-08-17 — Findings **F3 DONE** (Setup VM1 2/12 vs 4/24 picker; Minecraft username removed; HCL defaults 4/24). See [`E2E-7.2-Findings.md`](E2E-7.2-Findings.md). **NEXT = F4.** Do not mark 7.2 DONE. Do not start Phase 8.  
+2026-08-17 — Findings **F2 DONE** (time-weighted Setup deploy % + remaining-time range from the timed E2E log). See [`E2E-7.2-Findings.md`](E2E-7.2-Findings.md). **NEXT = F3.** Do not mark 7.2 DONE. Do not start Phase 8.  
+2026-08-17 — Findings **F1 DONE** (Setup deploy elapsed, duration copy, plan/log spacing, slim scrollbar). See [`E2E-7.2-Findings.md`](E2E-7.2-Findings.md). **NEXT = F2.** Do not mark 7.2 DONE. Do not start Phase 8.  
+2026-08-17 — Operator E2E: Deploy finished after SETUP-ISSUE-5 resume. Gaps split into [`E2E-7.2-Findings.md`](E2E-7.2-Findings.md) (**NEXT = F1**). Agents implement findings sections, not “mark 7.2 DONE.” Findings agents may SSH/OCI on the **test** stack (`TESTING` profile). Do not start Phase 8.  
+2026-08-17 — SETUP-ISSUE-5: Setup cloud-init wait was a false WAIT (`ubuntu` cannot `test -f` `/etc/mcmgr/cloud-init-done` under `0750 root:mcmgr`). Product waiter now `sudo -n test -f`. **Do not wait longer or reboot this stack.** Resume from Advanced → Deploy / repair after rebuilding Manager (`apply_stage=tofu_applied` skips tofu apply). **7.2 E2E is still the operator test.** NEXT remains 7.2. Do not start Phase 8.  
+2026-08-17 — Prerequisite only: Danger Zone **Delete infrastructure** (typed `confirm`, log + percent, `tofu destroy`, local stack files). **7.2 E2E is still the operator test.** NEXT remains 7.2. Do not start Phase 8.
 
 ---
 
-## Phase 8 — Packaging, updates, closed beta
+## Phase 8 — Packaging, updates, closed beta (**DEFERRED**)
+
+**Moved to [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Phase 9.** Do not implement from this heading. Step bodies below are kept for history.
 
 ### Step 8.1 — Windows installer
 
@@ -848,9 +866,9 @@ Phase B cutover is **DONE**. Step **7.1** is **DONE**. Destroy UI for teardown i
 
 ---
 
-## Phase 9 — MVP exit review
+## Phase 9 — MVP exit review (**DEFERRED**)
 
-**Status:** TODO  
+**Status:** DEFERRED — v1 exit is [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step 9.5. Installer/update success criteria stay unchecked here until that phase.  
 
 **Do**
 
@@ -870,7 +888,9 @@ Phase B cutover is **DONE**. Step **7.1** is **DONE**. Destroy UI for teardown i
 
 | Need | Where |
 |------|--------|
+| **Living v1 execution checklist** | [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) |
 | Happy-path user guide | [`Guide.md`](Guide.md) |
+| Step 7.2 E2E findings (split agent work) | [`E2E-7.2-Findings.md`](E2E-7.2-Findings.md) |
 | MVP / v1 intent | Lab `PRODUCT-IDEAS.md` |
 | Minecraft server install/upgrade mechanism (Vanilla/Paper/Fabric/NeoForge/Forge/Quilt/modpacks) | [`Minecraft-Server-Deployment-Blueprint.md`](Minecraft-Server-Deployment-Blueprint.md) |
 | Automated cloud infra (OpenTofu, Resource Manager reference capture, VM images, config hosting) | [`Automated-Infrastructure-Deployment.md`](Automated-Infrastructure-Deployment.md) |
@@ -888,27 +908,41 @@ Phase B cutover is **DONE**. Step **7.1** is **DONE**. Destroy UI for teardown i
 
 ---
 
-## Out of scope reminders (do not implement under this plan)
+## Out of scope reminders (do not implement under **this** MVP file)
 
-- Public `0.0.0.0/0` Minecraft  
-- Paid / spend mode  
-- Modded / Optimized Vanilla (Paper) Setup + pack analyze/install (v1) — when that lands, still **no in-app Modrinth/CurseForge/FTB browse/search/catalog** (blueprint §2.4; file-import only)  
-- Per-day budget calendar tool  
-- Full PTY console  
+v1 items below are **in** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) — implement them only as that plan’s NEXT step, not from this archive.
+
+- Public `0.0.0.0/0` Minecraft **except** V1 plan Step 3.2 (confirm-gated)  
+- Paid / spend mode **except** V1 plan Phase 8  
+- Modded / Optimized Vanilla (Paper) Setup + pack analyze/install — V1 plan Phase 4; still **no in-app catalog** (blueprint §2.4)  
+- Per-day budget calendar tool (**after v1**)  
+- Full PTY console (**after v1**; V1 Step 7.5 is RCON+logs only)  
 - macOS / Linux Manager  
 - Replacing door reconcile polling with events-as-primary  
 - Silent OCI tenancy probing on every startup  
-- Notification center / settings gear / overflow menu (v1)  
-- Oversized-world SSH **Download World Save** path + bell UX (v1; on-box flag OK in Phase 2)  
-- Players tab / Kick·Op·Ban (after v1)  
-- **$1 spend-brake lock UX** (Function writes Object Storage flag; full-window warning; typed confirmation to restart) — **v1**; MVP Function still SoftStops. Guide residual ~$1–$2 copy is in Step 7.1.  
-- Start-from-Manager **progress checklist** (after v1)  
+- Notification center / settings / overflow — V1 plan Phase 6  
+- Oversized-world SSH download + bell — V1 plan Step 6.3  
+- Players tab / Kick·Op·Ban (**after v1**)  
+- **$1 spend-brake lock UX** — V1 plan Phase 2  
+- Start-from-Manager **progress checklist** (**after v1**)  
 - Migrating the operator’s live Forge lab off `/home/ubuntu/minecraft/server` as a prerequisite for Step 2.3 (greenfield `/opt/mcmgr/` only; Connect-existing reads actual `world_path`)  
 
 ---
 
 ## Plan changelog
 
+| 2026-08-17 | Operator: **v1 features before packaging.** This file is the MVP archive (0–7 DONE). Living checklist: [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) **NEXT = Step 1.1**. Phase 8–9 deferred to V1 Phase 9. |
+| 2026-08-18 | **Step 7.2 DONE.** Second greenfield E2E signed off after **DOOR-ISSUE-9** (async Stop) and **SETUP-ISSUE-7** (firewalld vs netfilter-persistent). **NEXT = Step 8.1**. Do not start Phase 8 unless asked. |
+| 2026-08-17 | Findings **F8 DONE** (idle SoftStop parks reserved IP on a listening door). [`E2E-7.2-Findings.md`](E2E-7.2-Findings.md) **NEXT = F9.** Do not mark 7.2 DONE. Do not start Phase 8. |
+| 2026-08-17 | Findings **F7 DONE** (Setup parks reserved play IP on VM1 when the game is already up; wake START-on-RUNNING no-op; mcdoor I/O timeouts). [`E2E-7.2-Findings.md`](E2E-7.2-Findings.md) **NEXT = F8.** Do not mark 7.2 DONE. Do not start Phase 8. |
+| 2026-08-17 | Findings **F6 DONE** (destroy+redeploy resets usage ledger; Oracle monthly hours do not). [`E2E-7.2-Findings.md`](E2E-7.2-Findings.md) **NEXT = F7.** Do not mark 7.2 DONE. Do not start Phase 8. |
+| 2026-08-17 | Findings **F5 DONE** (Start disabled when VM1 is already on; Starting… / Stopping… / Restarting… in flight). [`E2E-7.2-Findings.md`](E2E-7.2-Findings.md) **NEXT = F6.** Do not mark 7.2 DONE. Do not start Phase 8. |
+| 2026-08-17 | Findings **F4 DONE** (Setup Close reloads manage clients without restart). [`E2E-7.2-Findings.md`](E2E-7.2-Findings.md) **NEXT = F5.** Do not mark 7.2 DONE. Do not start Phase 8. |
+| 2026-08-17 | Findings **F3 DONE** (Setup VM1 2/12 vs 4/24 picker; username removed; HCL defaults 4/24). [`E2E-7.2-Findings.md`](E2E-7.2-Findings.md) **NEXT = F4.** Do not mark 7.2 DONE. Do not start Phase 8. |
+| 2026-08-17 | Findings **F2 DONE** (time-weighted Setup deploy % + remaining-time range). [`E2E-7.2-Findings.md`](E2E-7.2-Findings.md) **NEXT = F3.** Do not mark 7.2 DONE. Do not start Phase 8. |
+| 2026-08-17 | Findings **F1 DONE** (Setup deploy elapsed / duration copy / plan-log spacing / slim scrollbar). [`E2E-7.2-Findings.md`](E2E-7.2-Findings.md) **NEXT = F2.** Do not mark 7.2 DONE. Do not start Phase 8. |
+| 2026-08-17 | Step **7.2** operator E2E ran; remaining work split in [`E2E-7.2-Findings.md`](E2E-7.2-Findings.md) (**NEXT = F1**). Do not mark 7.2 DONE. Do not start Phase 8. |
+| 2026-08-17 | Step **7.2** in progress: SETUP-ISSUE-5 (cloud-init `Last: WAIT` = ubuntu vs `/etc/mcmgr` 0750). Waiter now `sudo -n test -f`. **Not DONE.** NEXT remains 7.2. Do not start Phase 8. |
 | 2026-08-17 | Step **7.2 prerequisite:** Manager Danger Zone **Delete infrastructure** (typed `confirm`; log + percent until `tofu destroy` finishes; OpenTofu-managed resources only; then local config/wizard/tofu workspace). **7.2 E2E still operator-owned.** NEXT remains 7.2. Do not start Phase 8. |
 | 2026-08-17 | Manage tab-body scrollbar in the right window gutter (thin overlay-style thumb); tab cards stay aligned to the chrome row; `MinWidth` remeasures WebView2 client. **NEXT remains Step 7.2.** |
 | 2026-08-16 | Hybrid accent → cobalt; Usage tab hero metrics + grouped budget; “game computer” → “server” in UI help copy. |

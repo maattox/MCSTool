@@ -40,9 +40,17 @@ runcmd:
   - curl -fsSL https://packages.adoptium.net/artifactory/api/gpg/key/public | gpg --dearmor -o /usr/share/keyrings/adoptium.gpg
   - echo "deb [signed-by=/usr/share/keyrings/adoptium.gpg] https://packages.adoptium.net/artifactory/deb jammy main" > /etc/apt/sources.list.d/adoptium.list
   - apt-get update
+  # Oracle Ubuntu images enable netfilter-persistent (SSH-only INPUT REJECT).
+  # That Conflicts= with firewalld, so after the first reboot firewalld stays
+  # dead and :25565 is closed (wait_forge + public play). Disable it first.
+  - systemctl disable --now netfilter-persistent || true
+  - systemctl mask netfilter-persistent || true
+  - systemctl unmask firewalld || true
   - systemctl enable --now firewalld
   - firewall-cmd --permanent --add-service=ssh
   - firewall-cmd --permanent --add-port=25565/tcp
   - firewall-cmd --permanent --add-port=25565/udp
   - firewall-cmd --reload
+  # Marker last. /etc/mcmgr is 0750 root:mcmgr (blueprint §5) — ubuntu cannot test -f
+  # this path. Setup WaitCloudInitAsync uses sudo -n (SETUP-ISSUE-5). Do not chmod 0755.
   - date -u +%Y-%m-%dT%H:%M:%SZ > /etc/mcmgr/cloud-init-done

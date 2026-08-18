@@ -77,9 +77,13 @@ public sealed class SetupWizardState
     [JsonPropertyName("admin_cidr")]
     public string AdminCidr { get; set; } = "";
 
-    /// <summary>Optional Mojang username (later MOTD/ops; not required to join — OCI Security List is the allowlist).</summary>
-    [JsonPropertyName("admin_minecraft_username")]
-    public string AdminMinecraftUsername { get; set; } = "";
+    /// <summary>VM1 A1 Flex OCPUs. Setup picker: 2 or 4. Default 4.</summary>
+    [JsonPropertyName("vm1_ocpus")]
+    public int Vm1Ocpus { get; set; } = Vm1ShapeChoice.DefaultOcpus;
+
+    /// <summary>VM1 A1 Flex memory in GB. Setup picker: 12 (with 2 OCPU) or 24 (with 4). Default 24.</summary>
+    [JsonPropertyName("vm1_memory_gb")]
+    public int Vm1MemoryGb { get; set; } = Vm1ShapeChoice.DefaultMemoryGb;
 
     [JsonPropertyName("apply_stage")]
     public string ApplyStage { get; set; } = SetupApplyStage.NotStarted;

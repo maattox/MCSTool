@@ -14,5 +14,6 @@ public interface ISecurityListService
         int minecraftPort,
         int sshPort,
         int doorHttpPort,
+        string? adminName = null,
         CancellationToken cancellationToken = default);
 }

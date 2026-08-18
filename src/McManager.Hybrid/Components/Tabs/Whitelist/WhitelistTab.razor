@@ -7,7 +7,7 @@
             <span style="font-size:16px;font-weight:600;">Who can join</span>
             <button type="button"
                     class="mcm-help"
-                    title="Only these public IP addresses can connect. This is not Minecraft's in-game whitelist (that stays off). Admin also allows remote maintenance from that IP.">
+                    title="Only these public IPv4 addresses (or CIDR prefixes) can connect. This is not Minecraft's in-game whitelist (that stays off). Admin also allows remote maintenance from that IP. CIDR prefixes apply to Minecraft only unless you are editing your own admin entry.">
                 <i class="ti ti-help" aria-hidden="true"></i>
                 <span class="sr-only">About Who can join</span>
             </button>
@@ -28,7 +28,7 @@
 
         <div class="mcm-wl-row" style="border-top:none;">
             <span style="font-size:12px;color:var(--text-muted);">NAME</span>
-            <span style="font-size:12px;color:var(--text-muted);">IP</span>
+            <span style="font-size:12px;color:var(--text-muted);">IP / CIDR</span>
             <span style="font-size:12px;color:var(--text-muted);">ADMIN</span>
             <span></span>
         </div>
@@ -106,10 +106,35 @@
                 <label for="mcm-wl-name">Name</label>
                 <input id="mcm-wl-name" type="text" placeholder="e.g. Jordan" @bind="_draftName" @bind:event="oninput" />
             </div>
-            <div class="mcm-field">
-                <label for="mcm-wl-ip">IP address</label>
-                <input id="mcm-wl-ip" type="text" placeholder="e.g. 98.42.11.6" @bind="_draftIp" @bind:event="oninput" />
-            </div>
+            @if (!_cidrMode)
+            {
+                <div class="mcm-field">
+                    <label for="mcm-wl-ip">IP address</label>
+                    <input id="mcm-wl-ip" type="text" placeholder="e.g. 98.42.11.6" @bind="_draftIp" @bind:event="oninput" />
+                </div>
+            }
+            <button type="button"
+                    class="mcm-advanced-toggle"
+                    aria-expanded="@_cidrMode"
+                    @onclick="ToggleCidrMode">
+                <i class="ti @(_cidrMode ? "ti-chevron-down" : "ti-chevron-right")" aria-hidden="true"></i>
+                Advanced
+            </button>
+            @if (_cidrMode)
+            {
+                <div class="mcm-field">
+                    <label for="mcm-wl-cidr">CIDR prefix</label>
+                    <input id="mcm-wl-cidr"
+                           type="text"
+                           placeholder="e.g. 172.56.0.0/16"
+                           @bind="_draftCidr"
+                           @bind:event="oninput" />
+                </div>
+                @if (!string.IsNullOrWhiteSpace(CidrWidthWarning))
+                {
+                    <p class="mcm-prefix-warn">@CidrWidthWarning</p>
+                }
+            }
             <div class="mcm-checkbox-row">
                 <input id="mcm-wl-admin" type="checkbox" @bind="_draftAdmin" />
                 <label for="mcm-wl-admin" style="margin:0;">Admin</label>
@@ -137,15 +162,24 @@
     private FriendRowViewModel? _editing;
     private string _draftName = "";
     private string _draftIp = "";
+    private string _draftCidr = "";
     private bool _draftAdmin;
+    private bool _cidrMode;
     private string _origName = "";
     private string _origIp = "";
     private bool _origAdmin;
+    private bool _origCidrMode;
 
     private bool UpdateDraftChanged =>
         !string.Equals(_draftName.Trim(), _origName, StringComparison.Ordinal)
-        || !string.Equals(_draftIp.Trim(), _origIp, StringComparison.Ordinal)
-        || _draftAdmin != _origAdmin;
+        || !string.Equals(DraftSource.Trim(), _origIp, StringComparison.Ordinal)
+        || _draftAdmin != _origAdmin
+        || _cidrMode != _origCidrMode;
+
+    private string DraftSource => _cidrMode ? _draftCidr : _draftIp;
+
+    private string? CidrWidthWarning =>
+        _cidrMode ? Vm.PrefixWidthWarning(_draftCidr) : null;
 
     protected override void OnInitialized()
     {
@@ -174,10 +208,13 @@
         _editing = null;
         _draftName = "";
         _draftIp = "";
+        _draftCidr = "";
         _draftAdmin = false;
+        _cidrMode = false;
         _origName = "";
         _origIp = "";
         _origAdmin = false;
+        _origCidrMode = false;
         _modalOpen = true;
     }
 
@@ -186,11 +223,24 @@
         _isUpdate = true;
         _editing = friend;
         _draftName = friend.Name;
-        _draftIp = friend.Ip;
         _draftAdmin = friend.IsAdmin;
+        var cidrEntry = FriendRules.TryNormalizeAllowlistSource(friend.Ip, out var source, out _)
+                        && !source.IsSingleHost;
+        _cidrMode = cidrEntry;
+        if (cidrEntry)
+        {
+            _draftCidr = source.Stored;
+            _draftIp = "";
+        }
+        else
+        {
+            _draftIp = friend.Ip;
+            _draftCidr = "";
+        }
         _origName = friend.Name;
         _origIp = friend.Ip;
         _origAdmin = friend.IsAdmin;
+        _origCidrMode = _cidrMode;
         _modalOpen = true;
     }
 
@@ -203,10 +253,27 @@
     private void SubmitModal()
     {
         var ok = _isUpdate
-            ? Vm.TryUpdateFriend(_editing, _draftName, _draftIp, _draftAdmin)
-            : Vm.TryAddFriend(_draftName, _draftIp, _draftAdmin);
+            ? Vm.TryUpdateFriend(_editing, _draftName, DraftSource, _draftAdmin, requireSingleHost: !_cidrMode)
+            : Vm.TryAddFriend(_draftName, DraftSource, _draftAdmin, requireSingleHost: !_cidrMode);
         if (ok)
             CloseModal();
+    }
+
+    private void ToggleCidrMode()
+    {
+        if (_cidrMode)
+        {
+            if (FriendRules.TryNormalizeAllowlistSource(_draftCidr, out var source, out _))
+                _draftIp = source.IsSingleHost ? source.Stored : source.Cidr.Split('/')[0];
+            _cidrMode = false;
+            return;
+        }
+
+        if (FriendRules.TryNormalizeAllowlistSource(_draftIp, out var host, out _) && host.IsSingleHost)
+            _draftCidr = host.Cidr;
+        else if (string.IsNullOrWhiteSpace(_draftCidr))
+            _draftCidr = "";
+        _cidrMode = true;
     }
 
     private void OnModalKeyDown(KeyboardEventArgs e)

@@ -13,10 +13,14 @@ namespace McManager.Hybrid.ViewModels;
 /// </summary>
 public sealed partial class WhitelistViewModel : ObservableObject
 {
-    private readonly ManagerLocalConfig? _config;
-    private readonly string _dataDirectory;
-    private readonly ISecurityListService? _securityList;
-    private readonly string? _sessionError;
+    private ManagerLocalConfig? _config;
+    private readonly LocalConfigHost _configHost;
+    private readonly ManageCloudServices _cloud;
+    private readonly ManageSession _session;
+    private string _dataDirectory = "";
+    private ISecurityListService? _securityList;
+    private AllowlistStore? _allowlistStore;
+    private string? _sessionError;
     private string _savedFingerprint = "";
 
     public ObservableCollection<FriendRowViewModel> Friends { get; } = [];
@@ -35,23 +39,49 @@ public sealed partial class WhitelistViewModel : ObservableObject
 
     public bool CanSaveChanges => HasPendingChanges && !IsBusy;
 
-    public WhitelistViewModel(LocalConfigHost configHost, ManageCloudServices cloud)
+    public WhitelistViewModel(LocalConfigHost configHost, ManageCloudServices cloud, ManageSession session)
     {
-        _config = configHost.Config;
-        _dataDirectory = configHost.LoadResult.DataDirectory ?? "";
-        _sessionError = cloud.SessionError;
-        if (cloud.Session is not null)
-            _securityList = new SecurityListService(cloud.Session);
-
+        _configHost = configHost;
+        _cloud = cloud;
+        _session = session;
+        _dataDirectory = "";
         Friends.CollectionChanged += OnFriendsCollectionChanged;
-        foreach (var entry in configHost.LoadResult.Friends?.Friends ?? [])
-            Friends.Add(FriendRowViewModel.FromEntry(entry));
-        CaptureSavedFingerprint();
+        BindFromHost();
+        _session.Reloaded += OnSessionReloaded;
     }
 
-    public bool TryAddFriend(string name, string ip, bool isAdmin)
+    private void OnSessionReloaded(object? sender, EventArgs e) => BindFromHost();
+
+    private void BindFromHost()
     {
-        if (!TryValidate(name, ip, out var error, out var normalized))
+        _config = _configHost.Config;
+        _dataDirectory = _configHost.LoadResult.DataDirectory ?? "";
+        _sessionError = _cloud.SessionError;
+        _securityList = _cloud.Session is not null
+            ? new SecurityListService(_cloud.Session)
+            : null;
+        _allowlistStore = _cloud.Session is not null
+            && _config is not null
+            && !string.IsNullOrWhiteSpace(_config.ObjectStorage.Namespace)
+            && !string.IsNullOrWhiteSpace(_config.ObjectStorage.Bucket)
+            ? new AllowlistStore(
+                new ObjectStorageService(_cloud.Session, _config.ObjectStorage),
+                _config.ObjectStorage.Prefixes)
+            : null;
+
+        Friends.Clear();
+        foreach (var entry in _configHost.LoadResult.Friends?.Friends ?? [])
+            Friends.Add(FriendRowViewModel.FromEntry(entry));
+        CaptureSavedFingerprint();
+        if (_config is null)
+            StatusMessage = string.IsNullOrWhiteSpace(_sessionError)
+                ? ""
+                : _sessionError;
+    }
+
+    public bool TryAddFriend(string name, string ip, bool isAdmin, bool requireSingleHost = true)
+    {
+        if (!TryValidate(name, ip, isAdmin, editing: null, requireSingleHost, out var error, out var normalized))
         {
             StatusMessage = error;
             return false;
@@ -68,12 +98,17 @@ public sealed partial class WhitelistViewModel : ObservableObject
         return true;
     }
 
-    public bool TryUpdateFriend(FriendRowViewModel? row, string name, string ip, bool isAdmin)
+    public bool TryUpdateFriend(
+        FriendRowViewModel? row,
+        string name,
+        string ip,
+        bool isAdmin,
+        bool requireSingleHost = true)
     {
         if (row is null)
             return false;
 
-        if (!TryValidate(name, ip, out var error, out var normalized))
+        if (!TryValidate(name, ip, isAdmin, row, requireSingleHost, out var error, out var normalized))
         {
             StatusMessage = error;
             return false;
@@ -212,11 +247,32 @@ public sealed partial class WhitelistViewModel : ObservableObject
                 _config.Network.SecurityListId,
                 _config.Network.MinecraftPort,
                 _config.Network.SshPort,
-                _config.Door.HttpPort);
+                _config.Door.HttpPort,
+                _config.AdminName);
 
-            StatusMessage = result.Succeeded
-                ? result.Value?.Summary ?? "Saved and applied."
-                : result.Error ?? "Sync failed.";
+            if (!result.Succeeded)
+            {
+                StatusMessage = result.Error ?? "Sync failed.";
+                return;
+            }
+
+            var summary = result.Value?.Summary ?? "Saved and applied.";
+            if (_allowlistStore is not null)
+            {
+                var os = await _allowlistStore.PublishIfPresentAsync(friends);
+                if (!os.Succeeded)
+                {
+                    StatusMessage = summary
+                        + "\nObject Storage allowlist update failed: "
+                        + (os.Error ?? "unknown");
+                    return;
+                }
+
+                if (os.Value is { SkippedMissing: false })
+                    summary += "\n" + os.Value.Message;
+            }
+
+            StatusMessage = summary;
         }
         finally
         {
@@ -237,24 +293,51 @@ public sealed partial class WhitelistViewModel : ObservableObject
         return Friends.FirstOrDefault(f => f.IsAdmin);
     }
 
-    private static bool TryValidate(string name, string ip, out string error, out string normalized)
+    public string? PrefixWidthWarning(string source)
     {
-        _ = name;
+        if (!FriendRules.TryNormalizeAllowlistSource(source, out var parsed, out _))
+            return null;
+        return FriendRules.WidthWarning(parsed);
+    }
+
+    private bool TryValidate(
+        string name,
+        string ip,
+        bool isAdmin,
+        FriendRowViewModel? editing,
+        bool requireSingleHost,
+        out string error,
+        out string normalized)
+    {
         normalized = "";
-        if (string.IsNullOrWhiteSpace(ip))
+        if (!FriendRules.TryNormalizeAllowlistSource(ip, out var source, out error))
+            return false;
+
+        if (requireSingleHost && !source.IsSingleHost)
         {
-            error = "IP is required.";
+            error = "Use Advanced to enter a CIDR prefix.";
             return false;
         }
 
-        if (!FriendRules.TryNormalizeIp(ip, out normalized))
+        if (isAdmin && !source.IsSingleHost && !AllowsOwnAdminPrefix(name, editing))
         {
-            error = "Enter a valid IPv4 address.";
+            error = "Admin SSH and doorbell stay a single IPv4 unless you are editing your own admin entry. Uncheck Admin or use a /32.";
             return false;
         }
 
+        normalized = source.Stored;
         error = "";
         return true;
+    }
+
+    private bool AllowsOwnAdminPrefix(string name, FriendRowViewModel? editing)
+    {
+        var admin = FindAdminFriend();
+        if (editing is not null && admin is not null && editing.Id == admin.Id)
+            return true;
+
+        return !string.IsNullOrWhiteSpace(_config?.AdminName)
+            && string.Equals(name.Trim(), _config.AdminName, StringComparison.OrdinalIgnoreCase);
     }
 
     private void OnFriendsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)

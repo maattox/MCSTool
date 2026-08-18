@@ -324,7 +324,7 @@ If discovery HCL and lab `Infrastructure-Information.md` disagree, **believe the
 
 | VM | Shape (MVP) | Image |
 |----|-------------|--------|
-| **VM1** `mcmgr-vm1` | `VM.Standard.A1.Flex`, **4 OCPU / 24 GB** (Always Free–comfortable product target). **TEMPORARY (Step 3.3 blank-tenancy test):** OpenTofu defaults are **2 / 12** — revert [`infra/variables.tf`](../infra/variables.tf) after the test. Setup should later let the admin pick 2/12 vs 4/24 (PRODUCT-IDEAS). | Canonical Ubuntu **22.04 aarch64** (not Minimal unless we later prove Minimal has every package we need) |
+| **VM1** `mcmgr-vm1` | `VM.Standard.A1.Flex`, **4 OCPU / 24 GB** default (Setup may pick **2 / 12**). Always Free–eligible either way. | Canonical Ubuntu **22.04 aarch64** (not Minimal unless we later prove Minimal has every package we need) |
 | **Door** `mcmgr-door` | `VM.Standard.E2.1.Micro` (~1/8 OCPU, Always Free AMD Micro) | Canonical Ubuntu **22.04 x86_64** |
 
 Do **not** hard-code image OCIDs in git (they are regional and rotate monthly). Use `data "oci_core_images"` filtered by `operating_system = "Canonical Ubuntu"`, `operating_system_version = "22.04"`, and `display_name` regex for `aarch64` vs non-aarch64. Take the latest image in the list (Oracle returns newest first in the usual pattern used by [Ampere’s example](https://github.com/AmpereComputing/terraform-oci-ampere-a1/blob/main/ubuntu2204.tf)). Pin the **resolved** image OCID into `meta/infra.json` after apply for support, not into the module as a constant.
@@ -346,7 +346,7 @@ OCI instances accept cloud-init via `metadata.user_data` (**base64**). Combined 
 - `apt-get` baseline: `jq`, `unzip`, `curl`, `ca-certificates`, `firewalld` (VM1) as required.
 - Register Adoptium apt **repository** (not a specific `temurin-21` package — Java major is wizard-time).
 - Optional: disable password SSH; ensure `ubuntu` sudo; set hostname `mcmgr-vm1` / `mcmgr-door`.
-- Write a tiny `/etc/mcmgr/cloud-init-done` marker so SSH bootstrap can wait.
+- Write a tiny `/etc/mcmgr/cloud-init-done` marker so SSH bootstrap can wait. `/etc/mcmgr` is `0750 root:mcmgr`; Setup must probe with `sudo -n test -f` (SETUP-ISSUE-5). Do not chmod the directory world-readable.
 
 **Forbidden in user_data:**
 
@@ -466,7 +466,7 @@ Commit the **dependency lock file** (`.terraform.lock.hcl`) so Setup does not fl
 | `alert_email` | wizard |
 | `compartment_name` | default `mcmgr` |
 | `vcn_cidr` | default `10.0.0.0/16` (or documented equivalent) |
-| `vm1_ocpus` / `vm1_memory_gb` | Product MVP **4 / 24**. **TEMPORARY test defaults 2 / 12** in `infra/variables.tf` (revert after Step 3.3). Setup does not yet collect this — see PRODUCT-IDEAS Setup VM1 shape choice. |
+| `vm1_ocpus` / `vm1_memory_gb` | Setup picker: **4 / 24** (default) or **2 / 12**. HCL defaults are 4 / 24. Distinct from v1 day-2 resize. |
 | `bucket_name` | `mcmgr-shared-data` (must be unique per namespace — if taken, suffix; record actual name in meta) |
 
 No Minecraft version variable in tofu.
@@ -561,6 +561,8 @@ App updates (GitHub Releases of the Manager) are independent. A newer app must s
 
 Worlds that exist only in Object Storage are deleted with the bucket. No tofu state on this PC → the button fails closed (does not List-and-wipe the tenancy).
 
+**Ledger vs Always Free (MVP, no migration):** Destroy deletes the product bucket, including `ledger/usage.json` and `backups/world-*.zip`. The next Setup seeds an empty ledger. Oracle’s Always Free OCPU-hours for the **calendar month** still include the destroyed VMs’ uptime; Manager leftover-bank on the new stack will look high until the next month. See [`Guide.md`](Guide.md) → Tear down and redeploy.
+
 ---
 
 ## 13. Config distribution: installer vs GitHub
@@ -613,9 +615,9 @@ Order of operations (Phase 3.3; 3.1 only needs the module to be plan-able):
 3. `tofu init` → `tofu plan` → show summary → user confirms.
 4. `tofu apply` with waiter-style handling of 429s (provider retry + our own).
 5. Capacity failure → do not abandon variables; retry/poll/resume.
-6. Wait instances RUNNING; wait cloud-init marker over SSH. **Do not** `apt upgrade` / `do-release-upgrade` on the guests (22.04 is the baseline; cloud-init already sets `package_upgrade: false`).
+6. Wait instances RUNNING; wait cloud-init marker over SSH with **`sudo -n test -f`** (the VM1 marker is under `0750` `/etc/mcmgr`; a bare `test -f` as `ubuntu` is always WAIT — SETUP-ISSUE-5). **Do not** `apt upgrade` / `do-release-upgrade` on the guests (22.04 is the baseline; cloud-init already sets `package_upgrade: false`).
 7. SSH: door deploy (`install.sh` must write Object Storage namespace/bucket into `oci.env` when OS wake is on), VM1 `onbox/mcmgr` Vanilla driver, idle agent, §10.2 config sync.
-8. Guest repair (same SSH session or Re-Deploy at `apply_stage=vm1` without re-apply): `/etc/netplan/99-mcmgr-play.yaml` for the **secondary** play IP on both VMs (reserved public IP targets that address, not the ephemeral primary); re-apply managed `server.properties` (`white-list=false`, `enforce-whitelist=false`); optionally seed `whitelist.json` from the wizard **admin Minecraft username** (not required to join — OCI Security List is the allowlist).
+8. Guest repair (same SSH session or Re-Deploy at `apply_stage=vm1` without re-apply): `/etc/netplan/99-mcmgr-play.yaml` for the **secondary** play IP on both VMs (reserved public IP targets that address, not the ephemeral primary); re-apply managed `server.properties` (`white-list=false`, `enforce-whitelist=false`). Setup does **not** seed `whitelist.json` from a Minecraft username (OCI Security List is the allowlist).
 9. Seed Object Storage layout if tofu did not (empty prefixes, initial budget JSON). Treat **missing** `meta/infra.json` / `ledger/usage.json` as create (greenfield GET 404 is not a fatal publish error). Log seed failures into the Setup deploy log.
 10. Publish `meta/infra.json` from tofu outputs + on-box game manifest summary.
 11. Write `data/config.local.json`. Players connect on the **reserved play IP**, not the SSH ephemeral.
@@ -628,7 +630,7 @@ Resumability: wizard state **and** tofu state **and** `bootstrap-state.json` are
 
 | Constraint | How IaC honors it |
 |------------|-------------------|
-| A1 Flex free envelope (~1500 OCPU-h / ~9000 GB-h — confirm current docs) | Product default **4/24**; idle agent + $1 budget still deployed. **TEMPORARY test default 2/12** in `variables.tf` — revert after Step 3.3. |
+| A1 Flex free envelope (~1500 OCPU-h / ~9000 GB-h — confirm current docs) | Product default **4/24**; Setup may pick **2/12**. Idle agent + $1 budget still deployed. |
 | AMD Micro always-on door | E2.1.Micro only; no second Micro |
 | 200 GB block volume | Two × 50 GB boots; no extra volumes |
 | 10 GB Object Storage Standard | One bucket; no custom-provider bucket; no image staging bucket |
@@ -844,6 +846,8 @@ Ubuntu on OCI:
 
 | Date | Note |
 |------|------|
+| 2026-08-17 | Setup VM1 picker writes `vm1_ocpus` / `vm1_memory_gb` (4/24 default or 2/12). HCL defaults restored to 4/24. Minecraft username no longer collected; no `whitelist.json` seed. |
+| 2026-08-17 | SETUP-ISSUE-5: Setup cloud-init wait uses `sudo -n test -f` (marker under `/etc/mcmgr` 0750). |
 | 2026-08-15 | Step **4.3 DONE:** bootstrap / Re-Deploy write `white-list=false` + `enforce-whitelist=false` (SETUP-ISSUE-3). Admin Minecraft username is optional. |
 | 2026-08-15 | D7 Connect-existing = MVP plan Phase 5; **D10** test-deploy bugs must be fixed in product HCL/bootstrap, not only the live VM. Vanilla in-game whitelist off (SETUP-ISSUE-3 / Step 4.3). SETUP-ISSUE-4 CHDIR → Step 4.2 comprehensive permissions. |
 | 2026-08-14 | Step 3.3 blank-tenancy test: tenancy `mcmgr-door-ip`; door DG by instance OCID; OS seed 404=create; door `oci.env` OS vars; guest netplan; Vanilla whitelist; no apt-upgrade. Out-of-band policy import uses repo `infra/` + LocalAppData `-state` (quoted PowerShell). |

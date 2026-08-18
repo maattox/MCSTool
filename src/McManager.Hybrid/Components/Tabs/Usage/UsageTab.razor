@@ -103,7 +103,7 @@
     <div class="mcm-section-card">
         <div style="font-size:14px;font-weight:600;margin-bottom:2px;">Usage budget</div>
         <p class="mcm-usage-fieldset-hint">
-            These numbers stay inside Always Free. To turn the idle timer on or off, use Advanced / Danger Zone.
+            These numbers stay inside Always Free. To turn the idle timer on or off, use Danger Zone.
         </p>
 
         <fieldset class="mcm-usage-fieldset">
@@ -177,13 +177,6 @@
                            disabled="@Vm.IsBusy"
                            @bind="Vm.EditBudgetWarn"
                            @bind:event="oninput" />
-                </label>
-                <label class="mcm-checkbox-row mcm-usage-check" style="margin:0;" for="mcm-usage-idle-agent">
-                    <input id="mcm-usage-idle-agent"
-                           type="checkbox"
-                           disabled="@Vm.IsBusy"
-                           @bind="Vm.EditIdleAgentEnabled" />
-                    Keep auto-stop enabled when saving
                 </label>
             </div>
         </fieldset>

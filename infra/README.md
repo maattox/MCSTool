@@ -7,7 +7,7 @@ Authority: [`docs/Automated-Infrastructure-Deployment.md`](../docs/Automated-Inf
 
 **Step 3.1:** skeleton is validatable / plan-able. **Do not `tofu apply` on the live lab tenancy.** Setup (Step 3.3) applies from the wizard using **LocalAppData state**, not this directory’s `terraform.tfvars`. Applying here would create a second Always Free stack that competes with the running lab for Ampere / Micro / reserved-IP envelopes.
 
-**TEMPORARY (revert after Step 3.3 blank-tenancy test):** `vm1_ocpus` / `vm1_memory_gb` defaults are **2 / 12** so the test A1 is smaller than the product MVP **4 / 24**. Setup does not currently pass those variables, so the HCL defaults apply. Restore **4** and **24** in [`variables.tf`](variables.tf) when the test is done. The live lab stack is unchanged.
+Setup writes `vm1_ocpus` / `vm1_memory_gb` (**4 / 24** default, or **2 / 12**). HCL defaults match **4 / 24** if those variables are omitted.
 
 ---
 
@@ -38,7 +38,7 @@ State for **manual** `tofu` in this folder stays here (`terraform.tfstate`, giti
 | Compartment + tag `mcmgr-domain=mc-server-compartment` | `mcmgr` |
 | VCN / public subnet / IGW | `mcmgr-vcn`, `mcmgr-subnet-public`, `mcmgr-igw` |
 | Dedicated Security List | `mcmgr-sl` |
-| VM1 A1 Flex (product MVP **4/24**; **TEMPORARY test default 2/12** — revert after 3.3) Ubuntu 22.04 aarch64 | `mcmgr-vm1` |
+| VM1 A1 Flex (**4/24** default; Setup can pick **2/12**) Ubuntu 22.04 aarch64 | `mcmgr-vm1` |
 | Door E2.1.Micro Ubuntu 22.04 x86_64 | `mcmgr-door` |
 | Play secondaries + reserved public IP (idle: on door) | `mcmgr-vm1-play`, `mcmgr-door-play`, `mcmgr-play-ip` |
 | Private Standard bucket | `mcmgr-shared-data` |
@@ -74,8 +74,8 @@ Descriptions match Manager ownership (`"{name} SSH access"`, name, `"{name} door
 |-----|------|
 | `mcmgr` user/group, empty `/opt/mcmgr` + `/etc/mcmgr` + `/var/lib/mcmgr` with blueprint **§5** owners (`root:mcmgr` `0750` on `/opt/mcmgr`, **not** `chown -R mcmgr`; SoT is `onbox/mcmgr/common/layout.sh`) | hostname + `jq`/`curl` |
 | Adoptium **apt repo registration** (no `temurin-*` package) | no game tree, no firewalld |
-| firewalld: SSH + 25565 tcp/udp **without** source IPs (Security List is the IP allowlist) | iptables comes with `door_vm` in 3.3 |
-| marker `/etc/mcmgr/cloud-init-done` | marker `/etc/mcmgr-door/cloud-init-done` |
+| firewalld: SSH + 25565 tcp/udp **without** source IPs (Security List is the IP allowlist). Cloud-init **masks `netfilter-persistent`** so Oracle’s SSH-only REJECT cannot win after reboot (SETUP-ISSUE-7). | iptables comes with `door_vm` in 3.3 |
+| marker `/etc/mcmgr/cloud-init-done` (0750 dir — Setup waiter uses `sudo -n test -f`, SETUP-ISSUE-5) | marker `/etc/mcmgr-door/cloud-init-done` |
 
 Instance `metadata` is `ignore_changes` after create so later template tweaks do not recreate VM1 (world lives on that boot volume). OS-baseline fixes for *new* deploys do not retrofit old VMs — those use SSH repair.
 
@@ -144,7 +144,7 @@ If `mcmgr-shared-data` is taken in the namespace, set `bucket_name` to a suffix 
 
 ## Always Free constraints encoded here
 
-- A1 Flex product MVP **4 OCPU / 24 GB**; **TEMPORARY test default 2 / 12** (revert `variables.tf` after Step 3.3); door `VM.Standard.E2.1.Micro` with no `shape_config`
+- A1 Flex product default **4 OCPU / 24 GB** (Setup may pick **2 / 12**); door `VM.Standard.E2.1.Micro` with no `shape_config`
 - Two × 50 GB boot volumes; no extra block volumes
 - One Standard bucket; no custom-provider / image-staging bucket
 - No paid LB / NAT / extra reserved IPs

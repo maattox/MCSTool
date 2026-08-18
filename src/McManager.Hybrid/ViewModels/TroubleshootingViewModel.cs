@@ -15,7 +15,10 @@ public sealed partial class TroubleshootingViewModel : ObservableObject
     private const string DefaultLog =
         "One-shot repairs. Output from SSH/OCI appears here — Copy and paste it into chat if something fails.";
 
-    private readonly TroubleshootingService? _service;
+    private TroubleshootingService? _service;
+    private readonly LocalConfigHost _configHost;
+    private readonly ManageCloudServices _cloud;
+    private readonly ManageSession _session;
     private readonly IUiDialogs _dialogs;
     private readonly IClipboard _clipboard;
 
@@ -32,25 +35,45 @@ public sealed partial class TroubleshootingViewModel : ObservableObject
     public TroubleshootingViewModel(
         LocalConfigHost configHost,
         ManageCloudServices cloud,
+        ManageSession session,
         IUiDialogs dialogs,
         IClipboard clipboard)
     {
+        _configHost = configHost;
+        _cloud = cloud;
+        _session = session;
         _dialogs = dialogs;
         _clipboard = clipboard;
 
-        if (configHost.Config is not null)
+        BindFromHost();
+        _session.Reloaded += OnSessionReloaded;
+    }
+
+    private void OnSessionReloaded(object? sender, EventArgs e) => BindFromHost();
+
+    private void BindFromHost()
+    {
+        _service = null;
+        if (_configHost.Config is not null)
         {
             _service = new TroubleshootingService(
-                configHost.Config,
-                cloud.Ssh,
-                cloud.Compute,
-                cloud.Door);
+                _configHost.Config,
+                _cloud.Ssh,
+                _cloud.Compute,
+                _cloud.Door);
+            if (ResultLog.StartsWith("Troubleshooting service unavailable", StringComparison.Ordinal)
+                || ResultLog == DefaultLog)
+            {
+                ResultLog = DefaultLog;
+            }
+
+            StatusMessage =
+                "These actions repair the doorbell. They do not disable $0 idle/budget brakes (that is Danger Zone).";
+            return;
         }
-        else
-        {
-            ResultLog = "Troubleshooting service unavailable (config/OCI/SSH).";
-            StatusMessage = "Troubleshooting unavailable.";
-        }
+
+        ResultLog = "Troubleshooting service unavailable (config/OCI/SSH).";
+        StatusMessage = "Troubleshooting unavailable.";
     }
 
     public async Task ParkPlayIpAsync()

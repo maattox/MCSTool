@@ -38,8 +38,9 @@ public sealed class LocalConfigHost
     }
 
     /// <summary>
-    /// Re-read <c>config.local.json</c> after Connect-existing writes it. Still no OCI.
-    /// Call before constructing manage ViewModels so they see the new seed.
+    /// Re-read <c>config.local.json</c>. Still no OCI. Prefer
+    /// <see cref="ManageSession.ReloadFromDisk"/> so cloud clients and manage
+    /// ViewModels rebind; calling this alone leaves singleton clients stale.
     /// </summary>
     public void Reload()
     {

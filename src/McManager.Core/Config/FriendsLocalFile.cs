@@ -25,3 +25,19 @@ public sealed class FriendEntry
     [JsonPropertyName("is_admin")]
     public bool IsAdmin { get; init; }
 }
+
+/// <summary>Object Storage <c>ip/allowlist.json</c>. <c>ip</c> is a single IPv4 or IPv4 CIDR.</summary>
+public sealed class IpAllowlistDocument
+{
+    [JsonPropertyName("version")]
+    public int Version { get; set; } = 1;
+
+    [JsonPropertyName("updated_at")]
+    public string UpdatedAt { get; set; } = "";
+
+    [JsonPropertyName("mode_note")]
+    public string ModeNote { get; set; } = "MVP uses private allowlist only";
+
+    [JsonPropertyName("entries")]
+    public List<FriendEntry> Entries { get; set; } = [];
+}

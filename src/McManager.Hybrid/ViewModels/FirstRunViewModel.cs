@@ -11,6 +11,7 @@ public sealed partial class FirstRunViewModel : ObservableObject
     private readonly ConnectExistingFlow _flow;
     private readonly HybridShell _shell;
     private readonly LocalConfigHost _configHost;
+    private readonly ManageSession _session;
 
     [ObservableProperty]
     private bool _isBusy;
@@ -21,11 +22,13 @@ public sealed partial class FirstRunViewModel : ObservableObject
     public FirstRunViewModel(
         ConnectExistingFlow flow,
         HybridShell shell,
-        LocalConfigHost configHost)
+        LocalConfigHost configHost,
+        ManageSession session)
     {
         _flow = flow;
         _shell = shell;
         _configHost = configHost;
+        _session = session;
     }
 
     public LocalConfigHost ConfigHost => _configHost;
@@ -41,6 +44,7 @@ public sealed partial class FirstRunViewModel : ObservableObject
     {
         if (IsBusy)
             return;
+        _session.ReloadFromDisk();
         _shell.EnterManage();
     }
 
@@ -57,7 +61,7 @@ public sealed partial class FirstRunViewModel : ObservableObject
             var outcome = await _flow.RunAsync(progress);
             if (outcome == ConnectExistingOutcome.Connected)
             {
-                _configHost.Reload();
+                _session.ReloadFromDisk();
                 _shell.EnterManage();
                 return;
             }

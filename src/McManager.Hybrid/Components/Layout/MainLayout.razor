@@ -20,7 +20,7 @@
             <div class="mcm-status-card">
                 <div class="mcm-srow">
                     <span class="mcm-slabel">Status</span>
-                    <span class="mcm-sval @(StatusClass)">
+                    <span class="mcm-sval @(StatusClass)" aria-live="polite">
                         <span class="mcm-dot @(StatusDotClass)" aria-hidden="true"></span>
                         @Vm.Status
                     </span>
@@ -52,7 +52,7 @@
                             disabled="@(!Vm.CanStart)"
                             @onclick="Vm.StartAsync">
                         <i class="ti ti-player-play" aria-hidden="true"></i>
-                        Start
+                        @Vm.StartButtonLabel
                     </button>
                 </span>
                 <span class="mcm-power-wrap" title="@Vm.StopToolTip">
@@ -61,7 +61,7 @@
                             disabled="@(!Vm.CanStop)"
                             @onclick="Vm.StopAsync">
                         <i class="ti ti-player-stop" aria-hidden="true"></i>
-                        Stop
+                        @Vm.StopButtonLabel
                     </button>
                 </span>
                 <span class="mcm-power-wrap" title="@Vm.RestartToolTip">
@@ -70,7 +70,7 @@
                             disabled="@(!Vm.CanRestart)"
                             @onclick="Vm.RestartAsync">
                         <i class="ti ti-refresh" aria-hidden="true"></i>
-                        Restart
+                        @Vm.RestartButtonLabel
                     </button>
                 </span>
             </div>
@@ -177,7 +177,14 @@
                 class="mcm-tab @TabClass("advanced")"
                 aria-selected="@(IsTab("advanced") ? "true" : "false")"
                 @onclick="@(() => SelectTab("advanced"))">
-            Advanced / Danger Zone
+            Advanced
+        </button>
+        <button type="button"
+                role="tab"
+                class="mcm-tab @TabClass("danger")"
+                aria-selected="@(IsTab("danger") ? "true" : "false")"
+                @onclick="@(() => SelectTab("danger"))">
+            Danger Zone
         </button>
         <button type="button"
                 role="tab"
@@ -188,7 +195,7 @@
         </button>
     </nav>
 
-    <main class="mcm-tab-body" role="tabpanel">
+    <main class="mcm-tab-body mcm-slim-scroll" role="tabpanel">
         <div class="mcm-tab-body-inner">
             @switch (_tab)
             {
@@ -200,6 +207,9 @@
                     break;
                 case "advanced":
                     <AdvancedTab />
+                    break;
+                case "danger":
+                    <DangerZoneTab />
                     break;
                 case "troubleshooting":
                     <TroubleshootingTab />
@@ -249,6 +259,8 @@
         {
             if (IsPlaceholder(Vm.Status))
                 return "is-placeholder";
+            if (Vm.StatusIsBusy)
+                return "is-busy";
             return Vm.StatusIsRunning ? "is-running" : "is-stopped";
         }
     }
@@ -259,6 +271,8 @@
         {
             if (IsPlaceholder(Vm.Status))
                 return string.Empty;
+            if (Vm.StatusIsBusy)
+                return "is-busy";
             return Vm.StatusIsRunning ? "is-running" : "is-stopped";
         }
     }

@@ -10,6 +10,9 @@ public sealed class DoorStatus
     [JsonPropertyName("wake_in_progress")]
     public bool WakeInProgress { get; init; }
 
+    [JsonPropertyName("stop_in_progress")]
+    public bool StopInProgress { get; init; }
+
     [JsonPropertyName("last_error")]
     public string LastError { get; init; } = "";
 

@@ -54,8 +54,9 @@ public partial class App : Application
     /// <summary>
     /// Startup branch: <see cref="LocalConfigStore.HasManageConfig"/> → manage vs first-run.
     /// File I/O + lazy client construction only — no OCI List/Get until a button (Auto-detect)
-    /// or MainViewModel poll. Cloud clients are lazy so first-run Connect can Reload config
-    /// before manage ViewModels are constructed.
+    /// or MainViewModel poll. After Setup / Connect-existing writes <c>config.local.json</c>,
+    /// call <see cref="ManageSession.ReloadFromDisk"/> so singleton clients and ViewModels
+    /// rebind without restarting the process.
     /// </summary>
     private static void RegisterManageServices(IServiceCollection services)
     {
@@ -66,6 +67,7 @@ public partial class App : Application
             hasManageConfig ? HybridShell.PageKind.Manage : HybridShell.PageKind.FirstRun));
 
         services.AddSingleton(sp => new ManageCloudServices(sp.GetRequiredService<LocalConfigHost>()));
+        services.AddSingleton<ManageSession>();
         services.AddSingleton<ConnectExistingFlow>();
         services.AddSingleton<FirstRunViewModel>();
         services.AddSingleton<MainViewModel>();

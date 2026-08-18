@@ -385,7 +385,8 @@ oci.env
 .cursor/
 AGENTS.md
 
-# OpenTofu (commit infra/.terraform.lock.hcl; never commit state or tfvars)
+# Operator-copied Setup Deploy logs (may contain OCIDs, IPs, keys)
+docs/deploy-log.txt
 **/.terraform/
 *.tfstate
 *.tfstate.*

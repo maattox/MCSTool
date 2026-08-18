@@ -2,7 +2,7 @@
 
 **Status:** Living checklist for agents and the operator.  
 **Inserted before:** MVP [Phase 7 — Guide + greenfield E2E](MVP-Implementation-Plan.md#phase-7--guide--greenfield-e2e). Do **not** start Phase 7 until this phase is DONE.  
-**Parent checklist:** [`MVP-Implementation-Plan.md`](MVP-Implementation-Plan.md) (progress dashboard **NEXT = Step 7.2**; Phase B is **DONE**; Step 7.1 guide is **DONE**).  
+**Parent checklist:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) (**NEXT = Step 1.1**). This Phase B file is an **archive** (DONE). MVP Phases 0–7: [`MVP-Implementation-Plan.md`](MVP-Implementation-Plan.md).  
 **Product intent:** lab [`PRODUCT-IDEAS.md`](../../OCI-mc-server-manager/PRODUCT-IDEAS.md). UI sketches are **not locked**; operator notes override. Do not document layout choices as final or confirmed.  
 **Code SoT:** this repo (`OCI-mc-server`). Do **not** put Manager UI in the lab repo.
 

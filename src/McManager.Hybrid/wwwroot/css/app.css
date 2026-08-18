@@ -261,6 +261,11 @@ button.mcm-btn-disabled:hover {
     font-weight: 600;
 }
 
+.mcm-sval.is-busy {
+    color: var(--text-accent);
+    font-weight: 600;
+}
+
 .mcm-dot {
     display: inline-block;
     width: 8px;
@@ -277,6 +282,10 @@ button.mcm-btn-disabled:hover {
 
 .mcm-dot.is-stopped {
     background: var(--fill-danger);
+}
+
+.mcm-dot.is-busy {
+    background: var(--fill-accent);
 }
 
 .mcm-copy-inline {
@@ -540,14 +549,6 @@ button.mcm-btn-disabled:hover {
 
 .mcm-app-manage .mcm-tab-body {
     grid-column: 2 / 4;
-    scrollbar-gutter: stable;
-    scrollbar-width: thin;
-    scrollbar-color: color-mix(in srgb, var(--text-muted) 22%, transparent) transparent;
-}
-
-.mcm-app-manage .mcm-tab-body:hover,
-.mcm-app-manage .mcm-tab-body:focus-within {
-    scrollbar-color: color-mix(in srgb, var(--text-muted) 55%, transparent) transparent;
 }
 
 .mcm-app-manage > .mcm-toast {
@@ -560,47 +561,101 @@ button.mcm-btn-disabled:hover {
     width: min(var(--app-chrome-width), calc(100% - var(--app-pad-x) + var(--tab-scrollbar-size)));
 }
 
-.mcm-app-manage .mcm-tab-body::-webkit-scrollbar {
+/*
+ * Thin overlay-style thumb. Manage tab body, Setup wizard body, and log panes
+ * share this so Setup does not show the thick OS default bar.
+ */
+.mcm-slim-scroll,
+.mcm-app-manage .mcm-tab-body,
+.mcm-wizard-body,
+.mcm-wizard-log {
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--text-muted) 22%, transparent) transparent;
+}
+
+.mcm-slim-scroll:hover,
+.mcm-slim-scroll:focus-within,
+.mcm-app-manage .mcm-tab-body:hover,
+.mcm-app-manage .mcm-tab-body:focus-within,
+.mcm-wizard-body:hover,
+.mcm-wizard-body:focus-within,
+.mcm-wizard-log:hover,
+.mcm-wizard-log:focus-within {
+    scrollbar-color: color-mix(in srgb, var(--text-muted) 55%, transparent) transparent;
+}
+
+.mcm-slim-scroll::-webkit-scrollbar,
+.mcm-app-manage .mcm-tab-body::-webkit-scrollbar,
+.mcm-wizard-body::-webkit-scrollbar,
+.mcm-wizard-log::-webkit-scrollbar {
     width: var(--tab-scrollbar-size);
 }
 
-.mcm-app-manage .mcm-tab-body::-webkit-scrollbar-button {
+.mcm-slim-scroll::-webkit-scrollbar-button,
+.mcm-app-manage .mcm-tab-body::-webkit-scrollbar-button,
+.mcm-wizard-body::-webkit-scrollbar-button,
+.mcm-wizard-log::-webkit-scrollbar-button {
     display: none;
     width: 0;
     height: 0;
 }
 
-.mcm-app-manage .mcm-tab-body::-webkit-scrollbar-track {
+.mcm-slim-scroll::-webkit-scrollbar-track,
+.mcm-app-manage .mcm-tab-body::-webkit-scrollbar-track,
+.mcm-wizard-body::-webkit-scrollbar-track,
+.mcm-wizard-log::-webkit-scrollbar-track {
     background: transparent;
 }
 
-.mcm-app-manage .mcm-tab-body::-webkit-scrollbar-corner {
+.mcm-slim-scroll::-webkit-scrollbar-corner,
+.mcm-app-manage .mcm-tab-body::-webkit-scrollbar-corner,
+.mcm-wizard-body::-webkit-scrollbar-corner,
+.mcm-wizard-log::-webkit-scrollbar-corner {
     background: transparent;
 }
 
-.mcm-app-manage .mcm-tab-body::-webkit-scrollbar-thumb {
+.mcm-slim-scroll::-webkit-scrollbar-thumb,
+.mcm-app-manage .mcm-tab-body::-webkit-scrollbar-thumb,
+.mcm-wizard-body::-webkit-scrollbar-thumb,
+.mcm-wizard-log::-webkit-scrollbar-thumb {
     background-color: color-mix(in srgb, var(--text-muted) 28%, transparent);
     background-clip: padding-box;
     border: 2px solid transparent;
     border-radius: 999px;
 }
 
+.mcm-slim-scroll:hover::-webkit-scrollbar-thumb,
+.mcm-slim-scroll:focus-within::-webkit-scrollbar-thumb,
 .mcm-app-manage .mcm-tab-body:hover::-webkit-scrollbar-thumb,
-.mcm-app-manage .mcm-tab-body:focus-within::-webkit-scrollbar-thumb {
+.mcm-app-manage .mcm-tab-body:focus-within::-webkit-scrollbar-thumb,
+.mcm-wizard-body:hover::-webkit-scrollbar-thumb,
+.mcm-wizard-body:focus-within::-webkit-scrollbar-thumb,
+.mcm-wizard-log:hover::-webkit-scrollbar-thumb,
+.mcm-wizard-log:focus-within::-webkit-scrollbar-thumb {
     background-color: color-mix(in srgb, var(--text-muted) 55%, transparent);
 }
 
-.mcm-app-manage .mcm-tab-body::-webkit-scrollbar-thumb:hover {
+.mcm-slim-scroll::-webkit-scrollbar-thumb:hover,
+.mcm-app-manage .mcm-tab-body::-webkit-scrollbar-thumb:hover,
+.mcm-wizard-body::-webkit-scrollbar-thumb:hover,
+.mcm-wizard-log::-webkit-scrollbar-thumb:hover {
     background-color: color-mix(in srgb, var(--text-secondary) 80%, transparent);
     border-width: 1px;
 }
 
-.mcm-app-manage .mcm-tab-body::-webkit-scrollbar-thumb:active {
+.mcm-slim-scroll::-webkit-scrollbar-thumb:active,
+.mcm-app-manage .mcm-tab-body::-webkit-scrollbar-thumb:active,
+.mcm-wizard-body::-webkit-scrollbar-thumb:active,
+.mcm-wizard-log::-webkit-scrollbar-thumb:active {
     background-color: color-mix(in srgb, var(--text-secondary) 92%, transparent);
 }
 
 @media (prefers-reduced-motion: no-preference) {
-    .mcm-app-manage .mcm-tab-body::-webkit-scrollbar-thumb {
+    .mcm-slim-scroll::-webkit-scrollbar-thumb,
+    .mcm-app-manage .mcm-tab-body::-webkit-scrollbar-thumb,
+    .mcm-wizard-body::-webkit-scrollbar-thumb,
+    .mcm-wizard-log::-webkit-scrollbar-thumb {
         transition: background-color 160ms ease-out;
     }
 }
@@ -955,6 +1010,30 @@ button.mcm-btn-disabled:hover {
     margin-top: 2px;
 }
 
+button.mcm-advanced-toggle {
+    background: transparent;
+    border: none;
+    color: var(--text-accent);
+    font-size: 12px;
+    padding: 0 0 12px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
+button.mcm-advanced-toggle:hover:not(:disabled) {
+    background: transparent;
+    text-decoration: underline;
+}
+
+.mcm-prefix-warn {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin: -4px 0 12px;
+    line-height: 1.35;
+}
+
 .mcm-radio-row {
     display: flex;
     align-items: flex-start;
@@ -965,6 +1044,18 @@ button.mcm-btn-disabled:hover {
 
 .mcm-radio-row input {
     margin-top: 2px;
+}
+
+.mcm-radio-row span {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.mcm-radio-note {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 400;
 }
 
 .mcm-field select,
@@ -1055,6 +1146,13 @@ button.mcm-btn-disabled:hover {
     font-weight: 600;
 }
 
+.mcm-wizard-body > p.mcm-wizard-duration {
+    margin: 4px 0 8px;
+    font-weight: 400;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
 .mcm-wizard-mono {
     font-family: var(--font-mono);
     font-size: 12px;
@@ -1078,14 +1176,35 @@ button.mcm-btn-disabled:hover {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    margin: 8px 0 12px;
+    margin: 4px 0 4px;
+    flex: 0 0 auto;
 }
 
 .mcm-wizard-progress-row {
     display: flex;
     justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
     gap: 12px;
     font-size: 13px;
+}
+
+.mcm-wizard-progress-meta {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 12px;
+    flex: 1 1 auto;
+}
+
+.mcm-wizard-elapsed,
+.mcm-wizard-remaining {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+    white-space: nowrap;
 }
 
 .mcm-progress-track {
@@ -1102,16 +1221,30 @@ button.mcm-btn-disabled:hover {
     width: 0;
 }
 
+.mcm-wizard-log-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    flex: 1 1 auto;
+    min-height: 280px;
+    margin-top: 8px;
+}
+
 .mcm-wizard-log-block {
     display: flex;
     flex-direction: column;
-    min-height: 80px;
-    margin-top: 8px;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.mcm-wizard-plan-block {
+    flex: 0 0 auto;
+    max-height: 180px;
 }
 
 .mcm-wizard-log-grow {
     flex: 1 1 auto;
-    min-height: 120px;
+    min-height: 140px;
 }
 
 .mcm-wizard-log-label {
@@ -1119,14 +1252,15 @@ button.mcm-btn-disabled:hover {
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    margin-bottom: 4px;
+    flex: 0 0 auto;
+    margin-bottom: 6px;
     font-size: 13px;
     color: var(--text-secondary);
 }
 
 .mcm-wizard-log {
     flex: 1 1 auto;
-    min-height: 80px;
+    min-height: 72px;
     margin: 0;
     padding: 8px 10px;
     background: var(--surface-2);

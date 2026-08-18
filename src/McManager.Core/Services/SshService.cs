@@ -17,6 +17,10 @@ public interface ISshService
         string localZipPath,
         CancellationToken cancellationToken = default);
 
+    Task<ServiceResult> WipeWorldAsync(
+        Vm1Settings vm1,
+        CancellationToken cancellationToken = default);
+
     Task<ServiceResult> ApplyIdleSettingsAsync(
         Vm1Settings vm1,
         bool idleAgentEnabled,
@@ -58,6 +62,11 @@ public sealed class SshService : ISshService
         string localZipPath,
         CancellationToken cancellationToken = default) =>
         Task.Run(() => ReplaceWorld(vm1, localZipPath), cancellationToken);
+
+    public Task<ServiceResult> WipeWorldAsync(
+        Vm1Settings vm1,
+        CancellationToken cancellationToken = default) =>
+        Task.Run(() => WipeWorld(vm1), cancellationToken);
 
     public Task<ServiceResult> ApplyIdleSettingsAsync(
         Vm1Settings vm1,
@@ -199,6 +208,50 @@ public sealed class SshService : ISshService
                 if (stopped)
                     TryStartUnit(client, unit);
                 return ServiceResult.Fail($"SSH world replace failed: {ex.Message}");
+            }
+        }
+    }
+
+    private static ServiceResult WipeWorld(Vm1Settings vm1)
+    {
+        if (!WorldWipe.TryCreate(vm1.WorldPath, out var plan, out var pathError))
+            return ServiceResult.Fail(pathError ?? "vm1.world_path is invalid.");
+
+        if (!TryOpenSsh(vm1, out var client, out var unit, out var error))
+            return ServiceResult.Fail(error!);
+
+        using (client)
+        {
+            var stopped = false;
+            try
+            {
+                var stop = client.RunCommand($"sudo systemctl stop {EscapeShellArg(unit)}");
+                if (stop.ExitStatus != 0)
+                {
+                    var err = string.IsNullOrWhiteSpace(stop.Error) ? stop.Result : stop.Error;
+                    return ServiceResult.Fail(
+                        $"systemctl stop {unit} failed (exit {stop.ExitStatus}): {err.Trim()}");
+                }
+
+                stopped = true;
+
+                var wipe = client.RunCommand($"sudo bash -c {EscapeShellArg(plan.RemoteScript)}");
+                if (wipe.ExitStatus != 0)
+                {
+                    var err = string.IsNullOrWhiteSpace(wipe.Error) ? wipe.Result : wipe.Error;
+                    TryStartUnit(client, unit);
+                    return ServiceResult.Fail(
+                        $"World wipe failed (exit {wipe.ExitStatus}): {err.Trim()}. "
+                        + "Attempted to start Minecraft again.");
+                }
+
+                return ServiceResult.Ok();
+            }
+            catch (Exception ex)
+            {
+                if (stopped)
+                    TryStartUnit(client, unit);
+                return ServiceResult.Fail($"SSH world wipe failed: {ex.Message}");
             }
         }
     }

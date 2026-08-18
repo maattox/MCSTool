@@ -3,9 +3,9 @@
 
 <div style="display:flex;flex-direction:column;gap:16px;max-width:100%;">
     <div>
-        <div style="font-size:16px;font-weight:600;">Advanced / Danger Zone</div>
+        <div style="font-size:16px;font-weight:600;">Advanced</div>
         <p style="margin:4px 0 0;font-size:13px;color:var(--text-secondary);">
-            Technical VM and doorbell status, break-glass Compute, idle timer, stack identity, and stack teardown. Everyday Start / Stop stay on the top bar.
+            Technical VM and doorbell status, break-glass Compute, idle timeout, and stack identity. Turning the idle timer off and deleting the stack are on Danger Zone. Everyday Start / Stop stay on the top bar.
         </p>
     </div>
 
@@ -70,18 +70,18 @@
         </div>
     </div>
 
-    <div class="mcm-danger-card">
+    <div class="mcm-section-card">
         <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
-            <span style="font-size:14px;font-weight:600;">Idle shutdown</span>
+            <span style="font-size:14px;font-weight:600;">Idle timeout</span>
             <button type="button"
                     class="mcm-help"
-                    title="The idle timer shuts the game VM down when nobody is playing (or Minecraft is not running) so you stay on Always Free. Disable only for short tests. Starting Minecraft or rebooting the VM turns the timer back on.">
+                    title="How long the game VM may stay up with nobody playing, or with Minecraft not running, before SoftStop. Changing the minutes is not the same as turning the idle timer off — that control is on Danger Zone.">
                 <i class="ti ti-help" aria-hidden="true"></i>
-                <span class="sr-only">About idle shutdown</span>
+                <span class="sr-only">About idle timeout</span>
             </button>
         </div>
         <p style="margin:0 0 12px;font-size:13px;color:var(--text-secondary);">
-            Automatically stops the server when nobody's online, and warns players before the daily budget runs out. Boot force-enables idle (OS-ISSUE-7).
+            How long the server may sit empty (or with Minecraft down) before SoftStop, and how far ahead to warn players about the daily cap. Turning the timer off is on Danger Zone.
         </p>
         <div style="display:grid;grid-template-columns:220px 1fr;gap:8px 12px;align-items:center;">
             <label for="mcm-adv-idle-timeout">Idle timeout (minutes)</label>
@@ -101,15 +101,6 @@
                    disabled="@Vm.IsBusy"
                    @bind="Vm.EditBudgetWarn"
                    @bind:event="oninput" />
-
-            <span>Enabled</span>
-            <label class="mcm-checkbox-row" style="margin:0;" for="mcm-adv-idle-enabled">
-                <input id="mcm-adv-idle-enabled"
-                       type="checkbox"
-                       disabled="@Vm.IsBusy"
-                       @bind="Vm.EditIdleAgentEnabled" />
-                Automatically stop an empty or down server
-            </label>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">
             <button type="button"
@@ -119,33 +110,11 @@
             </button>
             <button type="button"
                     class="mcm-primary"
-                    disabled="@(!Vm.CanApplyIdle)"
-                    @onclick="Vm.ApplyIdleSettingsAsync">
+                    disabled="@(!Vm.CanApplyIdleTimeout)"
+                    @onclick="Vm.ApplyIdleTimeoutSettingsAsync">
                 Save changes
             </button>
         </div>
-    </div>
-
-    <div class="mcm-danger-card">
-        <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
-            <span style="font-size:14px;font-weight:600;">Delete infrastructure</span>
-            <button type="button"
-                    class="mcm-help"
-                    title="Removes only the product stack this Manager deployed (OpenTofu state on this PC). Does not delete your Oracle tenancy or Oracle’s default account resources.">
-                <i class="ti ti-help" aria-hidden="true"></i>
-                <span class="sr-only">About delete infrastructure</span>
-            </button>
-        </div>
-        <p style="margin:0 0 12px;font-size:13px;color:var(--text-secondary);">
-            Tear down the Always Free stack so you can run Setup again on this tenancy. World backups in shared storage are deleted. This does not close your Oracle account.
-        </p>
-        <button type="button"
-                class="mcm-danger-btn"
-                disabled="@Vm.IsBusy"
-                title="Opens a confirm window. Type confirm, then watch OpenTofu delete the stack. The window stays open until Oracle finishes."
-                @onclick="Vm.OpenDestroyInfrastructure">
-            Delete infrastructure
-        </button>
     </div>
 
     <div class="mcm-section-card">

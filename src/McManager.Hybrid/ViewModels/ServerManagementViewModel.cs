@@ -8,7 +8,7 @@ using McManager.Hybrid.Ui;
 namespace McManager.Hybrid.ViewModels;
 
 /// <summary>
-/// Server Management tab: Object Storage world backups + SSH replace when VM1 is RUNNING.
+/// Server Management tab: Object Storage world backups + SSH replace/wipe when VM1 is RUNNING.
 /// Own <see cref="IsBusy"/> only — does not grey Start/Stop/Restart or dispose <c>OciSession</c>.
 /// </summary>
 public sealed partial class ServerManagementViewModel : ObservableObject
@@ -16,14 +16,17 @@ public sealed partial class ServerManagementViewModel : ObservableObject
     private static readonly FileTypeFilter ZipFilter = new("ZIP files", ".zip");
     private static readonly FileTypeFilter AllFilesFilter = new("All files", ".*");
 
-    private readonly ManagerLocalConfig? _config;
-    private readonly BackupStore? _backups;
-    private readonly InfraMetaStore? _infra;
-    private readonly ISshService _ssh;
+    private ManagerLocalConfig? _config;
+    private BackupStore? _backups;
+    private InfraMetaStore? _infra;
+    private ISshService _ssh = null!;
+    private readonly LocalConfigHost _configHost;
+    private readonly ManageCloudServices _cloud;
+    private readonly ManageSession _session;
     private readonly IFilePicker _filePicker;
     private readonly IUiDialogs _dialogs;
     private readonly MainViewModel _main;
-    private readonly string? _sessionError;
+    private string? _sessionError;
     private long _currentBackupBytes;
 
     public ObservableCollection<WorldBackupInfo> Backups { get; } = [];
@@ -60,16 +63,39 @@ public sealed partial class ServerManagementViewModel : ObservableObject
     public ServerManagementViewModel(
         LocalConfigHost configHost,
         ManageCloudServices cloud,
+        ManageSession session,
         IFilePicker filePicker,
         IUiDialogs dialogs,
         MainViewModel main)
     {
-        _config = configHost.Config;
-        _ssh = cloud.Ssh;
+        _configHost = configHost;
+        _cloud = cloud;
+        _session = session;
         _filePicker = filePicker;
         _dialogs = dialogs;
         _main = main;
-        _sessionError = cloud.SessionError;
+
+        BindFromHost();
+        _session.Reloaded += OnSessionReloaded;
+    }
+
+    private void OnSessionReloaded(object? sender, EventArgs e) => BindFromHost();
+
+    private void BindFromHost()
+    {
+        _config = _configHost.Config;
+        _ssh = _cloud.Ssh;
+        _sessionError = _cloud.SessionError;
+        _backups = null;
+        _infra = null;
+        ServerNameDisplay = "—";
+        MinecraftVersionDisplay = "—";
+        LastBackupDisplay = "—";
+        BackupStorageDisplay = "—";
+        SoftCapDisplay = "—";
+        Backups.Clear();
+        SelectedBackup = null;
+        _currentBackupBytes = 0;
 
         if (_config is not null)
         {
@@ -78,14 +104,21 @@ public sealed partial class ServerManagementViewModel : ObservableObject
                 : _config.Vm1.DisplayName.Trim();
         }
 
-        if (_config is not null && cloud.Session is not null)
+        if (_config is not null && _cloud.Session is not null)
         {
-            var os = new ObjectStorageService(cloud.Session, _config.ObjectStorage);
+            var os = new ObjectStorageService(_cloud.Session, _config.ObjectStorage);
             _backups = new BackupStore(os, _config.ObjectStorage);
             _infra = new InfraMetaStore(os, _config.ObjectStorage.Prefixes);
             SoftCapDisplay = _backups.FormatSoftCapLine(0);
             BackupStorageDisplay = $"0.0 / {_backups.SoftCapGb:0.#} GB";
         }
+
+        StatusMessage = _backups is null
+            ? (string.IsNullOrWhiteSpace(_sessionError)
+                ? "Shared backup storage isn't configured."
+                : _sessionError)
+            : "Open this tab to list world backups.";
+        OnPropertyChanged(nameof(HasObjectStorage));
     }
 
     public async Task RefreshAsync()
@@ -259,6 +292,69 @@ public sealed partial class ServerManagementViewModel : ObservableObject
             StatusMessage = result.Succeeded
                 ? $"World replaced at {worldPath}. Minecraft start requested."
                 : result.Error ?? "Replace failed.";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    public async Task WipeWorldAsync()
+    {
+        if (IsBusy)
+            return;
+
+        if (_config is null)
+        {
+            StatusMessage = "Local config is missing.";
+            return;
+        }
+
+        var lifeRaw = _main.Vm1Lifecycle ?? "";
+        var life = lifeRaw.ToUpperInvariant();
+        if (life != "RUNNING")
+        {
+            StatusMessage =
+                $"VM1 is '{lifeRaw}' — Wipe world requires RUNNING. "
+                + "Start the game VM first, then wipe. Cloud backups stay until you delete them separately.";
+            return;
+        }
+
+        if (!WorldWipe.TryCreate(_config.Vm1.WorldPath, out var plan, out var pathError))
+        {
+            StatusMessage = pathError ?? "vm1.world_path is invalid.";
+            return;
+        }
+
+        var backupHint = _backups is null
+            ? "There is no shared backup storage configured, so this cannot be undone from Manager."
+            : "Cloud backups (Download World Save) are kept. Download one first if you might want this world back.";
+
+        var confirmed = await _dialogs.ConfirmAsync(
+            "Wipe the live world?",
+            "This deletes the current world on the server at "
+            + $"{plan.WorldPath}. Minecraft will be stopped, that folder removed, and Minecraft left stopped. "
+            + "The next Start generates a new world. This cannot be undone except by restoring a backup. "
+            + "Mods, loader files, and server.properties are not deleted. "
+            + backupHint,
+            "Wipe world");
+        if (!confirmed)
+        {
+            StatusMessage = "Wipe cancelled.";
+            return;
+        }
+
+        IsBusy = true;
+        StatusMessage = "Wiping live world via SSH…";
+        ProgressDisplay = "";
+
+        try
+        {
+            var result = await _ssh.WipeWorldAsync(_config.Vm1);
+            StatusMessage = result.Succeeded
+                ? $"Live world wiped at {plan.WorldPath}. Minecraft is stopped. "
+                  + "Start from the top bar to generate a new world. Cloud backups were not deleted."
+                : result.Error ?? "Wipe failed.";
         }
         finally
         {

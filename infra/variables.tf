@@ -76,14 +76,14 @@ variable "subnet_cidr" {
 
 variable "vm1_ocpus" {
   type        = number
-  description = "VM1 A1 Flex OCPUs. Product MVP target is 4. TEMPORARY (Step 3.3 blank-tenancy test): default 2 — REVERT TO 4 after the test."
-  default     = 2
+  description = "VM1 A1 Flex OCPUs. Setup picker writes 2 or 4; default 4 (product MVP)."
+  default     = 4
 }
 
 variable "vm1_memory_gb" {
   type        = number
-  description = "VM1 A1 Flex memory in GB. Product MVP target is 24. TEMPORARY (Step 3.3 blank-tenancy test): default 12 — REVERT TO 24 after the test."
-  default     = 12
+  description = "VM1 A1 Flex memory in GB. Setup picker writes 12 (with 2 OCPU) or 24 (with 4); default 24."
+  default     = 24
 }
 
 variable "bucket_name" {

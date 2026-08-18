@@ -13,12 +13,8 @@ namespace McManager.Core.Setup;
 /// </summary>
 public static class SetupCapacityChecker
 {
-    /// <summary>Must match <c>infra/variables.tf</c> VM1 defaults (TEMPORARY 2/12 test shape).</summary>
+    /// <summary>Must match <c>infra/variables.tf</c> VM1 shape family. Size comes from the Setup picker.</summary>
     public const string Vm1Shape = "VM.Standard.A1.Flex";
-
-    public const float Vm1Ocpus = 2;
-
-    public const float Vm1MemoryGb = 12;
 
     public sealed class Result
     {
@@ -85,7 +81,9 @@ public static class SetupCapacityChecker
                 };
             }
 
-            log?.Report($"Checking A1 Flex host capacity in {ad} ({Vm1Ocpus} OCPU / {Vm1MemoryGb} GB, no instance create)…");
+            var shape = Vm1ShapeChoice.Normalize(state.Vm1Ocpus, state.Vm1MemoryGb);
+            log?.Report(
+                $"Checking A1 Flex host capacity in {ad} ({Vm1ShapeChoice.Format(shape.Ocpus, shape.MemoryGb)}, no instance create)…");
 
             var request = new CreateComputeCapacityReportRequest
             {
@@ -101,8 +99,8 @@ public static class SetupCapacityChecker
                             InstanceShape = Vm1Shape,
                             InstanceShapeConfig = new CapacityReportInstanceShapeConfig
                             {
-                                Ocpus = Vm1Ocpus,
-                                MemoryInGBs = Vm1MemoryGb,
+                                Ocpus = shape.Ocpus,
+                                MemoryInGBs = shape.MemoryGb,
                                 BaselineOcpuUtilization = CapacityReportInstanceShapeConfig.BaselineOcpuUtilizationEnum.Baseline11,
                             },
                         },

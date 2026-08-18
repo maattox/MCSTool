@@ -134,9 +134,11 @@ Walk the wizard. You can close and resume later from **Advanced → Deploy / rep
 | Game | Vanilla only. Pick a **release** (default is latest release). Snapshots are Advanced. |
 | EULA | Open and accept the [Minecraft EULA](https://aka.ms/MinecraftEULA). Setup will not auto-accept it. |
 | Auth Token | Paste the token and **Store token**. Skip only if you accept that the Function image may not push this run. |
-| Summary | Confirm **your public IPv4** as `x.x.x.x/32`. Minecraft username is optional (not required to join). Read the plan. Check the create-resources box. Click **Deploy**. |
+| Summary | Confirm **your public IPv4** as `x.x.x.x/32`. Pick the game computer size (**4 OCPU / 24 GB** recommended, or **2 OCPU / 12 GB**). Read the plan. Check the create-resources box. Click **Deploy**. |
 
 **After Deploy starts:** Back and Deploy stay locked. Do not start a second Deploy. Resume / Re-Deploy is a separate Advanced action.
+
+**If the log times out waiting for `/etc/mcmgr/cloud-init-done` with `Last: WAIT`:** cloud-init likely already finished; `ubuntu` cannot see that file (`0750`). Rebuild Manager and resume from **Advanced → Deploy / repair** (skips `tofu apply` if apply already succeeded). Do not wait longer, reboot, or chmod `/etc/mcmgr`.
 
 **If Ampere A1 is out of capacity:** a window offers try again now, auto-retry every 5 minutes while the app stays open, or close and resume later. That wait does not spam Oracle’s API.
 
@@ -148,6 +150,8 @@ Deploy creates the compartment, network, reserved play IP, game VM, doorbell VM,
 
 1. Open the **Whitelist** tab. Add each friend’s **current public IPv4** (name optional). Check **Admin** only for people who should also reach SSH / doorbell admin from that IP.
 2. Click **Save changes** so the cloud firewall actually updates. Join is gated by this list, **not** Minecraft’s in-game whitelist (Setup leaves that off).
+
+If a friend’s home address keeps changing but a **prefix** stays stable (for example they are always `172.56.x.x`), open **Add IP** → **Advanced** and enter a CIDR such as `172.56.0.0/16` instead of a single address. That prefix is written on the Minecraft (25565) rules only. SSH / doorbell admin stay a single `/32` unless you are editing **your own** admin row. Prefixes `/0`–`/8` are rejected as too wide; anything wider than one host shows a warning. IPv4 only.
 3. Copy the **Play IP** from the top bar. Give friends that address and the Vanilla version you chose. Port is the default Minecraft port (`25565`).
 4. Click **Start**. Status **Running** means the game itself is joinable. **Stopped** means they should wait or click Start again — first wake can take several minutes.
 5. Friends add a server in Minecraft Java using the play IP.
@@ -167,9 +171,14 @@ When everyone is done, click **Stop** (doorbell-aware). If you forget, idle time
 | Wake / park the server | **Start** / **Stop** (not raw Compute on Advanced) |
 | Restart Minecraft only | **Restart** (game VM must already be up) |
 | Hours vs budget | Pinned usage cards + **Usage** tab |
-| World zip download / replace | **Server Management** (Object Storage; ~9.5 GB backup soft cap) |
+| World zip download / replace / wipe | **Server Management** (Object Storage; ~9.5 GB backup soft cap) |
 | Stuck play IP / doorbell | **Troubleshooting** (confirm-gated one-shots) |
 | Technical VM / doorbell state | **Advanced** |
+| Turn idle timer off / delete the stack | **Danger Zone** |
+
+**Wipe world** on **Server Management** deletes only the live save on the game VM so the next **Start** generates a new world. Cloud backups, mods, and `server.properties` are not deleted. Download a world save first if you might want the current world back. The game VM must be running; Minecraft is stopped for the wipe and left stopped until you Start.
+
+**Advanced vs Danger Zone:** Advanced is power-user tools (technical status, Deploy/repair, break-glass VM power, idle **timeout**, stack identity). **Danger Zone** is a separate tab for turning the idle timer **off** (testing only — boot / Minecraft start turns it back on) and **Delete infrastructure**. Troubleshooting stays its own tab.
 
 Do not disable the idle timer except for a short test. Booting the game VM turns it back on.
 
@@ -217,6 +226,8 @@ A single world zip larger than the soft cap is **not** uploaded (an on-box flag 
 
 Do not put SSH private keys, API keys, Auth Tokens, or RCON passwords in the bucket.
 
+[Deleting infrastructure](#tear-down-and-redeploy-greenfield-e2e) removes this bucket. A later Setup seeds a new empty usage ledger; Oracle’s Always Free hours for the current month are not reset.
+
 ---
 
 ## Connect an existing stack
@@ -249,13 +260,15 @@ Guest ACPI SoftStop hang is **not** a silent button — use Oracle Console reset
 
 To wipe the **product stack** on a test tenancy and run Setup again:
 
-1. In Manager, open **Advanced / Danger Zone**.
+1. In Manager, open **Danger Zone**.
 2. Click **Delete infrastructure**.
 3. Read the warning. Type **`confirm`** (lowercase) to enable Delete. This does **not** close your Oracle account.
 4. Keep the window open. The log and percent stay until Oracle finishes deleting (often several minutes). Close is disabled until it succeeds or fails.
 5. After success: close Manager fully, reopen it, then run Setup.
 
-Only resources this Manager deployed (OpenTofu state on **this PC**) are removed. Oracle default tenancy resources stay. World backups in the cloud go away; the friends list on this PC, API key, and SSH keys stay.
+Only resources this Manager deployed (OpenTofu state on **this PC**) are removed. Oracle default tenancy resources stay. The friends list on this PC, API key, and SSH keys stay.
+
+**Usage hours vs a fresh Setup:** Delete also wipes the cloud bucket — world backups and the usage history Manager uses. A new Setup starts that history at **zero**. Oracle’s Always Free **OCPU-hours for this calendar month** were already used by the old computers while they were on; they do **not** reset when you delete. Until the next month, Manager’s leftover hours can look too high. If you delete and redeploy mid-month, trust Oracle’s monthly Always Free clock, not the new stack’s Usage tab.
 
 If Delete says there is no OpenTofu state, this PC did not deploy the stack (or the `%LOCALAPPDATA%\McManager\tofu` folder is missing). Do not delete random compartments in the Console unless you know they are the product `mcmgr` stack.
 

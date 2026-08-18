@@ -1,0 +1,90 @@
+@inject AdvancedViewModel Vm
+@inject DestroyInfrastructureViewModel Destroy
+@implements IDisposable
+
+<div style="display:flex;flex-direction:column;gap:16px;max-width:100%;">
+    <div>
+        <div style="font-size:16px;font-weight:600;">Danger Zone</div>
+        <p style="margin:4px 0 0;font-size:13px;color:var(--text-secondary);">
+            Actions that can turn off Always Free brakes or delete the cloud stack. Idle timeout and break-glass VM power stay on Advanced. Everyday Start / Stop stay on the top bar.
+        </p>
+    </div>
+
+    <div class="mcm-danger-card">
+        <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
+            <span style="font-size:14px;font-weight:600;">Disable idle shutdown</span>
+            <button type="button"
+                    class="mcm-help"
+                    title="The idle timer shuts the game VM down when nobody is playing (or Minecraft is not running) so you stay on Always Free. Disable only for short tests. Starting Minecraft or rebooting the VM turns the timer back on.">
+                <i class="ti ti-help" aria-hidden="true"></i>
+                <span class="sr-only">About disable idle shutdown</span>
+            </button>
+        </div>
+        <p style="margin:0 0 12px;font-size:13px;color:var(--text-secondary);">
+            Testing / troubleshooting only. Unchecking this stops empty-server and daily-budget SoftStop until the next Minecraft boot. Boot force-enables idle (OS-ISSUE-7). Change how long it waits on Advanced.
+        </p>
+        <label class="mcm-checkbox-row" style="margin:0;" for="mcm-dz-idle-enabled">
+            <input id="mcm-dz-idle-enabled"
+                   type="checkbox"
+                   disabled="@Vm.IsBusy"
+                   @bind="Vm.EditIdleAgentEnabled" />
+            Automatically stop an empty or down server
+        </label>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">
+            <button type="button"
+                    disabled="@Vm.IsBusy"
+                    @onclick="Vm.RefreshIdleFromOsAsync">
+                Refresh from cloud
+            </button>
+            <button type="button"
+                    class="mcm-primary"
+                    disabled="@(!Vm.CanApplyIdleEnabled)"
+                    @onclick="Vm.ApplyIdleEnabledAsync">
+                Save changes
+            </button>
+        </div>
+    </div>
+
+    <div class="mcm-danger-card">
+        <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
+            <span style="font-size:14px;font-weight:600;">Delete infrastructure</span>
+            <button type="button"
+                    class="mcm-help"
+                    title="Removes only the product stack this Manager deployed (OpenTofu state on this PC). Does not delete your Oracle tenancy or Oracle’s default account resources.">
+                <i class="ti ti-help" aria-hidden="true"></i>
+                <span class="sr-only">About delete infrastructure</span>
+            </button>
+        </div>
+        <p style="margin:0 0 12px;font-size:13px;color:var(--text-secondary);">
+            Tear down the Always Free stack so you can run Setup again on this tenancy. World backups in shared storage are deleted. This does not close your Oracle account.
+        </p>
+        <button type="button"
+                class="mcm-danger-btn"
+                disabled="@Vm.IsBusy"
+                title="Opens a confirm window. Type confirm, then watch OpenTofu delete the stack. The window stays open until Oracle finishes."
+                @onclick="Destroy.Open">
+            Delete infrastructure
+        </button>
+    </div>
+
+    @* v1 later (do not implement here): Paid / spend mode — Step 8.1 *@
+    @* v1 later (do not implement here): VM1 shape scaling — Step 7.1 *@
+
+    <p style="margin:0;font-size:13px;color:var(--text-secondary);opacity:0.85;">@Vm.StatusMessage</p>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Vm.PropertyChanged += OnVmChanged;
+        _ = Vm.RefreshIdleFromOsAsync();
+    }
+
+    public void Dispose()
+    {
+        Vm.PropertyChanged -= OnVmChanged;
+    }
+
+    private void OnVmChanged(object? sender, PropertyChangedEventArgs e) =>
+        _ = InvokeAsync(StateHasChanged);
+}
