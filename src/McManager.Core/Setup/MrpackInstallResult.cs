@@ -36,7 +36,7 @@ public sealed class MrpackInstallResult
     public string Summary { get; }
 
     public const string ClientPackReminder =
-        "Friends must install the same exported pack you imported. Keep that file "
-        + "(Manager saved a copy for later re-download). This product cannot rebuild a "
-        + "client pack from the server mods/ folder.";
+        "Friends cannot join until they install the same exported pack you imported. "
+        + "Keep that file (Manager saved a copy). This app cannot rebuild a client pack "
+        + "from the server mods folder.";
 }

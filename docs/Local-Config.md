@@ -118,7 +118,7 @@ When you change OCI resources in Console or lab config, update `data/config.loca
 
 Gitignored [`data/sample-packs/`](../data/sample-packs/) holds homemade parser fixtures plus a few real published exports on this PC. Tracked instructions, gotchas, and the “pause and ask the operator to download a pack” rule: [`Sample-Packs.md`](Sample-Packs.md). Do not commit those archives. CI stays on `tests/fixtures/`.
 
-Imported Modrinth packs the Manager actually installed are copied to **`data/imported-packs/<pack>_<version>/original.mrpack`** (plus `archive.json`). That copy is for later Server Management re-download (Phase 5) — it is the original archive, not a zip of VM1 `mods/`. Gitignored with the rest of `data/`.
+Imported Modrinth packs the Manager actually installed are copied to **`data/imported-packs/<pack>_<version>/original.mrpack`** (plus `archive.json`). That copy is for later Server Management re-download (Phase 5) — it is the original archive, not a zip of VM1 `mods/`. The product cannot reconstruct a client pack from server `mods/` (Setup strips client-only files). Gitignored with the rest of `data/`.
 
 ## Later (after v1): deployment profiles
 

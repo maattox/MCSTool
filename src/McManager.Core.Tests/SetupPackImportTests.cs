@@ -128,8 +128,27 @@ public sealed class SetupPackImportTests
 
         var text = InfraPlanSummary.Build(state);
         Assert.Contains("Modded — CI Fabric Strip Fixture (fabric 0.16.9) 1.21.1", text, StringComparison.Ordinal);
+        Assert.Contains("same exported pack required to join", text, StringComparison.Ordinal);
         Assert.DoesNotContain("search", text, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("0.0.0.0/0", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Client_pack_copy_is_dedicated_and_novice()
+    {
+        Assert.Contains("not playable", SetupPackImport.ClientPackCopy, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("cannot rebuild a client pack", SetupPackImport.ClientPackCopy, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("mods folder on the server", SetupPackImport.ClientPackCopy, StringComparison.Ordinal);
+        Assert.DoesNotContain("VM1", SetupPackImport.ClientPackCopy, StringComparison.Ordinal);
+        Assert.DoesNotContain("catalog", SetupPackImport.ClientPackCopy, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("cannot join until they have it", SetupPackImport.ClientPackAckLabel, StringComparison.OrdinalIgnoreCase);
+
+        var line = SetupPackImport.FriendsNeedLine("CI Fabric Strip Fixture", "1.21.1", "fabric", "0.16.9");
+        Assert.Contains("CI Fabric Strip Fixture", line, StringComparison.Ordinal);
+        Assert.Contains("Minecraft 1.21.1", line, StringComparison.Ordinal);
+        Assert.Contains("Fabric 0.16.9", line, StringComparison.Ordinal);
+        Assert.Contains("same file you uploaded", line, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("modrinth.com/search", line, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

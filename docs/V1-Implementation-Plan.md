@@ -154,14 +154,14 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 | **1** | Manager shell (Advanced/Danger split, CIDR, wipe world) | **DONE** |
 | **2** | $1 spend-brake lock (Function flag, door, Manager overlay) | **DONE** |
 | **3** | Remove public/blacklist (was IP Management public mode) | **DONE** |
-| **4** | Setup game types (Paper, loaders, pack import) | **NEXT** = Step **4.11** |
+| **4** | Setup game types (Paper, loaders, pack import) | **NEXT** = Step **4.12** |
 | **5** | Server Management modding inspect + re-download pack | TODO |
 | **6** | Top-bar chrome + oversized-world SSH UX | TODO |
 | **7** | Remaining v1 (resize, console, storage, Connect version) | TODO |
 | **8** | Paid / spend mode (**last** product feature) | TODO |
 | **9** | Packaging, updates, launch (old MVP Phase 8–9) | TODO — **do not start** until Phases 1–8 are DONE or the operator skips 8 |
 
-**Current NEXT step:** [Step 4.11](#step-411--client-pack-communication-polish--guide). **Do not start Step 4.11** until the operator asks.
+**Current NEXT step:** [Step 4.12](#step-412--curseforge-pack-import-gated). **Do not start Step 4.12** until the operator asks.
 
 ---
 
@@ -710,7 +710,7 @@ Each installer step: Core metadata client + `onbox/mcmgr/` module + generic unit
 
 ### Step 4.11 — Client-pack communication polish + Guide
 
-**Status:** NEXT  
+**Status:** DONE  
 **Depends on:** 4.10
 
 **Read first**
@@ -728,7 +728,7 @@ Each installer step: Core metadata client + `onbox/mcmgr/` module + generic unit
 
 **Done when:** First-time Modded Setup cannot miss the client-pack requirement.
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-18 — Dedicated Setup notice (Game + Review): friends cannot join until they have the same exported pack; vanilla Minecraft is not enough; cannot rebuild a client pack from server `mods/`. Confirm checkbox + pack identity line. Guide section **Modded: friends need the client pack**. **NEXT = Step 4.12**. Do not start 4.12 unless asked.
 
 ---
 
@@ -1237,6 +1237,7 @@ Former MVP Phase **8–9**. **Do not start** until Phases **1–7** are DONE and
 
 | Date | Note |
 |------|------|
+| 2026-08-18 | **Step 4.11 DONE.** Dedicated client-pack notice in Setup (Game + Review) + Guide section: not playable until friends have the same exported pack; cannot rebuild from server `mods/`. **NEXT = Step 4.12**. Do not start 4.12 unless asked. |
 | 2026-08-18 | **Step 4.10 DONE.** Setup Modded branch: Vanilla vs Modded radios; file picker + drop (no catalog); analyze/confirm; client-pack copy; bootstrap loader + server-side pack files. Guide note. **NEXT = Step 4.11**. Do not start 4.11 unless asked. |
 | 2026-08-18 | **Step 4.8 DONE.** Modrinth `.mrpack` server-side install: Core `MrpackInstaller` (plain GET of index URLs, strip client-only, fail on unclear side, overrides copy, hash verify); retain original under `data/imported-packs/`; DEBUG temp-dir probe. No catalog, no wizard. **NEXT = Step 4.9**. Do not start 4.9 unless asked. |
 | 2026-08-18 | **Step 4.7 DONE.** Local `.mrpack` analyze: Core `MrpackAnalyzer` (no HTTP/install/catalog); `env.server` strip counts; tracked fixture `tests/fixtures/packs/fabric-strip.mrpack`; DEBUG Advanced probe. No wizard page. **NEXT = Step 4.8**. Do not start 4.8 unless asked. |

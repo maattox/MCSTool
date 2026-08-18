@@ -1239,6 +1239,29 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     100% { transform: translateX(280%); }
 }
 
+.mcm-client-pack-notice {
+    border: 1px solid var(--text-accent);
+    background: var(--surface-2);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    margin: 0 0 14px;
+}
+
+.mcm-client-pack-notice .mcm-wizard-kicker {
+    margin: 0 0 6px !important;
+}
+
+.mcm-client-pack-notice > p {
+    margin: 0 0 8px !important;
+    font-size: 13px;
+    color: var(--text-primary);
+    line-height: 1.45;
+}
+
+.mcm-client-pack-notice > p:last-child {
+    margin-bottom: 0 !important;
+}
+
 .mcm-pack-drop {
     position: relative;
     display: flex;

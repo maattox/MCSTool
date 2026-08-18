@@ -213,7 +213,7 @@
                            @onchange="@(() => Vm.SelectModdedServer())" />
                     <span>
                         Modded
-                        <span class="mcm-radio-note">Choose a local .mrpack or server-pack zip. Not a catalog.</span>
+                        <span class="mcm-radio-note">Choose a local .mrpack or server-pack zip. Friends need that same pack to join.</span>
                     </span>
                 </label>
 
@@ -272,8 +272,16 @@
 
                 @if (Vm.ShowModdedGameOptions)
                 {
+                    <aside class="mcm-client-pack-notice" role="note">
+                        <p class="mcm-wizard-kicker">@Vm.ClientPackTitle</p>
+                        <p>@Vm.ClientPackCopy</p>
+                        @if (Vm.ShowPackConfirmChecks)
+                        {
+                            <p class="mcm-wizard-lead">@Vm.ClientPackFriendsNeed</p>
+                        }
+                    </aside>
                     <p>
-                        Export the pack on Modrinth, CurseForge, or another tool first. Then choose that file here. Friends must install <strong>that same exported pack</strong> on their PCs.
+                        Export the pack on Modrinth, CurseForge, or another tool first. Then choose that file here. There is no pack search box.
                     </p>
                     <div class="mcm-pack-drop @(Vm.IsAnalyzingPack ? "is-busy" : "")"
                          aria-label="Drop a modpack file">
@@ -325,7 +333,6 @@
                     }
                     @if (Vm.ShowPackConfirmChecks)
                     {
-                        <p class="mcm-wizard-hint">@Vm.ClientPackCopy</p>
                         <label class="mcm-checkbox-row">
                             <input type="checkbox"
                                    disabled="@(!Vm.CanMutateWizard)"
@@ -336,7 +343,7 @@
                             <input type="checkbox"
                                    disabled="@(!Vm.CanMutateWizard)"
                                    @bind="Vm.ClientPackAcknowledged" />
-                            <span>I will give friends this same exported pack. I will keep the file (Manager also saves a copy for later re-download).</span>
+                            <span>@Vm.ClientPackAckLabel</span>
                         </label>
                     }
                 }
@@ -382,6 +389,14 @@
                 <p class="mcm-wizard-lead">
                     Review the plan, confirm your public IP, check the boxes, then Deploy. If A1 is out of capacity, a window will explain retry options.
                 </p>
+                @if (Vm.ServerTypeIsModded)
+                {
+                    <aside class="mcm-client-pack-notice" role="note">
+                        <p class="mcm-wizard-kicker">@Vm.ClientPackTitle</p>
+                        <p>@Vm.ClientPackCopy</p>
+                        <p class="mcm-wizard-lead">@Vm.ClientPackFriendsNeed</p>
+                    </aside>
+                }
                 <fieldset class="mcm-wizard-fieldset" disabled="@(!Vm.CanMutateWizard)">
                     <div class="mcm-field">
                         <label for="mcm-setup-admin-cidr">Your public IP (cloud firewall allowlist)</label>

@@ -27,6 +27,10 @@ public static class InfraPlanSummary
 
         var shape = Vm1ShapeChoice.Format(state.Vm1Ocpus, state.Vm1MemoryGb);
         var hours = Vm1ShapeChoice.HoursHint(state.Vm1Ocpus, state.Vm1MemoryGb);
+        var friendsLine = SetupServerType.IsModded(state.ServerType)
+            ? "  Friends: same exported pack required to join (vanilla Minecraft is not enough; "
+              + "cannot rebuild a client pack from server mods)\n"
+            : "";
 
         return
             "OpenTofu apply from this window creates Always Free resources (state under %LOCALAPPDATA%\\McManager\\tofu). "
@@ -40,6 +44,7 @@ public static class InfraPlanSummary
             + $"  SSH: {ssh}\n"
             + $"  Game computer size: {shape} ({hours})\n"
             + $"  Game: {flavor} {version} (EULA {(state.EulaAccepted ? "accepted" : "not accepted")})\n"
+            + friendsLine
             + $"  OCIR Auth Token stored: {(state.AuthTokenStored ? "yes (Windows Credential Manager McManager/ocir)" : "no — optional until Function push")}\n\n"
             + "OpenTofu will create (on confirmed Deploy)\n"
             + "  • Compartment mcmgr (unless using an existing OCID)\n"

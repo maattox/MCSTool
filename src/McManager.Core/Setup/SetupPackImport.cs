@@ -23,10 +23,57 @@ public static class SetupPackImport
     public const string LoaderRefusal =
         "Setup can install Fabric, Forge, or NeoForge packs. This pack's loader is not supported.";
 
+    public const string ClientPackTitle = "Friends need this pack to play";
+
+    /// <summary>Dedicated wizard/Guide copy (blueprint §25). Novice wording; no VM1 jargon.</summary>
     public const string ClientPackCopy =
-        "Friends must install the same exported pack you uploaded. Keep that file "
-        + "(Manager saves a copy so you can re-download it later). This product cannot "
-        + "rebuild a client pack from mods on the game computer.";
+        "This server is not playable for friends until they install the same exported pack "
+        + "on their PCs. Vanilla Minecraft is not enough. Keep the file you upload — Manager "
+        + "also saves a copy so you can share it later. This app cannot rebuild a client pack "
+        + "from the mods folder on the server.";
+
+    public const string ClientPackAckLabel =
+        "I will give friends this same exported pack. They cannot join until they have it.";
+
+    /// <summary>Shareable identity from the analyzed pack (file import; no catalog URL).</summary>
+    public static string FriendsNeedLine(
+        string? packName,
+        string? minecraftVersion,
+        string? loader,
+        string? loaderVersion)
+    {
+        var name = string.IsNullOrWhiteSpace(packName) ? "this pack" : packName.Trim();
+        var mc = string.IsNullOrWhiteSpace(minecraftVersion)
+            ? ""
+            : "Minecraft " + minecraftVersion.Trim();
+        var loaderLabel = DisplayLoader(loader);
+        if (!string.IsNullOrWhiteSpace(loaderLabel) && !string.IsNullOrWhiteSpace(loaderVersion))
+            loaderLabel += " " + loaderVersion.Trim();
+        string identity;
+        if (string.IsNullOrWhiteSpace(mc) && string.IsNullOrWhiteSpace(loaderLabel))
+            identity = name;
+        else if (string.IsNullOrWhiteSpace(loaderLabel))
+            identity = $"{name} — {mc}";
+        else if (string.IsNullOrWhiteSpace(mc))
+            identity = $"{name} — {loaderLabel}";
+        else
+            identity = $"{name} — {mc} with {loaderLabel}";
+        return "Share " + identity
+            + ". Give friends the same file you uploaded (not a zip of the server mods folder).";
+    }
+
+    public static string DisplayLoader(string? loader)
+    {
+        var id = (loader ?? "").Trim().ToLowerInvariant();
+        return id switch
+        {
+            MrpackAnalyzer.LoaderFabric => "Fabric",
+            MrpackAnalyzer.LoaderForge => "Forge",
+            MrpackAnalyzer.LoaderNeoForge => "NeoForge",
+            MrpackAnalyzer.LoaderQuilt => "Quilt",
+            _ => string.IsNullOrWhiteSpace(loader) ? "" : loader.Trim(),
+        };
+    }
 
     public static ServiceResult<SetupPackPreview> AnalyzeFile(string path)
     {

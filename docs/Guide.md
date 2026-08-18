@@ -32,7 +32,7 @@ Do **not** add paid shapes, extra volumes, or load balancers. Setup never opens 
 | API key files | `%USERPROFILE%\.oci\config` + PEM (not an SSH key). |
 | Auth Token | Optional in Setup, **needed** to install the $1 spend-brake Function image. |
 | Public IPv4 | Yours, and each friend’s, for the allowlist. Home IPs change. |
-| Minecraft Java Edition | Same release Setup chooses: Vanilla/Paper picker, or the version declared in a Modded pack. Friends on a Modded server also need **that same exported pack file**. |
+| Minecraft Java Edition | Same release Setup chooses: Vanilla/Paper picker, or the version declared in a Modded pack. **Modded:** friends also need **that same exported pack file** — vanilla Minecraft cannot join. See [Modded: friends need the client pack](#modded-friends-need-the-client-pack). |
 
 Until a Windows installer ships (MVP packaging step), run Manager from this repo — see [Install the Manager](#3-install-the-manager).
 
@@ -131,7 +131,7 @@ Walk the wizard. You can close and resume later from **Advanced → Deploy / rep
 | Compartment | Default: create compartment named **`mcmgr`**. Do not point a first deploy at a compartment that already has unrelated resources. |
 | Alert email | Where Oracle should email the $1 budget alert. |
 | SSH | **Generate a new key** (recommended). This is **not** the API key. The private key stays on disk; Setup does not put it in the resume file. |
-| Game | **Vanilla** or **Modded**. Vanilla: **Default Vanilla** (official Mojang) or **Optimized Vanilla** (Paper), then pick a **release**. Snapshots are Advanced and apply only to Default Vanilla. Paper’s list hides versions Paper does not build. Paper is a faster server, not a Forge/Fabric modpack. **Modded:** choose a local **`.mrpack` or server-pack zip** (file picker or drag-and-drop). Setup analyzes it and shows name, Minecraft version, loader, Java, and file counts. Confirm, and tell friends they must install **that same exported pack** — keep the file (Manager also saves a copy). There is no pack search box. CurseForge *client* exports are refused until a later step. Quilt packs are detected but not installable yet. |
+| Game | **Vanilla** or **Modded**. Vanilla: **Default Vanilla** (official Mojang) or **Optimized Vanilla** (Paper), then pick a **release**. Snapshots are Advanced and apply only to Default Vanilla. Paper’s list hides versions Paper does not build. Paper is a faster server, not a Forge/Fabric modpack. **Modded:** choose a local **`.mrpack` or server-pack zip** (file picker or drag-and-drop). Setup analyzes it and shows name, Minecraft version, loader, Java, and file counts. Confirm two checkboxes, including that you will give friends the **same exported pack**. There is no pack search box. CurseForge *client* exports are refused until a later step. Quilt packs are detected but not installable yet. Details: [Modded: friends need the client pack](#modded-friends-need-the-client-pack). |
 | EULA | Open and accept the [Minecraft EULA](https://aka.ms/MinecraftEULA). Setup will not auto-accept it. |
 | Auth Token | Paste the token and **Store token**. Skip only if you accept that the Function image may not push this run. |
 | Summary | Confirm **your public IPv4** as `x.x.x.x/32`. Pick the game computer size (**4 OCPU / 24 GB** recommended, or **2 OCPU / 12 GB**). Read the plan. Check the create-resources box. Click **Deploy**. |
@@ -146,6 +146,18 @@ Deploy creates the compartment, network, reserved play IP, game VM, doorbell VM,
 
 ---
 
+## Modded: friends need the client pack
+
+A **Modded** server is **not playable** until friends install the **same exported pack file** you chose in Setup. Vanilla Minecraft (and a different pack, or a different version of the same pack) cannot join.
+
+- Keep that file. Manager also saves a copy on this PC so you can share it later.
+- Tell friends the pack **name**, **Minecraft version**, and **loader** (Fabric / Forge / NeoForge) shown in Setup, and give them the original export.
+- This app **cannot** rebuild a client pack from the `mods/` folder on the game computer. Setup installs **server-side** mods only and skips client-only files, so a zip of the live server mods is **not** a playable pack for friends.
+
+Next is not available in Setup until you check that you will give friends this same pack. The same reminder appears on the Review page before Deploy.
+
+---
+
 ## 5. Allow friends, then play
 
 1. Open the **Whitelist** tab. Add each friend’s **current public IPv4** (name optional). Check **Admin** only for people who should also reach SSH / doorbell admin from that IP.
@@ -154,9 +166,9 @@ Deploy creates the compartment, network, reserved play IP, game VM, doorbell VM,
 If a friend’s home address keeps changing but a **prefix** stays stable (for example they are always `172.56.x.x`), open **Add IP** → **Advanced** and enter a CIDR such as `172.56.0.0/16` instead of a single address. That prefix is written on the Minecraft (25565) rules only. SSH / doorbell admin stay a single `/32` unless you are editing **your own** admin row. Prefixes `/0`–`/8` are rejected as too wide; anything wider than one host shows a warning. IPv4 only.
 
 The server is **private**. Join is allowlist-only: each friend needs an entry you Save. There is no public mode and no blacklist.
-3. Copy the **Play IP** from the top bar. Give friends that address and the Minecraft version you chose. Port is the default Minecraft port (`25565`).
-4. Click **Start**. Status **Running** means the game itself is joinable. **Stopped** means they should wait or click Start again — first wake can take several minutes.
-5. Friends add a server in Minecraft Java using the play IP.
+3. Copy the **Play IP** from the top bar. Give friends that address and the Minecraft version you chose. Port is the default Minecraft port (`25565`). **Modded:** also give them the **same exported pack file** from Setup — they cannot join with vanilla Minecraft. See [Modded: friends need the client pack](#modded-friends-need-the-client-pack).
+4. Click **Start**. Status **Running** means the game itself is joinable (Modded friends still need the pack installed first). **Stopped** means they should wait or click Start again — first wake can take several minutes.
+5. Friends add a server in Minecraft Java using the play IP. Modded friends must launch the matching pack (same loader and pack file), not a vanilla profile.
 
 When everyone is done, click **Stop** (doorbell-aware). If you forget, idle timeout (default **15 minutes** with nobody online, or if Minecraft is not running) SoftStops the game VM. Daily/monthly budgets can also refuse wake with a clear Minecraft kick/MOTD when the day’s hours are exhausted.
 

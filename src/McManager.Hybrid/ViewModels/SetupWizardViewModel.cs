@@ -413,7 +413,14 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     public bool ShowPackConfirmChecks => ShowPackSummary && PackCanContinue;
 
+    public string ClientPackTitle => SetupPackImport.ClientPackTitle;
+
     public string ClientPackCopy => SetupPackImport.ClientPackCopy;
+
+    public string ClientPackAckLabel => SetupPackImport.ClientPackAckLabel;
+
+    public string ClientPackFriendsNeed =>
+        SetupPackImport.FriendsNeedLine(PackName, MinecraftVersion, PackLoader, PackLoaderVersion);
 
     public void SelectDefaultVanilla() => VanillaFlavor = SetupVanillaFlavor.Default;
 
@@ -1496,7 +1503,10 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             case nameof(PackFileNameDisplay):
             case nameof(ShowPackSummary):
             case nameof(ShowPackConfirmChecks):
+            case nameof(ClientPackTitle):
             case nameof(ClientPackCopy):
+            case nameof(ClientPackAckLabel):
+            case nameof(ClientPackFriendsNeed):
             case nameof(Profiles):
             case nameof(VersionIds):
             case nameof(CapacityDialogOpen):
@@ -1547,6 +1557,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         OnPropertyChanged(nameof(PackFileNameDisplay));
         OnPropertyChanged(nameof(ShowPackSummary));
         OnPropertyChanged(nameof(ShowPackConfirmChecks));
+        OnPropertyChanged(nameof(ClientPackFriendsNeed));
         OnPropertyChanged(nameof(UseExistingCompartment));
         OnPropertyChanged(nameof(SshImportMode));
         OnPropertyChanged(nameof(AuthTokenStoredDisplay));
