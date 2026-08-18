@@ -154,14 +154,14 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 | **1** | Manager shell (Advanced/Danger split, CIDR, wipe world) | **DONE** |
 | **2** | $1 spend-brake lock (Function flag, door, Manager overlay) | **DONE** |
 | **3** | Remove public/blacklist (was IP Management public mode) | **DONE** |
-| **4** | Setup game types (Paper, loaders, pack import) | **NEXT** = Step **4.8** |
+| **4** | Setup game types (Paper, loaders, pack import) | **NEXT** = Step **4.9** |
 | **5** | Server Management modding inspect + re-download pack | TODO |
 | **6** | Top-bar chrome + oversized-world SSH UX | TODO |
 | **7** | Remaining v1 (resize, console, storage, Connect version) | TODO |
 | **8** | Paid / spend mode (**last** product feature) | TODO |
 | **9** | Packaging, updates, launch (old MVP Phase 8–9) | TODO — **do not start** until Phases 1–8 are DONE or the operator skips 8 |
 
-**Current NEXT step:** [Step 4.8](#step-48--modrinth-mrpack-install-server-side-only). **Do not start Step 4.8** until the operator asks.
+**Current NEXT step:** [Step 4.9](#step-49--manual-server-pack-zip-import). **Do not start Step 4.9** until the operator asks.
 
 ---
 
@@ -635,7 +635,7 @@ Each installer step: Core metadata client + `onbox/mcmgr/` module + generic unit
 
 ### Step 4.8 — Modrinth `.mrpack` install (server-side only)
 
-**Status:** NEXT  
+**Status:** DONE  
 **Depends on:** 4.7 + matching loader module
 
 **Read first**
@@ -654,13 +654,13 @@ Each installer step: Core metadata client + `onbox/mcmgr/` module + generic unit
 
 **Done when:** Server-side mods land; client-only jars do not; original archive is retained locally.
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-18 — Core `MrpackInstaller` GETs URLs already in the index (no catalog API); strips `env.server=unsupported`; fails loudly on unclear side; copies `overrides/` then `server-overrides/` (skips `client-overrides/`); sha512 then sha1. Original archive retained under `data/imported-packs/`. DEBUG Advanced **Install .mrpack (temp dir)**. Homemade `fabric-strip.mrpack` CDN smoke. No wizard page. **NEXT = Step 4.9**. Do not start 4.9 unless asked.
 
 ---
 
 ### Step 4.9 — Manual server-pack zip import
 
-**Status:** TODO  
+**Status:** NEXT  
 **Depends on:** 4.8
 
 **Read first**
@@ -1237,6 +1237,7 @@ Former MVP Phase **8–9**. **Do not start** until Phases **1–7** are DONE and
 
 | Date | Note |
 |------|------|
+| 2026-08-18 | **Step 4.8 DONE.** Modrinth `.mrpack` server-side install: Core `MrpackInstaller` (plain GET of index URLs, strip client-only, fail on unclear side, overrides copy, hash verify); retain original under `data/imported-packs/`; DEBUG temp-dir probe. No catalog, no wizard. **NEXT = Step 4.9**. Do not start 4.9 unless asked. |
 | 2026-08-18 | **Step 4.7 DONE.** Local `.mrpack` analyze: Core `MrpackAnalyzer` (no HTTP/install/catalog); `env.server` strip counts; tracked fixture `tests/fixtures/packs/fabric-strip.mrpack`; DEBUG Advanced probe. No wizard page. **NEXT = Step 4.8**. Do not start 4.8 unless asked. |
 | 2026-08-18 | **Step 4.6 DONE.** Forge loader module: Core `promotions_slim.json` client + on-box installer; Vanilla jar first; 1.12.2 `single_jar` / 1.20.1 `argfile_tree`; `none_published`; no Setup Forge radio. **NEXT = Step 4.7**. Do not start 4.7 unless asked. |
 | 2026-08-18 | **Step 4.5 DONE.** NeoForge loader module: Core Maven XML client + on-box installer; `--installServer` argfile tree; `none_published`; refuse ≤1.20.1; generic unit `@user_jvm_args.txt @unix_args --nogui`. No Forge / pack import / Setup Modded radio. **NEXT = Step 4.6**. Do not start 4.6 unless asked. |

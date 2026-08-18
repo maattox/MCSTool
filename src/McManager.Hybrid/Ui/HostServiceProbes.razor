@@ -1,3 +1,5 @@
+@using System.IO
+@using McManager.Core.Config
 @using McManager.Core.Setup
 @inject IUiDialogs Dialogs
 @inject IClipboard Clipboard
@@ -11,6 +13,7 @@
     <button type="button" @onclick="ProveClipboardAsync">Copy clipboard</button>
     <button type="button" @onclick="ProvePickerAsync">Native file picker</button>
     <button type="button" @onclick="AnalyzeMrpackAsync">Analyze .mrpack</button>
+    <button type="button" @onclick="InstallMrpackAsync">Install .mrpack (temp dir)</button>
     <button type="button" @onclick="PutSpendBrakeAsync">Put spend-brake fixture</button>
     <span class="mcm-host-probes-status">@_status</span>
     <span class="mcm-host-probes-clock" title="IUiClock">@Clock.UtcNow.ToString("HH:mm:ss") UTC</span>
@@ -108,6 +111,53 @@
         var summary = result.Value!.ConfirmableSummary;
         _status = $"mrpack: {result.Value.PackName} / {result.Value.Loader} {result.Value.LoaderVersion} / MC {result.Value.MinecraftVersion}";
         await Dialogs.ShowInfoAsync("DEBUG: .mrpack summary (not installed)", summary);
+    }
+
+    private async Task InstallMrpackAsync()
+    {
+        var path = await FilePicker.OpenFileAsync(new FilePickRequest
+        {
+            Title = "DEBUG: pick a local .mrpack (server-side install into a temp folder)",
+            Filters =
+            [
+                new FileTypeFilter("Modrinth pack", ".mrpack"),
+                new FileTypeFilter("Zip archives", ".zip"),
+                new FileTypeFilter("All files", ".*"),
+            ],
+        });
+        if (path is null)
+        {
+            _status = "mrpack install: cancelled";
+            return;
+        }
+
+        var ok = await Dialogs.ConfirmAsync(
+            "DEBUG: install .mrpack?",
+            "Downloads files already listed in the pack (plain GET — no catalog). "
+            + "Client-only files are skipped. Unclear env.server fails the install. "
+            + "Files go into a temp folder. A copy of this archive is kept in Manager local data "
+            + "for later re-download. Friends still need the same exported pack.\n\n"
+            + path,
+            "Install");
+        if (!ok)
+        {
+            _status = "mrpack install: cancelled";
+            return;
+        }
+
+        var dest = Path.Combine(Path.GetTempPath(), "mcmgr-mrpack-install-" + Guid.NewGuid().ToString("N"));
+        var dataDir = LocalConfigStore.TryFindDataDirectory();
+        var installer = new MrpackInstaller();
+        var result = await installer.InstallAsync(path, dest, dataDir);
+        if (!result.Succeeded)
+        {
+            _status = "mrpack install: " + result.Error;
+            await Dialogs.ShowInfoAsync("DEBUG: .mrpack install failed", result.Error ?? "Unknown error.");
+            return;
+        }
+
+        _status = $"mrpack install: {result.Value!.InstalledRelativePaths.Count} files → {dest}";
+        await Dialogs.ShowInfoAsync("DEBUG: .mrpack installed (temp dir)", result.Value.Summary);
     }
 
     private async Task PutSpendBrakeAsync()

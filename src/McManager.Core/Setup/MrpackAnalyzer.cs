@@ -447,6 +447,8 @@ internal sealed class MrpackIndexFile
 
     public List<string>? Downloads { get; set; }
 
+    public Dictionary<string, string>? Hashes { get; set; }
+
     public long? FileSize { get; set; }
 }
 
