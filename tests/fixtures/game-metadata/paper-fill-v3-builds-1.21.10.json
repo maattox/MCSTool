@@ -1,0 +1,68 @@
+[
+  {
+    "id": 112,
+    "time": "2025-11-14T01:41:07Z",
+    "channel": "BETA",
+    "commits": [
+      {
+        "sha": "f393100d5d85cf74b48e0d55a55fe79c13486957",
+        "time": "2025-11-14T01:40:07Z",
+        "message": "Update ConcurrentUtil to 0.0.7\n"
+      }
+    ],
+    "downloads": {
+      "server:default": {
+        "name": "paper-1.21.10-112.jar",
+        "checksums": {
+          "sha256": "d901c205cebd2c14e2d92c5fcbd0ba95add71da9726fc7829d1431a8b80969b6"
+        },
+        "size": 54472996,
+        "url": "https://fill-data.papermc.io/v1/objects/d901c205cebd2c14e2d92c5fcbd0ba95add71da9726fc7829d1431a8b80969b6/paper-1.21.10-112.jar"
+      }
+    }
+  },
+  {
+    "id": 130,
+    "time": "2026-01-04T21:00:59Z",
+    "channel": "STABLE",
+    "commits": [
+      {
+        "sha": "8043efd4d0e5bdc9dd0cbc33e9e8bb49e6d8c012",
+        "time": "2026-01-04T21:00:08Z",
+        "message": "Correctly read per-world gamerule for command blocks (#13411)\n\n"
+      }
+    ],
+    "downloads": {
+      "server:default": {
+        "name": "paper-1.21.10-130.jar",
+        "checksums": {
+          "sha256": "158703f75a26f842ea656b3dc6d75bf3d1ec176b97a2c36384d0b80b3871af53"
+        },
+        "size": 54475623,
+        "url": "https://fill-data.papermc.io/v1/objects/158703f75a26f842ea656b3dc6d75bf3d1ec176b97a2c36384d0b80b3871af53/paper-1.21.10-130.jar"
+      }
+    }
+  },
+  {
+    "id": 86,
+    "time": "2025-10-25T06:31:41Z",
+    "channel": "ALPHA",
+    "commits": [
+      {
+        "sha": "b278a92285f1ba2009d57deeb51b5bf95e982e7f",
+        "time": "2025-10-25T06:30:05Z",
+        "message": "Don't run player loot table for spectators (#11801)\n\n"
+      }
+    ],
+    "downloads": {
+      "server:default": {
+        "name": "paper-1.21.10-86.jar",
+        "checksums": {
+          "sha256": "ed9685cc7c494d52d011be059a5d3018825fd623532ca35808eae4924f132e65"
+        },
+        "size": 53488588,
+        "url": "https://fill-data.papermc.io/v1/objects/ed9685cc7c494d52d011be059a5d3018825fd623532ca35808eae4924f132e65/paper-1.21.10-86.jar"
+      }
+    }
+  }
+]

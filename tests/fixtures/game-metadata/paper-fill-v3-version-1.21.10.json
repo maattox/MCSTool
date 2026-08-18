@@ -1,0 +1,22 @@
+{
+  "version": {
+    "id": "1.21.10",
+    "support": {
+      "status": "UNSUPPORTED",
+      "end": "2026-01-17"
+    },
+    "java": {
+      "version": {
+        "minimum": 21
+      },
+      "flags": {
+        "recommended": [
+          "-XX:+UseG1GC",
+          "-XX:+ParallelRefProcEnabled",
+          "-XX:MaxGCPauseMillis=200"
+        ]
+      }
+    }
+  },
+  "builds": [130, 112, 86]
+}

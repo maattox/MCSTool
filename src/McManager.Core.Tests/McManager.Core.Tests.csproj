@@ -19,4 +19,11 @@
     <ProjectReference Include="..\McManager.Core\McManager.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\..\tests\fixtures\game-metadata\paper-fill-v3-*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>fixtures\game-metadata\%(Filename)%(Extension)</Link>
+    </None>
+  </ItemGroup>
+
 </Project>
