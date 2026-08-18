@@ -40,6 +40,19 @@ layout_ensure_accounts() {
 }
 
 # Install repair entrypoint + layout library so Setup/SSH can re-apply without the staging tree.
+# GNU cp -f of a file onto itself fails ("are the same file") — SETUP-ISSUE-8.
+# Running /opt/mcmgr/bin/repair-permissions.sh sources /opt/mcmgr/lib/layout.sh, so
+# src and dest are already the installed copies.
+_layout_cp_unless_same() {
+  local src="$1"
+  local dest="$2"
+  [[ -f "${src}" ]] || return 0
+  if [[ -e "${dest}" && "${src}" -ef "${dest}" ]]; then
+    return 0
+  fi
+  cp -f "${src}" "${dest}"
+}
+
 _layout_install_repair_helpers() {
   mkdir -p "${BIN_DIR}" "${OPT_MCMGR}/lib"
   local src_common
@@ -47,18 +60,12 @@ _layout_install_repair_helpers() {
   local src_home
   src_home="$(cd "${src_common}/.." && pwd)"
 
-  cp -f "${src_common}/env.sh" "${OPT_MCMGR}/lib/env.sh"
-  cp -f "${src_common}/layout.sh" "${OPT_MCMGR}/lib/layout.sh"
-  cp -f "${src_common}/server_properties.sh" "${OPT_MCMGR}/lib/server_properties.sh"
-  if [[ -f "${src_home}/repair-permissions.sh" ]]; then
-    cp -f "${src_home}/repair-permissions.sh" "${BIN_DIR}/repair-permissions.sh"
-  fi
-  if [[ -f "${src_home}/repair-server-properties.sh" ]]; then
-    cp -f "${src_home}/repair-server-properties.sh" "${BIN_DIR}/repair-server-properties.sh"
-  fi
-  if [[ -f "${src_common}/rcon-graceful-stop.sh" ]]; then
-    cp -f "${src_common}/rcon-graceful-stop.sh" "${BIN_DIR}/rcon-graceful-stop.sh"
-  fi
+  _layout_cp_unless_same "${src_common}/env.sh" "${OPT_MCMGR}/lib/env.sh"
+  _layout_cp_unless_same "${src_common}/layout.sh" "${OPT_MCMGR}/lib/layout.sh"
+  _layout_cp_unless_same "${src_common}/server_properties.sh" "${OPT_MCMGR}/lib/server_properties.sh"
+  _layout_cp_unless_same "${src_home}/repair-permissions.sh" "${BIN_DIR}/repair-permissions.sh"
+  _layout_cp_unless_same "${src_home}/repair-server-properties.sh" "${BIN_DIR}/repair-server-properties.sh"
+  _layout_cp_unless_same "${src_common}/rcon-graceful-stop.sh" "${BIN_DIR}/rcon-graceful-stop.sh"
   if _layout_is_live; then
     chown root:mcmgr "${OPT_MCMGR}/lib" "${OPT_MCMGR}/lib/env.sh" "${OPT_MCMGR}/lib/layout.sh" "${OPT_MCMGR}/lib/server_properties.sh" 2>/dev/null || true
     chmod 0750 "${OPT_MCMGR}/lib"

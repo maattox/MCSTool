@@ -111,9 +111,6 @@ public static class WorldWipe
             + "sudo mkdir -p -- \"$WORLD\"; "
             + "sudo chown mcmgr:mcmgr -- \"$WORLD\"; "
             + "sudo chmod 0750 -- \"$WORLD\"; "
-            + "if [ -x /opt/mcmgr/bin/repair-permissions.sh ]; then "
-            + "sudo bash /opt/mcmgr/bin/repair-permissions.sh; "
-            + "fi; "
             + "echo OK";
     }
 }

@@ -250,7 +250,7 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 
 **Done when:** Confirmed wipe path exists; backups are not deleted.
 
-**Changelog:** 2026-08-17 — Server Management **Wipe world** next to Download latest: confirm popup (live save only; cloud backups / mods / `server.properties` kept; Minecraft stopped then left stopped). SSH wipe via `WorldWipe` path guard (`/opt/mcmgr/server/<world>` only). Core unit tests for path construction. No live wipe.
+**Changelog:** 2026-08-17 — Server Management **Wipe world** next to Download latest: confirm popup (live save only; cloud backups / mods / `server.properties` kept; Minecraft stopped then left stopped). SSH wipe via `WorldWipe` path guard (`/opt/mcmgr/server/<world>` only). Core unit tests for path construction. Follow-up: wipe no longer calls `repair-permissions.sh` (SETUP-ISSUE-8 same-file `cp`); layout helper skips copy when src is dest.
 
 ---
 

@@ -19,6 +19,7 @@ public sealed class WorldWipeTests
         Assert.Contains("rm -rf -- \"$WORLD\"", plan.RemoteScript, StringComparison.Ordinal);
         Assert.Contains("mkdir -p -- \"$WORLD\"", plan.RemoteScript, StringComparison.Ordinal);
         Assert.Contains("chown mcmgr:mcmgr -- \"$WORLD\"", plan.RemoteScript, StringComparison.Ordinal);
+        Assert.DoesNotContain("repair-permissions", plan.RemoteScript, StringComparison.Ordinal);
         Assert.DoesNotContain("mods/", plan.RemoteScript, StringComparison.Ordinal);
         Assert.DoesNotContain("server.properties", plan.RemoteScript, StringComparison.Ordinal);
         Assert.DoesNotContain("backups/", plan.RemoteScript, StringComparison.Ordinal);
