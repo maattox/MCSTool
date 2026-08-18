@@ -32,8 +32,15 @@ args = json.loads(req("LAUNCH_ARGS_JSON"))
 hash_alg = req("ARTIFACT_HASH_ALG")
 hash_at = os.environ.get("ARTIFACT_HASH_VERIFIED_AT") or now
 dist = req("DISTRIBUTION")
-if dist not in ("vanilla", "paper", "fabric"):
+if dist not in ("vanilla", "paper", "fabric", "neoforge"):
     raise SystemExit(f"unsupported distribution {dist}")
+
+artifact_filename = req("ARTIFACT_FILENAME")
+artifact_download_url = req("ARTIFACT_DOWNLOAD_URL")
+installer_filename = None
+installer_download_url = None
+unix_args_path = None
+jvm_mem_src = "launch_args"
 
 if dist == "fabric":
     written_dist = "modded"
@@ -43,6 +50,26 @@ if dist == "fabric":
     if hash_alg != "none_published":
         raise SystemExit("fabric artifact_hash.algorithm must be none_published")
     hash_obj = {"algorithm": "none_published", "value": None, "verified_at": None}
+elif dist == "neoforge":
+    written_dist = "modded"
+    loader = "neoforge"
+    loader_version = req("LOADER_VERSION")
+    artifact_kind = os.environ.get("ARTIFACT_KIND") or "argfile_tree"
+    if artifact_kind != "argfile_tree":
+        raise SystemExit("neoforge server_artifact.kind must be argfile_tree after install")
+    if hash_alg != "none_published":
+        raise SystemExit("neoforge artifact_hash.algorithm must be none_published")
+    hash_obj = {"algorithm": "none_published", "value": None, "verified_at": None}
+    installer_filename = req("INSTALLER_FILENAME")
+    installer_download_url = req("INSTALLER_DOWNLOAD_URL")
+    unix_args_path = req("UNIX_ARGS_PATH")
+    artifact_filename = None
+    artifact_download_url = None
+    jvm_mem_src = "user_jvm_args_file"
+    if not args or args[0] != "@user_jvm_args.txt" or args[-1] != "--nogui":
+        raise SystemExit("neoforge launch args must be @user_jvm_args.txt @unix_args --nogui")
+    if not any(a.startswith("@libraries/") for a in args):
+        raise SystemExit("neoforge launch args missing @unix_args path")
 else:
     written_dist = dist
     loader = None
@@ -72,18 +99,18 @@ doc = {
   },
   "server_artifact": {
     "kind": artifact_kind,
-    "filename": req("ARTIFACT_FILENAME"),
-    "download_url": req("ARTIFACT_DOWNLOAD_URL"),
-    "installer_filename": None,
-    "installer_download_url": None,
-    "unix_args_path": None,
+    "filename": artifact_filename,
+    "download_url": artifact_download_url,
+    "installer_filename": installer_filename,
+    "installer_download_url": installer_download_url,
+    "unix_args_path": unix_args_path,
   },
   "artifact_hash": hash_obj,
   "launch_command": {
     "working_directory": req("SERVER_DIR"),
     "executable": req("JAVA_EXECUTABLE"),
     "args": args,
-    "jvm_memory_args_source": "launch_args",
+    "jvm_memory_args_source": jvm_mem_src,
   },
   "world_path": req("WORLD_PATH"),
   "server_dir": req("SERVER_DIR"),

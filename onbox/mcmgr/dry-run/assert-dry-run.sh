@@ -24,7 +24,7 @@ fi
 [[ -n "${PROPS}" && -f "${PROPS}" ]] || { echo "missing server.properties (${PROPS})"; exit 1; }
 
 "${PY}" - "${MANIFEST}" "${UNIT}" "${SECRET}" "${IDLE_CFG}" "${PROPS}" <<'PY'
-import json, sys, re
+import json, sys, re, os
 
 manifest_path, unit_path, secret_path, idle_cfg_path, props_path = sys.argv[1:6]
 with open(manifest_path, encoding="utf-8") as f:
@@ -54,9 +54,39 @@ assert doc["previous"] is None
 assert isinstance(doc["java_major"], int)
 assert doc["java"]["vendor"] == "temurin"
 assert doc["java"]["package_type"] == "jre"
-assert "-jar" in doc["launch_command"]["args"]
 assert all("\r" not in a for a in doc["launch_command"]["args"]), "CRLF leaked into launch args"
-if doc["distribution"] == "modded":
+if doc["distribution"] == "modded" and doc.get("loader") == "neoforge":
+    assert doc["loader_version"] == "21.1.98"
+    assert doc["server_artifact"]["kind"] == "argfile_tree"
+    assert doc["server_artifact"]["filename"] is None
+    assert doc["server_artifact"]["download_url"] is None
+    inst = doc["server_artifact"]["installer_filename"]
+    assert inst == "neoforge-21.1.98-installer.jar", inst
+    url = doc["server_artifact"]["installer_download_url"] or ""
+    assert url == (
+        "https://maven.neoforged.net/releases/net/neoforged/neoforge/21.1.98/"
+        "neoforge-21.1.98-installer.jar"
+    ), url
+    uap = doc["server_artifact"]["unix_args_path"]
+    assert uap == "libraries/net/neoforged/neoforge/21.1.98/unix_args.txt", uap
+    assert doc["artifact_hash"]["algorithm"] == "none_published"
+    assert doc["artifact_hash"]["value"] is None
+    assert doc["artifact_hash"]["verified_at"] is None
+    args = doc["launch_command"]["args"]
+    assert args == ["@user_jvm_args.txt", "@" + uap, "--nogui"], args
+    assert "-jar" not in args
+    assert "-Xms" not in "".join(args)
+    assert doc["launch_command"]["jvm_memory_args_source"] == "user_jvm_args_file"
+    assert doc["java_major"] == 21
+    assert doc["minecraft_version"] == "1.21.1"
+    server_dir = doc["server_dir"]
+    jvm_path = server_dir.rstrip("\\/") + "/user_jvm_args.txt"
+    with open(jvm_path, encoding="utf-8") as jf:
+        jvm = jf.read()
+    assert "-Xms" in jvm and "-Xmx" in jvm
+    unix_path = server_dir.rstrip("\\/") + "/" + uap.replace("\\", "/")
+    assert os.path.isfile(unix_path), unix_path
+elif doc["distribution"] == "modded":
     assert doc["loader"] == "fabric"
     assert doc["loader_version"] == "0.17.2"
     fn = doc["server_artifact"]["filename"]
@@ -76,6 +106,7 @@ if doc["distribution"] == "modded":
     assert "--nogui" not in doc["launch_command"]["args"]
     assert doc["java_major"] == 21
     assert doc["minecraft_version"] == "1.21.8"
+    assert "-jar" in doc["launch_command"]["args"]
 elif doc["distribution"] == "paper":
     assert doc["loader"] is None
     assert doc["loader_version"] is None
@@ -115,6 +146,12 @@ assert "ExecStart=" in unit
 if doc["distribution"] == "paper":
     assert doc["server_artifact"]["filename"] in unit
     assert "--nogui" in unit
+elif doc["distribution"] == "modded" and doc.get("loader") == "neoforge":
+    assert "@user_jvm_args.txt" in unit
+    assert "@" + doc["server_artifact"]["unix_args_path"] in unit
+    assert "--nogui" in unit
+    assert "-jar" not in unit
+    assert "bash -c" not in unit
 elif doc["distribution"] == "modded":
     assert doc["server_artifact"]["filename"] in unit
     assert "nogui" in unit

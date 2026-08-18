@@ -22,6 +22,8 @@ if [[ "${DISTRIBUTION}" == "paper" ]]; then
   export MINECRAFT_VERSION="${MINECRAFT_VERSION:-1.21.10}"
 elif [[ "${DISTRIBUTION}" == "fabric" ]]; then
   export MINECRAFT_VERSION="${MINECRAFT_VERSION:-1.21.8}"
+elif [[ "${DISTRIBUTION}" == "neoforge" ]]; then
+  export MINECRAFT_VERSION="${MINECRAFT_VERSION:-1.21.1}"
 else
   export MINECRAFT_VERSION="${MINECRAFT_VERSION:-1.21.1}"
 fi
@@ -32,7 +34,7 @@ echo "[dry-run] fixtures=${FIXTURES}"
 echo "[dry-run] distribution=${DISTRIBUTION}"
 echo "[dry-run] version=${MINECRAFT_VERSION}"
 
-if [[ "${DISTRIBUTION}" == "paper" || "${DISTRIBUTION}" == "fabric" ]]; then
+if [[ "${DISTRIBUTION}" == "paper" || "${DISTRIBUTION}" == "fabric" || "${DISTRIBUTION}" == "neoforge" ]]; then
   PY=""
   if command -v python3 >/dev/null 2>&1; then PY=python3
   elif command -v python >/dev/null 2>&1; then PY=python
@@ -42,8 +44,10 @@ if [[ "${DISTRIBUTION}" == "paper" || "${DISTRIBUTION}" == "fabric" ]]; then
   fi
   if [[ "${DISTRIBUTION}" == "paper" ]]; then
     "${PY}" "${ROOT}/common/paper_fill_v3.py" self-test --fixtures "${FIXTURES}"
-  else
+  elif [[ "${DISTRIBUTION}" == "fabric" ]]; then
     "${PY}" "${ROOT}/common/fabric_meta.py" self-test --fixtures "${FIXTURES}"
+  else
+    "${PY}" "${ROOT}/common/neoforge_meta.py" self-test --fixtures "${FIXTURES}"
   fi
 fi
 

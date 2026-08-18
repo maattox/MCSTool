@@ -154,14 +154,14 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 | **1** | Manager shell (Advanced/Danger split, CIDR, wipe world) | **DONE** |
 | **2** | $1 spend-brake lock (Function flag, door, Manager overlay) | **DONE** |
 | **3** | Remove public/blacklist (was IP Management public mode) | **DONE** |
-| **4** | Setup game types (Paper, loaders, pack import) | **NEXT** = Step **4.5** |
+| **4** | Setup game types (Paper, loaders, pack import) | **NEXT** = Step **4.6** |
 | **5** | Server Management modding inspect + re-download pack | TODO |
 | **6** | Top-bar chrome + oversized-world SSH UX | TODO |
 | **7** | Remaining v1 (resize, console, storage, Connect version) | TODO |
 | **8** | Paid / spend mode (**last** product feature) | TODO |
 | **9** | Packaging, updates, launch (old MVP Phase 8–9) | TODO — **do not start** until Phases 1–8 are DONE or the operator skips 8 |
 
-**Current NEXT step:** [Step 4.5](#step-45--neoforge-installer-module). **Do not start Step 4.5** until the operator asks.
+**Current NEXT step:** [Step 4.6](#step-46--forge-installer-module-legacy-packs). **Do not start Step 4.6** until the operator asks.
 
 ---
 
@@ -561,7 +561,7 @@ Each installer step: Core metadata client + `onbox/mcmgr/` module + generic unit
 
 ### Step 4.5 — NeoForge installer module
 
-**Status:** NEXT  
+**Status:** DONE  
 **Depends on:** 4.4 (module pattern)
 
 **Read first**
@@ -579,13 +579,13 @@ Each installer step: Core metadata client + `onbox/mcmgr/` module + generic unit
 
 **Done when:** NeoForge module writes manifest + unit args (argfile).
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-18 — Core `NeoForgeMavenClient` + on-box `bootstrap-neoforge.sh` / `neoforge_meta.py`: Maven `maven-metadata.xml` (not JSON); highest non-beta matching MC (component match, not `21.1` vs `21.10`); refuse Minecraft ≤1.20.1; `none_published`; `--installServer` after Java; generic unit `@user_jvm_args.txt @unix_args --nogui`. No Forge, no pack import, no Setup Modded radio. **NEXT = Step 4.6**. Do not start 4.6 unless asked.
 
 ---
 
 ### Step 4.6 — Forge installer module (legacy packs)
 
-**Status:** TODO  
+**Status:** NEXT  
 **Depends on:** 4.5
 
 **Read first**
@@ -1237,6 +1237,7 @@ Former MVP Phase **8–9**. **Do not start** until Phases **1–7** are DONE and
 
 | Date | Note |
 |------|------|
+| 2026-08-18 | **Step 4.5 DONE.** NeoForge loader module: Core Maven XML client + on-box installer; `--installServer` argfile tree; `none_published`; refuse ≤1.20.1; generic unit `@user_jvm_args.txt @unix_args --nogui`. No Forge / pack import / Setup Modded radio. **NEXT = Step 4.6**. Do not start 4.6 unless asked. |
 | 2026-08-18 | **Step 4.4 DONE.** Fabric loader module: Core meta client + on-box installer; three-axis `/server/jar` URL; `launcher_jar` + `none_published`; generic unit `nogui`. No pack import / Setup Modded radio. **NEXT = Step 4.5**. Do not start 4.5 unless asked. |
 | 2026-08-18 | **Step 4.3 DONE.** Setup Default Vanilla vs Optimized Vanilla (Paper): Mojang vs Fill v3 picker; bootstrap `DISTRIBUTION` to the 4.2 module; plan summary + infra `server_kind`. Guide note. **NEXT = Step 4.4**. Do not start 4.4 unless asked. |
 | 2026-08-18 | **Step 4.2 DONE.** On-box Paper module (`bootstrap-paper.sh` + Fill v3 helper): STABLE jar + sha256 + §4.2 manifest + generic unit `--nogui`. No Setup UI. **NEXT = Step 4.3**. Do not start 4.3 unless asked. |

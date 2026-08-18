@@ -1,6 +1,6 @@
 # On-box Minecraft bootstrap (VM1) — product SoT
 
-**Authority:** mechanism details live in [`docs/Minecraft-Server-Deployment-Blueprint.md`](../../docs/Minecraft-Server-Deployment-Blueprint.md). This tree is the **executable** Vanilla + Paper + Fabric bootstrap Setup uploads and runs over SSH. Wizard UI for Fabric/Modded is a later V1 step — the on-box Fabric module is invoked with `DISTRIBUTION=fabric`.
+**Authority:** mechanism details live in [`docs/Minecraft-Server-Deployment-Blueprint.md`](../../docs/Minecraft-Server-Deployment-Blueprint.md). This tree is the **executable** Vanilla + Paper + Fabric + NeoForge bootstrap Setup uploads and runs over SSH. Wizard UI for Fabric/Modded is a later V1 step — the on-box Fabric/NeoForge modules are invoked with `DISTRIBUTION=fabric` or `DISTRIBUTION=neoforge`.
 
 **Not** the idle agent (`/opt/mc-manager` stays in this repo’s `vm_agent/` tree). **Not** a copy of the operator’s live Forge lab under `/home/ubuntu/minecraft`.
 
@@ -15,9 +15,11 @@ onbox/mcmgr/
   common/*.sh                   helpers (incl. idle_agent_sync.sh §10.2)
   common/paper_fill_v3.py       Fill v3 STABLE resolve (SHA-256, no v2 URLs)
   common/fabric_meta.py         Fabric meta v2 resolve (game+loader+installer, none_published)
+  common/neoforge_meta.py       NeoForge Maven XML resolve (argfile_tree, none_published)
   modules/bootstrap-vanilla.sh  piston-meta Vanilla installer module
   modules/bootstrap-paper.sh    Fill v3 Paper installer module
   modules/bootstrap-fabric.sh   Fabric launcher-jar installer module
+  modules/bootstrap-neoforge.sh NeoForge installer-jar + --installServer module
   templates/minecraft.service.in
   dry-run/run-dry-run.sh        offline proof (fixtures + temp root)
 ```
@@ -61,9 +63,10 @@ cd onbox/mcmgr
 MCMGR_DRY_KEEP=1 MINECRAFT_VERSION=1.21.1 bash dry-run/run-dry-run.sh
 DISTRIBUTION=paper MINECRAFT_VERSION=1.21.10 bash dry-run/run-dry-run.sh
 DISTRIBUTION=fabric MINECRAFT_VERSION=1.21.8 bash dry-run/run-dry-run.sh
+DISTRIBUTION=neoforge MINECRAFT_VERSION=1.21.1 bash dry-run/run-dry-run.sh
 ```
 
-Uses [`tests/fixtures/game-metadata/`](../../tests/fixtures/game-metadata/) — no apt, no systemctl, no real jar download. Asserts a §4.1 (Vanilla), §4.2 (Paper), or Fabric loader (§18 / §4.4 artifact shape, `modpack` still null) manifest + the **generic** unit (`User=mcmgr`, Vanilla/Fabric `nogui` / Paper `--nogui`, `ExecStop=+`, `RestartPreventExitStatus=200`) + §7.3 `white-list=false` / `enforce-whitelist=false` / `online-mode=true`.
+Uses [`tests/fixtures/game-metadata/`](../../tests/fixtures/game-metadata/) — no apt, no systemctl, no real jar download. Asserts a §4.1 (Vanilla), §4.2 (Paper), Fabric loader (§18 / §4.4 artifact shape, `modpack` still null), or NeoForge argfile tree (§19 / §4.3 artifact shape without a pack) manifest + the **generic** unit (`User=mcmgr`, Vanilla/Fabric `nogui` / Paper `--nogui` / NeoForge `@user_jvm_args.txt @unix_args --nogui`, `ExecStop=+`, `RestartPreventExitStatus=200`) + §7.3 `white-list=false` / `enforce-whitelist=false` / `online-mode=true`.
 
 ## Live install (Phase 3 / operator VM)
 
@@ -84,9 +87,15 @@ export EULA_ACCEPTED=true
 export DISTRIBUTION=fabric
 export MINECRAFT_VERSION=1.21.8
 bash /path/to/onbox/mcmgr/common/driver.sh
+
+# NeoForge loader only (no pack import) — Maven XML + --installServer argfile tree:
+export EULA_ACCEPTED=true
+export DISTRIBUTION=neoforge
+export MINECRAFT_VERSION=1.21.1
+bash /path/to/onbox/mcmgr/common/driver.sh
 ```
 
-Requires: root, `curl`, `sha1sum` (Vanilla) / `sha256sum` (Paper), `python3`, `apt-get` (Adoptium) or network for Adoptium API fallback, aarch64 Ubuntu. Paper/Fabric HTTP calls send a descriptive User-Agent (`mcmgr-bootstrap/…` + GitHub URL). Fabric has no published launcher checksum (`none_published`).
+Requires: root, `curl`, `sha1sum` (Vanilla) / `sha256sum` (Paper), `python3`, `apt-get` (Adoptium) or network for Adoptium API fallback, aarch64 Ubuntu. Paper/Fabric/NeoForge HTTP calls send a descriptive User-Agent (`mcmgr-bootstrap/…` + GitHub URL). Fabric and NeoForge have no published installer/launcher checksum (`none_published`). NeoForge GETs use a 45s timeout and retry; failures name `maven.neoforged.net`. Minecraft **1.20.1 and older are refused** (Forge is the 1.20.1 path — later step).
 
 ## Phase 3 SSH upload notes
 
@@ -100,5 +109,5 @@ Follow [`Agent-Deploy-Pitfalls.md`](../../docs/Agent-Deploy-Pitfalls.md):
 ## Out of scope here
 
 - Setup wizard Modded / Fabric radio (later V1 step)
-- NeoForge / Forge / pack-import installer modules
+- Forge / pack-import installer modules
 - Quilt as a Setup entry point

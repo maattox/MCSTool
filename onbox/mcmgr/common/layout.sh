@@ -205,6 +205,7 @@ _layout_expect() {
 }
 
 # Vanilla places server.jar; Paper places paper-<ver>-<build>.jar; Fabric places fabric-server-mc.*.jar.
+# NeoForge keeps the installer jar and an argfile tree (unix_args.txt).
 _layout_artifact_jar() {
   if [[ -n "${ARTIFACT_FILENAME:-}" ]]; then
     printf '%s' "${SERVER_DIR}/${ARTIFACT_FILENAME}"
@@ -253,6 +254,12 @@ layout_verify() {
     local dry_jar
     dry_jar="$(_layout_artifact_jar)"
     [[ -n "${dry_jar}" && -f "${dry_jar}" ]] || mcmgr_die "layout verify: missing server jar under ${SERVER_DIR}"
+    if [[ "${ARTIFACT_KIND:-}" == "argfile_tree" ]]; then
+      [[ -n "${UNIX_ARGS_PATH:-}" && -f "${SERVER_DIR}/${UNIX_ARGS_PATH}" ]] \
+        || mcmgr_die "layout verify: missing unix_args ${SERVER_DIR}/${UNIX_ARGS_PATH:-}"
+      [[ -f "${SERVER_DIR}/user_jvm_args.txt" ]] \
+        || mcmgr_die "layout verify: missing ${SERVER_DIR}/user_jvm_args.txt"
+    fi
     [[ -f "${SYSTEMD_UNIT_PATH}" ]] || mcmgr_die "layout verify: missing unit ${SYSTEMD_UNIT_PATH}"
     grep -q '^User=mcmgr' "${SYSTEMD_UNIT_PATH}" || mcmgr_die "layout verify: unit missing User=mcmgr"
     grep -q '^RestartPreventExitStatus=200' "${SYSTEMD_UNIT_PATH}" || mcmgr_die "layout verify: unit missing RestartPreventExitStatus=200"
@@ -284,6 +291,14 @@ layout_verify() {
   artifact_base="$(basename "${artifact_jar}")"
   _layout_run_as_mcmgr bash -c 'cd "$1" && test -r "$2"' _ "${SERVER_DIR}" "${artifact_base}" \
     || mcmgr_die "layout verify: mcmgr cannot cd ${SERVER_DIR} / read ${artifact_base} (CHDIR class)"
+  if [[ "${ARTIFACT_KIND:-}" == "argfile_tree" ]]; then
+    [[ -n "${UNIX_ARGS_PATH:-}" && -f "${SERVER_DIR}/${UNIX_ARGS_PATH}" ]] \
+      || mcmgr_die "layout verify: missing unix_args ${SERVER_DIR}/${UNIX_ARGS_PATH:-}"
+    [[ -f "${SERVER_DIR}/user_jvm_args.txt" ]] \
+      || mcmgr_die "layout verify: missing ${SERVER_DIR}/user_jvm_args.txt"
+    _layout_run_as_mcmgr test -r "${SERVER_DIR}/${UNIX_ARGS_PATH}" \
+      || mcmgr_die "layout verify: mcmgr cannot read ${UNIX_ARGS_PATH}"
+  fi
 
   local java_exe
   java_exe="$(_layout_java_exe)"
