@@ -204,7 +204,7 @@ _layout_expect() {
   [[ "${mode}" == "${want_mode}" ]] || mcmgr_die "layout verify: ${path} mode ${mode} want ${want_mode}"
 }
 
-# Vanilla places server.jar; Paper places paper-<ver>-<build>.jar (§4.2 / §17.4).
+# Vanilla places server.jar; Paper places paper-<ver>-<build>.jar; Fabric places fabric-server-mc.*.jar.
 _layout_artifact_jar() {
   if [[ -n "${ARTIFACT_FILENAME:-}" ]]; then
     printf '%s' "${SERVER_DIR}/${ARTIFACT_FILENAME}"

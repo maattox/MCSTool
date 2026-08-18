@@ -154,14 +154,14 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 | **1** | Manager shell (Advanced/Danger split, CIDR, wipe world) | **DONE** |
 | **2** | $1 spend-brake lock (Function flag, door, Manager overlay) | **DONE** |
 | **3** | Remove public/blacklist (was IP Management public mode) | **DONE** |
-| **4** | Setup game types (Paper, loaders, pack import) | **NEXT** = Step **4.4** |
+| **4** | Setup game types (Paper, loaders, pack import) | **NEXT** = Step **4.5** |
 | **5** | Server Management modding inspect + re-download pack | TODO |
 | **6** | Top-bar chrome + oversized-world SSH UX | TODO |
 | **7** | Remaining v1 (resize, console, storage, Connect version) | TODO |
 | **8** | Paid / spend mode (**last** product feature) | TODO |
 | **9** | Packaging, updates, launch (old MVP Phase 8–9) | TODO — **do not start** until Phases 1–8 are DONE or the operator skips 8 |
 
-**Current NEXT step:** [Step 4.4](#step-44--fabric-installer-module). **Do not start Step 4.4** until the operator asks.
+**Current NEXT step:** [Step 4.5](#step-45--neoforge-installer-module). **Do not start Step 4.5** until the operator asks.
 
 ---
 
@@ -537,7 +537,7 @@ Each installer step: Core metadata client + `onbox/mcmgr/` module + generic unit
 
 ### Step 4.4 — Fabric installer module
 
-**Status:** NEXT  
+**Status:** DONE  
 **Depends on:** 4.2 (shared module shape)
 
 **Read first**
@@ -555,13 +555,13 @@ Each installer step: Core metadata client + `onbox/mcmgr/` module + generic unit
 
 **Done when:** Fabric can be installed as a loader module in isolation.
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-18 — Core `FabricMetaClient` + on-box `bootstrap-fabric.sh` / `fabric_meta.py`: three-axis `meta.fabricmc.net` v2 resolve (first stable loader + installer; optional pins); launcher jar filename; `/server/jar` URL requires the installer segment; `artifact_hash.algorithm=none_published` (no local sha). Driver `DISTRIBUTION=fabric` writes `distribution=modded` `loader=fabric` + generic unit `nogui`. No pack import, no Setup Modded radio. **NEXT = Step 4.5**. Do not start 4.5 unless asked.
 
 ---
 
 ### Step 4.5 — NeoForge installer module
 
-**Status:** TODO  
+**Status:** NEXT  
 **Depends on:** 4.4 (module pattern)
 
 **Read first**
@@ -1237,6 +1237,7 @@ Former MVP Phase **8–9**. **Do not start** until Phases **1–7** are DONE and
 
 | Date | Note |
 |------|------|
+| 2026-08-18 | **Step 4.4 DONE.** Fabric loader module: Core meta client + on-box installer; three-axis `/server/jar` URL; `launcher_jar` + `none_published`; generic unit `nogui`. No pack import / Setup Modded radio. **NEXT = Step 4.5**. Do not start 4.5 unless asked. |
 | 2026-08-18 | **Step 4.3 DONE.** Setup Default Vanilla vs Optimized Vanilla (Paper): Mojang vs Fill v3 picker; bootstrap `DISTRIBUTION` to the 4.2 module; plan summary + infra `server_kind`. Guide note. **NEXT = Step 4.4**. Do not start 4.4 unless asked. |
 | 2026-08-18 | **Step 4.2 DONE.** On-box Paper module (`bootstrap-paper.sh` + Fill v3 helper): STABLE jar + sha256 + §4.2 manifest + generic unit `--nogui`. No Setup UI. **NEXT = Step 4.3**. Do not start 4.3 unless asked. |
 | 2026-08-18 | **Step 4.1 DONE.** Core Fill v3 client + offline fixtures (STABLE resolve, SHA-256 URL from JSON, no v2 URL builder). No Setup UI / on-box. **NEXT = Step 4.2**. Do not start 4.2 unless asked. |

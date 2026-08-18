@@ -20,6 +20,8 @@ export EULA_ACCEPTED=true
 export DISTRIBUTION="${DISTRIBUTION:-vanilla}"
 if [[ "${DISTRIBUTION}" == "paper" ]]; then
   export MINECRAFT_VERSION="${MINECRAFT_VERSION:-1.21.10}"
+elif [[ "${DISTRIBUTION}" == "fabric" ]]; then
+  export MINECRAFT_VERSION="${MINECRAFT_VERSION:-1.21.8}"
 else
   export MINECRAFT_VERSION="${MINECRAFT_VERSION:-1.21.1}"
 fi
@@ -30,15 +32,19 @@ echo "[dry-run] fixtures=${FIXTURES}"
 echo "[dry-run] distribution=${DISTRIBUTION}"
 echo "[dry-run] version=${MINECRAFT_VERSION}"
 
-if [[ "${DISTRIBUTION}" == "paper" ]]; then
+if [[ "${DISTRIBUTION}" == "paper" || "${DISTRIBUTION}" == "fabric" ]]; then
   PY=""
   if command -v python3 >/dev/null 2>&1; then PY=python3
   elif command -v python >/dev/null 2>&1; then PY=python
   else
-    echo "dry-run: need python for paper_fill_v3 self-test" >&2
+    echo "dry-run: need python for meta self-test" >&2
     exit 1
   fi
-  "${PY}" "${ROOT}/common/paper_fill_v3.py" self-test --fixtures "${FIXTURES}"
+  if [[ "${DISTRIBUTION}" == "paper" ]]; then
+    "${PY}" "${ROOT}/common/paper_fill_v3.py" self-test --fixtures "${FIXTURES}"
+  else
+    "${PY}" "${ROOT}/common/fabric_meta.py" self-test --fixtures "${FIXTURES}"
+  fi
 fi
 
 bash "${ROOT}/common/driver.sh"

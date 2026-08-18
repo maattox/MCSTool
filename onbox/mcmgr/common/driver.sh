@@ -3,9 +3,11 @@
 # Usage:
 #   EULA_ACCEPTED=true MINECRAFT_VERSION=1.21.1 sudo -E ./common/driver.sh
 #   EULA_ACCEPTED=true DISTRIBUTION=paper MINECRAFT_VERSION=1.21.10 sudo -E ./common/driver.sh
+#   EULA_ACCEPTED=true DISTRIBUTION=fabric MINECRAFT_VERSION=1.21.8 sudo -E ./common/driver.sh
 # Dry-run:
 #   DRY_RUN=1 MCMGR_ROOT=/tmp/mcmgr-dry EULA_ACCEPTED=true ./common/driver.sh
 #   DRY_RUN=1 DISTRIBUTION=paper MINECRAFT_VERSION=1.21.10 MCMGR_ROOT=/tmp/mcmgr-dry EULA_ACCEPTED=true ./common/driver.sh
+#   DRY_RUN=1 DISTRIBUTION=fabric MINECRAFT_VERSION=1.21.8 MCMGR_ROOT=/tmp/mcmgr-dry EULA_ACCEPTED=true ./common/driver.sh
 # shellcheck shell=bash
 set -euo pipefail
 
@@ -39,8 +41,8 @@ trap on_err ERR
 
 main() {
   case "${DISTRIBUTION}" in
-    vanilla|paper) ;;
-    *) mcmgr_die "only distribution=vanilla|paper is implemented (got ${DISTRIBUTION})" ;;
+    vanilla|paper|fabric) ;;
+    *) mcmgr_die "only distribution=vanilla|paper|fabric is implemented (got ${DISTRIBUTION})" ;;
   esac
 
   if [[ "${DRY_RUN}" != "1" && "$(id -u)" -ne 0 ]]; then
@@ -79,6 +81,11 @@ main() {
     source "${MCMGR_HOME}/modules/bootstrap-paper.sh"
     run_stage artifact_placed paper_resolve_and_place
     java_major_from_module="${PAPER_JAVA_MAJOR:-}"
+  elif [[ "${DISTRIBUTION}" == "fabric" ]]; then
+    # shellcheck source=../modules/bootstrap-fabric.sh
+    source "${MCMGR_HOME}/modules/bootstrap-fabric.sh"
+    run_stage artifact_placed fabric_resolve_and_place
+    java_major_from_module="${FABRIC_JAVA_MAJOR:-}"
   else
     # shellcheck source=../modules/bootstrap-vanilla.sh
     source "${MCMGR_HOME}/modules/bootstrap-vanilla.sh"
@@ -96,8 +103,8 @@ main() {
     server_properties_apply "$(tr -d '\r\n' <"${RCON_SECRET}")"
   fi
 
-  # Build launch_command args for single_jar. unit_gen stays generic (§6.3):
-  # Vanilla uses bare `nogui`; Paper uses `--nogui` and the resolved jar filename.
+  # Build launch_command args. unit_gen stays generic (§6.3):
+  # Vanilla uses bare `nogui`; Paper uses `--nogui`; Fabric launcher_jar uses bare `nogui`.
   local launch_args
   launch_args=(
     "-Xms${JVM_XMS}"
@@ -116,6 +123,8 @@ if not flags:
 sys.stdout.buffer.write(("\n".join(flags) + "\n").encode("utf-8"))
 ')
     launch_args+=("-jar" "${ARTIFACT_FILENAME}" "--nogui")
+  elif [[ "${DISTRIBUTION}" == "fabric" ]]; then
+    launch_args+=("-jar" "${ARTIFACT_FILENAME}" "nogui")
   else
     launch_args+=("-XX:+UseG1GC" "-jar" "server.jar" "nogui")
   fi
@@ -140,6 +149,8 @@ sys.stdout.buffer.write(("\n".join(flags) + "\n").encode("utf-8"))
 
   if [[ "${DISTRIBUTION}" == "paper" ]]; then
     mcmgr_log "SUCCESS: Paper ${RESOLVED_MC_VERSION} bootstrap complete"
+  elif [[ "${DISTRIBUTION}" == "fabric" ]]; then
+    mcmgr_log "SUCCESS: Fabric ${RESOLVED_MC_VERSION} loader=${LOADER_VERSION:-} bootstrap complete"
   else
     mcmgr_log "SUCCESS: Vanilla ${RESOLVED_MC_VERSION} bootstrap complete"
   fi

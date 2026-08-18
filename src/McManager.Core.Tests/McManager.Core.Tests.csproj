@@ -24,6 +24,10 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>fixtures\game-metadata\%(Filename)%(Extension)</Link>
     </None>
+    <None Include="..\..\tests\fixtures\game-metadata\fabric-meta-*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>fixtures\game-metadata\%(Filename)%(Extension)</Link>
+    </None>
   </ItemGroup>
 
 </Project>

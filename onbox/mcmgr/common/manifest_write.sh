@@ -30,19 +30,37 @@ def req(name):
 
 args = json.loads(req("LAUNCH_ARGS_JSON"))
 hash_alg = req("ARTIFACT_HASH_ALG")
-hash_val = req("ARTIFACT_HASH_VALUE")
 hash_at = os.environ.get("ARTIFACT_HASH_VERIFIED_AT") or now
 dist = req("DISTRIBUTION")
-if dist not in ("vanilla", "paper"):
+if dist not in ("vanilla", "paper", "fabric"):
     raise SystemExit(f"unsupported distribution {dist}")
+
+if dist == "fabric":
+    written_dist = "modded"
+    loader = "fabric"
+    loader_version = req("LOADER_VERSION")
+    artifact_kind = os.environ.get("ARTIFACT_KIND") or "launcher_jar"
+    if hash_alg != "none_published":
+        raise SystemExit("fabric artifact_hash.algorithm must be none_published")
+    hash_obj = {"algorithm": "none_published", "value": None, "verified_at": None}
+else:
+    written_dist = dist
+    loader = None
+    loader_version = None
+    artifact_kind = "single_jar"
+    hash_obj = {
+        "algorithm": hash_alg,
+        "value": req("ARTIFACT_HASH_VALUE"),
+        "verified_at": hash_at,
+    }
 
 doc = {
   "schema_version": 1,
   "game_type": "minecraft",
-  "distribution": dist,
+  "distribution": written_dist,
   "minecraft_version": req("RESOLVED_MC_VERSION"),
-  "loader": None,
-  "loader_version": None,
+  "loader": loader,
+  "loader_version": loader_version,
   "java_major": int(req("JAVA_MAJOR")),
   "java": {
     "major": int(req("JAVA_MAJOR")),
@@ -53,18 +71,14 @@ doc = {
     "resolved_at": req("JAVA_RESOLVED_AT"),
   },
   "server_artifact": {
-    "kind": "single_jar",
+    "kind": artifact_kind,
     "filename": req("ARTIFACT_FILENAME"),
     "download_url": req("ARTIFACT_DOWNLOAD_URL"),
     "installer_filename": None,
     "installer_download_url": None,
     "unix_args_path": None,
   },
-  "artifact_hash": {
-    "algorithm": hash_alg,
-    "value": hash_val,
-    "verified_at": hash_at,
-  },
+  "artifact_hash": hash_obj,
   "launch_command": {
     "working_directory": req("SERVER_DIR"),
     "executable": req("JAVA_EXECUTABLE"),

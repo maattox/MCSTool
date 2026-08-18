@@ -48,20 +48,40 @@ assert not missing, f"manifest missing keys: {missing}"
 
 assert doc["schema_version"] == 1
 assert doc["game_type"] == "minecraft"
-assert doc["distribution"] in ("vanilla", "paper"), doc["distribution"]
-assert doc["loader"] is None
-assert doc["loader_version"] is None
+assert doc["distribution"] in ("vanilla", "paper", "modded"), doc["distribution"]
 assert doc["modpack"] is None
 assert doc["previous"] is None
 assert isinstance(doc["java_major"], int)
 assert doc["java"]["vendor"] == "temurin"
 assert doc["java"]["package_type"] == "jre"
-assert doc["server_artifact"]["kind"] == "single_jar"
 assert "-jar" in doc["launch_command"]["args"]
 assert all("\r" not in a for a in doc["launch_command"]["args"]), "CRLF leaked into launch args"
-if doc["distribution"] == "paper":
+if doc["distribution"] == "modded":
+    assert doc["loader"] == "fabric"
+    assert doc["loader_version"] == "0.17.2"
+    fn = doc["server_artifact"]["filename"]
+    assert fn == "fabric-server-mc.1.21.8-loader.0.17.2-launcher.1.1.0.jar", fn
+    assert doc["server_artifact"]["kind"] == "launcher_jar"
+    url = doc["server_artifact"]["download_url"] or ""
+    assert url == "https://meta.fabricmc.net/v2/versions/loader/1.21.8/0.17.2/1.1.0/server/jar"
+    parts = [p for p in url.split("/") if p]
+    assert parts[-5:-2] == ["1.21.8", "0.17.2", "1.1.0"], parts
+    assert parts[-2:] == ["server", "jar"]
+    assert doc["artifact_hash"]["algorithm"] == "none_published"
+    assert doc["artifact_hash"]["value"] is None
+    assert doc["artifact_hash"]["verified_at"] is None
+    assert doc["launch_command"]["args"][-1] == "nogui"
+    assert doc["launch_command"]["args"][-3] == "-jar"
+    assert doc["launch_command"]["args"][-2] == fn
+    assert "--nogui" not in doc["launch_command"]["args"]
+    assert doc["java_major"] == 21
+    assert doc["minecraft_version"] == "1.21.8"
+elif doc["distribution"] == "paper":
+    assert doc["loader"] is None
+    assert doc["loader_version"] is None
     fn = doc["server_artifact"]["filename"]
     assert fn.startswith("paper-") and fn.endswith(".jar"), fn
+    assert doc["server_artifact"]["kind"] == "single_jar"
     assert "api.papermc.io" not in (doc["server_artifact"]["download_url"] or "").lower()
     assert doc["artifact_hash"]["algorithm"] == "sha256"
     assert re.fullmatch(r"[0-9a-f]{64}", doc["artifact_hash"]["value"]), "sha256 shape"
@@ -71,6 +91,9 @@ if doc["distribution"] == "paper":
     assert "-XX:+UseG1GC" in doc["launch_command"]["args"]
     assert doc["java_major"] == 21
 else:
+    assert doc["loader"] is None
+    assert doc["loader_version"] is None
+    assert doc["server_artifact"]["kind"] == "single_jar"
     assert doc["server_artifact"]["filename"] == "server.jar"
     assert doc["artifact_hash"]["algorithm"] == "sha1"
     assert re.fullmatch(r"[0-9a-f]{40}", doc["artifact_hash"]["value"]), "sha1 shape"
@@ -92,6 +115,10 @@ assert "ExecStart=" in unit
 if doc["distribution"] == "paper":
     assert doc["server_artifact"]["filename"] in unit
     assert "--nogui" in unit
+elif doc["distribution"] == "modded":
+    assert doc["server_artifact"]["filename"] in unit
+    assert "nogui" in unit
+    assert "--nogui" not in unit
 else:
     assert "server.jar" in unit
     assert "nogui" in unit
