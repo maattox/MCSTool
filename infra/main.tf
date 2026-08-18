@@ -6,9 +6,10 @@ locals {
   stack_version  = "0.1.0"
   infra_schema   = 2
 
+  # Product v1: SoftStop VM1 only. Always Free AMD Micro does not use Ampere
+  # OCPU-hours; leaving the door up keeps MOTD / reconcile / IP parking.
   softstop_instance_ids = length(var.softstop_instance_ids) > 0 ? var.softstop_instance_ids : [
     module.compute.vm1_instance_id,
-    module.compute.door_instance_id,
   ]
 }
 
@@ -55,11 +56,13 @@ module "iam" {
 }
 
 module "budget_brake" {
-  source                = "./modules/budget_brake"
-  tenancy_ocid          = var.tenancy_ocid
-  compartment_id        = module.compartment.id
-  subnet_id             = module.network.subnet_id
-  alert_email           = var.alert_email
-  function_image        = var.function_image
-  softstop_instance_ids = local.softstop_instance_ids
+  source                     = "./modules/budget_brake"
+  tenancy_ocid               = var.tenancy_ocid
+  compartment_id             = module.compartment.id
+  subnet_id                  = module.network.subnet_id
+  alert_email                = var.alert_email
+  function_image             = var.function_image
+  softstop_instance_ids      = local.softstop_instance_ids
+  object_storage_namespace   = module.storage.namespace
+  object_storage_bucket_name = module.storage.bucket_name
 }

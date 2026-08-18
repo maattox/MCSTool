@@ -100,6 +100,6 @@ variable "function_image" {
 
 variable "softstop_instance_ids" {
   type        = list(string)
-  description = "Instance OCIDs the $1 Function SoftStops. Empty = both VM1 and door (lab default). PRODUCT-IDEAS still open on door-stop vs Micro-always-free."
+  description = "Instance OCIDs the $1 Function SoftStops. Empty = VM1 only (product v1: Always Free door Micro stays up)."
   default     = []
 }

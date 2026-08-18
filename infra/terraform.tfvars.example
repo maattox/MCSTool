@@ -26,4 +26,4 @@ existing_compartment_id = ""
 # vm1_memory_gb    = 24
 # bucket_name      = "mcmgr-shared-data"
 # function_image   = ""   # Step 3.3: region.ocir.io/<ns>/mcmgr-fn/softstop:<tag>
-# softstop_instance_ids = []  # empty = both VM1 and door
+# softstop_instance_ids = []  # empty = VM1 only (do not add the door Micro)

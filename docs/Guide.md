@@ -14,9 +14,9 @@ This product is built to stay at **$0** using Oracle [Always Free resources](htt
 
 Oracle still requires a **Pay As You Go (PAYG)** account for Ampere A1 capacity in many regions. PAYG means you *can* be billed if you leave Always Free. It is **not** permission to spend. Oracle’s docs say Always Free resources remain free after you upgrade; you are charged only for usage **above** those limits.
 
-**Last-resort $1 brake:** Setup creates a **$1 monthly compartment budget**. If actual spend ever reaches $1, an Oracle Function **SoftStops the computers** to halt further spend. That Function is not instant. Oracle bills when spend hits $1, and the Function can take several minutes, so you may see a **~$1–$2** charge **for that month**, then **no further charges** while the brake holds. This is **not** a perfect $0 guarantee.
+**Last-resort $1 brake:** Setup creates a **$1 monthly compartment budget**. If actual spend ever reaches $1, an Oracle Function **SoftStops the Minecraft computer** and writes a lock flag in Object Storage. The small always-on doorbell stays running (it is an Always Free AMD Micro and does not use Ampere hours). That Function is not instant. Oracle bills when spend hits $1, and the Function can take several minutes, so you may see a **~$1–$2** charge **for that month**, then **no further charges** while the brake holds. This is **not** a perfect $0 guarantee.
 
-If that brake fires, wait for the next calendar month before turning the stack back on (Manager does not yet show a full-window lock for this — that is a later feature). Use **Troubleshooting** in Manager if the play IP is left on the wrong computer.
+If that brake fires, wait for the next calendar month before turning the Minecraft computer back on (Manager does not yet show a full-window lock for this — that is the next spend-brake step). Use **Troubleshooting** in Manager if the play IP is left on the wrong computer.
 
 Do **not** add paid shapes, extra volumes, load balancers, or public `0.0.0.0/0` game access.
 

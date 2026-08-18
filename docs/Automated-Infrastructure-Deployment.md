@@ -483,10 +483,11 @@ Aligned with PRODUCT-IDEAS naming and lab `Infrastructure-Information.md` behavi
 - Private Standard bucket `mcmgr-shared-data` (no versioning, no emit events, Oracle-managed keys)
 - Dynamic groups (tenancy OCID as `compartment_id` — Oracle requires this): `mcmgr-dg-instances` (compartment), `mcmgr-dg-door` (**door instance OCID** — hyphenated `mcmgr-role` tag matching did not enroll the door on the identity-domain 3.3 test), `mcmgr-dg-fn` (fnfunc in compartment)
 - Policies **scoped to the product compartment / bucket** where the API allows (lab today is tenancy-wide `manage`; product should tighten)
-- $1 monthly budget on the compartment + alert (email) + **Events rule → Function** (`mcmgr-events-budget-alert`; RM dump omitted the action — Console has Functions → `shutdown_vm`). Do **not** create the lab’s unused ONS topic `Budget-Alerts`. Phase 3.3 may complete Function image push; 3.1 may placeholder. Behavior is staged in lab `PRODUCT-IDEAS.md` ([$1 spend-brake lock (v1)](../../OCI-mc-server-manager/PRODUCT-IDEAS.md#1-spend-brake-lock-v1)); IaC must not freeze the wrong split:
-  - **MVP Function code:** SoftStop to halt spend. Live lab (`functions/shutdown_vm/`) SoftStops **VM1 and VM2**. Keep the stop list a **variable** (default both, matching the lab) until PRODUCT-IDEAS settles whether the Always Free Micro can stay up; do not hard-code “VM1 only” as if that were already the product rule.
-  - **v1 Function code (not MVP):** also **PUT** a durable Object Storage lock flag (exact key TBD at v1 contract freeze; sketch `meta/spend-brake-triggered.json`). Manager is the only clearer; door reads it before wake. **Do not create or delete that object in OpenTofu** — it is runtime state, like ledger JSON.
-  - **IAM now (MVP tofu):** grant the Functions dynamic group SoftStop on the product compartment **and** object write **scoped to the product bucket**. The extra statement is unused until v1 Function code lands; putting it in greenfield avoids a later IAM-only apply. Do **not** grant tenancy-wide `manage objects`.
+- $1 monthly budget on the compartment + alert (email) + **Events rule → Function** (`mcmgr-events-budget-alert`; RM dump omitted the action — Console has Functions → `shutdown_vm`). Do **not** create the lab’s unused ONS topic `Budget-Alerts`. Phase 3.3 may complete Function image push; 3.1 may placeholder. Behavior is staged in lab `PRODUCT-IDEAS.md` ([$1 spend-brake lock (v1)](../../OCI-mc-server-manager/PRODUCT-IDEAS.md#1-spend-brake-lock-v1)):
+  - **Product v1 Function (lab `functions/shutdown_vm/`, not live-pushed in Step 2.2):** ignore budget **RESET**; on a real threshold alert SoftStop **VM1 only**, then **PUT** `meta/spend-brake-triggered.json`. **Do not SoftStop the door Micro** — AMD `VM.Standard.E2.1.Micro` is a separate Always Free allowance (up to two instances), not Ampere OCPU-hours; Oracle does not charge Always Free resources after PAYG upgrade. `softstop_instance_ids` defaults to VM1; keep it a variable for an emergency override. Function config must include `OS_NAMESPACE` / `OS_BUCKET` / `OS_LOCK_OBJECT`.
+  - **Live lab image (until an authorized `fn push`):** still SoftStops **VM1 and VM2** and does not write the lock (captured 0.0.11).
+  - **Do not create or delete the lock object in OpenTofu** — it is runtime state, like ledger JSON.
+  - **IAM:** grant the Functions dynamic group SoftStop on the product compartment **and** object write **scoped to the product bucket**. Do **not** grant tenancy-wide `manage objects`.
 
 **Outputs:** every OCID/IP the Manager needs for `config.local.json` and `meta/infra.json` (see Contracts-Object-Storage nested v2). No secrets in outputs.
 
@@ -846,7 +847,7 @@ Ubuntu on OCI:
 
 | Date | Note |
 |------|------|
-| 2026-08-17 | Setup VM1 picker writes `vm1_ocpus` / `vm1_memory_gb` (4/24 default or 2/12). HCL defaults restored to 4/24. Minecraft username no longer collected; no `whitelist.json` seed. |
+| 2026-08-17 | **V1 Step 2.2:** $1 Function source PUTs `meta/spend-brake-triggered.json`; **do not SoftStop the door Micro** (Always Free AMD Micro ≠ Ampere hours). HCL `softstop_instance_ids` defaults to VM1; Function config gets OS namespace/bucket/lock key. No `fn push`. |
 | 2026-08-17 | SETUP-ISSUE-5: Setup cloud-init wait uses `sudo -n test -f` (marker under `/etc/mcmgr` 0750). |
 | 2026-08-15 | Step **4.3 DONE:** bootstrap / Re-Deploy write `white-list=false` + `enforce-whitelist=false` (SETUP-ISSUE-3). Admin Minecraft username is optional. |
 | 2026-08-15 | D7 Connect-existing = MVP plan Phase 5; **D10** test-deploy bugs must be fixed in product HCL/bootstrap, not only the live VM. Vanilla in-game whitelist off (SETUP-ISSUE-3 / Step 4.3). SETUP-ISSUE-4 CHDIR → Step 4.2 comprehensive permissions. |

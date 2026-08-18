@@ -147,7 +147,7 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 | Phase | Focus | Status |
 |-------|--------|--------|
 | **1** | Manager shell (Advanced/Danger split, CIDR, wipe world) | **DONE** |
-| **2** | $1 spend-brake lock (Function flag, door, Manager overlay) | **NEXT** = Step **2.2** |
+| **2** | $1 spend-brake lock (Function flag, door, Manager overlay) | **NEXT** = Step **2.3** |
 | **3** | IP Management (public/private + blacklist) | TODO |
 | **4** | Setup game types (Paper, loaders, pack import) | TODO |
 | **5** | Server Management modding inspect + re-download pack | TODO |
@@ -156,7 +156,7 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 | **8** | Paid / spend mode (**last** product feature) | TODO |
 | **9** | Packaging, updates, launch (old MVP Phase 8–9) | TODO — **do not start** until Phases 1–8 are DONE or the operator skips 8 |
 
-**Current NEXT step:** [Step 2.2](#step-22--function-writes-the-lock-flag). **Do not start Step 2.2** until the operator asks.
+**Current NEXT step:** [Step 2.3](#step-23--door-honors-the-lock-flag). **Do not start Step 2.3** until the operator asks.
 
 ---
 
@@ -286,7 +286,7 @@ Split so Function, door, and Manager each get their own window.
 
 ### Step 2.2 — Function writes the lock flag
 
-**Status:** NEXT  
+**Status:** DONE  
 **Depends on:** 2.1
 
 **Read first**
@@ -308,13 +308,13 @@ Split so Function, door, and Manager each get their own window.
 
 **Done when:** Tracked Function source writes the flag; door-stop policy is written down.
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-17 — Tracked Function PUTs `meta/spend-brake-triggered.json` on real alerts (ignore RESET). SoftStop **VM1 only**; **do not SoftStop the door Micro** (Always Free AMD Micro is a separate envelope, not Ampere OCPU-hours). HCL default stop-list = VM1; Function config gets OS namespace/bucket/lock key. Mocked Events unit tests. No `fn push` / OCIR.
 
 ---
 
 ### Step 2.3 — Door honors the lock flag
 
-**Status:** TODO  
+**Status:** NEXT  
 **Depends on:** 2.1 (2.2 code may still be undeployed)
 
 **Read first**
@@ -1238,6 +1238,7 @@ Former MVP Phase **8–9**. **Do not start** until Phases **1–7** are DONE and
 
 | Date | Note |
 |------|------|
+| 2026-08-17 | **Step 2.2 DONE.** Tracked Function PUTs `meta/spend-brake-triggered.json` on real threshold alerts (ignore RESET); SoftStop **VM1 only**; door Micro left running (Always Free AMD Micro ≠ Ampere hours). HCL stop-list default VM1 + OS config. No `fn push`. **NEXT = Step 2.3**. Do not start 2.3 unless asked. |
 | 2026-08-17 | **Step 2.1 DONE.** Frozen Object Storage lock: `meta/spend-brake-triggered.json` v1; Function writer, Manager-only DELETE clearer, door+Manager readers; fail closed. Core DTO + get/put/delete. No live Function deploy. **NEXT = Step 2.2**. Do not start 2.2 unless asked. |
 | 2026-08-17 | **Step 1.3 DONE.** Wipe world: Server Management button + confirm; SSH deletes only `world_path` under `/opt/mcmgr/server/`; Minecraft stopped first; Object Storage backups / mods / `server.properties` untouched. **NEXT = Step 2.1**. Do not start 2.1 unless asked. |
 | 2026-08-17 | **Step 1.2 DONE.** Allowlist CIDR: Add-IP Advanced field; persist prefix locally + `ip/allowlist.json` when present; Minecraft SL rules use the CIDR; SSH/door stay `/32` except own admin entry; reject `/0`–`/8`. **NEXT = Step 1.3**. Do not start 1.3 unless asked. |

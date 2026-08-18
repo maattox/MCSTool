@@ -102,7 +102,7 @@ public sealed class SpendBrakeLockStore
     }
 
     /// <summary>
-    /// PUT / replace the lock. Production writer is the budget Function (Step 2.2).
+    /// PUT / replace the lock. Production writer is the budget Function (Step 2.2 source).
     /// Manager must not use this to set the lock; tests and DEBUG fixtures may.
     /// </summary>
     public async Task<ServiceResult> PutAsync(

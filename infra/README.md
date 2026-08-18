@@ -92,7 +92,7 @@ Dynamic groups use `compartment_id = <tenancy OCID>` (Oracle requirement). `mcmg
 |-------|--------|-----------------------------------------------|
 | `mcmgr-dg-instances` | all instances in the stack compartment | object read/write on the product bucket; `use instance-family` |
 | `mcmgr-dg-door` | `instance.id = <door OCID>` (tag matching did not enroll the door on the identity-domain test tenancy) | reserved-IP verbs via `mcmgr-door-ip` (tenancy) |
-| `mcmgr-dg-fn` | `fnfunc` in that compartment | `use instance-family`; object write on the product bucket (v1 spend-brake lock PUT; unused in MVP Function code) |
+| `mcmgr-dg-fn` | `fnfunc` in that compartment | `use instance-family`; object write on the product bucket (v1 spend-brake lock PUT) |
 
 No tenancy-wide `manage buckets` / `manage objects` / `manage instances`.
 
@@ -129,8 +129,8 @@ Never `tofu import` the **live Forge lab** into product state. Importing one res
 
 - Budget + ACTUAL ABSOLUTE $1 alert (email). Residual-charge copy is in the budget description / alert message.
 - Events → Function is the live path. **No ONS topic.**
-- `softstop_instance_ids` defaults to **both** VM1 and door (lab). PRODUCT-IDEAS still open on whether the Always Free Micro should stay up.
-- The v1 lock object (`meta/spend-brake-triggered.json` sketch) is **runtime state**, not a tofu resource.
+- `softstop_instance_ids` defaults to **VM1 only**. Always Free AMD Micro stays up (does not use Ampere OCPU-hours). Function config also passes `OS_NAMESPACE` / `OS_BUCKET` / `OS_LOCK_OBJECT` for the lock PUT.
+- The v1 lock object (`meta/spend-brake-triggered.json`) is **runtime state**, not a tofu resource. Tracked Function source writes it (lab `functions/shutdown_vm/`); do not `fn push` unless authorized.
 
 ---
 

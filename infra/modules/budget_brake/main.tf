@@ -31,6 +31,14 @@ variable "softstop_instance_ids" {
   type = list(string)
 }
 
+variable "object_storage_namespace" {
+  type = string
+}
+
+variable "object_storage_bucket_name" {
+  type = string
+}
+
 locals {
   create_function = trimspace(var.function_image) != ""
 }
@@ -40,7 +48,7 @@ resource "oci_budget_budget" "one_usd" {
   compartment_id                        = var.tenancy_ocid
   amount                                = 1
   display_name                          = "mcmgr-budget-1usd"
-  description                           = "Last-resort $1 actual-spend brake. If this fires, Oracle may bill ~$1-$2 that month; the Function SoftStops listed instances. Not a perfect $0 guarantee."
+  description                           = "Last-resort $1 actual-spend brake. If this fires, Oracle may bill ~$1-$2 that month; the Function SoftStops VM1 and PUTs the spend-brake lock. The Always Free door Micro stays running. Not a perfect $0 guarantee."
   reset_period                          = "MONTHLY"
   processing_period_type                = "MONTH"
   budget_processing_period_start_offset = 1
@@ -55,7 +63,7 @@ resource "oci_budget_alert_rule" "one_usd" {
   threshold_type = "ABSOLUTE"
   type           = "ACTUAL"
   recipients     = var.alert_email
-  message        = "MC Manager $1 spend brake fired. Compute will SoftStop. Residual ~$1-$2 that month is possible because the Function is not instantaneous."
+  message        = "MC Manager $1 spend brake fired. Minecraft VM will SoftStop; doorbell stays up. Residual ~$1-$2 that month is possible because the Function is not instantaneous."
 }
 
 resource "oci_artifacts_container_repository" "softstop" {
@@ -82,6 +90,9 @@ resource "oci_functions_function" "softstop" {
 
   config = {
     INSTANCE_OCIDS = join(",", var.softstop_instance_ids)
+    OS_NAMESPACE   = var.object_storage_namespace
+    OS_BUCKET      = var.object_storage_bucket_name
+    OS_LOCK_OBJECT = "meta/spend-brake-triggered.json"
   }
 }
 
