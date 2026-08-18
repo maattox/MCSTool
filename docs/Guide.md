@@ -192,6 +192,7 @@ When everyone is done, click **Stop** (doorbell-aware). If you forget, idle time
 | Stuck play IP / doorbell | **Troubleshooting** (confirm-gated one-shots) |
 | Technical VM / doorbell state | **Advanced** |
 | Turn idle timer off / delete the stack | **Danger Zone** |
+| Program settings / About | Top-right **gear** and **menu** (native Windows title bar stays) |
 
 **Wipe world** on **Server Management** deletes only the live save on the game VM so the next **Start** generates a new world. Cloud backups, mods, and `server.properties` are not deleted. Download a world save first if you might want the current world back. The game VM must be running; Minecraft is stopped for the wipe and left stopped until you Start.
 
@@ -200,6 +201,8 @@ When everyone is done, click **Stop** (doorbell-aware). If you forget, idle time
 **Advanced vs Danger Zone:** Advanced is power-user tools (technical status, Deploy/repair, break-glass VM power, idle **timeout**, stack identity). **Danger Zone** is a separate tab for turning the idle timer **off** (testing only — boot / Minecraft start turns it back on) and **Delete infrastructure**. Troubleshooting stays its own tab.
 
 Do not disable the idle timer except for a short test. Booting the game VM turns it back on.
+
+The top-right **gear** opens program settings for this PC: where stack config and OpenTofu files live, plus a **Check for updates** toggle (saved now; GitHub Releases checks start in a later release). The **menu** has **About** and a GitHub link. Tabs and Start / Stop are unchanged. There is not a notification list yet.
 
 ---
 

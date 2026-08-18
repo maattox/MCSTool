@@ -173,6 +173,7 @@ button.mcm-btn-disabled:hover {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 12px;
     margin-bottom: 12px;
     flex-shrink: 0;
     /* In-content wordmark only. Window min/max/close stay native WPF chrome. */
@@ -191,10 +192,93 @@ button.mcm-btn-disabled:hover {
     color: var(--text-secondary);
 }
 
+.mcm-title-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
 .mcm-always-free {
     font-size: 11px;
     font-weight: 600;
     color: var(--text-accent);
+    margin-right: 4px;
+}
+
+.mcm-chrome-btn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: transparent;
+    border: 0.5px solid transparent;
+    color: var(--text-secondary);
+}
+
+.mcm-chrome-btn .ti {
+    font-size: 17px;
+}
+
+.mcm-chrome-btn:hover:not(:disabled) {
+    background: var(--surface-2);
+    color: var(--text-primary);
+}
+
+.mcm-chrome-btn.is-open {
+    background: var(--surface-2);
+    border-color: var(--border);
+    color: var(--text-primary);
+}
+
+.mcm-overflow {
+    position: relative;
+    z-index: 36;
+}
+
+.mcm-overflow-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 188px;
+    padding: 4px;
+    background: var(--surface-1);
+    border: 0.5px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(8, 10, 14, 0.45);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.mcm-overflow-menu button {
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    border-radius: 7px;
+    padding: 8px 10px;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.mcm-overflow-menu button:hover:not(:disabled) {
+    background: var(--surface-2);
+}
+
+.mcm-overflow-catch {
+    position: fixed;
+    inset: 0;
+    z-index: 35;
+    background: transparent;
+}
+
+.mcm-app-manage > .mcm-overflow-catch,
+.mcm-app-manage > .mcm-modal-overlay {
+    grid-column: 1 / -1;
 }
 
 .mcm-chrome {
@@ -898,6 +982,107 @@ button.mcm-btn-disabled:hover {
 
 .mcm-modal-card.is-wide {
     width: 480px;
+}
+
+.mcm-modal-card.mcm-settings-card {
+    width: 520px;
+}
+
+.mcm-settings-section {
+    margin: 0 0 18px;
+}
+
+.mcm-settings-heading {
+    margin: 0 0 8px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.mcm-settings-note {
+    margin: 8px 0 0;
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.mcm-settings-error {
+    margin: 8px 0 0;
+    font-size: 12px;
+    color: var(--text-danger);
+}
+
+.mcm-path-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.mcm-path-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 10px;
+    background: var(--surface-2);
+    border: 0.5px solid var(--border);
+    border-radius: 8px;
+}
+
+.mcm-path-copy {
+    min-width: 0;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.mcm-path-label {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.mcm-path-hint {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.mcm-path-value {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-secondary);
+    word-break: break-all;
+}
+
+.mcm-path-value.is-missing {
+    color: var(--text-muted);
+}
+
+.mcm-path-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.mcm-path-actions button {
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+.mcm-about-name {
+    margin: 0 0 2px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.mcm-about-version {
+    margin: 0 0 12px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
 }
 
 .mcm-modal-title {

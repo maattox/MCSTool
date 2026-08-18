@@ -1,0 +1,170 @@
+using System.Reflection;
+using CommunityToolkit.Mvvm.ComponentModel;
+using McManager.Core.Config;
+using McManager.Hybrid.Ui;
+
+namespace McManager.Hybrid.ViewModels;
+
+/// <summary>
+/// Title-row overflow + program settings (gear). No notification center (Step 6.2).
+/// </summary>
+public sealed partial class ChromeViewModel : ObservableObject
+{
+    public const string GitHubUrl = ProgramPaths.GitHubUrl;
+
+    private readonly LocalConfigHost _configHost;
+    private readonly IClipboard _clipboard;
+    private readonly IShell _shell;
+    private readonly AppSettingsDocument _settings;
+    private readonly string _settingsPath;
+    private bool _loading = true;
+    private CancellationTokenSource? _copyCts;
+
+    public ChromeViewModel(LocalConfigHost configHost, IClipboard clipboard, IShell shell)
+    {
+        _configHost = configHost;
+        _clipboard = clipboard;
+        _shell = shell;
+        _settingsPath = AppSettingsStore.DefaultFilePath();
+        _settings = AppSettingsStore.Load(_settingsPath);
+        CheckForUpdates = _settings.CheckForUpdates;
+        AppVersion = ReadAppVersion();
+        RefreshPaths();
+        _loading = false;
+    }
+
+    public string AppName { get; } = "MC Manager";
+
+    public string AppVersion { get; }
+
+    [ObservableProperty]
+    private bool _overflowOpen;
+
+    [ObservableProperty]
+    private bool _settingsOpen;
+
+    [ObservableProperty]
+    private bool _aboutOpen;
+
+    [ObservableProperty]
+    private bool _checkForUpdates = true;
+
+    [ObservableProperty]
+    private string _saveError = "";
+
+    [ObservableProperty]
+    private string _copyFeedback = "";
+
+    [ObservableProperty]
+    private IReadOnlyList<ProgramPathItem> _paths = [];
+
+    public string? ConfigDirOverride => ProgramPaths.ConfigDirOverride;
+
+    public bool HasConfigDirOverride => !string.IsNullOrWhiteSpace(ConfigDirOverride);
+
+    public void ToggleOverflow()
+    {
+        OverflowOpen = !OverflowOpen;
+        if (OverflowOpen)
+        {
+            SettingsOpen = false;
+            AboutOpen = false;
+        }
+    }
+
+    public void CloseOverflow() => OverflowOpen = false;
+
+    public void OpenSettings()
+    {
+        OverflowOpen = false;
+        AboutOpen = false;
+        RefreshPaths();
+        CopyFeedback = "";
+        SettingsOpen = true;
+    }
+
+    public void CloseSettings() => SettingsOpen = false;
+
+    public void OpenAbout()
+    {
+        OverflowOpen = false;
+        SettingsOpen = false;
+        AboutOpen = true;
+    }
+
+    public void CloseAbout() => AboutOpen = false;
+
+    public void ClosePanels()
+    {
+        OverflowOpen = false;
+        SettingsOpen = false;
+        AboutOpen = false;
+    }
+
+    public void OpenGitHub()
+    {
+        OverflowOpen = false;
+        _shell.OpenUrl(GitHubUrl);
+    }
+
+    public async Task CopyPathAsync(string id)
+    {
+        var row = Paths.FirstOrDefault(p => string.Equals(p.Id, id, StringComparison.Ordinal));
+        if (row is null || string.IsNullOrWhiteSpace(row.Path))
+            return;
+
+        await _clipboard.SetTextAsync(row.Path);
+        CopyFeedback = "Copied " + row.Label.ToLowerInvariant() + ".";
+        _copyCts?.Cancel();
+        _copyCts = new CancellationTokenSource();
+        var token = _copyCts.Token;
+        try
+        {
+            await Task.Delay(1800, token);
+            if (!token.IsCancellationRequested)
+                CopyFeedback = "";
+        }
+        catch (TaskCanceledException)
+        {
+            // a later copy replaced this toast
+        }
+    }
+
+    public void OpenPath(string id)
+    {
+        var row = Paths.FirstOrDefault(p => string.Equals(p.Id, id, StringComparison.Ordinal));
+        if (row is null || string.IsNullOrWhiteSpace(row.Path))
+            return;
+        _shell.OpenPath(row.Path);
+    }
+
+    partial void OnCheckForUpdatesChanged(bool value)
+    {
+        if (_loading)
+            return;
+
+        _settings.CheckForUpdates = value;
+        var result = AppSettingsStore.Save(_settings, _settingsPath);
+        SaveError = result.Succeeded ? "" : (result.Error ?? "Could not save program settings.");
+    }
+
+    private void RefreshPaths()
+    {
+        var oci = _configHost.Config?.Oci.ConfigFile;
+        Paths = ProgramPaths.Describe(_configHost.LoadResult.DataDirectory, oci);
+    }
+
+    private static string ReadAppVersion()
+    {
+        var asm = typeof(App).Assembly;
+        var informational = asm.GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+            ?.InformationalVersion;
+        if (!string.IsNullOrWhiteSpace(informational))
+        {
+            var plus = informational.IndexOf('+', StringComparison.Ordinal);
+            return plus > 0 ? informational[..plus] : informational;
+        }
+
+        return asm.GetName().Version?.ToString(3) ?? "0.1.0";
+    }
+}

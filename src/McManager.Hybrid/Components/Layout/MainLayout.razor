@@ -4,6 +4,7 @@
 @using McManager.Hybrid.Components.Tabs.Advanced
 @using McManager.Hybrid.Components.Tabs.Troubleshooting
 @inject MainViewModel Vm
+@inject ChromeViewModel Chrome
 @implements IDisposable
 
 <div class="mcm-app mcm-app-manage">
@@ -12,7 +13,39 @@
             <i class="ti ti-server-2" aria-hidden="true"></i>
             <span>mc manager</span>
         </div>
-        <span class="mcm-always-free">Always Free</span>
+        <div class="mcm-title-actions">
+            <span class="mcm-always-free">Always Free</span>
+            <button type="button"
+                    class="mcm-chrome-btn"
+                    title="Program settings"
+                    aria-label="Program settings"
+                    @onclick="Chrome.OpenSettings">
+                <i class="ti ti-settings" aria-hidden="true"></i>
+            </button>
+            <div class="mcm-overflow">
+                <button type="button"
+                        class="mcm-chrome-btn @(Chrome.OverflowOpen ? "is-open" : null)"
+                        title="More"
+                        aria-label="More"
+                        aria-haspopup="menu"
+                        aria-expanded="@(Chrome.OverflowOpen ? "true" : "false")"
+                        aria-controls="mcm-overflow-menu"
+                        @onclick="Chrome.ToggleOverflow"
+                        @onclick:stopPropagation="true">
+                    <i class="ti ti-menu-2" aria-hidden="true"></i>
+                </button>
+                @if (Chrome.OverflowOpen)
+                {
+                    <div class="mcm-overflow-menu"
+                         id="mcm-overflow-menu"
+                         role="menu"
+                         @onclick:stopPropagation="true">
+                        <button type="button" role="menuitem" @onclick="Chrome.OpenAbout">About</button>
+                        <button type="button" role="menuitem" @onclick="Chrome.OpenGitHub">Source on GitHub</button>
+                    </div>
+                }
+            </div>
+        </div>
     </header>
 
     <section class="mcm-chrome" aria-label="Server status">
@@ -225,20 +258,150 @@
     {
         <div class="mcm-toast @(Vm.ToastIsError ? "is-error" : null)" role="status">@Vm.ToastMessage</div>
     }
+
+    @if (Chrome.OverflowOpen)
+    {
+        <div class="mcm-overflow-catch"
+             @onclick="Chrome.CloseOverflow"
+             @onkeydown="OnChromeKeyDown"></div>
+    }
+
+    @if (Chrome.SettingsOpen)
+    {
+        <div class="mcm-modal-overlay open"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="mcm-settings-title"
+             tabindex="-1"
+             @ref="_chromeOverlay"
+             @onclick="Chrome.CloseSettings"
+             @onkeydown="OnChromeKeyDown">
+            <div class="mcm-modal-card is-wide mcm-settings-card" @onclick:stopPropagation="true">
+                <h2 id="mcm-settings-title" class="mcm-modal-title">Program settings</h2>
+                <p class="mcm-modal-body">These are settings for this PC, not the Minecraft server. Window chrome stays the Windows title bar.</p>
+
+                <div class="mcm-settings-section">
+                    <h3 class="mcm-settings-heading">Paths</h3>
+                    @if (Chrome.HasConfigDirOverride)
+                    {
+                        <p class="mcm-settings-note">Data folder is overridden by MCMANAGER_CONFIG_DIR.</p>
+                    }
+                    <ul class="mcm-path-list">
+                        @foreach (var row in Chrome.Paths)
+                        {
+                            <li class="mcm-path-row">
+                                <div class="mcm-path-copy">
+                                    <span class="mcm-path-label">@row.Label</span>
+                                    <span class="mcm-path-hint">@row.Hint</span>
+                                    <code class="mcm-path-value @(row.Exists ? null : "is-missing")">
+                                        @(string.IsNullOrWhiteSpace(row.Path) ? "—" : row.Path)
+                                    </code>
+                                </div>
+                                <div class="mcm-path-actions">
+                                    <button type="button"
+                                            disabled="@(string.IsNullOrWhiteSpace(row.Path))"
+                                            title="Copy path"
+                                            @onclick="@(() => Chrome.CopyPathAsync(row.Id))">
+                                        Copy
+                                    </button>
+                                    <button type="button"
+                                            disabled="@(string.IsNullOrWhiteSpace(row.Path))"
+                                            title="Open in File Explorer"
+                                            @onclick="@(() => Chrome.OpenPath(row.Id))">
+                                        Open
+                                    </button>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                    @if (!string.IsNullOrWhiteSpace(Chrome.CopyFeedback))
+                    {
+                        <p class="mcm-settings-note" role="status">@Chrome.CopyFeedback</p>
+                    }
+                </div>
+
+                <div class="mcm-settings-section">
+                    <h3 class="mcm-settings-heading">Updates</h3>
+                    <label class="mcm-checkbox-row" style="margin:0;" for="mcm-check-updates">
+                        <input id="mcm-check-updates"
+                               type="checkbox"
+                               @bind="Chrome.CheckForUpdates" />
+                        Check for updates when Manager opens
+                    </label>
+                    <p class="mcm-settings-note">GitHub Releases checks are not live yet. This preference is saved for when updates ship.</p>
+                    @if (!string.IsNullOrWhiteSpace(Chrome.SaveError))
+                    {
+                        <p class="mcm-settings-error" role="alert">@Chrome.SaveError</p>
+                    }
+                </div>
+
+                <div class="mcm-modal-actions">
+                    <button type="button" class="mcm-primary" @onclick="Chrome.CloseSettings">Close</button>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (Chrome.AboutOpen)
+    {
+        <div class="mcm-modal-overlay open"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="mcm-about-title"
+             tabindex="-1"
+             @ref="_chromeOverlay"
+             @onclick="Chrome.CloseAbout"
+             @onkeydown="OnChromeKeyDown">
+            <div class="mcm-modal-card" @onclick:stopPropagation="true">
+                <h2 id="mcm-about-title" class="mcm-modal-title">About</h2>
+                <p class="mcm-about-name">@Chrome.AppName</p>
+                <p class="mcm-about-version">Version @Chrome.AppVersion</p>
+                <p class="mcm-modal-body">A Windows app for a private Minecraft server on Oracle Always Free. Friends connect to one play IP. Access is an IP allowlist — this is not a public server.</p>
+                <div class="mcm-modal-actions">
+                    <button type="button" @onclick="Chrome.OpenGitHub">GitHub</button>
+                    <button type="button" class="mcm-primary" @onclick="Chrome.CloseAbout">Close</button>
+                </div>
+            </div>
+        </div>
+    }
 </div>
 
 @code {
     private string _tab = "whitelist";
+    private ElementReference _chromeOverlay;
 
     protected override void OnInitialized()
     {
         Vm.PropertyChanged += OnVmChanged;
+        Chrome.PropertyChanged += OnVmChanged;
         Vm.StartChrome();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Chrome.SettingsOpen || Chrome.AboutOpen)
+        {
+            try
+            {
+                await _chromeOverlay.FocusAsync();
+            }
+            catch (InvalidOperationException)
+            {
+                // Element not in the tree yet.
+            }
+        }
     }
 
     public void Dispose()
     {
         Vm.PropertyChanged -= OnVmChanged;
+        Chrome.PropertyChanged -= OnVmChanged;
+    }
+
+    private void OnChromeKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+            Chrome.ClosePanels();
     }
 
     private void OnVmChanged(object? sender, PropertyChangedEventArgs e) =>

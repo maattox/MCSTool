@@ -156,12 +156,12 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 | **3** | Remove public/blacklist (was IP Management public mode) | **DONE** |
 | **4** | Setup game types (Paper, loaders, pack import) | **DONE** (Step **4.12** deferred) |
 | **5** | Server Management modding inspect + re-download pack | **DONE** |
-| **6** | Top-bar chrome + oversized-world SSH UX | **NEXT** = Step **6.1** |
+| **6** | Top-bar chrome + oversized-world SSH UX | **NEXT** = Step **6.2** |
 | **7** | Remaining v1 (resize, console, storage, Connect version) | TODO |
 | **8** | Paid / spend mode (**last** product feature) | TODO |
 | **9** | Packaging, updates, launch (old MVP Phase 8–9) | TODO — **do not start** until Phases 1–8 are DONE or the operator skips 8 |
 
-**Current NEXT step:** [Step 6.1](#step-61--overflow-menu--settings-gear). **Do not start Step 6.1** until the operator asks.
+**Current NEXT step:** [Step 6.2](#step-62--notification-center-bell). **Do not start Step 6.2** until the operator asks.
 
 ---
 
@@ -794,7 +794,7 @@ Historical **Do** (not to be started): import a user-supplied CurseForge client 
 
 ### Step 6.1 — Overflow menu + settings gear
 
-**Status:** NEXT  
+**Status:** DONE  
 **Depends on:** 1.1
 
 **Read first**
@@ -814,13 +814,13 @@ Historical **Do** (not to be started): import a user-supplied CurseForge client 
 
 **Done when:** Gear + overflow exist without a bell list.
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-18 — Title-row **gear** (program settings: resolved paths + Open/Copy; update-check toggle persisted to `%LOCALAPPDATA%\McManager\app-settings.json`, no GitHub check yet) and **overflow** (About + Source on GitHub). Native OS chrome; no bell list. Guide + Local-Config notes. **NEXT = Step 6.2**. Do not start 6.2 unless asked.
 
 ---
 
 ### Step 6.2 — Notification center (bell)
 
-**Status:** TODO  
+**Status:** NEXT  
 **Depends on:** 6.1
 
 **Read first**
@@ -1241,6 +1241,7 @@ Former MVP Phase **8–9**. **Do not start** until Phases **1–7** are DONE and
 
 | Date | Note |
 |------|------|
+| 2026-08-18 | **Step 6.1 DONE.** Title-row gear (paths + update-check placeholder) and overflow (About, GitHub). No bell. Native OS chrome. **NEXT = Step 6.2**. Do not start 6.2 unless asked. |
 | 2026-08-18 | **Step 5.1 DONE.** Server Management Modding: Vanilla/Paper empty state; inspect live `mods/` (SSH); **Download pack** = original `data/imported-packs/` archive (never zip VM1 `mods/`). Guide note. **NEXT = Step 6.1**. Do not start 6.1 unless asked. |
 | 2026-08-18 | **Step 4.12 DEFERRED** (ToS / key custody). No product CurseForge API key; keep Server Files zip via 4.9; client exports stay refused (Guide: Server Files or Modrinth `.mrpack`). **NEXT = Step 5.1**. Do not start 5.1 unless asked. |
 | 2026-08-18 | **Step 4.11 DONE.** Dedicated client-pack notice in Setup (Game + Review) + Guide section: not playable until friends have the same exported pack; cannot rebuild from server `mods/`. **NEXT = Step 4.12**. Do not start 4.12 unless asked. |

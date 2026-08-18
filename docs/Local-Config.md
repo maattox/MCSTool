@@ -12,6 +12,7 @@ The Manager WinExe (`McManager.Hybrid`, WPF + BlazorWebView) seeds connectivity 
 | `data/friends.local.json` | **Ignored** | Live Desired List seed |
 | `data/setup-wizard.local.json` | **Ignored** | Setup wizard resume (step index + fields; **no** Auth Token, **no** SSH private key) |
 | `data/sample-packs/` | **Ignored** | Operator-local sample `.mrpack` / CurseForge zips for Phase 4 pack-import work — see [`Sample-Packs.md`](Sample-Packs.md). **Not** CI fixtures. |
+| `%LOCALAPPDATA%\McManager\app-settings.json` | **Ignored** (outside the repo) | Program settings for this PC: update-check toggle (Phase 9 honors it). Not stack OCIDs. |
 
 Copy examples into `data/` and fill values, or keep the operator-seeded files already present on this machine.
 
@@ -119,6 +120,8 @@ When you change OCI resources in Console or lab config, update `data/config.loca
 Gitignored [`data/sample-packs/`](../data/sample-packs/) holds homemade parser fixtures plus a few real published exports on this PC. Tracked instructions, gotchas, and the “pause and ask the operator to download a pack” rule: [`Sample-Packs.md`](Sample-Packs.md). Do not commit those archives. CI stays on `tests/fixtures/`.
 
 Imported packs the Manager actually installed are copied to **`data/imported-packs/<pack>_<version>/original.mrpack`** (or `original.zip`, plus `archive.json`). **Server Management → Download pack** copies that original archive — never a zip of VM1 `mods/`. The product cannot reconstruct a client pack from server `mods/` (Setup strips client-only files). Gitignored with the rest of `data/`.
+
+**Program settings (gear):** resolved paths for the data folder, `config.local.json`, `%LOCALAPPDATA%\McManager\tofu`, and the Oracle API config file. The update-check checkbox writes `%LOCALAPPDATA%\McManager\app-settings.json` (`check_for_updates`, default on). No GitHub request runs until Phase 9.
 
 ## Later (after v1): deployment profiles
 

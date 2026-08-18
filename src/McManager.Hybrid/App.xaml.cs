@@ -45,6 +45,7 @@ public partial class App : Application
         services.AddSingleton<IUiDispatcher>(new WpfUiDispatcher(Dispatcher));
         services.AddSingleton<IUiClock, WpfUiClock>();
         services.AddSingleton<IClipboard, WpfClipboard>();
+        services.AddSingleton<IShell, WpfShell>();
         services.AddSingleton<IFilePicker, WpfFilePicker>();
         services.AddSingleton<UiDialogs>();
         services.AddSingleton<IUiDialogs>(sp => sp.GetRequiredService<UiDialogs>());
@@ -71,6 +72,7 @@ public partial class App : Application
         services.AddSingleton<ConnectExistingFlow>();
         services.AddSingleton<FirstRunViewModel>();
         services.AddSingleton<MainViewModel>();
+        services.AddSingleton<ChromeViewModel>();
         services.AddSingleton<WhitelistViewModel>();
         services.AddSingleton<UsageViewModel>();
         services.AddSingleton<ServerManagementViewModel>();
