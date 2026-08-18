@@ -5,11 +5,13 @@
 #   EULA_ACCEPTED=true DISTRIBUTION=paper MINECRAFT_VERSION=1.21.10 sudo -E ./common/driver.sh
 #   EULA_ACCEPTED=true DISTRIBUTION=fabric MINECRAFT_VERSION=1.21.8 sudo -E ./common/driver.sh
 #   EULA_ACCEPTED=true DISTRIBUTION=neoforge MINECRAFT_VERSION=1.21.1 sudo -E ./common/driver.sh
+#   EULA_ACCEPTED=true DISTRIBUTION=forge MINECRAFT_VERSION=1.12.2 sudo -E ./common/driver.sh
 # Dry-run:
 #   DRY_RUN=1 MCMGR_ROOT=/tmp/mcmgr-dry EULA_ACCEPTED=true ./common/driver.sh
 #   DRY_RUN=1 DISTRIBUTION=paper MINECRAFT_VERSION=1.21.10 MCMGR_ROOT=/tmp/mcmgr-dry EULA_ACCEPTED=true ./common/driver.sh
 #   DRY_RUN=1 DISTRIBUTION=fabric MINECRAFT_VERSION=1.21.8 MCMGR_ROOT=/tmp/mcmgr-dry EULA_ACCEPTED=true ./common/driver.sh
 #   DRY_RUN=1 DISTRIBUTION=neoforge MINECRAFT_VERSION=1.21.1 MCMGR_ROOT=/tmp/mcmgr-dry EULA_ACCEPTED=true ./common/driver.sh
+#   DRY_RUN=1 DISTRIBUTION=forge MINECRAFT_VERSION=1.12.2 MCMGR_ROOT=/tmp/mcmgr-dry EULA_ACCEPTED=true ./common/driver.sh
 # shellcheck shell=bash
 set -euo pipefail
 
@@ -43,8 +45,8 @@ trap on_err ERR
 
 main() {
   case "${DISTRIBUTION}" in
-    vanilla|paper|fabric|neoforge) ;;
-    *) mcmgr_die "only distribution=vanilla|paper|fabric|neoforge is implemented (got ${DISTRIBUTION})" ;;
+    vanilla|paper|fabric|neoforge|forge) ;;
+    *) mcmgr_die "only distribution=vanilla|paper|fabric|neoforge|forge is implemented (got ${DISTRIBUTION})" ;;
   esac
 
   if [[ "${DRY_RUN}" != "1" && "$(id -u)" -ne 0 ]]; then
@@ -93,6 +95,11 @@ main() {
     source "${MCMGR_HOME}/modules/bootstrap-neoforge.sh"
     run_stage artifact_placed neoforge_resolve_and_place
     java_major_from_module="${NEOFORGE_JAVA_MAJOR:-}"
+  elif [[ "${DISTRIBUTION}" == "forge" ]]; then
+    # shellcheck source=../modules/bootstrap-forge.sh
+    source "${MCMGR_HOME}/modules/bootstrap-forge.sh"
+    run_stage artifact_placed forge_resolve_and_place
+    java_major_from_module="${FORGE_JAVA_MAJOR:-}"
   else
     # shellcheck source=../modules/bootstrap-vanilla.sh
     source "${MCMGR_HOME}/modules/bootstrap-vanilla.sh"
@@ -105,6 +112,9 @@ main() {
   if [[ "${DISTRIBUTION}" == "neoforge" ]]; then
     # --installServer needs the Temurin we just placed (§19.3 / §12.1).
     run_stage installer_run neoforge_run_installer
+  elif [[ "${DISTRIBUTION}" == "forge" ]]; then
+    # Vanilla server.jar already placed; --installServer after Java (§20.2 / §20.3).
+    run_stage installer_run forge_run_installer
   fi
 
   run_stage eula_written eula_write "${RESOLVED_MC_VERSION}"
@@ -117,10 +127,11 @@ main() {
 
   # Build launch_command args. unit_gen stays generic (§6.3):
   # Vanilla uses bare `nogui`; Paper uses `--nogui`; Fabric launcher_jar uses bare `nogui`.
-  # NeoForge argfile_tree: `@user_jvm_args.txt @unix_args --nogui` (memory is in the argfile).
+  # NeoForge / Forge >=1.17 argfile_tree: `@user_jvm_args.txt @unix_args --nogui`.
+  # Forge <=1.16.5 single_jar: `-jar forge-{mc}-{forge}.jar nogui`.
   local launch_args
-  if [[ "${DISTRIBUTION}" == "neoforge" ]]; then
-    [[ -n "${UNIX_ARGS_PATH:-}" ]] || mcmgr_die "neoforge launch needs UNIX_ARGS_PATH"
+  if [[ "${ARTIFACT_KIND:-}" == "argfile_tree" ]]; then
+    [[ -n "${UNIX_ARGS_PATH:-}" ]] || mcmgr_die "argfile_tree launch needs UNIX_ARGS_PATH"
     launch_args=(
       "@user_jvm_args.txt"
       "@${UNIX_ARGS_PATH}"
@@ -145,6 +156,8 @@ sys.stdout.buffer.write(("\n".join(flags) + "\n").encode("utf-8"))
 ')
       launch_args+=("-jar" "${ARTIFACT_FILENAME}" "--nogui")
     elif [[ "${DISTRIBUTION}" == "fabric" ]]; then
+      launch_args+=("-jar" "${ARTIFACT_FILENAME}" "nogui")
+    elif [[ "${DISTRIBUTION}" == "forge" ]]; then
       launch_args+=("-jar" "${ARTIFACT_FILENAME}" "nogui")
     else
       launch_args+=("-XX:+UseG1GC" "-jar" "server.jar" "nogui")
@@ -175,6 +188,8 @@ sys.stdout.buffer.write(("\n".join(flags) + "\n").encode("utf-8"))
     mcmgr_log "SUCCESS: Fabric ${RESOLVED_MC_VERSION} loader=${LOADER_VERSION:-} bootstrap complete"
   elif [[ "${DISTRIBUTION}" == "neoforge" ]]; then
     mcmgr_log "SUCCESS: NeoForge ${RESOLVED_MC_VERSION} loader=${LOADER_VERSION:-} bootstrap complete"
+  elif [[ "${DISTRIBUTION}" == "forge" ]]; then
+    mcmgr_log "SUCCESS: Forge ${RESOLVED_MC_VERSION} loader=${LOADER_VERSION:-} kind=${ARTIFACT_KIND:-} bootstrap complete"
   else
     mcmgr_log "SUCCESS: Vanilla ${RESOLVED_MC_VERSION} bootstrap complete"
   fi

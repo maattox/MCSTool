@@ -154,14 +154,14 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 | **1** | Manager shell (Advanced/Danger split, CIDR, wipe world) | **DONE** |
 | **2** | $1 spend-brake lock (Function flag, door, Manager overlay) | **DONE** |
 | **3** | Remove public/blacklist (was IP Management public mode) | **DONE** |
-| **4** | Setup game types (Paper, loaders, pack import) | **NEXT** = Step **4.6** |
+| **4** | Setup game types (Paper, loaders, pack import) | **NEXT** = Step **4.7** |
 | **5** | Server Management modding inspect + re-download pack | TODO |
 | **6** | Top-bar chrome + oversized-world SSH UX | TODO |
 | **7** | Remaining v1 (resize, console, storage, Connect version) | TODO |
 | **8** | Paid / spend mode (**last** product feature) | TODO |
 | **9** | Packaging, updates, launch (old MVP Phase 8–9) | TODO — **do not start** until Phases 1–8 are DONE or the operator skips 8 |
 
-**Current NEXT step:** [Step 4.6](#step-46--forge-installer-module-legacy-packs). **Do not start Step 4.6** until the operator asks.
+**Current NEXT step:** [Step 4.7](#step-47--modrinth-mrpack-analyze-manager-no-install). **Do not start Step 4.7** until the operator asks.
 
 ---
 
@@ -585,7 +585,7 @@ Each installer step: Core metadata client + `onbox/mcmgr/` module + generic unit
 
 ### Step 4.6 — Forge installer module (legacy packs)
 
-**Status:** NEXT  
+**Status:** DONE  
 **Depends on:** 4.5
 
 **Read first**
@@ -603,13 +603,13 @@ Each installer step: Core metadata client + `onbox/mcmgr/` module + generic unit
 
 **Done when:** Forge module exists; UI does not offer Forge vs NeoForge as equal current choices.
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-18 — Core `ForgePromotionsClient` + on-box `bootstrap-forge.sh` / `forge_meta.py`: `promotions_slim.json` (prefer `-recommended`, Maven installer URL — not ad HTML); Vanilla `server.jar` first; `none_published`; 1.16.5-and-earlier `single_jar` / 1.17+ `argfile_tree`; Java 8 for pre-1.17; refuse Minecraft older than 1.7. Fixture pin 1.12.2 recommended `14.23.5.2854`. No Setup Forge radio (Vanilla flavor stays vanilla/paper). **NEXT = Step 4.7**. Do not start 4.7 unless asked.
 
 ---
 
 ### Step 4.7 — Modrinth `.mrpack` analyze (Manager, no install)
 
-**Status:** TODO  
+**Status:** NEXT  
 **Depends on:** 4.4–4.6 (need to *detect* loader)
 
 **Read first**
@@ -1237,6 +1237,7 @@ Former MVP Phase **8–9**. **Do not start** until Phases **1–7** are DONE and
 
 | Date | Note |
 |------|------|
+| 2026-08-18 | **Step 4.6 DONE.** Forge loader module: Core `promotions_slim.json` client + on-box installer; Vanilla jar first; 1.12.2 `single_jar` / 1.20.1 `argfile_tree`; `none_published`; no Setup Forge radio. **NEXT = Step 4.7**. Do not start 4.7 unless asked. |
 | 2026-08-18 | **Step 4.5 DONE.** NeoForge loader module: Core Maven XML client + on-box installer; `--installServer` argfile tree; `none_published`; refuse ≤1.20.1; generic unit `@user_jvm_args.txt @unix_args --nogui`. No Forge / pack import / Setup Modded radio. **NEXT = Step 4.6**. Do not start 4.6 unless asked. |
 | 2026-08-18 | **Step 4.4 DONE.** Fabric loader module: Core meta client + on-box installer; three-axis `/server/jar` URL; `launcher_jar` + `none_published`; generic unit `nogui`. No pack import / Setup Modded radio. **NEXT = Step 4.5**. Do not start 4.5 unless asked. |
 | 2026-08-18 | **Step 4.3 DONE.** Setup Default Vanilla vs Optimized Vanilla (Paper): Mojang vs Fill v3 picker; bootstrap `DISTRIBUTION` to the 4.2 module; plan summary + infra `server_kind`. Guide note. **NEXT = Step 4.4**. Do not start 4.4 unless asked. |

@@ -41,6 +41,15 @@
       "complianceLevel": 1
     },
     {
+      "id": "1.12.2",
+      "type": "release",
+      "url": "https://piston-meta.mojang.com/v1/packages/886945bfb2b978778c3a0288fd7fab09ab69c711/1.12.2.json",
+      "time": "2026-08-18T00:00:00+00:00",
+      "releaseTime": "2017-09-18T00:00:00+00:00",
+      "sha1": "886945bfb2b978778c3a0288fd7fab09ab69c711",
+      "complianceLevel": 0
+    },
+    {
       "id": "26.1.2",
       "type": "release",
       "url": "https://piston-meta.mojang.com/v1/packages/d3fd35143b65049d54ffc0dd8e51bfbad6d958d8/26.1.2.json",

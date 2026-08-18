@@ -24,6 +24,10 @@ public sealed class SetupVanillaFlavorTests
     {
         Assert.Equal("vanilla", SetupVanillaFlavor.ToDistribution(SetupVanillaFlavor.Default));
         Assert.Equal("paper", SetupVanillaFlavor.ToDistribution(SetupVanillaFlavor.Optimized));
+        Assert.NotEqual("forge", SetupVanillaFlavor.ToDistribution(SetupVanillaFlavor.Default));
+        Assert.NotEqual("forge", SetupVanillaFlavor.ToDistribution(SetupVanillaFlavor.Optimized));
+        Assert.NotEqual("neoforge", SetupVanillaFlavor.ToDistribution(SetupVanillaFlavor.Default));
+        Assert.NotEqual("neoforge", SetupVanillaFlavor.ToDistribution(SetupVanillaFlavor.Optimized));
     }
 
     [Fact]

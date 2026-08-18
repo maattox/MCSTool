@@ -19,7 +19,7 @@ Related live quirks for operators: lab [`docs/Issues.md`](../../OCI-mc-server-ma
 3. **Do not overwrite a running binary in place** (`ETXTBSY` on `mccontrol`).  
    **Fix:** `systemctl stop mccontrol` → `cp …/mccontrol.new` → `mv …new …/mccontrol` → `chmod` → start (all under one `sudo bash -c`).
 
-4. **Strip CRLF on every shell script you upload from Windows** (`sed -i 's/\r$//' …`) before `bash` runs it. Shebang/`set -o pipefail` break with `\r`. Same for on-box `*.py` helpers (`paper_fill_v3.py`, `fabric_meta.py`, `neoforge_meta.py`) — Setup's onbox `find` must include `-name '*.py'`.
+4. **Strip CRLF on every shell script you upload from Windows** (`sed -i 's/\r$//' …`) before `bash` runs it. Shebang/`set -o pipefail` break with `\r`. Same for on-box `*.py` helpers (`paper_fill_v3.py`, `fabric_meta.py`, `neoforge_meta.py`, `forge_meta.py`) — Setup's onbox `find` must include `-name '*.py'`.
 
 5. **Door scripts under `set -u` must default `HOME`:**  
    `export HOME="${HOME:-/home/ubuntu}"`  

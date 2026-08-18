@@ -1,0 +1,15 @@
+{
+  "id": "1.12.2",
+  "type": "release",
+  "javaVersion": {
+    "component": "jre-legacy",
+    "majorVersion": 8
+  },
+  "downloads": {
+    "server": {
+      "sha1": "886945bfb2b978778c3a0288fd7fab09ab69c711",
+      "size": 30222121,
+      "url": "https://piston-data.mojang.com/v1/objects/886945bfb2b978778c3a0288fd7fab09ab69c711/server.jar"
+    }
+  }
+}

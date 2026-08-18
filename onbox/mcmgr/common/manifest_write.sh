@@ -32,7 +32,7 @@ args = json.loads(req("LAUNCH_ARGS_JSON"))
 hash_alg = req("ARTIFACT_HASH_ALG")
 hash_at = os.environ.get("ARTIFACT_HASH_VERIFIED_AT") or now
 dist = req("DISTRIBUTION")
-if dist not in ("vanilla", "paper", "fabric", "neoforge"):
+if dist not in ("vanilla", "paper", "fabric", "neoforge", "forge"):
     raise SystemExit(f"unsupported distribution {dist}")
 
 artifact_filename = req("ARTIFACT_FILENAME")
@@ -70,6 +70,38 @@ elif dist == "neoforge":
         raise SystemExit("neoforge launch args must be @user_jvm_args.txt @unix_args --nogui")
     if not any(a.startswith("@libraries/") for a in args):
         raise SystemExit("neoforge launch args missing @unix_args path")
+elif dist == "forge":
+    written_dist = "modded"
+    loader = "forge"
+    loader_version = req("LOADER_VERSION")
+    artifact_kind = os.environ.get("ARTIFACT_KIND") or ""
+    if hash_alg != "none_published":
+        raise SystemExit("forge artifact_hash.algorithm must be none_published")
+    hash_obj = {"algorithm": "none_published", "value": None, "verified_at": None}
+    installer_filename = req("INSTALLER_FILENAME")
+    installer_download_url = req("INSTALLER_DOWNLOAD_URL")
+    if artifact_kind == "argfile_tree":
+        unix_args_path = req("UNIX_ARGS_PATH")
+        artifact_filename = None
+        artifact_download_url = None
+        jvm_mem_src = "user_jvm_args_file"
+        if not args or args[0] != "@user_jvm_args.txt" or args[-1] != "--nogui":
+            raise SystemExit("forge argfile launch args must be @user_jvm_args.txt @unix_args --nogui")
+        if not any(a.startswith("@libraries/net/minecraftforge/forge/") for a in args):
+            raise SystemExit("forge launch args missing @unix_args path")
+    elif artifact_kind == "single_jar":
+        artifact_filename = req("ARTIFACT_FILENAME")
+        artifact_download_url = None
+        unix_args_path = None
+        jvm_mem_src = "launch_args"
+        if len(args) < 3 or args[-3] != "-jar" or args[-1] != "nogui":
+            raise SystemExit("forge single_jar launch args must end with -jar <forge.jar> nogui")
+        if args[-2] != artifact_filename:
+            raise SystemExit("forge single_jar launch jar does not match ARTIFACT_FILENAME")
+        if "--nogui" in args:
+            raise SystemExit("forge single_jar uses nogui, not --nogui")
+    else:
+        raise SystemExit(f"forge server_artifact.kind must be single_jar or argfile_tree (got {artifact_kind})")
 else:
     written_dist = dist
     loader = None

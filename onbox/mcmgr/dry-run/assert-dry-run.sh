@@ -86,6 +86,35 @@ if doc["distribution"] == "modded" and doc.get("loader") == "neoforge":
     assert "-Xms" in jvm and "-Xmx" in jvm
     unix_path = server_dir.rstrip("\\/") + "/" + uap.replace("\\", "/")
     assert os.path.isfile(unix_path), unix_path
+elif doc["distribution"] == "modded" and doc.get("loader") == "forge":
+    assert doc["loader_version"] == "14.23.5.2854"
+    assert doc["server_artifact"]["kind"] == "single_jar"
+    fn = doc["server_artifact"]["filename"]
+    assert fn == "forge-1.12.2-14.23.5.2854.jar", fn
+    assert doc["server_artifact"]["download_url"] is None
+    inst = doc["server_artifact"]["installer_filename"]
+    assert inst == "forge-1.12.2-14.23.5.2854-installer.jar", inst
+    url = doc["server_artifact"]["installer_download_url"] or ""
+    assert url == (
+        "https://maven.minecraftforge.net/net/minecraftforge/forge/"
+        "1.12.2-14.23.5.2854/forge-1.12.2-14.23.5.2854-installer.jar"
+    ), url
+    assert "files.minecraftforge.net" not in url.lower()
+    assert doc["server_artifact"]["unix_args_path"] is None
+    assert doc["artifact_hash"]["algorithm"] == "none_published"
+    assert doc["artifact_hash"]["value"] is None
+    assert doc["artifact_hash"]["verified_at"] is None
+    args = doc["launch_command"]["args"]
+    assert args[-3:] == ["-jar", fn, "nogui"], args
+    assert "--nogui" not in args
+    assert doc["launch_command"]["jvm_memory_args_source"] == "launch_args"
+    assert doc["java_major"] == 8
+    assert doc["minecraft_version"] == "1.12.2"
+    server_dir = doc["server_dir"]
+    jar_path = server_dir.rstrip("\\/") + "/" + fn
+    assert os.path.isfile(jar_path), jar_path
+    vanilla_jar = server_dir.rstrip("\\/") + "/server.jar"
+    assert os.path.isfile(vanilla_jar), "Forge requires Vanilla server.jar first"
 elif doc["distribution"] == "modded":
     assert doc["loader"] == "fabric"
     assert doc["loader_version"] == "0.17.2"
@@ -151,6 +180,11 @@ elif doc["distribution"] == "modded" and doc.get("loader") == "neoforge":
     assert "@" + doc["server_artifact"]["unix_args_path"] in unit
     assert "--nogui" in unit
     assert "-jar" not in unit
+    assert "bash -c" not in unit
+elif doc["distribution"] == "modded" and doc.get("loader") == "forge":
+    assert doc["server_artifact"]["filename"] in unit
+    assert "nogui" in unit
+    assert "--nogui" not in unit
     assert "bash -c" not in unit
 elif doc["distribution"] == "modded":
     assert doc["server_artifact"]["filename"] in unit

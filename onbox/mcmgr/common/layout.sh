@@ -205,7 +205,8 @@ _layout_expect() {
 }
 
 # Vanilla places server.jar; Paper places paper-<ver>-<build>.jar; Fabric places fabric-server-mc.*.jar.
-# NeoForge keeps the installer jar and an argfile tree (unix_args.txt).
+# NeoForge / Forge >=1.17 keep the installer jar and an argfile tree (unix_args.txt).
+# Forge <=1.16.5 places a runnable forge-{mc}-{forge}.jar (single_jar).
 _layout_artifact_jar() {
   if [[ -n "${ARTIFACT_FILENAME:-}" ]]; then
     printf '%s' "${SERVER_DIR}/${ARTIFACT_FILENAME}"
