@@ -1,0 +1,52 @@
+{
+  "formatVersion": 1,
+  "game": "minecraft",
+  "versionId": "0.0.1-fixture",
+  "name": "CI Fabric Strip Fixture",
+  "summary": "Synthetic .mrpack for analyzer tests. Dummy hashes and example.invalid URLs — do not download.",
+  "dependencies": {
+    "minecraft": "1.21.1",
+    "fabric-loader": "0.16.9"
+  },
+  "files": [
+    {
+      "path": "mods/server-required.jar",
+      "hashes": {
+        "sha1": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "sha512": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "env": { "client": "required", "server": "required" },
+      "downloads": ["https://example.invalid/server-required.jar"],
+      "fileSize": 10
+    },
+    {
+      "path": "mods/server-optional.jar",
+      "hashes": {
+        "sha1": "cccccccccccccccccccccccccccccccccccccccc",
+        "sha512": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      },
+      "env": { "client": "optional", "server": "optional" },
+      "downloads": ["https://example.invalid/server-optional.jar"],
+      "fileSize": 10
+    },
+    {
+      "path": "mods/client-only.jar",
+      "hashes": {
+        "sha1": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "sha512": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+      },
+      "env": { "client": "required", "server": "unsupported" },
+      "downloads": ["https://example.invalid/client-only.jar"],
+      "fileSize": 10
+    },
+    {
+      "path": "mods/unclear-side.jar",
+      "hashes": {
+        "sha1": "1111111111111111111111111111111111111111",
+        "sha512": "22222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222"
+      },
+      "downloads": ["https://example.invalid/unclear-side.jar"],
+      "fileSize": 10
+    }
+  ]
+}

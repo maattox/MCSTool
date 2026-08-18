@@ -36,6 +36,10 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>fixtures\game-metadata\%(Filename)%(Extension)</Link>
     </None>
+    <None Include="..\..\tests\fixtures\packs\*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>fixtures\packs\%(Filename)%(Extension)</Link>
+    </None>
   </ItemGroup>
 
 </Project>
