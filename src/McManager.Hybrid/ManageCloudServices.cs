@@ -19,6 +19,7 @@ public sealed class ManageCloudServices : IDisposable
     public ComputeService? Compute { get; private set; }
     public DoorClient? Door { get; private set; }
     public UsageBudgetStore? UsageStore { get; private set; }
+    public SpendBrakeLockStore? SpendBrakeLock { get; private set; }
     public SshService Ssh { get; private set; } = new();
 
     public string? SessionError { get; private set; }
@@ -57,6 +58,7 @@ public sealed class ManageCloudServices : IDisposable
             Compute = new ComputeService(Session);
             var os = new ObjectStorageService(Session, config.ObjectStorage);
             UsageStore = new UsageBudgetStore(os, config.ObjectStorage.Prefixes);
+            SpendBrakeLock = new SpendBrakeLockStore(os, config.ObjectStorage.Prefixes);
         }
 
         try
@@ -85,5 +87,6 @@ public sealed class ManageCloudServices : IDisposable
         Session = null;
         Compute = null;
         UsageStore = null;
+        SpendBrakeLock = null;
     }
 }

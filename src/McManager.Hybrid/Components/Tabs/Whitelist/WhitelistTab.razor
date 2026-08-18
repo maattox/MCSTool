@@ -17,6 +17,43 @@
         </p>
     </div>
 
+    <div class="mcm-section-card" style="margin-bottom:12px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+            <div>
+                <span style="font-size:14px;font-weight:500;">Access</span>
+                <p style="margin:4px 0 0;font-size:13px;color:var(--text-secondary);">
+                    @(Vm.IsPublic ? "Public mode (saved)." : "Private — allowlist only.")
+                </p>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                <button type="button"
+                        class="@(Vm.IsPublic ? "" : "mcm-danger-btn")"
+                        disabled="@Vm.IsBusy"
+                        @onclick="Vm.ToggleAccessModeAsync">
+                    @Vm.ModeToggleLabel
+                </button>
+                <button type="button"
+                        disabled="@(!Vm.CanApplyPublicAccess || Vm.IsBusy)"
+                        title="Not available yet. The Security List stays private."
+                        @onclick="Vm.ApplyPublicAccessAsync">
+                    Apply public access
+                </button>
+            </div>
+        </div>
+    </div>
+
+    @if (Vm.IsPublic)
+    {
+        <div class="mcm-danger-card" style="margin-bottom:12px;">
+            <p style="margin:0;font-size:13px;line-height:1.45;">
+                The allowlist is <strong>not applied</strong> while the server is public. Switch back with
+                <strong>Make server private</strong>.
+                Opening the cloud firewall to the internet is <strong>not applied yet</strong> —
+                friends still need an allowlist entry to join. <strong>Apply public access</strong> is disabled until a later update.
+            </p>
+        </div>
+    }
+
     <div class="mcm-section-card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
             <span style="font-size:14px;font-weight:500;">Allowed IPs</span>
@@ -58,6 +95,62 @@
                 @onclick="Vm.SaveChangesAsync">
             Save changes
         </button>
+    </div>
+
+    <div class="mcm-section-card" style="margin-top:12px;">
+        <button type="button"
+                class="mcm-advanced-toggle"
+                style="padding:0;margin:0;"
+                aria-expanded="@_blacklistOpen"
+                @onclick="ToggleBlacklistPanel">
+            <i class="ti @(_blacklistOpen ? "ti-chevron-down" : "ti-chevron-right")" aria-hidden="true"></i>
+            Blacklist
+        </button>
+        @if (_blacklistOpen)
+        {
+            @if (!Vm.IsPublic)
+            {
+                <p style="margin:8px 0 10px;font-size:13px;color:var(--text-secondary);">
+                    Blacklist applies only in public mode. Entries are saved now; they are not used while the server is private.
+                </p>
+            }
+            else
+            {
+                <p style="margin:8px 0 10px;font-size:13px;color:var(--text-secondary);">
+                    These IPs are stored for public mode. Denying them in the cloud firewall is not applied yet.
+                </p>
+            }
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                <span style="font-size:13px;color:var(--text-muted);">Blocked IPs</span>
+                <button type="button" disabled="@Vm.IsBusy" @onclick="OpenBlacklistModal">
+                    <i class="ti ti-plus" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
+                    Add IP
+                </button>
+            </div>
+            <div class="mcm-bl-row" style="border-top:none;">
+                <span style="font-size:12px;color:var(--text-muted);">NAME</span>
+                <span style="font-size:12px;color:var(--text-muted);">IP</span>
+                <span></span>
+            </div>
+            @if (Vm.Blacklist.Count == 0)
+            {
+                <p style="margin:8px 0 0;font-size:13px;color:var(--text-muted);">No blocked IPs.</p>
+            }
+            @foreach (var row in Vm.Blacklist)
+            {
+                <div class="mcm-bl-row">
+                    <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@(string.IsNullOrWhiteSpace(row.Name) ? "—" : row.Name)</span>
+                    <span style="font-family:var(--font-mono);">@row.Ip</span>
+                    <div class="mcm-wl-actions">
+                        <button type="button"
+                                style="color:var(--text-danger);border-color:var(--border-danger);"
+                                @onclick="@(() => Vm.RemoveBlacklist(row))">
+                            Remove
+                        </button>
+                    </div>
+                </div>
+            }
+        }
     </div>
 
     <div class="mcm-section-card" style="margin-top:12px;">
@@ -156,6 +249,33 @@
     </div>
 }
 
+@if (_blacklistModalOpen)
+{
+    <div class="mcm-modal-overlay open"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="mcm-bl-modal-title"
+         tabindex="-1"
+         @onclick="CloseBlacklistModal"
+         @onkeydown="OnBlacklistModalKeyDown">
+        <div class="mcm-modal-card" @onclick:stopPropagation="true">
+            <h2 id="mcm-bl-modal-title" class="mcm-modal-title">Add blacklist IP</h2>
+            <div class="mcm-field">
+                <label for="mcm-bl-name">Name (optional)</label>
+                <input id="mcm-bl-name" type="text" placeholder="e.g. blocked" @bind="_blDraftName" @bind:event="oninput" />
+            </div>
+            <div class="mcm-field">
+                <label for="mcm-bl-ip">IP address</label>
+                <input id="mcm-bl-ip" type="text" placeholder="e.g. 203.0.113.9" @bind="_blDraftIp" @bind:event="oninput" />
+            </div>
+            <div class="mcm-modal-actions">
+                <button type="button" @onclick="CloseBlacklistModal">Cancel</button>
+                <button type="button" class="mcm-primary" @onclick="SubmitBlacklistModal">Add</button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private bool _modalOpen;
     private bool _isUpdate;
@@ -169,6 +289,10 @@
     private string _origIp = "";
     private bool _origAdmin;
     private bool _origCidrMode;
+    private bool _blacklistOpen;
+    private bool _blacklistModalOpen;
+    private string _blDraftName = "";
+    private string _blDraftIp = "";
 
     private bool UpdateDraftChanged =>
         !string.Equals(_draftName.Trim(), _origName, StringComparison.Ordinal)
@@ -185,12 +309,14 @@
     {
         Vm.PropertyChanged += OnVmChanged;
         Vm.Friends.CollectionChanged += OnFriendsChanged;
+        Vm.Blacklist.CollectionChanged += OnBlacklistChanged;
     }
 
     public void Dispose()
     {
         Vm.PropertyChanged -= OnVmChanged;
         Vm.Friends.CollectionChanged -= OnFriendsChanged;
+        Vm.Blacklist.CollectionChanged -= OnBlacklistChanged;
     }
 
     private void OnVmChanged(object? sender, PropertyChangedEventArgs e) =>
@@ -199,8 +325,13 @@
     private void OnFriendsChanged(object? sender, NotifyCollectionChangedEventArgs e) =>
         _ = InvokeAsync(StateHasChanged);
 
+    private void OnBlacklistChanged(object? sender, NotifyCollectionChangedEventArgs e) =>
+        _ = InvokeAsync(StateHasChanged);
+
     private void OnAdminIpInput(ChangeEventArgs e) =>
         Vm.AdminIpInput = e.Value?.ToString() ?? "";
+
+    private void ToggleBlacklistPanel() => _blacklistOpen = !_blacklistOpen;
 
     private void OpenAddModal()
     {
@@ -259,6 +390,21 @@
             CloseModal();
     }
 
+    private void OpenBlacklistModal()
+    {
+        _blDraftName = "";
+        _blDraftIp = "";
+        _blacklistModalOpen = true;
+    }
+
+    private void CloseBlacklistModal() => _blacklistModalOpen = false;
+
+    private void SubmitBlacklistModal()
+    {
+        if (Vm.TryAddBlacklist(_blDraftName, _blDraftIp))
+            CloseBlacklistModal();
+    }
+
     private void ToggleCidrMode()
     {
         if (_cidrMode)
@@ -280,5 +426,11 @@
     {
         if (e.Key == "Escape")
             CloseModal();
+    }
+
+    private void OnBlacklistModalKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+            CloseBlacklistModal();
     }
 }

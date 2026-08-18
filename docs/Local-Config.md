@@ -7,12 +7,14 @@ The Manager WinExe (`McManager.Hybrid`, WPF + BlazorWebView) seeds connectivity 
 | Path | Git | Role |
 |------|-----|------|
 | [`config.local.example.json`](../config.local.example.json) | Tracked | Schema template (placeholders) |
-| [`friends.local.example.json`](../friends.local.example.json) | Tracked | Whitelist template (`ip` = IPv4 or IPv4 CIDR) |
+| [`friends.local.example.json`](../friends.local.example.json) | Tracked | Whitelist template (`ip` = IPv4 or IPv4 CIDR; optional `mode` + `blacklist`) |
 | `data/config.local.json` | **Ignored** | Live OCIDs / SSH / Object Storage / budgets |
 | `data/friends.local.json` | **Ignored** | Live Desired List seed |
 | `data/setup-wizard.local.json` | **Ignored** | Setup wizard resume (step index + fields; **no** Auth Token, **no** SSH private key) |
 
 Copy examples into `data/` and fill values, or keep the operator-seeded files already present on this machine.
+
+`friends.local.json` may include `mode` (`private` or `public`, default **private**) and `blacklist` (`id` / `name` / `ip` entries). Missing or invalid `mode` is never treated as public. The Manager also writes the same mode + blacklist to Object Storage `ip/mode.json` when that object already exists. Public mode in this file does **not** rewrite the Security List until a later step.
 
 ## Sources of truth when refreshing seeds
 

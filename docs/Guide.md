@@ -16,7 +16,7 @@ Oracle still requires a **Pay As You Go (PAYG)** account for Ampere A1 capacity 
 
 **Last-resort $1 brake:** Setup creates a **$1 monthly compartment budget**. If actual spend ever reaches $1, an Oracle Function **SoftStops the Minecraft computer** and writes a lock flag in Object Storage. The small always-on doorbell stays running (it is an Always Free AMD Micro and does not use Ampere hours). That Function is not instant. Oracle bills when spend hits $1, and the Function can take several minutes, so you may see a **~$1–$2** charge **for that month**, then **no further charges** while the brake holds. This is **not** a perfect $0 guarantee.
 
-If that brake fires, wait for the next calendar month before turning the Minecraft computer back on (Manager does not yet show a full-window lock for this — that is the next spend-brake step). Use **Troubleshooting** in Manager if the play IP is left on the wrong computer.
+If that brake fires, friends who ping the play IP see a **MONTHLY SPEND BRAKE FIRED** message (not the daily budget one). Wait for the next calendar month, then open Manager. The app fills the window with a warning; Start stays blocked until you type the exact confirmation sentence (copy-paste is allowed). Confirming starts the doorbell if needed, parks the play IP, clears the lock, then tries a normal Start — idle and daily/monthly free-hour limits still apply. The lock is not cleared automatically at month rollover. Use **Troubleshooting** if the play IP is left on the wrong computer.
 
 Do **not** add paid shapes, extra volumes, load balancers, or public `0.0.0.0/0` game access.
 
@@ -152,6 +152,8 @@ Deploy creates the compartment, network, reserved play IP, game VM, doorbell VM,
 2. Click **Save changes** so the cloud firewall actually updates. Join is gated by this list, **not** Minecraft’s in-game whitelist (Setup leaves that off).
 
 If a friend’s home address keeps changing but a **prefix** stays stable (for example they are always `172.56.x.x`), open **Add IP** → **Advanced** and enter a CIDR such as `172.56.0.0/16` instead of a single address. That prefix is written on the Minecraft (25565) rules only. SSH / doorbell admin stay a single `/32` unless you are editing **your own** admin row. Prefixes `/0`–`/8` are rejected as too wide; anything wider than one host shows a warning. IPv4 only.
+
+The server starts **private** (allowlist only). **Make server public** asks for a strong confirm and saves that choice on this PC (and in shared storage when `ip/mode.json` already exists). It does **not** open the cloud firewall yet — **Apply public access** stays disabled. While public mode is saved, a notice explains that the allowlist will not apply once public access is on; expand **Blacklist** to store IPs to deny in public mode (saved with **Save changes**; not used while private). Stay private unless you understand the risk.
 3. Copy the **Play IP** from the top bar. Give friends that address and the Vanilla version you chose. Port is the default Minecraft port (`25565`).
 4. Click **Start**. Status **Running** means the game itself is joinable. **Stopped** means they should wait or click Start again — first wake can take several minutes.
 5. Friends add a server in Minecraft Java using the play IP.

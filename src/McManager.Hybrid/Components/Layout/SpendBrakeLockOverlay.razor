@@ -1,0 +1,98 @@
+@inject MainViewModel Vm
+@implements IDisposable
+
+@if (!Vm.SpendBrakeOverlayVisible)
+{
+    return;
+}
+
+<div class="mcm-spend-brake"
+     role="alertdialog"
+     aria-modal="true"
+     aria-labelledby="mcm-spend-brake-title"
+     aria-describedby="mcm-spend-brake-copy">
+    <div class="mcm-spend-brake-panel">
+        <p class="mcm-spend-brake-kicker">Last-resort $1 brake</p>
+        <h1 id="mcm-spend-brake-title" class="mcm-spend-brake-title">Monthly spend brake fired</h1>
+
+        <div id="mcm-spend-brake-copy" class="mcm-spend-brake-copy">
+            <p>
+                The $1 budget safety mechanism — in place to ensure you are not accidentally charged — has been triggered. Your Minecraft server exceeded the allowed monthly free usage, and any further use will result in your account being billed.
+            </p>
+            <p>
+                The safety mechanism automatically shut down your Minecraft computer to prevent further charges. The small doorbell computer is still meant to stay on. The mechanism can take several minutes to activate, so your account may have been charged somewhere between $1 and $2, but there will be no further charges while this lock remains.
+            </p>
+            <p>
+                Wait until the start of the next calendar month before turning the server back on. To turn it back on, you must give explicit permission. This lock is not cleared automatically at month rollover.
+            </p>
+        </div>
+
+        <p class="mcm-spend-brake-prompt">
+            Type this statement <strong>exactly</strong> (copy-paste is allowed):
+        </p>
+        <div class="mcm-spend-brake-sentence-row">
+            <blockquote class="mcm-spend-brake-sentence">@Vm.SpendBrakeConfirmationSentence</blockquote>
+            <button type="button"
+                    class="mcm-spend-brake-copy-btn"
+                    disabled="@Vm.SpendBrakeUnlockInFlight"
+                    title="Copy confirmation sentence"
+                    @onclick="Vm.CopySpendBrakeConfirmationAsync">
+                <i class="ti ti-copy" aria-hidden="true"></i>
+                Copy
+            </button>
+        </div>
+
+        <label class="mcm-spend-brake-label" for="mcm-spend-brake-typed">Confirmation</label>
+        <textarea id="mcm-spend-brake-typed"
+                  class="mcm-spend-brake-input"
+                  rows="4"
+                  autocomplete="off"
+                  spellcheck="false"
+                  disabled="@Vm.SpendBrakeUnlockInFlight"
+                  @bind="Vm.SpendBrakeTypedConfirm"
+                  @bind:event="oninput"></textarea>
+
+        @if (!string.IsNullOrWhiteSpace(Vm.SpendBrakeUnlockStatus))
+        {
+            <p class="mcm-spend-brake-status" role="status">@Vm.SpendBrakeUnlockStatus</p>
+        }
+
+        <p class="mcm-spend-brake-footnote">
+            After unlock, idle shutdown and daily/monthly free-hour limits still apply. Start will refuse if those gates are exhausted.
+        </p>
+
+        <div class="mcm-spend-brake-actions">
+            @if (Vm.SpendBrakeDebugEnabled)
+            {
+                <button type="button"
+                        disabled="@Vm.SpendBrakeUnlockInFlight"
+                        title="DEBUG: DELETE the lock object without starting the server"
+                        @onclick="Vm.DebugClearSpendBrakeAsync">
+                    DEBUG: clear lock
+                </button>
+            }
+            <button type="button"
+                    class="mcm-action-btn mcm-action-btn-start"
+                    disabled="@(!Vm.CanConfirmSpendBrakeStart)"
+                    @onclick="Vm.ConfirmSpendBrakeStartAsync">
+                <i class="ti ti-player-play" aria-hidden="true"></i>
+                Start Server
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Vm.PropertyChanged += OnVmChanged;
+    }
+
+    public void Dispose()
+    {
+        Vm.PropertyChanged -= OnVmChanged;
+    }
+
+    private void OnVmChanged(object? sender, PropertyChangedEventArgs e) =>
+        _ = InvokeAsync(StateHasChanged);
+}

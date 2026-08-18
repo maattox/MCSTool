@@ -72,14 +72,14 @@ These are normative rules for new Phase 2+ work. Existing lab/product code does 
 | `meta/infra.json` | canonical **2** | Setup; Manager infra-publish/upgrade | Manager / Connect existing; diagnostics | **Live nested v2** after Step 2.2 migration |
 | `meta/flags.json` | 1 | Shared protocol (last modifier) | Manager, VM1, door | Live |
 | `meta/oversized-world-backup.json` | 1 | VM1 backup agent | Manager | **Live set/skip (Step 2.4)**; Manager UX / clear flow remains v1 |
-| `meta/spend-brake-triggered.json` | 1 | $1 budget Function sets/replaces; Manager is the only clearer (DELETE) | Manager, door | **Frozen v1.** Tracked Function PUT = Step **2.2** (not live-pushed). Door honor = 2.3; Manager overlay = 2.4 |
+| `meta/spend-brake-triggered.json` | 1 | $1 budget Function sets/replaces; Manager is the only clearer (DELETE) | Manager, door | **Frozen v1.** Function PUT = 2.2 (not live-pushed). Door honor = 2.3 (source). **Manager overlay = 2.4 DONE.** |
 | `meta/world-restore-request.json` | 1 | Manager requests; VM1 updates outcome | VM1, Manager | Reserved contract for flag-driven restore; current MVP uses SSH fallback |
 | `meta/backup-upload-lock.json` | 1 | Manager or VM1 active uploader | Manager, VM1 | Reserved coordination contract; not implemented |
 | `ledger/usage.json` | 2 | VM1; door only for STOPPED orphan heal | Manager, door, VM1 boot | Live |
 | `ledger/lease.json` | 1 | VM1 heartbeat; door clears after STOPPED heal | VM1 boot, door heal, diagnostics | Live |
 | `budget/config.json` | 1 | Manager; VM1 may patch detected shape / boot safety | Door, VM1, Manager | Live |
-| `ip/allowlist.json` | 1 | Manager | Future product consumers | Seeded/live; Hybrid Save updates when present. `ip` = IPv4 or IPv4 CIDR |
-| `ip/mode.json` | 1 | Manager | Future product consumers | Seeded/live; MVP mode fixed `private` |
+| `ip/allowlist.json` | 1 | Manager | Future product consumers | Seeded/live; Hybrid Save updates when present. `ip` = IPv4 or IPv4 CIDR. Applied only while mode is private. |
+| `ip/mode.json` | 1 | Manager | Future product consumers | Seeded/live; Hybrid persists `private` \| `public` + blacklist when present. Missing/invalid mode = private. SL rewrite of public is Step 3.2. |
 | `messages/chat.json` | 1 | Manager | VM1 agent | Seeded/live; rich editor deferred |
 | `backups/.keep` | text | Setup/seed | None | Optional marker |
 | `backups/world-<UTC>.zip` | ZIP | VM1 backup agent; Manager manual upload | Manager | Live |
@@ -441,7 +441,7 @@ The deployed door currently uses America/Los_Angeles day windows, ignores `daily
 {
   "version": 1,
   "updated_at": "2026-08-11T00:00:00Z",
-  "mode_note": "MVP uses private allowlist only",
+  "mode_note": "Allowlist is applied only when ip/mode.json is private.",
   "entries": [
     {
       "id": "<UUID>",
@@ -472,11 +472,20 @@ The deployed door currently uses America/Los_Angeles day windows, ignores `daily
   "version": 1,
   "updated_at": "2026-08-11T00:00:00Z",
   "mode": "private",
-  "blacklist": []
+  "blacklist": [
+    {
+      "id": "<UUID>",
+      "name": "blocked",
+      "ip": "198.51.100.7"
+    }
+  ]
 }
 ```
 
-MVP requires `mode: "private"`. Public mode and blacklist behavior are v1 features. No actor may interpret a missing/invalid mode as public.
+- `mode` is `private` or `public`. Missing, empty, or any other value is **private**. No actor may interpret a missing/invalid mode as public.
+- `blacklist` is a list of single IPv4 hosts (`id`, optional `name`, `ip` without `/32`). Used when mode is public (Security List deny is Step **3.3**). Ignored while private.
+- Manager is the intended writer. Hybrid updates this object **only when it already exists** (does not create it). Local SoT is `friends.local.json` (`mode` + `blacklist`).
+- **Step 3.1:** Manager persists mode + blacklist; it does **not** rewrite the Security List. Public Minecraft `0.0.0.0/0` is Step **3.2**.
 
 ---
 
@@ -604,14 +613,14 @@ Semantics:
 - **Fail closed:** a present object is locked even if JSON is malformed or `version` is newer than the reader supports. Transport / auth Get failures are **errors**, not unlocked.
 - **Writer:** the $1 budget Function **sets/replaces** the object when handling a real threshold alert. Ignore budget **RESET** — do not write or delete the object on RESET. A second alert may overwrite (idempotent PUT). Tracked Function write is Step **2.2** (no live `fn push` in 2.2).
 - **Clearer:** Manager **only**, via **DELETE**, after the admin types the exact confirmation statement from PRODUCT-IDEAS and Start/reconcile succeeds (Step **2.4**). Missing-object DELETE is success. Do **not** auto-clear at calendar-month rollover. Do **not** write `status: "cleared"` — unlocked = object gone.
-- **Readers:** Manager (full-window warning; block Start until typed confirm) and the door (refuse **START VM1** while present, same poll discipline as the budget gate). Door honor is Step **2.3**.
+- **Readers:** Manager (full-window warning; block Start until typed confirm — **DONE** Step **2.4**) and the door (refuse **START VM1** while present, same poll discipline as the budget gate). Door honor is **DONE** in lab `door_vm/` (Step **2.3**; live door needs redeploy).
 - **Not** a dirty-flag category. Consumers GET this small object at Manager open / Start / door wake (same pattern as oversized-world).
 - **Not** an OpenTofu / Setup seed object. Do not create or delete it from IaC.
 - **Not** a field of `meta/infra.json`. Freezing this key does **not** bump `infra_schema`.
 - This object does **not** encode whether the Function SoftStopped the door Micro. **Product v1 policy (Step 2.2):** the Function **does not** SoftStop the door (Always Free AMD Micro is a separate envelope). Live undeployed images may still stop both VMs.
 - Must not contain secrets, card details, confirmation-sentence text, or live OCIDs (those stay in `meta/infra.json` if needed).
 
-Core helpers: `SpendBrakeLockDocument` + `SpendBrakeLockStore` (get / put / delete). Manager production code must use PUT only for tests or DEBUG fixtures — never to *set* the live lock.
+Core helpers: `SpendBrakeLockDocument` + `SpendBrakeLockStore` (get / put / delete) + `SpendBrakeLockUx` (exact confirmation sentence + overlay/Start rules). Manager production code must use PUT only for tests or DEBUG fixtures — never to *set* the live lock.
 
 ### `meta/world-restore-request.json` — reserved restore request v1
 
@@ -659,7 +668,7 @@ Current SSH fallback is happy-path tested but not yet equivalent to the target a
 | Backup ZIPs | Read; manual upload/SSH replace | **Primary upload/evict** | None | Marker seed |
 | Backup upload lock | Acquire/release for upload | Acquire/release for backup/evict | None | None |
 | Oversized backup flag | Read; future clear UX | **Write/block** | None | None |
-| Spend-brake lock | **Only clearer** (DELETE after typed confirm — Step 2.4) | None | Read; refuse VM1 wake (Step 2.3) | None (not a tofu/seed object; Function is the writer — Step 2.2 source) |
+| Spend-brake lock | **Only clearer** (DELETE after typed confirm — **2.4 DONE**) | None | Read; refuse VM1 wake (**Step 2.3 source**) | None (not a tofu/seed object; Function is the writer — Step 2.2 source) |
 | World restore request | Write/read outcome; SSH fallback today | Future apply/outcome write | None | None |
 
 ---
@@ -701,10 +710,10 @@ No live objects were modified during review.
 10. Flag-driven `meta/world-restore-request.json` apply is not implemented; SSH replacement is the current fallback.
 11. The upload lock is not implemented; current Manager/VM1 List+PUT operations can race and exceed the aggregate cap. Current VM1 eviction accepts any `.zip` under `backups/`, not only canonical `world-*.zip`.
 12. Current SSH world replace lacks archive preflight and rollback after extraction failure.
-13. Hybrid whitelist writes local `friends.local.json` and applies the Security List. `ip/allowlist.json` is updated on Save **when that object already exists** (V1 Step 1.2). `ip` may be a single IPv4 or an IPv4 CIDR prefix.
+13. Hybrid whitelist writes local `friends.local.json` (friends + `mode` + `blacklist`) and applies the Security List **allowlist** (still private). `ip/allowlist.json` and `ip/mode.json` are updated on Save / mode toggle **when those objects already exist** (V1 Steps 1.2 and 3.1). `ip` on the allowlist may be a single IPv4 or an IPv4 CIDR prefix. Public SL rewrite is Step 3.2.
 14. Prefixes are fixed for `infra_schema: 2`; the prefix map is configuration/discovery data, not permission to change hardcoded deployed actors independently. A prefix change requires coordinated actor updates plus an `infra_schema` bump.
 15. Lease fields are all required properties (nullable where shown). A VM1 helper implements the configured 900-second stale test, but no active caller was found; deployed door heal does not enforce age and uses the heartbeat only after OCI reports VM1 `STOPPED`.
-16. **DONE (V1 Step 2.1 + 2.2 source):** `meta/spend-brake-triggered.json` key + v1 JSON shape are frozen. Tracked Function PUTs the object and SoftStops VM1 only. Door honor and Manager overlay remain Steps 2.3–2.4. Live Function image still does not write this object until an authorized `fn push`.
+16. **DONE (V1 Steps 2.1–2.4):** `meta/spend-brake-triggered.json` key + v1 JSON shape are frozen. Tracked Function PUTs the object and SoftStops VM1 only. Door wake GETs the object and refuses START while it is present. Manager shows a full-window overlay on open, blocks Start until the exact PRODUCT-IDEAS confirmation sentence, then parks the play IP (Troubleshooting path), DELETEs the lock, refreshes door OS cache, and Wakes (idle/daily/monthly gates still apply). Live Function image still does not write this object until an authorized `fn push`. Live door needs redeploy from `door_vm/`.
 
 ---
 
@@ -721,6 +730,7 @@ Product:
 - `src/McManager.Core/Services/AllowlistStore.cs`
 - `src/McManager.Core/Services/SpendBrakeLockStore.cs`
 - `src/McManager.Core/Usage/SpendBrakeLockDocument.cs`
+- `src/McManager.Core/Usage/SpendBrakeLockUx.cs`
 - `src/McManager.Core/Config/FriendRules.cs`
 - `docs/Local-Config.md`
 

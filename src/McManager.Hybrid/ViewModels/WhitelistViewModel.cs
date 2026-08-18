@@ -4,11 +4,14 @@ using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using McManager.Core.Config;
 using McManager.Core.Services;
+using McManager.Hybrid.Ui;
 
 namespace McManager.Hybrid.ViewModels;
 
 /// <summary>
-/// Whitelist tab: local friends CRUD + Security List apply. Dialogs stay in Razor.
+/// Whitelist tab: local friends CRUD + Security List apply, plus access mode and
+/// blacklist persist (no Security List rewrite for public mode in this step).
+/// Dialogs for add/update stay in Razor; public-mode confirm uses <see cref="IUiDialogs"/>.
 /// Does not touch manage-chrome power-in-flight.
 /// </summary>
 public sealed partial class WhitelistViewModel : ObservableObject
@@ -17,13 +20,17 @@ public sealed partial class WhitelistViewModel : ObservableObject
     private readonly LocalConfigHost _configHost;
     private readonly ManageCloudServices _cloud;
     private readonly ManageSession _session;
+    private readonly IUiDialogs _dialogs;
     private string _dataDirectory = "";
     private ISecurityListService? _securityList;
     private AllowlistStore? _allowlistStore;
+    private IpModeStore? _ipModeStore;
     private string? _sessionError;
     private string _savedFingerprint = "";
 
     public ObservableCollection<FriendRowViewModel> Friends { get; } = [];
+
+    public ObservableCollection<BlacklistRowViewModel> Blacklist { get; } = [];
 
     [ObservableProperty]
     private string _adminIpInput = "";
@@ -37,15 +44,32 @@ public sealed partial class WhitelistViewModel : ObservableObject
     [ObservableProperty]
     private bool _hasPendingChanges;
 
+    [ObservableProperty]
+    private string _accessMode = IpAccessMode.Private;
+
     public bool CanSaveChanges => HasPendingChanges && !IsBusy;
 
-    public WhitelistViewModel(LocalConfigHost configHost, ManageCloudServices cloud, ManageSession session)
+    public bool IsPublic => IpAccessMode.IsPublic(AccessMode);
+
+    public string ModeToggleLabel =>
+        IsPublic ? "Make server private" : "Make server public";
+
+    /// <summary>Step 3.2 wires this. Always false in 3.1 so the Security List stays private.</summary>
+    public bool CanApplyPublicAccess => false;
+
+    public WhitelistViewModel(
+        LocalConfigHost configHost,
+        ManageCloudServices cloud,
+        ManageSession session,
+        IUiDialogs dialogs)
     {
         _configHost = configHost;
         _cloud = cloud;
         _session = session;
+        _dialogs = dialogs;
         _dataDirectory = "";
         Friends.CollectionChanged += OnFriendsCollectionChanged;
+        Blacklist.CollectionChanged += OnBlacklistCollectionChanged;
         BindFromHost();
         _session.Reloaded += OnSessionReloaded;
     }
@@ -60,18 +84,30 @@ public sealed partial class WhitelistViewModel : ObservableObject
         _securityList = _cloud.Session is not null
             ? new SecurityListService(_cloud.Session)
             : null;
-        _allowlistStore = _cloud.Session is not null
+        var osReady = _cloud.Session is not null
             && _config is not null
             && !string.IsNullOrWhiteSpace(_config.ObjectStorage.Namespace)
-            && !string.IsNullOrWhiteSpace(_config.ObjectStorage.Bucket)
+            && !string.IsNullOrWhiteSpace(_config.ObjectStorage.Bucket);
+        _allowlistStore = osReady
             ? new AllowlistStore(
-                new ObjectStorageService(_cloud.Session, _config.ObjectStorage),
+                new ObjectStorageService(_cloud.Session!, _config!.ObjectStorage),
+                _config.ObjectStorage.Prefixes)
+            : null;
+        _ipModeStore = osReady
+            ? new IpModeStore(
+                new ObjectStorageService(_cloud.Session!, _config!.ObjectStorage),
                 _config.ObjectStorage.Prefixes)
             : null;
 
         Friends.Clear();
         foreach (var entry in _configHost.LoadResult.Friends?.Friends ?? [])
             Friends.Add(FriendRowViewModel.FromEntry(entry));
+
+        Blacklist.Clear();
+        foreach (var entry in _configHost.LoadResult.Friends?.Blacklist ?? [])
+            Blacklist.Add(BlacklistRowViewModel.FromEntry(entry));
+
+        AccessMode = IpAccessMode.Normalize(_configHost.LoadResult.Friends?.Mode);
         CaptureSavedFingerprint();
         if (_config is null)
             StatusMessage = string.IsNullOrWhiteSpace(_sessionError)
@@ -132,17 +168,101 @@ public sealed partial class WhitelistViewModel : ObservableObject
         StatusMessage = "Friend removed (not saved yet).";
     }
 
+    public bool TryAddBlacklist(string name, string ip)
+    {
+        if (!FriendRules.TryNormalizeAllowlistSource(ip, out var source, out var error))
+        {
+            StatusMessage = error;
+            return false;
+        }
+
+        if (!source.IsSingleHost)
+        {
+            StatusMessage = "Blacklist entries are a single IPv4 for now.";
+            return false;
+        }
+
+        if (Blacklist.Any(b => string.Equals(b.Ip, source.Stored, StringComparison.OrdinalIgnoreCase)))
+        {
+            StatusMessage = "That IP is already on the blacklist.";
+            return false;
+        }
+
+        Blacklist.Add(new BlacklistRowViewModel
+        {
+            Name = name.Trim(),
+            Ip = source.Stored,
+        });
+        StatusMessage = "Blacklist entry added (not saved yet).";
+        RecalculateDirty();
+        return true;
+    }
+
+    public void RemoveBlacklist(BlacklistRowViewModel? row)
+    {
+        if (row is null)
+            return;
+
+        Blacklist.Remove(row);
+        StatusMessage = "Blacklist entry removed (not saved yet).";
+    }
+
     public async Task SaveChangesAsync()
     {
         if (IsBusy || !HasPendingChanges)
             return;
 
-        SaveFriendsLocal();
+        if (!SaveFriendsLocal())
+            return;
+
         await SyncToOciAsync();
         if (StatusMessage.Contains("failed", StringComparison.OrdinalIgnoreCase))
             return;
 
         CaptureSavedFingerprint();
+    }
+
+    public async Task ToggleAccessModeAsync()
+    {
+        if (IsBusy)
+            return;
+
+        if (!IsPublic)
+        {
+            var confirmed = await _dialogs.ConfirmAsync(
+                "Make the server public?",
+                "Anyone on the internet will be able to reach Minecraft on the play IP. "
+                + "Griefing, scanning, and attacks become possible. This is not recommended for a friends server.\n\n"
+                + "SSH and doorbell admin stay limited to your admin IPs. "
+                + "The allowlist will not gate Minecraft joins while the server is public.",
+                confirmButtonText: "Make public");
+            if (!confirmed)
+            {
+                StatusMessage = "Public mode cancelled.";
+                return;
+            }
+
+            AccessMode = IpAccessMode.Public;
+        }
+        else
+        {
+            AccessMode = IpAccessMode.Private;
+        }
+
+        if (!SaveFriendsLocal())
+        {
+            AccessMode = IpAccessMode.Normalize(_configHost.LoadResult.Friends?.Mode);
+            return;
+        }
+
+        await PublishModeAsync();
+    }
+
+    public Task ApplyPublicAccessAsync()
+    {
+        StatusMessage =
+            "Apply public access is not available yet. The Security List was not changed.";
+        return Task.CompletedTask;
     }
 
     public async Task DetectPublicIpAsync()
@@ -206,17 +326,24 @@ public sealed partial class WhitelistViewModel : ObservableObject
         await SaveChangesAsync();
     }
 
-    private void SaveFriendsLocal()
+    private bool SaveFriendsLocal()
     {
         var file = new FriendsLocalFile
         {
             SchemaVersion = 1,
+            Mode = IpAccessMode.Normalize(AccessMode),
             Friends = Friends.Select(f => f.ToEntry()).ToList(),
+            Blacklist = Blacklist.Select(b => b.ToEntry()).ToList(),
         };
 
         var result = LocalConfigStore.SaveFriends(file, _dataDirectory);
         if (!result.Succeeded)
+        {
             StatusMessage = result.Error ?? "Save failed.";
+            return false;
+        }
+
+        return true;
     }
 
     private async Task SyncToOciAsync()
@@ -272,12 +399,67 @@ public sealed partial class WhitelistViewModel : ObservableObject
                     summary += "\n" + os.Value.Message;
             }
 
+            var mode = await TryPublishModeUnlockedAsync();
+            if (!string.IsNullOrWhiteSpace(mode))
+                summary += "\n" + mode;
+
+            if (IsPublic)
+            {
+                summary +=
+                    "\nPublic mode is saved; the cloud firewall is still the private allowlist "
+                    + "(Apply public access is not available yet).";
+            }
+
             StatusMessage = summary;
         }
         finally
         {
             IsBusy = false;
         }
+    }
+
+    private async Task PublishModeAsync()
+    {
+        if (IsBusy)
+            return;
+
+        IsBusy = true;
+        try
+        {
+            var extra = await TryPublishModeUnlockedAsync();
+            if (IsPublic)
+            {
+                StatusMessage =
+                    "Public mode saved on this PC. The cloud firewall is still private (allowlist only). "
+                    + "Apply public access is disabled until a later update."
+                    + (string.IsNullOrWhiteSpace(extra) ? "" : "\n" + extra);
+            }
+            else
+            {
+                StatusMessage =
+                    "Private mode saved. The allowlist is the live firewall. Blacklist applies only in public mode."
+                    + (string.IsNullOrWhiteSpace(extra) ? "" : "\n" + extra);
+            }
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task<string?> TryPublishModeUnlockedAsync()
+    {
+        if (_ipModeStore is null)
+            return null;
+
+        var os = await _ipModeStore.PublishIfPresentAsync(
+            AccessMode,
+            Blacklist.Select(b => b.ToEntry()).ToList());
+        if (!os.Succeeded)
+            return "Object Storage mode update failed: " + (os.Error ?? "unknown");
+        if (os.Value is { SkippedMissing: true })
+            return os.Value.Message;
+        return os.Value?.Message;
     }
 
     private FriendRowViewModel? FindAdminFriend()
@@ -358,7 +540,28 @@ public sealed partial class WhitelistViewModel : ObservableObject
         NotifyFriendsUi();
     }
 
+    private void OnBlacklistCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.OldItems is not null)
+        {
+            foreach (BlacklistRowViewModel row in e.OldItems)
+                row.PropertyChanged -= OnBlacklistPropertyChanged;
+        }
+
+        if (e.NewItems is not null)
+        {
+            foreach (BlacklistRowViewModel row in e.NewItems)
+                row.PropertyChanged += OnBlacklistPropertyChanged;
+        }
+
+        RecalculateDirty();
+        OnPropertyChanged(nameof(Blacklist));
+    }
+
     private void OnFriendPropertyChanged(object? sender, PropertyChangedEventArgs e) =>
+        RecalculateDirty();
+
+    private void OnBlacklistPropertyChanged(object? sender, PropertyChangedEventArgs e) =>
         RecalculateDirty();
 
     private void RecalculateDirty()
@@ -373,7 +576,9 @@ public sealed partial class WhitelistViewModel : ObservableObject
     }
 
     private string Fingerprint() =>
-        string.Join("\n", Friends.Select(f => $"{f.Name}\t{f.Ip}\t{f.IsAdmin}"));
+        string.Join("\n", Friends.Select(f => $"{f.Name}\t{f.Ip}\t{f.IsAdmin}"))
+        + "\n#bl\n"
+        + string.Join("\n", Blacklist.Select(b => $"{b.Name}\t{b.Ip}"));
 
     private void NotifyFriendsUi() =>
         OnPropertyChanged(nameof(Friends));
@@ -383,4 +588,10 @@ public sealed partial class WhitelistViewModel : ObservableObject
 
     partial void OnIsBusyChanged(bool value) =>
         OnPropertyChanged(nameof(CanSaveChanges));
+
+    partial void OnAccessModeChanged(string value)
+    {
+        OnPropertyChanged(nameof(IsPublic));
+        OnPropertyChanged(nameof(ModeToggleLabel));
+    }
 }

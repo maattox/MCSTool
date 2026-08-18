@@ -2,12 +2,14 @@
 @inject IClipboard Clipboard
 @inject IFilePicker FilePicker
 @inject IUiClock Clock
+@inject MainViewModel Main
 @implements IDisposable
 
 <div class="mcm-host-probes" role="region" aria-label="DEBUG host service probes">
     <button type="button" @onclick="ProveConfirmAsync">Confirm modal</button>
     <button type="button" @onclick="ProveClipboardAsync">Copy clipboard</button>
     <button type="button" @onclick="ProvePickerAsync">Native file picker</button>
+    <button type="button" @onclick="PutSpendBrakeAsync">Put spend-brake fixture</button>
     <span class="mcm-host-probes-status">@_status</span>
     <span class="mcm-host-probes-clock" title="IUiClock">@Clock.UtcNow.ToString("HH:mm:ss") UTC</span>
 </div>
@@ -73,5 +75,11 @@
             ],
         });
         _status = path is null ? "Picker: cancelled" : "Picker: " + path;
+    }
+
+    private async Task PutSpendBrakeAsync()
+    {
+        await Main.DebugPutSpendBrakeFixtureAsync();
+        _status = "Spend-brake: fixture PUT (overlay if Object Storage succeeded)";
     }
 }

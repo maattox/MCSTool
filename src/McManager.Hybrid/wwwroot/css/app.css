@@ -480,7 +480,7 @@ button.mcm-btn-disabled:hover {
     position: fixed;
     top: 16px;
     right: 16px;
-    z-index: 30;
+    z-index: 80;
     max-width: 420px;
     padding: 10px 12px;
     background: var(--surface-1);
@@ -831,6 +831,15 @@ button.mcm-btn-disabled:hover {
     grid-template-columns: 1fr 1fr 56px 128px;
 }
 
+.mcm-bl-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 88px;
+    align-items: center;
+    padding: 8px 0;
+    border-top: 0.5px solid var(--border);
+    font-size: 13px;
+}
+
 .mcm-bk-row {
     grid-template-columns: 1fr auto auto;
     gap: 16px;
@@ -848,6 +857,7 @@ button.mcm-btn-disabled:hover {
 }
 
 .mcm-wl-row:hover .mcm-wl-actions,
+.mcm-bl-row:hover .mcm-wl-actions,
 .mcm-bk-row:hover .mcm-bk-actions {
     opacity: 1;
     pointer-events: auto;
@@ -1521,4 +1531,142 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     position: absolute;
     right: 0.75rem;
     top: 0.5rem;
+}
+
+/* Step 2.4 — full-window $1 spend-brake lock. Not dismissible. */
+.mcm-spend-brake {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    background: var(--bg);
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    overflow: auto;
+    padding: 24px 20px 32px;
+}
+
+.mcm-spend-brake-panel {
+    width: min(640px, 100%);
+    margin: auto;
+    background: var(--bg-danger);
+    border: 1px solid var(--border-danger);
+    border-radius: 12px;
+    padding: 28px 28px 24px;
+    box-shadow: 0 0 0 1px rgba(224, 90, 82, 0.12), 0 24px 48px rgba(0, 0, 0, 0.45);
+}
+
+.mcm-spend-brake-kicker {
+    margin: 0 0 6px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-danger);
+}
+
+.mcm-spend-brake-title {
+    margin: 0 0 16px;
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+}
+
+.mcm-spend-brake-copy {
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--text-secondary);
+}
+
+.mcm-spend-brake-copy p {
+    margin: 0 0 12px;
+}
+
+.mcm-spend-brake-copy p:last-child {
+    margin-bottom: 0;
+}
+
+.mcm-spend-brake-prompt {
+    margin: 18px 0 8px;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.mcm-spend-brake-sentence-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.mcm-spend-brake-sentence {
+    flex: 1;
+    margin: 0;
+    padding: 10px 12px;
+    background: var(--surface-2);
+    border: 0.5px solid var(--border-danger);
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--text-primary);
+    user-select: text;
+}
+
+.mcm-spend-brake-copy-btn {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.mcm-spend-brake-label {
+    display: block;
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 0 0 6px;
+}
+
+.mcm-spend-brake-input {
+    width: 100%;
+    resize: vertical;
+    min-height: 88px;
+    background: var(--surface-2);
+    border: 0.5px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-family: var(--font-mono);
+    line-height: 1.45;
+}
+
+.mcm-spend-brake-input:focus {
+    outline: 2px solid color-mix(in srgb, var(--fill-accent) 55%, transparent);
+    outline-offset: 1px;
+}
+
+.mcm-spend-brake-status {
+    margin: 12px 0 0;
+    font-size: 13px;
+    color: var(--text-accent);
+}
+
+.mcm-spend-brake-footnote {
+    margin: 14px 0 0;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.mcm-spend-brake-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    align-items: center;
+    margin-top: 18px;
+}
+
+.mcm-spend-brake-actions .mcm-action-btn-start {
+    min-width: 148px;
 }

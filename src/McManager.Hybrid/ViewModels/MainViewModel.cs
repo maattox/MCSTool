@@ -30,8 +30,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private DoorClient? _door;
     private ComputeService? _compute;
     private UsageBudgetStore? _usageStore;
+    private SpendBrakeLockStore? _spendBrake;
+    private TroubleshootingService? _troubleshooting;
     private SshService _ssh = null!;
     private bool _resumeChromeAfterReload;
+    private SpendBrakeUiState _spendBrakeUi = SpendBrakeUiState.Unknown;
 
     private CancellationTokenSource? _pollCts;
     private CancellationTokenSource? _toastCts;
@@ -129,6 +132,30 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _pinRolloverPositive;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanConfirmSpendBrakeStart))]
+    private string _spendBrakeTypedConfirm = "";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanConfirmSpendBrakeStart))]
+    private bool _spendBrakeUnlockInFlight;
+
+    [ObservableProperty]
+    private string _spendBrakeUnlockStatus = "";
+
+    public bool SpendBrakeOverlayVisible =>
+        _spendBrakeUi == SpendBrakeUiState.Locked;
+
+    public bool CanConfirmSpendBrakeStart =>
+        SpendBrakeOverlayVisible
+        && !SpendBrakeUnlockInFlight
+        && SpendBrakeLockUx.MatchesConfirmation(SpendBrakeTypedConfirm);
+
+    public string SpendBrakeConfirmationSentence =>
+        SpendBrakeLockUx.ConfirmationSentence;
+
+    public bool SpendBrakeDebugEnabled => UiHostProbes.Enabled;
+
     public bool HasPlayIp =>
         !string.IsNullOrWhiteSpace(PlayIp) && PlayIp != Placeholder;
 
@@ -174,6 +201,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             if (Vm1IsComingUp
                 || string.Equals(DoorState, "STARTING", StringComparison.OrdinalIgnoreCase))
                 return "Already starting. Wait until status is Running.";
+            if (_spendBrakeUi == SpendBrakeUiState.Locked)
+                return "The monthly spend brake is on. Confirm in the warning to start.";
+            if (_spendBrakeUi == SpendBrakeUiState.Unknown)
+                return "Can't start: spend-brake lock status is unknown. Check Object Storage, then try Start again.";
             if (DoorState is Placeholder or "unreachable")
                 return "Can't start: the wake service is unreachable. Try Troubleshooting if this lasts.";
             return "Start is unavailable right now.";
@@ -256,13 +287,23 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _door = _cloud.Door;
         _compute = _cloud.Compute;
         _usageStore = _cloud.UsageStore;
+        _spendBrake = _cloud.SpendBrakeLock;
         _ssh = _cloud.Ssh;
+        _troubleshooting = _config is not null
+            ? new TroubleshootingService(_config, _ssh, _compute, _door)
+            : null;
         PlayIp = _configHost.PlayIp;
         ConfigLoaded = _configHost.HasManageConfig && _config is not null;
         _hasInitialStatus = false;
         _pinLedger = UsageLedgerDocument.Empty();
         _powerActionInFlight = false;
         _powerAction = PowerActionKind.None;
+        SpendBrakeTypedConfirm = "";
+        SpendBrakeUnlockInFlight = false;
+        SpendBrakeUnlockStatus = "";
+        SetSpendBrakeUi(_spendBrake is null
+            ? SpendBrakeUiState.NotConfigured
+            : SpendBrakeUiState.Unknown);
         CanStart = false;
         CanStop = false;
         CanRestart = false;
@@ -311,6 +352,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         StartPoller();
         _ = RefreshStatusAsync(forceDoor: true, forceOci: true);
         _ = RefreshPinsAsync();
+        _ = RefreshSpendBrakeLockAsync();
     }
 
     /// <summary>
@@ -338,7 +380,166 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     public async Task StartAsync()
     {
-        if (_door is null || _powerActionInFlight || !CanStart)
+        if (_powerActionInFlight || SpendBrakeUnlockInFlight)
+            return;
+
+        await RefreshSpendBrakeLockAsync();
+        if (_spendBrakeUi == SpendBrakeUiState.Locked)
+            return;
+        if (_spendBrakeUi == SpendBrakeUiState.Unknown)
+        {
+            ActionFeedback = StartDisabledReason;
+            ShowToast(ActionFeedback, isError: true);
+            return;
+        }
+
+        if (_door is null || !CanStart)
+            return;
+
+        await WakeGameServerAsync();
+    }
+
+    /// <summary>
+    /// Overlay Start Server: park doorbell, DELETE the lock, refresh door OS cache,
+    /// then the normal Wake path (idle / daily / monthly gates still apply).
+    /// </summary>
+    public async Task ConfirmSpendBrakeStartAsync()
+    {
+        if (!CanConfirmSpendBrakeStart || _spendBrake is null)
+            return;
+
+        SpendBrakeUnlockInFlight = true;
+        SpendBrakeUnlockStatus = "Starting the doorbell and parking the play IP…";
+        ShowToast(SpendBrakeUnlockStatus, isError: false);
+
+        try
+        {
+            if (_troubleshooting is null)
+            {
+                SpendBrakeUnlockStatus =
+                    "Can't recover the doorbell (config/OCI/SSH unavailable). The lock was not cleared.";
+                ShowToast(SpendBrakeUnlockStatus, isError: true);
+                return;
+            }
+
+            var park = await _troubleshooting.ParkPlayIpAsync();
+            if (!park.Succeeded)
+            {
+                SpendBrakeUnlockStatus = park.Summary;
+                ShowToast(SpendBrakeUnlockStatus, isError: true);
+                return;
+            }
+
+            SpendBrakeUnlockStatus = "Clearing the monthly spend-brake lock…";
+            var cleared = await _spendBrake.ClearAsync();
+            if (!cleared.Succeeded)
+            {
+                SpendBrakeUnlockStatus = cleared.Error
+                    ?? "Could not delete the spend-brake lock. The server was not started.";
+                ShowToast(SpendBrakeUnlockStatus, isError: true);
+                return;
+            }
+
+            SpendBrakeTypedConfirm = "";
+            SetSpendBrakeUi(SpendBrakeUiState.Unlocked);
+            SpendBrakeUnlockStatus = "Refreshing the doorbell budget cache…";
+            var refresh = await _troubleshooting.RefreshOsBudgetAsync();
+            if (!refresh.Succeeded)
+            {
+                ShowToast(
+                    "Lock cleared, but the doorbell cache refresh failed. Try Troubleshooting → Refresh OS budget, then Start.",
+                    isError: true);
+            }
+
+            SpendBrakeUnlockStatus = "";
+        }
+        finally
+        {
+            SpendBrakeUnlockInFlight = false;
+            UpdateCommandFlags();
+        }
+
+        if (_spendBrakeUi != SpendBrakeUiState.Unlocked)
+            return;
+
+        if (_door is null)
+        {
+            ShowToast(
+                "Lock cleared. The wake service client is unavailable — use Start when the doorbell is reachable.",
+                isError: true);
+            return;
+        }
+
+        await WakeGameServerAsync();
+    }
+
+    public async Task CopySpendBrakeConfirmationAsync()
+    {
+        await _clipboard.SetTextAsync(SpendBrakeLockUx.ConfirmationSentence);
+        SpendBrakeUnlockStatus = "Copied the confirmation sentence.";
+        ShowToast(SpendBrakeUnlockStatus, isError: false);
+    }
+
+    public async Task RefreshSpendBrakeLockAsync()
+    {
+        if (_spendBrake is null)
+        {
+            SetSpendBrakeUi(SpendBrakeUiState.NotConfigured);
+            UpdateCommandFlags();
+            return;
+        }
+
+        var got = await _spendBrake.GetAsync();
+        if (!got.Succeeded || got.Value is null)
+        {
+            SetSpendBrakeUi(SpendBrakeUiState.Unknown);
+            if (!string.IsNullOrWhiteSpace(got.Error) && !_powerActionInFlight)
+                ActionFeedback = got.Error;
+            UpdateCommandFlags();
+            return;
+        }
+
+        SetSpendBrakeUi(got.Value.Present
+            ? SpendBrakeUiState.Locked
+            : SpendBrakeUiState.Unlocked);
+        UpdateCommandFlags();
+    }
+
+    public async Task DebugPutSpendBrakeFixtureAsync()
+    {
+        if (!UiHostProbes.Enabled || _spendBrake is null)
+            return;
+        var put = await _spendBrake.PutAsync(SpendBrakeLockDocument.Create());
+        if (!put.Succeeded)
+        {
+            ShowToast(put.Error ?? "DEBUG: could not PUT spend-brake fixture.", isError: true);
+            return;
+        }
+
+        ShowToast("DEBUG: spend-brake lock fixture written.", isError: false);
+        await RefreshSpendBrakeLockAsync();
+    }
+
+    public async Task DebugClearSpendBrakeAsync()
+    {
+        if (!UiHostProbes.Enabled || _spendBrake is null)
+            return;
+        var cleared = await _spendBrake.ClearAsync();
+        if (!cleared.Succeeded)
+        {
+            ShowToast(cleared.Error ?? "DEBUG: could not DELETE spend-brake lock.", isError: true);
+            return;
+        }
+
+        SpendBrakeTypedConfirm = "";
+        SpendBrakeUnlockStatus = "";
+        ShowToast("DEBUG: spend-brake lock deleted (no Start).", isError: false);
+        await RefreshSpendBrakeLockAsync();
+    }
+
+    private async Task WakeGameServerAsync()
+    {
+        if (_door is null)
             return;
 
         BeginPowerAction(PowerActionKind.Start);
@@ -567,12 +768,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         door ??= CachedDoorStatus();
 
-        var allowPower = _hasInitialStatus && !_powerActionInFlight;
+        var allowPower = _hasInitialStatus && !_powerActionInFlight && !SpendBrakeUnlockInFlight;
+        var spendBrakeBlocks = _spendBrakeUi is SpendBrakeUiState.Locked or SpendBrakeUiState.Unknown;
         var degraded = door?.IsDegraded == true;
         var alreadyOn = !degraded && (Vm1IsRunning || door?.IsPlayable == true);
         var starting = !degraded && (Vm1IsComingUp || door?.IsStarting == true);
 
-        CanStart = allowPower && door is not null && !alreadyOn && !starting;
+        CanStart = allowPower && door is not null && !alreadyOn && !starting && !spendBrakeBlocks;
         CanStop = allowPower && (alreadyOn || starting || degraded);
         CanRestart = allowPower && Vm1IsRunning;
         NotifyPowerTooltips();
@@ -638,6 +840,24 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(StopButtonLabel));
         OnPropertyChanged(nameof(RestartButtonLabel));
         OnPropertyChanged(nameof(StatusIsBusy));
+    }
+
+    private enum SpendBrakeUiState
+    {
+        NotConfigured,
+        Unknown,
+        Unlocked,
+        Locked
+    }
+
+    private void SetSpendBrakeUi(SpendBrakeUiState state)
+    {
+        if (_spendBrakeUi == state)
+            return;
+        _spendBrakeUi = state;
+        OnPropertyChanged(nameof(SpendBrakeOverlayVisible));
+        OnPropertyChanged(nameof(CanConfirmSpendBrakeStart));
+        NotifyPowerTooltips();
     }
 
     private enum PowerActionKind

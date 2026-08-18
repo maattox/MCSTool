@@ -147,8 +147,8 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 | Phase | Focus | Status |
 |-------|--------|--------|
 | **1** | Manager shell (Advanced/Danger split, CIDR, wipe world) | **DONE** |
-| **2** | $1 spend-brake lock (Function flag, door, Manager overlay) | **NEXT** = Step **2.3** |
-| **3** | IP Management (public/private + blacklist) | TODO |
+| **2** | $1 spend-brake lock (Function flag, door, Manager overlay) | **DONE** |
+| **3** | IP Management (public/private + blacklist) | **NEXT** = Step **3.2** |
 | **4** | Setup game types (Paper, loaders, pack import) | TODO |
 | **5** | Server Management modding inspect + re-download pack | TODO |
 | **6** | Top-bar chrome + oversized-world SSH UX | TODO |
@@ -156,7 +156,7 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 | **8** | Paid / spend mode (**last** product feature) | TODO |
 | **9** | Packaging, updates, launch (old MVP Phase 8–9) | TODO — **do not start** until Phases 1–8 are DONE or the operator skips 8 |
 
-**Current NEXT step:** [Step 2.3](#step-23--door-honors-the-lock-flag). **Do not start Step 2.3** until the operator asks.
+**Current NEXT step:** [Step 3.2](#step-32--security-list-public--private-rewrite). **Do not start Step 3.2** until the operator asks.
 
 ---
 
@@ -314,7 +314,7 @@ Split so Function, door, and Manager each get their own window.
 
 ### Step 2.3 — Door honors the lock flag
 
-**Status:** NEXT  
+**Status:** DONE  
 **Depends on:** 2.1 (2.2 code may still be undeployed)
 
 **Read first**
@@ -332,17 +332,19 @@ Split so Function, door, and Manager each get their own window.
 
 **Test**
 
-- WSL/unit or a local `mccontrol` smoke with a fixture lock file if that harness already exists; otherwise document the operator door-redeploy check.
+- `make test` in lab `door_vm/` (MOTD/kick + `SPEND_BRAKE` state names). This Windows session had no gcc; run that in WSL/Linux.
+- After **redeploying the door** from `door_vm/` (Testing2 Phase 3+4 or Setup `install.sh`): SSH the door as `ubuntu`, then `sudo bash /opt/mccontrol/oci/pull_os_budget.sh --force` — expect `SPEND_BRAKE_LOCK=0` while the object is absent (wake must not DEGRADE).
+- Optional refuse check (delete the object when done): PUT a tiny `meta/spend-brake-triggered.json`, `POST /api/wake`, confirm VM1 stays STOPPED and MOTD/kick contains `MONTHLY SPEND BRAKE FIRED` (not `DAILY BUDGET`). Then DELETE the object and `/api/os-refresh`.
 
 **Done when:** Wake path refuses START when the flag is present.
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-17 — Door wake GETs `meta/spend-brake-triggered.json` on every `pull_os_budget.sh` (404 = unlocked; other GET errors fail closed). Presence → `SPEND_BRAKE`; **never** `start_vm1.sh`. MOTD/kick: `MONTHLY SPEND BRAKE FIRED — the admin must use Manager after a new calendar month.` (distinct from daily). Reconcile parks IP like idle. `make test` MOTD/state. Live door needs redeploy from `door_vm/`.
 
 ---
 
 ### Step 2.4 — Manager full-window lock UX
 
-**Status:** TODO  
+**Status:** DONE  
 **Depends on:** 2.1, 1.1
 
 **Read first**
@@ -365,7 +367,7 @@ Split so Function, door, and Manager each get their own window.
 
 **Done when:** Overlay + exact typed confirm + clear + reconcile path exist.
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-17 — Full-window overlay when `meta/spend-brake-triggered.json` is present (open + Start re-GET). Exact PRODUCT-IDEAS confirmation sentence; Start Server parks play IP (Troubleshooting `ParkPlayIp`), DELETEs the lock, door OS-refresh, then normal Wake (idle/daily/monthly gates still apply). No auto-clear at month rollover. Fail-closed Start when Get fails (no overlay). DEBUG fixture PUT/clear on Advanced probes. Core `SpendBrakeLockUx` unit tests.
 
 ---
 
@@ -375,7 +377,7 @@ Split so Function, door, and Manager each get their own window.
 
 ### Step 3.1 — Mode + blacklist persist (no SL rewrite yet)
 
-**Status:** TODO  
+**Status:** DONE  
 **Depends on:** 1.2 (friends list / allowlist objects)
 
 **Read first**
@@ -397,13 +399,13 @@ Split so Function, door, and Manager each get their own window.
 
 **Done when:** Mode + blacklist persist; SL still private `/32` (and CIDR from 1.2).
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-17 — Whitelist **Make server public** / **Make server private** with aggressive confirm before public. Mode + blacklist persist in `friends.local.json` and Object Storage `ip/mode.json` when present (missing/invalid mode = private). Public notice + blacklist “applies only in public mode.” **Apply public access** disabled; Security List not rewritten; no `0.0.0.0/0`.
 
 ---
 
 ### Step 3.2 — Security List public / private rewrite
 
-**Status:** TODO  
+**Status:** NEXT  
 **Depends on:** 3.1
 
 **Read first**
@@ -1238,6 +1240,9 @@ Former MVP Phase **8–9**. **Do not start** until Phases **1–7** are DONE and
 
 | Date | Note |
 |------|------|
+| 2026-08-17 | **Step 3.1 DONE.** Persist `private`/`public` + blacklist locally (`friends.local.json`) and `ip/mode.json` when present; public confirm; Apply-public stub; SL unchanged. **NEXT = Step 3.2**. Do not start 3.2 unless asked. |
+| 2026-08-17 | **Step 2.4 DONE.** Manager full-window spend-brake overlay; exact typed confirm; park-IP + DELETE lock + OS-refresh + Wake (gates still apply). Core `SpendBrakeLockUx` tests. **NEXT = Step 3.1**. Do not start 3.1 unless asked. |
+| 2026-08-17 | **Step 2.3 DONE.** Door GETs `meta/spend-brake-triggered.json` on wake pull; presence refuses START (`SPEND_BRAKE` MOTD/kick distinct from daily). Fail closed on non-404 GET. No extra Python. Live door still needs redeploy. **NEXT = Step 2.4**. Do not start 2.4 unless asked. |
 | 2026-08-17 | **Step 2.2 DONE.** Tracked Function PUTs `meta/spend-brake-triggered.json` on real threshold alerts (ignore RESET); SoftStop **VM1 only**; door Micro left running (Always Free AMD Micro ≠ Ampere hours). HCL stop-list default VM1 + OS config. No `fn push`. **NEXT = Step 2.3**. Do not start 2.3 unless asked. |
 | 2026-08-17 | **Step 2.1 DONE.** Frozen Object Storage lock: `meta/spend-brake-triggered.json` v1; Function writer, Manager-only DELETE clearer, door+Manager readers; fail closed. Core DTO + get/put/delete. No live Function deploy. **NEXT = Step 2.2**. Do not start 2.2 unless asked. |
 | 2026-08-17 | **Step 1.3 DONE.** Wipe world: Server Management button + confirm; SSH deletes only `world_path` under `/opt/mcmgr/server/`; Minecraft stopped first; Object Storage backups / mods / `server.properties` untouched. **NEXT = Step 2.1**. Do not start 2.1 unless asked. |

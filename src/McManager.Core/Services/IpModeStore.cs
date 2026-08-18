@@ -5,10 +5,11 @@ using McManager.Core.Config;
 namespace McManager.Core.Services;
 
 /// <summary>
-/// Reads/writes Object Storage <c>ip/allowlist.json</c> when that object already exists.
-/// Does not create the object (Setup / later IP-mode work owns first seed).
+/// Reads/writes Object Storage <c>ip/mode.json</c> when that object already exists.
+/// Does not create the object (Setup / bucket seed owns first write).
+/// Missing or unknown <c>mode</c> is private — never treated as public.
 /// </summary>
-public sealed class AllowlistStore
+public sealed class IpModeStore
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -21,20 +22,21 @@ public sealed class AllowlistStore
     private readonly IObjectStorageService _objectStorage;
     private readonly string _objectName;
 
-    public AllowlistStore(IObjectStorageService objectStorage, ObjectStoragePrefixes prefixes)
+    public IpModeStore(IObjectStorageService objectStorage, ObjectStoragePrefixes prefixes)
     {
         _objectStorage = objectStorage;
-        _objectName = Combine(prefixes.Ip, "allowlist.json");
+        _objectName = Combine(prefixes.Ip, "mode.json");
     }
 
     public string ObjectName => _objectName;
 
     /// <summary>
-    /// PUT updated entries only if <c>ip/allowlist.json</c> is already in the bucket.
-    /// Missing object → skipped (not an error).
+    /// PUT updated mode + blacklist only if <c>ip/mode.json</c> is already in the bucket.
+    /// Missing object → skipped (not an error). Does not touch the Security List.
     /// </summary>
-    public async Task<ServiceResult<AllowlistPublishResult>> PublishIfPresentAsync(
-        IReadOnlyList<FriendEntry> friends,
+    public async Task<ServiceResult<IpModePublishResult>> PublishIfPresentAsync(
+        string mode,
+        IReadOnlyList<BlacklistEntry> blacklist,
         CancellationToken cancellationToken = default)
     {
         var bytes = await _objectStorage.GetBytesAsync(_objectName, cancellationToken);
@@ -42,35 +44,39 @@ public sealed class AllowlistStore
         {
             if (OciErrorFormatter.IsNotFoundMessage(bytes.Error))
             {
-                return ServiceResult<AllowlistPublishResult>.Ok(new AllowlistPublishResult
+                return ServiceResult<IpModePublishResult>.Ok(new IpModePublishResult
                 {
                     SkippedMissing = true,
-                    Message = $"{_objectName} is not in the bucket yet; Security List is the live allowlist.",
+                    Message = $"{_objectName} is not in the bucket yet; mode is saved on this PC only.",
                 });
             }
 
-            return ServiceResult<AllowlistPublishResult>.Fail(
+            return ServiceResult<IpModePublishResult>.Fail(
                 bytes.Error ?? $"Get {_objectName} failed.");
         }
 
-        IpAllowlistDocument doc;
+        IpModeDocument doc;
         try
         {
-            doc = JsonSerializer.Deserialize<IpAllowlistDocument>(bytes.Value, JsonOptions)
-                  ?? new IpAllowlistDocument();
+            doc = JsonSerializer.Deserialize<IpModeDocument>(bytes.Value, JsonOptions)
+                  ?? new IpModeDocument();
         }
         catch (JsonException ex)
         {
-            return ServiceResult<AllowlistPublishResult>.Fail(
+            return ServiceResult<IpModePublishResult>.Fail(
                 $"{_objectName} JSON parse failed: {ex.Message}");
         }
 
-        doc.Version = doc.Version <= 0 ? 1 : doc.Version;
-        if (string.IsNullOrWhiteSpace(doc.ModeNote)
-            || doc.ModeNote.Contains("MVP uses private", StringComparison.OrdinalIgnoreCase))
-            doc.ModeNote = "Allowlist is applied only when ip/mode.json is private.";
+        if (doc.Version > IpModeDocument.CurrentVersion)
+        {
+            return ServiceResult<IpModePublishResult>.Fail(
+                $"{_objectName} version {doc.Version} is newer than this Manager supports.");
+        }
+
+        doc.Version = doc.Version <= 0 ? IpModeDocument.CurrentVersion : doc.Version;
         doc.UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
-        doc.Entries = friends.ToList();
+        doc.Mode = IpAccessMode.Normalize(mode);
+        doc.Blacklist = blacklist.ToList();
 
         var json = JsonSerializer.Serialize(doc, JsonOptions);
         var putBytes = Encoding.UTF8.GetBytes(json.EndsWith('\n') ? json : json + "\n");
@@ -80,12 +86,12 @@ public sealed class AllowlistStore
             "application/json",
             cancellationToken);
         if (!put.Succeeded)
-            return ServiceResult<AllowlistPublishResult>.Fail(put.Error ?? $"Put {_objectName} failed.");
+            return ServiceResult<IpModePublishResult>.Fail(put.Error ?? $"Put {_objectName} failed.");
 
-        return ServiceResult<AllowlistPublishResult>.Ok(new AllowlistPublishResult
+        return ServiceResult<IpModePublishResult>.Ok(new IpModePublishResult
         {
             SkippedMissing = false,
-            Message = $"Updated {_objectName} ({doc.Entries.Count} entries).",
+            Message = $"Updated {_objectName} (mode={doc.Mode}, {doc.Blacklist.Count} blacklist).",
         });
     }
 
@@ -97,7 +103,7 @@ public sealed class AllowlistStore
     }
 }
 
-public sealed class AllowlistPublishResult
+public sealed class IpModePublishResult
 {
     public bool SkippedMissing { get; init; }
     public string Message { get; init; } = "";
