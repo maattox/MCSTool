@@ -7,6 +7,9 @@
 *.tftpl text eol=lf
 infra/**/*.yaml text eol=lf
 infra/**/*.yml text eol=lf
+onbox/**/*.sh text eol=lf
+onbox/**/*.py text eol=lf
+onbox/**/*.in text eol=lf
 
 ###############################################################################
 # Set default behavior for command prompt diff.

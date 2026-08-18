@@ -6,8 +6,8 @@ set -euo pipefail
 # shellcheck source=env.sh
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/env.sh"
 
-# Expects env vars set by driver / vanilla module:
-#   RESOLVED_MC_VERSION, JAVA_*, ARTIFACT_*, LAUNCH_*, EULA_*, RCON_PASSWORD_REF
+# Expects env vars set by driver / installer module:
+#   DISTRIBUTION, RESOLVED_MC_VERSION, JAVA_*, ARTIFACT_*, LAUNCH_*, EULA_*, RCON_PASSWORD_REF
 manifest_write() {
   mkdir -p "${ETC_MCMGR}"
   local py
@@ -32,11 +32,14 @@ args = json.loads(req("LAUNCH_ARGS_JSON"))
 hash_alg = req("ARTIFACT_HASH_ALG")
 hash_val = req("ARTIFACT_HASH_VALUE")
 hash_at = os.environ.get("ARTIFACT_HASH_VERIFIED_AT") or now
+dist = req("DISTRIBUTION")
+if dist not in ("vanilla", "paper"):
+    raise SystemExit(f"unsupported distribution {dist}")
 
 doc = {
   "schema_version": 1,
   "game_type": "minecraft",
-  "distribution": "vanilla",
+  "distribution": dist,
   "minecraft_version": req("RESOLVED_MC_VERSION"),
   "loader": None,
   "loader_version": None,

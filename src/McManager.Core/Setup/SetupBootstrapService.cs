@@ -517,7 +517,7 @@ public sealed class SetupBootstrapService
         UploadTree(client, onbox, onboxStaging, log);
         var driver =
             "set -euo pipefail; "
-            + $"find {onboxStaging} -type f \\( -name '*.sh' -o -name '*.in' \\) -exec sed -i 's/\\r$//' {{}} +; "
+            + $"find {onboxStaging} -type f \\( -name '*.sh' -o -name '*.in' -o -name '*.py' \\) -exec sed -i 's/\\r$//' {{}} +; "
             + $"export EULA_ACCEPTED=true MINECRAFT_VERSION={ShQuote(minecraftVersion)} DISTRIBUTION=vanilla HOME=/home/ubuntu; "
             + $"sudo -E bash {onboxStaging}/common/driver.sh";
         Exec(client, "bash -c " + ShQuote(driver), TimeSpan.FromMinutes(20), log);

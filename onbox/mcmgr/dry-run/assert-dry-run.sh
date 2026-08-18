@@ -48,7 +48,7 @@ assert not missing, f"manifest missing keys: {missing}"
 
 assert doc["schema_version"] == 1
 assert doc["game_type"] == "minecraft"
-assert doc["distribution"] == "vanilla"
+assert doc["distribution"] in ("vanilla", "paper"), doc["distribution"]
 assert doc["loader"] is None
 assert doc["loader_version"] is None
 assert doc["modpack"] is None
@@ -57,11 +57,24 @@ assert isinstance(doc["java_major"], int)
 assert doc["java"]["vendor"] == "temurin"
 assert doc["java"]["package_type"] == "jre"
 assert doc["server_artifact"]["kind"] == "single_jar"
-assert doc["server_artifact"]["filename"] == "server.jar"
-assert doc["artifact_hash"]["algorithm"] == "sha1"
-assert re.fullmatch(r"[0-9a-f]{40}", doc["artifact_hash"]["value"]), "sha1 shape"
-assert doc["launch_command"]["args"][-2:] == ["server.jar", "nogui"]
 assert "-jar" in doc["launch_command"]["args"]
+assert all("\r" not in a for a in doc["launch_command"]["args"]), "CRLF leaked into launch args"
+if doc["distribution"] == "paper":
+    fn = doc["server_artifact"]["filename"]
+    assert fn.startswith("paper-") and fn.endswith(".jar"), fn
+    assert "api.papermc.io" not in (doc["server_artifact"]["download_url"] or "").lower()
+    assert doc["artifact_hash"]["algorithm"] == "sha256"
+    assert re.fullmatch(r"[0-9a-f]{64}", doc["artifact_hash"]["value"]), "sha256 shape"
+    assert doc["launch_command"]["args"][-1] == "--nogui"
+    assert doc["launch_command"]["args"][-3] == "-jar"
+    assert doc["launch_command"]["args"][-2] == fn
+    assert "-XX:+UseG1GC" in doc["launch_command"]["args"]
+    assert doc["java_major"] == 21
+else:
+    assert doc["server_artifact"]["filename"] == "server.jar"
+    assert doc["artifact_hash"]["algorithm"] == "sha1"
+    assert re.fullmatch(r"[0-9a-f]{40}", doc["artifact_hash"]["value"]), "sha1 shape"
+    assert doc["launch_command"]["args"][-2:] == ["server.jar", "nogui"]
 assert doc["world_path"].endswith("/opt/mcmgr/server/world") or doc["world_path"].endswith("\\opt\\mcmgr\\server\\world") or "/opt/mcmgr/server/world" in doc["world_path"].replace("\\", "/")
 assert doc["server_dir"].replace("\\", "/").endswith("/opt/mcmgr/server")
 assert doc["minecraft_unit"] == "minecraft"
@@ -76,8 +89,13 @@ assert password not in blob, "rcon password leaked into manifest"
 assert "User=mcmgr" in unit
 assert "Group=mcmgr" in unit
 assert "ExecStart=" in unit
-assert "server.jar" in unit
-assert "nogui" in unit
+if doc["distribution"] == "paper":
+    assert doc["server_artifact"]["filename"] in unit
+    assert "--nogui" in unit
+else:
+    assert "server.jar" in unit
+    assert "nogui" in unit
+    assert "--nogui" not in unit
 assert "rcon-graceful-stop.sh" in unit
 assert "ExecStop=+" in unit
 assert "RestartPreventExitStatus=200" in unit

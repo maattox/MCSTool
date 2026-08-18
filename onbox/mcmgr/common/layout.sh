@@ -204,6 +204,26 @@ _layout_expect() {
   [[ "${mode}" == "${want_mode}" ]] || mcmgr_die "layout verify: ${path} mode ${mode} want ${want_mode}"
 }
 
+# Vanilla places server.jar; Paper places paper-<ver>-<build>.jar (§4.2 / §17.4).
+_layout_artifact_jar() {
+  if [[ -n "${ARTIFACT_FILENAME:-}" ]]; then
+    printf '%s' "${SERVER_DIR}/${ARTIFACT_FILENAME}"
+    return 0
+  fi
+  if [[ -f "${SERVER_DIR}/server.jar" ]]; then
+    printf '%s' "${SERVER_DIR}/server.jar"
+    return 0
+  fi
+  local j
+  for j in "${SERVER_DIR}"/*.jar; do
+    if [[ -f "${j}" ]]; then
+      printf '%s' "${j}"
+      return 0
+    fi
+  done
+  printf ''
+}
+
 _layout_java_exe() {
   local exe=""
   if [[ -f "${VAR_MCMGR}/java_executable.path" ]]; then
@@ -230,7 +250,9 @@ layout_verify() {
   [[ -d "${VAR_MCMGR}" ]] || mcmgr_die "layout verify: missing ${VAR_MCMGR}"
 
   if ! _layout_is_live; then
-    [[ -f "${SERVER_DIR}/server.jar" ]] || mcmgr_die "layout verify: missing ${SERVER_DIR}/server.jar"
+    local dry_jar
+    dry_jar="$(_layout_artifact_jar)"
+    [[ -n "${dry_jar}" && -f "${dry_jar}" ]] || mcmgr_die "layout verify: missing server jar under ${SERVER_DIR}"
     [[ -f "${SYSTEMD_UNIT_PATH}" ]] || mcmgr_die "layout verify: missing unit ${SYSTEMD_UNIT_PATH}"
     grep -q '^User=mcmgr' "${SYSTEMD_UNIT_PATH}" || mcmgr_die "layout verify: unit missing User=mcmgr"
     grep -q '^RestartPreventExitStatus=200' "${SYSTEMD_UNIT_PATH}" || mcmgr_die "layout verify: unit missing RestartPreventExitStatus=200"
@@ -256,9 +278,12 @@ layout_verify() {
   [[ -f "${RCON_SECRET}" ]] || mcmgr_die "layout verify: missing ${RCON_SECRET}"
   _layout_expect "${RCON_SECRET}" "root:root" "0600"
 
-  [[ -f "${SERVER_DIR}/server.jar" ]] || mcmgr_die "layout verify: missing ${SERVER_DIR}/server.jar"
-  _layout_run_as_mcmgr bash -c 'cd "$1" && test -r server.jar' _ "${SERVER_DIR}" \
-    || mcmgr_die "layout verify: mcmgr cannot cd ${SERVER_DIR} / read server.jar (CHDIR class)"
+  local artifact_jar artifact_base
+  artifact_jar="$(_layout_artifact_jar)"
+  [[ -n "${artifact_jar}" && -f "${artifact_jar}" ]] || mcmgr_die "layout verify: missing server jar under ${SERVER_DIR}"
+  artifact_base="$(basename "${artifact_jar}")"
+  _layout_run_as_mcmgr bash -c 'cd "$1" && test -r "$2"' _ "${SERVER_DIR}" "${artifact_base}" \
+    || mcmgr_die "layout verify: mcmgr cannot cd ${SERVER_DIR} / read ${artifact_base} (CHDIR class)"
 
   local java_exe
   java_exe="$(_layout_java_exe)"

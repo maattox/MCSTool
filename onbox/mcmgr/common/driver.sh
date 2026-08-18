@@ -2,8 +2,10 @@
 # Shared bootstrap driver — layout → java → installer module → eula/props/rcon → unit → manifest.
 # Usage:
 #   EULA_ACCEPTED=true MINECRAFT_VERSION=1.21.1 sudo -E ./common/driver.sh
+#   EULA_ACCEPTED=true DISTRIBUTION=paper MINECRAFT_VERSION=1.21.10 sudo -E ./common/driver.sh
 # Dry-run:
 #   DRY_RUN=1 MCMGR_ROOT=/tmp/mcmgr-dry EULA_ACCEPTED=true ./common/driver.sh
+#   DRY_RUN=1 DISTRIBUTION=paper MINECRAFT_VERSION=1.21.10 MCMGR_ROOT=/tmp/mcmgr-dry EULA_ACCEPTED=true ./common/driver.sh
 # shellcheck shell=bash
 set -euo pipefail
 
@@ -36,7 +38,10 @@ on_err() {
 trap on_err ERR
 
 main() {
-  [[ "${DISTRIBUTION}" == "vanilla" ]] || mcmgr_die "only distribution=vanilla is implemented (got ${DISTRIBUTION})"
+  case "${DISTRIBUTION}" in
+    vanilla|paper) ;;
+    *) mcmgr_die "only distribution=vanilla|paper is implemented (got ${DISTRIBUTION})" ;;
+  esac
 
   if [[ "${DRY_RUN}" != "1" && "$(id -u)" -ne 0 ]]; then
     mcmgr_die "live install must run as root (or use DRY_RUN=1)"
@@ -67,12 +72,21 @@ main() {
   run_stage layout_ready layout_ensure_accounts
   layout_apply
 
-  # Resolve + place artifact first so Java major comes from Mojang metadata.
-  # shellcheck source=../modules/bootstrap-vanilla.sh
-  source "${MCMGR_HOME}/modules/bootstrap-vanilla.sh"
-  run_stage artifact_placed vanilla_resolve_and_place
+  # Resolve + place artifact first so Java major comes from upstream metadata.
+  local java_major_from_module=""
+  if [[ "${DISTRIBUTION}" == "paper" ]]; then
+    # shellcheck source=../modules/bootstrap-paper.sh
+    source "${MCMGR_HOME}/modules/bootstrap-paper.sh"
+    run_stage artifact_placed paper_resolve_and_place
+    java_major_from_module="${PAPER_JAVA_MAJOR:-}"
+  else
+    # shellcheck source=../modules/bootstrap-vanilla.sh
+    source "${MCMGR_HOME}/modules/bootstrap-vanilla.sh"
+    run_stage artifact_placed vanilla_resolve_and_place
+    java_major_from_module="${VANILLA_JAVA_MAJOR:-}"
+  fi
 
-  run_stage java_resolved java_install "${VANILLA_JAVA_MAJOR}"
+  run_stage java_resolved java_install "${java_major_from_module}"
 
   run_stage eula_written eula_write "${RESOLVED_MC_VERSION}"
   run_stage rcon_ready rcon_setup
@@ -82,16 +96,29 @@ main() {
     server_properties_apply "$(tr -d '\r\n' <"${RCON_SECRET}")"
   fi
 
-  # Build launch_command args for single_jar (generic unit_gen — no vanilla branch).
+  # Build launch_command args for single_jar. unit_gen stays generic (§6.3):
+  # Vanilla uses bare `nogui`; Paper uses `--nogui` and the resolved jar filename.
   local launch_args
   launch_args=(
     "-Xms${JVM_XMS}"
     "-Xmx${JVM_XMX}"
-    "-XX:+UseG1GC"
-    "-jar"
-    "server.jar"
-    "nogui"
   )
+  if [[ "${DISTRIBUTION}" == "paper" ]]; then
+    export PAPER_JVM_FLAGS_JSON="${PAPER_JVM_FLAGS_JSON:-[]}"
+    local flag
+    while IFS= read -r flag; do
+      flag="${flag%$'\r'}"
+      [[ -n "${flag}" ]] && launch_args+=("${flag}")
+    done < <("$(mcmgr_python)" -c 'import json,os,sys
+flags=json.loads(os.environ.get("PAPER_JVM_FLAGS_JSON") or "[]")
+if not flags:
+    flags=["-XX:+UseG1GC"]
+sys.stdout.buffer.write(("\n".join(flags) + "\n").encode("utf-8"))
+')
+    launch_args+=("-jar" "${ARTIFACT_FILENAME}" "--nogui")
+  else
+    launch_args+=("-XX:+UseG1GC" "-jar" "server.jar" "nogui")
+  fi
   export LAUNCH_ARGS_JSON
   LAUNCH_ARGS_JSON="$("$(mcmgr_python)" -c 'import json,sys; print(json.dumps(sys.argv[1:]))' "${launch_args[@]}")"
 
@@ -111,7 +138,11 @@ main() {
     systemctl start "${MINECRAFT_UNIT}.service" || mcmgr_log "warning: systemctl start failed (first boot may need manual start)"
   fi
 
-  mcmgr_log "SUCCESS: Vanilla ${RESOLVED_MC_VERSION} bootstrap complete"
+  if [[ "${DISTRIBUTION}" == "paper" ]]; then
+    mcmgr_log "SUCCESS: Paper ${RESOLVED_MC_VERSION} bootstrap complete"
+  else
+    mcmgr_log "SUCCESS: Vanilla ${RESOLVED_MC_VERSION} bootstrap complete"
+  fi
   mcmgr_log "  server_dir=${SERVER_DIR}"
   mcmgr_log "  manifest=${GAME_MANIFEST}"
   mcmgr_log "  unit=${SYSTEMD_UNIT_PATH}"

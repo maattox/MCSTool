@@ -154,14 +154,14 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 | **1** | Manager shell (Advanced/Danger split, CIDR, wipe world) | **DONE** |
 | **2** | $1 spend-brake lock (Function flag, door, Manager overlay) | **DONE** |
 | **3** | Remove public/blacklist (was IP Management public mode) | **DONE** |
-| **4** | Setup game types (Paper, loaders, pack import) | **NEXT** = Step **4.2** |
+| **4** | Setup game types (Paper, loaders, pack import) | **NEXT** = Step **4.3** |
 | **5** | Server Management modding inspect + re-download pack | TODO |
 | **6** | Top-bar chrome + oversized-world SSH UX | TODO |
 | **7** | Remaining v1 (resize, console, storage, Connect version) | TODO |
 | **8** | Paid / spend mode (**last** product feature) | TODO |
 | **9** | Packaging, updates, launch (old MVP Phase 8–9) | TODO — **do not start** until Phases 1–8 are DONE or the operator skips 8 |
 
-**Current NEXT step:** [Step 4.2](#step-42--on-box-paper-installer-module). **Do not start Step 4.2** until the operator asks.
+**Current NEXT step:** [Step 4.3](#step-43--setup-wizard-default-vs-optimized-vanilla). **Do not start Step 4.3** until the operator asks.
 
 ---
 
@@ -484,7 +484,7 @@ Each installer step: Core metadata client + `onbox/mcmgr/` module + generic unit
 
 ### Step 4.2 — on-box Paper installer module
 
-**Status:** NEXT  
+**Status:** DONE  
 **Depends on:** 4.1
 
 **Read first**
@@ -504,13 +504,13 @@ Each installer step: Core metadata client + `onbox/mcmgr/` module + generic unit
 
 **Done when:** On-box Paper module exists and writes a valid manifest + unit args for a jar.
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-18 — On-box `bootstrap-paper.sh` + `paper_fill_v3.py`: Fill v3 STABLE resolve (SHA-256, `server:default` URL from JSON, no v2 builder, no ALPHA/BETA fallback). Driver `DISTRIBUTION=paper` writes §4.2 manifest + generic unit `--nogui` + Paper recommended JVM flags. Layout verify accepts Paper jar name. No wizard UI. **NEXT = Step 4.3**. Do not start 4.3 unless asked.
 
 ---
 
 ### Step 4.3 — Setup wizard: Default vs Optimized Vanilla
 
-**Status:** TODO  
+**Status:** NEXT  
 **Depends on:** 4.1, 4.2
 
 **Read first**
@@ -1237,6 +1237,7 @@ Former MVP Phase **8–9**. **Do not start** until Phases **1–7** are DONE and
 
 | Date | Note |
 |------|------|
+| 2026-08-18 | **Step 4.2 DONE.** On-box Paper module (`bootstrap-paper.sh` + Fill v3 helper): STABLE jar + sha256 + §4.2 manifest + generic unit `--nogui`. No Setup UI. **NEXT = Step 4.3**. Do not start 4.3 unless asked. |
 | 2026-08-18 | **Step 4.1 DONE.** Core Fill v3 client + offline fixtures (STABLE resolve, SHA-256 URL from JSON, no v2 URL builder). No Setup UI / on-box. **NEXT = Step 4.2**. Do not start 4.2 unless asked. |
 | 2026-08-18 | **Step 3.4 DONE.** Manager private-only: no public toggle/blacklist UI; no `ip/mode.json` writer; planner keeps CIDR allowlist and strips leftover world-open Minecraft. TESTING SL was already private. **NEXT = Step 4.1**. Do not start 4.1 unless asked. |
 | 2026-08-18 | **Public/blacklist rejected.** Step **3.3 CANCELLED**. Steps **3.1–3.2 WITHDRAWN**. Docs updated. **NEXT = Step 3.4** (remove 3.1/3.2 code; keep CIDR). Do not start 3.4 unless asked. |

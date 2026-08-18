@@ -17,13 +17,29 @@ export DRY_RUN=1
 export MCMGR_ROOT="${STAGING}"
 export MCMGR_FIXTURES_DIR="${FIXTURES}"
 export EULA_ACCEPTED=true
-export MINECRAFT_VERSION="${MINECRAFT_VERSION:-1.21.1}"
-export DISTRIBUTION=vanilla
+export DISTRIBUTION="${DISTRIBUTION:-vanilla}"
+if [[ "${DISTRIBUTION}" == "paper" ]]; then
+  export MINECRAFT_VERSION="${MINECRAFT_VERSION:-1.21.10}"
+else
+  export MINECRAFT_VERSION="${MINECRAFT_VERSION:-1.21.1}"
+fi
 export MCMGR_INSTALLED_BY=dry_run
 
 echo "[dry-run] staging=${STAGING}"
 echo "[dry-run] fixtures=${FIXTURES}"
+echo "[dry-run] distribution=${DISTRIBUTION}"
 echo "[dry-run] version=${MINECRAFT_VERSION}"
+
+if [[ "${DISTRIBUTION}" == "paper" ]]; then
+  PY=""
+  if command -v python3 >/dev/null 2>&1; then PY=python3
+  elif command -v python >/dev/null 2>&1; then PY=python
+  else
+    echo "dry-run: need python for paper_fill_v3 self-test" >&2
+    exit 1
+  fi
+  "${PY}" "${ROOT}/common/paper_fill_v3.py" self-test --fixtures "${FIXTURES}"
+fi
 
 bash "${ROOT}/common/driver.sh"
 
