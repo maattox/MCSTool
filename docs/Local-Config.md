@@ -123,6 +123,8 @@ Imported packs the Manager actually installed are copied to **`data/imported-pac
 
 **Program settings (gear):** resolved paths for the data folder, `config.local.json`, `%LOCALAPPDATA%\McManager\tofu`, and the Oracle API config file. The update-check checkbox writes `%LOCALAPPDATA%\McManager\app-settings.json` (`check_for_updates`, default on). No GitHub request runs until Phase 9.
 
+**Notifications (bell):** in-memory this session only (not a file). Later steps post into the same list; Debug builds can post a sample from Advanced → DEBUG host probes.
+
 ## Later (after v1): deployment profiles
 
 MVP/v1 assume **one** connected stack: a single `data/config.local.json` (+ friends / wizard resume beside it). Lab `PRODUCT-IDEAS.md` **Multi-deploy profiles (after v1)** adds connecting an *additional* infrastructure deployment from Advanced (OCI API config + VM SSH keys → auto-detect/validate → profile switcher).

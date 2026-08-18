@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Threading;
 using McManager.Core.Config;
+using McManager.Core.Notifications;
 using McManager.Hybrid.Ui;
 using McManager.Hybrid.Ui.Wpf;
 using McManager.Hybrid.ViewModels;
@@ -72,6 +73,8 @@ public partial class App : Application
         services.AddSingleton<ConnectExistingFlow>();
         services.AddSingleton<FirstRunViewModel>();
         services.AddSingleton<MainViewModel>();
+        services.AddSingleton<NotificationCenter>();
+        services.AddSingleton<NotificationCenterViewModel>();
         services.AddSingleton<ChromeViewModel>();
         services.AddSingleton<WhitelistViewModel>();
         services.AddSingleton<UsageViewModel>();

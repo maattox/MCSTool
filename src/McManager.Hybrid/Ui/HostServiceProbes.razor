@@ -6,6 +6,7 @@
 @inject IFilePicker FilePicker
 @inject IUiClock Clock
 @inject MainViewModel Main
+@inject NotificationCenterViewModel Notices
 @implements IDisposable
 
 <div class="mcm-host-probes" role="region" aria-label="DEBUG host service probes">
@@ -17,6 +18,7 @@
     <button type="button" @onclick="AnalyzeManualZipAsync">Analyze server-pack zip</button>
     <button type="button" @onclick="InstallManualZipAsync">Install server-pack zip (temp dir)</button>
     <button type="button" @onclick="PutSpendBrakeAsync">Put spend-brake fixture</button>
+    <button type="button" @onclick="PostFakeNotice">Post fake notification</button>
     <span class="mcm-host-probes-status">@_status</span>
     <span class="mcm-host-probes-clock" title="IUiClock">@Clock.UtcNow.ToString("HH:mm:ss") UTC</span>
 </div>
@@ -246,5 +248,11 @@
     {
         await Main.DebugPutSpendBrakeFixtureAsync();
         _status = "Spend-brake: fixture PUT (overlay if Object Storage succeeded)";
+    }
+
+    private void PostFakeNotice()
+    {
+        Notices.PostDebugSample();
+        _status = "Notification: posted (bell badge). Open the bell to dismiss.";
     }
 }

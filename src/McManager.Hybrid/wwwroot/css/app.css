@@ -234,6 +234,174 @@ button.mcm-btn-disabled:hover {
     color: var(--text-primary);
 }
 
+.mcm-bell {
+    position: relative;
+    z-index: 36;
+}
+
+.mcm-bell-badge {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--fill-danger);
+    border: 1.5px solid var(--bg);
+    pointer-events: none;
+}
+
+.mcm-notice-panel {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    width: 340px;
+    max-height: 380px;
+    padding: 8px;
+    background: var(--surface-1);
+    border: 0.5px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(8, 10, 14, 0.45);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    outline: none;
+}
+
+.mcm-notice-panel:focus-visible {
+    outline: 2px solid var(--fill-accent);
+    outline-offset: 2px;
+}
+
+.mcm-notice-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 4px 6px 2px;
+}
+
+.mcm-notice-title {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.mcm-notice-clear {
+    background: transparent;
+    border: none;
+    padding: 2px 4px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.mcm-notice-clear:hover:not(:disabled) {
+    background: transparent;
+    color: var(--text-primary);
+}
+
+.mcm-notice-empty {
+    margin: 0;
+    padding: 18px 10px 20px;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--text-secondary);
+}
+
+.mcm-notice-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    max-height: 320px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.mcm-notice-item {
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr) 28px;
+    gap: 8px;
+    align-items: start;
+    padding: 8px 6px;
+    border-radius: 8px;
+}
+
+.mcm-notice-item:hover {
+    background: var(--surface-2);
+}
+
+.mcm-notice-item > .ti {
+    margin-top: 2px;
+    font-size: 15px;
+    color: var(--text-secondary);
+}
+
+.mcm-notice-item.is-warning > .ti {
+    color: var(--text-accent);
+}
+
+.mcm-notice-item.is-error > .ti {
+    color: var(--text-danger);
+}
+
+.mcm-notice-copy {
+    min-width: 0;
+}
+
+.mcm-notice-item-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.mcm-notice-item-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.mcm-notice-stamp {
+    flex-shrink: 0;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-muted);
+}
+
+.mcm-notice-body {
+    margin: 4px 0 0;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--text-secondary);
+}
+
+.mcm-notice-dismiss {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 7px;
+    color: var(--text-muted);
+}
+
+.mcm-notice-dismiss .ti {
+    font-size: 14px;
+}
+
+.mcm-notice-dismiss:hover:not(:disabled) {
+    background: var(--surface-2);
+    color: var(--text-primary);
+}
+
 .mcm-overflow {
     position: relative;
     z-index: 36;

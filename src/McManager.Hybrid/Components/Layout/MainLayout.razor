@@ -5,6 +5,7 @@
 @using McManager.Hybrid.Components.Tabs.Troubleshooting
 @inject MainViewModel Vm
 @inject ChromeViewModel Chrome
+@inject NotificationCenterViewModel Notices
 @implements IDisposable
 
 <div class="mcm-app mcm-app-manage">
@@ -15,11 +16,85 @@
         </div>
         <div class="mcm-title-actions">
             <span class="mcm-always-free">Always Free</span>
+            <div class="mcm-bell">
+                <button type="button"
+                        class="mcm-chrome-btn @(Notices.PanelOpen ? "is-open" : null)"
+                        title="Notifications"
+                        aria-label="@Notices.BellAriaLabel"
+                        aria-haspopup="dialog"
+                        aria-expanded="@(Notices.PanelOpen ? "true" : "false")"
+                        aria-controls="mcm-notice-panel"
+                        @onclick="ToggleBell"
+                        @onclick:stopPropagation="true">
+                    <i class="ti ti-bell" aria-hidden="true"></i>
+                    @if (Notices.HasUnread)
+                    {
+                        <span class="mcm-bell-badge" aria-hidden="true"></span>
+                    }
+                </button>
+                @if (Notices.PanelOpen)
+                {
+                    <div class="mcm-notice-panel"
+                         id="mcm-notice-panel"
+                         role="dialog"
+                         aria-labelledby="mcm-notice-title"
+                         tabindex="-1"
+                         @ref="_noticePanel"
+                         @onclick:stopPropagation="true"
+                         @onkeydown="OnChromeKeyDown">
+                        <div class="mcm-notice-head">
+                            <h2 id="mcm-notice-title" class="mcm-notice-title">Notifications</h2>
+                            @if (!Notices.IsEmpty)
+                            {
+                                <button type="button"
+                                        class="mcm-notice-clear"
+                                        @onclick="Notices.DismissAll">
+                                    Dismiss all
+                                </button>
+                            }
+                        </div>
+                        @if (Notices.IsEmpty)
+                        {
+                            <p class="mcm-notice-empty">@NotificationCenterViewModel.EmptyState</p>
+                        }
+                        else
+                        {
+                            <ul class="mcm-notice-list mcm-slim-scroll">
+                                @foreach (var item in Notices.Items)
+                                {
+                                    <li class="mcm-notice-item @NotificationCenterViewModel.SeverityClass(item)">
+                                        <i class="@NotificationCenterViewModel.SeverityIcon(item)" aria-hidden="true"></i>
+                                        <div class="mcm-notice-copy">
+                                            <div class="mcm-notice-item-head">
+                                                <span class="mcm-notice-item-title">@item.Title</span>
+                                                <time class="mcm-notice-stamp" datetime="@item.CreatedAt.ToString("o")">
+                                                    @NotificationCenterViewModel.FormatStamp(item)
+                                                </time>
+                                            </div>
+                                            @if (!string.IsNullOrWhiteSpace(item.Body))
+                                            {
+                                                <p class="mcm-notice-body">@item.Body</p>
+                                            }
+                                        </div>
+                                        <button type="button"
+                                                class="mcm-notice-dismiss"
+                                                title="Dismiss"
+                                                aria-label="Dismiss @item.Title"
+                                                @onclick="@(() => Notices.Dismiss(item.Id))">
+                                            <i class="ti ti-x" aria-hidden="true"></i>
+                                        </button>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                }
+            </div>
             <button type="button"
                     class="mcm-chrome-btn"
                     title="Program settings"
                     aria-label="Program settings"
-                    @onclick="Chrome.OpenSettings">
+                    @onclick="OpenSettings">
                 <i class="ti ti-settings" aria-hidden="true"></i>
             </button>
             <div class="mcm-overflow">
@@ -30,7 +105,7 @@
                         aria-haspopup="menu"
                         aria-expanded="@(Chrome.OverflowOpen ? "true" : "false")"
                         aria-controls="mcm-overflow-menu"
-                        @onclick="Chrome.ToggleOverflow"
+                        @onclick="ToggleOverflow"
                         @onclick:stopPropagation="true">
                     <i class="ti ti-menu-2" aria-hidden="true"></i>
                 </button>
@@ -259,10 +334,10 @@
         <div class="mcm-toast @(Vm.ToastIsError ? "is-error" : null)" role="status">@Vm.ToastMessage</div>
     }
 
-    @if (Chrome.OverflowOpen)
+    @if (Chrome.OverflowOpen || Notices.PanelOpen)
     {
         <div class="mcm-overflow-catch"
-             @onclick="Chrome.CloseOverflow"
+             @onclick="CloseFlyouts"
              @onkeydown="OnChromeKeyDown"></div>
     }
 
@@ -274,7 +349,7 @@
              aria-labelledby="mcm-settings-title"
              tabindex="-1"
              @ref="_chromeOverlay"
-             @onclick="Chrome.CloseSettings"
+             @onclick="CloseSettings"
              @onkeydown="OnChromeKeyDown">
             <div class="mcm-modal-card is-wide mcm-settings-card" @onclick:stopPropagation="true">
                 <h2 id="mcm-settings-title" class="mcm-modal-title">Program settings</h2>
@@ -336,7 +411,7 @@
                 </div>
 
                 <div class="mcm-modal-actions">
-                    <button type="button" class="mcm-primary" @onclick="Chrome.CloseSettings">Close</button>
+                    <button type="button" class="mcm-primary" @onclick="CloseSettings">Close</button>
                 </div>
             </div>
         </div>
@@ -369,26 +444,34 @@
 @code {
     private string _tab = "whitelist";
     private ElementReference _chromeOverlay;
+    private ElementReference _noticePanel;
+    private bool _noticeFocusPending;
 
     protected override void OnInitialized()
     {
         Vm.PropertyChanged += OnVmChanged;
         Chrome.PropertyChanged += OnVmChanged;
+        Notices.PropertyChanged += OnVmChanged;
         Vm.StartChrome();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (Chrome.SettingsOpen || Chrome.AboutOpen)
+        try
         {
-            try
+            if (Chrome.SettingsOpen || Chrome.AboutOpen)
             {
                 await _chromeOverlay.FocusAsync();
             }
-            catch (InvalidOperationException)
+            else if (_noticeFocusPending && Notices.PanelOpen)
             {
-                // Element not in the tree yet.
+                _noticeFocusPending = false;
+                await _noticePanel.FocusAsync();
             }
+        }
+        catch (InvalidOperationException)
+        {
+            // Element not in the tree yet.
         }
     }
 
@@ -396,12 +479,44 @@
     {
         Vm.PropertyChanged -= OnVmChanged;
         Chrome.PropertyChanged -= OnVmChanged;
+        Notices.PropertyChanged -= OnVmChanged;
+    }
+
+    private void ToggleBell()
+    {
+        Chrome.ClosePanels();
+        var opening = !Notices.PanelOpen;
+        Notices.Toggle();
+        if (opening && Notices.PanelOpen)
+            _noticeFocusPending = true;
+    }
+
+    private void ToggleOverflow()
+    {
+        Notices.Close();
+        Chrome.ToggleOverflow();
+    }
+
+    private void OpenSettings()
+    {
+        Notices.Close();
+        Chrome.OpenSettings();
+    }
+
+    private void CloseSettings() => Chrome.CloseSettings();
+
+    private void CloseFlyouts()
+    {
+        Chrome.CloseOverflow();
+        Notices.Close();
     }
 
     private void OnChromeKeyDown(KeyboardEventArgs e)
     {
-        if (e.Key == "Escape")
-            Chrome.ClosePanels();
+        if (e.Key != "Escape")
+            return;
+        Chrome.ClosePanels();
+        Notices.Close();
     }
 
     private void OnVmChanged(object? sender, PropertyChangedEventArgs e) =>

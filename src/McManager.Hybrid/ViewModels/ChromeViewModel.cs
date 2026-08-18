@@ -6,7 +6,7 @@ using McManager.Hybrid.Ui;
 namespace McManager.Hybrid.ViewModels;
 
 /// <summary>
-/// Title-row overflow + program settings (gear). No notification center (Step 6.2).
+/// Title-row overflow + program settings (gear). Bell list is <see cref="NotificationCenterViewModel"/>.
 /// </summary>
 public sealed partial class ChromeViewModel : ObservableObject
 {

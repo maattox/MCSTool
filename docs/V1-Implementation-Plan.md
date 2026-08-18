@@ -156,12 +156,12 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 | **3** | Remove public/blacklist (was IP Management public mode) | **DONE** |
 | **4** | Setup game types (Paper, loaders, pack import) | **DONE** (Step **4.12** deferred) |
 | **5** | Server Management modding inspect + re-download pack | **DONE** |
-| **6** | Top-bar chrome + oversized-world SSH UX | **NEXT** = Step **6.2** |
+| **6** | Top-bar chrome + oversized-world SSH UX | **NEXT** = Step **6.3** |
 | **7** | Remaining v1 (resize, console, storage, Connect version) | TODO |
 | **8** | Paid / spend mode (**last** product feature) | TODO |
 | **9** | Packaging, updates, launch (old MVP Phase 8–9) | TODO — **do not start** until Phases 1–8 are DONE or the operator skips 8 |
 
-**Current NEXT step:** [Step 6.2](#step-62--notification-center-bell). **Do not start Step 6.2** until the operator asks.
+**Current NEXT step:** [Step 6.3](#step-63--oversized-world-ssh-download--bell). **Do not start Step 6.3** until the operator asks.
 
 ---
 
@@ -820,7 +820,7 @@ Historical **Do** (not to be started): import a user-supplied CurseForge client 
 
 ### Step 6.2 — Notification center (bell)
 
-**Status:** NEXT  
+**Status:** DONE  
 **Depends on:** 6.1
 
 **Read first**
@@ -838,13 +838,13 @@ Historical **Do** (not to be started): import a user-supplied CurseForge client 
 
 **Done when:** Bell shows a dismissible list.
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-18 — Title-row **bell** + dismissible list (empty state; unread pip). Core `NotificationCenter` is the in-app channel (session-only, cap 50). DEBUG Advanced probe **Post fake notification**. No Start checklist, no Players. Guide + Local-Config notes. **NEXT = Step 6.3**. Do not start 6.3 unless asked.
 
 ---
 
 ### Step 6.3 — Oversized-world SSH download + bell
 
-**Status:** TODO  
+**Status:** NEXT  
 **Depends on:** 6.2
 
 **Read first**
@@ -1241,6 +1241,7 @@ Former MVP Phase **8–9**. **Do not start** until Phases **1–7** are DONE and
 
 | Date | Note |
 |------|------|
+| 2026-08-18 | **Step 6.2 DONE.** Title-row bell + dismissible notification list; Core `NotificationCenter` channel (session-only); DEBUG fake post. **NEXT = Step 6.3**. Do not start 6.3 unless asked. |
 | 2026-08-18 | **Step 6.1 DONE.** Title-row gear (paths + update-check placeholder) and overflow (About, GitHub). No bell. Native OS chrome. **NEXT = Step 6.2**. Do not start 6.2 unless asked. |
 | 2026-08-18 | **Step 5.1 DONE.** Server Management Modding: Vanilla/Paper empty state; inspect live `mods/` (SSH); **Download pack** = original `data/imported-packs/` archive (never zip VM1 `mods/`). Guide note. **NEXT = Step 6.1**. Do not start 6.1 unless asked. |
 | 2026-08-18 | **Step 4.12 DEFERRED** (ToS / key custody). No product CurseForge API key; keep Server Files zip via 4.9; client exports stay refused (Guide: Server Files or Modrinth `.mrpack`). **NEXT = Step 5.1**. Do not start 5.1 unless asked. |
