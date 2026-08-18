@@ -14,6 +14,8 @@
     <button type="button" @onclick="ProvePickerAsync">Native file picker</button>
     <button type="button" @onclick="AnalyzeMrpackAsync">Analyze .mrpack</button>
     <button type="button" @onclick="InstallMrpackAsync">Install .mrpack (temp dir)</button>
+    <button type="button" @onclick="AnalyzeManualZipAsync">Analyze server-pack zip</button>
+    <button type="button" @onclick="InstallManualZipAsync">Install server-pack zip (temp dir)</button>
     <button type="button" @onclick="PutSpendBrakeAsync">Put spend-brake fixture</button>
     <span class="mcm-host-probes-status">@_status</span>
     <span class="mcm-host-probes-clock" title="IUiClock">@Clock.UtcNow.ToString("HH:mm:ss") UTC</span>
@@ -158,6 +160,86 @@
 
         _status = $"mrpack install: {result.Value!.InstalledRelativePaths.Count} files → {dest}";
         await Dialogs.ShowInfoAsync("DEBUG: .mrpack installed (temp dir)", result.Value.Summary);
+    }
+
+    private async Task AnalyzeManualZipAsync()
+    {
+        var path = await FilePicker.OpenFileAsync(new FilePickRequest
+        {
+            Title = "DEBUG: pick a local server-pack zip (analyze only — nothing is uploaded or installed)",
+            Filters =
+            [
+                new FileTypeFilter("Zip archives", ".zip"),
+                new FileTypeFilter("All files", ".*"),
+            ],
+        });
+        if (path is null)
+        {
+            _status = "manual zip: cancelled";
+            return;
+        }
+
+        var result = ManualServerPackAnalyzer.AnalyzeFile(path);
+        if (!result.Succeeded)
+        {
+            _status = "manual zip: " + result.Error;
+            await Dialogs.ShowInfoAsync("DEBUG: server-pack zip analyze failed", result.Error ?? "Unknown error.");
+            return;
+        }
+
+        var a = result.Value!;
+        _status = a.CanInstall
+            ? $"manual zip: {a.Kind} / {a.PackName} / {a.Loader}"
+            : "manual zip: refused " + a.Kind;
+        await Dialogs.ShowInfoAsync(
+            a.CanInstall ? "DEBUG: server-pack zip summary (not installed)" : "DEBUG: server-pack zip refused",
+            a.ConfirmableSummary);
+    }
+
+    private async Task InstallManualZipAsync()
+    {
+        var path = await FilePicker.OpenFileAsync(new FilePickRequest
+        {
+            Title = "DEBUG: pick a local server-pack zip (unzip into a temp folder)",
+            Filters =
+            [
+                new FileTypeFilter("Zip archives", ".zip"),
+                new FileTypeFilter("All files", ".*"),
+            ],
+        });
+        if (path is null)
+        {
+            _status = "manual zip install: cancelled";
+            return;
+        }
+
+        var ok = await Dialogs.ConfirmAsync(
+            "DEBUG: install server-pack zip?",
+            "Unzips a generic server pack (mods/ + config/, or a CurseForge Server Files layout). "
+            + "Client-only jars are skipped when fabric/quilt/Forge metadata says so. "
+            + "Client packs and CurseForge client exports are refused. No catalog download. "
+            + "Files go into a temp folder. A copy of this archive is kept in Manager local data "
+            + "for later re-download. Friends still need the same exported pack.\n\n"
+            + path,
+            "Install");
+        if (!ok)
+        {
+            _status = "manual zip install: cancelled";
+            return;
+        }
+
+        var dest = Path.Combine(Path.GetTempPath(), "mcmgr-manual-zip-install-" + Guid.NewGuid().ToString("N"));
+        var dataDir = LocalConfigStore.TryFindDataDirectory();
+        var result = ManualServerPackInstaller.Install(path, dest, dataDir);
+        if (!result.Succeeded)
+        {
+            _status = "manual zip install: " + result.Error;
+            await Dialogs.ShowInfoAsync("DEBUG: server-pack zip install failed", result.Error ?? "Unknown error.");
+            return;
+        }
+
+        _status = $"manual zip install: {result.Value!.InstalledRelativePaths.Count} files → {dest}";
+        await Dialogs.ShowInfoAsync("DEBUG: server-pack zip installed (temp dir)", result.Value.Summary);
     }
 
     private async Task PutSpendBrakeAsync()

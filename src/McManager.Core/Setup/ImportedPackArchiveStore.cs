@@ -29,32 +29,59 @@ public static class ImportedPackArchiveStore
     public static string DirectoryFor(string dataDirectory, string packName, string? versionId) =>
         Path.Combine(dataDirectory, DirectoryName, FolderNameFor(packName, versionId));
 
+    public static string ArchiveFileNameFor(string sourcePath)
+    {
+        var ext = Path.GetExtension(sourcePath ?? "");
+        if (ext.Equals(".mrpack", StringComparison.OrdinalIgnoreCase))
+            return ArchiveFileName;
+        if (string.IsNullOrEmpty(ext))
+            return "original.bin";
+        return "original" + ext.ToLowerInvariant();
+    }
+
     public static ServiceResult<string> Retain(
         string sourceMrpackPath,
         MrpackAnalysis analysis,
         string dataDirectory)
     {
         ArgumentNullException.ThrowIfNull(analysis);
-        if (string.IsNullOrWhiteSpace(sourceMrpackPath))
-            return ServiceResult<string>.Fail("No .mrpack path was provided to retain.");
-        if (!File.Exists(sourceMrpackPath))
-            return ServiceResult<string>.Fail($"File not found: {sourceMrpackPath}");
+        return Retain(
+            sourceMrpackPath,
+            analysis.PackName,
+            analysis.VersionId,
+            analysis.Loader,
+            analysis.MinecraftVersion,
+            dataDirectory);
+    }
+
+    public static ServiceResult<string> Retain(
+        string sourceArchivePath,
+        string packName,
+        string? versionId,
+        string loader,
+        string minecraftVersion,
+        string dataDirectory)
+    {
+        if (string.IsNullOrWhiteSpace(sourceArchivePath))
+            return ServiceResult<string>.Fail("No pack archive path was provided to retain.");
+        if (!File.Exists(sourceArchivePath))
+            return ServiceResult<string>.Fail($"File not found: {sourceArchivePath}");
         if (string.IsNullOrWhiteSpace(dataDirectory))
             return ServiceResult<string>.Fail("No Manager data directory was provided for the retained pack archive.");
 
         try
         {
-            var destDir = DirectoryFor(dataDirectory, analysis.PackName, analysis.VersionId);
+            var destDir = DirectoryFor(dataDirectory, packName, versionId);
             Directory.CreateDirectory(destDir);
-            var destPath = Path.Combine(destDir, ArchiveFileName);
-            File.Copy(sourceMrpackPath, destPath, overwrite: true);
+            var destPath = Path.Combine(destDir, ArchiveFileNameFor(sourceArchivePath));
+            File.Copy(sourceArchivePath, destPath, overwrite: true);
 
             var sidecar = new ImportedPackArchiveSidecar(
-                analysis.PackName,
-                analysis.VersionId,
-                analysis.Loader,
-                analysis.MinecraftVersion,
-                Path.GetFileName(sourceMrpackPath),
+                packName,
+                versionId,
+                loader,
+                minecraftVersion,
+                Path.GetFileName(sourceArchivePath),
                 DateTime.UtcNow.ToString("o"),
                 destPath);
             File.WriteAllText(
@@ -65,7 +92,7 @@ public static class ImportedPackArchiveStore
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            return ServiceResult<string>.Fail($"Cannot retain the original .mrpack: {ex.Message}");
+            return ServiceResult<string>.Fail($"Cannot retain the original pack archive: {ex.Message}");
         }
     }
 

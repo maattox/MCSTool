@@ -317,7 +317,7 @@ public static class MrpackAnalyzer
         return true;
     }
 
-    internal static string NormalizeZipPath(string fullName)
+    public static string NormalizeZipPath(string fullName)
     {
         var n = (fullName ?? "").Replace('\\', '/').Trim();
         while (n.StartsWith("./", StringComparison.Ordinal))

@@ -154,14 +154,14 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 | **1** | Manager shell (Advanced/Danger split, CIDR, wipe world) | **DONE** |
 | **2** | $1 spend-brake lock (Function flag, door, Manager overlay) | **DONE** |
 | **3** | Remove public/blacklist (was IP Management public mode) | **DONE** |
-| **4** | Setup game types (Paper, loaders, pack import) | **NEXT** = Step **4.9** |
+| **4** | Setup game types (Paper, loaders, pack import) | **NEXT** = Step **4.10** |
 | **5** | Server Management modding inspect + re-download pack | TODO |
 | **6** | Top-bar chrome + oversized-world SSH UX | TODO |
 | **7** | Remaining v1 (resize, console, storage, Connect version) | TODO |
 | **8** | Paid / spend mode (**last** product feature) | TODO |
 | **9** | Packaging, updates, launch (old MVP Phase 8–9) | TODO — **do not start** until Phases 1–8 are DONE or the operator skips 8 |
 
-**Current NEXT step:** [Step 4.9](#step-49--manual-server-pack-zip-import). **Do not start Step 4.9** until the operator asks.
+**Current NEXT step:** [Step 4.10](#step-410--setup-wizard-modded-branch-ui). **Do not start Step 4.10** until the operator asks.
 
 ---
 
@@ -660,7 +660,7 @@ Each installer step: Core metadata client + `onbox/mcmgr/` module + generic unit
 
 ### Step 4.9 — Manual server-pack zip import
 
-**Status:** NEXT  
+**Status:** DONE  
 **Depends on:** 4.8
 
 **Read first**
@@ -677,13 +677,13 @@ Each installer step: Core metadata client + `onbox/mcmgr/` module + generic unit
 
 **Done when:** Manual zip is a second import adapter, not a rewrite of 4.8.
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-18 — Core `ManualServerPackAnalyzer` + `ManualServerPackInstaller` (second adapter, does not rewrite 4.8). Unstructured `mods/`+`config/` unzip; CurseForge Server Files layout when jars/libraries are already in the zip; strip jars whose fabric/quilt/Forge metadata is client-only; refuse `.mrpack`, CurseForge client exports, and launcher zips instead of heuristic-stripping. Retain original under `data/imported-packs/` as `original.zip`. Tracked fixture `tests/fixtures/packs/manual-server.zip`. DEBUG Advanced analyze/install probes. Homemade `manual-server.zip` smoke. No catalog, no wizard. **NEXT = Step 4.10**. Do not start 4.10 unless asked.
 
 ---
 
 ### Step 4.10 — Setup wizard Modded branch UI
 
-**Status:** TODO  
+**Status:** NEXT  
 **Depends on:** 4.7–4.9
 
 **Read first**
@@ -1237,6 +1237,7 @@ Former MVP Phase **8–9**. **Do not start** until Phases **1–7** are DONE and
 
 | Date | Note |
 |------|------|
+| 2026-08-18 | **Step 4.9 DONE.** Manual server-pack zip adapter: Core analyze/install (unstructured `mods/`+`config/`, CF Server Files when already populated, in-jar client-only strip, refuse client/mrpack/CF-client exports); retain `original.zip`; tracked fixture + DEBUG probes. No catalog, no wizard. **NEXT = Step 4.10**. Do not start 4.10 unless asked. |
 | 2026-08-18 | **Step 4.8 DONE.** Modrinth `.mrpack` server-side install: Core `MrpackInstaller` (plain GET of index URLs, strip client-only, fail on unclear side, overrides copy, hash verify); retain original under `data/imported-packs/`; DEBUG temp-dir probe. No catalog, no wizard. **NEXT = Step 4.9**. Do not start 4.9 unless asked. |
 | 2026-08-18 | **Step 4.7 DONE.** Local `.mrpack` analyze: Core `MrpackAnalyzer` (no HTTP/install/catalog); `env.server` strip counts; tracked fixture `tests/fixtures/packs/fabric-strip.mrpack`; DEBUG Advanced probe. No wizard page. **NEXT = Step 4.8**. Do not start 4.8 unless asked. |
 | 2026-08-18 | **Step 4.6 DONE.** Forge loader module: Core `promotions_slim.json` client + on-box installer; Vanilla jar first; 1.12.2 `single_jar` / 1.20.1 `argfile_tree`; `none_published`; no Setup Forge radio. **NEXT = Step 4.7**. Do not start 4.7 unless asked. |
