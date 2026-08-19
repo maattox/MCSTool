@@ -103,7 +103,7 @@ Optional string params: prefer **omit/null** over `""` (empty string still valid
 - [ ] Lifecycle waits: waiter-style (≤30s between polls, ~20 min timeout)  
 - [ ] List pagination complete  
 - [ ] `opc-retry-token` on sensitive creates where supported  
-- [ ] ETag / if-match when concurrent updates matter  
+- [x] ETag / if-match when concurrent updates matter (Manager budget, meta, allowlist — V1 Step 7.4)  
 - [ ] Log **`opc-request-id`** on failures  
 - [ ] UI poll intervals match the table above  
 
@@ -122,4 +122,5 @@ Optional string params: prefer **omit/null** over `""` (empty string still valid
 
 | Date | Note |
 |------|------|
+| 2026-08-18 | Manager Object Storage writes for `budget/config.json`, `meta/infra.json`, `meta/flags.json` (those publishes), and `ip/allowlist.json` send `If-Match`. 412 → refresh-and-retry. |
 | 2026-08-11 | Initial guide aligned with lab doc + Oracle Using the API. |

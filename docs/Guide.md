@@ -250,7 +250,9 @@ Setup creates a shared Standard-tier bucket (product name `mcmgr-shared-data`) u
 
 Always Free Object Storage on a paid/PAYG tenancy is small (**10 GB** Standard, **50,000 API requests/month** in Oracle’s current notes). The product keeps backups under about **9.5 GB** and avoids chatty refresh loops.
 
-A single world zip larger than the soft cap is **not** uploaded (an on-box flag is set). Manager does not yet offer a special SSH download UI for that case.
+Manager updates to **budget config**, **stack identity** (`meta/infra.json`), and the shared **IP allowlist** use a conditional write (ETag). If the game VM or another Manager copy changed the object first, Save fails with a refresh-and-retry message instead of silently overwriting. `ip/mode.json` is not written.
+
+A single world zip larger than the soft cap is **not** uploaded (an on-box flag is set). Manager then offers an SSH live-world download from Server Management when the game computer is up.
 
 Do not put SSH private keys, API keys, Auth Tokens, or RCON passwords in the bucket.
 

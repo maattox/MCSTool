@@ -31,16 +31,16 @@ public sealed class AllowlistStore
 
     /// <summary>
     /// PUT updated entries only if <c>ip/allowlist.json</c> is already in the bucket.
-    /// Missing object → skipped (not an error).
+    /// Missing object → skipped (not an error). Existing object uses If-Match.
     /// </summary>
     public async Task<ServiceResult<AllowlistPublishResult>> PublishIfPresentAsync(
         IReadOnlyList<FriendEntry> friends,
         CancellationToken cancellationToken = default)
     {
-        var bytes = await _objectStorage.GetBytesAsync(_objectName, cancellationToken);
-        if (!bytes.Succeeded || bytes.Value is null)
+        var got = await _objectStorage.GetObjectAsync(_objectName, cancellationToken);
+        if (!got.Succeeded || got.Value is null)
         {
-            if (OciErrorFormatter.IsNotFoundMessage(bytes.Error))
+            if (OciErrorFormatter.IsNotFoundMessage(got.Error))
             {
                 return ServiceResult<AllowlistPublishResult>.Ok(new AllowlistPublishResult
                 {
@@ -50,13 +50,19 @@ public sealed class AllowlistStore
             }
 
             return ServiceResult<AllowlistPublishResult>.Fail(
-                bytes.Error ?? $"Get {_objectName} failed.");
+                got.Error ?? $"Get {_objectName} failed.");
+        }
+
+        if (string.IsNullOrWhiteSpace(got.Value.Etag))
+        {
+            return ServiceResult<AllowlistPublishResult>.Fail(
+                ObjectStorageConflict.MissingEtag(_objectName));
         }
 
         IpAllowlistDocument doc;
         try
         {
-            doc = JsonSerializer.Deserialize<IpAllowlistDocument>(bytes.Value, JsonOptions)
+            doc = JsonSerializer.Deserialize<IpAllowlistDocument>(got.Value.Content, JsonOptions)
                   ?? new IpAllowlistDocument();
         }
         catch (JsonException ex)
@@ -82,6 +88,7 @@ public sealed class AllowlistStore
             _objectName,
             putBytes,
             "application/json",
+            got.Value.Etag,
             cancellationToken);
         if (!put.Succeeded)
             return ServiceResult<AllowlistPublishResult>.Fail(put.Error ?? $"Put {_objectName} failed.");

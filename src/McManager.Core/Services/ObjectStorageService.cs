@@ -22,9 +22,19 @@ public sealed class ObjectStorageService : IObjectStorageService
         string objectName,
         CancellationToken cancellationToken = default)
     {
+        var got = await GetObjectAsync(objectName, cancellationToken).ConfigureAwait(false);
+        if (!got.Succeeded || got.Value is null)
+            return ServiceResult<byte[]>.Fail(got.Error ?? "GetObject failed.");
+        return ServiceResult<byte[]>.Ok(got.Value.Content);
+    }
+
+    public async Task<ServiceResult<ObjectStorageGetResult>> GetObjectAsync(
+        string objectName,
+        CancellationToken cancellationToken = default)
+    {
         var validation = ValidateObjectName(objectName);
         if (validation is not null)
-            return ServiceResult<byte[]>.Fail(validation);
+            return ServiceResult<ObjectStorageGetResult>.Fail(validation);
 
         try
         {
@@ -40,19 +50,32 @@ public sealed class ObjectStorageService : IObjectStorageService
             await using var stream = response.InputStream;
             using var memory = new MemoryStream();
             await stream.CopyToAsync(memory, cancellationToken);
-            return ServiceResult<byte[]>.Ok(memory.ToArray());
+            return ServiceResult<ObjectStorageGetResult>.Ok(new ObjectStorageGetResult
+            {
+                Content = memory.ToArray(),
+                Etag = string.IsNullOrWhiteSpace(response.ETag) ? null : response.ETag,
+            });
         }
         catch (Exception ex)
         {
-            return ServiceResult<byte[]>.Fail(ComputeService.FormatOciError("GetObject", ex));
+            return ServiceResult<ObjectStorageGetResult>.Fail(
+                ComputeService.FormatOciError("GetObject", ex));
         }
     }
 
-    public async Task<ServiceResult> PutBytesAsync(
+    public Task<ServiceResult> PutBytesAsync(
         string objectName,
         byte[] content,
         string contentType = "application/octet-stream",
         CancellationToken cancellationToken = default)
+        => PutBytesAsync(objectName, content, contentType, ifMatch: null, cancellationToken);
+
+    public async Task<ServiceResult> PutBytesAsync(
+        string objectName,
+        byte[] content,
+        string contentType,
+        string? ifMatch,
+        CancellationToken cancellationToken)
     {
         var validation = ValidateObjectName(objectName);
         if (validation is not null)
@@ -70,6 +93,7 @@ public sealed class ObjectStorageService : IObjectStorageService
                     PutObjectBody = stream,
                     ContentLength = content.Length,
                     ContentType = contentType,
+                    IfMatch = string.IsNullOrWhiteSpace(ifMatch) ? null : ifMatch,
                 },
                 cancellationToken: cancellationToken);
 
@@ -77,6 +101,8 @@ public sealed class ObjectStorageService : IObjectStorageService
         }
         catch (Exception ex)
         {
+            if (OciErrorFormatter.IsPreconditionFailed(ex))
+                return ServiceResult.Fail(ObjectStorageConflict.Message(objectName));
             return ServiceResult.Fail(ComputeService.FormatOciError("PutObject", ex));
         }
     }

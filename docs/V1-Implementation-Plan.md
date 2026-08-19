@@ -157,11 +157,11 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 | **4** | Setup game types (Paper, loaders, pack import) | **DONE** (Step **4.12** deferred) |
 | **5** | Server Management modding inspect + re-download pack | **DONE** |
 | **6** | Top-bar chrome + oversized-world SSH UX | **DONE** |
-| **7** | Remaining v1 (resize, console, storage, Connect version) | **NEXT** = Step **7.4** |
+| **7** | Remaining v1 (resize, console, storage, Connect version) | **NEXT** = Step **7.5** |
 | **8** | Paid / spend mode (**last** product feature) | TODO |
 | **9** | Packaging, updates, launch (old MVP Phase 8–9) | TODO — **do not start** until Phases 1–8 are DONE or the operator skips 8 |
 
-**Current NEXT step:** [Step 7.4](#step-74--conditional-object-storage-writes-etag). **Do not start Step 7.4** until the operator asks.
+**Current NEXT step:** [Step 7.5](#step-75--rcon--log-console-tab-not-pty). **Do not start Step 7.5** until the operator asks.
 
 ---
 
@@ -948,7 +948,7 @@ Historical **Do** (not to be started): import a user-supplied CurseForge client 
 
 ### Step 7.4 — Conditional Object Storage writes (etag)
 
-**Status:** NEXT  
+**Status:** DONE  
 **Depends on:** existing Core Object Storage client
 
 **Read first**
@@ -967,7 +967,7 @@ Historical **Do** (not to be started): import a user-supplied CurseForge client 
 
 **Done when:** Those Manager writers are conditional.
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-18 — Manager `If-Match` on `budget/config.json`, `meta/infra.json`, `meta/flags.json` (those publishes), and `ip/allowlist.json`. GetObject returns ETag; 412 → refresh-and-retry instead of clobber. First create stays unconditional. `ip/mode.json` still has no writer. Core conflict tests. No dirty-flag category changes. **NEXT = Step 7.5**. Do not start 7.5 unless asked.
 
 ---
 
@@ -1241,6 +1241,7 @@ Former MVP Phase **8–9**. **Do not start** until Phases **1–7** are DONE and
 
 | Date | Note |
 |------|------|
+| 2026-08-18 | **Step 7.4 DONE.** Manager Object Storage writes for budget, meta (infra + flags on those publishes), and `ip/allowlist.json` use ETag `If-Match`; 412 is a clear conflict error. No `backups` dirty-flag category. **NEXT = Step 7.5**. Do not start 7.5 unless asked. |
 | 2026-08-18 | **Step 7.3 DONE.** Connect existing blocks newer `infra_schema` / document version; extra-confirms older schema, legacy meta, or `stack_version` drift; hydrate refuses incompatible stacks. Auto-detect stays button-gated (no tag rediscovery). **NEXT = Step 7.4**. Do not start 7.4 unless asked. |
 | 2026-08-18 | **Step 7.2 DONE.** Soften Usage / pin / idle MOTD copy for always-on-capable 2/12; 4/24 keeps scarce remaining-hours language; still meters. Live door MOTD needs redeploy. **NEXT = Step 7.3**. Do not start 7.3 unless asked. |
 | 2026-08-18 | **Step 7.1 DONE.** Danger Zone VM1 A1 Flex scale (2/12 or 4/24); STOPPED gate; playtime preview; local + budget/meta update; ledger intervals unchanged. No live resize. **NEXT = Step 7.2**. Do not start 7.2 unless asked. |

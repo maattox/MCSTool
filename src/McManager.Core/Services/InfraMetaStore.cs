@@ -32,10 +32,10 @@ public sealed class InfraMetaStore
     public async Task<ServiceResult<InfraMetaReadResult>> GetAsync(
         CancellationToken cancellationToken = default)
     {
-        var bytes = await _objectStorage.GetBytesAsync(InfraObjectName, cancellationToken);
-        if (!bytes.Succeeded || bytes.Value is null)
+        var got = await _objectStorage.GetObjectAsync(InfraObjectName, cancellationToken);
+        if (!got.Succeeded || got.Value is null)
         {
-            if (OciErrorFormatter.IsNotFoundMessage(bytes.Error))
+            if (OciErrorFormatter.IsNotFoundMessage(got.Error))
             {
                 return ServiceResult<InfraMetaReadResult>.Ok(new InfraMetaReadResult
                 {
@@ -44,13 +44,14 @@ public sealed class InfraMetaStore
                 });
             }
 
-            return ServiceResult<InfraMetaReadResult>.Fail(bytes.Error ?? $"Get {InfraObjectName} failed.");
+            return ServiceResult<InfraMetaReadResult>.Fail(got.Error ?? $"Get {InfraObjectName} failed.");
         }
 
+        var etag = got.Value.Etag;
         JsonNode? root;
         try
         {
-            root = JsonNode.Parse(Encoding.UTF8.GetString(bytes.Value));
+            root = JsonNode.Parse(Encoding.UTF8.GetString(got.Value.Content));
         }
         catch (JsonException ex)
         {
@@ -87,6 +88,7 @@ public sealed class InfraMetaStore
                 LegacyVersion = version > 0 ? version : 1,
                 LegacyInfraSchema = schema > 0 ? schema : 1,
                 LegacySummary = SummarizeLegacy(obj),
+                Etag = etag,
                 Notes =
                     $"{InfraObjectName} is legacy flat/incomplete "
                     + $"(version={version}, infra_schema={schema}). Publish to migrate to nested v2.",
@@ -115,6 +117,7 @@ public sealed class InfraMetaStore
         return ServiceResult<InfraMetaReadResult>.Ok(new InfraMetaReadResult
         {
             Document = doc,
+            Etag = etag,
             Notes = $"Loaded {InfraObjectName}: {doc.FormatSummary()}",
         });
     }
@@ -421,16 +424,35 @@ public sealed class InfraMetaStore
                 "Cannot publish meta/infra.json: " + string.Join(" ", problems));
         }
 
-        var put = await PutJsonAsync(InfraObjectName, doc, cancellationToken);
+        var metaExists = !priorRead.Missing;
+        var metaEtag = priorRead.Etag;
+        var requireMeta = ObjectStorageConditional.RequireEtagIfPresent(
+            InfraObjectName, metaExists, metaEtag);
+        if (!requireMeta.Succeeded)
+        {
+            return ServiceResult<InfraMetaPublishResult>.Fail(
+                requireMeta.Error ?? ObjectStorageConflict.MissingEtag(InfraObjectName));
+        }
+
+        var put = await PutJsonAsync(InfraObjectName, doc, metaEtag, cancellationToken);
         if (!put.Succeeded)
             return ServiceResult<InfraMetaPublishResult>.Fail(put.Error ?? "Put infra meta failed.");
 
         var flagsResult = await GetJsonAsync<MetaFlagsDocument>(FlagsObjectName, cancellationToken);
         MetaFlagsDocument flags;
+        string? flagsEtag = null;
         if (flagsResult.Succeeded && flagsResult.Value is not null)
         {
-            flags = flagsResult.Value;
+            flags = flagsResult.Value.Document;
+            flagsEtag = flagsResult.Value.Etag;
             flags.Normalize();
+            var requireFlags = ObjectStorageConditional.RequireEtagIfPresent(
+                FlagsObjectName, objectExists: true, flagsEtag);
+            if (!requireFlags.Succeeded)
+            {
+                return ServiceResult<InfraMetaPublishResult>.Fail(
+                    requireFlags.Error ?? ObjectStorageConflict.MissingEtag(FlagsObjectName));
+            }
         }
         else if (OciErrorFormatter.IsNotFoundMessage(flagsResult.Error))
         {
@@ -443,7 +465,7 @@ public sealed class InfraMetaStore
         }
 
         flags.MarkDirty("meta", ["door", "vm1"], clearWriter: "manager");
-        var putFlags = await PutJsonAsync(FlagsObjectName, flags, cancellationToken);
+        var putFlags = await PutJsonAsync(FlagsObjectName, flags, flagsEtag, cancellationToken);
         if (!putFlags.Succeeded)
         {
             return ServiceResult<InfraMetaPublishResult>.Fail(
@@ -494,31 +516,42 @@ public sealed class InfraMetaStore
             + $"vm1={Get("vm1_instance_id")} door={Get("vm2_instance_id")} bucket={bucket}";
     }
 
-    private async Task<ServiceResult<T>> GetJsonAsync<T>(
+    private sealed class JsonGet<T> where T : class
+    {
+        public required T Document { get; init; }
+        public string? Etag { get; init; }
+    }
+
+    private async Task<ServiceResult<JsonGet<T>>> GetJsonAsync<T>(
         string objectName,
         CancellationToken cancellationToken)
         where T : class
     {
-        var bytes = await _objectStorage.GetBytesAsync(objectName, cancellationToken);
-        if (!bytes.Succeeded || bytes.Value is null)
-            return ServiceResult<T>.Fail(bytes.Error ?? $"GetObject {objectName} failed.");
+        var got = await _objectStorage.GetObjectAsync(objectName, cancellationToken);
+        if (!got.Succeeded || got.Value is null)
+            return ServiceResult<JsonGet<T>>.Fail(got.Error ?? $"GetObject {objectName} failed.");
 
         try
         {
-            var doc = JsonSerializer.Deserialize<T>(bytes.Value, JsonOptions);
+            var doc = JsonSerializer.Deserialize<T>(got.Value.Content, JsonOptions);
             if (doc is null)
-                return ServiceResult<T>.Fail($"{objectName} is empty or invalid JSON.");
-            return ServiceResult<T>.Ok(doc);
+                return ServiceResult<JsonGet<T>>.Fail($"{objectName} is empty or invalid JSON.");
+            return ServiceResult<JsonGet<T>>.Ok(new JsonGet<T>
+            {
+                Document = doc,
+                Etag = got.Value.Etag,
+            });
         }
         catch (JsonException ex)
         {
-            return ServiceResult<T>.Fail($"{objectName} JSON parse failed: {ex.Message}");
+            return ServiceResult<JsonGet<T>>.Fail($"{objectName} JSON parse failed: {ex.Message}");
         }
     }
 
     private async Task<ServiceResult> PutJsonAsync<T>(
         string objectName,
         T document,
+        string? ifMatch,
         CancellationToken cancellationToken)
     {
         var json = JsonSerializer.Serialize(document, JsonOptions);
@@ -535,6 +568,7 @@ public sealed class InfraMetaStore
             objectName,
             bytes,
             "application/json",
+            ifMatch,
             cancellationToken);
     }
 
@@ -554,6 +588,7 @@ public sealed class InfraMetaReadResult
     public int? LegacyVersion { get; init; }
     public int? LegacyInfraSchema { get; init; }
     public string? LegacySummary { get; init; }
+    public string? Etag { get; init; }
     public string Notes { get; init; } = "";
 }
 

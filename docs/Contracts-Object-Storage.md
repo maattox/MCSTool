@@ -60,7 +60,8 @@ These are normative rules for new Phase 2+ work. Existing lab/product code does 
 - `ledger/usage.json` already uses a monotonic `revision`, remote/local merge, and best-effort `If-Match`.
 - `ledger/lease.json` is a last-writer heartbeat singleton; it intentionally does not dirty ledger flags.
 - IP, messages, and infra meta have one primary writer role. `budget/config.json` has a Manager primary writer **and** a narrow VM1 patch writer (shape and boot safety), so both must fetch the latest document, preserve fields, and use conditional writes.
-- The deployed Manager and VM1 do not yet use ETags for budget, and the Manager serializes a closed DTO field set. A stale Manager publish can overwrite a VM1 shape patch; Step 2.4 must resolve this shared-writer hazard.
+- **Manager (V1 Step 7.4):** writes to `budget/config.json`, `meta/infra.json`, `meta/flags.json` (on those Manager publishes/clears), and `ip/allowlist.json` GET the current ETag and PUT with `If-Match`. HTTP 412 returns a refresh-and-retry error instead of clobbering. First create (object missing) is unconditional. `ip/mode.json` is withdrawn — no Manager writer.
+- VM1 shape/idle patches of `budget/config.json` in `vm_agent/os_publish.py` still PUT without If-Match. A concurrent Manager publish now fails closed (412) rather than overwriting blindly.
 - `meta/flags.json` is shared by all actors. A writer must fetch, modify only the intended bits, preserve all known categories, and PUT the result. A failed flags PUT does not invalidate the authoritative object that was already written; consumers must also support explicit/forced refresh.
 
 ---
@@ -686,8 +687,8 @@ No live objects were modified during review.
 2. **DONE (Step 2.4):** VM1 `meta/oversized-world-backup.json` set/skip behavior in `vm_agent/world_backup.py`. **DONE (V1 Step 6.3):** Manager bell + SSH live-world download (no OS PUT). Typed clear UX still later.
 3. **Step 2.4:** make door wake force-refresh/validate authoritative ledger+budget rather than relying only on flags/cache.
 4. **Step 2.4:** align door UTC/override/OCPU+GB accounting with Manager and VM1, or record an operator-approved deferral.
-5. Conditional writes are robust for the ledger but not consistently applied to budget/flags/other shared JSON.
-6. Budget is a shared-writer object; current Manager DTO publishing can clobber VM1 shape/source updates.
+5. **DONE (V1 Step 7.4):** Manager conditional writes (`If-Match`) for `budget/config.json`, `meta/infra.json`, `meta/flags.json` on those Manager publishes, and `ip/allowlist.json`. Ledger already had best-effort If-Match. VM1 budget shape/idle patches still PUT unconditionally.
+6. Budget is a shared-writer object. Manager If-Match stops a silent clobber when VM1 writes in the GET/PUT window; a closed DTO can still drop advisory `*_source` fields if there is no concurrent writer.
 7. Current readers do not consistently reject unsupported versions or malformed required safety fields.
 8. Avalonia uncertainty diagnostics are not fully represented in `UsageInterval`; safe while Manager remains ledger-read-only.
 9. Avalonia manual backup upload counts only listed backup ZIPs, not fresh whole-bucket usage.

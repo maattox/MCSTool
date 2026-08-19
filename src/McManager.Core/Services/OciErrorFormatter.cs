@@ -55,6 +55,20 @@ public static class OciErrorFormatter
             || error.Contains("does not exist", StringComparison.OrdinalIgnoreCase)
             || error.Contains("not found in the bucket", StringComparison.OrdinalIgnoreCase));
 
+    public static bool IsPreconditionFailed(Exception ex)
+    {
+        var status = TryGetStatusCode(ex);
+        if (status == 412)
+            return true;
+
+        var code = TryGetErrorCode(ex);
+        return string.Equals(code, "IfMatchFailed", StringComparison.OrdinalIgnoreCase)
+               || string.Equals(code, "NoEtagMatch", StringComparison.OrdinalIgnoreCase)
+               || ex.Message.Contains("Precondition Failed", StringComparison.OrdinalIgnoreCase)
+               || ex.Message.Contains("If-Match", StringComparison.OrdinalIgnoreCase)
+               || ex.Message.Contains("IfMatch", StringComparison.OrdinalIgnoreCase);
+    }
+
     private static string? TryGetOpcRequestId(Exception ex)
     {
         foreach (var name in new[] { "OpcRequestId", "opcRequestId", "RequestId" })

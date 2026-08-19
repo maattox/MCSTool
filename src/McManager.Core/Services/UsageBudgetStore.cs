@@ -38,9 +38,13 @@ public sealed class UsageBudgetStore
     {
         var flagsResult = await GetJsonAsync<MetaFlagsDocument>(FlagsObjectName, cancellationToken);
         MetaFlagsDocument flags;
+        string? flagsEtag = null;
+        var flagsExisted = false;
         if (flagsResult.Succeeded && flagsResult.Value is not null)
         {
-            flags = flagsResult.Value;
+            flags = flagsResult.Value.Document;
+            flagsEtag = flagsResult.Value.Etag;
+            flagsExisted = true;
             flags.Normalize();
         }
         else if (OciErrorFormatter.IsNotFoundMessage(flagsResult.Error))
@@ -57,7 +61,7 @@ public sealed class UsageBudgetStore
         string? budgetNote = null;
         if (budgetResult.Succeeded && budgetResult.Value is not null)
         {
-            budget = budgetResult.Value;
+            budget = budgetResult.Value.Document;
         }
         else if (OciErrorFormatter.IsNotFoundMessage(budgetResult.Error))
         {
@@ -79,15 +83,24 @@ public sealed class UsageBudgetStore
             var ledgerResult = await GetJsonAsync<UsageLedgerDocument>(LedgerObjectName, cancellationToken);
             if (ledgerResult.Succeeded && ledgerResult.Value is not null)
             {
-                ledger = ledgerResult.Value;
+                ledger = ledgerResult.Value.Document;
                 ledger.DailyOverrides ??= new Dictionary<string, DailyOverride>(StringComparer.Ordinal);
                 ledger.Intervals ??= [];
                 ledgerPulled = true;
 
                 if (ledgerDirty || forceLedger)
                 {
+                    var require = ObjectStorageConditional.RequireEtagIfPresent(
+                        FlagsObjectName, flagsExisted, flagsEtag);
+                    if (!require.Succeeded)
+                    {
+                        return ServiceResult<UsagePullSnapshot>.Fail(
+                            require.Error ?? ObjectStorageConflict.MissingEtag(FlagsObjectName));
+                    }
+
                     flags.ClearFlag("ledger", "manager");
-                    var putFlags = await PutJsonAsync(FlagsObjectName, flags, cancellationToken);
+                    var putFlags = await PutJsonAsync(
+                        FlagsObjectName, flags, flagsEtag, cancellationToken);
                     if (!putFlags.Succeeded)
                     {
                         return ServiceResult<UsagePullSnapshot>.Fail(
@@ -131,17 +144,42 @@ public sealed class UsageBudgetStore
         BudgetConfigDocument document,
         CancellationToken cancellationToken = default)
     {
+        var existing = await GetJsonAsync<BudgetConfigDocument>(BudgetObjectName, cancellationToken);
+        string? budgetEtag = null;
+        if (existing.Succeeded && existing.Value is not null)
+        {
+            budgetEtag = existing.Value.Etag;
+            var require = ObjectStorageConditional.RequireEtagIfPresent(
+                BudgetObjectName, objectExists: true, budgetEtag);
+            if (!require.Succeeded)
+                return ServiceResult<UsagePublishResult>.Fail(
+                    require.Error ?? ObjectStorageConflict.MissingEtag(BudgetObjectName));
+        }
+        else if (!OciErrorFormatter.IsNotFoundMessage(existing.Error))
+        {
+            return ServiceResult<UsagePublishResult>.Fail(existing.Error ?? "Failed to get budget.");
+        }
+
         document.StampUpdated();
-        var putBudget = await PutJsonAsync(BudgetObjectName, document, cancellationToken);
+        var putBudget = await PutJsonAsync(BudgetObjectName, document, budgetEtag, cancellationToken);
         if (!putBudget.Succeeded)
             return ServiceResult<UsagePublishResult>.Fail(putBudget.Error ?? "Put budget failed.");
 
         var flagsResult = await GetJsonAsync<MetaFlagsDocument>(FlagsObjectName, cancellationToken);
         MetaFlagsDocument flags;
+        string? flagsEtag = null;
         if (flagsResult.Succeeded && flagsResult.Value is not null)
         {
-            flags = flagsResult.Value;
+            flags = flagsResult.Value.Document;
+            flagsEtag = flagsResult.Value.Etag;
             flags.Normalize();
+            var requireFlags = ObjectStorageConditional.RequireEtagIfPresent(
+                FlagsObjectName, objectExists: true, flagsEtag);
+            if (!requireFlags.Succeeded)
+            {
+                return ServiceResult<UsagePublishResult>.Fail(
+                    requireFlags.Error ?? ObjectStorageConflict.MissingEtag(FlagsObjectName));
+            }
         }
         else if (OciErrorFormatter.IsNotFoundMessage(flagsResult.Error))
         {
@@ -154,7 +192,7 @@ public sealed class UsageBudgetStore
         }
 
         flags.MarkDirty("budget", ["door", "vm1"], clearWriter: "manager");
-        var putFlags = await PutJsonAsync(FlagsObjectName, flags, cancellationToken);
+        var putFlags = await PutJsonAsync(FlagsObjectName, flags, flagsEtag, cancellationToken);
         if (!putFlags.Succeeded)
         {
             return ServiceResult<UsagePublishResult>.Fail(
@@ -185,37 +223,48 @@ public sealed class UsageBudgetStore
             return ServiceResult.Fail(existing.Error ?? "Get ledger failed.");
 
         var empty = UsageLedgerDocument.Empty();
-        var put = await PutJsonAsync(LedgerObjectName, empty, cancellationToken);
+        var put = await PutJsonAsync(LedgerObjectName, empty, ifMatch: null, cancellationToken);
         return put.Succeeded
             ? ServiceResult.Ok()
             : ServiceResult.Fail(put.Error ?? "Put empty ledger failed.");
     }
 
-    private async Task<ServiceResult<T>> GetJsonAsync<T>(
+    private sealed class JsonGet<T> where T : class
+    {
+        public required T Document { get; init; }
+        public string? Etag { get; init; }
+    }
+
+    private async Task<ServiceResult<JsonGet<T>>> GetJsonAsync<T>(
         string objectName,
         CancellationToken cancellationToken)
         where T : class
     {
-        var bytes = await _objectStorage.GetBytesAsync(objectName, cancellationToken);
-        if (!bytes.Succeeded || bytes.Value is null)
-            return ServiceResult<T>.Fail(bytes.Error ?? $"GetObject {objectName} failed.");
+        var got = await _objectStorage.GetObjectAsync(objectName, cancellationToken);
+        if (!got.Succeeded || got.Value is null)
+            return ServiceResult<JsonGet<T>>.Fail(got.Error ?? $"GetObject {objectName} failed.");
 
         try
         {
-            var doc = JsonSerializer.Deserialize<T>(bytes.Value, JsonOptions);
+            var doc = JsonSerializer.Deserialize<T>(got.Value.Content, JsonOptions);
             if (doc is null)
-                return ServiceResult<T>.Fail($"{objectName} is empty or invalid JSON.");
-            return ServiceResult<T>.Ok(doc);
+                return ServiceResult<JsonGet<T>>.Fail($"{objectName} is empty or invalid JSON.");
+            return ServiceResult<JsonGet<T>>.Ok(new JsonGet<T>
+            {
+                Document = doc,
+                Etag = got.Value.Etag,
+            });
         }
         catch (JsonException ex)
         {
-            return ServiceResult<T>.Fail($"{objectName} JSON parse failed: {ex.Message}");
+            return ServiceResult<JsonGet<T>>.Fail($"{objectName} JSON parse failed: {ex.Message}");
         }
     }
 
     private async Task<ServiceResult> PutJsonAsync<T>(
         string objectName,
         T document,
+        string? ifMatch,
         CancellationToken cancellationToken)
     {
         var json = JsonSerializer.Serialize(document, JsonOptions);
@@ -232,6 +281,7 @@ public sealed class UsageBudgetStore
             objectName,
             bytes,
             "application/json",
+            ifMatch,
             cancellationToken);
     }
 

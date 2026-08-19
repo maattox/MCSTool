@@ -16,7 +16,7 @@ The Manager WinExe (`McManager.Hybrid`, WPF + BlazorWebView) seeds connectivity 
 
 Copy examples into `data/` and fill values, or keep the operator-seeded files already present on this machine.
 
-`friends.local.json` is the local allowlist (friends + admin flags). Public mode and blacklist are **rejected** — do not add `mode` or `blacklist` as product fields. Leftover keys in an existing file are ignored; Save strips them. The Manager writes `ip/allowlist.json` when that object already exists. There is no live writer for `ip/mode.json`.
+`friends.local.json` is the local allowlist (friends + admin flags). Public mode and blacklist are **rejected** — do not add `mode` or `blacklist` as product fields. Leftover keys in an existing file are ignored; Save strips them. The Manager writes `ip/allowlist.json` when that object already exists (**If-Match**; a concurrent change fails instead of clobbering). There is no live writer for `ip/mode.json`.
 
 ## Sources of truth when refreshing seeds
 
