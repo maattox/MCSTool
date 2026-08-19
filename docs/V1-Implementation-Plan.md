@@ -157,11 +157,11 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 | **4** | Setup game types (Paper, loaders, pack import) | **DONE** (Step **4.12** deferred) |
 | **5** | Server Management modding inspect + re-download pack | **DONE** |
 | **6** | Top-bar chrome + oversized-world SSH UX | **DONE** |
-| **7** | Remaining v1 (resize, console, storage, Connect version) | **NEXT** = Step **7.1** |
+| **7** | Remaining v1 (resize, console, storage, Connect version) | **NEXT** = Step **7.2** |
 | **8** | Paid / spend mode (**last** product feature) | TODO |
 | **9** | Packaging, updates, launch (old MVP Phase 8–9) | TODO — **do not start** until Phases 1–8 are DONE or the operator skips 8 |
 
-**Current NEXT step:** [Step 7.1](#step-71--vm1-shape-scaling-danger-zone). **Do not start Step 7.1** until the operator asks.
+**Current NEXT step:** [Step 7.2](#step-72--always-on-capable-212-messaging). **Do not start Step 7.2** until the operator asks.
 
 ---
 
@@ -872,7 +872,7 @@ Historical **Do** (not to be started): import a user-supplied CurseForge client 
 
 ### Step 7.1 — VM1 shape scaling (Danger Zone)
 
-**Status:** NEXT  
+**Status:** DONE  
 **Depends on:** 1.1
 
 **Read first**
@@ -893,13 +893,13 @@ Historical **Do** (not to be started): import a user-supplied CurseForge client 
 
 **Done when:** Scale apply path exists with warnings; ledger history still valid.
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-18 — Danger Zone **Change game computer size**: live GetInstance OCPU/memory; radios 4/24 and 2/12 only (no 8 OCPU); Apply disabled unless VM1 STOPPED; hard confirm with remaining playtime preview (~1500 OCPU-h envelope ÷ shape; stack budget target). UpdateInstance shapeConfig + waiter; writes `config.local.json`, `budget/config.json`, `meta/infra.json`; ledger intervals unchanged. Core `Vm1ShapeScaleUx` tests. No live test-tenancy resize. **NEXT = Step 7.2**. Do not start 7.2 unless asked.
 
 ---
 
 ### Step 7.2 — Always-on-capable 2/12 messaging
 
-**Status:** TODO  
+**Status:** NEXT  
 **Depends on:** 7.1 (or Setup 2/12 picker already shipped in MVP)
 
 **Read first**
@@ -1241,6 +1241,7 @@ Former MVP Phase **8–9**. **Do not start** until Phases **1–7** are DONE and
 
 | Date | Note |
 |------|------|
+| 2026-08-18 | **Step 7.1 DONE.** Danger Zone VM1 A1 Flex scale (2/12 or 4/24); STOPPED gate; playtime preview; local + budget/meta update; ledger intervals unchanged. No live resize. **NEXT = Step 7.2**. Do not start 7.2 unless asked. |
 | 2026-08-18 | **Step 6.3 DONE.** Oversized-world flag → bell + Server Management SSH live-world download (no OS PUT). DEBUG fixture. **NEXT = Step 7.1**. Do not start 7.1 unless asked. |
 | 2026-08-18 | **Step 6.2 DONE.** Title-row bell + dismissible notification list; Core `NotificationCenter` channel (session-only); DEBUG fake post. **NEXT = Step 6.3**. Do not start 6.3 unless asked. |
 | 2026-08-18 | **Step 6.1 DONE.** Title-row gear (paths + update-check placeholder) and overflow (About, GitHub). No bell. Native OS chrome. **NEXT = Step 6.2**. Do not start 6.2 unless asked. |

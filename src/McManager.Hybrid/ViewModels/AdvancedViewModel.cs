@@ -10,8 +10,9 @@ namespace McManager.Hybrid.ViewModels;
 /// <summary>
 /// Advanced: technical VM/door status, break-glass Compute, idle timeout/warn,
 /// infra meta publish, Auto-detect, Deploy/repair → Setup wizard.
-/// Danger Zone reuses idle <see cref="EditIdleAgentEnabled"/> apply + the existing
-/// typed-confirm delete dialog (not constructed here).
+/// Danger Zone reuses idle <see cref="EditIdleAgentEnabled"/> apply, VM1 shape
+/// scale lives on <see cref="Vm1ShapeScaleViewModel"/>, and typed-confirm delete
+/// is the existing destroy dialog (not constructed here).
 /// Own <see cref="IsBusy"/> only — does not grey Start/Stop/Restart.
 /// </summary>
 public sealed partial class AdvancedViewModel : ObservableObject

@@ -1,4 +1,5 @@
 @inject AdvancedViewModel Vm
+@inject Vm1ShapeScaleViewModel Scale
 @inject DestroyInfrastructureViewModel Destroy
 @implements IDisposable
 
@@ -47,6 +48,66 @@
 
     <div class="mcm-danger-card">
         <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
+            <span style="font-size:14px;font-weight:600;">Change game computer size</span>
+            <button type="button"
+                    class="mcm-help"
+                    title="Ampere A1 Flex OCPU and memory. Changing size changes how fast Always Free hours burn. The game computer and Minecraft must be Stopped. Past usage rows keep the size they were recorded at. Sizes above 4 OCPU / 24 GB are not offered yet.">
+                <i class="ti ti-help" aria-hidden="true"></i>
+                <span class="sr-only">About changing game computer size</span>
+            </button>
+        </div>
+        <p style="margin:0 0 12px;font-size:13px;color:var(--text-secondary);">
+            Current size: <strong>@Scale.CurrentSizeDisplay</strong>
+            <span style="color:var(--text-muted);"> · VM1 @Scale.Vm1Lifecycle</span>
+        </p>
+        <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);">
+            Apply is disabled until the game computer is Stopped (top-bar Stop). Minecraft stops with it. Always Free sizes only — not larger than 4 OCPU / 24 GB.
+        </p>
+        <label class="mcm-radio-row">
+            <input type="radio"
+                   name="mcm-dz-vm1-shape"
+                   disabled="@Scale.IsBusy"
+                   checked="@Scale.TargetIsDefault"
+                   @onchange="@(() => Scale.SelectDefaultShape())" />
+            <span>
+                4 OCPU / 24 GB (recommended)
+                <span class="mcm-radio-note">More room for players and mods. Uses Always Free hours faster while the game computer is on.</span>
+            </span>
+        </label>
+        <label class="mcm-radio-row">
+            <input type="radio"
+                   name="mcm-dz-vm1-shape"
+                   disabled="@Scale.IsBusy"
+                   checked="@(!Scale.TargetIsDefault)"
+                   @onchange="@(() => Scale.SelectSmallerShape())" />
+            <span>
+                2 OCPU / 12 GB
+                <span class="mcm-radio-note">Smaller Always Free size. More wall-clock hours from the same OCPU-hour budget; less room if you add mods or more players.</span>
+            </span>
+        </label>
+        <div class="mcm-shape-preview">@Scale.PreviewText</div>
+        @if (!Scale.CanApply && !string.IsNullOrWhiteSpace(Scale.BlockedReason))
+        {
+            <p style="margin:0 0 12px;font-size:13px;color:var(--text-danger);">@Scale.BlockedReason</p>
+        }
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;">
+            <button type="button"
+                    disabled="@Scale.IsBusy"
+                    @onclick="Scale.RefreshAsync">
+                Refresh size
+            </button>
+            <button type="button"
+                    class="mcm-danger-btn"
+                    disabled="@(!Scale.CanApply)"
+                    @onclick="Scale.ApplyAsync">
+                Apply size change
+            </button>
+        </div>
+        <p style="margin:10px 0 0;font-size:13px;color:var(--text-secondary);opacity:0.85;">@Scale.StatusMessage</p>
+    </div>
+
+    <div class="mcm-danger-card">
+        <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
             <span style="font-size:14px;font-weight:600;">Delete infrastructure</span>
             <button type="button"
                     class="mcm-help"
@@ -68,7 +129,6 @@
     </div>
 
     @* v1 later (do not implement here): Paid / spend mode — Step 8.1 *@
-    @* v1 later (do not implement here): VM1 shape scaling — Step 7.1 *@
 
     <p style="margin:0;font-size:13px;color:var(--text-secondary);opacity:0.85;">@Vm.StatusMessage</p>
 </div>
@@ -77,14 +137,20 @@
     protected override void OnInitialized()
     {
         Vm.PropertyChanged += OnVmChanged;
+        Scale.PropertyChanged += OnScaleChanged;
         _ = Vm.RefreshIdleFromOsAsync();
+        _ = Scale.RefreshAsync();
     }
 
     public void Dispose()
     {
         Vm.PropertyChanged -= OnVmChanged;
+        Scale.PropertyChanged -= OnScaleChanged;
     }
 
     private void OnVmChanged(object? sender, PropertyChangedEventArgs e) =>
+        _ = InvokeAsync(StateHasChanged);
+
+    private void OnScaleChanged(object? sender, PropertyChangedEventArgs e) =>
         _ = InvokeAsync(StateHasChanged);
 }

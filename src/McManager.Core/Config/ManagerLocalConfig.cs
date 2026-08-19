@@ -90,10 +90,10 @@ public sealed class Vm1Settings
     public string Shape { get; init; } = "";
 
     [JsonPropertyName("shape_ocpus")]
-    public double ShapeOcpus { get; init; }
+    public double ShapeOcpus { get; set; }
 
     [JsonPropertyName("shape_memory_gb")]
-    public double ShapeMemoryGb { get; init; }
+    public double ShapeMemoryGb { get; set; }
 
     [JsonPropertyName("primary_private_ip")]
     public string PrimaryPrivateIp { get; init; } = "";

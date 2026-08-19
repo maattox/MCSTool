@@ -1,11 +1,22 @@
 using McManager.Core.Oci;
+using Oci.CoreService.Models;
 using Oci.CoreService.Requests;
 
 namespace McManager.Core.Services;
 
+public sealed record InstanceShapeSnapshot(
+    string LifecycleState,
+    string Shape,
+    double Ocpus,
+    double MemoryGb);
+
 public interface IComputeService
 {
     Task<ServiceResult<string>> GetLifecycleStateAsync(
+        string instanceId,
+        CancellationToken cancellationToken = default);
+
+    Task<ServiceResult<InstanceShapeSnapshot>> GetInstanceShapeAsync(
         string instanceId,
         CancellationToken cancellationToken = default);
 
@@ -17,9 +28,22 @@ public interface IComputeService
         string instanceId,
         CancellationToken cancellationToken = default);
 
+    Task<ServiceResult> UpdateInstanceShapeConfigAsync(
+        string instanceId,
+        float ocpus,
+        float memoryGb,
+        CancellationToken cancellationToken = default);
+
     Task<ServiceResult<string>> WaitForLifecycleAsync(
         string instanceId,
         string desiredState,
+        TimeSpan? timeout = null,
+        CancellationToken cancellationToken = default);
+
+    Task<ServiceResult<InstanceShapeSnapshot>> WaitForShapeConfigAsync(
+        string instanceId,
+        double ocpus,
+        double memoryGb,
         TimeSpan? timeout = null,
         CancellationToken cancellationToken = default);
 }
@@ -50,6 +74,28 @@ public sealed class ComputeService : IComputeService
         catch (Exception ex)
         {
             return ServiceResult<string>.Fail(FormatOciError("GetInstance", ex));
+        }
+    }
+
+    public async Task<ServiceResult<InstanceShapeSnapshot>> GetInstanceShapeAsync(
+        string instanceId,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(instanceId))
+            return ServiceResult<InstanceShapeSnapshot>.Fail("instance_id is empty.");
+
+        try
+        {
+            var response = await _session.Compute.GetInstance(
+                new GetInstanceRequest { InstanceId = instanceId },
+                retryConfiguration: _session.RetryConfiguration,
+                cancellationToken: cancellationToken);
+
+            return ServiceResult<InstanceShapeSnapshot>.Ok(ReadSnapshot(response.Instance));
+        }
+        catch (Exception ex)
+        {
+            return ServiceResult<InstanceShapeSnapshot>.Fail(FormatOciError("GetInstance", ex));
         }
     }
 
@@ -105,6 +151,43 @@ public sealed class ComputeService : IComputeService
         }
     }
 
+    public async Task<ServiceResult> UpdateInstanceShapeConfigAsync(
+        string instanceId,
+        float ocpus,
+        float memoryGb,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(instanceId))
+            return ServiceResult.Fail("instance_id is empty.");
+        if (ocpus <= 0 || memoryGb <= 0)
+            return ServiceResult.Fail("Shape OCPUs and memory GB must be > 0.");
+
+        try
+        {
+            await _session.Compute.UpdateInstance(
+                new UpdateInstanceRequest
+                {
+                    InstanceId = instanceId,
+                    UpdateInstanceDetails = new UpdateInstanceDetails
+                    {
+                        ShapeConfig = new UpdateInstanceShapeConfigDetails
+                        {
+                            Ocpus = ocpus,
+                            MemoryInGBs = memoryGb,
+                        },
+                    },
+                },
+                retryConfiguration: _session.RetryConfiguration,
+                cancellationToken: cancellationToken);
+
+            return ServiceResult.Ok();
+        }
+        catch (Exception ex)
+        {
+            return ServiceResult.Fail(FormatOciError("UpdateInstance shapeConfig", ex));
+        }
+    }
+
     public async Task<ServiceResult<string>> WaitForLifecycleAsync(
         string instanceId,
         string desiredState,
@@ -139,6 +222,62 @@ public sealed class ComputeService : IComputeService
             await Task.Delay(delay, cancellationToken);
             delaySeconds = Math.Min(delaySeconds * 2, maxDelaySeconds);
         }
+    }
+
+    public async Task<ServiceResult<InstanceShapeSnapshot>> WaitForShapeConfigAsync(
+        string instanceId,
+        double ocpus,
+        double memoryGb,
+        TimeSpan? timeout = null,
+        CancellationToken cancellationToken = default)
+    {
+        var limit = timeout ?? TimeSpan.FromMinutes(20);
+        var deadline = DateTime.UtcNow + limit;
+        var delaySeconds = 3.0;
+        const double maxDelaySeconds = 30.0;
+
+        while (true)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var current = await GetInstanceShapeAsync(instanceId, cancellationToken);
+            if (!current.Succeeded || current.Value is null)
+                return current;
+
+            var snap = current.Value;
+            var state = (snap.LifecycleState ?? "").ToUpperInvariant();
+            if (state is "FAILED" or "TERMINATED" or "TERMINATING")
+            {
+                return ServiceResult<InstanceShapeSnapshot>.Fail(
+                    $"Instance entered {state} while waiting for shape "
+                    + $"{Vm1ShapeScaleUx.FormatExact(ocpus, memoryGb)}.");
+            }
+
+            var stable = state is "STOPPED" or "RUNNING";
+            if (stable && Vm1ShapeScaleUx.ShapeEquals(snap.Ocpus, snap.MemoryGb, ocpus, memoryGb))
+                return current;
+
+            if (DateTime.UtcNow >= deadline)
+            {
+                return ServiceResult<InstanceShapeSnapshot>.Fail(
+                    $"Timed out waiting for shape {Vm1ShapeScaleUx.FormatExact(ocpus, memoryGb)} "
+                    + $"(last={Vm1ShapeScaleUx.FormatExact(snap.Ocpus, snap.MemoryGb)}, lifecycle={state}) "
+                    + $"after {limit.TotalMinutes:0} minutes.");
+            }
+
+            var delay = TimeSpan.FromSeconds(Math.Min(delaySeconds, maxDelaySeconds));
+            await Task.Delay(delay, cancellationToken);
+            delaySeconds = Math.Min(delaySeconds * 2, maxDelaySeconds);
+        }
+    }
+
+    private static InstanceShapeSnapshot ReadSnapshot(Instance instance)
+    {
+        var state = instance.LifecycleState?.ToString() ?? "UNKNOWN";
+        var shape = instance.Shape?.Trim() ?? "";
+        var ocpus = (double)(instance.ShapeConfig?.Ocpus ?? 0);
+        var memory = (double)(instance.ShapeConfig?.MemoryInGBs ?? 0);
+        return new InstanceShapeSnapshot(state, shape, ocpus, memory);
     }
 
     /// <summary>

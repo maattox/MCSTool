@@ -191,7 +191,7 @@ When everyone is done, click **Stop** (doorbell-aware). If you forget, idle time
 | Inspect mods / re-download imported pack | **Server Management** → **Modding** (original Setup file on this PC; not a zip of server mods) |
 | Stuck play IP / doorbell | **Troubleshooting** (confirm-gated one-shots) |
 | Technical VM / doorbell state | **Advanced** |
-| Turn idle timer off / delete the stack | **Danger Zone** |
+| Turn idle timer off / change game computer size / delete the stack | **Danger Zone** |
 | Program settings / About / notifications | Top-right **bell**, **gear**, and **menu** (native Windows title bar stays) |
 
 **Wipe world** on **Server Management** deletes only the live save on the game VM so the next **Start** generates a new world. Cloud backups, mods, and `server.properties` are not deleted. Download a world save first if you might want the current world back. The game VM must be running; Minecraft is stopped for the wipe and left stopped until you Start.
@@ -200,9 +200,11 @@ When everyone is done, click **Stop** (doorbell-aware). If you forget, idle time
 
 **Modding** on the same tab: Vanilla and Paper show a short “not a modded server” note. On a Modded stack you can inspect the server-side files in `mods/` (game VM must be running) and **Download pack** — that copies the **original imported archive** saved on this PC, not a zip of the live server mods (that zip would not work for friends). If the original file is missing from this PC, Manager cannot rebuild a client pack.
 
-**Advanced vs Danger Zone:** Advanced is power-user tools (technical status, Deploy/repair, break-glass VM power, idle **timeout**, stack identity). **Danger Zone** is a separate tab for turning the idle timer **off** (testing only — boot / Minecraft start turns it back on) and **Delete infrastructure**. Troubleshooting stays its own tab.
+**Advanced vs Danger Zone:** Advanced is power-user tools (technical status, Deploy/repair, break-glass VM power, idle **timeout**, stack identity). **Danger Zone** is a separate tab for turning the idle timer **off** (testing only — boot / Minecraft start turns it back on), **changing the game computer size** (2 OCPU / 12 GB or 4 OCPU / 24 GB), and **Delete infrastructure**. Troubleshooting stays its own tab.
 
 Do not disable the idle timer except for a short test. Booting the game VM turns it back on.
+
+**Change game computer size** on Danger Zone is disabled until the game computer is **Stopped** (use top-bar **Stop** so Minecraft is down too). It updates Oracle A1 Flex OCPU/memory, then local config and shared budget/meta so usage math matches. Past usage rows keep the size they were recorded at. A larger size uses Always Free hours faster (less wall-clock left this month); a smaller size does the reverse. Sizes above 4 OCPU / 24 GB are not offered.
 
 The top-right **bell** opens a notification list (empty until something posts; each item can be dismissed). The **gear** opens program settings for this PC: where stack config and OpenTofu files live, plus a **Check for updates** toggle (saved now; GitHub Releases checks start in a later release). The **menu** has **About** and a GitHub link. Tabs and Start / Stop are unchanged.
 

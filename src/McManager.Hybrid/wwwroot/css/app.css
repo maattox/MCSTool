@@ -1051,6 +1051,18 @@ button.mcm-btn-disabled:hover {
     filter: none;
 }
 
+.mcm-shape-preview {
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    white-space: pre-wrap;
+    line-height: 1.4;
+}
+
 .mcm-modal-card.mcm-destroy-card {
     width: 640px;
     max-width: 92%;
