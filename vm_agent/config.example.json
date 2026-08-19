@@ -18,6 +18,7 @@
     "budget_stop": "Usage limits reached. Server shutting down.",
     "soft_cap_stop": "Monthly usage soft cap reached. Server shutting down.",
     "idle_stop": "No players for {minutes} minutes. Saving and shutting down.",
+    "idle_stop_inactive": "Minecraft not running for {minutes} minutes. Saving and shutting down.",
     "admin_stop": "Admin requested shutdown. Saving world\u2026"
   },
   "minecraft_unit": "minecraft",

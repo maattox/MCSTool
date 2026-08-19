@@ -17,12 +17,16 @@ namespace McManager.Hybrid.ViewModels;
 public sealed partial class ServerManagementViewModel : ObservableObject
 {
     private static readonly FileTypeFilter ZipFilter = new("ZIP files", ".zip");
+    private static readonly FileTypeFilter PngFilter = new("PNG images", ".png");
     private static readonly FileTypeFilter AllFilesFilter = new("All files", ".*");
 
     private ManagerLocalConfig? _config;
     private BackupStore? _backups;
     private InfraMetaStore? _infra;
     private OversizedWorldBackupStore? _oversizedWorld;
+    private ChatMessagesStore? _chat;
+    private byte[]? _pendingIconPng;
+    private bool _clearIcon;
     private ISshService _ssh = null!;
     private readonly LocalConfigHost _configHost;
     private readonly ManageCloudServices _cloud;
@@ -39,6 +43,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject
     public ObservableCollection<WorldBackupInfo> Backups { get; } = [];
 
     public ObservableCollection<string> ModFiles { get; } = [];
+
+    public ObservableCollection<ChatTemplateRow> ChatTemplates { get; } = [];
 
     [ObservableProperty]
     private WorldBackupInfo? _selectedBackup;
@@ -121,6 +127,37 @@ public sealed partial class ServerManagementViewModel : ObservableObject
 
     public string WorldBackupsHelpTitle => OversizedWorldBackupUx.HelpTitle;
 
+    public string IdentityHelpTitle =>
+        "Name and description show in Minecraft’s server list when the game is running (plain text, two lines). The 64×64 PNG is the list icon. Automated chat is what the idle timer says in-game before a stop. Save, then Restart Minecraft (or Start) to apply. The doorbell MOTD while the game computer is off is not edited here.";
+
+    public string MotdPreview => ServerIdentityUx.BuildMotd(IdentityName, IdentityDescription);
+
+    public bool CanSaveIdentity => HasObjectStorage && !AnyBusy;
+
+    public bool CanClearIcon =>
+        HasObjectStorage && !AnyBusy && (HasCustomIcon || _pendingIconPng is { Length: > 0 });
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(MotdPreview))]
+    private string _identityName = "";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(MotdPreview))]
+    private string _identityDescription = "";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanClearIcon))]
+    private bool _hasCustomIcon;
+
+    [ObservableProperty]
+    private string _iconPreviewDataUrl = "";
+
+    [ObservableProperty]
+    private bool _showChatTemplates;
+
+    [ObservableProperty]
+    private string _identityStatus = "";
+
     public ServerManagementViewModel(
         LocalConfigHost configHost,
         ManageCloudServices cloud,
@@ -157,6 +194,15 @@ public sealed partial class ServerManagementViewModel : ObservableObject
         _backups = null;
         _infra = null;
         _oversizedWorld = null;
+        _chat = null;
+        _pendingIconPng = null;
+        _clearIcon = false;
+        IdentityName = "";
+        IdentityDescription = "";
+        HasCustomIcon = false;
+        IconPreviewDataUrl = "";
+        IdentityStatus = "";
+        ChatTemplates.Clear();
         ServerNameDisplay = "—";
         MinecraftVersionDisplay = "—";
         LastBackupDisplay = "—";
@@ -182,6 +228,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject
             _backups = new BackupStore(os, _config.ObjectStorage);
             _infra = new InfraMetaStore(os, _config.ObjectStorage.Prefixes);
             _oversizedWorld = new OversizedWorldBackupStore(os, _config.ObjectStorage.Prefixes);
+            _chat = new ChatMessagesStore(os, _config.ObjectStorage.Prefixes);
             SoftCapDisplay = _backups.FormatSoftCapLine(0);
             BackupStorageDisplay = $"0.0 / {_backups.SoftCapGb:0.#} GB";
         }
@@ -192,7 +239,10 @@ public sealed partial class ServerManagementViewModel : ObservableObject
                 : _sessionError)
             : "Open this tab to list world backups.";
         OnPropertyChanged(nameof(HasObjectStorage));
+        OnPropertyChanged(nameof(CanSaveIdentity));
+        OnPropertyChanged(nameof(CanClearIcon));
         BindLocalPack();
+        FillDefaultChatRows();
     }
 
     public async Task RefreshAsync()
@@ -215,6 +265,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject
         try
         {
             await RefreshOversizedFlagAsync();
+            await LoadIdentityAsync();
             var result = await _backups.ListWorldBackupsAsync();
             if (!result.Succeeded || result.Value is null)
             {
@@ -637,6 +688,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject
         OnPropertyChanged(nameof(AnyBusy));
         OnPropertyChanged(nameof(CanDownloadPack));
         OnPropertyChanged(nameof(DownloadPackTitle));
+        OnPropertyChanged(nameof(CanSaveIdentity));
+        OnPropertyChanged(nameof(CanClearIcon));
     }
 
     partial void OnIsBusyChanged(bool value) => NotifyModdingCommands();
@@ -811,4 +864,158 @@ public sealed partial class ServerManagementViewModel : ObservableObject
             : Backups.FirstOrDefault(b =>
                 string.Equals(b.ObjectName, previousName, StringComparison.Ordinal));
     }
+
+    public async Task PickIconAsync()
+    {
+        var path = await _filePicker.OpenFileAsync(new FilePickRequest
+        {
+            Title = "Choose a 64×64 PNG server icon",
+            Filters = [PngFilter, AllFilesFilter],
+        });
+        if (string.IsNullOrWhiteSpace(path))
+            return;
+        if (!File.Exists(path))
+        {
+            IdentityStatus = "Could not read that icon file.";
+            return;
+        }
+
+        var bytes = await File.ReadAllBytesAsync(path);
+        var error = ServerIdentityUx.ValidateIcon(bytes);
+        if (error is not null)
+        {
+            IdentityStatus = error;
+            return;
+        }
+
+        _pendingIconPng = bytes;
+        _clearIcon = false;
+        ApplyIconPreview(bytes);
+        IdentityStatus = "Icon selected. Save to store it.";
+        OnPropertyChanged(nameof(CanClearIcon));
+    }
+
+    public void ClearIcon()
+    {
+        _pendingIconPng = null;
+        _clearIcon = HasCustomIcon || !string.IsNullOrWhiteSpace(IconPreviewDataUrl);
+        ApplyIconPreview(null);
+        IdentityStatus = _clearIcon ? "Icon will be removed on Save." : "";
+        OnPropertyChanged(nameof(CanClearIcon));
+    }
+
+    public async Task SaveIdentityAsync()
+    {
+        if (_chat is null || AnyBusy)
+            return;
+
+        IsBusy = true;
+        IdentityStatus = "Saving…";
+        try
+        {
+            var doc = ChatMessagesDocument.Defaults();
+            doc.ServerName = IdentityName?.Trim() ?? "";
+            doc.Description = IdentityDescription?.Trim() ?? "";
+            doc.ChatMessages = ChatTemplates
+                .Where(row => !string.IsNullOrWhiteSpace(row.Key))
+                .ToDictionary(row => row.Key, row => row.Text ?? "", StringComparer.Ordinal);
+
+            var put = await _chat.PublishAsync(doc, _pendingIconPng, _clearIcon);
+            if (!put.Succeeded)
+            {
+                IdentityStatus = put.Error ?? "Save failed.";
+                return;
+            }
+
+            _pendingIconPng = null;
+            _clearIcon = false;
+            await LoadIdentityAsync();
+            IdentityStatus =
+                "Saved. Restart Minecraft (or Start) to apply the name, icon, and chat lines.";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task LoadIdentityAsync()
+    {
+        if (_chat is null)
+        {
+            FillDefaultChatRows();
+            return;
+        }
+
+        var got = await _chat.GetAsync();
+        if (!got.Succeeded || got.Value is null)
+        {
+            IdentityStatus = got.Error ?? "Could not load server identity.";
+            FillDefaultChatRows();
+            return;
+        }
+
+        var doc = got.Value.Document;
+        IdentityName = doc.ServerName ?? "";
+        IdentityDescription = doc.Description ?? "";
+        ServerNameDisplay = ServerIdentityUx.DisplayName(IdentityName, _config?.Vm1.DisplayName);
+        ApplyChatRows(doc.ChatMessages);
+        _pendingIconPng = null;
+        _clearIcon = false;
+        ApplyIconPreview(got.Value.IconPng is { Length: > 0 } ? got.Value.IconPng : null);
+
+        IdentityStatus = got.Value.Present
+            ? ""
+            : "No saved identity yet — defaults are shown. Save to create the shared file.";
+    }
+
+    private void FillDefaultChatRows() => ApplyChatRows(ServerIdentityUx.DefaultChatMessages);
+
+    private void ApplyChatRows(IReadOnlyDictionary<string, string>? stored)
+    {
+        ChatTemplates.Clear();
+        foreach (var field in ServerIdentityUx.ChatTemplateFields)
+        {
+            var text = "";
+            if (stored is not null && stored.TryGetValue(field.Key, out var storedText)
+                && !string.IsNullOrWhiteSpace(storedText))
+            {
+                text = storedText;
+            }
+            else if (ServerIdentityUx.DefaultChatMessages.TryGetValue(field.Key, out var fallback))
+            {
+                text = fallback;
+            }
+
+            ChatTemplates.Add(new ChatTemplateRow
+            {
+                Key = field.Key,
+                Label = field.Label,
+                Placeholders = field.Placeholders,
+                Text = text,
+            });
+        }
+    }
+
+    private void ApplyIconPreview(byte[]? png)
+    {
+        if (png is { Length: > 0 })
+        {
+            HasCustomIcon = true;
+            IconPreviewDataUrl = "data:image/png;base64," + Convert.ToBase64String(png);
+        }
+        else
+        {
+            HasCustomIcon = false;
+            IconPreviewDataUrl = "";
+        }
+    }
+}
+
+public sealed class ChatTemplateRow
+{
+    public required string Key { get; init; }
+    public required string Label { get; init; }
+    public string? Placeholders { get; init; }
+    public string Text { get; set; } = "";
 }

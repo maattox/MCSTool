@@ -189,6 +189,7 @@ When everyone is done, click **Stop** (doorbell-aware). If you forget, idle time
 | Hours vs budget | Pinned usage cards + **Usage** tab |
 | World zip download / replace / wipe | **Server Management** (Object Storage; ~9.5 GB backup soft cap; SSH live copy if the world is too large) |
 | Inspect mods / re-download imported pack | **Server Management** → **Modding** (original Setup file on this PC; not a zip of server mods) |
+| Name, icon, description, idle chat lines | **Server Management** → **Name, icon, and messages** (plain text; Restart Minecraft to apply) |
 | Send Minecraft commands / view logs | **Console** (not a live terminal) |
 | Stuck play IP / doorbell | **Troubleshooting** (confirm-gated one-shots) |
 | Technical VM / doorbell state | **Advanced** |
@@ -200,6 +201,8 @@ When everyone is done, click **Stop** (doorbell-aware). If you forget, idle time
 **World too large for cloud backup:** If a single world zip is bigger than the ~9.5 GB free cloud cap, automatic cloud backups stop. The top-right **bell** warns you. **Download latest world save** then copies the **live** world from the game VM over SSH (the VM must be Running). That file stays on this PC and is **not** uploaded to cloud storage. Older cloud backups in the list can still be downloaded.
 
 **Modding** on the same tab: Vanilla and Paper show a short “not a modded server” note. On a Modded stack you can inspect the server-side files in `mods/` (game VM must be running) and **Download pack** — that copies the **original imported archive** saved on this PC, not a zip of the live server mods (that zip would not work for friends). If the original file is missing from this PC, Manager cannot rebuild a client pack.
+
+**Name, icon, and messages** on Server Management: set the name and description friends see in their Minecraft server list (plain text, two lines), pick a **64×64 PNG** icon, and optionally edit the automated chat lines used before an idle or budget stop. Save writes the shared copy. **Restart** Minecraft (or **Start**) applies it. The doorbell message while the game computer is off is not edited here.
 
 **Console** sends Minecraft commands (the same ones you would type in the server console) and shows recent logs from the game computer. Start the server first. A leading `/` is optional. This is not a live terminal, and the RCON port stays local on the game computer — it is not opened on the cloud firewall.
 

@@ -17,7 +17,7 @@ Redeploy to the VM (`/opt/mc-manager`) after changing this tree. Door Phase 4 de
 
 1. **Idle / budget SoftStop** — `mc-idle-watch.timer` → unit not active **or** RCON empty → `timeout 120 systemctl stop` when the game is up → **cold world zip → Object Storage** (9.5 GiB soft cap; evict oldest `backups/*.zip` first; delete local zip) → **close+save local ledger** → **clear lease** → **retry OS publish** → OCI SoftStop  
 2. **Lease heartbeat (Phase 5)** — while Minecraft is active, refresh `ledger/lease.json` about every 5 minutes (does not dirty ledger flags)  
-3. **Boot ledger** — `mc-boot-ledger.service` → **force-enable idle agent** (timer + local/OS `idle_agent_enabled=true`) → **force-pull** OS ledger + lease → merge → close prior opens (lease / list-boots) → repair `stop_uncertain` → fill missing boots → **detect live shape** → open boot interval + lease → publish; sync shape to local config + OS `budget/config.json`  
+3. **Boot ledger** — `mc-boot-ledger.service` → **force-enable idle agent** (timer + local/OS `idle_agent_enabled=true`) → **force-pull** OS ledger + lease → merge → close prior opens (lease / list-boots) → repair `stop_uncertain` → fill missing boots → **detect live shape** → open boot interval + lease → publish; sync shape to local config + OS `budget/config.json`; **force-pull** `messages/chat.json` (identity MOTD/icon + idle chat templates) when Object Storage is configured  
 4. **Object Storage** — publish `ledger/usage.json` (with `revision`); dirty manager + door flags; publish `ledger/lease.json`; upload `backups/world-*.zip`  
 5. **Live world backup (ready for scheduled use)** — `world_backup.py live` / `mode=auto` while unit active: RCON `save-off` → `save-all flush` → zip → `save-on` (always) → upload → delete local. SoftStop uses **cold** after stop. **`--stream-stdout`** zips the world to stdout (no Object Storage PUT) for Manager oversized-world SSH download.  
 
@@ -48,12 +48,12 @@ RCON stays **localhost only** (`25575`).
 | Path | Role |
 |------|------|
 | `idle_watch.py` | Idle / soft-cap stop; lease heartbeat; cold world backup; publish retries before SoftStop |
-| `record_boot.py` | Boot force-enable idle + force-pull → merge → reconcile → repair → start + lease → publish |
+| `record_boot.py` | Boot force-enable idle + force-pull ledger/lease/messages → merge → reconcile → repair → start + lease → publish |
 | `world_backup.py` | Cold + **live** zip → OS upload; **`--stream-stdout`** zip to stdout (no OS PUT) |
 | `ledger.py` | Interval math, list-boots reconcile, repair, merge |
 | `lease.py` | Lease open / heartbeat / clear helpers |
 | `shape_detect.py` | Live OCPU / memory detection from `/proc` |
-| `os_publish.py` | Object Storage put/get + dirty flags; lease + budget shape / idle_enabled sync |
+| `os_publish.py` | Object Storage put/get + dirty flags; lease + budget shape / idle_enabled sync; messages identity pull |
 | `install.sh` | On-box install from uploaded tree |
 | systemd unit templates | Idle timer + boot ledger |
 

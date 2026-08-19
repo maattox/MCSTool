@@ -60,7 +60,7 @@ These are normative rules for new Phase 2+ work. Existing lab/product code does 
 - `ledger/usage.json` already uses a monotonic `revision`, remote/local merge, and best-effort `If-Match`.
 - `ledger/lease.json` is a last-writer heartbeat singleton; it intentionally does not dirty ledger flags.
 - IP, messages, and infra meta have one primary writer role. `budget/config.json` has a Manager primary writer **and** a narrow VM1 patch writer (shape and boot safety), so both must fetch the latest document, preserve fields, and use conditional writes.
-- **Manager (V1 Step 7.4):** writes to `budget/config.json`, `meta/infra.json`, `meta/flags.json` (on those Manager publishes/clears), and `ip/allowlist.json` GET the current ETag and PUT with `If-Match`. HTTP 412 returns a refresh-and-retry error instead of clobbering. First create (object missing) is unconditional. `ip/mode.json` is withdrawn — no Manager writer.
+- **Manager (V1 Step 7.4):** writes to `budget/config.json`, `meta/infra.json`, `meta/flags.json` (on those Manager publishes/clears), and `ip/allowlist.json` GET the current ETag and PUT with `If-Match`. HTTP 412 returns a refresh-and-retry error instead of clobbering. First create (object missing) is unconditional. `ip/mode.json` is withdrawn — no Manager writer. **Step 7.6:** `messages/chat.json` uses the same If-Match rule.
 - VM1 shape/idle patches of `budget/config.json` in `vm_agent/os_publish.py` still PUT without If-Match. A concurrent Manager publish now fails closed (412) rather than overwriting blindly.
 - `meta/flags.json` is shared by all actors. A writer must fetch, modify only the intended bits, preserve all known categories, and PUT the result. A failed flags PUT does not invalidate the authoritative object that was already written; consumers must also support explicit/forced refresh.
 
@@ -81,7 +81,7 @@ These are normative rules for new Phase 2+ work. Existing lab/product code does 
 | `budget/config.json` | 1 | Manager; VM1 may patch detected shape / boot safety | Door, VM1, Manager | Live |
 | `ip/allowlist.json` | 1 | Manager | Future product consumers | Seeded/live; Hybrid Save updates when present. `ip` = IPv4 or IPv4 CIDR. **Always applied** (product is private-only). |
 | `ip/mode.json` | 1 | — (withdrawn) | — | **Withdrawn 2026-08-18.** Public/blacklist rejected. Step 3.1 wrote it; Step **3.4** stopped the Manager writer. Leftover objects in buckets may remain unused. |
-| `messages/chat.json` | 1 | Manager | VM1 agent | Seeded/live; rich editor deferred |
+| `messages/chat.json` | 1 | Manager | VM1 agent | **V1 Step 7.6 DONE** — identity + templates; Manager If-Match; VM1 boot pull. Rich MOTD editor still out. |
 | `backups/.keep` | text | Setup/seed | None | Optional marker |
 | `backups/world-<UTC>.zip` | ZIP | VM1 backup agent; Manager manual upload | Manager | Live |
 | `smoke/*` | text | Test actors | Test actors | Non-contract test artifacts; safe to delete |
@@ -474,28 +474,38 @@ A leftover object may still exist in some buckets from V1 Step 3.1 (`version`, `
 
 ---
 
-## `messages/chat.json` — VM1 message templates v1
+## `messages/chat.json` — VM1 message templates + identity v1
 
 ```json
 {
   "version": 1,
   "updated_at": "2026-08-11T00:00:00Z",
+  "server_name": "Friends SMP",
+  "description": "Weekend world",
+  "icon_object": "messages/server-icon.png",
   "chat_messages": {
     "budget_warn_leftover": "Daily usage limit exceeded; using leftover hours (~{ocpu:.1f} OCPU-h / ~{gb:.1f} GB-h left).",
     "budget_final_warn": "Daily + leftover usage exhausted. Server will shut down soon.",
     "budget_stop": "Usage limits reached. Server shutting down.",
     "soft_cap_stop": "Monthly usage soft cap reached. Server shutting down.",
     "idle_stop": "No players for {minutes} minutes. Saving and shutting down.",
+    "idle_stop_inactive": "Minecraft not running for {minutes} minutes. Saving and shutting down.",
     "admin_stop": "Admin requested shutdown. Saving world…"
   }
 }
 ```
 
-- Manager is the intended writer; VM1 is the consumer.
-- Unknown/missing template keys fall back to built-in defaults.
+- Manager is the intended writer; VM1 is the consumer (Minecraft boot / `record_boot.py` force-pull).
+- **v1 (Step 7.6):** additive identity fields on the same document version: `server_name`, `description` (plain-text MOTD; name then description as two lines), optional `icon_object` pointing at `messages/server-icon.png` (64×64 PNG). Door MOTD/favicon while idle is **not** this object (operational copy stays in `mcdoor`).
+- Unknown/missing template keys fall back to built-in defaults. `idle_stop_inactive` is additive; older seeds without it still work.
 - Invalid format placeholders must not crash the agent; current formatter returns the unformatted template.
 - RCON credentials never belong in this object.
-- Rich message editing is outside MVP.
+- Manager writes use ETag `If-Match` when the object exists; first create is unconditional. After a successful PUT, `messages.vm1=true` and `messages.manager=false` (door stays false).
+- Rich MOTD visual editing is outside v1 / MVP.
+
+### `messages/server-icon.png`
+
+Optional binary sibling of `messages/chat.json`. Minecraft list icon (64×64 PNG). Manager is the only writer. Absence means no custom icon.
 
 ---
 
@@ -649,7 +659,7 @@ Current SSH fallback is happy-path tested but not yet equivalent to the target a
 | Lease | Diagnostics | **Primary heartbeat/clear** | Read; clear after heal | Seed empty |
 | Budget | **Primary write** | Read; shape/idle safety patch | Read | Seed |
 | IP config | Intended primary write | Future read | Future read | Seed |
-| Messages | Intended primary write | Read | Not currently | Seed |
+| Messages | **Primary write** (identity + templates, Step **7.6**) | Read on Minecraft boot | Not currently | Seed |
 | Backup ZIPs | Read; manual upload/SSH replace | **Primary upload/evict** | None | Marker seed |
 | Backup upload lock | Acquire/release for upload | Acquire/release for backup/evict | None | None |
 | Oversized backup flag | Read; future clear UX | **Write/block** | None | None |

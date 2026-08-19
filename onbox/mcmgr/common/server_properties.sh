@@ -22,10 +22,14 @@ managed = {
     "rcon.password": password,
     "white-list": "false",
     "enforce-whitelist": "false",
-    "motd": "A Minecraft Server",
     "difficulty": "normal",
     "max-players": "20",
     "online-mode": "true",
+}
+# Identity (name/icon/description) owns motd after first write. Only seed a
+# default when the key is missing so repair does not clobber Manager saves.
+if_missing = {
+    "motd": "A Minecraft Server",
 }
 # Intentionally never allow online-mode false via this writer.
 assert managed["online-mode"] == "true"
@@ -52,10 +56,15 @@ for line in lines:
     if key in managed:
         out.append(f"{key}={managed[key]}")
         seen.add(key)
-    else:
-        out.append(raw)
+        continue
+    if key in if_missing:
+        seen.add(key)
+    out.append(raw)
 
 for key, val in managed.items():
+    if key not in seen:
+        out.append(f"{key}={val}")
+for key, val in if_missing.items():
     if key not in seen:
         out.append(f"{key}={val}")
 

@@ -452,7 +452,15 @@ public sealed class SetupDeployOrchestrator
             return ServiceResult.Fail(pubMeta.Error ?? "Publish meta/infra.json failed.");
         }
 
-        log?.Report("Published budget/config.json, ledger/usage.json, and meta/infra.json.");
+        var chatStore = new ChatMessagesStore(os, config.ObjectStorage.Prefixes);
+        var seedChat = await chatStore.SeedIfMissingAsync(cancellationToken).ConfigureAwait(false);
+        if (!seedChat.Succeeded)
+        {
+            log?.Report("Seed messages/chat.json failed: " + (seedChat.Error ?? "unknown"));
+            return ServiceResult.Fail(seedChat.Error ?? "Seed messages/chat.json failed.");
+        }
+
+        log?.Report("Published budget/config.json, ledger/usage.json, meta/infra.json, and messages/chat.json.");
         return ServiceResult.Ok();
     }
 

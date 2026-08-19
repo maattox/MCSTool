@@ -19,6 +19,10 @@ OBJ_FLAGS = "meta/flags.json"
 OBJ_LEDGER = "ledger/usage.json"
 OBJ_LEASE = "ledger/lease.json"
 OBJ_BUDGET = "budget/config.json"
+OBJ_CHAT = "messages/chat.json"
+OBJ_ICON = "messages/server-icon.png"
+CONFIG_PATH = os.environ.get("MC_MANAGER_CONFIG", "/etc/mc-manager/config.json")
+DEFAULT_MOTD = "A Minecraft Server"
 CONSUMERS = ("manager", "door", "vm1")
 CATEGORIES = ("ledger", "budget", "meta", "ip", "messages")
 
@@ -121,6 +125,185 @@ def _put_json(
     if if_match:
         kwargs["if_match"] = if_match
     client.put_object(**kwargs)
+
+
+def _get_bytes(client, namespace: str, bucket: str, name: str) -> bytes | None:
+    try:
+        resp = client.get_object(namespace, bucket, name)
+        return resp.data.content
+    except Exception as exc:  # noqa: BLE001
+        status = getattr(exc, "status", None)
+        if status == 404:
+            return None
+        text = str(exc)
+        if "404" in text or "NotFound" in text or "not found" in text.lower():
+            return None
+        raise
+
+
+def _server_dir(cfg: dict[str, Any]) -> str | None:
+    world = str(cfg.get("world_path") or "").strip().rstrip("/")
+    if not world:
+        return None
+    parent = os.path.dirname(world)
+    if not parent or parent == "/":
+        return None
+    return parent
+
+
+def _chown_mcmgr(path: str) -> None:
+    try:
+        import pwd
+
+        info = pwd.getpwnam("mcmgr")
+        os.chown(path, info.pw_uid, info.pw_gid)
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def _patch_properties_key(path: str, key: str, value: str) -> None:
+    lines: list[str] = []
+    try:
+        with open(path, encoding="utf-8") as f:
+            lines = f.read().splitlines()
+    except FileNotFoundError:
+        lines = []
+    out: list[str] = []
+    seen = False
+    prefix = key + "="
+    for line in lines:
+        if line.startswith(prefix) or line.startswith(key + " ="):
+            if not seen:
+                out.append(f"{key}={value}")
+                seen = True
+            continue
+        out.append(line)
+    if not seen:
+        out.append(f"{key}={value}")
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8", newline="\n") as f:
+        f.write("\n".join(out) + "\n")
+    os.replace(tmp, path)
+    _chown_mcmgr(path)
+    try:
+        os.chmod(path, 0o640)
+    except OSError:
+        pass
+
+
+def _build_motd(server_name: str, description: str) -> str:
+    name = " ".join((server_name or "").split())
+    desc_lines = [
+        " ".join(part.split())
+        for part in (description or "").replace("\r\n", "\n").replace("\r", "\n").split("\n")
+        if part.strip()
+    ]
+    desc = "\\n".join(desc_lines)
+    if name and desc:
+        return f"{name}\\n{desc}"
+    if desc:
+        return desc
+    if name:
+        return name
+    return DEFAULT_MOTD
+
+
+def _merge_chat_into_local_config(cfg: dict[str, Any], chat_messages: dict[str, Any]) -> None:
+    stored = dict(cfg.get("messages") or {})
+    for key, value in chat_messages.items():
+        if value is None:
+            continue
+        stored[str(key)] = str(value)
+    cfg["messages"] = stored
+    try:
+        with open(CONFIG_PATH, encoding="utf-8") as f:
+            on_disk = json.load(f)
+        if not isinstance(on_disk, dict):
+            on_disk = {}
+    except (OSError, json.JSONDecodeError):
+        on_disk = dict(cfg)
+    on_disk["messages"] = stored
+    tmp = CONFIG_PATH + ".tmp"
+    os.makedirs(os.path.dirname(CONFIG_PATH) or ".", exist_ok=True)
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(on_disk, f, indent=2)
+        f.write("\n")
+    os.replace(tmp, CONFIG_PATH)
+
+
+def _apply_identity(cfg: dict[str, Any], doc: dict[str, Any], client, namespace: str, bucket: str) -> list[str]:
+    notes: list[str] = []
+    server_dir = _server_dir(cfg)
+    if not server_dir:
+        notes.append("world_path missing; skipped motd/icon apply.")
+        return notes
+
+    name = str(doc.get("server_name") or "").strip()
+    description = str(doc.get("description") or "").strip()
+    motd = _build_motd(name, description)
+    props = os.path.join(server_dir, "server.properties")
+    try:
+        _patch_properties_key(props, "motd", motd)
+        notes.append(f"wrote motd in {props}")
+    except OSError as exc:
+        notes.append(f"motd write failed: {exc}")
+
+    icon_name = str(doc.get("icon_object") or "").strip() or OBJ_ICON
+    icon_dest = os.path.join(server_dir, "server-icon.png")
+    raw = _get_bytes(client, namespace, bucket, icon_name)
+    if raw:
+        tmp = icon_dest + ".tmp"
+        with open(tmp, "wb") as f:
+            f.write(raw)
+        os.replace(tmp, icon_dest)
+        _chown_mcmgr(icon_dest)
+        try:
+            os.chmod(icon_dest, 0o644)
+        except OSError:
+            pass
+        notes.append(f"wrote {icon_dest}")
+    elif os.path.isfile(icon_dest) and not icon_name:
+        notes.append("no icon object; left existing server-icon.png")
+    return notes
+
+
+def pull_messages_if_dirty(cfg: dict[str, Any], *, force: bool = False) -> str:
+    """Download messages/chat.json when messages.vm1 is dirty (or force on boot).
+
+    Merges chat templates into local idle-agent config and applies motd/icon
+    under the Minecraft server directory. Takes effect on the next Minecraft start.
+    """
+    ns_bucket = _ns_bucket(cfg)
+    if ns_bucket is None:
+        return "Object Storage not configured; skipped messages pull."
+    namespace, bucket = ns_bucket
+    client = _client()
+    flags = _normalize_flags(_get_json(client, namespace, bucket, OBJ_FLAGS))
+    dirty = bool(flags["categories"]["messages"].get("vm1"))
+    if not force and not dirty:
+        return "messages.vm1 clear; skipped pull."
+
+    doc = _get_json(client, namespace, bucket, OBJ_CHAT)
+    if not isinstance(doc, dict):
+        if dirty:
+            flags["categories"]["messages"]["vm1"] = False
+            flags["updated_at"] = _utc_now()
+            _put_json(client, namespace, bucket, OBJ_FLAGS, flags)
+        return f"{OBJ_CHAT} missing; skipped identity apply."
+
+    chat_messages = doc.get("chat_messages") if isinstance(doc.get("chat_messages"), dict) else {}
+    _merge_chat_into_local_config(cfg, chat_messages)
+    notes = _apply_identity(cfg, doc, client, namespace, bucket)
+    if dirty:
+        flags["categories"]["messages"]["vm1"] = False
+        flags["updated_at"] = _utc_now()
+        _put_json(client, namespace, bucket, OBJ_FLAGS, flags)
+
+    why = "boot force-pull" if force and not dirty else ("flag dirty" if dirty else "force")
+    cleared = "; cleared messages.vm1" if dirty else ""
+    extra = ("; " + "; ".join(notes)) if notes else ""
+    return f"Pulled {OBJ_CHAT} ({why}){cleared}{extra}."
 
 
 def _ns_bucket(cfg: dict[str, Any]) -> tuple[str, str] | None:

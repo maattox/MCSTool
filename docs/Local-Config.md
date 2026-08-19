@@ -127,6 +127,8 @@ Imported packs the Manager actually installed are copied to **`data/imported-pac
 
 **Notifications (bell):** in-memory this session only (not a file). Manager posts when `meta/oversized-world-backup.json` is present (world too large for cloud backup). Debug builds can post a sample, or PUT/clear an oversized-world fixture, from Advanced → DEBUG host probes.
 
+**Server identity (Server Management):** name, description, 64×64 PNG icon, and idle/budget chat templates persist in Object Storage `messages/chat.json` (optional `messages/server-icon.png`). Manager **If-Match** on save; first create is unconditional. VM1 applies on the next Minecraft start (`record_boot.py`). Not stored in `config.local.json`.
+
 ## Later (after v1): deployment profiles
 
 MVP/v1 assume **one** connected stack: a single `data/config.local.json` (+ friends / wizard resume beside it). Lab `PRODUCT-IDEAS.md` **Multi-deploy profiles (after v1)** adds connecting an *additional* infrastructure deployment from Advanced (OCI API config + VM SSH keys → auto-detect/validate → profile switcher).

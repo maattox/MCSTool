@@ -33,6 +33,126 @@
     <div class="mcm-section-card" style="margin-bottom:1.25rem;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
             <div style="display:flex;align-items:center;gap:4px;">
+                <span style="font-size:14px;font-weight:500;">Name, icon, and messages</span>
+                <button type="button"
+                        class="mcm-help"
+                        title="@Vm.IdentityHelpTitle">
+                    <i class="ti ti-help" aria-hidden="true"></i>
+                    <span class="sr-only">About name, icon, and messages</span>
+                </button>
+            </div>
+            <button type="button"
+                    class="mcm-primary"
+                    disabled="@(!Vm.CanSaveIdentity)"
+                    title="Writes the shared copy. Restart Minecraft (or Start) to apply name, icon, and chat lines."
+                    @onclick="Vm.SaveIdentityAsync">
+                Save
+            </button>
+        </div>
+        <p style="margin:0 0 12px;font-size:13px;color:var(--text-muted);">
+            Friends see the name, description, and icon in their Minecraft server list while the game is running. This is plain text — not a formatted MOTD editor. The doorbell message while the game computer is off stays as-is.
+        </p>
+        <div class="mcm-identity-grid">
+            <div>
+                <div class="mcm-field">
+                    <label for="mcm-server-name">Server name</label>
+                    <input id="mcm-server-name"
+                           type="text"
+                           maxlength="40"
+                           disabled="@Vm.AnyBusy"
+                           @bind="Vm.IdentityName"
+                           @bind:event="oninput" />
+                </div>
+                <div class="mcm-field">
+                    <label for="mcm-server-desc">Description</label>
+                    <textarea id="mcm-server-desc"
+                              maxlength="80"
+                              rows="2"
+                              disabled="@Vm.AnyBusy"
+                              @bind="Vm.IdentityDescription"
+                              @bind:event="oninput"></textarea>
+                </div>
+                <p class="mcm-motd-preview">
+                    <span>Server list preview</span>
+                    @foreach (var line in Vm.MotdPreview.Split("\\n", StringSplitOptions.None))
+                    {
+                        <span class="mcm-motd-line">@line</span>
+                    }
+                </p>
+            </div>
+            <div>
+                <div class="mcm-identity-icon-row">
+                    @if (!string.IsNullOrWhiteSpace(Vm.IconPreviewDataUrl))
+                    {
+                        <img class="mcm-server-icon"
+                             src="@Vm.IconPreviewDataUrl"
+                             width="64"
+                             height="64"
+                             alt="Server icon" />
+                    }
+                    else
+                    {
+                        <div class="mcm-server-icon mcm-server-icon-empty" aria-hidden="true">
+                            <i class="ti ti-photo"></i>
+                        </div>
+                    }
+                    <div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <button type="button"
+                                    disabled="@Vm.AnyBusy"
+                                    title="Minecraft needs a 64×64 PNG."
+                                    @onclick="Vm.PickIconAsync">
+                                Choose icon
+                            </button>
+                            <button type="button"
+                                    disabled="@(!Vm.CanClearIcon)"
+                                    @onclick="Vm.ClearIcon">
+                                Remove icon
+                            </button>
+                        </div>
+                        <p style="margin:6px 0 0;font-size:12px;color:var(--text-muted);">64×64 PNG</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @if (!string.IsNullOrWhiteSpace(Vm.IdentityStatus))
+        {
+            <p style="margin:0 0 8px;font-size:13px;color:var(--text-secondary);white-space:pre-wrap;">@Vm.IdentityStatus</p>
+        }
+        <button type="button"
+                class="mcm-advanced-toggle"
+                @onclick="() => Vm.ShowChatTemplates = !Vm.ShowChatTemplates">
+            @(Vm.ShowChatTemplates ? "Hide automated chat" : "Automated chat")
+        </button>
+        @if (Vm.ShowChatTemplates)
+        {
+            <p style="margin:0 0 10px;font-size:12px;color:var(--text-muted);">
+                These lines are sent in-game before an idle or budget stop. Keep the placeholders such as <code>{minutes}</code> if the line uses them.
+            </p>
+            <div class="mcm-chat-templates">
+                @foreach (var row in Vm.ChatTemplates)
+                {
+                    <div class="mcm-field">
+                        <label>
+                            @row.Label
+                            @if (!string.IsNullOrWhiteSpace(row.Placeholders))
+                            {
+                                <span style="font-weight:400;color:var(--text-muted);"> @row.Placeholders</span>
+                            }
+                        </label>
+                        <textarea rows="2"
+                                  disabled="@Vm.AnyBusy"
+                                  @bind="row.Text"
+                                  @bind:event="oninput"></textarea>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <div class="mcm-section-card" style="margin-bottom:1.25rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+            <div style="display:flex;align-items:center;gap:4px;">
                 <span style="font-size:14px;font-weight:500;">Modding</span>
                 <button type="button"
                         class="mcm-help"
@@ -182,6 +302,7 @@
         Vm.PropertyChanged += OnVmChanged;
         Vm.Backups.CollectionChanged += OnBackupsChanged;
         Vm.ModFiles.CollectionChanged += OnModsChanged;
+        Vm.ChatTemplates.CollectionChanged += OnChatChanged;
         _ = Vm.RefreshAsync();
         _ = Vm.RefreshMinecraftVersionAsync();
     }
@@ -190,6 +311,8 @@
     {
         Vm.PropertyChanged -= OnVmChanged;
         Vm.Backups.CollectionChanged -= OnBackupsChanged;
+        Vm.ChatTemplates.CollectionChanged -= OnChatChanged;
+        Vm.ChatTemplates.CollectionChanged -= OnChatChanged;
         Vm.ModFiles.CollectionChanged -= OnModsChanged;
     }
 
@@ -200,5 +323,8 @@
         _ = InvokeAsync(StateHasChanged);
 
     private void OnModsChanged(object? sender, NotifyCollectionChangedEventArgs e) =>
+        _ = InvokeAsync(StateHasChanged);
+
+    private void OnChatChanged(object? sender, NotifyCollectionChangedEventArgs e) =>
         _ = InvokeAsync(StateHasChanged);
 }

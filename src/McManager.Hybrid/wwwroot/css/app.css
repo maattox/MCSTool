@@ -2299,3 +2299,71 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     flex: 0 0 auto;
     padding: 8px 16px;
 }
+
+.mcm-identity-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 16px 24px;
+    align-items: start;
+    margin-bottom: 8px;
+}
+
+.mcm-identity-icon-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.mcm-server-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 8px;
+    border: 0.5px solid var(--border);
+    image-rendering: pixelated;
+    background: var(--surface-1);
+    flex: 0 0 64px;
+    object-fit: contain;
+}
+
+.mcm-server-icon-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 22px;
+}
+
+.mcm-motd-preview {
+    margin: 0 0 4px;
+    padding: 8px 10px;
+    background: var(--surface-1);
+    border: 0.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-primary);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.mcm-motd-preview > span:first-child {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+}
+
+.mcm-motd-line {
+    font-family: var(--font-sans);
+    line-height: 1.35;
+}
+
+.mcm-chat-templates {
+    display: grid;
+    gap: 0;
+}
+
+@media (max-width: 720px) {
+    .mcm-identity-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

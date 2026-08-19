@@ -123,6 +123,12 @@ def main() -> int:
     with open(CONFIG_PATH, "r", encoding="utf-8") as f:
         cfg = json.load(f)
     cfg = force_enable_idle_agent(cfg)
+    try:
+        print(os_publish_mod.pull_messages_if_dirty(cfg, force=True))
+        with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+            cfg.update(json.load(f))
+    except Exception as exc:  # noqa: BLE001
+        print(f"Object Storage messages pull warning: {exc}", file=sys.stderr)
     path = cfg.get("ledger_path", "/var/lib/mc-manager/usage.json")
     lpath = os_publish_mod.lease_path(cfg)
     fallback_o, fallback_m = shape_mod.shape_from_cfg(cfg)
