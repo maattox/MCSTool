@@ -157,11 +157,11 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 | **4** | Setup game types (Paper, loaders, pack import) | **DONE** (Step **4.12** deferred) |
 | **5** | Server Management modding inspect + re-download pack | **DONE** |
 | **6** | Top-bar chrome + oversized-world SSH UX | **DONE** |
-| **7** | Remaining v1 (resize, console, storage, Connect version) | **NEXT** = Step **7.2** |
+| **7** | Remaining v1 (resize, console, storage, Connect version) | **NEXT** = Step **7.3** |
 | **8** | Paid / spend mode (**last** product feature) | TODO |
 | **9** | Packaging, updates, launch (old MVP Phase 8–9) | TODO — **do not start** until Phases 1–8 are DONE or the operator skips 8 |
 
-**Current NEXT step:** [Step 7.2](#step-72--always-on-capable-212-messaging). **Do not start Step 7.2** until the operator asks.
+**Current NEXT step:** [Step 7.3](#step-73--infra-vs-app-version-on-connect-existing). **Do not start Step 7.3** until the operator asks.
 
 ---
 
@@ -899,7 +899,7 @@ Historical **Do** (not to be started): import a user-supplied CurseForge client 
 
 ### Step 7.2 — Always-on-capable 2/12 messaging
 
-**Status:** NEXT  
+**Status:** DONE  
 **Depends on:** 7.1 (or Setup 2/12 picker already shipped in MVP)
 
 **Read first**
@@ -917,13 +917,13 @@ Historical **Do** (not to be started): import a user-supplied CurseForge client 
 
 **Done when:** 2/12 users are not nagged as if they were on a scarce 4-OCPU budget.
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-18 — Soften Usage / pin / idle MOTD copy when VM1 can stay ~24/7 inside Always Free (2 OCPU × 31d ≤ ~1500 OCPU-h). 4/24 keeps remaining-hours and cap language. Metering, daily-exhausted, and spend-brake copy unchanged. Core `AlwaysOnCapableCopy` tests. Live door needs redeploy from `door_vm/` for MOTD. **NEXT = Step 7.3**. Do not start 7.3 unless asked.
 
 ---
 
 ### Step 7.3 — Infra vs app version on Connect existing
 
-**Status:** TODO  
+**Status:** NEXT  
 **Depends on:** MVP Phase 5 (DONE)
 
 **Read first**
@@ -1241,6 +1241,7 @@ Former MVP Phase **8–9**. **Do not start** until Phases **1–7** are DONE and
 
 | Date | Note |
 |------|------|
+| 2026-08-18 | **Step 7.2 DONE.** Soften Usage / pin / idle MOTD copy for always-on-capable 2/12; 4/24 keeps scarce remaining-hours language; still meters. Live door MOTD needs redeploy. **NEXT = Step 7.3**. Do not start 7.3 unless asked. |
 | 2026-08-18 | **Step 7.1 DONE.** Danger Zone VM1 A1 Flex scale (2/12 or 4/24); STOPPED gate; playtime preview; local + budget/meta update; ledger intervals unchanged. No live resize. **NEXT = Step 7.2**. Do not start 7.2 unless asked. |
 | 2026-08-18 | **Step 6.3 DONE.** Oversized-world flag → bell + Server Management SSH live-world download (no OS PUT). DEBUG fixture. **NEXT = Step 7.1**. Do not start 7.1 unless asked. |
 | 2026-08-18 | **Step 6.2 DONE.** Title-row bell + dismissible notification list; Core `NotificationCenter` channel (session-only); DEBUG fake post. **NEXT = Step 6.3**. Do not start 6.3 unless asked. |

@@ -58,8 +58,16 @@ static void test_motd_by_door_state(void) {
 
   state.door = DOOR_IDLE;
   state.used_ocpu_hours = 10.0;
+  state.ocpus = 4.0;
   mcdoor_build_motd(&state, motd, sizeof motd);
   CHECK(strstr(motd, "OCPU-h remaining") != NULL, "idle MOTD missing budget hint: %s", motd);
+
+  state.ocpus = 2.0;
+  mcdoor_build_motd(&state, motd, sizeof motd);
+  CHECK(strstr(motd, "OCPU-h remaining") == NULL,
+        "2-OCPU idle MOTD must not nag remaining hours: %s", motd);
+  CHECK(strstr(motd, "Connect to wake") != NULL, "2-OCPU idle MOTD missing wake hint: %s",
+        motd);
 
   state.door = DOOR_STARTING;
   mcdoor_build_motd(&state, motd, sizeof motd);

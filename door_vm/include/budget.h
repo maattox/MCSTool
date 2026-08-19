@@ -89,4 +89,15 @@ int budget_la_day_bounds(const char *la_yyyy_mm_dd, long long *start, long long 
  * `size` must be >= 11. Returns 0 or -1. */
 int budget_la_date_for(const char *now_utc, char *out, size_t size);
 
+/* Always Free Ampere envelope used in MOTD copy (~1500 OCPU-h/month).
+ * 2 OCPU × 24h × 31d = 1488; 4 OCPU cannot stay up around the clock. */
+#define ALWAYS_FREE_OCPU_HOUR_ENVELOPE 1500.0
+
+static inline int budget_shape_always_on_capable(double ocpus) {
+  if (ocpus <= 0.0) {
+    return 0;
+  }
+  return (ocpus * 24.0 * 31.0) <= (ALWAYS_FREE_OCPU_HOUR_ENVELOPE + 0.5);
+}
+
 #endif /* VM2_BUDGET_H */

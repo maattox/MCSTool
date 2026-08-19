@@ -206,6 +206,8 @@ Do not disable the idle timer except for a short test. Booting the game VM turns
 
 **Change game computer size** on Danger Zone is disabled until the game computer is **Stopped** (use top-bar **Stop** so Minecraft is down too). It updates Oracle A1 Flex OCPU/memory, then local config and shared budget/meta so usage math matches. Past usage rows keep the size they were recorded at. A larger size uses Always Free hours faster (less wall-clock left this month); a smaller size does the reverse. Sizes above 4 OCPU / 24 GB are not offered.
 
+**Smaller size (2 OCPU / 12 GB):** hours are still counted, but Manager and the doorbell MOTD use calmer copy because this size can usually stay on all month inside Always Free. The 4 OCPU / 24 GB size still shows remaining-hours and “cap” language — those hours run out faster. Daily-budget-exhausted and spend-brake messages are the same on both sizes.
+
 The top-right **bell** opens a notification list (empty until something posts; each item can be dismissed). The **gear** opens program settings for this PC: where stack config and OpenTofu files live, plus a **Check for updates** toggle (saved now; GitHub Releases checks start in a later release). The **menu** has **About** and a GitHub link. Tabs and Start / Stop are unchanged.
 
 ---

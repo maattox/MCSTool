@@ -136,6 +136,18 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private bool _pinRolloverPositive;
 
     [ObservableProperty]
+    private string _pinTodayHelp = AlwaysOnCapableCopy.PinTodayHelp(false);
+
+    [ObservableProperty]
+    private string _pinMonthHelp = AlwaysOnCapableCopy.PinMonthHelp(false);
+
+    [ObservableProperty]
+    private string _pinAvgHelp = AlwaysOnCapableCopy.PinAvgHelp(false);
+
+    [ObservableProperty]
+    private string _pinRolloverHelp = AlwaysOnCapableCopy.PinRolloverHelp(false);
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanConfirmSpendBrakeStart))]
     private string _spendBrakeTypedConfirm = "";
 
@@ -988,6 +1000,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         PinRolloverValue = snap.RolloverValue;
         PinRolloverHint = snap.RolloverHint;
         PinRolloverPositive = snap.RolloverPositive;
+        PinTodayHelp = snap.TodayHelp;
+        PinMonthHelp = snap.MonthHelp;
+        PinAvgHelp = snap.AvgHelp;
+        PinRolloverHelp = snap.RolloverHelp;
     }
 
     private void ShowToast(string message, bool isError)

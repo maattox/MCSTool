@@ -11,6 +11,20 @@ public static class Vm1ShapeScaleUx
     /// <summary>Product Always Free Ampere envelope used in copy (~1500 OCPU-h).</summary>
     public const double AlwaysFreeOcpuHourEnvelope = 1500;
 
+    /// <summary>Longest calendar month as wall-clock hours (24 × 31).</summary>
+    public const double LongestMonthHours = 24 * 31;
+
+    /// <summary>
+    /// True when this OCPU count can stay up ~24/7 inside the Always Free envelope
+    /// (2 OCPU × 744 h ≈ 1488 OCPU-h; 4 OCPU cannot).
+    /// </summary>
+    public static bool CanStayUpAroundTheClock(double ocpus)
+    {
+        if (ocpus <= 0)
+            return false;
+        return ocpus * LongestMonthHours <= AlwaysFreeOcpuHourEnvelope + 0.5;
+    }
+
     public static bool IsVm1Stopped(string? lifecycle) =>
         string.Equals((lifecycle ?? "").Trim(), "STOPPED", StringComparison.OrdinalIgnoreCase);
 

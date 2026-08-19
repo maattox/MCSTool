@@ -124,6 +124,24 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _todayOverDaily;
 
+    [ObservableProperty]
+    private string _leadCopy = AlwaysOnCapableCopy.UsageLead(false);
+
+    [ObservableProperty]
+    private string _remainingHoursLabel = AlwaysOnCapableCopy.RemainingHoursLabel(false);
+
+    [ObservableProperty]
+    private string _remainingHoursHint = AlwaysOnCapableCopy.RemainingHoursHint(false);
+
+    [ObservableProperty]
+    private string _softCapsHint = AlwaysOnCapableCopy.SoftCapsHint(false);
+
+    [ObservableProperty]
+    private string _idleWarningsHint = AlwaysOnCapableCopy.IdleWarningsHint(false);
+
+    [ObservableProperty]
+    private string _rolloverHelp = AlwaysOnCapableCopy.PinRolloverHelp(false);
+
     public bool HasObjectStorage => _store is not null;
 
     public bool CanPublish => HasPendingChanges && !IsBusy && HasObjectStorage;
@@ -217,7 +235,7 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
 
         var confirmed = await _dialogs.ConfirmAsync(
             "Save usage budget?",
-            "This updates the shared hours budget the server uses to stop itself when you run out of free time. Continue?",
+            AlwaysOnCapableCopy.PublishConfirmBody(AlwaysOnCapableCopy.ForShape(doc.ShapeOcpus)),
             confirmButtonText: "Publish");
         if (!confirmed)
         {
@@ -349,17 +367,26 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
         SoftCapHitDisplay = report.HitSoftCap ? "Yes — soft cap hit" : "No";
         HitSoftCap = report.HitSoftCap;
         var shape = ResolveShapeOcpus(shapeOcpus);
+        var alwaysOn = AlwaysOnCapableCopy.ForShape(shape);
+        LeadCopy = AlwaysOnCapableCopy.UsageLead(alwaysOn);
+        RemainingHoursLabel = AlwaysOnCapableCopy.RemainingHoursLabel(alwaysOn);
+        RemainingHoursHint = AlwaysOnCapableCopy.RemainingHoursHint(alwaysOn);
+        SoftCapsHint = AlwaysOnCapableCopy.SoftCapsHint(alwaysOn);
+        IdleWarningsHint = AlwaysOnCapableCopy.IdleWarningsHint(alwaysOn);
         var dailyHours = report.DailyOcpuAllowance / shape;
         var remainingHours = Math.Max(0, report.MonthlyOcpuTarget - report.MonthOcpu) / shape;
         var rolloverHours = report.LeftoverOcpu / shape;
-        RemainingDisplay = $"{remainingHours:F1}h left this month (not rollover)";
+        RemainingDisplay = alwaysOn
+            ? $"{remainingHours:F1}h available this month (not rollover)"
+            : $"{remainingHours:F1}h left this month (not rollover)";
         RemainingHoursValue = $"{remainingHours:F1}h";
         UsedHoursValue = $"{report.MonthUptime:F1}h";
         TodayHoursValue = $"{report.TodayUptimeHours:F1}h";
-        TodayHoursHint = $"/ {dailyHours:F1}h allowed today";
+        TodayHoursHint = AlwaysOnCapableCopy.PinTodayHint(dailyHours, alwaysOn);
         TodayOverDaily = report.OcpuOverDaily;
         RolloverHoursValue = $"{(rolloverHours >= 0 ? "+" : "")}{rolloverHours:F1}h";
         RolloverHoursPositive = rolloverHours > 0.05;
+        RolloverHelp = AlwaysOnCapableCopy.PinRolloverHelp(alwaysOn);
         CopyPins(PinnedUsageSnapshot.FromReport(report, shape));
     }
 
@@ -380,6 +407,10 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
         _main.PinRolloverValue = snap.RolloverValue;
         _main.PinRolloverHint = snap.RolloverHint;
         _main.PinRolloverPositive = snap.RolloverPositive;
+        _main.PinTodayHelp = snap.TodayHelp;
+        _main.PinMonthHelp = snap.MonthHelp;
+        _main.PinAvgHelp = snap.AvgHelp;
+        _main.PinRolloverHelp = snap.RolloverHelp;
     }
 
     private double ResolveShapeOcpus(double shapeOcpus)

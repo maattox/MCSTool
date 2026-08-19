@@ -16,14 +16,14 @@
     </div>
 
     <p class="mcm-usage-lead">
-        How much free cloud time the server has used. Saving a budget below is what refuses a start when you are out of hours.
+        @Vm.LeadCopy
     </p>
 
     <div class="mcm-usage-hero">
         <div class="mcm-usage-metric">
-            <div class="mcm-usage-metric-label">Hours left this month</div>
+            <div class="mcm-usage-metric-label">@Vm.RemainingHoursLabel</div>
             <div class="mcm-usage-metric-value">@Vm.RemainingHoursValue</div>
-            <div class="mcm-usage-metric-hint">Wall-clock time still in this month’s cap — not the rollover bank</div>
+            <div class="mcm-usage-metric-hint">@Vm.RemainingHoursHint</div>
         </div>
         <div class="mcm-usage-metric">
             <div class="mcm-usage-metric-label">Used this month</div>
@@ -40,7 +40,7 @@
                 Rollover bank
                 <button type="button"
                         class="mcm-help"
-                        title="Unused daily hours saved from earlier days this month. This is not the hours still left in the month.">
+                        title="@Vm.RolloverHelp">
                     <i class="ti ti-help" aria-hidden="true"></i>
                     <span class="sr-only">About rollover bank</span>
                 </button>
@@ -133,7 +133,7 @@
 
         <fieldset class="mcm-usage-fieldset">
             <div class="mcm-usage-fieldset-title">Soft caps</div>
-            <p class="mcm-usage-fieldset-hint">Warn and idle-stop before you fully spend the monthly allowance.</p>
+            <p class="mcm-usage-fieldset-hint">@Vm.SoftCapsHint</p>
             <div class="mcm-usage-fields">
                 <label class="mcm-usage-field" for="mcm-usage-soft-ocpu">
                     <span class="mcm-usage-field-label">Soft CPU-hour cap</span>
@@ -158,7 +158,7 @@
 
         <fieldset class="mcm-usage-fieldset">
             <div class="mcm-usage-fieldset-title">Idle warnings</div>
-            <p class="mcm-usage-fieldset-hint">How long the server can sit empty, and how far ahead to warn players about the daily cap.</p>
+            <p class="mcm-usage-fieldset-hint">@Vm.IdleWarningsHint</p>
             <div class="mcm-usage-fields">
                 <label class="mcm-usage-field" for="mcm-usage-idle">
                     <span class="mcm-usage-field-label">Idle timeout (minutes)</span>

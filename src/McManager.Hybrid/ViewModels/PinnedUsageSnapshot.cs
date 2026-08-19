@@ -25,9 +25,15 @@ public sealed class PinnedUsageSnapshot
     public string RolloverHint { get; init; } = "";
     public bool RolloverPositive { get; init; }
 
+    public string TodayHelp { get; init; } = AlwaysOnCapableCopy.PinTodayHelp(false);
+    public string MonthHelp { get; init; } = AlwaysOnCapableCopy.PinMonthHelp(false);
+    public string AvgHelp { get; init; } = AlwaysOnCapableCopy.PinAvgHelp(false);
+    public string RolloverHelp { get; init; } = AlwaysOnCapableCopy.PinRolloverHelp(false);
+
     public static PinnedUsageSnapshot FromReport(BudgetReport report, double shapeOcpus)
     {
         var shape = shapeOcpus > 0 ? shapeOcpus : 4;
+        var alwaysOn = AlwaysOnCapableCopy.ForShape(shape);
         var dailyHours = report.DailyOcpuAllowance / shape;
         var todayHours = report.TodayUptimeHours;
         var avgHours = report.AvgHoursPerDay;
@@ -40,17 +46,21 @@ public sealed class PinnedUsageSnapshot
         return new PinnedUsageSnapshot
         {
             TodayValue = $"{todayHours:F1}h",
-            TodayHint = $"/ {dailyHours:F1}h allowed",
+            TodayHint = AlwaysOnCapableCopy.PinTodayHint(dailyHours, alwaysOn),
             TodayFraction = dailyHours > 0 ? Math.Clamp(todayHours / dailyHours, 0, 1) : 0,
             AvgValue = $"{avgHours:F1}h",
-            AvgHint = $"/ {dailyHours:F1}h budget",
+            AvgHint = AlwaysOnCapableCopy.PinAvgHint(dailyHours, alwaysOn),
             AvgFraction = dailyHours > 0 ? Math.Clamp(avgHours / dailyHours, 0, 1) : 0,
             MonthValue = $"{monthPct * 100:F0}%",
-            MonthHint = "of monthly cap",
+            MonthHint = AlwaysOnCapableCopy.PinMonthHint(alwaysOn),
             MonthFraction = monthPct,
             RolloverValue = $"{(rolloverHours >= 0 ? "+" : "")}{rolloverHours:F1}h",
             RolloverHint = "unused hours from earlier days",
             RolloverPositive = rolloverHours > 0.05,
+            TodayHelp = AlwaysOnCapableCopy.PinTodayHelp(alwaysOn),
+            MonthHelp = AlwaysOnCapableCopy.PinMonthHelp(alwaysOn),
+            AvgHelp = AlwaysOnCapableCopy.PinAvgHelp(alwaysOn),
+            RolloverHelp = AlwaysOnCapableCopy.PinRolloverHelp(alwaysOn),
         };
     }
 }

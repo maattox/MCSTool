@@ -143,6 +143,10 @@ void mcdoor_build_motd(const ControlState *state, char *out, size_t out_cap) {
 
   switch (state->door) {
     case DOOR_IDLE: {
+      if (budget_shape_always_on_capable(state->ocpus)) {
+        snprintf(out, out_cap, "Server offline. Connect to wake the world.");
+        break;
+      }
       double remaining =
           budget_remaining_ocpu(state->used_ocpu_hours, state->daily_limit_ocpu_hours);
       if (remaining < 0.0) {
