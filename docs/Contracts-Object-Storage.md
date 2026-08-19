@@ -76,7 +76,7 @@ These are normative rules for new Phase 2+ work. Existing lab/product code does 
 | `meta/spend-brake-triggered.json` | 1 | $1 budget Function sets/replaces; Manager is the only clearer (DELETE) | Manager, door | **Frozen v1.** Function PUT = 2.2 (not live-pushed). Door honor = 2.3 (source). **Manager overlay = 2.4 DONE.** |
 | `meta/world-restore-request.json` | 1 | Manager requests; VM1 updates outcome | VM1, Manager | Reserved contract for flag-driven restore; current MVP uses SSH fallback |
 | `meta/backup-upload-lock.json` | 1 | Manager or VM1 active uploader | Manager, VM1 | Reserved coordination contract; not implemented |
-| `ledger/usage.json` | 2 | VM1; door only for STOPPED orphan heal | Manager, door, VM1 boot | Live |
+| `ledger/usage.json` | 2 | VM1; door only for STOPPED orphan heal; **Usage API Function** (Step **7.7** source) writes `daily_overrides` for days older than ~48h | Manager, door, VM1 boot | Live ledger; Function **not deployed** |
 | `ledger/lease.json` | 1 | VM1 heartbeat; door clears after STOPPED heal | VM1 boot, door heal, diagnostics | Live |
 | `budget/config.json` | 1 | Manager; VM1 may patch detected shape / boot safety | Door, VM1, Manager | Live |
 | `ip/allowlist.json` | 1 | Manager | Future product consumers | Seeded/live; Hybrid Save updates when present. `ip` = IPv4 or IPv4 CIDR. **Always applied** (product is private-only). |
@@ -252,6 +252,7 @@ The last rule is the target. The deployed `pull_os_budget.sh` currently fetches 
 | VM1 publishes ledger | `ledger.manager=true`, `ledger.door=true`, `ledger.vm1=false` |
 | Door heals ledger while VM1 `STOPPED` | `ledger.manager=true`, `ledger.door=false`, `ledger.vm1=true` |
 | Manager optional/manual ledger publish | `ledger.manager=false`, `ledger.door=true`, `ledger.vm1=true` |
+| Usage API Function writes `daily_overrides` (days older than ~48h) | `ledger.manager=true`, `ledger.door=true`, `ledger.vm1=true` (Function is not a consumer) |
 | Manager publishes budget | `budget.manager=false`, `budget.door=true`, `budget.vm1=true` |
 | VM1 patches detected shape or boot force-enables idle | `budget.manager=true`, `budget.door=true`, `budget.vm1=false` |
 | Setup/Manager publishes infra meta | `meta.manager=false`, `meta.door=true`, `meta.vm1=true` |
@@ -264,7 +265,7 @@ There is no `backups` category in v1. Adding it now is unsafe because current no
 
 ## `ledger/usage.json` — usage ledger v2
 
-VM1 is the primary writer. Door writes only to close orphaned open intervals after OCI reports VM1 **`STOPPED`**. Manager Phase 1 is a reader; lab Testing2 supports manual publish.
+VM1 is the primary writer. Door writes only to close orphaned open intervals after OCI reports VM1 **`STOPPED`**. Manager Phase 1 is a reader; lab Testing2 supports manual publish. **V1 Step 7.7 (source, not deployed):** a second Function may write `daily_overrides` for UTC days whose end is older than ~48 hours, using OCI Usage API Ampere A1 OCPU-h / GB-h (`note=usage_api_reconcile`), then bump `revision` and dirty all three ledger consumers. It must not rewrite intervals, must not overwrite a non-`usage_api_reconcile` (manual) override, and must not plant a zero-API override over interval hours. Tracked tree: `functions/reconcile_usage/`. Do not `fn push` unless authorized.
 
 **Destroy:** `tofu destroy` of the product stack deletes this bucket (including `ledger/usage.json`); a later Setup seeds a new empty ledger and does not restore prior intervals. Oracle Always Free OCPU-hours for the calendar month still include the destroyed VMs. MVP has no ledger import. See [`Guide.md`](Guide.md) → Tear down and [`Automated-Infrastructure-Deployment.md`](Automated-Infrastructure-Deployment.md) §12.4.
 
@@ -666,6 +667,8 @@ Current SSH fallback is happy-path tested but not yet equivalent to the target a
 | Spend-brake lock | **Only clearer** (DELETE after typed confirm — **2.4 DONE**) | None | Read; refuse VM1 wake (**Step 2.3 source**) | None (not a tofu/seed object; Function is the writer — Step 2.2 source) |
 | World restore request | Write/read outcome; SSH fallback today | Future apply/outcome write | None | None |
 
+The $1 budget Function writes `meta/spend-brake-triggered.json` (not a matrix column). The Usage API Function (Step **7.7** source, not live-pushed) may write `ledger/usage.json` `daily_overrides` for days older than ~48 hours and dirty all three ledger consumers; it does not replace VM1 as primary interval writer.
+
 ---
 
 ## Live bucket review (2026-08-11)
@@ -709,6 +712,7 @@ No live objects were modified during review.
 14. Prefixes are fixed for `infra_schema: 2`; the prefix map is configuration/discovery data, not permission to change hardcoded deployed actors independently. A prefix change requires coordinated actor updates plus an `infra_schema` bump.
 15. Lease fields are all required properties (nullable where shown). A VM1 helper implements the configured 900-second stale test, but no active caller was found; deployed door heal does not enforce age and uses the heartbeat only after OCI reports VM1 `STOPPED`.
 16. **DONE (V1 Steps 2.1–2.4):** `meta/spend-brake-triggered.json` key + v1 JSON shape are frozen. Tracked Function PUTs the object and SoftStops VM1 only. Door wake GETs the object and refuses START while it is present. Manager shows a full-window overlay on open, blocks Start until the exact PRODUCT-IDEAS confirmation sentence, then parks the play IP (Troubleshooting path), DELETEs the lock, refreshes door OS cache, and Wakes (idle/daily/monthly gates still apply). Live Function image still does not write this object until an authorized `fn push`. Live door needs redeploy from `door_vm/`.
+17. **DONE (V1 Step 7.7, code only):** Tracked `functions/reconcile_usage/` writes `daily_overrides` from Usage API for UTC days older than ~48 hours, bumps `revision`, dirties ledger consumers. Not deployed; no live Usage API run.
 
 ---
 
@@ -734,5 +738,6 @@ Lab/on-box:
 - Lab `app/object_storage.py`, `app/os_sync.py`, `app/usage.py`
 - Product `vm_agent/ledger.py`, `vm_agent/lease.py`, `vm_agent/os_publish.py`, `vm_agent/world_backup.py`
 - Product `door_vm/oci/pull_os_budget.sh`, `door_vm/oci/heal_os_ledger.sh`
+- Product `functions/shutdown_vm/`, `functions/reconcile_usage/`
 - Lab `docs/Object-Storage-Phase1.md` through `Object-Storage-Phase5.md`
 - `PRODUCT-IDEAS.md` — sync model, infra meta, oversized-world intent, v1 $1 spend-brake lock

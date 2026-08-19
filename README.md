@@ -6,7 +6,7 @@ This is the **official product repository**. The Manager UI is **.NET 8 + Blazor
 
 ## Status
 
-Manage + Setup are usable on the Blazor Hybrid WinExe. **Phase B** (Avalonia → Blazor Hybrid) is **DONE**. Happy-path user guide: [`docs/Guide.md`](docs/Guide.md). Living execution checklist: [`docs/V1-Implementation-Plan.md`](docs/V1-Implementation-Plan.md) (**NEXT = Step 6.2**; do not start until asked). MVP Phases 0–7 are **DONE** ([`docs/MVP-Implementation-Plan.md`](docs/MVP-Implementation-Plan.md)); packaging is deferred to V1 Phase 9. Danger Zone can **Delete infrastructure** (`tofu destroy` of the product stack only). Phase B archive: [`docs/Blazor-UI-Migration-Plan.md`](docs/Blazor-UI-Migration-Plan.md).
+Manage + Setup are usable on the Blazor Hybrid WinExe. **Phase B** (Avalonia → Blazor Hybrid) is **DONE**. Happy-path user guide: [`docs/Guide.md`](docs/Guide.md). Living execution checklist: [`docs/V1-Implementation-Plan.md`](docs/V1-Implementation-Plan.md) (**NEXT = Step 8.1**; do not start until asked). MVP Phases 0–7 are **DONE** ([`docs/MVP-Implementation-Plan.md`](docs/MVP-Implementation-Plan.md)); packaging is deferred to V1 Phase 9. Danger Zone can **Delete infrastructure** (`tofu destroy` of the product stack only). Phase B archive: [`docs/Blazor-UI-Migration-Plan.md`](docs/Blazor-UI-Migration-Plan.md).
 
 Licensing is **TBD** (no `LICENSE` file yet).
 
@@ -42,7 +42,7 @@ OCI SDK call patterns (throttling, waiters, request thrift): [`docs/OCI-API-Usag
 
 | Repo | Role |
 |------|------|
-| **This repo (`OCI-mc-server`)** | Official product: Manager (Blazor Hybrid UI + Core + Setup / OpenTofu) and on-box SoT (`door_vm/`, `vm_agent/`, `functions/shutdown_vm/`, `onbox/mcmgr/`) |
+| **This repo (`OCI-mc-server`)** | Official product: Manager (Blazor Hybrid UI + Core + Setup / OpenTofu) and on-box SoT (`door_vm/`, `vm_agent/`, `functions/shutdown_vm/`, `functions/reconcile_usage/`, `onbox/mcmgr/`) |
 | Sibling **`OCI-mc-server-manager`** (lab) | Python day-2 tool, live-Forge infra docs, product planning (`PRODUCT-IDEAS.md`) |
 
 Deep infrastructure and product-intent docs live in the lab sibling (e.g. `Infrastructure-Information.md`, `PRODUCT-IDEAS.md`). On-box source that Setup deploys lives **in this repo**.

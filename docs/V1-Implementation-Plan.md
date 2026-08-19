@@ -5,7 +5,7 @@
 **MVP archive:** [`MVP-Implementation-Plan.md`](MVP-Implementation-Plan.md) — Phases **0–7 DONE**. Packaging (old Phase 8 / Step 8.1) is **deferred** to [Phase 9](#phase-9--packaging-updates-launch) of **this** file.  
 **Suggested narrative:** lab [`docs/Development-Steps.md`](../../OCI-mc-server-manager/docs/Development-Steps.md).  
 **Live infra docs:** lab repo (`Infrastructure-Information.md`, `docs/VM-Software.md`).  
-**On-box SoT:** **this repo** (`door_vm/`, `vm_agent/`, `functions/shutdown_vm/`, `onbox/mcmgr/`).  
+**On-box SoT:** **this repo** (`door_vm/`, `vm_agent/`, `functions/shutdown_vm/`, `functions/reconcile_usage/`, `onbox/mcmgr/`).  
 **Code SoT for Manager:** **this repo** (`OCI-mc-server`).
 
 **Cost rule:** keep OCI spend at **$0** (Always Free–eligible) unless the operator explicitly accepts paid changes. **Paid / spend mode is Phase 8** — last product feature, not a side quest.
@@ -157,11 +157,11 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 | **4** | Setup game types (Paper, loaders, pack import) | **DONE** (Step **4.12** deferred) |
 | **5** | Server Management modding inspect + re-download pack | **DONE** |
 | **6** | Top-bar chrome + oversized-world SSH UX | **DONE** |
-| **7** | Remaining v1 (resize, console, storage, Connect version) | **NEXT** = Step **7.7** |
-| **8** | Paid / spend mode (**last** product feature) | TODO |
+| **7** | Remaining v1 (resize, console, storage, Connect version) | **DONE** |
+| **8** | Paid / spend mode (**last** product feature) | **NEXT** = Step **8.1** |
 | **9** | Packaging, updates, launch (old MVP Phase 8–9) | TODO — **do not start** until Phases 1–8 are DONE or the operator skips 8 |
 
-**Current NEXT step:** [Step 7.7](#step-77--usage-api-48h-ledger-reconcile-function-code-only). **Do not start Step 7.7** until the operator asks.
+**Current NEXT step:** [Step 8.1](#step-81--paid-mode-model--danger-zone-ui). **Do not start Step 8.1** until the operator asks.
 
 ---
 
@@ -1022,7 +1022,7 @@ Historical **Do** (not to be started): import a user-supplied CurseForge client 
 
 ### Step 7.7 — Usage API 48h ledger reconcile Function (code only)
 
-**Status:** TODO  
+**Status:** DONE  
 **Depends on:** ledger contract
 
 **Read first**
@@ -1042,7 +1042,7 @@ Historical **Do** (not to be started): import a user-supplied CurseForge client 
 
 **Done when:** Source + README exist; not deployed unless the operator later asks.
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-18 — Tracked Function `functions/reconcile_usage/`: Usage API `USAGE` daily rows for UTC days older than ~48h; Ampere A1 OCPU/memory only (ignore door Micro); write `daily_overrides` (`note=usage_api_reconcile`), bump `revision`, dirty all three ledger consumers; preserve intervals and manual overrides; never plant a zero-API override. Mocked payload unit tests. No `fn push` / OCIR / live Usage API run. **NEXT = Step 8.1**. Do not start 8.1 unless asked.
 
 ---
 
@@ -1241,6 +1241,7 @@ Former MVP Phase **8–9**. **Do not start** until Phases **1–7** are DONE and
 
 | Date | Note |
 |------|------|
+| 2026-08-18 | **Step 7.7 DONE.** Tracked Usage API 48h ledger reconcile Function (`functions/reconcile_usage/`): Ampere A1 daily_overrides + revision/flags bump; mocked tests; not deployed. **NEXT = Step 8.1**. Do not start 8.1 unless asked. |
 | 2026-08-18 | **Step 7.6 DONE.** Server Management identity + automated chat: Object Storage `messages/chat.json` (+ optional 64×64 PNG); VM1 boot apply; no rich MOTD editor. **NEXT = Step 7.7**. Do not start 7.7 unless asked. |
 | 2026-08-18 | **Step 7.5 DONE.** Hybrid Console tab: SSH journalctl logs + localhost RCON Send (on-box secret, no Security List 25575). Not a PTY. **NEXT = Step 7.6**. Do not start 7.6 unless asked. |
 | 2026-08-18 | **Step 7.4 DONE.** Manager Object Storage writes for budget, meta (infra + flags on those publishes), and `ip/allowlist.json` use ETag `If-Match`; 412 is a clear conflict error. No `backups` dirty-flag category. **NEXT = Step 7.5**. Do not start 7.5 unless asked. |
