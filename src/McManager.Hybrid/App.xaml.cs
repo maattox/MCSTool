@@ -79,6 +79,7 @@ public partial class App : Application
         services.AddSingleton<WhitelistViewModel>();
         services.AddSingleton<UsageViewModel>();
         services.AddSingleton<ServerManagementViewModel>();
+        services.AddSingleton<ConsoleViewModel>();
         services.AddSingleton<TroubleshootingViewModel>();
         services.AddSingleton<AdvancedViewModel>();
         services.AddSingleton<Vm1ShapeScaleViewModel>();

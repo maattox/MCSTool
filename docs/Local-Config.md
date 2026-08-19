@@ -103,7 +103,7 @@ Required for early API work:
 - `play.reserved_public_ip` (+ `reserved_public_ip_id` for IP move / diagnostics)
 - `object_storage.namespace`, `object_storage.bucket`
 
-These fields are hydratable from Object Storage **`meta/infra.json`** (full OCID set in lab `PRODUCT-IDEAS.md` / product [`Contracts-Object-Storage.md`](Contracts-Object-Storage.md)). Local file still holds SSH private key path, OCI profile, and RCON — not Object Storage.
+These fields are hydratable from Object Storage **`meta/infra.json`** (full OCID set in lab `PRODUCT-IDEAS.md` / product [`Contracts-Object-Storage.md`](Contracts-Object-Storage.md)). Local file still holds SSH private key path, OCI profile, and RCON — not Object Storage. The **Console** tab does not send the local RCON password: it SSHs to the game computer and uses `/etc/mcmgr/rcon.secret` against localhost:25575.
 
 **Connect existing (Phase 5 / v1 Step 7.3):** First-run **Auto-detect infrastructure** and Advanced **Auto-detect infrastructure** hydrate `config.local.json` from `meta/infra.json` after a confirm (and overwrite confirm if a seed already exists). Newer `infra_schema` / document version refuses; older schema or `stack_version` drift extra-confirms. See [Connect existing](#connect-existing-hydrate-from-metainfrajson) above.
 

@@ -1,0 +1,105 @@
+@using McManager.Core.Services
+@inject ConsoleViewModel Vm
+@inject IJSRuntime JS
+@implements IDisposable
+
+<div class="mcm-console">
+    <div class="mcm-console-head">
+        <div class="mcm-console-title-row">
+            <h1 class="mcm-console-title">Console</h1>
+            <button type="button"
+                    class="mcm-help"
+                    title="@Vm.HelpTitle">
+                <i class="ti ti-help" aria-hidden="true"></i>
+                <span class="sr-only">About Console</span>
+            </button>
+        </div>
+        <button type="button"
+                disabled="@(!Vm.CanRefresh)"
+                title="@Vm.RefreshTitle"
+                @onclick="Vm.RefreshLogsAsync">
+            <i class="ti ti-refresh" aria-hidden="true"></i>
+            Refresh logs
+        </button>
+    </div>
+
+    <p class="mcm-console-status" role="status">@Vm.StatusMessage</p>
+
+    <pre id="mcm-console-log"
+         class="mcm-console-log mcm-wizard-mono mcm-slim-scroll"
+         tabindex="0"
+         aria-label="Minecraft logs">@if (string.IsNullOrWhiteSpace(Vm.LogText))
+    {<span class="mcm-console-empty">@MinecraftConsoleRemote.EmptyLogs</span>}
+    else
+    {@Vm.LogText}</pre>
+
+    <form class="mcm-console-rail" @onsubmit="OnSendAsync" @onsubmit:preventDefault="true">
+        <label class="sr-only" for="mcm-console-input">Minecraft command</label>
+        <input id="mcm-console-input"
+               class="mcm-console-input"
+               type="text"
+               autocomplete="off"
+               spellcheck="false"
+               maxlength="@MinecraftConsoleRemote.MaxCommandChars"
+               placeholder="say Hello — or list, then Enter"
+               disabled="@Vm.IsBusy"
+               @bind="Vm.CommandText"
+               @bind:event="oninput" />
+        <button type="submit"
+                class="mcm-primary"
+                disabled="@(!Vm.CanSend)"
+                title="@Vm.SendTitle">
+            Send
+        </button>
+    </form>
+</div>
+
+@code {
+    private bool _scrollPending = true;
+
+    protected override void OnInitialized()
+    {
+        Vm.PropertyChanged += OnVmChanged;
+        _ = Vm.RefreshLogsAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("mcmSetupLog.attach", "mcm-console-log");
+            if (_scrollPending)
+            {
+                _scrollPending = false;
+                await JS.InvokeVoidAsync("mcmSetupLog.scrollIfStuck", "mcm-console-log");
+            }
+        }
+        catch (InvalidOperationException)
+        {
+            // WebView not ready.
+        }
+        catch (JSException)
+        {
+            // Helper missing in a test host.
+        }
+    }
+
+    public void Dispose()
+    {
+        Vm.PropertyChanged -= OnVmChanged;
+    }
+
+    private void OnVmChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(ConsoleViewModel.LogText) or null)
+            _scrollPending = true;
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnSendAsync()
+    {
+        if (!Vm.CanSend)
+            return;
+        await Vm.SendAsync();
+    }
+}

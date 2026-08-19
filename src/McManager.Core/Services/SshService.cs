@@ -44,6 +44,23 @@ public interface ISshService
         TimeSpan? timeout = null,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Recent Minecraft unit logs via SSH <c>journalctl</c>. Not a live tail / PTY.
+    /// </summary>
+    Task<SshExecResult> FetchMinecraftLogsAsync(
+        Vm1Settings vm1,
+        int lineCount = MinecraftConsoleRemote.DefaultLogLines,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// One RCON command over SSH to VM1 localhost:25575 using <c>/etc/mcmgr/rcon.secret</c>.
+    /// Never opens RCON on the Security List.
+    /// </summary>
+    Task<SshExecResult> SendMinecraftRconAsync(
+        Vm1Settings vm1,
+        string command,
+        CancellationToken cancellationToken = default);
+
     Task<SshExecResult> UploadTextFilesAsync(
         SshTarget target,
         IReadOnlyList<(string LocalPath, string RemotePath)> files,
@@ -103,6 +120,23 @@ public sealed class SshService : ISshService
         TimeSpan? timeout = null,
         CancellationToken cancellationToken = default) =>
         Task.Run(() => RunCommand(target, command, timeout ?? TimeSpan.FromMinutes(2)), cancellationToken);
+
+    public Task<SshExecResult> FetchMinecraftLogsAsync(
+        Vm1Settings vm1,
+        int lineCount = MinecraftConsoleRemote.DefaultLogLines,
+        CancellationToken cancellationToken = default) =>
+        Task.Run(
+            () => RunCommand(
+                SshTarget.FromVm1(vm1),
+                MinecraftConsoleRemote.LogsCommand(lineCount),
+                TimeSpan.FromSeconds(30)),
+            cancellationToken);
+
+    public Task<SshExecResult> SendMinecraftRconAsync(
+        Vm1Settings vm1,
+        string command,
+        CancellationToken cancellationToken = default) =>
+        Task.Run(() => SendMinecraftRcon(vm1, command), cancellationToken);
 
     public Task<SshExecResult> UploadTextFilesAsync(
         SshTarget target,
@@ -494,6 +528,14 @@ public sealed class SshService : ISshService
         {
             // Best-effort recovery; caller already has the primary error.
         }
+    }
+
+    private static SshExecResult SendMinecraftRcon(Vm1Settings vm1, string command)
+    {
+        if (!MinecraftConsoleRemote.TryBuildRconCommand(command, out var remote, out var error))
+            return SshExecResult.Fail(error ?? MinecraftConsoleRemote.EmptyCommandHint);
+
+        return RunCommand(SshTarget.FromVm1(vm1), remote, TimeSpan.FromSeconds(30));
     }
 
     private static SshExecResult RunCommand(SshTarget target, string command, TimeSpan timeout)

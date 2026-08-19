@@ -2171,3 +2171,131 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 .mcm-spend-brake-actions .mcm-action-btn-start {
     min-width: 148px;
 }
+
+/* Console tab: log well fills remaining height; command rail stays put. */
+.mcm-tab-body.is-console {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding-top: 0.85rem;
+}
+
+.mcm-tab-body.is-console .mcm-tab-body-inner {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.mcm-console {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.mcm-console-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.mcm-console-title-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.mcm-console-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.mcm-console-head button i {
+    font-size: 14px;
+    vertical-align: -2px;
+    margin-right: 4px;
+}
+
+.mcm-console-status {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+.mcm-console-log {
+    flex: 1 1 auto;
+    min-height: 12rem;
+    margin: 0;
+    padding: 12px 14px;
+    background: #12161c;
+    border: 0.5px solid var(--border);
+    border-radius: 10px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text-primary);
+    caret-color: var(--fill-accent);
+}
+
+.mcm-console-log:focus-visible {
+    outline: 2px solid var(--fill-accent);
+    outline-offset: 2px;
+}
+
+.mcm-console-log::selection,
+.mcm-console-input::selection {
+    background: color-mix(in srgb, var(--fill-accent) 35%, transparent);
+}
+
+.mcm-console-empty {
+    color: var(--text-muted);
+}
+
+.mcm-console-rail {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+    align-items: stretch;
+}
+
+.mcm-console-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    background: var(--surface-1);
+    border: 0.5px solid var(--border-strong);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-family: var(--font-mono);
+    caret-color: var(--fill-accent);
+}
+
+.mcm-console-input::placeholder {
+    color: var(--text-muted);
+    font-family: var(--font-sans);
+}
+
+.mcm-console-input:focus {
+    outline: 2px solid color-mix(in srgb, var(--fill-accent) 55%, transparent);
+    outline-offset: 1px;
+}
+
+.mcm-console-input:disabled {
+    color: var(--text-muted);
+    cursor: not-allowed;
+}
+
+.mcm-console-rail .mcm-primary {
+    flex: 0 0 auto;
+    padding: 8px 16px;
+}

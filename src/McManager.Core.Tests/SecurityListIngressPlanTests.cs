@@ -54,6 +54,7 @@ public sealed class SecurityListIngressPlanTests
         Assert.True(HasTcp(plan.Owned, "198.51.100.7/32", SshPort, FriendRules.SshDescription("Admin")));
         Assert.True(HasTcp(plan.Owned, "198.51.100.7/32", DoorPort, FriendRules.DoorDescription("Admin")));
         Assert.DoesNotContain(plan.Ingress, r => IsSshOrDoor(r) && FriendRules.IsWorldOpenCidr(r.Source));
+        Assert.DoesNotContain(plan.Ingress, IsRcon);
     }
 
     [Fact]
@@ -140,6 +141,16 @@ public sealed class SecurityListIngressPlanTests
             return rule.TcpOptions?.DestinationPortRange?.Min == McPort;
         if (rule.Protocol == SecurityListIngressPlanner.ProtocolUdp)
             return rule.UdpOptions?.DestinationPortRange?.Min == McPort;
+        return false;
+    }
+
+    private static bool IsRcon(IngressSecurityRule rule)
+    {
+        const int rcon = MinecraftConsoleRemote.RconPort;
+        if (rule.Protocol == SecurityListIngressPlanner.ProtocolTcp)
+            return rule.TcpOptions?.DestinationPortRange?.Min == rcon;
+        if (rule.Protocol == SecurityListIngressPlanner.ProtocolUdp)
+            return rule.UdpOptions?.DestinationPortRange?.Min == rcon;
         return false;
     }
 

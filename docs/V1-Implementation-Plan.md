@@ -157,11 +157,11 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 | **4** | Setup game types (Paper, loaders, pack import) | **DONE** (Step **4.12** deferred) |
 | **5** | Server Management modding inspect + re-download pack | **DONE** |
 | **6** | Top-bar chrome + oversized-world SSH UX | **DONE** |
-| **7** | Remaining v1 (resize, console, storage, Connect version) | **NEXT** = Step **7.5** |
+| **7** | Remaining v1 (resize, console, storage, Connect version) | **NEXT** = Step **7.6** |
 | **8** | Paid / spend mode (**last** product feature) | TODO |
 | **9** | Packaging, updates, launch (old MVP Phase 8–9) | TODO — **do not start** until Phases 1–8 are DONE or the operator skips 8 |
 
-**Current NEXT step:** [Step 7.5](#step-75--rcon--log-console-tab-not-pty). **Do not start Step 7.5** until the operator asks.
+**Current NEXT step:** [Step 7.6](#step-76--server-name--icon--description--chat-messages). **Do not start Step 7.6** until the operator asks.
 
 ---
 
@@ -973,7 +973,7 @@ Historical **Do** (not to be started): import a user-supplied CurseForge client 
 
 ### Step 7.5 — RCON + log console tab (not PTY)
 
-**Status:** TODO  
+**Status:** DONE  
 **Depends on:** existing SSH/RCON helpers
 
 **Read first**
@@ -992,7 +992,7 @@ Historical **Do** (not to be started): import a user-supplied CurseForge client 
 
 **Done when:** Operator can send RCON and view logs from Manager.
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-18 — Hybrid **Console** tab (after Server Management): SSH `journalctl -u minecraft` log well + Send to localhost RCON via on-box `/etc/mcmgr/rcon.secret` (command base64, never a Security List 25575). Leading `/` optional. Not a PTY; status card unchanged. Core `MinecraftConsoleRemote` tests + planner 25575 assertion. Guide + Local-Config notes.
 
 ---
 
@@ -1241,6 +1241,7 @@ Former MVP Phase **8–9**. **Do not start** until Phases **1–7** are DONE and
 
 | Date | Note |
 |------|------|
+| 2026-08-18 | **Step 7.5 DONE.** Hybrid Console tab: SSH journalctl logs + localhost RCON Send (on-box secret, no Security List 25575). Not a PTY. **NEXT = Step 7.6**. Do not start 7.6 unless asked. |
 | 2026-08-18 | **Step 7.4 DONE.** Manager Object Storage writes for budget, meta (infra + flags on those publishes), and `ip/allowlist.json` use ETag `If-Match`; 412 is a clear conflict error. No `backups` dirty-flag category. **NEXT = Step 7.5**. Do not start 7.5 unless asked. |
 | 2026-08-18 | **Step 7.3 DONE.** Connect existing blocks newer `infra_schema` / document version; extra-confirms older schema, legacy meta, or `stack_version` drift; hydrate refuses incompatible stacks. Auto-detect stays button-gated (no tag rediscovery). **NEXT = Step 7.4**. Do not start 7.4 unless asked. |
 | 2026-08-18 | **Step 7.2 DONE.** Soften Usage / pin / idle MOTD copy for always-on-capable 2/12; 4/24 keeps scarce remaining-hours language; still meters. Live door MOTD needs redeploy. **NEXT = Step 7.3**. Do not start 7.3 unless asked. |
