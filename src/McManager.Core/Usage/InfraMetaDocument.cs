@@ -256,7 +256,8 @@ public sealed class InfraMetaDocument
             + $"Play IP: {play}\n"
             + $"VM1: {vm1}\n"
             + $"Door: {door}\n"
-            + $"Bucket: {bucket}";
+            + $"Bucket: {bucket}\n"
+            + $"Infra schema: {InfraSchemaValue} · stack {StackVersion}";
     }
 
     /// <summary>
@@ -361,8 +362,9 @@ public sealed class InfraMetaDocument
 
     /// <summary>
     /// Soft-validate for Connect existing. Missing required OCIDs are errors (skip stack).
-    /// Schema/version/mode mismatches are warnings (confirm, do not mutate).
-    /// <c>ssh_host</c> may be null.
+    /// Schema/version/mode mismatches are warnings here; ConnectExistingCompatibility
+    /// blocks a newer schema and extra-confirms older schema / stack_version drift.
+    /// Does not mutate. <c>ssh_host</c> may be null.
     /// </summary>
     public IReadOnlyList<string> ValidateForConnect(out IReadOnlyList<string> warnings)
     {

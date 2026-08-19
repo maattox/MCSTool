@@ -58,7 +58,7 @@ Button-gated discovery (`ConnectExistingService`):
 1. Read `%USERPROFILE%\.oci\config` and try each usable profile (region + tenancy + loadable key). Sequential; 429 backoff via `OciSession`.
 2. List compartments; keep display name **`mcmgr`** **or** freeform tag **`mcmgr-domain=mc-server-compartment`**.
 3. In each candidate, look for `meta/infra.json` (prefer bucket `mcmgr-shared-data`, then other buckets in that compartment). Lab buckets may use another name — the object records the live bucket.
-4. Validate required OCIDs. Soft `infra_schema` / document-version mismatch → warn + extra confirm; Connect does **not** publish or mutate meta. Multiple matches → chooser (never first-hit-wins).
+4. Validate required OCIDs. **v1:** `infra_schema` / document version **newer** than this Manager → refuse (do not write `config.local.json`). Older schema, legacy meta, or `stack_version` drift → extra confirm. Connect does **not** publish or mutate meta. Multiple matches → chooser (never first-hit-wins). Auto-detect stays **button-gated** (no launch-time OCI probe; no tag rediscovery when meta is present).
 5. On confirm: write `data/config.local.json` from meta (world_path / unit as recorded — lab may still be `/home/ubuntu/minecraft/server`; greenfield `/opt/mcmgr/`).
 6. If that file already exists: confirm overwrite first. Existing **SSH key path** and **RCON** on this PC are preserved; the operator is prompted to browse a private key only when none is present. OCI profile is the one that found the stack.
 
@@ -105,7 +105,7 @@ Required for early API work:
 
 These fields are hydratable from Object Storage **`meta/infra.json`** (full OCID set in lab `PRODUCT-IDEAS.md` / product [`Contracts-Object-Storage.md`](Contracts-Object-Storage.md)). Local file still holds SSH private key path, OCI profile, and RCON — not Object Storage.
 
-**Connect existing (Phase 5):** First-run **Auto-detect infrastructure** and Advanced **Auto-detect infrastructure** hydrate `config.local.json` from `meta/infra.json` after a confirm (and overwrite confirm if a seed already exists). See [Connect existing](#connect-existing-hydrate-from-metainfrajson) above.
+**Connect existing (Phase 5 / v1 Step 7.3):** First-run **Auto-detect infrastructure** and Advanced **Auto-detect infrastructure** hydrate `config.local.json` from `meta/infra.json` after a confirm (and overwrite confirm if a seed already exists). Newer `infra_schema` / document version refuses; older schema or `stack_version` drift extra-confirms. See [Connect existing](#connect-existing-hydrate-from-metainfrajson) above.
 
 **Manage MVP (Step 2.2):** Advanced tab can **Publish infra meta from local config** to write nested `meta/infra.json` v2 (and migrate a legacy flat v1 object). Refresh reads the bucket object back. Game fields (`server_kind` / `minecraft_version`) are editable on that tab until Setup owns them.
 

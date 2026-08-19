@@ -40,6 +40,10 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>fixtures\packs\%(Filename)%(Extension)</Link>
     </None>
+    <None Include="..\..\tests\fixtures\infra\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>fixtures\infra\%(Filename)%(Extension)</Link>
+    </None>
   </ItemGroup>
 
 </Project>

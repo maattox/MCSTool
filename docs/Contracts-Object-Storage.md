@@ -105,7 +105,7 @@ The operator bucket previously contained a **legacy flat v1** object (`infra_sch
 | `created_at` | UTC timestamp | First creation of this stack metadata |
 | `updated_at` | UTC timestamp | Last successful metadata update |
 
-MVP Connect existing may warn and require confirmation on an unsupported `infra_schema`; it must not silently mutate an incompatible stack. v1 may enforce compatibility more strictly.
+MVP Connect existing warned and required confirmation on an unsupported `infra_schema`; it did not silently mutate an incompatible stack. **v1 (Step 7.3):** Connect **refuses** when `infra_schema` or document `version` is **newer** than this Manager. Older schema, legacy meta, or a different `stack_version` gets an extra confirm. Connect does not publish or migrate meta. Auto-detect stays button-gated.
 
 **Connect existing (Phase 5):** After the operator clicks **Auto-detect infrastructure** (first-run or Advanced — never on launch), Manager locates a product compartment + bucket, **reads** this object, and hydrates `data/config.local.json`. Prefer this object over rediscovering every OCID via tags. Targeted Get-by-OCID to refresh a stale `ssh_host` is allowed. Connect does not publish or migrate meta.
 

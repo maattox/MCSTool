@@ -1,0 +1,69 @@
+{
+  "version": 2,
+  "infra_schema": 2,
+  "stack_version": "0.1.0",
+  "created_at": "2026-08-18T00:00:00Z",
+  "updated_at": "2026-08-18T00:00:00Z",
+  "stack_name": "mcmgr",
+  "mode": "always_free",
+  "region": "us-sanjose-1",
+  "tenancy_id": "ocid1.tenancy.oc1..aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "compartment_id": "ocid1.compartment.oc1..aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "play": {
+    "reserved_public_ip": "203.0.113.10",
+    "reserved_public_ip_id": "ocid1.publicip.oc1..aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "game": {
+    "server_kind": "vanilla",
+    "minecraft_version": "1.21.8"
+  },
+  "network": {
+    "vcn_id": "ocid1.vcn.oc1..aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "subnet_id": "ocid1.subnet.oc1..aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "security_list_id": "ocid1.securitylist.oc1..aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "minecraft_port": 25565,
+    "ssh_port": 22
+  },
+  "vm1": {
+    "instance_id": "ocid1.instance.oc1..aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "display_name": "mcmgr-vm1",
+    "shape": "VM.Standard.A1.Flex",
+    "shape_ocpus": 4.0,
+    "shape_memory_gb": 24.0,
+    "primary_private_ip": "10.0.0.10",
+    "secondary_private_ip": "10.0.0.11",
+    "secondary_private_ip_id": "ocid1.privateip.oc1..aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "ssh_host": "203.0.113.11",
+    "ssh_user": "ubuntu",
+    "world_path": "/opt/mcmgr/server/world",
+    "minecraft_unit": "minecraft"
+  },
+  "door": {
+    "instance_id": "ocid1.instance.oc1..bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "display_name": "mcmgr-door",
+    "primary_private_ip": "10.0.0.20",
+    "secondary_private_ip": "10.0.0.21",
+    "secondary_private_ip_id": "ocid1.privateip.oc1..bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "ssh_host": "203.0.113.21",
+    "ssh_user": "ubuntu",
+    "http_port": 8080
+  },
+  "object_storage": {
+    "namespace": "example-ns",
+    "bucket": "mcmgr-shared-data",
+    "bucket_id": "ocid1.bucket.oc1..aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "soft_cap_gb": 9.5,
+    "backup_enabled": true,
+    "prefixes": {
+      "meta": "meta/",
+      "ledger": "ledger/",
+      "budget": "budget/",
+      "ip": "ip/",
+      "messages": "messages/",
+      "backups": "backups/"
+    }
+  },
+  "ssh": {
+    "private_key_location": "admin_pc_only"
+  }
+}

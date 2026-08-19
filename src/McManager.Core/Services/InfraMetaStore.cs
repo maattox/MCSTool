@@ -120,8 +120,9 @@ public sealed class InfraMetaStore
     }
 
     /// <summary>
-    /// Lenient parse for Connect existing: newer/older schema is a warning, not a hard fail.
-    /// Does not write or migrate the object.
+    /// Parse for Connect existing without writing or migrating. Missing OCIDs skip the stack.
+    /// Newer/older schema stay on the candidate so
+    /// <see cref="ConnectExistingCompatibility"/> can block or extra-confirm.
     /// </summary>
     public static ServiceResult<InfraMetaConnectRead> ParseForConnect(byte[] jsonBytes)
     {

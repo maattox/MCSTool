@@ -132,6 +132,10 @@ public static class ConnectExistingService
         if (candidate.Document is null)
             return ServiceResult<ManagerLocalConfig>.Fail("Candidate has no meta/infra.json document.");
 
+        var compatibility = ConnectExistingCompatibility.Evaluate(candidate);
+        if (compatibility.BlocksConnect)
+            return ServiceResult<ManagerLocalConfig>.Fail(compatibility.HydrateError);
+
         var doc = candidate.Document;
         var needVm1 = string.IsNullOrWhiteSpace(doc.Vm1.SshHost);
         var needDoor = string.IsNullOrWhiteSpace(doc.Door.SshHost);
@@ -534,7 +538,11 @@ public sealed class ConnectExistingCandidate
     public string DedupeKey =>
         $"{TenancyId}|{CompartmentId}|{Bucket}";
 
-    public bool HasSchemaWarning => SchemaWarnings.Count > 0 || IsLegacy;
+    public ConnectExistingDecision Compatibility =>
+        ConnectExistingCompatibility.Evaluate(this);
+
+    public bool HasSchemaWarning => Compatibility.RequiresConfirm;
+    public bool IsIncompatible => Compatibility.BlocksConnect;
 
     public string ChooserLabel
     {
@@ -542,19 +550,27 @@ public sealed class ConnectExistingCandidate
         {
             var play = Document?.Play.ReservedPublicIp;
             var vm1 = Document?.Vm1.DisplayName;
-            var warn = HasSchemaWarning ? " (schema warning)" : "";
+            var warn = Compatibility.Level switch
+            {
+                ConnectExistingCompatibilityLevel.Block => " (incompatible)",
+                ConnectExistingCompatibilityLevel.Warn => " (version warning)",
+                _ => "",
+            };
             return
                 $"{ProfileName} · {Region} · {CompartmentName} · play {play} · {vm1} · {Bucket}{warn}";
         }
     }
 
+    public string IdentitySummary =>
+        Document is null
+            ? $"Profile: {ProfileName}\nRegion: {Region}\nCompartment: {CompartmentName}\nBucket: {Bucket}"
+            : Document.FormatConnectSummary(ProfileName, CompartmentName);
+
     public string ConfirmSummary
     {
         get
         {
-            var body = Document is null
-                ? $"Profile: {ProfileName}\nRegion: {Region}\nCompartment: {CompartmentName}\nBucket: {Bucket}"
-                : Document.FormatConnectSummary(ProfileName, CompartmentName);
+            var body = IdentitySummary;
             if (SchemaWarnings.Count == 0)
                 return body;
             return body + "\n\nWarnings:\n- " + string.Join("\n- ", SchemaWarnings);

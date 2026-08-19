@@ -10,6 +10,7 @@ public enum ConnectExistingOutcome
     Cancelled,
     NoneFound,
     Failed,
+    Incompatible,
     Connected,
 }
 
@@ -77,17 +78,27 @@ public sealed class ConnectExistingFlow
             return ConnectExistingOutcome.Cancelled;
         }
 
-        if (chosen.HasSchemaWarning)
+        var compatibility = chosen.Compatibility;
+        if (compatibility.BlocksConnect)
+        {
+            progress?.Report("Connect refused (incompatible infra schema).");
+            await _dialogs.ShowInfoAsync(
+                compatibility.DialogTitle,
+                compatibility.FormatBody(chosen.IdentitySummary),
+                cancellationToken);
+            return ConnectExistingOutcome.Incompatible;
+        }
+
+        if (compatibility.RequiresConfirm)
         {
             var schemaOk = await _dialogs.ConfirmAsync(
-                "Schema warning — connect anyway?",
-                chosen.ConfirmSummary
-                + "\n\nThis Manager will not modify Object Storage meta or the cloud stack. Continue?",
+                compatibility.DialogTitle,
+                compatibility.FormatBody(chosen.IdentitySummary),
                 confirmButtonText: "Connect anyway",
                 cancellationToken: cancellationToken);
             if (!schemaOk)
             {
-                progress?.Report("Connect cancelled (schema warning).");
+                progress?.Report("Connect cancelled (version warning).");
                 return ConnectExistingOutcome.Cancelled;
             }
         }

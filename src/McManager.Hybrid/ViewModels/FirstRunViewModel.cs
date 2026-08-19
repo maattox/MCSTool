@@ -68,6 +68,8 @@ public sealed partial class FirstRunViewModel : ObservableObject
 
             if (outcome == ConnectExistingOutcome.NoneFound)
                 StatusMessage = "No product stack found. Nothing was written.";
+            else if (outcome == ConnectExistingOutcome.Incompatible)
+                StatusMessage = "Stack is incompatible with this Manager. Nothing was written.";
             else if (outcome == ConnectExistingOutcome.Cancelled)
                 StatusMessage = "Auto-detect cancelled. Nothing was written.";
         }

@@ -264,8 +264,9 @@ On a **new PC** (or after reinstall):
 
 1. Repeat [API key](#api-signing-key--userprofileociconfig) on that PC (same tenancy).
 2. Open Manager with **no** local config → **Find an existing stack** (or Advanced **Auto-detect infrastructure**). The app does **not** scan Oracle on every launch.
-3. Confirm the summary (region, compartment, play IP). Multiple matches get a chooser.
-4. Point at the SSH **private** key when asked. RCON stays local-only.
+3. Confirm the summary (region, compartment, play IP, infra schema / stack version). Multiple matches get a chooser.
+4. If this Manager is **older** than the stack (`infra_schema` or document version newer than the app), Connect **refuses** — update Manager. If the stack is older, or `stack_version` differs, you get an extra warning; Connect still does not change the cloud stack.
+5. Point at the SSH **private** key when asked. RCON stays local-only.
 
 “I already have a stack” skips the scan — only use that if you already placed `config.local.json` by hand.
 

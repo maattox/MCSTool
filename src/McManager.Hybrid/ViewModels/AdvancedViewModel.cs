@@ -177,6 +177,8 @@ public sealed partial class AdvancedViewModel : ObservableObject
 
             if (outcome == ConnectExistingOutcome.NoneFound)
                 StatusMessage = "No product stack found. Existing local config was not changed.";
+            else if (outcome == ConnectExistingOutcome.Incompatible)
+                StatusMessage = "Stack is incompatible with this Manager. Existing local config was not changed.";
             else if (outcome == ConnectExistingOutcome.Cancelled)
                 StatusMessage = "Auto-detect cancelled. Existing local config was not changed.";
         }
