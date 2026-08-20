@@ -204,7 +204,7 @@ When everyone is done, click **Stop** (doorbell-aware). If you forget, idle time
 | Send Minecraft commands / view logs | **Console** (not a live terminal) |
 | Stuck play IP / doorbell | **Troubleshooting** (confirm-gated one-shots) |
 | Technical VM / doorbell state | **Advanced** |
-| Turn idle timer off / change game computer size / delete the stack | **Danger Zone** |
+| Turn idle timer off / idle timeout / change game computer size / delete the stack | **Advanced → Danger Zone** |
 | Program settings / About / notifications | Top-right **bell**, **gear**, and **menu** (native Windows title bar stays) |
 
 **Wipe world** on **Server Management** deletes only the live save on the game VM. Cloud backups, mods, and `server.properties` are not deleted. Download a world save first if you might want the current world back. The game VM must be running; Minecraft is stopped for the wipe and **started again** so a new world generates.
@@ -219,11 +219,11 @@ When everyone is done, click **Stop** (doorbell-aware). If you forget, idle time
 
 **Console** sends Minecraft commands (the same ones you would type in the server console) and shows recent logs from the game computer. Start the server first. A leading `/` is optional. This is not a live terminal, and the RCON port stays local on the game computer — it is not opened on the cloud firewall.
 
-**Advanced vs Danger Zone:** Advanced is power-user tools (technical status, Deploy/repair, break-glass VM power, idle **timeout**, stack identity). **Danger Zone** is a separate tab for turning the idle timer **off** (testing only — boot / Minecraft start turns it back on), **changing the game computer size** (2 OCPU / 12 GB or 4 OCPU / 24 GB), and **Delete infrastructure**. Troubleshooting stays its own tab.
+**Advanced → Danger Zone:** Advanced is power-user tools (technical status, Deploy/repair, break-glass VM power, stack identity). Scroll to the **Danger Zone** heading on the same tab for idle **timeout**, turning the idle timer **off** (testing only — boot / Minecraft start turns it back on), **changing the game computer size** (2 OCPU / 12 GB or 4 OCPU / 24 GB), and **Delete infrastructure**. There is no separate Danger Zone tab. Troubleshooting stays its own tab.
 
 Do not disable the idle timer except for a short test. Booting the game VM turns it back on.
 
-**Change game computer size** on Danger Zone is disabled until the game computer is **Stopped** (use top-bar **Stop** so Minecraft is down too). It updates Oracle A1 Flex OCPU/memory, then local config and shared budget/meta so usage math matches. Past usage rows keep the size they were recorded at. A larger size uses Always Free hours faster (less wall-clock left this month); a smaller size does the reverse. Sizes above 4 OCPU / 24 GB are not offered.
+**Change game computer size** on **Advanced → Danger Zone** is disabled until the game computer is **Stopped** (use top-bar **Stop** so Minecraft is down too). It updates Oracle A1 Flex OCPU/memory, then local config and shared budget/meta so usage math matches. Past usage rows keep the size they were recorded at. A larger size uses Always Free hours faster (less wall-clock left this month); a smaller size does the reverse. Sizes above 4 OCPU / 24 GB are not offered.
 
 **Smaller size (2 OCPU / 12 GB):** hours are still counted, but Manager and the doorbell MOTD use calmer copy because this size can usually stay on all month inside Always Free. The 4 OCPU / 24 GB size still shows remaining-hours and “cap” language — those hours run out faster. Daily-budget-exhausted and spend-brake messages are the same on both sizes.
 
@@ -310,7 +310,7 @@ Guest ACPI SoftStop hang is **not** a silent button — use Oracle Console reset
 
 To wipe the **product stack** on a test tenancy and run Setup again:
 
-1. In Manager, open **Danger Zone**.
+1. In Manager, open **Advanced** and scroll to **Danger Zone**.
 2. Click **Delete infrastructure**.
 3. Read the warning. Type **`confirm`** (lowercase) to enable Delete. This does **not** close your Oracle account.
 4. Keep the window open. The log and percent stay until Oracle finishes deleting (often several minutes). Close is disabled until it succeeds or fails.

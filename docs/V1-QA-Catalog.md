@@ -715,9 +715,9 @@ For each: click the path, then Result Pass or Fail with what you saw.
 
 **Runner:** `operator` · **Duration:** `quick`
 
-**Steps:** Open Whitelist, Usage, Server Management, Console, Troubleshooting, Advanced, **Danger Zone**.
+**Steps:** Open Whitelist, Usage, Server Management, Console, Troubleshooting, Advanced. There is no separate **Danger Zone** tab.
 
-**Expected:** Idle **disable** and **Delete infrastructure** only on Danger Zone. Idle **timeout** on Advanced. Troubleshooting is its own tab.
+**Expected:** Idle **enable/disable**, idle **timeout**, shape scale, and **Delete infrastructure** are under the **Advanced → Danger Zone** heading (typed-`confirm` still required for Delete). Troubleshooting is its own tab.
 
 ### S4-03 — Whitelist add /32
 
@@ -815,7 +815,7 @@ For each: click the path, then Result Pass or Fail with what you saw.
 
 **Runner:** `operator` · **Duration:** `quick`
 
-**Steps:** Disable idle with strong confirm. Confirm Advanced does **not** have this checkbox.
+**Steps:** On **Advanced → Danger Zone**, disable idle with strong confirm. Idle timeout is on that same heading (not higher on Advanced).
 
 **Expected:** Strong warning. Boot/Minecraft start will turn it back on (tell testers).
 

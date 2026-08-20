@@ -3,26 +3,26 @@
 @inject DestroyInfrastructureViewModel Destroy
 @implements IDisposable
 
-<div style="display:flex;flex-direction:column;gap:16px;max-width:100%;">
+<section class="mcm-danger-zone" aria-labelledby="mcm-danger-zone-title">
     <div>
-        <div style="font-size:16px;font-weight:600;">Danger Zone</div>
-        <p style="margin:4px 0 0;font-size:13px;color:var(--text-secondary);">
-            Actions that can turn off Always Free brakes or delete the cloud stack. Idle timeout and break-glass VM power stay on Advanced. Everyday Start / Stop stay on the top bar.
+        <h2 id="mcm-danger-zone-title" class="mcm-danger-zone-title">Danger Zone</h2>
+        <p class="mcm-danger-zone-lede">
+            Idle shutdown, server size, and deleting the cloud stack. These can turn off Always Free brakes or tear the stack down. Break-glass VM power stays above. Everyday Start / Stop stay on the top bar.
         </p>
     </div>
 
     <div class="mcm-danger-card">
         <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
-            <span style="font-size:14px;font-weight:600;">Disable idle shutdown</span>
+            <span class="mcm-danger-card-title">Idle shutdown</span>
             <button type="button"
                     class="mcm-help"
-                    title="The idle timer shuts the game VM down when nobody is playing (or Minecraft is not running) so you stay on Always Free. Disable only for short tests. Starting Minecraft or rebooting the VM turns the timer back on.">
+                    title="The idle timer shuts the server down when nobody is playing (or Minecraft is not running) so you stay on Always Free. Disable only for short tests. Starting Minecraft or rebooting the VM turns the timer back on.">
                 <i class="ti ti-help" aria-hidden="true"></i>
-                <span class="sr-only">About disable idle shutdown</span>
+                <span class="sr-only">About idle shutdown</span>
             </button>
         </div>
-        <p style="margin:0 0 12px;font-size:13px;color:var(--text-secondary);">
-            Testing / troubleshooting only. Unchecking this stops empty-server and daily-budget SoftStop until the next Minecraft boot. Boot force-enables idle (OS-ISSUE-7). Change how long it waits on Advanced.
+        <p style="margin:0 0 12px;font-size:13px;">
+            Testing / troubleshooting only. Unchecking this stops empty-server and daily-budget SoftStop until the next Minecraft boot. Boot force-enables idle (OS-ISSUE-7).
         </p>
         <label class="mcm-checkbox-row" style="margin:0;" for="mcm-dz-idle-enabled">
             <input id="mcm-dz-idle-enabled"
@@ -44,11 +44,39 @@
                 Save changes
             </button>
         </div>
+
+        <div style="display:grid;grid-template-columns:220px 1fr;gap:8px 12px;align-items:center;margin-top:16px;">
+            <label for="mcm-dz-idle-timeout">Idle timeout (minutes)</label>
+            <input id="mcm-dz-idle-timeout"
+                   type="text"
+                   class="mcm-num-input"
+                   style="width:10rem;"
+                   disabled="@Vm.IsBusy"
+                   @bind="Vm.EditIdleTimeout"
+                   @bind:event="oninput" />
+
+            <label for="mcm-dz-budget-warn">Budget warning lead time (minutes)</label>
+            <input id="mcm-dz-budget-warn"
+                   type="text"
+                   class="mcm-num-input"
+                   style="width:10rem;"
+                   disabled="@Vm.IsBusy"
+                   @bind="Vm.EditBudgetWarn"
+                   @bind:event="oninput" />
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">
+            <button type="button"
+                    class="mcm-primary"
+                    disabled="@(!Vm.CanApplyIdleTimeout)"
+                    @onclick="Vm.ApplyIdleTimeoutSettingsAsync">
+                Save timeout
+            </button>
+        </div>
     </div>
 
     <div class="mcm-danger-card">
         <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
-            <span style="font-size:14px;font-weight:600;">Change game computer size</span>
+            <span class="mcm-danger-card-title">Change game computer size</span>
             <button type="button"
                     class="mcm-help"
                     title="Ampere A1 Flex OCPU and memory. Changing size changes how fast Always Free hours burn. The game computer and Minecraft must be Stopped. Past usage rows keep the size they were recorded at. Sizes above 4 OCPU / 24 GB are not offered yet.">
@@ -56,11 +84,11 @@
                 <span class="sr-only">About changing game computer size</span>
             </button>
         </div>
-        <p style="margin:0 0 12px;font-size:13px;color:var(--text-secondary);">
+        <p style="margin:0 0 12px;font-size:13px;">
             Current size: <strong>@Scale.CurrentSizeDisplay</strong>
-            <span style="color:var(--text-muted);"> · VM1 @Scale.Vm1Lifecycle</span>
+            <span> · VM1 @Scale.Vm1Lifecycle</span>
         </p>
-        <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);">
+        <p style="margin:0 0 10px;font-size:13px;">
             Apply is disabled until the game computer is Stopped (top-bar Stop). Minecraft stops with it. Always Free sizes only — not larger than 4 OCPU / 24 GB.
         </p>
         <label class="mcm-radio-row">
@@ -103,12 +131,12 @@
                 Apply size change
             </button>
         </div>
-        <p style="margin:10px 0 0;font-size:13px;color:var(--text-secondary);opacity:0.85;">@Scale.StatusMessage</p>
+        <p style="margin:10px 0 0;font-size:13px;opacity:0.9;">@Scale.StatusMessage</p>
     </div>
 
     <div class="mcm-danger-card">
         <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
-            <span style="font-size:14px;font-weight:600;">Delete infrastructure</span>
+            <span class="mcm-danger-card-title">Delete infrastructure</span>
             <button type="button"
                     class="mcm-help"
                     title="Removes only the product stack this Manager deployed (OpenTofu state on this PC). Does not delete your Oracle tenancy or Oracle’s default account resources.">
@@ -116,7 +144,7 @@
                 <span class="sr-only">About delete infrastructure</span>
             </button>
         </div>
-        <p style="margin:0 0 12px;font-size:13px;color:var(--text-secondary);">
+        <p style="margin:0 0 12px;font-size:13px;">
             Tear down the Always Free stack so you can run Setup again on this tenancy. World backups in shared storage are deleted. This does not close your Oracle account.
         </p>
         <button type="button"
@@ -129,16 +157,13 @@
     </div>
 
     @* v1 later (do not implement here): Paid / spend mode — Step 8.1 *@
-
-    <p style="margin:0;font-size:13px;color:var(--text-secondary);opacity:0.85;">@Vm.StatusMessage</p>
-</div>
+</section>
 
 @code {
     protected override void OnInitialized()
     {
         Vm.PropertyChanged += OnVmChanged;
         Scale.PropertyChanged += OnScaleChanged;
-        _ = Vm.RefreshIdleFromOsAsync();
         _ = Scale.RefreshAsync();
     }
 

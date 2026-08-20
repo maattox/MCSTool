@@ -1,6 +1,6 @@
 # V1 Pass-2 follow-on — operator notes (living)
 
-**Status:** Living. Created 2026-08-20 (docs only). **NEXT = P3.**  
+**Status:** Living. Created 2026-08-20 (docs only). **NEXT = P4.**  
 **Parent:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.4**.  
 **Why now:** operator 2026-08-20 — Pass 2 closed early after greenfield Modded + join + Modding panel. Pause Step **8.5.2** and implement these notes **before** QA Pass 3.
 
@@ -102,8 +102,8 @@ Do **not** rewrite PRODUCT-IDEAS to match. Note the drift in the implementing se
 |----|---------|--------|-----------|----------------|
 | **P1** | Top-bar Start STOPPED gate + spend-brake confirm + player count | **DONE** | SEQUENTIAL | Yes (player count) |
 | **P2** | Setup “Deployment Complete” + reserved IP copy | **DONE** | SEQUENTIAL | No |
-| **P3** | Merge Danger Zone into Advanced + idle only there + vibrant red | **NEXT** | SEQUENTIAL | No |
-| **P4** | Window-locked dismissible action banners | TODO | SEQUENTIAL | No |
+| **P3** | Merge Danger Zone into Advanced + idle only there + vibrant red | **DONE** | SEQUENTIAL | No |
+| **P4** | Window-locked dismissible action banners | **NEXT** | SEQUENTIAL | No |
 | **P5** | “game computer” → “server” (Setup + Manager + Guide) | TODO | SEQUENTIAL | No |
 | **P6** | Console simple vs full log | TODO | SEQUENTIAL | Yes (optional) |
 | **P7** | Per-tab vertical scroll memory | TODO | SEQUENTIAL | No |
@@ -182,7 +182,7 @@ Keep the deploy log available (below or collapsed). Do not dump OCIDs. Use “se
 
 ## P3 — Merge Danger Zone into Advanced
 
-**Status:** NEXT  
+**Status:** DONE  
 **Catalog IDs:** S4-02 (update **expected** — product change)
 
 **Read first**
@@ -209,13 +209,13 @@ Keep the deploy log available (below or collapsed). Do not dump OCIDs. Use “se
 
 **Done when:** Guide + catalog S4-02 match; CSS tokens updated.
 
-**Changelog:** *(empty)*
+**Changelog:** 2026-08-20 — Removed Danger Zone tab. Idle enable + timeout, shape, and Delete sit under **Advanced → Danger Zone**. Tokens `--bg-danger: #5c1e24`, `--border-danger: #e05a52`, heading `--text-danger-bright`. Wipe World fill unchanged. Catalog S4-02 / S4-18 expected updated. Guide.
 
 ---
 
 ## P4 — Window-locked dismissible action banners
 
-**Status:** TODO  
+**Status:** NEXT  
 **Catalog IDs:** Server Management wipe path (S3-07 adjacent)
 
 **Read first**
@@ -533,6 +533,7 @@ Derive OCIR username from namespace + OCI user **if that is a small change**; ot
 
 | Date | Note |
 |------|------|
+| 2026-08-20 | **P3 DONE.** Danger Zone merged into Advanced; idle only under that heading; vibrant redstone plate. **NEXT = P4.** Do not start Pass 3, 8.6.1, or 9.1. |
 | 2026-08-20 | **P2 DONE.** Setup **Deployment Complete** + reserved play IP Copy + Close. **NEXT = P3.** Do not start Pass 3, 8.6.1, or 9.1. |
 | 2026-08-20 | **P1 DONE.** Start STOPPED gate; overlay unlock-only; Players pin. **NEXT = P2.** Do not start Pass 3, 8.6.1, or 9.1. |
 | 2026-08-20 | **Created** (docs only). **NEXT = P1.** Pass 2 closed early; Step **8.5.2** paused. Pack replace pulled into v1 (full re-setup). Tab completion, light-swap, and 8.6.1 CI parked. Do not start Pass 3, 8.6.1, or 9.1. |

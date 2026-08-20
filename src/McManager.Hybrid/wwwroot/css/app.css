@@ -8,7 +8,7 @@
     --surface-2: #262d38;
     --border: #323a48;
     --border-strong: #4a5466;
-    --border-danger: #7a3a3a;
+    --border-danger: #e05a52;
     --text-primary: #e7ebf0;
     --text-secondary: #9aa4b2;
     --text-muted: #6e7888;
@@ -19,7 +19,9 @@
     --fill-accent: #4d8ef5;
     --fill-success: #2f9e5f;
     --fill-danger: #c94c4c;
-    --bg-danger: #2a1c1c;
+    --bg-danger: #5c1e24;
+    --text-danger-bright: #ff7a72;
+    --text-danger-muted: #efc6c2;
     --power-disabled-bg: #2a303a;
     --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
     --font-mono: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
@@ -1026,11 +1028,57 @@ button.mcm-btn-disabled:hover {
     padding: 1rem;
 }
 
+.mcm-danger-zone {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 12px;
+    padding-top: 8px;
+}
+
+.mcm-danger-zone-title {
+    margin: 0;
+    font: inherit;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: var(--text-danger-bright);
+}
+
+.mcm-danger-zone-lede {
+    margin: 6px 0 0;
+    font-size: 13px;
+    color: var(--text-danger-muted);
+}
+
 .mcm-danger-card {
     background: var(--bg-danger);
     border: 1px solid var(--border-danger);
     border-radius: var(--radius);
     padding: 1rem;
+}
+
+.mcm-danger-card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-danger-bright);
+}
+
+.mcm-danger-card p,
+.mcm-danger-card .mcm-radio-note {
+    color: var(--text-danger-muted);
+}
+
+.mcm-danger-card strong {
+    color: var(--text-primary);
+}
+
+.mcm-danger-card .mcm-help {
+    color: var(--text-danger-muted);
+}
+
+.mcm-danger-card .mcm-help:hover:not(:disabled) {
+    background: rgba(255, 122, 114, 0.14);
 }
 
 .mcm-danger-btn {

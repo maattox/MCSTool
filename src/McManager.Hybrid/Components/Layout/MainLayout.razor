@@ -297,13 +297,6 @@
         </button>
         <button type="button"
                 role="tab"
-                class="mcm-tab @TabClass("danger")"
-                aria-selected="@(IsTab("danger") ? "true" : "false")"
-                @onclick="@(() => SelectTab("danger"))">
-            Danger Zone
-        </button>
-        <button type="button"
-                role="tab"
                 class="mcm-tab @TabClass("troubleshooting")"
                 aria-selected="@(IsTab("troubleshooting") ? "true" : "false")"
                 @onclick="@(() => SelectTab("troubleshooting"))">
@@ -326,9 +319,6 @@
                     break;
                 case "advanced":
                     <AdvancedTab />
-                    break;
-                case "danger":
-                    <DangerZoneTab />
                     break;
                 case "troubleshooting":
                     <TroubleshootingTab />
