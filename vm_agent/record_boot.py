@@ -7,6 +7,9 @@ lease/list-boots → repair uncertain → fill missing boots → detect live sha
 
 Also force-enables the idle agent (timer + local/OS config) so a forgotten
 Danger Zone disable cannot leave free-tier SoftStop brakes off after reboot.
+
+Messages identity (motd/icon) is force-pulled at the start of this oneshot.
+The unit is Before=minecraft.service so Java sees the new files this start.
 """
 
 from __future__ import annotations

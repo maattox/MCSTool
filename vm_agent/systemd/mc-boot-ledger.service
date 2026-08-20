@@ -1,10 +1,15 @@
 [Unit]
 Description=Record Minecraft boot in usage ledger
-After=minecraft.service
-Requires=minecraft.service
+After=network-online.target
+Wants=network-online.target
+# Identity (motd/icon) must land on disk before Java reads server.properties.
+# Vanilla rewrites that file on stop from in-memory values, so After=minecraft
+# made every start load the previous identity (S4-12 / OS-ISSUE-10).
+Before=minecraft.service
 
 [Service]
 Type=oneshot
+TimeoutStartSec=120
 Environment=MC_MANAGER_CONFIG=/etc/mc-manager/config.json
 Environment=PYTHONPATH=/opt/mc-manager/lib
 ExecStart=/opt/mc-manager/venv/bin/python /opt/mc-manager/bin/record_boot.py

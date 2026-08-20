@@ -272,7 +272,9 @@ def pull_messages_if_dirty(cfg: dict[str, Any], *, force: bool = False) -> str:
     """Download messages/chat.json when messages.vm1 is dirty (or force on boot).
 
     Merges chat templates into local idle-agent config and applies motd/icon
-    under the Minecraft server directory. Takes effect on the next Minecraft start.
+    under the Minecraft server directory. systemd runs this Before=minecraft
+    so this start loads the new identity (Vanilla rewrites server.properties
+    on stop from in-memory values).
     """
     ns_bucket = _ns_bucket(cfg)
     if ns_bucket is None:

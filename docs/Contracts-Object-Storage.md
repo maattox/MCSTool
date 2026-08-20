@@ -496,7 +496,7 @@ A leftover object may still exist in some buckets from V1 Step 3.1 (`version`, `
 }
 ```
 
-- Manager is the intended writer; VM1 is the consumer (Minecraft boot / `record_boot.py` force-pull).
+- Manager is the intended writer; VM1 is the consumer (`mc-boot-ledger.service` force-pulls **before** Java starts so this Minecraft process loads the new MOTD/icon).
 - **v1 (Step 7.6):** additive identity fields on the same document version: `server_name`, `description` (plain-text MOTD; name then description as two lines), optional `icon_object` pointing at `messages/server-icon.png` (64×64 PNG). Door MOTD/favicon while idle is **not** this object (operational copy stays in `mcdoor`).
 - Unknown/missing template keys fall back to built-in defaults. `idle_stop_inactive` is additive; older seeds without it still work.
 - Invalid format placeholders must not crash the agent; current formatter returns the unformatted template.

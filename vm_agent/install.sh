@@ -45,6 +45,7 @@ chmod 644 "${OPT}/lib/ledger.py" "${OPT}/lib/rcon_client.py"
 [[ -f "${OPT}/lib/world_backup.py" ]] && chmod 644 "${OPT}/lib/world_backup.py"
 # Normalize CRLF if files were uploaded from Windows
 sed -i 's/\r$//' "${OPT}/bin/graceful_stop.sh" "${OPT}/install.sh" 2>/dev/null || true
+sed -i 's/\r$//' "${OPT}/bin/"*.py "${OPT}/lib/"*.py 2>/dev/null || true
 
 # Python venv + oci SDK (for instance principal stop / Object Storage publish)
 if [[ ! -x "${OPT}/venv/bin/python" ]]; then
@@ -68,6 +69,16 @@ fi
 if [[ -f "${OPT}/mc-boot-ledger.service" ]]; then
   cp -f "${OPT}/mc-boot-ledger.service" /etc/systemd/system/mc-boot-ledger.service
 fi
+
+# Existing VMs keep a generated minecraft.service; the drop-in makes Java wait
+# for identity apply without rewriting ExecStart. Greenfield template has the
+# same After=/Wants= (onbox/mcmgr/templates/minecraft.service.in).
+mkdir -p /etc/systemd/system/minecraft.service.d
+cat > /etc/systemd/system/minecraft.service.d/mcmgr-identity.conf <<'EOF'
+[Unit]
+After=mc-boot-ledger.service
+Wants=mc-boot-ledger.service
+EOF
 
 # Ensure config exists
 if [[ ! -f "${ETC}/config.json" ]]; then
