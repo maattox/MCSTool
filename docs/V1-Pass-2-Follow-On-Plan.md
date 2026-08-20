@@ -1,6 +1,6 @@
 # V1 Pass-2 follow-on — operator notes (living)
 
-**Status:** Living. Created 2026-08-20 (docs only). **NEXT = P5.**  
+**Status:** Living. Created 2026-08-20 (docs only). **NEXT = P6.**  
 **Parent:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.4**.  
 **Why now:** operator 2026-08-20 — Pass 2 closed early after greenfield Modded + join + Modding panel. Pause Step **8.5.2** and implement these notes **before** QA Pass 3.
 
@@ -104,8 +104,8 @@ Do **not** rewrite PRODUCT-IDEAS to match. Note the drift in the implementing se
 | **P2** | Setup “Deployment Complete” + reserved IP copy | **DONE** | SEQUENTIAL | No |
 | **P3** | Merge Danger Zone into Advanced + idle only there + vibrant red | **DONE** | SEQUENTIAL | No |
 | **P4** | Window-locked dismissible action banners | **DONE** | SEQUENTIAL | No |
-| **P5** | “game computer” → “server” (Setup + Manager + Guide) | **NEXT** | SEQUENTIAL | No |
-| **P6** | Console simple vs full log | TODO | SEQUENTIAL | Yes (optional) |
+| **P5** | “game computer” → “server” (Setup + Manager + Guide) | **DONE** | SEQUENTIAL | No |
+| **P6** | Console simple vs full log | **NEXT** | SEQUENTIAL | Yes (optional) |
 | **P7** | Per-tab vertical scroll memory | TODO | SEQUENTIAL | No |
 | **P8** | Usage by day (collapsed “Detailed usage”) | TODO | SEQUENTIAL | No |
 | **P9** | Manual / jar-root unclear-side: continue + exclude lists | TODO | PARALLEL-OK vs Hybrid-only | No |
@@ -252,7 +252,7 @@ Reuse one Hybrid mechanism; migrate Server Management first, then other manage t
 
 ## P5 — “game computer” → “server”
 
-**Status:** NEXT  
+**Status:** DONE  
 
 **Read first**
 
@@ -273,7 +273,7 @@ Do not rewrite the whole blueprint or PRODUCT-IDEAS. Do not change OCI shape nam
 
 **Done when:** Guide uses “server” on those paths.
 
-**Changelog:** *(empty)*
+**Changelog:** 2026-08-20 — User-visible **game computer** → **server** in Setup, Manager Hybrid, Core UX strings (`Vm1ShapeScaleUx`, `SetupPackImport`, Console, shape picker), and Guide. Technical **game VM** / **VM1** labels unchanged. `Vm1ShapeScaleUxTests` updated. Drift vs PRODUCT-IDEAS (novice “server” wording) now reflected in Guide.
 
 ---
 
@@ -533,6 +533,7 @@ Derive OCIR username from namespace + OCI user **if that is a small change**; ot
 
 | Date | Note |
 |------|------|
+| 2026-08-20 | **P5 DONE.** “game computer” → “server” (Setup + Manager + Guide). **NEXT = P6.** Do not start Pass 3, 8.6.1, or 9.1. |
 | 2026-08-20 | **P4 DONE.** Window-locked dismissible action banners (not auto-hide for long/error). **NEXT = P5.** Do not start Pass 3, 8.6.1, or 9.1. |
 | 2026-08-20 | **P3 DONE.** Danger Zone merged into Advanced; idle only under that heading; vibrant redstone plate. **NEXT = P4.** Do not start Pass 3, 8.6.1, or 9.1. |
 | 2026-08-20 | **P2 DONE.** Setup **Deployment Complete** + reserved play IP Copy + Close. **NEXT = P3.** Do not start Pass 3, 8.6.1, or 9.1. |

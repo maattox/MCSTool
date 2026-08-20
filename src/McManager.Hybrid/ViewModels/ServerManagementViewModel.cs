@@ -130,7 +130,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject
     public string WorldBackupsHelpTitle => OversizedWorldBackupUx.HelpTitle;
 
     public string IdentityHelpTitle =>
-        "Name and description show in Minecraft’s server list when the game is running (plain text, two lines). The 64×64 PNG is the list icon. Automated chat is what the idle timer says in-game before a stop. Save, then Restart Minecraft (or Start) to apply. The doorbell MOTD while the game computer is off is not edited here.";
+        "Name and description show in Minecraft’s server list when the game is running (plain text, two lines). The 64×64 PNG is the list icon. Automated chat is what the idle timer says in-game before a stop. Save, then Restart Minecraft (or Start) to apply. The doorbell MOTD while the server is off is not edited here.";
 
     public string MotdPreview => ServerIdentityUx.BuildMotd(IdentityName, IdentityDescription);
 

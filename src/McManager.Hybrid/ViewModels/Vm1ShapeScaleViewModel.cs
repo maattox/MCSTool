@@ -31,7 +31,7 @@ public sealed partial class Vm1ShapeScaleViewModel : ObservableObject
     private bool _isBusy;
 
     [ObservableProperty]
-    private string _statusMessage = "Game computer size is an Always Free setting. Apply only while the game computer is Stopped.";
+    private string _statusMessage = "Server size is an Always Free setting. Apply only while the server is Stopped.";
 
     [ObservableProperty]
     private string _vm1Lifecycle = "—";
@@ -150,7 +150,7 @@ public sealed partial class Vm1ShapeScaleViewModel : ObservableObject
             await PullBudgetAsync();
             StatusMessage =
                 $"Current size {CurrentSizeDisplay} (VM1 {Vm1Lifecycle}). "
-                + "Apply is disabled unless the game computer is Stopped.";
+                + "Apply is disabled unless the server is Stopped.";
         }
         finally
         {
@@ -182,7 +182,7 @@ public sealed partial class Vm1ShapeScaleViewModel : ObservableObject
         var targetO = TargetOcpus;
         var targetM = TargetMemoryGb;
         var confirmed = await _dialogs.ConfirmAsync(
-            "Danger Zone — change game computer size?",
+            "Danger Zone — change server size?",
             Vm1ShapeScaleUx.ConfirmMessage(
                 CurrentOcpus,
                 CurrentMemoryGb,

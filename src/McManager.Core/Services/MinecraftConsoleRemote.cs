@@ -21,7 +21,7 @@ public static class MinecraftConsoleRemote
 
     public const string HelpTitle =
         "Send commands as if you typed them in the Minecraft server console. "
-        + "Recent logs are from the game computer. This is not a live terminal.";
+        + "Recent logs are from the server. This is not a live terminal.";
 
     public const string Intro =
         "Send Minecraft commands and read recent logs. Start the server first. "
@@ -31,7 +31,7 @@ public static class MinecraftConsoleRemote
         "No log lines yet. Start the server, then Refresh.";
 
     public const string VmStoppedHint =
-        "Start the server first. Console needs the game computer up.";
+        "Start the server first. Console needs the server running.";
 
     public const string MinecraftStoppedHint =
         "Minecraft is stopped. Start the server, then send commands.";

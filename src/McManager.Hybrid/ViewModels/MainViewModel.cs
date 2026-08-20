@@ -180,7 +180,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     public string StartToolTip => CanStart
         ? (string.Equals(DoorState, "DEGRADED", StringComparison.OrdinalIgnoreCase)
-            ? "The game computer is on but not joinable. Start retries the wake path."
+            ? "The server is on but not joinable. Start retries the wake path."
             : "Start the Minecraft server so friends can connect.")
         : StartDisabledReason;
 

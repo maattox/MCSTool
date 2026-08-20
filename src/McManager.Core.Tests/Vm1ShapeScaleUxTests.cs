@@ -20,7 +20,7 @@ public sealed class Vm1ShapeScaleUxTests
     {
         Assert.False(Vm1ShapeScaleUx.CanApply("STOPPED", 4, 24, 4, 24));
         Assert.False(Vm1ShapeScaleUx.CanApply("STOPPED", 2.0, 12.0, 2, 12));
-        Assert.Equal("The game computer is already this size.",
+        Assert.Equal("The server is already this size.",
             Vm1ShapeScaleUx.ApplyBlockedReason("STOPPED", 4, 24, 4, 24));
     }
 

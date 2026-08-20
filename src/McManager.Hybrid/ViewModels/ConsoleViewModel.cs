@@ -54,7 +54,7 @@ public sealed partial class ConsoleViewModel : ObservableObject, IDisposable
 
     public string RefreshTitle =>
         CanRefresh
-            ? "Reload recent Minecraft logs from the game computer."
+            ? "Reload recent Minecraft logs from the server."
             : (Vm1IsRunning ? "Working…" : MinecraftConsoleRemote.VmStoppedHint);
 
     public string SendTitle
@@ -121,7 +121,7 @@ public sealed partial class ConsoleViewModel : ObservableObject, IDisposable
         if (_config is null)
             StatusMessage = "Local config is missing.";
         else if (string.IsNullOrWhiteSpace(_config.Vm1.SshHost))
-            StatusMessage = "No SSH host for the game computer.";
+            StatusMessage = "No SSH host for the server.";
         else
             StatusMessage = MinecraftConsoleRemote.Intro;
         NotifyDerived();

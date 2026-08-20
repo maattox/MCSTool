@@ -41,7 +41,7 @@ public static class SetupPackImport
     /// </summary>
     public const string OverrideListMisdeclarationCopy =
         "This pack marks some mods as needed on the server that are known client-only mods. "
-        + "Setup will skip those on the game computer. If the server fails to start, check this skipped list first.";
+        + "Setup will skip those on the server. If the server fails to start, check this skipped list first.";
 
     public const int OverrideListExampleCap = 6;
 

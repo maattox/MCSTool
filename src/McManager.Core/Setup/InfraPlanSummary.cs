@@ -42,7 +42,7 @@ public static class InfraPlanSummary
             + $"  {compartment}\n"
             + $"  Budget alert email: {email}\n"
             + $"  SSH: {ssh}\n"
-            + $"  Game computer size: {shape} ({hours})\n"
+            + $"  Server size: {shape} ({hours})\n"
             + $"  Game: {flavor} {version} (EULA {(state.EulaAccepted ? "accepted" : "not accepted")})\n"
             + friendsLine
             + $"  OCIR Auth Token stored: {(state.AuthTokenStored ? "yes (Windows Credential Manager McManager/ocir)" : "no — optional until Function push")}\n\n"

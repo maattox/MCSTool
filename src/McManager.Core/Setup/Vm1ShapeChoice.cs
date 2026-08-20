@@ -38,6 +38,6 @@ public static class Vm1ShapeChoice
         var n = Normalize(ocpus, memoryGb);
         return n.Ocpus == SmallerOcpus
             ? "smaller Always Free size — Vanilla can often stay on all month; less room if you add mods or more players later"
-            : "recommended — more room for players and later mods; uses Always Free hours faster while the game computer is on";
+            : "recommended — more room for players and later mods; uses Always Free hours faster while the server is on";
     }
 }

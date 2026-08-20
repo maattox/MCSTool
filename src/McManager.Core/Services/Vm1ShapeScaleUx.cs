@@ -88,12 +88,12 @@ public static class Vm1ShapeScaleUx
             return "That size is not offered. Always Free stays at 2 OCPU / 12 GB or 4 OCPU / 24 GB.";
 
         if (ShapeEquals(currentOcpus, currentMemoryGb, targetOcpus, targetMemoryGb))
-            return "The game computer is already this size.";
+            return "The server is already this size.";
 
         if (!IsVm1Stopped(vm1Lifecycle))
         {
             var state = string.IsNullOrWhiteSpace(vm1Lifecycle) ? "unknown" : vm1Lifecycle.Trim();
-            return "Stop the server from the top bar first (game computer must be Stopped). "
+            return "Stop the server from the top bar first (it must be fully Stopped). "
                 + "Minecraft stops with it. Current VM1 state: " + state + ".";
         }
 
@@ -134,7 +134,7 @@ public static class Vm1ShapeScaleUx
         double monthOcpuUsed)
     {
         return
-            "This changes how fast Always Free Ampere hours burn while the game computer is on.\n\n"
+            "This changes how fast Always Free Ampere hours burn while the server is on.\n\n"
             + PreviewBody(
                 currentOcpus,
                 currentMemoryGb,
@@ -142,7 +142,7 @@ public static class Vm1ShapeScaleUx
                 targetMemoryGb,
                 monthlyOcpuTarget,
                 monthOcpuUsed)
-            + "\n\nThe game computer and Minecraft must stay Stopped during the Oracle resize. "
+            + "\n\nThe server and Minecraft must stay Stopped during the Oracle resize. "
             + "Larger than 4 OCPU / 24 GB is not offered until the Always Free envelope is confirmed.\n\n"
             + "Apply this size in Oracle and update shared budget/meta?";
     }

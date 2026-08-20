@@ -452,7 +452,7 @@
                                @bind="Vm.AdminCidr"
                                @bind:event="oninput" />
                     </div>
-                    <p class="mcm-wizard-hint">Game computer size (Always Free Ampere A1). This is chosen once at deploy — not a later resize.</p>
+                    <p class="mcm-wizard-hint">Server size (Always Free Ampere A1). This is chosen once at deploy — not a later resize.</p>
                     <label class="mcm-radio-row">
                         <input type="radio"
                                name="mcm-setup-vm1-shape"
@@ -461,7 +461,7 @@
                                @onchange="@(() => Vm.SelectDefaultVm1Shape())" />
                         <span>
                             4 OCPU / 24 GB (recommended)
-                            <span class="mcm-radio-note">More room for players and later mods. Uses Always Free hours faster while the game computer is on.</span>
+                            <span class="mcm-radio-note">More room for players and later mods. Uses Always Free hours faster while the server is on.</span>
                         </span>
                     </label>
                     <label class="mcm-radio-row">

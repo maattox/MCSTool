@@ -138,7 +138,7 @@ Walk the wizard. You can close and resume later from **Advanced → Deploy / rep
 | Game | **Vanilla** or **Modded**. Vanilla: **Default Vanilla** (official Mojang) or **Optimized Vanilla** (Paper), then pick a **release**. Snapshots are Advanced and apply only to Default Vanilla. Paper’s list hides versions Paper does not build. Paper is a faster server, not a Forge/Fabric modpack. **Modded:** choose a local **`.mrpack` or server-pack zip** (file picker or drag-and-drop). Setup analyzes it and shows name, Minecraft version, loader, Java, and file counts. Confirm two checkboxes, including that you will give friends the **same exported pack**. There is no pack search box. Prefer a **Modrinth `.mrpack`**, or a CurseForge **Server Files** zip (the jars are already inside). CurseForge *client* exports (manifest IDs, no jars) are refused — download Server Files from that pack’s CurseForge page instead. Quilt packs are detected but not installable yet. Details: [Modded: friends need the client pack](#modded-friends-need-the-client-pack). |
 | EULA | Open and accept the [Minecraft EULA](https://aka.ms/MinecraftEULA). Setup will not auto-accept it. |
 | Auth Token | Paste the token and **Store token**. Needed to install the $1 spend-brake Function (copy a pre-built image into your registry). Skip only if you accept that the Function may not install this run. You do **not** need Docker Desktop. |
-| Summary | Confirm **your public IPv4** as `x.x.x.x/32`. Pick the game computer size (**4 OCPU / 24 GB** recommended, or **2 OCPU / 12 GB**). Read the plan. Check the create-resources box. Click **Deploy**. |
+| Summary | Confirm **your public IPv4** as `x.x.x.x/32`. Pick the server size (**4 OCPU / 24 GB** recommended, or **2 OCPU / 12 GB**). Read the plan. Check the create-resources box. Click **Deploy**. |
 
 **After Deploy starts:** Back and Deploy stay locked. Do not start a second Deploy. Resume / Re-Deploy is a separate Advanced action.
 
@@ -160,7 +160,7 @@ A **Modded** server is **not playable** until friends install the **same exporte
 
 - Keep that file. Manager also saves a copy on this PC; **Server Management → Download pack** copies that original archive (not a zip of server mods).
 - Tell friends the pack **name**, **Minecraft version**, and **loader** (Fabric / Forge / NeoForge) shown in Setup, and give them the original export.
-- This app **cannot** rebuild a client pack from the `mods/` folder on the game computer. Setup installs **server-side** mods only and skips client-only files, so a zip of the live server mods is **not** a playable pack for friends.
+- This app **cannot** rebuild a client pack from the `mods/` folder on the server. Setup installs **server-side** mods only and skips client-only files, so a zip of the live server mods is **not** a playable pack for friends.
 
 Some packs mark client-only mods as required on the server. Setup skips those known names automatically, shows a warning with examples, and still lets you continue. If the game later fails to start, check that skipped list first.
 
@@ -204,7 +204,7 @@ When everyone is done, click **Stop** (doorbell-aware). If you forget, idle time
 | Send Minecraft commands / view logs | **Console** (not a live terminal) |
 | Stuck play IP / doorbell | **Troubleshooting** (confirm-gated one-shots) |
 | Technical VM / doorbell state | **Advanced** |
-| Turn idle timer off / idle timeout / change game computer size / delete the stack | **Advanced → Danger Zone** |
+| Turn idle timer off / idle timeout / change server size / delete the stack | **Advanced → Danger Zone** |
 | Program settings / About / notifications | Top-right **bell**, **gear**, and **menu** (native Windows title bar stays) |
 
 **Wipe world** on **Server Management** deletes only the live save on the game VM. Cloud backups, mods, and `server.properties` are not deleted. Download a world save first if you might want the current world back. The game VM must be running; Minecraft is stopped for the wipe and **started again** so a new world generates. If the server is off, that warning (and other button results) shows in a banner **locked to the bottom of the Manager window** — read it, then **X** to dismiss. Short successes such as copying the play IP still fade on their own. Setup keeps its footer status.
@@ -215,15 +215,15 @@ When everyone is done, click **Stop** (doorbell-aware). If you forget, idle time
 
 **Modding** on the same tab: Vanilla and Paper show a short “not a modded server” note. On a Modded stack you can inspect the server-side files in `mods/` (game VM must be running) and **Download pack** — that copies the **original imported archive** saved on this PC, not a zip of the live server mods (that zip would not work for friends). If the original file is missing from this PC, Manager cannot rebuild a client pack.
 
-**Name, icon, and messages** on Server Management: set the name and description friends see in their Minecraft server list (plain text, two lines), pick a **64×64 PNG** icon, and optionally edit the automated chat lines used before an idle or budget stop. Save writes the shared copy. **Restart** Minecraft (or **Start**) applies it. The doorbell message while the game computer is off is not edited here.
+**Name, icon, and messages** on Server Management: set the name and description friends see in their Minecraft server list (plain text, two lines), pick a **64×64 PNG** icon, and optionally edit the automated chat lines used before an idle or budget stop. Save writes the shared copy. **Restart** Minecraft (or **Start**) applies it. The doorbell message while the server is off is not edited here.
 
-**Console** sends Minecraft commands (the same ones you would type in the server console) and shows recent logs from the game computer. Start the server first. A leading `/` is optional. This is not a live terminal, and the RCON port stays local on the game computer — it is not opened on the cloud firewall.
+**Console** sends Minecraft commands (the same ones you would type in the server console) and shows recent logs from the server. Start the server first. A leading `/` is optional. This is not a live terminal, and the RCON port stays local on the server — it is not opened on the cloud firewall.
 
-**Advanced → Danger Zone:** Advanced is power-user tools (technical status, Deploy/repair, break-glass VM power, stack identity). Scroll to the **Danger Zone** heading on the same tab for idle **timeout**, turning the idle timer **off** (testing only — boot / Minecraft start turns it back on), **changing the game computer size** (2 OCPU / 12 GB or 4 OCPU / 24 GB), and **Delete infrastructure**. There is no separate Danger Zone tab. Troubleshooting stays its own tab.
+**Advanced → Danger Zone:** Advanced is power-user tools (technical status, Deploy/repair, break-glass VM power, stack identity). Scroll to the **Danger Zone** heading on the same tab for idle **timeout**, turning the idle timer **off** (testing only — boot / Minecraft start turns it back on), **changing the server size** (2 OCPU / 12 GB or 4 OCPU / 24 GB), and **Delete infrastructure**. There is no separate Danger Zone tab. Troubleshooting stays its own tab.
 
 Do not disable the idle timer except for a short test. Booting the game VM turns it back on.
 
-**Change game computer size** on **Advanced → Danger Zone** is disabled until the game computer is **Stopped** (use top-bar **Stop** so Minecraft is down too). It updates Oracle A1 Flex OCPU/memory, then local config and shared budget/meta so usage math matches. Past usage rows keep the size they were recorded at. A larger size uses Always Free hours faster (less wall-clock left this month); a smaller size does the reverse. Sizes above 4 OCPU / 24 GB are not offered.
+**Change server size** on **Advanced → Danger Zone** is disabled until the server is **Stopped** (use top-bar **Stop** so Minecraft is down too). It updates Oracle A1 Flex OCPU/memory, then local config and shared budget/meta so usage math matches. Past usage rows keep the size they were recorded at. A larger size uses Always Free hours faster (less wall-clock left this month); a smaller size does the reverse. Sizes above 4 OCPU / 24 GB are not offered.
 
 **Smaller size (2 OCPU / 12 GB):** hours are still counted, but Manager and the doorbell MOTD use calmer copy because this size can usually stay on all month inside Always Free. The 4 OCPU / 24 GB size still shows remaining-hours and “cap” language — those hours run out faster. Daily-budget-exhausted and spend-brake messages are the same on both sizes.
 
@@ -271,7 +271,7 @@ Always Free Object Storage on a paid/PAYG tenancy is small (**10 GB** Standard, 
 
 Manager updates to **budget config**, **stack identity** (`meta/infra.json`), and the shared **IP allowlist** use a conditional write (ETag). If the game VM or another Manager copy changed the object first, Save fails with a refresh-and-retry message instead of silently overwriting. `ip/mode.json` is not written.
 
-A single world zip larger than the soft cap is **not** uploaded (an on-box flag is set). Manager then offers an SSH live-world download from Server Management when the game computer is up.
+A single world zip larger than the soft cap is **not** uploaded (an on-box flag is set). Manager then offers an SSH live-world download from Server Management when the server is up.
 
 Do not put SSH private keys, API keys, Auth Tokens, or RCON passwords in the bucket.
 
