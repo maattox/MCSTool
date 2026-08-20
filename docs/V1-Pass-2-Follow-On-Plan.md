@@ -1,7 +1,7 @@
 # V1 Pass-2 follow-on — operator notes (living)
 
-**Status:** Living. Created 2026-08-20 (docs only). **NEXT = P6.**  
-**Parent:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.4**.  
+**Status:** Living. Created 2026-08-20 (docs only). **NEXT = P7.**  
+**Parent:** `[V1-Implementation-Plan.md](V1-Implementation-Plan.md)` Step **8.4**.  
 **Why now:** operator 2026-08-20 — Pass 2 closed early after greenfield Modded + join + Modding panel. Pause Step **8.5.2** and implement these notes **before** QA Pass 3.
 
 This file’s creation session **must not implement code**. Later agents implement **only the single section marked NEXT**.
@@ -15,17 +15,21 @@ This file’s creation session **must not implement code**. Later agents impleme
 
 ---
 
+
+
 ## How agents must use this file
 
-1. Read **this protocol**, the [Progress dashboard](#progress-dashboard), and **only the NEXT section**.  
-2. Implement only that section. Do not start neighbors “while you are here.”  
-3. After finishing: mark **DONE**, set the next incomplete section to **NEXT**, changelog line, update V1 plan Step **8.4** + dashboard, **stop**.  
-4. If you change a test VM or TESTING cloud resource, make the **same** change in local SoT (`onbox/`, `infra/`, `door_vm/`, `vm_agent/`, `functions/shutdown_vm/`, Manager/Setup). File lab [`docs/Issues.md`](../../OCI-mc-server-manager/docs/Issues.md) for on-box/Setup/door bugs.  
-5. Never create git commits. Suggest a message.  
-6. Do **not** start Step **8.5.2** (Pass 3), **8.6.1** (CI Function pipeline), or **9.1**. P13 is a **Setup lookup** for a pre-built image, not the CI/Release work in 8.6.1.  
-7. If this plan disagrees with lab `PRODUCT-IDEAS.md`, **follow this plan** and note drift (do not rewrite PRODUCT-IDEAS to match).  
-8. VM1: START if needed, **disable idle** while working, **re-enable** when finished (re-disable after Minecraft start — OS-ISSUE-7).  
+1. Read **this protocol**, the [Progress dashboard](#progress-dashboard), and **only the NEXT section**.
+2. Implement only that section. Do not start neighbors “while you are here.”
+3. After finishing: mark **DONE**, set the next incomplete section to **NEXT**, changelog line, update V1 plan Step **8.4** + dashboard, **stop**.
+4. If you change a test VM or TESTING cloud resource, make the **same** change in local SoT (`onbox/`, `infra/`, `door_vm/`, `vm_agent/`, `functions/shutdown_vm/`, Manager/Setup). File lab `[docs/Issues.md](../../OCI-mc-server-manager/docs/Issues.md)` for on-box/Setup/door bugs.
+5. Never create git commits. Suggest a message.
+6. Do **not** start Step **8.5.2** (Pass 3), **8.6.1** (CI Function pipeline), or **9.1**. P13 is a **Setup lookup** for a pre-built image, not the CI/Release work in 8.6.1.
+7. If this plan disagrees with lab `PRODUCT-IDEAS.md`, **follow this plan** and note drift (do not rewrite PRODUCT-IDEAS to match).
+8. VM1: START if needed, **disable idle** while working, **re-enable** when finished (re-disable after Minecraft start — OS-ISSUE-7).
 9. UI-heavy sections (P3, P4, P8) **must** read the named UI skills before changing CSS/Razor. Do not invent a third visual language.
+
+
 
 ### Context budget
 
@@ -42,11 +46,15 @@ When done: update this plan’s statuses and V1 Step 8.4, file Issues.md if on-b
 Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / Plan mode only if the NEXT step is marked PARALLEL-OK. Include this same Agent-vs-Plan instruction in the prompt you give me for the following step.
 ```
 
+
+
 ### PARALLEL-OK
 
 Only when two sections **do not** edit the same files **and** do not both own the TESTING stack. Hybrid Razor/CSS is sequential by default. P9 (Core pack analyze) does not overlap Hybrid tabs. P12 (TESTING Function fill-in) must not run in parallel with any other SSH/OCI chat.
 
 ---
+
+
 
 ## What already happened (do not rediscover)
 
@@ -55,7 +63,7 @@ Only when two sections **do not** edit the same files **and** do not both own th
 - Step **4.13** / R1–R4 **DONE** (itzg exclude lists). Manual/jar-root **install** keeps leftover unclear jars after the list; Setup **analyze** still **blocks** the whole zip when `UnclearSideCount > 0` (`SetupPackImport.UnclearSideRefusal`).  
 - Top-bar **Start** (`MainViewModel.UpdateCommandFlags`): `CanStart` is true when VM1 is not RUNNING and not STARTING/PROVISIONING. **STOPPING is not gated** — that is P1. Novice Status is door-playable, not OCI lifecycle.  
 - **Players** pin is never filled (`PlayersDisplay` stays placeholder). There is no RCON `list` poll.  
-- Spend-brake overlay confirm (`ConfirmSpendBrakeStartAsync`) parks the play IP, DELETEs the lock, refreshes OS budget, **then calls `WakeGameServerAsync()`**. Operator wants the overlay to **unlock** only; Start stays on the top bar.  
+- Spend-brake overlay confirm (`ConfirmSpendBrakeStartAsync`) parks the play IP, DELETEs the lock, refreshes OS budget, **then calls** `WakeGameServerAsync()`. Operator wants the overlay to **unlock** only; Start stays on the top bar.  
 - Existing `mcm-toast` auto-hides. Tab `StatusMessage` (e.g. Server Management wipe copy) sits at the **bottom** of the scrolling tab. That is P4.  
 - Danger Zone is its **own tab**. Idle **timeout** is on Advanced; idle **enable** is on Danger Zone. `--bg-danger: #2a1c1c` is the dark red.  
 - Setup last step is still the Deploy log. There is no “Deployment Complete” + reserved-IP copy block.  
@@ -67,56 +75,70 @@ Only when two sections **do not** edit the same files **and** do not both own th
 
 ---
 
+
+
 ## Drift vs PRODUCT-IDEAS (follow this plan)
 
-| Topic | PRODUCT-IDEAS / older V1 | This plan |
-|-------|--------------------------|-----------|
-| Danger Zone **tab** | Separate tab from Advanced (v1) | Merge into **bottom of Advanced**; tab label stays **Advanced** |
-| Idle timeout | Advanced | **Danger Zone heading** only (with enable/disable) |
-| “game computer” | Novice phrasing | User-visible copy → **server** |
-| Pack replace | After v1; light vs full | **v1 now**; **full re-setup only** (light swap parked) |
-| Jar-root unclear side | Fail / do not guess (`.mrpack` rule) | **Manual zip / jar-root:** continue; rely on exclude lists. **`.mrpack` still fails** on unclear `env.server` |
-| Spend-brake overlay confirm | Overlay Start (park + clear + wake) | Confirm **clears the lock** (and doorbell recover as today) but **does not Start**; user clicks top-bar Start |
-| Function image | 8.6.1 CI after QA | P12 TESTING fill-in now; P13 Setup looks for a pre-built artifact; **CI/Release still 8.6.1** |
+
+| Topic                       | PRODUCT-IDEAS / older V1             | This plan                                                                                                     |
+| --------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| Danger Zone **tab**         | Separate tab from Advanced (v1)      | Merge into **bottom of Advanced**; tab label stays **Advanced**                                               |
+| Idle timeout                | Advanced                             | **Danger Zone heading** only (with enable/disable)                                                            |
+| “game computer”             | Novice phrasing                      | User-visible copy → **server**                                                                                |
+| Pack replace                | After v1; light vs full              | **v1 now**; **full re-setup only** (light swap parked)                                                        |
+| Jar-root unclear side       | Fail / do not guess (`.mrpack` rule) | **Manual zip / jar-root:** continue; rely on exclude lists. `.mrpack` **still fails** on unclear `env.server` |
+| Spend-brake overlay confirm | Overlay Start (park + clear + wake)  | Confirm **clears the lock** (and doorbell recover as today) but **does not Start**; user clicks top-bar Start |
+| Function image              | 8.6.1 CI after QA                    | P12 TESTING fill-in now; P13 Setup looks for a pre-built artifact; **CI/Release still 8.6.1**                 |
+
 
 Do **not** rewrite PRODUCT-IDEAS to match. Note the drift in the implementing section’s changelog / Guide.
 
 ---
 
+
+
 ## Parked (not this plan)
 
-| Item | Why |
-|------|-----|
-| Console **tab completion** (commands + online names) | Operator: only if easy. Needs a command dictionary, live `list` parse, and Blazor autocomplete. Too large for this pause. After-v1 unless a later agent finds a tiny path — do not start it here. |
-| Pack replace **light swap** (same MC + loader, converge `mods/` only) | Blueprint §28.1 later path. v1 = full re-setup (P10–P11). |
-| Step **8.6.1** CI (`linux/arm64` in GitHub Actions), GHCR/Release asset, `crane`/`oras` in the installer | Required before official release; **not** this pause. P13 must not invent a second product path that contradicts 8.6.1. |
-| Committing a Function image tarball to git | Images are large. `artifacts/` is **gitignored**. |
-| CurseForge API (4.12), Quilt Setup, Players tab, paid/spend mode, in-app pack browser | Unchanged. |
-| `tofu destroy` / second greenfield | Pass 3 / later. Keep this TESTING stack. |
+
+| Item                                                                                                     | Why                                                                                                                                                                                               |
+| -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Console **tab completion** (commands + online names)                                                     | Operator: only if easy. Needs a command dictionary, live `list` parse, and Blazor autocomplete. Too large for this pause. After-v1 unless a later agent finds a tiny path — do not start it here. |
+| Pack replace **light swap** (same MC + loader, converge `mods/` only)                                    | Blueprint §28.1 later path. v1 = full re-setup (P10–P11).                                                                                                                                         |
+| Step **8.6.1** CI (`linux/arm64` in GitHub Actions), GHCR/Release asset, `crane`/`oras` in the installer | Required before official release; **not** this pause. P13 must not invent a second product path that contradicts 8.6.1.                                                                           |
+| Committing a Function image tarball to git                                                               | Images are large. `artifacts/` is **gitignored**.                                                                                                                                                 |
+| CurseForge API (4.12), Quilt Setup, Players tab, paid/spend mode, in-app pack browser                    | Unchanged.                                                                                                                                                                                        |
+| `tofu destroy` / second greenfield                                                                       | Pass 3 / later. Keep this TESTING stack.                                                                                                                                                          |
+
 
 ---
+
+
 
 ## Progress dashboard
 
-| ID | Section | Status | Parallel? | Live SSH/OCI? |
-|----|---------|--------|-----------|----------------|
-| **P1** | Top-bar Start STOPPED gate + spend-brake confirm + player count | **DONE** | SEQUENTIAL | Yes (player count) |
-| **P2** | Setup “Deployment Complete” + reserved IP copy | **DONE** | SEQUENTIAL | No |
-| **P3** | Merge Danger Zone into Advanced + idle only there + vibrant red | **DONE** | SEQUENTIAL | No |
-| **P4** | Window-locked dismissible action banners | **DONE** | SEQUENTIAL | No |
-| **P5** | “game computer” → “server” (Setup + Manager + Guide) | **DONE** | SEQUENTIAL | No |
-| **P6** | Console simple vs full log | **NEXT** | SEQUENTIAL | Yes (optional) |
-| **P7** | Per-tab vertical scroll memory | TODO | SEQUENTIAL | No |
-| **P8** | Usage by day (collapsed “Detailed usage”) | TODO | SEQUENTIAL | No |
-| **P9** | Manual / jar-root unclear-side: continue + exclude lists | TODO | PARALLEL-OK vs Hybrid-only | No |
-| **P10** | Pack replace — on-box full re-setup | TODO | SEQUENTIAL | Yes |
-| **P11** | Pack replace — Server Management UI | TODO | SEQUENTIAL | Yes |
-| **P12** | TESTING spend-brake Function fill-in (Docker) | TODO | SEQUENTIAL (owns stack) | Yes |
-| **P13** | Setup prefers a pre-built Function image artifact | TODO | SEQUENTIAL | No |
 
-When **P13** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 ([`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md)). Do not start Pass 3 until the operator says so.
+| ID      | Section                                                         | Status   | Parallel?                  | Live SSH/OCI?      |
+| ------- | --------------------------------------------------------------- | -------- | -------------------------- | ------------------ |
+| **P1**  | Top-bar Start STOPPED gate + spend-brake confirm + player count | **DONE** | SEQUENTIAL                 | Yes (player count) |
+| **P2**  | Setup “Deployment Complete” + reserved IP copy                  | **DONE** | SEQUENTIAL                 | No                 |
+| **P3**  | Merge Danger Zone into Advanced + idle only there + vibrant red | **DONE** | SEQUENTIAL                 | No                 |
+| **P4**  | Window-locked dismissible action banners                        | **DONE** | SEQUENTIAL                 | No                 |
+| **P5**  | “game computer” → “server” (Setup + Manager + Guide)            | **DONE** | SEQUENTIAL                 | No                 |
+| **P6**  | Console simple vs full log                                      | **DONE** | SEQUENTIAL                 | Yes (optional)     |
+| **P7**  | Per-tab vertical scroll memory                                  | **NEXT** | SEQUENTIAL                 | No                 |
+| **P8**  | Usage by day (collapsed “Detailed usage”)                       | TODO     | SEQUENTIAL                 | No                 |
+| **P9**  | Manual / jar-root unclear-side: continue + exclude lists        | TODO     | PARALLEL-OK vs Hybrid-only | No                 |
+| **P10** | Pack replace — on-box full re-setup                             | TODO     | SEQUENTIAL                 | Yes                |
+| **P11** | Pack replace — Server Management UI                             | TODO     | SEQUENTIAL                 | Yes                |
+| **P12** | TESTING spend-brake Function fill-in (Docker)                   | TODO     | SEQUENTIAL (owns stack)    | Yes                |
+| **P13** | Setup prefers a pre-built Function image artifact               | TODO     | SEQUENTIAL                 | No                 |
+
+
+When **P13** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)`). Do not start Pass 3 until the operator says so.
 
 ---
+
+
 
 ## P1 — Top-bar Start STOPPED gate + spend-brake confirm + player count
 
@@ -133,8 +155,8 @@ When **P13** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 ([`V1-QA-Pass-3
 
 **Do**
 
-1. **Start gate.** `CanStart` must be false unless VM1 lifecycle is **STOPPED** (not `STOPPING`, `STARTING`, `PROVISIONING`, `RUNNING`, empty/unknown). Tooltip: wait until the server has fully stopped. Do not treat “Minecraft off / novice Stopped” as enough. If it already waits for STOPPED, keep that and still add the STOPPING/unknown guards + a unit/VM test if cheap.  
-2. **Spend-brake confirm.** Typed confirm still parks the play IP, DELETEs the lock, refreshes door OS cache (same recover as today). **Do not** call `WakeGameServerAsync()`. Overlay dismisses; user uses top-bar **Start**. Rename the overlay button so it is not “Start”. Update overlay copy.  
+1. **Start gate.** `CanStart` must be false unless VM1 lifecycle is **STOPPED** (not `STOPPING`, `STARTING`, `PROVISIONING`, `RUNNING`, empty/unknown). Tooltip: wait until the server has fully stopped. Do not treat “Minecraft off / novice Stopped” as enough. If it already waits for STOPPED, keep that and still add the STOPPING/unknown guards + a unit/VM test if cheap.
+2. **Spend-brake confirm.** Typed confirm still parks the play IP, DELETEs the lock, refreshes door OS cache (same recover as today). **Do not** call `WakeGameServerAsync()`. Overlay dismisses; user uses top-bar **Start**. Rename the overlay button so it is not “Start”. Update overlay copy.
 3. **Players pin.** While novice Status is Running, poll RCON `list` over SSH (localhost on VM1) on the existing status refresh cadence — **not** a 1s loop. Parse the vanilla “There are X of a max of Y players online” line (Fabric/FO still uses this). Show **X** (and max if cheap). When Stopped, show `0` or `—` (pick one and use it consistently). Never put the RCON password in logs.
 
 **Test**
@@ -149,6 +171,8 @@ When **P13** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 ([`V1-QA-Pass-3
 
 ---
 
+
+
 ## P2 — Setup Deployment Complete + reserved IP
 
 **Status:** DONE  
@@ -158,14 +182,14 @@ When **P13** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 ([`V1-QA-Pass-3
 
 - `src/McManager.Hybrid/Components/Setup/SetupWizard.razor` (last / Deploy step + footer Close)  
 - `src/McManager.Hybrid/ViewModels/SetupWizardViewModel.cs` (`IsLastStep`, deploy success, play IP fields)  
-- [`Guide.md`](Guide.md) Setup Deploy / first connect paragraphs
+- `[Guide.md](Guide.md)` Setup Deploy / first connect paragraphs
 
 **Do**
 
 When Deploy **succeeds**, the last step must clearly show:
 
-1. Heading **Deployment Complete** (not only a log line).  
-2. The **reserved play IP** friends use, with a small **Copy** button (clipboard).  
+1. Heading **Deployment Complete** (not only a log line).
+2. The **reserved play IP** friends use, with a small **Copy** button (clipboard).
 3. Nearby copy: close the Setup wizard to continue to the Manager app (the existing Close button is enough — do not add a second wizard).
 
 Keep the deploy log available (below or collapsed). Do not dump OCIDs. Use “server” not “game computer” if P5 has not run yet — prefer “server” in **new** strings.
@@ -180,6 +204,8 @@ Keep the deploy log available (below or collapsed). Do not dump OCIDs. Use “se
 
 ---
 
+
+
 ## P3 — Merge Danger Zone into Advanced
 
 **Status:** DONE  
@@ -193,14 +219,14 @@ Keep the deploy log available (below or collapsed). Do not dump OCIDs. Use “se
 - `src/McManager.Hybrid/Components/Tabs/Advanced/AdvancedTab.razor`  
 - `src/McManager.Hybrid/Components/Tabs/Advanced/DangerZoneTab.razor`  
 - `src/McManager.Hybrid/wwwroot/css/app.css` (`--bg-danger`, `--fill-danger`, `--border-danger`, `.mcm-danger-card`)  
-- [`Guide.md`](Guide.md) Advanced vs Danger Zone  
-- [`V1-QA-Catalog.md`](V1-QA-Catalog.md) S4-02 **Expected** (update it)
+- `[Guide.md](Guide.md)` Advanced vs Danger Zone  
+- `[V1-QA-Catalog.md](V1-QA-Catalog.md)` S4-02 **Expected** (update it)
 
 **Do**
 
-1. Remove the **Danger Zone** tab. Tab name **Advanced** stays.  
-2. Put today’s Danger Zone content at the **bottom of Advanced** under a clear **Danger Zone** heading (idle enable/disable **and** idle timeout minutes, shape scale, Delete infrastructure).  
-3. Remove idle timeout from the upper Advanced body so it is **not** duplicated. Break-glass VM power, technical status, Deploy/repair stay in Advanced **above** Danger Zone.  
+1. Remove the **Danger Zone** tab. Tab name **Advanced** stays.
+2. Put today’s Danger Zone content at the **bottom of Advanced** under a clear **Danger Zone** heading (idle enable/disable **and** idle timeout minutes, shape scale, Delete infrastructure).
+3. Remove idle timeout from the upper Advanced body so it is **not** duplicated. Break-glass VM power, technical status, Deploy/repair stay in Advanced **above** Danger Zone.
 4. Restyle Danger Zone: `--bg-danger: #2a1c1c` is too dark. Use the UI skills for a **vibrant** danger treatment that still reads on the cobalt Hybrid theme (section background, heading, buttons). Do not make Wipe World / other non-DZ buttons louder than this heading.
 
 **Test**
@@ -212,6 +238,8 @@ Keep the deploy log available (below or collapsed). Do not dump OCIDs. Use “se
 **Changelog:** 2026-08-20 — Removed Danger Zone tab. Idle enable + timeout, shape, and Delete sit under **Advanced → Danger Zone**. Tokens `--bg-danger: #5c1e24`, `--border-danger: #e05a52`, heading `--text-danger-bright`. Wipe World fill unchanged. Catalog S4-02 / S4-18 expected updated. Guide.
 
 ---
+
+
 
 ## P4 — Window-locked dismissible action banners
 
@@ -250,6 +278,8 @@ Reuse one Hybrid mechanism; migrate Server Management first, then other manage t
 
 ---
 
+
+
 ## P5 — “game computer” → “server”
 
 **Status:** DONE  
@@ -277,9 +307,11 @@ Do not rewrite the whole blueprint or PRODUCT-IDEAS. Do not change OCI shape nam
 
 ---
 
+
+
 ## P6 — Console simple vs full log
 
-**Status:** TODO  
+**Status:** DONE  
 **Catalog IDs:** S4-13
 
 **Read first**
@@ -300,13 +332,15 @@ A small **Full** / **Advanced** control on the console (corner) shows the unfilt
 
 **Done when:** Guide Console paragraph mentions simple vs full.
 
-**Changelog:** *(empty)*
+**Changelog:** 2026-08-20 — Default **Simple** log hides RCON listener/thread/auth plumbing; **Full** shows unfiltered `journalctl`. Corner toggle on log well. Core `FilterSimpleLog` + tests. Catalog S4-13 expected updated. Guide Console paragraph.
 
 ---
 
+
+
 ## P7 — Per-tab vertical scroll memory
 
-**Status:** TODO  
+**Status:** NEXT  
 
 **Read first**
 
@@ -328,6 +362,8 @@ Do **not** keep one scrollbar on the shared `main` that all tabs share. Saving `
 **Changelog:** *(empty)*
 
 ---
+
+
 
 ## P8 — Usage by day (collapsed)
 
@@ -359,6 +395,8 @@ Inside: hours **by UTC day** for the current month, readable for a novice (one r
 
 ---
 
+
+
 ## P9 — Manual / jar-root unclear-side may continue
 
 **Status:** TODO  
@@ -369,7 +407,7 @@ Inside: hours **by UTC day** for the current month, readable for a novice (one r
 - `src/McManager.Core/Setup/SetupPackImport.cs` (`FromManual`, `UnclearSideRefusal`)  
 - `src/McManager.Core/Setup/ManualServerPackAnalyzer.cs` / installer  
 - `src/McManager.Core.Tests/SetupPackImportTests.cs`  
-- [`V1-Modpack-Robustness-Plan.md`](V1-Modpack-Robustness-Plan.md) R3 (unclear jars **kept** after the list)  
+- `[V1-Modpack-Robustness-Plan.md](V1-Modpack-Robustness-Plan.md)` R3 (unclear jars **kept** after the list)  
 - Tracked fixture `tests/fixtures/packs/jar-root.zip` if present
 
 **Do**
@@ -390,6 +428,8 @@ If a jar-root zip still has **no** detectable Minecraft version or loader after 
 
 ---
 
+
+
 ## P10 — Pack replace, on-box full re-setup
 
 **Status:** TODO  
@@ -400,17 +440,17 @@ If a jar-root zip still has **no** detectable Minecraft version or loader after 
 - Blueprint **§28.1** (full re-setup row only) + **§12.2 / §12.3** if named in that section  
 - `onbox/mcmgr/` bootstrap / repair  
 - `src/McManager.Core/Setup/` pack install + game-manifest write  
-- [`docs/Agent-Deploy-Pitfalls.md`](Agent-Deploy-Pitfalls.md) (`User=mcmgr`, sudo chains, world path)  
+- `[docs/Agent-Deploy-Pitfalls.md](Agent-Deploy-Pitfalls.md)` (`User=mcmgr`, sudo chains, world path)  
 - Do **not** load the whole blueprint
 
 **Do**
 
 Operator pulled **change pack** into v1. Implement the **full re-setup** path only (light swap parked):
 
-1. Stop Minecraft.  
-2. Keep the **world** unless the user also chose Wipe (P11 confirm).  
-3. Clear the previous game install enough that bootstrap is clean (loader, `mods/`, `config/` from the old pack, unit, manifest) — **not** `/opt/mcmgr` identity/RCON/world unless the contract requires it. Prefer the existing Setup bootstrap modules over a one-off SSH novel.  
-4. Install the new local pack the same way Setup does (analyze → retain original under `data/imported-packs/` → on-box install → manifest → unit).  
+1. Stop Minecraft.
+2. Keep the **world** unless the user also chose Wipe (P11 confirm).
+3. Clear the previous game install enough that bootstrap is clean (loader, `mods/`, `config/` from the old pack, unit, manifest) — **not** `/opt/mcmgr` identity/RCON/world unless the contract requires it. Prefer the existing Setup bootstrap modules over a one-off SSH novel.
+4. Install the new local pack the same way Setup does (analyze → retain original under `data/imported-packs/` → on-box install → manifest → unit).
 5. Start + health check. Warn if Minecraft/loader change may not load the old save.
 
 **Test**
@@ -423,6 +463,8 @@ Operator pulled **change pack** into v1. Implement the **full re-setup** path on
 
 ---
 
+
+
 ## P11 — Pack replace, Server Management UI
 
 **Status:** TODO  
@@ -434,7 +476,7 @@ Operator pulled **change pack** into v1. Implement the **full re-setup** path on
 - `src/McManager.Hybrid/Components/Tabs/ServerManagement/ServerManagementTab.razor`  
 - `src/McManager.Hybrid/ViewModels/ServerManagementViewModel.cs`  
 - P10 entry point  
-- [`Guide.md`](Guide.md) Modding section  
+- `[Guide.md](Guide.md)` Modding section  
 - Same file-picker / drag-and-drop rules as Setup (**no catalog**)
 
 **Do**
@@ -452,6 +494,8 @@ Server Management **Change pack** (wording up to you): pick / drop a `.mrpack` o
 **Changelog:** *(empty)*
 
 ---
+
+
 
 ## P12 — TESTING spend-brake Function fill-in
 
@@ -471,10 +515,10 @@ Server Management **Change pack** (wording up to you): pick / drop a `.mrpack` o
 
 Pass 2 skipped the Function (Docker daemon was down). Docker Desktop is **running** now. On **TESTING** only:
 
-1. Build/push **product** `shutdown_vm` `linux/arm64` (v1 image: SoftStop **VM1 only** + lock PUT). Reuse the existing OCIR repo `mcmgr-fn/softstop` if Setup created it.  
-2. Create or update the Function + Events on this stack so S2-17 can run later. Prefer `fn` / OCI CLI under the Functions blanket.  
-3. If Function **application** / Events resources were never applied (skip left tofu without a Function), **stop and ask** before `tofu apply`. Do not `tofu destroy`. Do not create extra paid apps/repos.  
-4. Optionally `docker save` a local tarball under gitignored `artifacts/` for P13 — **do not commit it**.  
+1. Build/push **product** `shutdown_vm` `linux/arm64` (v1 image: SoftStop **VM1 only** + lock PUT). Reuse the existing OCIR repo `mcmgr-fn/softstop` if Setup created it.
+2. Create or update the Function + Events on this stack so S2-17 can run later. Prefer `fn` / OCI CLI under the Functions blanket.
+3. If Function **application** / Events resources were never applied (skip left tofu without a Function), **stop and ask** before `tofu apply`. Do not `tofu destroy`. Do not create extra paid apps/repos.
+4. Optionally `docker save` a local tarball under gitignored `artifacts/` for P13 — **do not commit it**.
 5. Synthetic invoke only. Do not fire a real $1 alert. Do not SoftStop the door. DELETE the lock after tests unless the next chat needs it.
 
 **Test**
@@ -487,6 +531,8 @@ Pass 2 skipped the Function (Docker daemon was down). Docker Desktop is **runnin
 
 ---
 
+
+
 ## P13 — Setup prefers a pre-built Function image
 
 **Status:** TODO  
@@ -498,8 +544,8 @@ Pass 2 skipped the Function (Docker daemon was down). Docker Desktop is **runnin
 - V1 [Step 8.6.1](V1-Implementation-Plan.md#step-861--ci-built-arm-image--setup-copy-into-ocir) (constraints only — do not implement CI)  
 - `src/McManager.Core/Setup/OcirFunctionPublisher.cs`  
 - `src/McManager.Core/Setup/SetupDeployOrchestrator.cs`  
-- [`Guide.md`](Guide.md) Auth Token / Deploy Function paragraphs  
-- [`docs/Local-Config.md`](Local-Config.md) repair/Function skip note
+- `[Guide.md](Guide.md)` Auth Token / Deploy Function paragraphs  
+- `[docs/Local-Config.md](Local-Config.md)` repair/Function skip note
 
 **Do**
 
@@ -521,21 +567,29 @@ Derive OCIR username from namespace + OCI user **if that is a small change**; ot
 
 ---
 
+
+
 ## After this plan
 
-1. V1 dashboard: **8.4 DONE**, **NEXT = Step 8.5.2** (Pass 3).  
-2. Follow [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) — leftovers from Pass 1/2 **plus** tests for files this plan changed. Do not `tofu destroy` unless that prompt says so.  
+1. V1 dashboard: **8.4 DONE**, **NEXT = Step 8.5.2** (Pass 3).
+2. Follow `[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)` — leftovers from Pass 1/2 **plus** tests for files this plan changed. Do not `tofu destroy` unless that prompt says so.
 3. Do not start 8.6.1 or 9.1.
 
 ---
 
+
+
 ## Plan changelog
 
-| Date | Note |
-|------|------|
-| 2026-08-20 | **P5 DONE.** “game computer” → “server” (Setup + Manager + Guide). **NEXT = P6.** Do not start Pass 3, 8.6.1, or 9.1. |
-| 2026-08-20 | **P4 DONE.** Window-locked dismissible action banners (not auto-hide for long/error). **NEXT = P5.** Do not start Pass 3, 8.6.1, or 9.1. |
-| 2026-08-20 | **P3 DONE.** Danger Zone merged into Advanced; idle only under that heading; vibrant redstone plate. **NEXT = P4.** Do not start Pass 3, 8.6.1, or 9.1. |
-| 2026-08-20 | **P2 DONE.** Setup **Deployment Complete** + reserved play IP Copy + Close. **NEXT = P3.** Do not start Pass 3, 8.6.1, or 9.1. |
-| 2026-08-20 | **P1 DONE.** Start STOPPED gate; overlay unlock-only; Players pin. **NEXT = P2.** Do not start Pass 3, 8.6.1, or 9.1. |
+
+| Date       | Note                                                                                                                                                                                                                  |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-20 | **P6 DONE.** Console Simple vs Full log toggle; RCON plumbing hidden in Simple. **NEXT = P7.** Do not start Pass 3, 8.6.1, or 9.1.                                                                                     |
+| 2026-08-20 | **P5 DONE.** “game computer” → “server” (Setup + Manager + Guide). **NEXT = P6.** Do not start Pass 3, 8.6.1, or 9.1.                                                                                                 |
+| 2026-08-20 | **P4 DONE.** Window-locked dismissible action banners (not auto-hide for long/error). **NEXT = P5.** Do not start Pass 3, 8.6.1, or 9.1.                                                                              |
+| 2026-08-20 | **P3 DONE.** Danger Zone merged into Advanced; idle only under that heading; vibrant redstone plate. **NEXT = P4.** Do not start Pass 3, 8.6.1, or 9.1.                                                               |
+| 2026-08-20 | **P2 DONE.** Setup **Deployment Complete** + reserved play IP Copy + Close. **NEXT = P3.** Do not start Pass 3, 8.6.1, or 9.1.                                                                                        |
+| 2026-08-20 | **P1 DONE.** Start STOPPED gate; overlay unlock-only; Players pin. **NEXT = P2.** Do not start Pass 3, 8.6.1, or 9.1.                                                                                                 |
 | 2026-08-20 | **Created** (docs only). **NEXT = P1.** Pass 2 closed early; Step **8.5.2** paused. Pack replace pulled into v1 (full re-setup). Tab completion, light-swap, and 8.6.1 CI parked. Do not start Pass 3, 8.6.1, or 9.1. |
+
+

@@ -2442,11 +2442,62 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     flex-shrink: 0;
 }
 
-.mcm-console-log {
+.mcm-console-log-wrap {
+    position: relative;
     flex: 1 1 auto;
     min-height: 12rem;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.mcm-console-log-mode {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 1;
+    display: flex;
+    gap: 2px;
+    padding: 2px;
+    background: color-mix(in srgb, var(--surface-1) 90%, transparent);
+    border: 0.5px solid var(--border);
+    border-radius: 8px;
+    backdrop-filter: blur(6px);
+}
+
+.mcm-console-mode-btn {
+    border: 0;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--text-secondary);
+    background: transparent;
+    cursor: pointer;
+}
+
+.mcm-console-mode-btn:hover {
+    color: var(--text-primary);
+    background: color-mix(in srgb, var(--fill-accent) 12%, transparent);
+}
+
+.mcm-console-mode-btn.is-active {
+    color: var(--text-on-accent, #fff);
+    background: var(--fill-accent);
+}
+
+.mcm-console-mode-btn:focus-visible {
+    outline: 2px solid var(--fill-accent);
+    outline-offset: 1px;
+}
+
+.mcm-console-log {
+    flex: 1 1 auto;
+    min-height: 0;
     margin: 0;
     padding: 12px 14px;
+    padding-top: 36px;
     background: #12161c;
     border: 0.5px solid var(--border);
     border-radius: 10px;

@@ -38,9 +38,19 @@ public sealed partial class ConsoleViewModel : ObservableObject, IDisposable
     private string _logText = "";
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DisplayedLogText))]
+    private bool _showFullLog;
+
+    [ObservableProperty]
     private string _statusMessage = MinecraftConsoleRemote.Intro;
 
     public string HelpTitle => MinecraftConsoleRemote.HelpTitle;
+
+    public string DisplayedLogText =>
+        ShowFullLog ? LogText : MinecraftConsoleRemote.FilterSimpleLog(LogText);
+
+    partial void OnLogTextChanged(string value) =>
+        OnPropertyChanged(nameof(DisplayedLogText));
 
     public bool Vm1IsRunning =>
         string.Equals(_main.Vm1Lifecycle, "RUNNING", StringComparison.OrdinalIgnoreCase);

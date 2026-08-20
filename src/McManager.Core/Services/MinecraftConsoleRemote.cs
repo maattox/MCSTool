@@ -21,7 +21,11 @@ public static class MinecraftConsoleRemote
 
     public const string HelpTitle =
         "Send commands as if you typed them in the Minecraft server console. "
-        + "Recent logs are from the server. This is not a live terminal.";
+        + "Recent logs show game activity by default; switch to Full for the raw service log. "
+        + "This is not a live terminal.";
+
+    public const string SimpleLogEmptyHint =
+        "No simplified log lines in this buffer. Switch to Full to see the raw service log.";
 
     public const string Intro =
         "Send Minecraft commands and read recent logs. Start the server first. "
@@ -163,6 +167,49 @@ public static class MinecraftConsoleRemote
         if (string.IsNullOrEmpty(body))
             return "> " + command;
         return "> " + command + Environment.NewLine + body;
+    }
+
+    /// <summary>
+    /// Console Simple view: drop known RCON listener/thread/auth plumbing from an unfiltered
+    /// <c>journalctl -o cat</c> buffer. Keeps chat, joins, command transcript, errors, and
+    /// <c>[Rcon:</c> command echoes.
+    /// </summary>
+    public static string FilterSimpleLog(string? full)
+    {
+        if (string.IsNullOrEmpty(full))
+            return "";
+
+        var lines = full.Split('\n');
+        if (lines.Length == 0)
+            return "";
+
+        var kept = new List<string>(lines.Length);
+        foreach (var line in lines)
+        {
+            if (!IsSimpleLogNoiseLine(line))
+                kept.Add(line);
+        }
+
+        return string.Join('\n', kept).TrimEnd();
+    }
+
+    private static bool IsSimpleLogNoiseLine(string line)
+    {
+        if (string.IsNullOrWhiteSpace(line))
+            return false;
+
+        var lower = line.ToLowerInvariant();
+        if (lower.Contains("thread rcon client", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("rcon listener", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("rcon running on", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("rcon connection from", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("rcon authenticated", StringComparison.Ordinal))
+            return true;
+        return false;
     }
 
     /// <summary>

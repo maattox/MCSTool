@@ -777,7 +777,7 @@ For each: click the path, then Result Pass or Fail with what you saw.
 
 **Steps:** Refresh logs. Send `list` (leading `/` optional). Not a PTY.
 
-**Expected:** Log lines + command response. RCON not on SL.
+**Expected:** Default **Simple** view is readable (chat, joins, command transcript, errors). **Full** shows unfiltered `journalctl` including RCON listener/thread lines. Send `list` (leading `/` optional). RCON not on SL. Not a PTY.
 
 ### S4-14 — Troubleshooting one-shots
 

@@ -217,7 +217,7 @@ When everyone is done, click **Stop** (doorbell-aware). If you forget, idle time
 
 **Name, icon, and messages** on Server Management: set the name and description friends see in their Minecraft server list (plain text, two lines), pick a **64×64 PNG** icon, and optionally edit the automated chat lines used before an idle or budget stop. Save writes the shared copy. **Restart** Minecraft (or **Start**) applies it. The doorbell message while the server is off is not edited here.
 
-**Console** sends Minecraft commands (the same ones you would type in the server console) and shows recent logs from the server. Start the server first. A leading `/` is optional. This is not a live terminal, and the RCON port stays local on the server — it is not opened on the cloud firewall.
+**Console** sends Minecraft commands (the same ones you would type in the server console) and shows recent logs from the server. **Simple** (default) hides RCON listener/thread noise so chat, joins, and errors stay readable; **Full** shows the unfiltered service log. Start the server first. A leading `/` is optional. This is not a live terminal, and the RCON port stays local on the server — it is not opened on the cloud firewall.
 
 **Advanced → Danger Zone:** Advanced is power-user tools (technical status, Deploy/repair, break-glass VM power, stack identity). Scroll to the **Danger Zone** heading on the same tab for idle **timeout**, turning the idle timer **off** (testing only — boot / Minecraft start turns it back on), **changing the server size** (2 OCPU / 12 GB or 4 OCPU / 24 GB), and **Delete infrastructure**. There is no separate Danger Zone tab. Troubleshooting stays its own tab.
 

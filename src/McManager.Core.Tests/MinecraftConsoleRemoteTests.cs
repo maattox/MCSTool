@@ -137,4 +137,44 @@ public sealed class MinecraftConsoleRemoteTests
         var run = SshExecResult.Fail("could not reach Minecraft RCON on localhost", exitStatus: 5);
         Assert.Equal(MinecraftConsoleRemote.RconUnreachableHint, MinecraftConsoleRemote.OperatorHintFromRcon(run));
     }
+
+    [Fact]
+    public void Filter_simple_log_drops_rcon_plumbing_keeps_game_and_transcript()
+    {
+        var full =
+            "Starting net.minecraft.server...\n"
+            + "[16:00:00] [Server thread/INFO]: Starting RCON listener\n"
+            + "[16:00:00] [Server thread/INFO]: RCON running on 0.0.0.0:25575\n"
+            + "[16:00:01] [RCON Listener #1/INFO]: Thread RCON Client /127.0.0.1 started\n"
+            + "[16:00:01] [RCON Listener #1/INFO]: Thread RCON Client /127.0.0.1 shutting down\n"
+            + "[16:00:02] [Server thread/INFO]: Steve joined the game\n"
+            + "[16:00:03] [Server thread/INFO]: <Steve> hello\n"
+            + "[Rcon: Steve issued server command: list]\n"
+            + "> list\n"
+            + "There are 0 of a max of 20 players online:\n"
+            + "[16:00:04] [Server thread/ERROR]: Something broke\n"
+            + "FAIL RCON bind on startup";
+
+        var simple = MinecraftConsoleRemote.FilterSimpleLog(full);
+
+        Assert.DoesNotContain("Thread RCON Client", simple, StringComparison.Ordinal);
+        Assert.DoesNotContain("Starting RCON listener", simple, StringComparison.Ordinal);
+        Assert.DoesNotContain("RCON running on", simple, StringComparison.Ordinal);
+        Assert.Contains("Steve joined the game", simple, StringComparison.Ordinal);
+        Assert.Contains("<Steve> hello", simple, StringComparison.Ordinal);
+        Assert.Contains("[Rcon: Steve issued server command: list]", simple, StringComparison.Ordinal);
+        Assert.Contains("> list", simple, StringComparison.Ordinal);
+        Assert.Contains("There are 0 of a max of 20 players online:", simple, StringComparison.Ordinal);
+        Assert.Contains("Something broke", simple, StringComparison.Ordinal);
+        Assert.Contains("FAIL RCON bind on startup", simple, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Filter_simple_log_empty_input_returns_empty(string? full)
+    {
+        Assert.Equal("", MinecraftConsoleRemote.FilterSimpleLog(full));
+    }
 }

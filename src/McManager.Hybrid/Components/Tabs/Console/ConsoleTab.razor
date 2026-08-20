@@ -25,13 +25,43 @@
 
     <p class="mcm-console-status" role="status">@Vm.StatusMessage</p>
 
-    <pre id="mcm-console-log"
-         class="mcm-console-log mcm-wizard-mono mcm-slim-scroll"
-         tabindex="0"
-         aria-label="Minecraft logs">@if (string.IsNullOrWhiteSpace(Vm.LogText))
-    {<span class="mcm-console-empty">@MinecraftConsoleRemote.EmptyLogs</span>}
-    else
-    {@Vm.LogText}</pre>
+    <div class="mcm-console-log-wrap">
+        <div class="mcm-console-log-mode" role="group" aria-label="Log view">
+            <button type="button"
+                    class="mcm-console-mode-btn @(Vm.ShowFullLog ? null : "is-active")"
+                    aria-pressed="@(!Vm.ShowFullLog)"
+                    title="Game-focused log (default)"
+                    @onclick="() => SetLogMode(full: false)">
+                Simple
+            </button>
+            <button type="button"
+                    class="mcm-console-mode-btn @(Vm.ShowFullLog ? "is-active" : null)"
+                    aria-pressed="@Vm.ShowFullLog"
+                    aria-label="Full raw journalctl log"
+                    title="Unfiltered service log including RCON plumbing"
+                    @onclick="() => SetLogMode(full: true)">
+                Full
+            </button>
+        </div>
+        <pre id="mcm-console-log"
+             class="mcm-console-log mcm-wizard-mono mcm-slim-scroll"
+             tabindex="0"
+             aria-label="Minecraft logs">@if (string.IsNullOrWhiteSpace(Vm.DisplayedLogText))
+        {
+            if (string.IsNullOrWhiteSpace(Vm.LogText))
+            {
+                <span class="mcm-console-empty">@MinecraftConsoleRemote.EmptyLogs</span>
+            }
+            else if (!Vm.ShowFullLog)
+            {
+                <span class="mcm-console-empty">@MinecraftConsoleRemote.SimpleLogEmptyHint</span>
+            }
+        }
+        else
+        {
+            @Vm.DisplayedLogText
+        }</pre>
+    </div>
 
     <form class="mcm-console-rail" @onsubmit="OnSendAsync" @onsubmit:preventDefault="true">
         <label class="sr-only" for="mcm-console-input">Minecraft command</label>
@@ -91,9 +121,24 @@
 
     private void OnVmChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(ConsoleViewModel.LogText) or null)
+        if (e.PropertyName is nameof(ConsoleViewModel.LogText)
+            or nameof(ConsoleViewModel.DisplayedLogText)
+            or nameof(ConsoleViewModel.ShowFullLog)
+            or null)
+        {
             _scrollPending = true;
+        }
+
         _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void SetLogMode(bool full)
+    {
+        if (Vm.ShowFullLog == full)
+            return;
+
+        Vm.ShowFullLog = full;
+        _scrollPending = true;
     }
 
     private async Task OnSendAsync()
