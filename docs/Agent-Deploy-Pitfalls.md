@@ -41,7 +41,11 @@ Related live quirks for operators: lab [`docs/Issues.md`](../../OCI-mc-server-ma
 
 13. **Oracle Ubuntu ships `netfilter-persistent` (SSH-only INPUT REJECT) which Conflicts with firewalld.** After SoftStop reboot, netfilter-persistent can win and leave firewalld **inactive** — Minecraft listens but door `wait_forge` and public 25565 fail (SETUP-ISSUE-7). Cloud-init and guest repair must **disable + mask `netfilter-persistent` before** `systemctl enable --now firewalld`.
 
-14. **GNU `cp -f src dest` fails when they are the same file** (`cp: '…' and '…' are the same file`). `layout_apply` used to copy `env.sh` / `layout.sh` into `/opt/mcmgr/lib/` even when repair was already running from that tree (SETUP-ISSUE-8). Skip with `[[ src -ef dest ]]`. Do not treat that error as a wipe/replace failure and restart Minecraft.
+14. **Do not run UFW alongside firewalld.** Canonical Ubuntu enables `ufw.service` even when `/etc/ufw/ufw.conf` is `ENABLED=no`. Product SoT is **firewalld**. Cloud-init / `EnsureVm1HostFirewall` **disable + mask `ufw`** without `systemctl stop ufw` while firewalld is up (`ufw-init stop` can scramble nft).
+
+15. **firewalld `Before=network-pre.target` races cloud-init/dbus (Debian #1025618).** systemd may delete `dbus.socket` / `dbus.service` to break the cycle. Guest then has no dbus: firewalld never starts, ACPI SoftStop sits in OCI **STOPPING** ~15–17 min (OS-ISSUE-9). Drop-ins **cannot** reset `Before=`/`Wants=`. Install full override `/etc/systemd/system/firewalld.service` from `infra/cloud-init/firewalld-mcmgr.service` (no network-pre), then `daemon-reload`. Do not wake while lifecycle is still STOPPING.
+
+16. **GNU `cp -f src dest` fails when they are the same file** (`cp: '…' and '…' are the same file`). `layout_apply` used to copy `env.sh` / `layout.sh` into `/opt/mcmgr/lib/` even when repair was already running from that tree (SETUP-ISSUE-8). Skip with `[[ src -ef dest ]]`. Do not treat that error as a wipe/replace failure and restart Minecraft.
 
 ---
 
@@ -64,6 +68,8 @@ Related live quirks for operators: lab [`docs/Issues.md`](../../OCI-mc-server-ma
 | `Permission denied` reading `/etc/mc-manager/`, `/opt/mcmgr/`, systemd drop-ins | Recurring: `ubuntu` is not root | `sudo` or `chown`/`chmod` the specific path **before** retrying |
 | `minecraft.service` `status=200/CHDIR` / WorkingDirectory Permission denied | `User=mcmgr` cannot traverse `WorkingDirectory` (SETUP-ISSUE-4) | Stop the unit; `namei -l`; `sudo bash …/repair-permissions.sh` (whole §5 contract). Not `0777`, not `User=ubuntu` |
 | Wake **DEGRADED** `ip_to_vm1.sh failed` after Forge TCP OK | Compartment IAM and/or door DG not matching; or `public-ip update` without `--force` | Tenancy `mcmgr-door-ip` + door DG by instance.id (product HCL); scripts `--force` + already-on-target no-op |
+| SoftStop stuck **STOPPING** ~15–17 min; firewalld journal empty; `pam_systemd` no system bus | systemd deleted dbus to break firewalld/cloud-init cycle (OS-ISSUE-9) | Full `/etc/systemd/system/firewalld.service` override (no network-pre); mask UFW; wait STOPPED before wake |
+| Wake DEGRADED / `ERROR: spend-brake lock GET failed (not 404)` while the lock object is absent | OCI CLI 3.90+ 404 is `"status": 404` / `error code 404` (`code` is null), not `ObjectNotFound`. `status:[[:space:]]*404` does not match quoted JSON. GET `--file` also leaves a 0-byte cache that C treats as locked. | Product `pull_os_budget.sh` matches that 404 text and `rm`s the cache unless GET succeeded. Redeploy the script **and** `mccontrol` (Setup repair copies scripts only). |
 | Micro `make mccontrol` takes many minutes | Expected on E2.1.Micro | Set long SSH timeouts; don’t assume hung |
 
 ---
@@ -94,6 +100,8 @@ Related live quirks for operators: lab [`docs/Issues.md`](../../OCI-mc-server-ma
 - [ ] After product `vm_agent/` changes: **Redeploy idle agent** on a RUNNING VM1 (door Phase 4 does not push VM1).
 - [ ] `minecraft.service` `User=mcmgr` can `chdir` `WorkingDirectory` (`namei -l`); after any `mkdir` under `/opt/mcmgr` re-run `layout_apply` / `repair-permissions.sh` — do not ship a one-path chmod
 - [ ] Setup cloud-init wait uses `sudo -n test -f` on `/etc/mcmgr/cloud-init-done` (0750; `ubuntu` `test -f` is a false WAIT)
+- [ ] VM1 host firewall: `netfilter-persistent` **and** `ufw` masked; `/etc/systemd/system/firewalld.service` is the McManager override (OS-ISSUE-9)
+- [ ] Door spend-brake: `sudo bash /opt/mccontrol/oci/pull_os_budget.sh --force` prints `SPEND_BRAKE_LOCK=0` when the lock object is absent (CLI 3.90 404 is `"status": 404`, not `ObjectNotFound` — DOOR-ISSUE-10). Redeploy **script + mccontrol**, not scripts-only repair.
 
 ---
 

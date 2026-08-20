@@ -29,6 +29,17 @@ packages:
   - firewalld
   - gnupg
 
+# Distro firewalld Before=network-pre.target + After=dbus.service races cloud-init
+# (Debian #1025618). systemd may delete dbus; ACPI SoftStop then hangs (OS-ISSUE-9).
+# Drop-ins cannot reset Before=/Wants= — write a full unit override. Security List
+# remains the IP allowlist.
+write_files:
+  - path: /etc/systemd/system/firewalld.service
+    owner: root:root
+    permissions: "0644"
+    content: |
+${indent(6, firewalld_unit)}
+
 runcmd:
   - mkdir -p /opt/mcmgr/server /opt/mcmgr/backups-work /opt/mcmgr/bin /etc/mcmgr /var/lib/mcmgr
   - chown root:mcmgr /opt/mcmgr /opt/mcmgr/bin /etc/mcmgr
@@ -45,6 +56,14 @@ runcmd:
   # dead and :25565 is closed (wait_forge + public play). Disable it first.
   - systemctl disable --now netfilter-persistent || true
   - systemctl mask netfilter-persistent || true
+  # Canonical Ubuntu enables ufw.service even when ufw.conf ENABLED=no.
+  # Do not run UFW alongside firewalld (both own nftables). Mask only — do not
+  # systemctl stop ufw while firewalld is up (ufw-init stop can scramble nft).
+  - ufw --force disable || true
+  - systemctl disable ufw || true
+  - systemctl mask ufw || true
+  - systemctl daemon-reload
+  - rm -f /etc/systemd/system/dbus-org.fedoraproject.FirewallD1.service
   - systemctl unmask firewalld || true
   - systemctl enable --now firewalld
   - firewall-cmd --permanent --add-service=ssh

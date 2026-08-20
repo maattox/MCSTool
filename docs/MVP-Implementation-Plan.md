@@ -914,7 +914,7 @@ Phase B cutover is **DONE**. Step **7.1** is **DONE**. Step **7.2** is **DONE**.
 v1 items below are **in** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) — implement them only as that plan’s NEXT step, not from this archive.
 
 - Public `0.0.0.0/0` Minecraft (rejected in v1 too — private allowlist only)  
-- Paid / spend mode **except** V1 plan Phase 8  
+- Paid / spend mode (**not v1** — later / far future; V1 Phase 8 SKIPPED)  
 - Modded / Optimized Vanilla (Paper) Setup + pack analyze/install — V1 plan Phase 4; still **no in-app catalog** (blueprint §2.4)  
 - Per-day budget calendar tool (**after v1**)  
 - Full PTY console (**after v1**; V1 Step 7.5 is RCON+logs only)  

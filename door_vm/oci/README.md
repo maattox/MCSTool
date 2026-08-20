@@ -50,3 +50,5 @@ does not default to it.
 
 Validate flags against the `oci` version on the target image (`oci -v`).
 `public-ip update` uses `--force` when moving the reserved IP between door and VM1 secondaries. `ip_to_vm1.sh` / `ip_to_vm2.sh` no-op if the IP is already on the target private IP (avoids DEGRADED on a redundant Stop).
+
+`oci os object get` of a missing key (CLI **3.90+**): ServiceError `"code": null`, message **The service returned error code 404**, JSON `"status": 404` — not `ObjectNotFound`. `pull_os_budget.sh` treats that as unlocked (`SPEND_BRAKE_LOCK=0`) and deletes the empty `--file` leftover. Other GET errors stay fail-closed.

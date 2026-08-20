@@ -48,7 +48,7 @@ State for **manual** `tofu` in this folder stays here (`terraform.tfstate`, giti
 
 **Not created:** NAT gateway, private subnet, service gateway, IPv6, NSGs, ONS topic, Object Storage objects (ledger/meta/backups), Minecraft/Java/door binaries.
 
-**Gated on `function_image`:** Function `mcmgr-fn-softstop` and Events rule `mcmgr-events-budget-alert`. Leave the variable empty until Step 3.3 pushes an image to OCIR.
+**Gated on `function_image`:** Function `mcmgr-fn-softstop` and Events rule `mcmgr-events-budget-alert`. Leave the variable empty until Setup has copied the CI-built ARM image into OCIR (V1 Step **8.6.1**). The current Docker `buildx` publisher is interim and must not ship.
 
 ---
 
@@ -74,7 +74,7 @@ Descriptions match Manager ownership (`"{name} SSH access"`, name, `"{name} door
 |-----|------|
 | `mcmgr` user/group, empty `/opt/mcmgr` + `/etc/mcmgr` + `/var/lib/mcmgr` with blueprint **§5** owners (`root:mcmgr` `0750` on `/opt/mcmgr`, **not** `chown -R mcmgr`; SoT is `onbox/mcmgr/common/layout.sh`) | hostname + `jq`/`curl` |
 | Adoptium **apt repo registration** (no `temurin-*` package) | no game tree, no firewalld |
-| firewalld: SSH + 25565 tcp/udp **without** source IPs (Security List is the IP allowlist). Cloud-init **masks `netfilter-persistent`** so Oracle’s SSH-only REJECT cannot win after reboot (SETUP-ISSUE-7). | iptables comes with `door_vm` in 3.3 |
+| firewalld: SSH + 25565 tcp/udp **without** source IPs (Security List is the IP allowlist). Cloud-init **masks `netfilter-persistent`** (SETUP-ISSUE-7), **masks UFW**, and writes `/etc/systemd/system/firewalld.service` (no `network-pre`) so boot does not delete dbus (OS-ISSUE-9). | iptables comes with `door_vm` in 3.3 |
 | marker `/etc/mcmgr/cloud-init-done` (0750 dir — Setup waiter uses `sudo -n test -f`, SETUP-ISSUE-5) | marker `/etc/mcmgr-door/cloud-init-done` |
 
 Instance `metadata` is `ignore_changes` after create so later template tweaks do not recreate VM1 (world lives on that boot volume). OS-baseline fixes for *new* deploys do not retrofit old VMs — those use SSH repair.
@@ -130,7 +130,7 @@ Never `tofu import` the **live Forge lab** into product state. Importing one res
 - Budget + ACTUAL ABSOLUTE $1 alert (email). Residual-charge copy is in the budget description / alert message.
 - Events → Function is the live path. **No ONS topic.**
 - `softstop_instance_ids` defaults to **VM1 only**. Always Free AMD Micro stays up (does not use Ampere OCPU-hours). Function config also passes `OS_NAMESPACE` / `OS_BUCKET` / `OS_LOCK_OBJECT` for the lock PUT.
-- The v1 lock object (`meta/spend-brake-triggered.json`) is **runtime state**, not a tofu resource. Tracked Function source writes it (`functions/shutdown_vm/`); do not `fn push` unless authorized.
+- The v1 lock object (`meta/spend-brake-triggered.json`) is **runtime state**, not a tofu resource. Tracked Function source writes it (`functions/shutdown_vm/`). **Product path (before release):** CI-built ARM image copied into the user’s OCIR (V1 Step **8.6.1**), not Docker Desktop / Cloud Shell on the admin PC. TESTING `fn push` remains allowed for agents; do not `fn push` the live Forge lab unless the operator authorizes it.
 
 ---
 

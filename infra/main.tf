@@ -43,7 +43,9 @@ module "compute" {
   ssh_public_key = var.ssh_public_key
   vm1_ocpus      = var.vm1_ocpus
   vm1_memory_gb  = var.vm1_memory_gb
-  vm1_user_data  = base64gzip(templatefile("${path.module}/cloud-init/vm1.yaml.tftpl", {}))
+  vm1_user_data  = base64gzip(templatefile("${path.module}/cloud-init/vm1.yaml.tftpl", {
+    firewalld_unit = file("${path.module}/cloud-init/firewalld-mcmgr.service")
+  }))
   door_user_data = base64gzip(templatefile("${path.module}/cloud-init/door.yaml.tftpl", {}))
 }
 

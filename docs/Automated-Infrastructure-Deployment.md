@@ -401,7 +401,7 @@ Optional **later** (not MVP): after the bucket exists, Setup may upload a copy o
 | Vanilla/common bootstrap | product `onbox/mcmgr/` | Manager SFTP + `sudo bash` |
 | Door C + scripts | product `door_vm/` | Same SFTP pattern as lab `door_deploy.py` (obey [`Agent-Deploy-Pitfalls.md`](Agent-Deploy-Pitfalls.md)) |
 | Idle agent | product `vm_agent/` | Same |
-| `$1` budget Function | product `functions/shutdown_vm/` | OCIR / `fn push` (operator-authorized) |
+| `$1` budget Function | product `functions/shutdown_vm/` | CI-built `linux/arm64` image **copied** into the user’s OCIR (`mcmgr-fn/softstop`); then tofu creates the Function + Events. **Not** Docker Desktop / `fn` / Cloud Shell on the admin PC (V1 Step **8.6.1**). Auth Token still required. Until 8.6.1 ships, Setup’s publisher may still `docker buildx` and skip. Lab Cloud Shell / TESTING `fn push` are break-glass only. |
 
 CRLF stripping, `/tmp` as `ubuntu`, `sudo bash -c 'a && b'`, stop `mccontrol` before replacing the binary, `HOME` for systemd oneshots — all still apply.
 
@@ -484,9 +484,9 @@ Aligned with PRODUCT-IDEAS naming and lab `Infrastructure-Information.md` behavi
 - Private Standard bucket `mcmgr-shared-data` (no versioning, no emit events, Oracle-managed keys)
 - Dynamic groups (tenancy OCID as `compartment_id` — Oracle requires this): `mcmgr-dg-instances` (compartment), `mcmgr-dg-door` (**door instance OCID** — hyphenated `mcmgr-role` tag matching did not enroll the door on the identity-domain 3.3 test), `mcmgr-dg-fn` (fnfunc in compartment)
 - Policies **scoped to the product compartment / bucket** where the API allows (lab today is tenancy-wide `manage`; product should tighten)
-- $1 monthly budget on the compartment + alert (email) + **Events rule → Function** (`mcmgr-events-budget-alert`; RM dump omitted the action — Console has Functions → `shutdown_vm`). Do **not** create the lab’s unused ONS topic `Budget-Alerts`. Phase 3.3 may complete Function image push; 3.1 may placeholder. Behavior is staged in lab `PRODUCT-IDEAS.md` ([$1 spend-brake lock (v1)](../../OCI-mc-server-manager/PRODUCT-IDEAS.md#1-spend-brake-lock-v1)):
+- $1 monthly budget on the compartment + alert (email) + **Events rule → Function** (`mcmgr-events-budget-alert`; RM dump omitted the action — Console has Functions → `shutdown_vm`). Do **not** create the lab’s unused ONS topic `Budget-Alerts`. **Function image (v1, before release):** CI builds `linux/arm64`; Setup **copies** into the user’s OCIR; tofu sets `function_image`. Users do not run Docker Desktop, `fn`, or Cloud Shell. Phase 3.3’s current `docker buildx` publisher is **interim** until V1 Step **8.6.1**. 3.1 may leave `function_image` empty (Function + Events gated). Behavior is staged in lab `PRODUCT-IDEAS.md` ([$1 spend-brake lock (v1)](../../OCI-mc-server-manager/PRODUCT-IDEAS.md#1-spend-brake-lock-v1) and [Spend-brake Function image](../../OCI-mc-server-manager/PRODUCT-IDEAS.md#spend-brake-function-image-v1-before-release)):
   - **Product v1 Function (lab `functions/shutdown_vm/`, not live-pushed in Step 2.2):** ignore budget **RESET**; on a real threshold alert SoftStop **VM1 only**, then **PUT** `meta/spend-brake-triggered.json`. **Do not SoftStop the door Micro** — AMD `VM.Standard.E2.1.Micro` is a separate Always Free allowance (up to two instances), not Ampere OCPU-hours; Oracle does not charge Always Free resources after PAYG upgrade. `softstop_instance_ids` defaults to VM1; keep it a variable for an emergency override. Function config must include `OS_NAMESPACE` / `OS_BUCKET` / `OS_LOCK_OBJECT`.
-  - **Live lab image (until an authorized `fn push`):** still SoftStops **VM1 and VM2** and does not write the lock (captured 0.0.11).
+  - **Live lab image (until an authorized v1 push):** still SoftStops **VM1 and VM2** and does not write the lock (captured 0.0.11). TESTING agents may `fn push` v1; the **product** path after 8.6.1 is CI copy, not Cloud Shell.
   - **Do not create or delete the lock object in OpenTofu** — it is runtime state, like ledger JSON.
   - **IAM:** grant the Functions dynamic group SoftStop on the product compartment **and** object write **scoped to the product bucket**. Do **not** grant tenancy-wide `manage objects`.
 
@@ -545,7 +545,7 @@ If tofu also owned Security List ingress, every whitelist edit would fight state
 
 1. Bump module `stack_version`.
 2. If `meta/infra.json` shape changes, bump `infra_schema`.
-3. Manager “Repair / update infrastructure” (v1-ish; MVP Setup may only do first deploy): fetch newer HCL (§13), `tofu plan`, show the user, apply.
+3. Manager “Repair / update infrastructure” (v1-ish; MVP Setup may only do first deploy): fetch newer HCL (§13), `tofu plan`, show the user, apply. **Function image:** copy a newer bundled digest into OCIR when it differs from live (V1 Step **8.6.1**) — independent of `apply_stage` already being complete.
 4. Connect-existing MVP-light may soft-warn on schema mismatch; v1 enforces.
 
 App updates (GitHub Releases of the Manager) are independent. A newer app must still drive older infra until `infra_schema` says otherwise.
@@ -576,6 +576,7 @@ Worlds that exist only in Object Storage are deleted with the bucket. No tofu st
 | Channel | Role |
 |---------|------|
 | **Bundled `infra/`** inside the app/installer | Always present; checksummed; used offline; defines the minimum `infra_schema` that app version understands |
+| **Bundled Function image** (or GitHub Release asset, same hybrid idea as HCL) | CI-built `linux/arm64` spend-brake image; Setup copies into the user’s OCIR. Required before official release (V1 Step **8.6.1**). |
 | **GitHub Release asset** (e.g. `mcmgr-infra-0.2.0.zip`) or repo zipball of tag `infra-v0.2.0` | Optional newer module; Setup checks on wizard start (not every Manager launch — no silent probe) |
 | **User Object Storage / RM Git source** | Not used as the module source |
 
@@ -599,7 +600,7 @@ GitHub is **free** for public repos. This product repo is already public (`maatt
 | State encryption | OpenTofu `encryption` block with PBKDF2 passphrase from Windows Credential Manager (or skip encryption in first 3.1 skeleton, but **do not** commit plaintext state). See [State and Plan Encryption](https://opentofu.org/docs/language/state/encryption/). Losing the passphrase = losing the ability to manage that stack with tofu (Connect-existing via meta still works for *day-2*). |
 | SSH private key | Admin PC only; fingerprint may go in `meta/infra.json` |
 | API key | `~/.oci` |
-| Auth Token (OCIR) | Windows Credential Manager when Function push needs it |
+| Auth Token (OCIR) | Windows Credential Manager. Needed to **copy** the pre-built Function image into the user’s OCIR (V1 Step **8.6.1**). Not Docker Desktop. Until 8.6.1, the interim publisher still uses Docker buildx. |
 | RCON | `/etc/mcmgr/rcon.secret` on VM1; local config copy; **never** meta, **never** tofu state if we can avoid it (state will still see instance metadata — do not put RCON in user_data) |
 
 **No Terraform Cloud / HCP / OCI RM remote backend** for MVP.
@@ -622,7 +623,8 @@ Order of operations (Phase 3.3; 3.1 only needs the module to be plan-able):
 8. Guest repair (same SSH session or Re-Deploy at `apply_stage=vm1` without re-apply): `/etc/netplan/99-mcmgr-play.yaml` for the **secondary** play IP on both VMs (reserved public IP targets that address, not the ephemeral primary); re-apply managed `server.properties` (`white-list=false`, `enforce-whitelist=false`). Setup does **not** seed `whitelist.json` from a Minecraft username (OCI Security List is the allowlist).
 9. Seed Object Storage layout if tofu did not (empty prefixes, initial budget JSON). Treat **missing** `meta/infra.json` / `ledger/usage.json` as create (greenfield GET 404 is not a fatal publish error). Log seed failures into the Setup deploy log.
 10. Publish `meta/infra.json` from tofu outputs + on-box game manifest summary.
-11. Write `data/config.local.json`. Players connect on the **reserved play IP**, not the SSH ephemeral.
+11. **Spend-brake Function image:** copy the CI-built `linux/arm64` artifact into the user’s OCIR (Auth Token; no Docker Desktop — V1 Step **8.6.1**), set `function_image`, second `tofu apply` to create Function + Events. Deploy / repair must **converge** when bundled digest ≠ live image (do not skip because `apply_stage` already passed Function). Until 8.6.1, the interim publisher may `docker buildx` and skip. Missing token → Function/Events stay uncreated; VMs still succeed.
+12. Write `data/config.local.json`. Players connect on the **reserved play IP**, not the SSH ephemeral.
 
 Resumability: wizard state **and** tofu state **and** `bootstrap-state.json` are three different checkpoints. Document which step was last completed.
 
@@ -641,7 +643,7 @@ Resumability: wizard state **and** tofu state **and** `bootstrap-state.json` are
 | Security List private-only | No `0.0.0.0/0` on 22/25565/8080 |
 | Home region | Wizard should prefer home region for Always Free eligibility |
 
-If a resource would create spend, the module must not include it without a variable that defaults **off** and a wizard warning (v1 paid mode). MVP has no such variable.
+If a resource would create spend, the module must not include it without a variable that defaults **off** and a wizard warning. Paid / spend mode is **not v1** (later / far future). MVP and v1 have no such variable.
 
 ---
 
@@ -800,9 +802,9 @@ Then download config with the stack get-configuration APIs documented under [Get
 |----------|-----------------------------|
 | **3.1 OpenTofu skeleton** | Create `infra/` as §11. `tofu validate` / plan against an **empty** test compartment. **Read this file first.** Use discovery pack only as reference. No apply until operator approves. |
 | **3.2 Wizard UX** | Collect variables in §11.2; show plan summary; persist resume; **no** RM UI. Infra zip resolve (bundled only is OK in 3.2; GitHub pull can be 3.3 or a small follow-up). |
-| **3.3 Apply + bootstrap** | Local `tofu apply`; capacity wait; SSH bootstrap per Minecraft blueprint; write meta; Function/OCIR Auth Token. |
+| **3.3 Apply + bootstrap** | Local `tofu apply`; capacity wait; SSH bootstrap per Minecraft blueprint; write meta; Function/OCIR Auth Token. **Image:** CI copy into OCIR after V1 **8.6.1**; interim 3.3 `docker buildx` must not ship. |
 | **4 Connect existing** | Does **not** need tofu state. `meta/infra.json` only. |
-| **7 Installer** | Bundle pinned `tofu.exe` + `infra/` + license; optional GitHub infra pull already designed. |
+| **7 Installer** | Bundle pinned `tofu.exe` + `infra/` + license + **8.6.1 Function image artifact**; optional GitHub infra/image pull already designed. |
 
 **Step 3.1 must not:** clone discovery HCL, add `schema.yaml` “just in case,” create custom images, or target Resource Manager as a backend.
 
@@ -848,6 +850,7 @@ Ubuntu on OCI:
 
 | Date | Note |
 |------|------|
+| 2026-08-19 | **Function image product path:** CI-built `linux/arm64` copied into the user’s OCIR (Auth Token). No Docker Desktop / `fn` / Cloud Shell on the admin PC. Required before official release (V1 Step **8.6.1**). Current `docker buildx` publisher is interim. |
 | 2026-08-17 | **V1 Step 2.2:** $1 Function source PUTs `meta/spend-brake-triggered.json`; **do not SoftStop the door Micro** (Always Free AMD Micro ≠ Ampere hours). HCL `softstop_instance_ids` defaults to VM1; Function config gets OS namespace/bucket/lock key. No `fn push`. |
 | 2026-08-17 | SETUP-ISSUE-5: Setup cloud-init wait uses `sudo -n test -f` (marker under `/etc/mcmgr` 0750). |
 | 2026-08-15 | Step **4.3 DONE:** bootstrap / Re-Deploy write `white-list=false` + `enforce-whitelist=false` (SETUP-ISSUE-3). Admin Minecraft username is optional. |

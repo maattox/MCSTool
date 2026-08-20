@@ -1,9 +1,11 @@
 # `shutdown_vm` — $1 budget emergency Function
 
 **Status:** Product **v1** source (V1 Step **2.2**). `func.yaml` version **0.0.12**.  
-Live lab / already-pushed images may still be **0.0.11** (SoftStop both VMs, no lock PUT) until the operator authorizes `fn push` / OCIR. **Do not deploy this tree from this step.** Prefer waiting until Step **2.3** (door honors the lock) so a running door cannot wake VM1 after the brake.
+**TESTING (2026-08-19 P3):** `mcmgr-fn-softstop` / `mcmgr-fn/softstop:setup` runs this v1 image (S2-16–18 Pass). Live **Forge lab** may still be **0.0.11** (SoftStop both VMs, no lock PUT). TESTING agents **may** `fn build` / `fn push` / invoke this tree without asking — stay at **$0**, do **not** fire a real $1 budget alert, **do not SoftStop the door**. Never `DEFAULT` / live Forge lab.
 
-**Not** a live Function deploy. Tracked placeholders only — resolve OCIDs from Function config / lab `data/Infrastructure-Deployment-Private.md`.
+**Product path (required before official release — V1 Step 8.6.1):** CI builds `linux/arm64`; Setup **copies** the image into the user’s OCIR. Users do **not** install Docker Desktop, `fn`, or use Cloud Shell. The current Setup `docker buildx` publisher is **interim**. Cloud Shell / Code Editor remain lab break-glass only (`oci fn` never builds an image). Later code fixes ship as a new image version with the app / GitHub Release; Deploy / repair converges digest. Function **config** (VM1 OCID, bucket, lock key) stays tofu-owned — no rebuild.
+
+Tracked placeholders only — resolve OCIDs from Function config / lab `data/Infrastructure-Deployment-Private.md`. Do not bake live OCIDs into git.
 
 ## Product decision (door Micro)
 
@@ -54,7 +56,7 @@ IAM: Functions dynamic group needs `use instance-family` (SoftStop) and **object
 | `func.yaml` | Fn project metadata (memory 256 MiB, Python 3.12) |
 | `requirements.txt` | `fdk`, `oci` |
 
-`INSTANCE_OCIDS` placeholders in git must stay placeholders. Setup `OcirFunctionPublisher` still rewrites the baked list to read `INSTANCE_OCIDS` from env when pushing an image.
+`INSTANCE_OCIDS` placeholders in git must stay placeholders. The shipped image must read `INSTANCE_OCIDS` from Function config/env (Setup’s interim publisher rewrites the baked list when it still builds locally). CI in Step **8.6.1** must produce the same env-driven image.
 
 ## Tests
 
@@ -71,4 +73,4 @@ No live budget fire.
 - Product [`Contracts-Object-Storage.md`](../../docs/Contracts-Object-Storage.md) — lock key + JSON  
 - Lab [`Infrastructure-Information.md`](../../../OCI-mc-server-manager/Infrastructure-Information.md) — Budget emergency stop  
 - Lab [`PRODUCT-IDEAS.md`](../../../OCI-mc-server-manager/PRODUCT-IDEAS.md) — $1 spend-brake lock  
-- Lab [`docs/Issues.md`](../../../OCI-mc-server-manager/docs/Issues.md) — FN-ISSUE-1 (live **deployed** image may still stop the door until an authorized push)
+- Lab [`docs/Issues.md`](../../../OCI-mc-server-manager/docs/Issues.md) — FN-ISSUE-1 (**gone on TESTING**; live **Forge lab** image may still stop the door until v1 is pushed there)

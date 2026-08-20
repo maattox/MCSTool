@@ -414,23 +414,45 @@ public sealed class SetupBootstrapService
     /// Oracle images ship netfilter-persistent (SSH-only REJECT) which Conflicts
     /// with firewalld. Cloud-init enables firewalld; after reboot the Oracle
     /// rules win unless netfilter-persistent is masked.
+    /// Canonical Ubuntu also enables ufw.service (even with ENABLED=no). Product
+    /// SoT is firewalld-only. Distro firewalld Before=network-pre.target races
+    /// cloud-init/dbus (Debian #1025618); a full unit override (not a drop-in)
+    /// omits that Before= so systemd does not delete dbus at boot (OS-ISSUE-9).
     /// </summary>
     private static void EnsureVm1HostFirewall(SshClient client, IProgress<string>? log)
     {
         log?.Report("Ensuring firewalld owns the host filter (25565 + SSH)…");
+        var infra = ProductPaths.FindInfraDirectory()
+            ?? throw new InvalidOperationException("Product infra/ not found.");
+        var unitPath = Path.Combine(infra, "cloud-init", "firewalld-mcmgr.service");
+        if (!File.Exists(unitPath))
+            throw new InvalidOperationException("Missing infra/cloud-init/firewalld-mcmgr.service.");
+        var unit = File.ReadAllText(unitPath).Replace("\r\n", "\n", StringComparison.Ordinal);
+        if (!unit.EndsWith('\n'))
+            unit += "\n";
+
         Exec(
             client,
             "sudo bash -c " + ShQuote(
                 "set -euo pipefail; "
                 + "systemctl disable --now netfilter-persistent 2>/dev/null || true; "
                 + "systemctl mask netfilter-persistent 2>/dev/null || true; "
+                + "ufw --force disable 2>/dev/null || true; "
+                + "systemctl disable ufw 2>/dev/null || true; "
+                + "systemctl mask ufw 2>/dev/null || true; "
+                + "rm -rf /etc/systemd/system/firewalld.service.d; "
+                + "cat > /etc/systemd/system/firewalld.service <<'EOF'\n"
+                + unit
+                + "EOF\n"
+                + "rm -f /etc/systemd/system/dbus-org.fedoraproject.FirewallD1.service; "
+                + "systemctl daemon-reload; "
                 + "systemctl unmask firewalld 2>/dev/null || true; "
                 + "systemctl enable --now firewalld; "
                 + "firewall-cmd --permanent --add-service=ssh; "
                 + "firewall-cmd --permanent --add-port=25565/tcp; "
                 + "firewall-cmd --permanent --add-port=25565/udp; "
                 + "firewall-cmd --reload"),
-            TimeSpan.FromSeconds(45),
+            TimeSpan.FromSeconds(60),
             log);
     }
 

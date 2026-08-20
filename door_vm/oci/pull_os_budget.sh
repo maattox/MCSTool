@@ -54,6 +54,11 @@ PY
 # uses --force). Presence = locked even if JSON is malformed. 404 = unlocked
 # (delete stale cache). Any other GET error fails this script so mccontrol
 # will not START VM1 (fail closed). No extra Python.
+#
+# OCI CLI 3.90+ missing-object JSON is not ObjectNotFound:
+#   "code": null, "message": "The service returned error code 404", "status": 404
+# Quoted "status": 404 does not match status:[[:space:]]*404. GET --file still
+# creates an empty LOCK_LOCAL on 404 — always delete it unless GET succeeded.
 echo "== get meta/spend-brake-triggered.json =="
 set +e
 oci os object get -ns "$NS" -bn "$BN" --name meta/spend-brake-triggered.json \
@@ -62,10 +67,13 @@ lock_rc=$?
 set -e
 if [[ "$lock_rc" -eq 0 ]]; then
   echo "SPEND_BRAKE_LOCK=1"
-elif [[ -s "$LOCK_ERR" ]] && grep -Eqi 'ObjectNotFound|status:[[:space:]]*404|The object .+ was not found' "$LOCK_ERR"; then
+elif [[ -s "$LOCK_ERR" ]] && grep -Eqi \
+  'ObjectNotFound|The service returned error code 404|"status":[[:space:]]*404|status:[[:space:]]*404|The object .+ was not found' \
+  "$LOCK_ERR"; then
   rm -f "$LOCK_LOCAL"
   echo "SPEND_BRAKE_LOCK=0"
 else
+  rm -f "$LOCK_LOCAL"
   echo "ERROR: spend-brake lock GET failed (not 404); fail closed" >&2
   if [[ -s "$LOCK_ERR" ]]; then
     cat "$LOCK_ERR" >&2

@@ -95,7 +95,7 @@ public static class OcirFunctionPublisher
 
             var build = await RunAsync(
                 docker,
-                ["buildx", "build", "--platform", "linux/arm64", "-t", image, "--push", staging],
+                ["buildx", "build", "--platform", "linux/arm64", "--provenance=false", "--sbom=false", "-t", image, "--push", staging],
                 stdin: null,
                 log,
                 cancellationToken).ConfigureAwait(false);

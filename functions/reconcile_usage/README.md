@@ -1,7 +1,7 @@
 # `reconcile_usage` — Usage API 48h ledger reconcile
 
 **Status:** Product **v1** source (V1 Step **7.7**). `func.yaml` version **0.0.1**.  
-**Not deployed.** Tracked placeholders only. Do **not** `fn push` / OCIR / `tofu apply` unless the operator authorizes it. Do **not** invoke this against the live Forge lab or run live Usage API queries from an agent session.
+**TESTING** agents **may** `fn push` / invoke without asking (prefer `{"dry_run": true}` first). Stay at **$0**. Do **not** invoke against the live Forge lab (`DEFAULT`). `tofu apply` still needs operator authorization.
 
 This is a **second** Function. It does **not** change [`shutdown_vm`](../shutdown_vm/README.md) ($1 spend-brake SoftStop).
 
@@ -46,7 +46,7 @@ Do **not** add this policy or a timer in OpenTofu in this step.
 
 ## Deploy later (operator-authorized)
 
-- Image push / OCIR / a scheduled Events (or Fn cron) invoke — **not** in Step 7.7.  
+- Same **CI-built ARM + copy into the user’s OCIR** channel as [`shutdown_vm`](../shutdown_vm/README.md) (V1 Step **8.6.1**). Do **not** require Docker Desktop on the admin PC. TESTING `fn push` is a lab/agent path only.  
 - Prefer the existing Functions application (`GENERIC_ARM`) rather than a paid second app.  
 - Timeout in `func.yaml` is **120s** (Usage API + GET/PUT). Memory 256 MiB.
 

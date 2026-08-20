@@ -24,13 +24,13 @@ Copy examples into `data/` and fill values, or keep the operator-seeded files al
 2. Lab `data/Infrastructure-Deployment-Private.md` — full OCIDs (reserved IP id, private IP ids, VCN, bucket, …)  
 3. Lab `data/friends.json` — whitelist  
 
-Do **not** copy Auth Tokens into `config.local.json` (OCIR only; Manager uses `~/.oci` API key). Setup stores an optional OCIR Auth Token in **Windows Credential Manager** (`McManager/ocir`), not in wizard JSON.
+Do **not** copy Auth Tokens into `config.local.json` (OCIR only; Manager uses `~/.oci` API key). Setup stores an optional OCIR Auth Token in **Windows Credential Manager** (`McManager/ocir`), not in wizard JSON. After V1 Step **8.6.1**, that token is for **copying** a pre-built ARM Function image into OCIR — not for Docker on this PC.
 
 ## Setup wizard resume
 
 `McManager.Core.Config.SetupWizardStore` reads/writes `data/setup-wizard.local.json` (same data directory as manage config). Saved on each Next/Back/Close.
 
-Included: current step, Always Free / residual / capacity flags, OCI profile + region, compartment strategy, alert email, SSH **public** path/line/fingerprint (Generate creates `%USERPROFILE%\.ssh\mcmgr_ed25519_yyyyMMdd_HHmmss`, not a reused default name), **server type** (`vanilla` / `modded`), Vanilla flavor (`default` Mojang vs `optimized` Paper) + version **id**, Modded pack path/kind/name/loader + confirm flags (no catalog URL), EULA flag, whether a token was stored, **admin `/32` CIDR**, **VM1 OCPUs / memory** (`2`/`12` or `4`/`24`; default **4 / 24**). In-game `white-list` is **off**; OCI Security List is the allowlist. Also **`apply_stage`**, optional Function image after OCIR push.
+Included: current step, Always Free / residual / capacity flags, OCI profile + region, compartment strategy, alert email, SSH **public** path/line/fingerprint (Generate creates `%USERPROFILE%\.ssh\mcmgr_ed25519_yyyyMMdd_HHmmss`, not a reused default name), **server type** (`vanilla` / `modded`), Vanilla flavor (`default` Mojang vs `optimized` Paper) + version **id**, Modded pack path/kind/name/loader + confirm flags (no catalog URL), EULA flag, whether a token was stored, **admin `/32` CIDR**, **VM1 OCPUs / memory** (`2`/`12` or `4`/`24`; default **4 / 24**). In-game `white-list` is **off**; OCI Security List is the allowlist. Also **`apply_stage`**, optional Function image after OCIR **copy** (V1 Step **8.6.1**; interim publisher may still build with Docker).
 
 **Not** included: Auth Token secret, SSH private key, tenancy OCID, jar URL/sha1.
 
@@ -41,7 +41,7 @@ Included: current step, Always Free / residual / capacity flags, OCI profile + r
 - `friends.local.json` with the admin `/32` **only if that file is empty**.
 - Guest netplan (`/etc/netplan/99-mcmgr-play.yaml`) for the secondary play IP; managed `server.properties` with **`white-list=false`** / **`enforce-whitelist=false`** (OCI Security List is the allowlist). Setup does **not** seed `whitelist.json` from a Minecraft username.
 
-**Re-Deploy:** if `apply_stage` is already `vm1` (or later), Deploy re-runs guest repair (netplan, door env, managed `server.properties` whitelist-off) and can start a STOPPED VM1 — it does **not** re-`tofu apply`. Players use `play.reserved_public_ip`, not `vm1.ssh_host` / `door.ssh_host`.
+**Re-Deploy:** if `apply_stage` is already `vm1` (or later), Deploy re-runs guest repair (netplan, door env, managed `server.properties` whitelist-off) and can start a STOPPED VM1 — it does **not** re-`tofu apply` for VMs. After V1 Step **8.6.1**, repair **must** still copy a newer Function image when the bundled digest differs from live (today a skipped Function stage is not retried — that is a gap). Players use `play.reserved_public_ip`, not `vm1.ssh_host` / `door.ssh_host`.
 
 **Delete infrastructure (Danger Zone):** typed `confirm`, then OpenTofu `destroy` of the LocalAppData stack only. After success the app removes `config.local.json`, `setup-wizard.local.json`, and `%LOCALAPPDATA%\McManager\tofu\<stack-id>\`. It keeps `friends.local.json`, `~/.oci`, SSH keys, and Credential Manager. Close Manager and reopen before a fresh Setup. No tofu state on this PC → destroy refuses (it will not scan-and-wipe the tenancy). The product Object Storage bucket (including `ledger/usage.json` and world backups) is destroyed with the stack; a later Setup seeds a new empty ledger. Oracle Always Free hours for the current month are not reset — see [`Guide.md`](Guide.md) → Tear down and redeploy.
 
