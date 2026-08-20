@@ -1,6 +1,6 @@
 # V1 bug-fix plan — Pass 1
 
-**Status:** Living. Created 2026-08-19 from [`V1-QA-Pass-1-Results.md`](V1-QA-Pass-1-Results.md) after **operator early triage** (paused after S2). **P1–P8 DONE** (P8 2026-08-20). Catalog **S0–S7 DONE** (S7-04 Skipped). Operator **confirmed remaining severities** 2026-08-19 (including S3-07 auto-start). **NEXT = none** (Pass 1 bug-fix P-sections complete). Do not start 8.6.1 or 9.1.  
+**Status:** Living. Created 2026-08-19 from [`V1-QA-Pass-1-Results.md`](V1-QA-Pass-1-Results.md) after **operator early triage** (paused after S2). **P1–P8 DONE** (P8 2026-08-20). Catalog **S0–S7 DONE** (S7-04 Skipped — greenfield is **Pass 2**). Operator **confirmed remaining severities** 2026-08-19 (including S3-07 auto-start). **NEXT = none** (Pass 1 bug-fix P-sections complete). QA execution: [`V1-QA-Pass-2-Scope.md`](V1-QA-Pass-2-Scope.md) Phase A. Do not start 8.6.1 or 9.1.  
 **Parent:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.5.2** (stays NEXT until Phase 8.5 exits).  
 **Catalog:** [`V1-QA-Catalog.md`](V1-QA-Catalog.md) — do not edit expected steps.
 
@@ -112,9 +112,9 @@ Do **not** open a new P-section for these unless the operator overrides.
 | Door LA midnight vs UTC day windows | **Parked** (operator 2026-08-19). Documented in [`Contracts-Object-Storage.md`](Contracts-Object-Storage.md). |
 | DOOR-ISSUE-1 / S5-02 idle kick on first connect | Known. Copy nit (“wake already triggered”) parks with it. |
 | Hybrid Status until focus (S5-04) | Intended 2 min background poll (`MainViewModel.BackgroundPollInterval`). |
-| S4-11 modded Modding panel | Later modded TESTING redeploy. |
+| S4-11 modded Modding panel | Pass 2 Phase D ([`V1-QA-Pass-2-Scope.md`](V1-QA-Pass-2-Scope.md)) |
 | SSH.NET GHSA-q939-rpr3-3284 | After-v1 / Phase 9. |
-| S7-04 greenfield | Operator-authorized tofu later. |
+| S7-04 greenfield | **Pass 2 Phase A** (operator-authorized tofu in that prompt). |
 | Step 4.12 CurseForge API | Stays **deferred**. P7 is file-import block only. |
 
 ---
@@ -364,4 +364,4 @@ Do **not** load the full PRODUCT-IDEAS or blueprint except §11.3 if needed for 
 | 2026-08-20 | **P5 DONE.** S4-12: Manager write OK; live agent lacked identity apply; SoT applied after Java so Vanilla stop rewrote old MOTD. `mc-boot-ledger` now Before=minecraft; TESTING redeployed. Localhost SLP showed new MOTD+icon. OS-ISSUE-10. **NEXT = P6**. Do not start 8.6.1 or 9.1. |
 | 2026-08-20 | **P6 DONE.** S5-05 Manager Start: HTTP `/api/wake` skips daily; Minecraft login still refuses; spend-brake still blocks. Hybrid Start wait ignores `BUDGET_EXHAUSTED`. TESTING: daily kick + admin PLAYABLE + lock refuse. DOOR-ISSUE-11. **NEXT = P7**. Do not start 8.6.1 or 9.1. |
 | 2026-08-20 | **P7 DONE.** Incomplete CF zip (manifest + libraries/installer, no `mods/` jars) hard-blocked with Server Files / filled-zip copy. Client export still refused. Complete Server Files + `.mrpack` still continue. No CurseForge API. **NEXT = P8**. Do not start 8.6.1 or 9.1. |
-| 2026-08-20 | **P8 DONE.** Wipe auto-starts Minecraft (`systemctl start` after live-save delete). TESTING: unit active + journal Done 10.7s new world; backups kept. Guide/catalog already auto-start. PRODUCT-IDEAS Wipe world step 4 may still say next-Start (drift, not reverted). **NEXT = none**. Do not start 8.6.1 or 9.1. |
+| 2026-08-20 | **P8 DONE.** Wipe auto-starts Minecraft (`systemctl start` after live-save delete). TESTING: unit active + journal Done 10.7s new world; backups kept. Guide/catalog already auto-start. PRODUCT-IDEAS Wipe world step 4 may still say next-Start (drift, not reverted). **NEXT = none**. Pass 2 is [`V1-QA-Pass-2-Scope.md`](V1-QA-Pass-2-Scope.md). Do not start 8.6.1 or 9.1. |

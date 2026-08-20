@@ -11,6 +11,15 @@
     <EmbeddedResource Include="..\..\tests\fixtures\game-metadata\paper-fill-v3-project.json">
       <LogicalName>McManager.Core.Setup.paper-fill-v3-project.json</LogicalName>
     </EmbeddedResource>
+    <EmbeddedResource Include="..\..\docs\modrinth-exclude-include.json">
+      <LogicalName>McManager.Core.Setup.modrinth-exclude-include.json</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\docs\cf-exclude-include.json">
+      <LogicalName>McManager.Core.Setup.cf-exclude-include.json</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Setup\pack-lists\mcmgr-exclude-include.json">
+      <LogicalName>McManager.Core.Setup.mcmgr-exclude-include.json</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 
   <ItemGroup>

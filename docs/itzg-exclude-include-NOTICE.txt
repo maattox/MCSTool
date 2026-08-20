@@ -1,0 +1,21 @@
+Exclude/include override lists
+==============================
+
+docs/modrinth-exclude-include.json
+docs/cf-exclude-include.json
+
+These files are copies of the lists maintained by the itzg/docker-minecraft-server
+project (and the shared JSON schema documented in itzg/mc-image-helper).
+
+Upstream:
+  https://github.com/itzg/docker-minecraft-server
+  files/modrinth-exclude-include.json
+  files/cf-exclude-include.json
+  https://github.com/itzg/mc-image-helper  (exclude/include file schema)
+
+License: Apache License 2.0 (itzg/docker-minecraft-server).
+
+This product vendors the lists so Setup can strip known client-only mods when
+a pack mis-declares them as server-compatible. Optional refresh at analyze time
+may fetch newer copies from GitHub raw URLs; the bundled files are the fallback.
+Do not treat these lists as CurseForge or Modrinth API data.

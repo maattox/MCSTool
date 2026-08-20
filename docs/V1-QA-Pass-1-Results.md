@@ -1,5 +1,7 @@
 # V1 QA Pass 1 — results
 
+**Pass:** 1 (**historical** — execution continues at [`V1-QA-Pass-2-Scope.md`](V1-QA-Pass-2-Scope.md) / [`V1-QA-Pass-2-Results.md`](V1-QA-Pass-2-Results.md). Do not fill this file further.)
+
 **Pass:** 1  
 **Catalog:** `[V1-QA-Catalog.md](V1-QA-Catalog.md)`  
 **Dates:** 2026-08-19 (S0, S1, S2, S3, S4, S5, S6, **S7**). **Paused after S2** for OS-ISSUE-9; **P1 DONE** 2026-08-19; **P2 DONE** 2026-08-19 (S2-11); **P3 DONE** 2026-08-19 (S2-16–18). **S3 DONE** 2026-08-19 (one **Minor** Fail: S3-04 leftover `/24`). **S4 DONE** 2026-08-19 (one **Major** Fail suggested: S4-12 name/icon/MOTD not applied). **S5 DONE** 2026-08-19 (one **Major** Fail suggested: S5-05 daily-exhaust path). **S6 DONE** 2026-08-19 (no catalog Fail; incomplete CurseForge zip UX in Additional problems). **S7 DONE** 2026-08-19 (S7-02/S7-03 Pass; S7-04 Skipped — no tofu this round). Pass 1 catalog suites S0–S7 filled. Do not start 8.6.1 or 9.1.  

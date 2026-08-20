@@ -1,0 +1,9 @@
+{
+  "globalExcludes": [
+    "iris"
+  ],
+  "globalForceIncludes": [
+    "sodium"
+  ],
+  "modpacks": {}
+}

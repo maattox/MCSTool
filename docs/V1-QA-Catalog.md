@@ -2,10 +2,11 @@
 
 **Status:** Living test catalog for [Phase 8.5](V1-Implementation-Plan.md#phase-85--pre-packaging-qa).  
 **Parent:** `[V1-Implementation-Plan.md](V1-Implementation-Plan.md)`.  
-**Results:** fill a dated `[V1-QA-Pass-N-Results.md](V1-QA-Pass-1-Results.md)` (copy the Pass 1 file). Do **not** edit expected steps in this catalog just to record an outcome.  
+**Results:** fill `[V1-QA-Pass-N-Results.md](V1-QA-Pass-2-Results.md)` for the current pass. Pass 1 is historical (`[V1-QA-Pass-1-Results.md](V1-QA-Pass-1-Results.md)`). Do **not** edit expected steps in this catalog just to record an outcome.  
+**Pass 2 execution:** `[V1-QA-Pass-2-Scope.md](V1-QA-Pass-2-Scope.md)` (include/skip + phases). Do not re-run the full catalog.  
 **Fix work:** after triage, an agent writes `[V1-Bug-Fix-Plan-Pass-N.md](V1-Bug-Fix-Plan-TEMPLATE.md)` from the filled results. Agents implement **that** plan, not this catalog.
 
-This catalog is `dotnet run` **+ the existing TESTING stack**. It is not the PRODUCT-IDEAS clean-room (new account + installer + real $1 budget fire). Do not start [Step 8.6.1](V1-Implementation-Plan.md#step-861--ci-built-arm-image--setup-copy-into-ocir) or [Step 9.1](V1-Implementation-Plan.md#step-91--windows-installer) from this file.
+This catalog is `dotnet run` **+ TESTING**. Pass 1 used the existing Vanilla stack. Pass 2 is Delete + greenfield **Modded**. It is not the PRODUCT-IDEAS clean-room (new account + installer + real $1 budget fire). Do not start [Step 8.6.1](V1-Implementation-Plan.md#step-861--ci-built-arm-image--setup-copy-into-ocir) or [Step 9.1](V1-Implementation-Plan.md#step-91--windows-installer) from this file.
 
 **Cost:** $0 (Always Free–eligible). Never open `0.0.0.0/0` on Minecraft, SSH, or door admin.
 
@@ -15,34 +16,25 @@ This catalog is `dotnet run` **+ the existing TESTING stack**. It is not the PRO
 
 ## How to use this file
 
-1. Each pass: run [S0](#s0--automated-already-covered) → [S1](#s1--agent-preflight) → [S2](#s2--agent-on-box--cloud) → [S3](#s3--hybrid-agent-stages-operator-clicks) → operator suites [S4](#s4--operator-manager-ui)–[S6](#s6--setup--connect-existing). Leave [S7](#s7--destructive--last) last. Record [S8](#s8--known-issue-checks) as you hit them.
-2. **One agent chat owns the TESTING stack at a time** for S1–S2 (and any S3 staging). Two chats shortening idle and invoking the spend-brake Function will collide.
-3. Fill the pass results file as you go. Do not wait until the end of a three-hour session.
-4. Pass 2+ = **failed tests from the last pass + smoke ([S0](#s0--automated-already-covered), [S1-03](#s1-03--stack-snapshot), [S2-08](#s2-08--wake-from-stopped-unlocked), [S4-01](#s4-01--novice-status--play-ip)) + tests for files that changed**. Full catalog re-run only before declaring Phase 8.5 done.
-5. Agents executing this catalog: read **this protocol + the suite you were asked to run**. Do not load the Minecraft blueprint, PRODUCT-IDEAS, or the whole V1 plan.
-6. The operator **may pause a pass after a suite** for a Blocker (write/run [`V1-Bug-Fix-Plan-Pass-N.md`](V1-Bug-Fix-Plan-TEMPLATE.md), then a delta). Pass 1 catalog S0–S7 filled; remaining bug-fix **NEXT = P4** ([`V1-Bug-Fix-Plan-Pass-1.md`](V1-Bug-Fix-Plan-Pass-1.md)). Do not start 8.6.1 or 9.1.
+1. **Pass 1 (DONE):** full S0–S7 on Vanilla (S7-04 Skipped). Bug-fix P1–P8 DONE.
+2. **Pass 2 (living):** follow [`V1-QA-Pass-2-Scope.md`](V1-QA-Pass-2-Scope.md) phases A–D. Fill [`V1-QA-Pass-2-Results.md`](V1-QA-Pass-2-Results.md). Do **not** re-run rows already `Skipped` there.
+3. **One agent chat owns the TESTING stack at a time.** Two chats shortening idle and invoking the spend-brake Function will collide. Greenfield destroy/apply is Phase A only.
+4. Fill the pass results file as you go. Do not wait until the end of a three-hour session.
+5. Later passes = **failed tests from the last pass + smoke ([S0-01](#s0-01--core-unit-tests), [S1-03](#s1-03--stack-snapshot), [S2-08](#s2-08--wake-from-stopped-unlocked), [S2-09](#s2-09--idle-softstop-short-timeout), [S2-17](#s2-17--invoke-function-with-fake-actual-alert), [S3-01](#s3-01--spend-brake-overlay--typed-confirm), [S4-01](#s4-01--novice-chrome)) + tests for files that changed** + gaps the last pass never covered (Pass 2: greenfield + live Modded). Full catalog re-run only before declaring Phase 8.5 done.
+6. Agents: read **Pass 2 scope + named catalog IDs**. Do not load the Minecraft blueprint, PRODUCT-IDEAS, or the whole V1 plan.
+7. The operator **may pause a pass after a suite** for a Blocker (write/run [`V1-Bug-Fix-Plan-Pass-N.md`](V1-Bug-Fix-Plan-TEMPLATE.md), then a delta). Do not start 8.6.1 or 9.1.
 
 
 
 ### Operator prompt (copy-paste)
 
-**Agent suite (no UI):**
+**Pass 2 Phase A (greenfield + modded) — current NEXT:**
 
-```text
-Read docs/V1-QA-Catalog.md in OCI-mc-server. Run only suites S0, S1, and S2 (all tests marked Runner = agent). Fill docs/V1-QA-Pass-1-Results.md as you go. TESTING profile only. Stay at $0. You MAY fn build/push/invoke product Functions on TESTING. Do not tofu apply/destroy. Do not start Step 9.1. Do not commit. Restore lock object, idle timeout, and idle-enabled when you finish. Stop after S2 and tell me what failed.
-```
+Canonical text: [`V1-QA-Pass-2-Scope.md`](V1-QA-Pass-2-Scope.md) → Operator prompts → Phase A.
 
-**Hybrid suite:**
+**Pass 2 later phases / triage:** same file (Phase B, C, D, triage).
 
-```text
-Read docs/V1-QA-Catalog.md suite S3. Stage the fixtures listed; wait for me to click through; then verify cloud/on-box. Fill the S3 rows in docs/V1-QA-Pass-1-Results.md. TESTING only. Stay at $0. Do not tofu apply. Do not commit.
-```
-
-**Triage / bug-fix plan (docs only):**
-
-```text
-Read docs/V1-QA-Catalog.md (protocol only) and the filled docs/V1-QA-Pass-N-Results.md. Do not write product code. Create docs/V1-Bug-Fix-Plan-Pass-N.md from the template. Triage Fail vs Known vs after-v1. Stop and ask me to confirm severity before any agent implements fixes.
-```
+**Historical Pass 1 agent suite (do not use):** filled [`V1-QA-Pass-1-Results.md`](V1-QA-Pass-1-Results.md).
 
 ---
 
@@ -115,7 +107,7 @@ Optional on Fail: screenshot path, `journalctl` snippet, approximate timestamp (
 | After-v1 PRODUCT-IDEAS                  | Players tab, pack replace, PTY, paid mode, …                                             |
 | In-app pack browser / public Minecraft  | **Rejected**                                                                             |
 | Live Forge lab (`DEFAULT` profile)      | Forbidden                                                                                |
-| `tofu apply` / `tofu destroy`           | Still **operator-authorized per session** — S7-04 is skip unless you say so in that chat |
+| `tofu apply` / `tofu destroy`           | Still **operator-authorized per session** — Pass 2 **Phase A** authorizes TESTING destroy-then-apply for S7-04. Other chats: skip unless the operator says so |
 
 
 ---
@@ -186,7 +178,7 @@ Treat as `Known`, not a new Fail, unless worse than documented. Living list: lab
 | **OS-ISSUE-7**               | Idle disable does not survive boot / Minecraft start (**by design**) | S2-28, S4-18                                                |
 | **FN-ISSUE-1**               | Old Function image SoftStops the door                                | S2-16 / S2-17 — **gone on TESTING** (P3); Forge lab may still be 0.0.11 |
 | **OS-ISSUE-6** (backup skip) | Function/Console SoftStop skips world backup (MVP deferred)          | S2-17 — note only                                           |
-| **OS-ISSUE-9**               | Guest ACPI SoftStop stuck OCI **STOPPING**; UFW vs firewalld unproven | S2-05 / S2-08 wait — Pass 1 **P1** before S3 |
+| **OS-ISSUE-9**               | Guest ACPI SoftStop stuck OCI **STOPPING** — **fixed** (firewalld/cloud-init/dbus; P1) | S2-05 / S2-08 on **greenfield** (Pass 2 Phase B) |
 
 
 ---
@@ -198,7 +190,7 @@ Treat as `Known`, not a new Fail, unless worse than documented. Living list: lab
 - No open **Blocker** or **Major** on the latest pass (or parked with operator OK).  
 - Smoke: S0-01, S1-03, S2-08, S2-09, S2-17, S3-01, S4-01 all `Pass` (or S3-01/S4-01 Pass on the operator pass).  
 - Remaining items are `Known` / `After-v1` / `Won't-fix` with ids.  
-- Then V1 **NEXT** may move to Step **9.1** (operator asks).
+- Then V1 **NEXT** may move to Step **8.6.1** (not 9.1). Operator asks.
 
 ---
 
@@ -697,7 +689,7 @@ Agent: put the fixture, watch OCI/SSH. Operator: Hybrid or Minecraft. Fill **bot
 
 *(Pass 1 recorded leave-stopped. Operator 2026-08-19 overrode — [`V1-Bug-Fix-Plan-Pass-1.md`](V1-Bug-Fix-Plan-Pass-1.md) **P8**. PRODUCT-IDEAS Wipe world step 4 may still say next-Start.)*
 
-**Restore:** Operator may restore from backup if they want the old world. Leave Minecraft stopped.
+**Restore:** Operator may restore from backup if they want the old world. Minecraft is **running** after wipe; Stop from Manager / idle when the session ends.
 
 ---
 
@@ -987,7 +979,7 @@ Skip any row you are not willing to restore. **S7-04 requires an explicit operat
 
 **Runner:** `operator` · **Duration:** `destructive`
 
-**Steps:** Only with explicit **tofu destroy + apply** in the session. Danger Zone Delete (`confirm`). Then Setup Deploy on TESTING. Never `DEFAULT` / Forge lab. Never a second A1 that would exceed Always Free.
+**Steps:** Only with explicit **tofu destroy + apply** in the session (Pass 2 Phase A prompt is that authorization). Danger Zone Delete (`confirm`). Then Setup Deploy on TESTING — **Modded**, one sample pack ([`V1-QA-Pass-2-Scope.md`](V1-QA-Pass-2-Scope.md)). Never `DEFAULT` / Forge lab. Never a second A1 that would exceed Always Free. Destroy **first**.
 
 **Expected:** Same bar as MVP 7.2 E2E: playable doorbell, idle, private SL. New ledger starts at zero; Oracle monthly hours do **not** reset (Guide).
 

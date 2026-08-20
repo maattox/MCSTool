@@ -1,0 +1,20 @@
+{
+  "globalExcludes": [
+    "sodium",
+    "Xaeros_Minimap",
+    "Cull Less Leaves"
+  ],
+  "globalForceIncludes": [
+    "keep-me"
+  ],
+  "modpacks": {
+    "cobbleverse": {
+      "excludes": [
+        "cloth-config"
+      ],
+      "forceIncludes": [
+        "configurable"
+      ]
+    }
+  }
+}
