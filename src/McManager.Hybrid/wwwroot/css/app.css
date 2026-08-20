@@ -1690,6 +1690,57 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     line-height: 1.45;
 }
 
+.mcm-wizard-complete {
+    border: 1px solid var(--fill-success);
+    background: var(--surface-2);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin: 0 0 16px;
+}
+
+.mcm-wizard-complete .mcm-wizard-kicker {
+    margin: 0 0 8px !important;
+    color: var(--text-success);
+}
+
+.mcm-wizard-complete > p {
+    margin: 0 !important;
+    font-size: 13px;
+    color: var(--text-primary);
+    line-height: 1.45;
+}
+
+.mcm-wizard-play-ip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 4px 0 12px;
+}
+
+.mcm-wizard-play-ip-value {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: 0.01em;
+}
+
+.mcm-wizard-log-details {
+    margin-top: 4px;
+}
+
+.mcm-wizard-log-details > summary {
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.mcm-wizard-log-details .mcm-wizard-log {
+    min-height: 120px;
+    max-height: 240px;
+}
+
 .mcm-pack-drop {
     position: relative;
     display: flex;

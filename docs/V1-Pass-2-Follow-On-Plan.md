@@ -1,6 +1,6 @@
 # V1 Pass-2 follow-on — operator notes (living)
 
-**Status:** Living. Created 2026-08-20 (docs only). **NEXT = P2.**  
+**Status:** Living. Created 2026-08-20 (docs only). **NEXT = P3.**  
 **Parent:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.4**.  
 **Why now:** operator 2026-08-20 — Pass 2 closed early after greenfield Modded + join + Modding panel. Pause Step **8.5.2** and implement these notes **before** QA Pass 3.
 
@@ -101,8 +101,8 @@ Do **not** rewrite PRODUCT-IDEAS to match. Note the drift in the implementing se
 | ID | Section | Status | Parallel? | Live SSH/OCI? |
 |----|---------|--------|-----------|----------------|
 | **P1** | Top-bar Start STOPPED gate + spend-brake confirm + player count | **DONE** | SEQUENTIAL | Yes (player count) |
-| **P2** | Setup “Deployment Complete” + reserved IP copy | **NEXT** | SEQUENTIAL | No |
-| **P3** | Merge Danger Zone into Advanced + idle only there + vibrant red | TODO | SEQUENTIAL | No |
+| **P2** | Setup “Deployment Complete” + reserved IP copy | **DONE** | SEQUENTIAL | No |
+| **P3** | Merge Danger Zone into Advanced + idle only there + vibrant red | **NEXT** | SEQUENTIAL | No |
 | **P4** | Window-locked dismissible action banners | TODO | SEQUENTIAL | No |
 | **P5** | “game computer” → “server” (Setup + Manager + Guide) | TODO | SEQUENTIAL | No |
 | **P6** | Console simple vs full log | TODO | SEQUENTIAL | Yes (optional) |
@@ -151,7 +151,7 @@ When **P13** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 ([`V1-QA-Pass-3
 
 ## P2 — Setup Deployment Complete + reserved IP
 
-**Status:** NEXT  
+**Status:** DONE  
 **Catalog IDs:** S6-01 (finish page)
 
 **Read first**
@@ -176,13 +176,13 @@ Keep the deploy log available (below or collapsed). Do not dump OCIDs. Use “se
 
 **Done when:** Success UI exists; Guide mentions the IP + Close.
 
-**Changelog:** *(empty)*
+**Changelog:** 2026-08-20 — After Deploy success (or resume of `apply_stage=config_written`): heading **Deployment Complete**, reserved play IP + Copy, Close to Manager. Deploy log collapsed if present. Catalog S6-01 expected updated. Guide IP + Close.
 
 ---
 
 ## P3 — Merge Danger Zone into Advanced
 
-**Status:** TODO  
+**Status:** NEXT  
 **Catalog IDs:** S4-02 (update **expected** — product change)
 
 **Read first**
@@ -533,5 +533,6 @@ Derive OCIR username from namespace + OCI user **if that is a small change**; ot
 
 | Date | Note |
 |------|------|
+| 2026-08-20 | **P2 DONE.** Setup **Deployment Complete** + reserved play IP Copy + Close. **NEXT = P3.** Do not start Pass 3, 8.6.1, or 9.1. |
 | 2026-08-20 | **P1 DONE.** Start STOPPED gate; overlay unlock-only; Players pin. **NEXT = P2.** Do not start Pass 3, 8.6.1, or 9.1. |
 | 2026-08-20 | **Created** (docs only). **NEXT = P1.** Pass 2 closed early; Step **8.5.2** paused. Pack replace pulled into v1 (full re-setup). Tab completion, light-swap, and 8.6.1 CI parked. Do not start Pass 3, 8.6.1, or 9.1. |

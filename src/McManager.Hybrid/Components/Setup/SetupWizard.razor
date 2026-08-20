@@ -393,6 +393,45 @@
             }
             else if (Vm.IsStepSummary)
             {
+                @if (Vm.ShowDeploySuccess)
+                {
+                    <aside class="mcm-wizard-complete" role="status">
+                        <p class="mcm-wizard-kicker">Play IP</p>
+                        @if (Vm.HasReservedPlayIp)
+                        {
+                            <div class="mcm-wizard-play-ip">
+                                <span class="mcm-wizard-play-ip-value mcm-wizard-mono">@Vm.ReservedPlayIp</span>
+                                <button type="button"
+                                        class="mcm-copy-inline"
+                                        title="Copy play IP"
+                                        @onclick="Vm.CopyReservedPlayIpAsync">
+                                    <i class="ti ti-copy" aria-hidden="true"></i>
+                                    Copy
+                                </button>
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="mcm-wizard-hint">The reserved play IP was not found in local config. Close and copy Play IP from the Manager top bar.</p>
+                        }
+                        <p>
+                            Close this wizard to continue to the Manager app. Give friends the play IP above so they can join the server (Minecraft port 25565).
+                        </p>
+                    </aside>
+                    @if (!string.IsNullOrWhiteSpace(Vm.DeployLog))
+                    {
+                        <details class="mcm-wizard-log-details">
+                            <summary>Deploy log</summary>
+                            <div class="mcm-wizard-log-label">
+                                <span></span>
+                                <button type="button" title="Copy deploy log" @onclick="Vm.CopyDeployLogAsync">Copy</button>
+                            </div>
+                            <pre id="mcm-deploy-log" class="mcm-wizard-log mcm-wizard-mono mcm-slim-scroll">@Vm.DeployLog</pre>
+                        </details>
+                    }
+                }
+                else
+                {
                 <p class="mcm-wizard-lead">
                     Review the plan, confirm your public IP, check the boxes, then Deploy. If A1 is out of capacity, a window will explain retry options.
                 </p>
@@ -499,6 +538,7 @@
                         <pre id="mcm-deploy-log" class="mcm-wizard-log mcm-wizard-mono mcm-slim-scroll">@Vm.DeployLog</pre>
                     </div>
                 </div>
+                }
             }
         </div>
 
@@ -539,8 +579,9 @@
                     <button type="button" @onclick="Vm.StopCapacityPoll">Pause auto-retry</button>
                 }
                 <button type="button"
+                        class="@(Vm.ShowDeploySuccess ? "mcm-primary" : null)"
                         disabled="@(!Vm.CanCloseWizard)"
-                        title="You can close while a deploy is not running. Resume later from Advanced → Deploy / repair."
+                        title="@(Vm.ShowDeploySuccess ? "Close Setup and continue to the Manager app." : "You can close while a deploy is not running. Resume later from Advanced → Deploy / repair.")"
                         @onclick="Close">
                     Close
                 </button>

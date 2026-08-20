@@ -148,6 +148,8 @@ Walk the wizard. You can close and resume later from **Advanced → Deploy / rep
 
 Deploy creates the compartment, network, reserved play IP, game VM, doorbell VM, shared storage, IAM, and (when the Auth Token is present) the $1 budget Function, then installs the chosen Default Vanilla, Paper, or Modded (loader + server-side mods) server on the game VM. It can take a while. Leave the app open until the log shows success.
 
+When Deploy **succeeds**, Setup shows **Deployment Complete** and the **reserved play IP** friends should use, with a **Copy** button. Click **Close** (footer) to continue to the Manager app. The deploy log stays on that page, collapsed under **Deploy log**. Reopening a finished Setup from **Advanced → Deploy / repair** shows the same complete page — do not click Deploy again.
+
 The Function image is a **pre-built ARM** copy into your OCIR, not a Docker build on this PC (V1 Step 8.6.1). Until that step ships, from-source Deploy may log that the Function was skipped if Docker is missing.
 
 ---

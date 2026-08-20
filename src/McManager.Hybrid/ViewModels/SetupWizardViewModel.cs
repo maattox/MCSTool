@@ -234,6 +234,9 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     [ObservableProperty]
     private bool _capacityDialogOpen;
 
+    [ObservableProperty]
+    private string _reservedPlayIp = "";
+
     public bool HasExistingManageConfig { get; }
 
     public bool IsTofuDryRun { get; } = ProductPaths.IsTofuDryRun();
@@ -269,7 +272,15 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         && StepIsValid(CurrentStep)
         && !IsDeployLocked;
 
-    public bool ShowDeployButton => IsLastStep && !CapacityWaiting;
+    public bool ShowDeploySuccess =>
+        IsLastStep
+        && !IsBusy
+        && !CapacityWaiting
+        && string.Equals(ApplyStage, SetupApplyStage.ConfigWritten, StringComparison.Ordinal);
+
+    public bool HasReservedPlayIp => !string.IsNullOrWhiteSpace(ReservedPlayIp);
+
+    public bool ShowDeployButton => IsLastStep && !CapacityWaiting && !ShowDeploySuccess;
 
     public bool ShowCapacityOptionsButton =>
         IsLastStep && CapacityWaiting && !IsPollingCapacity && !IsBusy;
@@ -446,11 +457,14 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         5 => "Minecraft",
         6 => "Mojang EULA",
         7 => "Optional Auth Token",
-        8 => "Review and deploy",
+        8 => ShowDeploySuccess ? "Deployment Complete" : "Review and deploy",
         _ => "Setup",
     };
 
-    public string StepSubtitle => $"Step {CurrentStep + 1} of {SetupWizardState.StepCount}";
+    public string StepSubtitle =>
+        ShowDeploySuccess
+            ? "Close this wizard to continue to the Manager app."
+            : $"Step {CurrentStep + 1} of {SetupWizardState.StepCount}";
 
     public string PlanSummaryText => InfraPlanSummary.Build(ToState());
 
@@ -824,6 +838,17 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             "Copied deploy log.").ConfigureAwait(true);
     }
 
+    public async Task CopyReservedPlayIpAsync()
+    {
+        if (!HasReservedPlayIp)
+        {
+            StatusMessage = "No play IP to copy.";
+            return;
+        }
+
+        await CopyToClipboardAsync(ReservedPlayIp, "Copied play IP.").ConfigureAwait(true);
+    }
+
     private async Task CopyToClipboardAsync(string text, string okMessage)
     {
         try
@@ -878,7 +903,10 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             else
             {
                 if (result.Succeeded)
+                {
                     CapacityWaiting = false;
+                    RefreshReservedPlayIp(result.Outputs?.PlayReservedPublicIp);
+                }
 
                 if (IsPollingCapacity && result.Succeeded)
                     StopCapacityPoll();
@@ -1336,6 +1364,12 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             ? SetupApplyStage.NotStarted
             : state.ApplyStage;
         _functionImage = state.FunctionImage ?? "";
+        if (string.Equals(ApplyStage, SetupApplyStage.ConfigWritten, StringComparison.Ordinal))
+        {
+            IsDeployLocked = true;
+            CurrentStep = SetupWizardState.StepCount - 1;
+        }
+        RefreshReservedPlayIp();
     }
 
     public SetupWizardState ToState() => new()
@@ -1490,6 +1524,8 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             case nameof(CanDeploy):
             case nameof(CanRetryDeploy):
             case nameof(ShowDeployButton):
+            case nameof(ShowDeploySuccess):
+            case nameof(HasReservedPlayIp):
             case nameof(ShowCapacityOptionsButton):
             case nameof(ShowReplaceConfigConfirm):
             case nameof(ShowDeployProgress):
@@ -1547,6 +1583,8 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         OnPropertyChanged(nameof(CanDeploy));
         OnPropertyChanged(nameof(CanRetryDeploy));
         OnPropertyChanged(nameof(ShowDeployButton));
+        OnPropertyChanged(nameof(ShowDeploySuccess));
+        OnPropertyChanged(nameof(HasReservedPlayIp));
         OnPropertyChanged(nameof(ShowCapacityOptionsButton));
         OnPropertyChanged(nameof(ShowReplaceConfigConfirm));
         OnPropertyChanged(nameof(ShowDeployProgress));
@@ -1576,6 +1614,57 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         OnPropertyChanged(nameof(SshImportMode));
         OnPropertyChanged(nameof(AuthTokenStoredDisplay));
     }
+
+    private void RefreshReservedPlayIp(string? preferred = null)
+    {
+        ReservedPlayIp = SanitizePlayIp(preferred)
+            ?? TryReadPlayIpFromLocalConfig()
+            ?? TryReadPlayIpFromTofuOutputs()
+            ?? "";
+    }
+
+    private static string? TryReadPlayIpFromLocalConfig()
+    {
+        var loaded = LocalConfigStore.Load();
+        return SanitizePlayIp(loaded.Config?.Play.ReservedPublicIp);
+    }
+
+    private string? TryReadPlayIpFromTofuOutputs()
+    {
+        var stackId = CreateCompartment ? CompartmentName : TofuWorkspace.DefaultStackId;
+        var path = Path.Combine(
+            TofuWorkspace.TofuRootDirectory(),
+            TofuWorkspace.Sanitize(stackId),
+            "outputs.json");
+        if (!File.Exists(path))
+            return null;
+
+        try
+        {
+            var parsed = TofuApplyOutputs.Parse(File.ReadAllText(path));
+            return SanitizePlayIp(parsed.Value?.PlayReservedPublicIp);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    private static string? SanitizePlayIp(string? value)
+    {
+        var ip = (value ?? "").Trim();
+        if (ip.Length == 0)
+            return null;
+        if (ip.StartsWith("ocid1.", StringComparison.OrdinalIgnoreCase))
+            return null;
+        var slash = ip.IndexOf('/');
+        if (slash > 0)
+            ip = ip[..slash].Trim();
+        return System.Net.IPAddress.TryParse(ip, out _) ? ip : null;
+    }
+
+    partial void OnReservedPlayIpChanged(string value) =>
+        OnPropertyChanged(nameof(HasReservedPlayIp));
 
     private static void OpenUrl(string url)
     {

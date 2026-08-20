@@ -2,7 +2,7 @@
 
 **Status:** Living test catalog for [Phase 8.5](V1-Implementation-Plan.md#phase-85--pre-packaging-qa).  
 **Parent:** `[V1-Implementation-Plan.md](V1-Implementation-Plan.md)`.  
-**Results:** fill `[V1-QA-Pass-N-Results.md](V1-QA-Pass-3-Results.md)` for the current pass. Pass 1 and Pass 2 are historical. Do **not** edit expected steps in this catalog just to record an outcome. Product changes (Step 8.4) **may** update expected (S4-02, S3-01, S6-02).  
+**Results:** fill `[V1-QA-Pass-N-Results.md](V1-QA-Pass-3-Results.md)` for the current pass. Pass 1 and Pass 2 are historical. Do **not** edit expected steps in this catalog just to record an outcome. Product changes (Step 8.4) **may** update expected (S4-02, S3-01, S6-01, S6-02).  
 **Pass 2 execution:** `[V1-QA-Pass-2-Scope.md](V1-QA-Pass-2-Scope.md)` (**closed early**).  
 **Pass 3 execution:** `[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)` (**blocked** until Step 8.4). Do not re-run the full catalog.  
 **Fix work:** after triage, an agent writes `[V1-Bug-Fix-Plan-Pass-N.md](V1-Bug-Fix-Plan-TEMPLATE.md)` from the filled results. Agents implement **that** plan, not this catalog.
@@ -915,9 +915,9 @@ Do **not** `tofu apply` from these tests unless the operator authorizes it in th
 
 **Runner:** `operator` · **Duration:** `wait`
 
-**Steps:** If you can open Setup without destroying manage config: walk Always Free checkboxes ($1 residual honesty), profile picker, compartment default `mcmgr`, game Vanilla vs Modded, Paper vs Default Vanilla, EULA link, Auth Token skip copy, shape 2/12 vs 4/24, admin `/32`. **Do not click Deploy** unless S7.
+**Steps:** If you can open Setup without destroying manage config: walk Always Free checkboxes ($1 residual honesty), profile picker, compartment default `mcmgr`, game Vanilla vs Modded, Paper vs Default Vanilla, EULA link, Auth Token skip copy, shape 2/12 vs 4/24, admin `/32`. **Do not click Deploy** unless S7. If Setup already finished, reopen the last step from **Advanced → Deploy / repair** (no second Deploy) to check the finish page.
 
-**Expected:** Copy matches Guide. Back/Deploy lock behavior is described (cannot verify without Deploy). Modded: file picker/drop only; client-pack checkboxes; Quilt cannot continue; CurseForge **client** export refused.
+**Expected:** Copy matches Guide. Back/Deploy lock behavior is described (cannot verify without Deploy). Modded: file picker/drop only; client-pack checkboxes; Quilt cannot continue; CurseForge **client** export refused. After a successful Deploy (or resume of a finished wizard): heading **Deployment Complete**, reserved play IP with **Copy**, Close to continue to Manager; deploy log may be collapsed below.
 
 ### S6-02 — Modded analyze (local file)
 
