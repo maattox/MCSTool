@@ -110,6 +110,86 @@ public sealed class SecurityListIngressPlanTests
     }
 
     [Fact]
+    public void Private_strips_leftover_minecraft_prefix_and_keeps_wait_forge_tcp()
+    {
+        var existing = new[]
+        {
+            IcmpRule(),
+            WaitForgeTcpRule(),
+            SecurityListIngressPlanner.MakeTcpRule(
+                "192.0.2.0/24",
+                McPort,
+                "test range"),
+            SecurityListIngressPlanner.MakeUdpRule(
+                "192.0.2.0/24",
+                McPort,
+                "test range"),
+            SecurityListIngressPlanner.MakeTcpRule(
+                "192.0.2.0/32",
+                McPort,
+                "test host"),
+            SecurityListIngressPlanner.MakeUdpRule(
+                "192.0.2.0/32",
+                McPort,
+                "test host"),
+            SecurityListIngressPlanner.MakeTcpRule(
+                "0.0.0.0/0",
+                McPort,
+                "someone edited this description"),
+            SecurityListIngressPlanner.MakeUdpRule(
+                "172.56.0.0/16",
+                McPort,
+                "gone cidr friend"),
+            SecurityListIngressPlanner.MakeTcpRule(
+                "172.56.0.0/16",
+                McPort,
+                "gone cidr friend"),
+        };
+
+        var plan = SecurityListIngressPlanner.Build(
+            existing,
+            [Admin],
+            McPort,
+            SshPort,
+            DoorPort,
+            adminName: "Admin");
+
+        Assert.Contains(plan.Preserved, SameIcmp);
+        Assert.Single(plan.Preserved, IsWaitForge);
+        Assert.DoesNotContain(plan.Preserved, r => r.Source == "192.0.2.0/24");
+        Assert.DoesNotContain(plan.Preserved, r => r.Source == "172.56.0.0/16");
+        Assert.DoesNotContain(plan.Ingress, r => IsMinecraft(r) && r.Source == "192.0.2.0/24");
+        Assert.DoesNotContain(plan.Ingress, r => IsMinecraft(r) && r.Source == "192.0.2.0/32");
+        Assert.DoesNotContain(plan.Ingress, r => IsMinecraft(r) && r.Source == "172.56.0.0/16");
+        Assert.DoesNotContain(plan.Ingress, r => IsMinecraft(r) && FriendRules.IsWorldOpenCidr(r.Source));
+        Assert.True(HasMc(plan.Owned, "198.51.100.7/32", "Admin"));
+    }
+
+    [Fact]
+    public void Private_rewrites_desired_prefix_friend_instead_of_preserving_old_name()
+    {
+        var existing = new[]
+        {
+            WaitForgeTcpRule(),
+            SecurityListIngressPlanner.MakeTcpRule("172.56.0.0/16", McPort, "old name"),
+            SecurityListIngressPlanner.MakeUdpRule("172.56.0.0/16", McPort, "old name"),
+        };
+
+        var plan = SecurityListIngressPlanner.Build(
+            existing,
+            [CidrFriend, Admin],
+            McPort,
+            SshPort,
+            DoorPort,
+            adminName: "Admin");
+
+        Assert.Contains(plan.Preserved, IsWaitForge);
+        Assert.DoesNotContain(plan.Preserved, r => r.Source == "172.56.0.0/16");
+        Assert.True(HasMc(plan.Owned, "172.56.0.0/16", "Jordan"));
+        Assert.DoesNotContain(plan.Ingress, r => IsMinecraft(r) && r.Description == "old name");
+    }
+
+    [Fact]
     public void Apply_result_summary_is_private_only()
     {
         var result = new SecurityListApplyResult
@@ -134,6 +214,18 @@ public sealed class SecurityListIngressPlanTests
 
     private static bool SameIcmp(IngressSecurityRule rule) =>
         rule.Protocol == "1" && rule.Description == "ICMP";
+
+    private static IngressSecurityRule WaitForgeTcpRule() =>
+        SecurityListIngressPlanner.MakeTcpRule(
+            "10.0.0.0/24",
+            McPort,
+            "Door wait_forge private poll");
+
+    private static bool IsWaitForge(IngressSecurityRule rule) =>
+        rule.Protocol == SecurityListIngressPlanner.ProtocolTcp
+        && rule.Source == "10.0.0.0/24"
+        && rule.TcpOptions?.DestinationPortRange?.Min == McPort
+        && rule.UdpOptions is null;
 
     private static bool IsMinecraft(IngressSecurityRule rule)
     {

@@ -1,7 +1,7 @@
 # V1 Implementation Plan
 
 **Status:** Living checklist for agents and the operator.  
-**Product intent authority:** lab `[PRODUCT-IDEAS.md](../../OCI-mc-server-manager/PRODUCT-IDEAS.md)` (v1 table). When this plan and PRODUCT-IDEAS disagree on *what* v1 means, **PRODUCT-IDEAS wins** — update this file.  
+**Product intent:** **Operator will** is the source of truth. Lab `[PRODUCT-IDEAS.md](../../OCI-mc-server-manager/PRODUCT-IDEAS.md)` is the living vision/roadmap (v1 table), **not infallible**. When **this plan** and PRODUCT-IDEAS disagree on *what* v1 means: do **not** silently rewrite this file to match PRODUCT-IDEAS. Either **stop and ask** the operator which document to follow (then update the other), **or follow this plan** (operator-requested execution) and **note** in the step changelog that PRODUCT-IDEAS disagrees and may drift. Newer operator-requested docs often match current will more closely.  
 **MVP archive:** `[MVP-Implementation-Plan.md](MVP-Implementation-Plan.md)` — Phases **0–7 DONE**. Packaging (old Phase 8 / Step 8.1) is **deferred** to [Phase 9](#phase-9--packaging-updates-launch) of **this** file.  
 **Suggested narrative:** lab `[docs/Development-Steps.md](../../OCI-mc-server-manager/docs/Development-Steps.md)`.  
 **Live infra docs:** lab repo (`Infrastructure-Information.md`, `docs/VM-Software.md`).  
@@ -27,7 +27,7 @@
   - **Stop.** Do not start the next large step unless the operator says to continue.
 4. In the chat reply: what was done, how to test, what the next step will be, ask whether to continue / pause / adjust.
 5. **Never create git commits** (operator commits in Visual Studio). You may suggest a commit message.
-6. Do **not** implement **after v1** / **later** PRODUCT-IDEAS items (Players tab, start checklist, maintenance IP, multi-deploy, pack replace, Quilt Setup entry, Purpur, PTY console, macOS/Linux Manager, **paid / spend mode**). An **in-app mod/modpack browser** is **rejected** (not after-v1) — users import a local pack file only; do not build it. **Public Minecraft / public-private toggle / blacklist** is **rejected** (not after-v1) — private allowlist only; do not rebuild it.
+6. Do **not** implement **after v1** / **later** PRODUCT-IDEAS items (Players tab, start checklist, maintenance IP, multi-deploy, pack replace, Quilt Setup entry, Purpur, PTY console, macOS/Linux Manager, **paid / spend mode**) unless the operator asks. An **in-app mod/modpack browser** is **rejected** (not after-v1) — users import a local pack file only; do not build it. **Public Minecraft / public-private toggle / blacklist** is **rejected** (not after-v1) — private allowlist only; do not rebuild it. If **this plan** disagrees with PRODUCT-IDEAS, follow this plan and note the drift (do not silently rewrite this file to match PRODUCT-IDEAS).
 7. Do **not** put Manager UI in the lab repo. On-box source (`door_vm/`, `vm_agent/`, `functions/shutdown_vm/`) lives **in this repo**. Lab changes are OK for lab docs / Python Manager only. Phase B (Blazor Hybrid) is **DONE**; do not re-open Avalonia.
 8. **Fix the product path, not only the test VM.** If you change a test VM or a **TESTING** cloud resource, make the **same** change in the local deployment SoT in the same session (`onbox/mcmgr/`, `infra/`, `door_vm/`, `vm_agent/`, `functions/shutdown_vm/`, Manager/Setup code here). The next greenfield Setup must pick it up. Patching only the live test instance is not done.
 9. `ubuntu` **Permission denied** — `sudo` or fix owner/mode (`[docs/Agent-Deploy-Pitfalls.md](Agent-Deploy-Pitfalls.md)`).
@@ -187,12 +187,12 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 | **6**   | Top-bar chrome + oversized-world SSH UX                    | **DONE**                                              |
 | **7**   | Remaining v1 (resize, console, storage, Connect version)   | **DONE**                                              |
 | **8**   | Paid / spend mode                                          | **SKIPPED** (operator 2026-08-18; far future, not v1) |
-| **8.5** | Pre-packaging QA (catalog + passes + bug-fix plans)        | **NEXT** = Step **8.5.2** (Pass 1 **S4 DONE**; continue **S5**) |
+| **8.5** | Pre-packaging QA (catalog + passes + bug-fix plans)        | **NEXT** = Step **8.5.2** (Pass 1 **S7 DONE**; triage remaining Fails) |
 | **8.6** | CI-built ARM spend-brake Function image (no Docker on admin PC) | TODO — after 8.5 exit; **required before 9.1 / official release** |
 | **9**   | Packaging, updates, launch (old MVP Phase 8–9)             | TODO — do not start until Phase 8.5 **and** Step **8.6.1** are DONE |
 
 
-**Current NEXT step:** [Step 8.5.2](#step-852--execute-qa-passes). Pass 1 **S4 DONE** — operator may continue catalog **S5**. Open Fail: **S4-12** (Major suggested). **Do not start Step 8.6.1** until Phase 8.5 exits (unless the operator asks to interleave). **Do not start Step 9.1** until Phase 8.5 **and** Step **8.6.1** are DONE.
+**Current NEXT step:** [Step 8.5.2](#step-852--execute-qa-passes). Pass 1 **S7 DONE** (S7-04 Skipped). Open Fails: **S3-04** (Minor leftover CIDR), **S4-12** (Major suggested), **S5-05** (Major suggested). Next is **docs-only triage** of remaining Fails (not a new catalog suite). **Do not start Step 8.6.1** until Phase 8.5 exits (unless the operator asks to interleave). **Do not start Step 9.1** until Phase 8.5 **and** Step **8.6.1** are DONE.
 
 ---
 
@@ -292,7 +292,7 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 
 **Done when:** Confirmed wipe path exists; backups are not deleted.
 
-**Changelog:** 2026-08-17 — Server Management **Wipe world** next to Download latest: confirm popup (live save only; cloud backups / mods / `server.properties` kept; Minecraft stopped then left stopped). SSH wipe via `WorldWipe` path guard (`/opt/mcmgr/server/<world>` only). Core unit tests for path construction. Follow-up: wipe no longer calls `repair-permissions.sh` (SETUP-ISSUE-8 same-file `cp`); layout helper skips copy when src is dest.
+**Changelog:** 2026-08-17 — Server Management **Wipe world** next to Download latest: confirm popup (live save only; cloud backups / mods / `server.properties` kept; Minecraft stopped then left stopped). SSH wipe via `WorldWipe` path guard (`/opt/mcmgr/server/<world>` only). Core unit tests for path construction. Follow-up: wipe no longer calls `repair-permissions.sh` (SETUP-ISSUE-8 same-file `cp`); layout helper skips copy when src is dest. **2026-08-19:** operator overrode leave-stopped — Pass 1 **P8** auto-starts Minecraft after wipe (PRODUCT-IDEAS item 4 may still say next-Start).
 
 ---
 
@@ -1194,7 +1194,7 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 | ------------------------------------------------------------ | -------------------------------------------------------------------------- |
 | `[V1-QA-Catalog.md](V1-QA-Catalog.md)`                       | Stable tests, runners (`agent` / `hybrid` / `operator`), expected, restore |
 | `[V1-QA-Pass-1-Results.md](V1-QA-Pass-1-Results.md)`         | Operator/agent fill-out for pass 1                                         |
-| `[V1-Bug-Fix-Plan-Pass-1.md](V1-Bug-Fix-Plan-Pass-1.md)`     | Pass 1 fixes; **P1–P3 DONE**. Catalog **S4 DONE**; continue **S5**.  |
+| `[V1-Bug-Fix-Plan-Pass-1.md](V1-Bug-Fix-Plan-Pass-1.md)`     | Pass 1 fixes; **P1–P3 DONE**. Catalog **S7 DONE**; remaining Fails need triage.  |
 | `[V1-Bug-Fix-Plan-TEMPLATE.md](V1-Bug-Fix-Plan-TEMPLATE.md)` | Copy to `V1-Bug-Fix-Plan-Pass-N.md` after triage                           |
 
 
@@ -1257,7 +1257,7 @@ Do **not** start Step **8.6.1** or Step **9.1** from this step. Do not rewrite t
 
 **Done when:** Operator agrees a pass is ready for triage **or** QA exit is met (then 8.5.3). This step stays **NEXT** across multiple chats until then.
 
-**Changelog:** 2026-08-19 — Pass 1 S0–S4 filled (S1–S2; P1–P3; S3; S4). Open: S3-04 Minor leftover CIDR; S4-12 Major suggested (name/icon/MOTD not applied). Continue **S5**. Do not start 8.6.1 or 9.1.
+**Changelog:** 2026-08-19 — Pass 1 **S7 DONE**. Operator confirmed remaining Fails: P4 Minor leftover CIDR (**NEXT** on bug-fix plan), P5 Major identity, P6 Major Manager Start when daily exhausted, P7 Minor incomplete CF zip, **P8** Minor wipe auto-start (overrides PRODUCT-IDEAS leave-stopped). Timezone parked. Do not start 8.6.1 or 9.1.
 
 ---
 
@@ -1495,6 +1495,10 @@ Former MVP Phase **8–9**. Phases **1–7** are **DONE**. Phase **8** is **SKIP
 
 | Date       | Note                                                                                                                                                                                                                                                                                                                              |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-19 | **Phase 8.5** Pass 1 remaining Fails **confirmed**. Bug-fix **NEXT = P4**. P5 Major, P6 Major, P7 Minor, **P8** wipe auto-start (operator override vs PRODUCT-IDEAS leave-stopped). Timezone parked. **NEXT remains Step 8.5.2**. Do not start 8.6.1 or 9.1. |
+| 2026-08-19 | **Phase 8.5** Pass 1 **S7 DONE**. S7-02/S7-03 Pass; S7-04 Skipped (no tofu this round). Restore: VM1 **STOPPED** A1.Flex **2/12**, play IP on door, idle on (15), lock absent, daily cap original. Next: docs-only triage of remaining Fails. **NEXT remains Step 8.5.2**. Do not start 8.6.1 or 9.1. |
+| 2026-08-19 | **Phase 8.5** Pass 1 **S6 DONE**. Setup/Connect recorded (all Pass). Incomplete CurseForge zip warned but allowed continue (Additional problems). Restore: VM1 **STOPPED**, play IP on door, idle on (15), lock absent. Continue **S7** (optional; S7-04 needs explicit tofu). **NEXT remains Step 8.5.2**. Do not start 8.6.1 or 9.1. |
+| 2026-08-19 | **Phase 8.5** Pass 1 **S5 DONE**. Play path recorded; S5-05 Fail (daily exhaust: Manager Start refused; MOTD lag/timezone; no chat on sudden cap). Restore: VM1 **STOPPED**, play IP on door, idle on (15), lock absent, daily cap original. Continue **S6**. **NEXT remains Step 8.5.2**. Do not start 8.6.1 or 9.1. |
 | 2026-08-19 | **Phase 8.5** Pass 1 **S4 DONE**. Operator Manager UI recorded; S4-12 Fail (name/icon/MOTD not applied). Restore: VM1 **STOPPED**, play IP on door, idle on (15), lock absent. Continue **S5**. **NEXT remains Step 8.5.2**. Do not start 8.6.1 or 9.1. |
 | 2026-08-19 | **Phase 8.6 added** (docs only): CI-built `linux/arm64` spend-brake Function image + Setup copy into the user’s OCIR. No Docker Desktop / `fn` / Cloud Shell on the admin PC. **Required before 9.1 / official release.** **NEXT remains Step 8.5.2.** Do not start 8.6.1 until QA exits (unless asked). |
 | 2026-08-19 | **Phase 8.5** Pass 1 **paused after S2**. Bug-fix plan created: **P1** = OS-ISSUE-9 (ACPI STOPPING + UFW/firewalld/dbus). Do not start S3 or 9.1. **NEXT remains Step 8.5.2**. |

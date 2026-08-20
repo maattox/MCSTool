@@ -8,7 +8,9 @@ namespace McManager.Core.Services;
 /// <see cref="Oci.CoreService.Requests.UpdateSecurityListRequest"/> replaces the entire
 /// ingress list — preserve ICMP and other non-owned rules; never emit SSH/door from
 /// <c>0.0.0.0/0</c>. Minecraft is private allowlist only (CIDR or <c>/32</c>).
-/// Leftover world-open Minecraft rules are treated as managed and stripped.
+/// Leftover world-open Minecraft rules and leftover friend Minecraft prefixes
+/// (TCP+UDP, <c>/9</c>–<c>/31</c>) are treated as managed and stripped.
+/// Door <c>wait_forge</c> is TCP-only from the subnet CIDR and must stay.
 /// </summary>
 public static class SecurityListIngressPlanner
 {
@@ -23,19 +25,20 @@ public static class SecurityListIngressPlanner
         int doorHttpPort,
         string? adminName)
     {
+        var existingList = existing as IReadOnlyList<IngressSecurityRule> ?? existing.ToList();
         var ownedDescriptions = friends
             .SelectMany(f => new[] { f.Name.Trim(), f.Ip.Trim() })
             .Where(n => !string.IsNullOrWhiteSpace(n))
             .ToHashSet(StringComparer.Ordinal);
 
         var preserved = new List<IngressSecurityRule>();
-        foreach (var rule in existing)
+        foreach (var rule in existingList)
         {
             var desc = rule.Description ?? "";
             if (FriendRules.IsOwnedDescription(desc, ownedDescriptions))
                 continue;
 
-            if (IsManagedRule(rule, minecraftPort, sshPort, doorHttpPort))
+            if (IsManagedRule(rule, minecraftPort, sshPort, doorHttpPort, existingList))
                 continue;
 
             preserved.Add(rule);
@@ -59,7 +62,8 @@ public static class SecurityListIngressPlanner
         IngressSecurityRule rule,
         int minecraftPort,
         int sshPort,
-        int doorHttpPort)
+        int doorHttpPort,
+        IReadOnlyList<IngressSecurityRule>? existing = null)
     {
         var desc = rule.Description ?? "";
         if (FriendRules.IsOwnedDescription(desc))
@@ -71,6 +75,9 @@ public static class SecurityListIngressPlanner
         {
             return true;
         }
+
+        if (IsLeftoverMinecraftPrefix(rule, proto, minecraftPort, existing))
+            return true;
 
         if (!FriendRules.IsSingleHostCidr(rule.Source))
             return false;
@@ -95,6 +102,38 @@ public static class SecurityListIngressPlanner
 
         return false;
     }
+
+    /// <summary>
+    /// Friend Advanced CIDRs are named (not <c>mc-whitelist:</c>) and are TCP+UDP.
+    /// <c>wait_forge</c> is the same prefix width but TCP-only — leave that rule.
+    /// </summary>
+    private static bool IsLeftoverMinecraftPrefix(
+        IngressSecurityRule rule,
+        string proto,
+        int minecraftPort,
+        IReadOnlyList<IngressSecurityRule>? existing)
+    {
+        if (!IsMinecraftPort(rule, proto, minecraftPort))
+            return false;
+        if (!IsAllowlistPrefixSource(rule.Source))
+            return false;
+
+        // UDP on a friend prefix is never wait_forge (that probe is TCP-only).
+        if (proto == ProtocolUdp)
+            return true;
+
+        if (proto != ProtocolTcp || existing is null)
+            return false;
+
+        return existing.Any(other =>
+            other.Protocol == ProtocolUdp
+            && string.Equals(other.Source, rule.Source, StringComparison.Ordinal)
+            && other.UdpOptions?.DestinationPortRange?.Min == minecraftPort);
+    }
+
+    private static bool IsAllowlistPrefixSource(string? source) =>
+        FriendRules.TryNormalizeAllowlistSource(source ?? "", out var parsed, out _)
+        && !parsed.IsSingleHost;
 
     private static bool IsMinecraftPort(IngressSecurityRule rule, string proto, int minecraftPort)
     {

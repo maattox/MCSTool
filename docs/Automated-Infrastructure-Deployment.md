@@ -4,7 +4,7 @@
 
 **Scope:** Cloud resources (compartment, VCN, compute, reserved IP, IAM, Object Storage, $1 budget Function) plus the **orchestration** that runs OpenTofu and then SSH-bootstraps the boxes. This document does **not** redefine how Minecraft itself is installed — that remains [`Minecraft-Server-Deployment-Blueprint.md`](Minecraft-Server-Deployment-Blueprint.md).
 
-**Product intent authority:** lab [`PRODUCT-IDEAS.md`](../../OCI-mc-server-manager/PRODUCT-IDEAS.md). When this document and PRODUCT-IDEAS disagree on **staging** (MVP vs v1 vs later), PRODUCT-IDEAS wins. When they disagree on **IaC mechanism** (OpenTofu vs Resource Manager, image strategy, config hosting, state), **this document is authoritative** and PRODUCT-IDEAS should link here instead of re-describing details.
+**Product intent:** lab [`PRODUCT-IDEAS.md`](../../OCI-mc-server-manager/PRODUCT-IDEAS.md) is vision/roadmap, **not infallible** (operator will wins). When this document and PRODUCT-IDEAS disagree on **staging** (MVP vs v1 vs later): **stop and ask**, or **follow this document** (mechanism SoT) and **note** that PRODUCT-IDEAS may drift. When they disagree on **IaC mechanism** (OpenTofu vs Resource Manager, image strategy, config hosting, state), **this document is authoritative** — do not rewrite it to match PRODUCT-IDEAS; link from PRODUCT-IDEAS instead of re-describing details.
 
 **Audience:** the operator (especially [§18](#18-operator-guide--what-to-capture-from-the-oci-console-for-ai-agents)), and coding agents implementing MVP Phase 3 (`infra/` OpenTofu, Setup wizard, apply + bootstrap).
 

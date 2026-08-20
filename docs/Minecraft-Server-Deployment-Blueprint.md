@@ -2,7 +2,7 @@
 
 **Status:** Living design authority for **how the Minecraft server itself gets installed, launched, upgraded, and backed up on VM1** — for Vanilla (MVP), Optimized Vanilla, and Modded (v1+). Researched and written 2026-08-11 against current (2026) upstream APIs; re-verify version-specific facts (Java majors, endpoint URLs, sunset dates) before relying on them in far-future work.
 
-**Scope:** This document is the **single source of truth** for the on-box "game layer" contract described only briefly in lab [`PRODUCT-IDEAS.md`](../../OCI-mc-server-manager/PRODUCT-IDEAS.md#vanilla-server-bootstrap-mvp) and [`PRODUCT-IDEAS.md`](../../OCI-mc-server-manager/PRODUCT-IDEAS.md#setup-game-types-v1). Where this document and PRODUCT-IDEAS disagree on **staging** (MVP vs v1 vs later), PRODUCT-IDEAS wins and this document should be corrected. Where they disagree on **mechanism** (exact APIs, schema field names, directory layout), this document is authoritative and PRODUCT-IDEAS should be updated to link here instead of re-describing details.
+**Scope:** This document is the **single source of truth** for the on-box "game layer" **mechanism** described only briefly in lab [`PRODUCT-IDEAS.md`](../../OCI-mc-server-manager/PRODUCT-IDEAS.md#vanilla-server-bootstrap-mvp) and [`PRODUCT-IDEAS.md`](../../OCI-mc-server-manager/PRODUCT-IDEAS.md#setup-game-types-v1). PRODUCT-IDEAS is vision/roadmap, **not infallible** (operator will wins). Where this document and PRODUCT-IDEAS disagree on **staging** (MVP vs v1 vs later): **stop and ask** the operator, **or follow the current operator-requested plan** (V1 plan / bug-fix plan) and **note** that PRODUCT-IDEAS may drift — do **not** silently rewrite that plan to match PRODUCT-IDEAS. Where they disagree on **mechanism** (exact APIs, schema field names, directory layout), **this document is authoritative**; PRODUCT-IDEAS should link here instead of re-describing details.
 
 **Audience:** developers and coding agents implementing Setup/OpenTofu, SSH bootstrap scripts, the Manager (`OCI-mc-server` / `McManager.Core`), and the on-box idle agent (`vm_agent/` in this repo).
 
@@ -903,9 +903,11 @@ Nothing here overrides the existing Object Storage Always-Free soft-cap policy (
 
 ### 11.3 Wipe world (v1 Manager, not Setup)
 
-Lab `PRODUCT-IDEAS.md` **Wipe world (v1)** is a Server Management action: stop Minecraft, delete the live save at `world_path` (the world directory only — not `mods/`, not Object Storage backups), then the next start lets the server generate a **new** world. Confirmation UI is a PRODUCT-IDEAS concern.
+Lab `PRODUCT-IDEAS.md` **Wipe world (v1)** is a Server Management action: stop Minecraft, delete the live save at `world_path` (the world directory only — not `mods/`, not Object Storage backups), then **start Minecraft again** so a **new** world generates. Confirmation UI is a Manager concern.
 
-**On-box:** delete the contents of `world_path` (or the directory itself and recreate an empty one with the same ownership as §5). Do **not** use this path to wipe `mods/` or `config/`. Restoring a previous world remains the existing backup download / world-replace flow. If Minecraft is running, stop the unit first (same stop discipline as a cold backup) so files are not rewritten while being deleted.
+**Operator override (2026-08-19):** Pass 1 P8 auto-start. PRODUCT-IDEAS item 4 may still say leave-stopped / next Start — follow the bug-fix plan; note drift. Do not rewrite P8 back to leave-stopped.
+
+**On-box:** delete the contents of `world_path` (or the directory itself and recreate an empty one with the same ownership as §5). Do **not** use this path to wipe `mods/` or `config/`. Restoring a previous world remains the existing backup download / world-replace flow. If Minecraft is running, stop the unit first (same stop discipline as a cold backup) so files are not rewritten while being deleted, then start the unit.
 
 ---
 

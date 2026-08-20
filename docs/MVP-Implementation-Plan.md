@@ -1,7 +1,7 @@
 # MVP Implementation Plan
 
 **Status:** **Archive for Phases 0–7 (DONE).** Agents implementing product features must follow [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) (**NEXT = Step 1.1**). Packaging (this file’s Phase 8 / Step 8.1) is **deferred** until V1 Phase 9.  
-**Product intent authority:** lab [`PRODUCT-IDEAS.md`](../../OCI-mc-server-manager/PRODUCT-IDEAS.md) (MVP section). When this plan and PRODUCT-IDEAS disagree on *what* MVP means, **PRODUCT-IDEAS wins** — update this file.  
+**Product intent:** **Operator will** is the source of truth. Lab [`PRODUCT-IDEAS.md`](../../OCI-mc-server-manager/PRODUCT-IDEAS.md) is vision/roadmap (MVP section), **not infallible**. This file is an **archive** (Phases 0–7 DONE). Do not silently rewrite living docs to match PRODUCT-IDEAS; ask, or follow the current operator-requested document and note drift.  
 **Suggested narrative order:** lab [`docs/Development-Steps.md`](../../OCI-mc-server-manager/docs/Development-Steps.md).  
 **Live infra docs:** lab repo (`Infrastructure-Information.md`, `docs/VM-Software.md`).  
 **On-box SoT:** **this repo** (`door_vm/`, `vm_agent/`, `functions/shutdown_vm/`, `onbox/mcmgr/`).  

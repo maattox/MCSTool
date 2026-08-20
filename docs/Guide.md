@@ -202,7 +202,9 @@ When everyone is done, click **Stop** (doorbell-aware). If you forget, idle time
 | Turn idle timer off / change game computer size / delete the stack | **Danger Zone** |
 | Program settings / About / notifications | Top-right **bell**, **gear**, and **menu** (native Windows title bar stays) |
 
-**Wipe world** on **Server Management** deletes only the live save on the game VM so the next **Start** generates a new world. Cloud backups, mods, and `server.properties` are not deleted. Download a world save first if you might want the current world back. The game VM must be running; Minecraft is stopped for the wipe and left stopped until you Start.
+**Wipe world** on **Server Management** deletes only the live save on the game VM. Cloud backups, mods, and `server.properties` are not deleted. Download a world save first if you might want the current world back. The game VM must be running; Minecraft is stopped for the wipe and **started again** so a new world generates.
+
+*(Pass 1 catalog recorded leave-stopped; operator 2026-08-19 overrode — bug-fix **P8**. Lab PRODUCT-IDEAS Wipe world step 4 may still say the next Start creates a world.)*
 
 **World too large for cloud backup:** If a single world zip is bigger than the ~9.5 GB free cloud cap, automatic cloud backups stop. The top-right **bell** warns you. **Download latest world save** then copies the **live** world from the game VM over SSH (the VM must be Running). That file stays on this PC and is **not** uploaded to cloud storage. Older cloud backups in the list can still be downloaded.
 

@@ -20,7 +20,7 @@ This catalog is `dotnet run` **+ the existing TESTING stack**. It is not the PRO
 3. Fill the pass results file as you go. Do not wait until the end of a three-hour session.
 4. Pass 2+ = **failed tests from the last pass + smoke ([S0](#s0--automated-already-covered), [S1-03](#s1-03--stack-snapshot), [S2-08](#s2-08--wake-from-stopped-unlocked), [S4-01](#s4-01--novice-status--play-ip)) + tests for files that changed**. Full catalog re-run only before declaring Phase 8.5 done.
 5. Agents executing this catalog: read **this protocol + the suite you were asked to run**. Do not load the Minecraft blueprint, PRODUCT-IDEAS, or the whole V1 plan.
-6. The operator **may pause a pass after a suite** for a Blocker (write/run [`V1-Bug-Fix-Plan-Pass-N.md`](V1-Bug-Fix-Plan-TEMPLATE.md), then a delta). Pass 1 bug-fix **P1–P3 are DONE** — operator may resume **S3**. Do not start 9.1.
+6. The operator **may pause a pass after a suite** for a Blocker (write/run [`V1-Bug-Fix-Plan-Pass-N.md`](V1-Bug-Fix-Plan-TEMPLATE.md), then a delta). Pass 1 catalog S0–S7 filled; remaining bug-fix **NEXT = P4** ([`V1-Bug-Fix-Plan-Pass-1.md`](V1-Bug-Fix-Plan-Pass-1.md)). Do not start 8.6.1 or 9.1.
 
 
 
@@ -691,9 +691,11 @@ Agent: put the fixture, watch OCI/SSH. Operator: Hybrid or Minecraft. Fill **bot
 
 **Operator:** Download a backup first if you care about the world. Server Management **Wipe world** + confirm.
 
-**Agent:** Minecraft stopped then left stopped. `world` dir gone or empty under `/opt/mcmgr/server/<world>` only. `mods/`, `server.properties`, Object Storage `backups/` untouched.
+**Agent:** Minecraft stopped then **started again**. `world` dir gone or empty under `/opt/mcmgr/server/<world>` only. `mods/`, `server.properties`, Object Storage `backups/` untouched.
 
-**Expected:** Path guard holds. Next Start generates a new world.
+**Expected:** Path guard holds. Minecraft is **running** after wipe; next join is a fresh world.
+
+*(Pass 1 recorded leave-stopped. Operator 2026-08-19 overrode — [`V1-Bug-Fix-Plan-Pass-1.md`](V1-Bug-Fix-Plan-Pass-1.md) **P8**. PRODUCT-IDEAS Wipe world step 4 may still say next-Start.)*
 
 **Restore:** Operator may restore from backup if they want the old world. Leave Minecraft stopped.
 
