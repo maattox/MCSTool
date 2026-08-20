@@ -26,6 +26,12 @@ public static class ManualServerPackAnalyzer
         + "If a Server Files zip is available for this pack, upload that instead. "
         + "Do not guess client-only mods from a client export.";
 
+    public const string CurseForgeIncompleteRefusal =
+        "This CurseForge zip lists mods in the manifest but does not include the pre-downloaded "
+        + "mod jars (libraries or an installer alone is not enough). Download the pack's "
+        + "Server Files zip, or a filled zip that already contains the mods/ jars, and upload "
+        + "that instead. This app cannot download missing jars from CurseForge.";
+
     public const string UnknownRefusal =
         "This zip does not look like a server pack (need a mods/ folder with jars, "
         + "or a Server Files zip that already contains libraries/ and the loader). "
@@ -159,11 +165,16 @@ public static class ManualServerPackAnalyzer
         var looksLikeCfExport = cfManifest is not null
             && string.Equals(cfManifest.ManifestType, "minecraftModpack", StringComparison.OrdinalIgnoreCase)
             && cfFiles.Count > 0;
-        if (looksLikeCfExport && modJars.Count == 0 && !hasLibraries && !hasInstallerJar)
+        if (looksLikeCfExport && modJars.Count == 0)
         {
+            // Client export (IDs only) and Server Files / installer zips that omit mods/*.jar
+            // both cannot be filled in without the CurseForge API (v1 Step 4.12 deferred).
+            var refusal = hasLibraries || hasInstallerJar
+                ? CurseForgeIncompleteRefusal
+                : CurseForgeClientRefusal;
             return OkRefused(
                 ManualServerPackKind.CurseForgeClientExport,
-                CurseForgeClientRefusal,
+                refusal,
                 sourceName,
                 wrapper,
                 names,

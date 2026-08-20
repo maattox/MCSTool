@@ -79,6 +79,70 @@ public sealed class SetupPackImportTests
     }
 
     [Fact]
+    public void Incomplete_curseforge_zip_cannot_continue()
+    {
+        using var zip = MakeZip(
+            ("manifest.json", CfManifestJson()),
+            ("libraries/net/neoforged/example.jar", "lib"),
+            ("neoforge-21.1.0-installer.jar", "installer"));
+        var path = WriteTemp("cf-incomplete.zip", zip);
+        try
+        {
+            var result = SetupPackImport.AnalyzeFile(path);
+            Assert.True(result.Succeeded, result.Error);
+            var preview = result.Value!;
+            Assert.Equal(SetupPackImport.KindManualZip, preview.Kind);
+            Assert.False(preview.CanContinue);
+            Assert.Equal(ManualServerPackAnalyzer.CurseForgeIncompleteRefusal, preview.BlockReason);
+            Assert.Contains("Server Files", preview.BlockReason, StringComparison.Ordinal);
+            Assert.DoesNotContain("api.curseforge.com", preview.BlockReason, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            TryDelete(path);
+        }
+    }
+
+    [Fact]
+    public void Complete_curseforge_server_files_and_mrpack_can_continue()
+    {
+        var serverJar = MakeJar(("fabric.mod.json", """{"schemaVersion":1,"id":"content","version":"0","environment":"*"}"""));
+        using var cf = MakeZipBytes(
+            ("manifest.json", Encoding.UTF8.GetBytes(CfManifestJson())),
+            ("libraries/net/neoforged/example.jar", Encoding.UTF8.GetBytes("lib")),
+            ("mods/content.jar", serverJar),
+            ("run.sh", Encoding.UTF8.GetBytes("#!/bin/sh")));
+        var cfPath = WriteTemp("cf-server.zip", cf);
+        try
+        {
+            var result = SetupPackImport.AnalyzeFile(cfPath);
+            Assert.True(result.Succeeded, result.Error);
+            Assert.True(result.Value!.CanContinue);
+            Assert.Null(result.Value.BlockReason);
+            Assert.Equal(MrpackAnalyzer.LoaderNeoForge, result.Value.Loader);
+        }
+        finally
+        {
+            TryDelete(cfPath);
+        }
+
+        using var mrpack = MakeZip(
+            ("modrinth.index.json", IndexJson("fabric-loader", "0.16.9", "1.21.1")));
+        var mrPath = WriteTemp("ok.mrpack", mrpack);
+        try
+        {
+            var result = SetupPackImport.AnalyzeFile(mrPath);
+            Assert.True(result.Succeeded, result.Error);
+            Assert.Equal(SetupPackImport.KindMrpack, result.Value!.Kind);
+            Assert.True(result.Value.CanContinue);
+        }
+        finally
+        {
+            TryDelete(mrPath);
+        }
+    }
+
+    [Fact]
     public void Distribution_vanilla_paper_or_loader_from_wizard()
     {
         var vanilla = new SetupWizardState
@@ -178,7 +242,26 @@ public sealed class SetupPackImportTests
         }
         """;
 
-    private static MemoryStream MakeZip(params (string Name, string Content)[] entries)
+    private static string CfManifestJson() =>
+        """
+        {
+          "minecraft": {
+            "version": "1.21.1",
+            "modLoaders": [{ "id": "neoforge-21.1.0", "primary": true }]
+          },
+          "manifestType": "minecraftModpack",
+          "manifestVersion": 1,
+          "name": "MCMGR Synthetic CF Export",
+          "version": "0.1.0",
+          "files": [{ "projectID": 1, "fileID": 1, "required": true }],
+          "overrides": "overrides"
+        }
+        """;
+
+    private static MemoryStream MakeZip(params (string Name, string Content)[] entries) =>
+        MakeZipBytes(entries.Select(e => (e.Name, Encoding.UTF8.GetBytes(e.Content))).ToArray());
+
+    private static MemoryStream MakeZipBytes(params (string Name, byte[] Content)[] entries)
     {
         var ms = new MemoryStream();
         using (var zip = new ZipArchive(ms, ZipArchiveMode.Create, leaveOpen: true))
@@ -186,13 +269,19 @@ public sealed class SetupPackImportTests
             foreach (var (name, content) in entries)
             {
                 var entry = zip.CreateEntry(name);
-                using var writer = new StreamWriter(entry.Open(), Encoding.UTF8);
-                writer.Write(content);
+                using var output = entry.Open();
+                output.Write(content);
             }
         }
 
         ms.Position = 0;
         return ms;
+    }
+
+    private static byte[] MakeJar(params (string Name, string Content)[] entries)
+    {
+        using var zip = MakeZip(entries);
+        return zip.ToArray();
     }
 
     private static string WriteTemp(string name, MemoryStream zip)

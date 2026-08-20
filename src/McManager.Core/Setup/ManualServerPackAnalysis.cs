@@ -12,7 +12,10 @@ public enum ManualServerPackKind
     /// <summary>Modrinth <c>modrinth.index.json</c> — use <see cref="MrpackInstaller"/>, not this adapter.</summary>
     Mrpack,
 
-    /// <summary>CurseForge client export (file IDs, no server jars). Do not heuristic-strip.</summary>
+    /// <summary>
+    /// CurseForge client export or incomplete Server Files (manifest file IDs, no <c>mods/</c> jars).
+    /// Do not heuristic-strip or fetch jars.
+    /// </summary>
     CurseForgeClientExport,
 
     /// <summary>Launcher/client instance zip. Do not heuristic-strip.</summary>

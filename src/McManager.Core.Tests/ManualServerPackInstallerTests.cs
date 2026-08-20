@@ -114,6 +114,46 @@ public sealed class ManualServerPackInstallerTests
     }
 
     [Fact]
+    public void Refuses_curseforge_zip_with_libraries_or_installer_but_no_mod_jars()
+    {
+        using var libs = MakeZip(
+            ("manifest.json", CfManifestJson(includeFiles: true)),
+            ("libraries/net/neoforged/example.jar", "lib"),
+            ("run.sh", "#!/bin/sh"));
+        var libsPath = WriteTemp("cf-libs-only.zip", libs);
+        try
+        {
+            var result = ManualServerPackAnalyzer.AnalyzeFile(libsPath);
+            Assert.True(result.Succeeded, result.Error);
+            Assert.Equal(ManualServerPackKind.CurseForgeClientExport, result.Value!.Kind);
+            Assert.False(result.Value.CanInstall);
+            Assert.Equal(ManualServerPackAnalyzer.CurseForgeIncompleteRefusal, result.Value.RefusalReason);
+            Assert.Contains("Server Files", result.Value.RefusalReason, StringComparison.Ordinal);
+            Assert.DoesNotContain("api.curseforge.com", result.Value.RefusalReason, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            TryDelete(libsPath);
+        }
+
+        using var installer = MakeZip(
+            ("manifest.json", CfManifestJson(includeFiles: true)),
+            ("neoforge-21.1.0-installer.jar", "installer"));
+        var installerPath = WriteTemp("cf-installer-only.zip", installer);
+        try
+        {
+            var result = ManualServerPackAnalyzer.AnalyzeFile(installerPath);
+            Assert.True(result.Succeeded, result.Error);
+            Assert.False(result.Value!.CanInstall);
+            Assert.Equal(ManualServerPackAnalyzer.CurseForgeIncompleteRefusal, result.Value.RefusalReason);
+        }
+        finally
+        {
+            TryDelete(installerPath);
+        }
+    }
+
+    [Fact]
     public void Installs_unstructured_zip_strips_fabric_client_jar_flattens_overrides_and_keeps_wrapper()
     {
         var serverJar = Encoding.UTF8.GetBytes("server-bytes");

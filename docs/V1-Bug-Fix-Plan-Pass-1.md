@@ -1,6 +1,6 @@
 # V1 bug-fix plan — Pass 1
 
-**Status:** Living. Created 2026-08-19 from [`V1-QA-Pass-1-Results.md`](V1-QA-Pass-1-Results.md) after **operator early triage** (paused after S2). **P1–P6 DONE** (P6 2026-08-20). Catalog **S0–S7 DONE** (S7-04 Skipped). Operator **confirmed remaining severities** 2026-08-19 (including S3-07 auto-start). **NEXT = P7.** Do not start 8.6.1 or 9.1.  
+**Status:** Living. Created 2026-08-19 from [`V1-QA-Pass-1-Results.md`](V1-QA-Pass-1-Results.md) after **operator early triage** (paused after S2). **P1–P7 DONE** (P7 2026-08-20). Catalog **S0–S7 DONE** (S7-04 Skipped). Operator **confirmed remaining severities** 2026-08-19 (including S3-07 auto-start). **NEXT = P8.** Do not start 8.6.1 or 9.1.  
 **Parent:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.5.2** (stays NEXT until Phase 8.5 exits).  
 **Catalog:** [`V1-QA-Catalog.md`](V1-QA-Catalog.md) — do not edit expected steps.
 
@@ -94,10 +94,10 @@ Pass 1 **S0–S7** are recorded in [`V1-QA-Pass-1-Results.md`](V1-QA-Pass-1-Resu
 | **P4** | Allowlist leftover Minecraft prefix CIDR (S3-04) | **DONE** | PARALLEL-OK vs P5/P6/P7 | Unit tests; no tofu |
 | **P5** | Server name / icon / MOTD not applied (S4-12) | **DONE** | SEQUENTIAL vs VM1 work | Yes |
 | **P6** | Manager Start after daily exhaustion (S5-05) | **DONE** | SEQUENTIAL vs door/Hybrid Start | Yes |
-| **P7** | Incomplete CurseForge zip hard-block (S6-02 UX) | **NEXT** | PARALLEL-OK vs P4 | No |
-| **P8** | Wipe world auto-starts Minecraft (S3-07) | TODO | SEQUENTIAL vs Server Management | Yes |
+| **P7** | Incomplete CurseForge zip hard-block (S6-02 UX) | **DONE** | PARALLEL-OK vs P4 | No |
+| **P8** | Wipe world auto-starts Minecraft (S3-07) | **NEXT** | SEQUENTIAL vs Server Management | Yes |
 
-**NEXT = P7.** Do not start 8.6.1 or 9.1.
+**NEXT = P8.** Do not start 8.6.1 or 9.1.
 
 ---
 
@@ -292,7 +292,7 @@ Do **not** load the full PRODUCT-IDEAS or Minecraft blueprint. Do **not** weaken
 
 ## P7 — Incomplete CurseForge zip hard-block (optional)
 
-**Status:** NEXT  
+**Status:** DONE  
 **Catalog IDs:** Additional problem #11 (S6-02 row was **Pass**)  
 **Severity:** Minor (operator 2026-08-19)
 
@@ -314,13 +314,13 @@ Do **not** load the full PRODUCT-IDEAS or Minecraft blueprint. Do **not** weaken
 
 **Done when:** Wizard cannot proceed on a jar-less CurseForge manifest zip.
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-20 — Incomplete CurseForge zip (manifest file IDs plus `libraries/` or an installer, **no** `mods/*.jar`) was classified as Server Files and allowed continue. Zero-jar client export was already refused. Fix: any CF `minecraftModpack` with listed files and zero `mods/` jars is `CanInstall=false`; installer/libraries-only uses stronger copy (download Server Files / filled zip; no API). `FromManual` already maps that to `CanContinue=false`. Tests: incomplete libs/installer zips block; complete Server Files + `.mrpack` still continue. No Issues.md (Manager Core only). Did not `tofu apply`. Did not start P8 or 9.1.
 
 ---
 
 ## P8 — Wipe world auto-starts Minecraft (S3-07)
 
-**Status:** TODO  
+**Status:** NEXT  
 **Catalog IDs:** S3-07 (Pass 1 **Pass** for leave-stopped; operator 2026-08-19 overrode)  
 **Severity:** Minor (operator: must change; not Won't-fix)
 
@@ -363,3 +363,4 @@ Do **not** load the full PRODUCT-IDEAS or blueprint except §11.3 if needed for 
 | 2026-08-19 | **P4 DONE.** Leftover Minecraft prefix CIDRs (TCP+UDP `/9`–`/31`) are managed and stripped; door `wait_forge` TCP-only subnet 25565 + ICMP preserved. `SecurityListIngressPlanTests` cover S3-04. **NEXT = P5**. Do not start 8.6.1 or 9.1. |
 | 2026-08-20 | **P5 DONE.** S4-12: Manager write OK; live agent lacked identity apply; SoT applied after Java so Vanilla stop rewrote old MOTD. `mc-boot-ledger` now Before=minecraft; TESTING redeployed. Localhost SLP showed new MOTD+icon. OS-ISSUE-10. **NEXT = P6**. Do not start 8.6.1 or 9.1. |
 | 2026-08-20 | **P6 DONE.** S5-05 Manager Start: HTTP `/api/wake` skips daily; Minecraft login still refuses; spend-brake still blocks. Hybrid Start wait ignores `BUDGET_EXHAUSTED`. TESTING: daily kick + admin PLAYABLE + lock refuse. DOOR-ISSUE-11. **NEXT = P7**. Do not start 8.6.1 or 9.1. |
+| 2026-08-20 | **P7 DONE.** Incomplete CF zip (manifest + libraries/installer, no `mods/` jars) hard-blocked with Server Files / filled-zip copy. Client export still refused. Complete Server Files + `.mrpack` still continue. No CurseForge API. **NEXT = P8**. Do not start 8.6.1 or 9.1. |
