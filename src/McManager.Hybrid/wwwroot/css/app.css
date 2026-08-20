@@ -14,6 +14,7 @@
     --text-muted: #6e7888;
     --text-success: #3dbd74;
     --text-danger: #e05a52;
+    --text-warning: #e0b252;
     --text-accent: #8bb4ff;
     --fill-accent: #4d8ef5;
     --fill-success: #2f9e5f;
@@ -1667,6 +1668,26 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 
 .mcm-client-pack-notice > p:last-child {
     margin-bottom: 0 !important;
+}
+
+.mcm-pack-list-warning {
+    border: 1px solid var(--text-warning);
+    background: #2a2618;
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    margin: 0 0 12px;
+}
+
+.mcm-pack-list-warning .mcm-wizard-kicker {
+    margin: 0 0 6px !important;
+    color: var(--text-warning);
+}
+
+.mcm-pack-list-warning > p {
+    margin: 0 !important;
+    font-size: 13px;
+    color: var(--text-primary);
+    line-height: 1.45;
 }
 
 .mcm-pack-drop {

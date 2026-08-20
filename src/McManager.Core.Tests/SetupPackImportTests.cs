@@ -21,6 +21,12 @@ public sealed class SetupPackImportTests
         Assert.Equal(MrpackAnalyzer.LoaderFabric, preview.Loader);
         Assert.False(preview.CanContinue);
         Assert.Equal(SetupPackImport.UnclearSideRefusal, preview.BlockReason);
+        Assert.Equal(0, preview.OverrideListSkipCount);
+        Assert.Null(preview.OverrideListWarning);
+        Assert.DoesNotContain(
+            SetupPackImport.OverrideListMisdeclarationCopy,
+            preview.ConfirmableSummary,
+            StringComparison.Ordinal);
         Assert.DoesNotContain("modrinth.com/search", preview.ConfirmableSummary, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -38,6 +44,12 @@ public sealed class SetupPackImportTests
         Assert.Null(preview.BlockReason);
         Assert.Equal(1, preview.ClientOnlyCount);
         Assert.Equal(0, preview.UnclearSideCount);
+        Assert.Equal(1, preview.OverrideListSkipCount);
+        Assert.Contains("sodium-fabric-mistag.jar", preview.OverrideListSkipPaths[0], StringComparison.OrdinalIgnoreCase);
+        Assert.False(string.IsNullOrWhiteSpace(preview.OverrideListWarning));
+        Assert.Contains(SetupPackImport.OverrideListMisdeclarationCopy, preview.OverrideListWarning, StringComparison.Ordinal);
+        Assert.Contains("sodium-fabric-mistag.jar", preview.OverrideListWarning, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(SetupPackImport.OverrideListMisdeclarationCopy, preview.ConfirmableSummary, StringComparison.Ordinal);
         Assert.Contains("Override list: 1", preview.ConfirmableSummary, StringComparison.Ordinal);
     }
 
@@ -111,6 +123,8 @@ public sealed class SetupPackImportTests
             Assert.Equal(SetupPackImport.KindManualZip, preview.Kind);
             Assert.False(preview.CanContinue);
             Assert.Equal(ManualServerPackAnalyzer.CurseForgeIncompleteRefusal, preview.BlockReason);
+            Assert.Equal(0, preview.OverrideListSkipCount);
+            Assert.Null(preview.OverrideListWarning);
             Assert.Contains("Server Files", preview.BlockReason, StringComparison.Ordinal);
             Assert.DoesNotContain("api.curseforge.com", preview.BlockReason, StringComparison.OrdinalIgnoreCase);
         }
@@ -253,6 +267,58 @@ public sealed class SetupPackImportTests
     }
 
     [Fact]
+    public void Override_list_warning_caps_examples_and_stays_novice()
+    {
+        var paths = Enumerable.Range(1, 10).Select(i => $"mods/client-mod-{i}.jar").ToList();
+        var text = SetupPackImport.FormatOverrideListWarning(10, paths);
+        Assert.False(string.IsNullOrWhiteSpace(text));
+        Assert.Contains(SetupPackImport.OverrideListMisdeclarationCopy, text, StringComparison.Ordinal);
+        Assert.Contains("client-mod-1.jar", text, StringComparison.Ordinal);
+        Assert.Contains("client-mod-6.jar", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("client-mod-7.jar", text, StringComparison.Ordinal);
+        Assert.Contains("and 4 more", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("VM1", text, StringComparison.Ordinal);
+        Assert.Null(SetupPackImport.FormatOverrideListWarning(0, paths));
+    }
+
+    [Fact]
+    public void Analyze_with_failed_refresh_still_uses_embedded_list()
+    {
+        var handler = new FailHandler();
+        using var http = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(2) };
+        var refresh = new ExcludeIncludeListRefresh(http);
+        var path = FixturePath("fabric-mistag.mrpack");
+        var result = SetupPackImport.AnalyzeFile(path, refresh);
+        Assert.True(result.Succeeded, result.Error);
+        var preview = result.Value!;
+        Assert.True(preview.CanContinue);
+        Assert.Equal(1, preview.OverrideListSkipCount);
+        Assert.False(string.IsNullOrWhiteSpace(preview.OverrideListWarning));
+        Assert.False(refresh.UsedRemote(ExcludeIncludeListRefresh.ModrinthRawUrl));
+    }
+
+    [Fact]
+    public void Analyze_with_remote_list_can_replace_layer1()
+    {
+        var handler = new MapHandler();
+        handler.Map(
+            ExcludeIncludeListRefresh.ModrinthRawUrl,
+            """{"globalExcludes":["lithium-mistag"],"globalForceIncludes":[],"modpacks":{}}""");
+        using var http = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(2) };
+        var refresh = new ExcludeIncludeListRefresh(http);
+        var path = FixturePath("fabric-mistag.mrpack");
+        var result = SetupPackImport.AnalyzeFile(path, refresh);
+        Assert.True(result.Succeeded, result.Error);
+        var preview = result.Value!;
+        Assert.True(preview.CanContinue);
+        Assert.True(refresh.UsedRemote(ExcludeIncludeListRefresh.ModrinthRawUrl));
+        Assert.Equal(1, preview.OverrideListSkipCount);
+        Assert.Contains("lithium-mistag", preview.OverrideListSkipPaths[0], StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("sodium", preview.OverrideListSkipPaths[0], StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("lithium-mistag", preview.OverrideListWarning, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void Server_type_normalizes_unknown_to_vanilla()
     {
         Assert.Equal(SetupServerType.Vanilla, SetupServerType.Normalize(null));
@@ -356,6 +422,40 @@ public sealed class SetupPackImportTests
         }
         catch (IOException)
         {
+        }
+    }
+
+    private sealed class FailHandler : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken) =>
+            Task.FromException<HttpResponseMessage>(new HttpRequestException("github down"));
+    }
+
+    private sealed class MapHandler : HttpMessageHandler
+    {
+        private readonly Dictionary<string, string> _map = new(StringComparer.Ordinal);
+
+        public void Map(string url, string body) => _map[url] = body;
+
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            var url = request.RequestUri?.ToString() ?? "";
+            if (!_map.TryGetValue(url, out var body))
+            {
+                return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.NotFound)
+                {
+                    Content = new StringContent($"unmapped {url}"),
+                });
+            }
+
+            return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new StringContent(body, Encoding.UTF8, "application/json"),
+            });
         }
     }
 }

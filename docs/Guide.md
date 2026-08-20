@@ -160,6 +160,8 @@ A **Modded** server is **not playable** until friends install the **same exporte
 - Tell friends the pack **name**, **Minecraft version**, and **loader** (Fabric / Forge / NeoForge) shown in Setup, and give them the original export.
 - This app **cannot** rebuild a client pack from the `mods/` folder on the game computer. Setup installs **server-side** mods only and skips client-only files, so a zip of the live server mods is **not** a playable pack for friends.
 
+Some packs mark client-only mods as required on the server. Setup skips those known names automatically, shows a warning with examples, and still lets you continue. If the game later fails to start, check that skipped list first.
+
 Next is not available in Setup until you check that you will give friends this same pack. The same reminder appears on the Review page before Deploy.
 
 **CurseForge files:** if the zip is a *client* export (a `manifest.json` of project/file IDs and no mod jars), Setup will refuse it. On that pack’s CurseForge page, download **Server Files** (jars already inside) and import that zip — or use a Modrinth `.mrpack` when the pack exists there. This app does not call the CurseForge API and does not reconstruct missing jars.

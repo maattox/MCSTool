@@ -297,6 +297,9 @@ public sealed class MrpackAnalyzerTests
         var preview = SetupPackImport.FromMrpack(a, sample);
         Assert.True(preview.CanContinue);
         Assert.Null(preview.BlockReason);
+        Assert.True(preview.OverrideListSkipCount > 0);
+        Assert.False(string.IsNullOrWhiteSpace(preview.OverrideListWarning));
+        Assert.Contains(SetupPackImport.OverrideListMisdeclarationCopy, preview.OverrideListWarning, StringComparison.Ordinal);
         Assert.Contains("Override list:", a.ConfirmableSummary, StringComparison.Ordinal);
     }
 

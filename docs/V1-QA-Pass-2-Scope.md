@@ -1,7 +1,7 @@
 # V1 QA Pass 2 — scope (greenfield + modded)
 
 **Pass:** 2  
-**Status:** **PAUSED** until Step **4.13** / [`V1-Modpack-Robustness-Plan.md`](V1-Modpack-Robustness-Plan.md) **R4** is DONE. Do **not** run Phase A or `tofu destroy` until then. Living execution slice of [Step 8.5.2](V1-Implementation-Plan.md#step-852--execute-qa-passes). Docs created 2026-08-19.  
+**Status:** **READY** — Step **4.13** / R4 is **DONE**. Do **not** run Phase A or `tofu destroy` until the operator says Pass 2 may start. Living execution slice of [Step 8.5.2](V1-Implementation-Plan.md#step-852--execute-qa-passes). Docs created 2026-08-19.  
 **Catalog:** [`V1-QA-Catalog.md`](V1-QA-Catalog.md) — IDs and expected steps stay there. Do **not** regenerate the catalog.  
 **Results:** fill [`V1-QA-Pass-2-Results.md`](V1-QA-Pass-2-Results.md) as you go.  
 **Prior pass:** [`V1-QA-Pass-1-Results.md`](V1-QA-Pass-1-Results.md) (Vanilla on the **existing** TESTING stack; **S7-04 Skipped**). Bug-fix [`V1-Bug-Fix-Plan-Pass-1.md`](V1-Bug-Fix-Plan-Pass-1.md) **P1–P8 DONE**.
@@ -47,35 +47,36 @@ This file + the named catalog IDs + [`Guide.md`](Guide.md) **Tear down and redep
 
 | Phase | Focus | Status |
 |-------|--------|--------|
-| **A** | S0 smoke + **S7-04 greenfield Modded Setup** | **PAUSED** (wait for 4.13) |
+| **A** | S0 smoke + **S7-04 greenfield Modded Setup** | **TODO** — wait for operator |
 | **B** | S1 + selected S2 on the **new** stack | TODO — after A |
 | **C** | Hybrid delta (Pass 1 Fail retests + modded join) | TODO — after B |
 | **D** | Remaining operator UI / play-path in-scope IDs | TODO — after C |
 
-**NEXT = Phase A** after Step **4.13** exits. Do not start until the operator says Pass 2 may run. Stop after each phase unless the operator says continue.
+**NEXT = Phase A.** Step **4.13** has exited. Do not start until the operator says Pass 2 may run. Stop after each phase unless the operator says continue.
 
 ---
 
 ## Pack (pick one before Deploy)
 
-**Paused:** do not Deploy until 4.13 is DONE. After that, this row may prefer a pack that exercises override-list stripping (S6-02 warning). Until the 4.13 session updates this row:
-
 Live VM1: **at most one** small Fabric or NeoForge pack ([`Sample-Packs.md`](Sample-Packs.md)). Files live in gitignored `data/sample-packs/` (exact names in `data/sample-packs/README.txt`). Do not commit packs. Do not download mega-packs.
 
-**Recommended (Pass 2 default):** Modrinth NeoForge **BlockFront**  
+**Recommended Deploy pack (Pass 2 default):** Modrinth NeoForge **BlockFront**  
 `data/sample-packs/real/modrinth-neoforge-BlockFront - Official Mod Pack 0.9.0.27b.mrpack`
 
 - Tiny real pack (loader **NeoForge**, Minecraft **1.21.1**).  
 - Pass 1 never installed a loader or pack on VM1.  
-- Sodium tagged `unsupported` correctly (unlike Fabulously Optimized).
+- Sodium tagged `unsupported` correctly (unlike Fabulously Optimized). Good doorbell/loader proof; not the mis-declaration warning case.
 
 **Fallback** if BlockFront is missing or Deploy is too heavy: `data/sample-packs/homemade/fabric-strip.mrpack` (Fabric 1.21.1, real CDN URLs, good `env.server` strip).
 
-**Do not Deploy with:** Fabulously Optimized / OptiFine-for-Fabric / MMC3 (heavy or all-`required` until 4.13 lands); CurseForge **client** exports (no jars — Setup must **hard-block**, P7); Infinite Horizons (~305 mods); **MilesPack** (~300 MB jar-root zip).
+**S6-02 analyze extras (do not Deploy these):**
 
-Record the chosen filename + loader + Minecraft version in the results header. Friends (and the operator’s client) need **that same exported file** — vanilla Java cannot join (S3-05).
+1. **P7 hard-block:** drop `homemade/curseforge-synthetic.zip` (or any jar-less CF zip). Wizard **cannot continue**. Do not call the CurseForge API (Step 4.12 stays deferred).  
+2. **Mis-declaration warning:** drop Simply Optimized (`data/sample-packs/real/modrinth-fabric-Simply-Optimized-Continued-v2.1+26.2.mrpack`) **or** `tests/fixtures/packs/fabric-mistag.mrpack`. Expect the client-only skip warning, **continue still enabled**. Then switch to BlockFront (or fabric-strip) for Deploy. Not a 300 MB zip.
 
-**P7 during Setup (cheap):** before picking BlockFront, drop `homemade/curseforge-synthetic.zip` (or any jar-less CF zip) and confirm the wizard **cannot continue**. Then pick the real `.mrpack`. That is the S6-02 incomplete-CF retest — do not call the CurseForge API (Step 4.12 stays deferred).
+**Do not Deploy with:** Fabulously Optimized / OptiFine-for-Fabric / MMC3; CurseForge **client** exports (P7); Infinite Horizons (~305 mods); **MilesPack** (~300 MB jar-root zip); Simply Optimized (analyze-only for the warning).
+
+Record the chosen **Deploy** filename + loader + Minecraft version in the results header. Friends (and the operator’s client) need **that same exported file** — vanilla Java cannot join (S3-05).
 
 ---
 
@@ -117,7 +118,7 @@ Catalog rule: Pass 2+ = last-pass **Fails** + **smoke** + tests for **changed fi
 | **S0-01** | Core tests changed in P4–P8; QA-exit smoke |
 | **S0-04** | `tofu validate` before a real apply |
 | **S6-01** | Live Setup pages **with Deploy** (Pass 1 walked pages and did **not** Deploy) |
-| **S6-02** | Analyze the chosen pack; P7 jar-less CF **hard-block** |
+| **S6-02** | Analyze the chosen pack; P7 jar-less CF **hard-block**; mis-declaration warning (Simply Optimized or fabric-mistag — analyze only) |
 | **S7-04** | Delete + greenfield — the point of this pass |
 
 Phase A **Done when:** TESTING stack is a playable doorbell; game-manifest is **modded** with the chosen loader; 25565 not world-open; VM1 shape **2/12** (unless overridden); new ledger; lock absent; idle on at session end (or say why not). Record whether Setup installed the Function.
@@ -188,7 +189,7 @@ Agent: S0-01, S0-04, then watch OCI/SSH. Operator: Hybrid clicks.
 3. Launch Hybrid with `MCMANAGER_CONFIG_DIR` = the TESTING manage folder that still has tofu state (`mcmgr-blank-test` from Pass 1).  
 4. Operator: Danger Zone → Delete infrastructure → type `confirm`. Wait until destroy succeeds.  
 5. Close Manager. Reopen (same folder or a new empty `mcmgr-pass-2`). First-run → **Setup**.  
-6. Wizard: Always Free checkboxes, profile **TESTING**, compartment `mcmgr`, **Modded**, file = chosen pack, client-pack checkboxes, EULA, admin `/32`, shape **2/12**. Optional: jar-less CF zip first (S6-02 P7). **Deploy.**  
+6. Wizard: Always Free checkboxes, profile **TESTING**, compartment `mcmgr`, **Modded**, file = chosen **Deploy** pack, client-pack checkboxes, EULA, admin `/32`, shape **2/12**. Before that: jar-less CF zip (S6-02 P7), then Simply Optimized or fabric-mistag (S6-02 warning; continue enabled). **Deploy.**  
 7. Agent: waiter-style polls (not 1s). One A1 + one Micro only. Mirror any guest fix into SoT.  
 8. **S7-04 expected:** doorbell (play IP on door when idle/stopped; wake moves it); private SL; `User=mcmgr`; manifest matches the pack; Minecraft eventually listen on 25565. New Object Storage ledger.  
 9. Restore: DELETE lock if created; idle **on**; prefer VM1 **STOPPED**, play IP on door. Record the **new SSH key** path in the session log (**no** key material).  
@@ -207,7 +208,7 @@ Read docs/V1-QA-Pass-2-Scope.md in OCI-mc-server (protocol + Phase A only) and t
 Pass 1 is done (Vanilla, no greenfield). This chat is Pass 2 Phase A only: S0-01, S0-04, S6-01/S6-02 as live Setup, then S7-04 Delete + greenfield.
 You MAY tofu destroy then tofu apply on profile TESTING only for this Phase A stack. Destroy the existing TESTING product stack first. Never a second Always Free A1. Never DEFAULT / live Forge lab. Never Minecraft 0.0.0.0/0. Stay at $0.
 I will click Hybrid. Use MCMANAGER_CONFIG_DIR for the TESTING folder (Pass 1: mcmgr-blank-test), not repo data/config.local.json (Forge / DEFAULT). After Delete, close Manager, reopen, Setup.
-Setup: profile TESTING, Modded, sample pack BlockFront .mrpack (or homemade/fabric-strip.mrpack if we say so in chat), VM1 shape 2 OCPU / 12 GB, client-pack confirmations. Before the real pack, try a jar-less CurseForge zip and confirm the wizard hard-blocks (P7).
+Setup: profile TESTING, Modded, sample pack BlockFront .mrpack (or homemade/fabric-strip.mrpack if we say so in chat), VM1 shape 2 OCPU / 12 GB, client-pack confirmations. Before the real pack: drop a jar-less CurseForge zip (P7 hard-block), then Simply Optimized or tests/fixtures/packs/fabric-mistag.mrpack (mis-declaration warning, continue enabled). Do not Deploy those; Deploy BlockFront (or fabric-strip).
 You MAY fn build/push/invoke product Functions on TESTING. Setup may skip the Function until Step 8.6.1 — record that; it is not a Fail of 8.6.1. Do not fire a real $1 budget alert. Do not SoftStop the door.
 If Setup/bootstrap is wrong, file lab docs/Issues.md and fix product onbox/infra/door_vm/vm_agent — do not only patch the new VMs.
 After Setup, SSH with the new wizard key in the new config, not the Pass 1 key unless config still points there. If you need VM1, disable idle while working; re-enable when you finish (OS-ISSUE-7 after Minecraft start).

@@ -172,6 +172,9 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     private string _packSummary = "";
 
     [ObservableProperty]
+    private string _packOverrideListWarning = "";
+
+    [ObservableProperty]
     private string _packBlockReason = "";
 
     [ObservableProperty]
@@ -413,6 +416,9 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     public bool ShowPackConfirmChecks => ShowPackSummary && PackCanContinue;
 
+    public bool ShowOverrideListWarning =>
+        ShowPackSummary && PackCanContinue && !string.IsNullOrWhiteSpace(PackOverrideListWarning);
+
     public string ClientPackTitle => SetupPackImport.ClientPackTitle;
 
     public string ClientPackCopy => SetupPackImport.ClientPackCopy;
@@ -593,6 +599,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         PackLoader = "";
         PackLoaderVersion = "";
         PackSummary = "";
+        PackOverrideListWarning = "";
         PackBlockReason = "";
         PackCanContinue = false;
         PackConfirmed = false;
@@ -611,6 +618,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         PackAnalyzeCaption = "Analyzing modpack…";
         PackBlockReason = "";
         PackSummary = "";
+        PackOverrideListWarning = "";
         PackCanContinue = false;
         if (!keepConfirm)
         {
@@ -621,11 +629,13 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         StatusMessage = "Analyzing modpack…";
         try
         {
-            var result = await Task.Run(() => SetupPackImport.AnalyzeFile(path)).ConfigureAwait(true);
+            var result = await Task.Run(() =>
+                SetupPackImport.AnalyzeFile(path, ExcludeIncludeListRefresh.Shared)).ConfigureAwait(true);
             if (!result.Succeeded || result.Value is null)
             {
                 PackPath = path;
                 PackSummary = "";
+                PackOverrideListWarning = "";
                 PackCanContinue = false;
                 PackConfirmed = false;
                 PackBlockReason = result.Error ?? "Could not analyze this file.";
@@ -644,6 +654,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         {
             PackCanContinue = false;
             PackConfirmed = false;
+            PackOverrideListWarning = "";
             PackBlockReason = "Analyze failed: " + ex.Message;
             StatusMessage = PackBlockReason;
         }
@@ -694,6 +705,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         PackLoader = preview.Loader;
         PackLoaderVersion = preview.LoaderVersion;
         PackSummary = preview.ConfirmableSummary;
+        PackOverrideListWarning = preview.OverrideListWarning ?? "";
         PackBlockReason = preview.BlockReason ?? "";
         PackCanContinue = preview.CanContinue;
         if (!preview.CanContinue)
@@ -1503,6 +1515,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             case nameof(PackFileNameDisplay):
             case nameof(ShowPackSummary):
             case nameof(ShowPackConfirmChecks):
+            case nameof(ShowOverrideListWarning):
             case nameof(ClientPackTitle):
             case nameof(ClientPackCopy):
             case nameof(ClientPackAckLabel):
@@ -1557,6 +1570,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         OnPropertyChanged(nameof(PackFileNameDisplay));
         OnPropertyChanged(nameof(ShowPackSummary));
         OnPropertyChanged(nameof(ShowPackConfirmChecks));
+        OnPropertyChanged(nameof(ShowOverrideListWarning));
         OnPropertyChanged(nameof(ClientPackFriendsNeed));
         OnPropertyChanged(nameof(UseExistingCompartment));
         OnPropertyChanged(nameof(SshImportMode));

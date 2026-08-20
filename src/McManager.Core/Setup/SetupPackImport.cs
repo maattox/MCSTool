@@ -35,6 +35,16 @@ public static class SetupPackImport
     public const string ClientPackAckLabel =
         "I will give friends this same exported pack. They cannot join until they have it.";
 
+    /// <summary>
+    /// Confirmable-summary warning when the override list skips mods the pack treated as
+    /// server-side or side-unknown (row 12). Not a third required checkbox.
+    /// </summary>
+    public const string OverrideListMisdeclarationCopy =
+        "This pack marks some mods as needed on the server that are known client-only mods. "
+        + "Setup will skip those on the game computer. If the server fails to start, check this skipped list first.";
+
+    public const int OverrideListExampleCap = 6;
+
     /// <summary>Shareable identity from the analyzed pack (file import; no catalog URL).</summary>
     public static string FriendsNeedLine(
         string? packName,
@@ -75,7 +85,9 @@ public static class SetupPackImport
         };
     }
 
-    public static ServiceResult<SetupPackPreview> AnalyzeFile(string path)
+    public static ServiceResult<SetupPackPreview> AnalyzeFile(
+        string path,
+        ExcludeIncludeListRefresh? refresh = null)
     {
         if (string.IsNullOrWhiteSpace(path))
             return ServiceResult<SetupPackPreview>.Fail("No pack file was provided.");
@@ -85,20 +97,20 @@ public static class SetupPackImport
         var ext = Path.GetExtension(path);
         if (ext.Equals(".mrpack", StringComparison.OrdinalIgnoreCase))
         {
-            var mr = MrpackAnalyzer.AnalyzeFile(path);
+            var mr = MrpackAnalyzer.AnalyzeFile(path, refresh?.ModrinthMatcher());
             if (!mr.Succeeded)
                 return ServiceResult<SetupPackPreview>.Fail(mr.Error!);
             return ServiceResult<SetupPackPreview>.Ok(FromMrpack(mr.Value!, path));
         }
 
-        var manual = ManualServerPackAnalyzer.AnalyzeFile(path);
+        var manual = ManualServerPackAnalyzer.AnalyzeFile(path, refresh?.CurseForgeMatcher());
         if (!manual.Succeeded)
             return ServiceResult<SetupPackPreview>.Fail(manual.Error!);
 
         var analysis = manual.Value!;
         if (analysis.Kind == ManualServerPackKind.Mrpack)
         {
-            var mr = MrpackAnalyzer.AnalyzeFile(path);
+            var mr = MrpackAnalyzer.AnalyzeFile(path, refresh?.ModrinthMatcher());
             if (!mr.Succeeded)
                 return ServiceResult<SetupPackPreview>.Fail(mr.Error!);
             return ServiceResult<SetupPackPreview>.Ok(FromMrpack(mr.Value!, path));
@@ -120,6 +132,7 @@ public static class SetupPackImport
         else if (string.IsNullOrWhiteSpace(analysis.MinecraftVersion))
             block = "This pack does not declare a Minecraft version.";
 
+        var warning = FormatOverrideListWarning(analysis.OverrideListSkipCount, analysis.OverrideListSkipPaths);
         return new SetupPackPreview(
             KindMrpack,
             path,
@@ -133,10 +146,13 @@ public static class SetupPackImport
             analysis.ServerSideCount,
             analysis.ClientOnlyCount,
             analysis.UnclearSideCount,
-            analysis.ConfirmableSummary,
+            PrependWarning(analysis.ConfirmableSummary, warning),
             analysis.Warnings,
             canContinue: block is null,
-            blockReason: block);
+            blockReason: block,
+            analysis.OverrideListSkipCount,
+            analysis.OverrideListSkipPaths,
+            warning);
     }
 
     public static SetupPackPreview FromManual(ManualServerPackAnalysis analysis, string path)
@@ -154,6 +170,7 @@ public static class SetupPackImport
         else if (string.IsNullOrWhiteSpace(analysis.MinecraftVersion))
             block = "This pack does not declare a Minecraft version.";
 
+        var warning = FormatOverrideListWarning(analysis.OverrideListSkipCount, analysis.OverrideListSkipPaths);
         return new SetupPackPreview(
             KindManualZip,
             path,
@@ -167,10 +184,59 @@ public static class SetupPackImport
             analysis.ServerSideCount,
             analysis.ClientOnlyCount,
             analysis.UnclearSideCount,
-            analysis.ConfirmableSummary,
+            PrependWarning(analysis.ConfirmableSummary, warning),
             analysis.Warnings,
             canContinue: block is null,
-            blockReason: block);
+            blockReason: block,
+            analysis.OverrideListSkipCount,
+            analysis.OverrideListSkipPaths,
+            warning);
+    }
+
+    /// <summary>
+    /// Novice warning plus capped filenames when the override list skipped server-side / unknown-side files.
+    /// Returns null when there is nothing to warn about (pack-declared client-only is not this case).
+    /// </summary>
+    public static string? FormatOverrideListWarning(int skipCount, IReadOnlyList<string>? skipPaths)
+    {
+        if (skipCount <= 0)
+            return null;
+
+        var paths = skipPaths ?? [];
+        var examples = paths
+            .Select(ExampleFileName)
+            .Where(n => n.Length > 0)
+            .Take(OverrideListExampleCap)
+            .ToList();
+
+        var sb = new System.Text.StringBuilder();
+        sb.Append(OverrideListMisdeclarationCopy);
+        if (examples.Count > 0)
+        {
+            sb.Append(" Examples: ").Append(string.Join(", ", examples));
+            var remaining = skipCount - examples.Count;
+            if (remaining > 0)
+                sb.Append(" (and ").Append(remaining).Append(" more)");
+            sb.Append('.');
+        }
+
+        return sb.ToString();
+    }
+
+    private static string ExampleFileName(string relativePath)
+    {
+        var n = (relativePath ?? "").Replace('\\', '/').Trim();
+        if (n.Length == 0)
+            return "";
+        var slash = n.LastIndexOf('/');
+        return slash < 0 ? n : n[(slash + 1)..];
+    }
+
+    private static string PrependWarning(string summary, string? warning)
+    {
+        if (string.IsNullOrWhiteSpace(warning))
+            return summary;
+        return warning.TrimEnd() + Environment.NewLine + Environment.NewLine + summary;
     }
 
     public static bool IsInstallableLoader(string? loader)
@@ -253,7 +319,10 @@ public sealed class SetupPackPreview
         string confirmableSummary,
         IReadOnlyList<string> warnings,
         bool canContinue,
-        string? blockReason)
+        string? blockReason,
+        int overrideListSkipCount = 0,
+        IReadOnlyList<string>? overrideListSkipPaths = null,
+        string? overrideListWarning = null)
     {
         Kind = kind;
         SourcePath = sourcePath;
@@ -271,6 +340,9 @@ public sealed class SetupPackPreview
         Warnings = warnings;
         CanContinue = canContinue;
         BlockReason = blockReason;
+        OverrideListSkipCount = overrideListSkipCount;
+        OverrideListSkipPaths = overrideListSkipPaths ?? [];
+        OverrideListWarning = overrideListWarning;
     }
 
     public string Kind { get; }
@@ -289,4 +361,12 @@ public sealed class SetupPackPreview
     public IReadOnlyList<string> Warnings { get; }
     public bool CanContinue { get; }
     public string? BlockReason { get; }
+
+    /// <summary>Files skipped because the itzg/product list excluded a server-side or unknown-side jar.</summary>
+    public int OverrideListSkipCount { get; }
+
+    public IReadOnlyList<string> OverrideListSkipPaths { get; }
+
+    /// <summary>Novice warning when <see cref="OverrideListSkipCount"/> is positive; otherwise null.</summary>
+    public string? OverrideListWarning { get; }
 }

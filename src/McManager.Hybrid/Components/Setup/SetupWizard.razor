@@ -329,6 +329,13 @@
                         {
                             <p class="mcm-wizard-error">@Vm.PackBlockReason</p>
                         }
+                        @if (Vm.ShowOverrideListWarning)
+                        {
+                            <aside class="mcm-pack-list-warning" role="status">
+                                <p class="mcm-wizard-kicker">Some client-only mods will be skipped</p>
+                                <p>@Vm.PackOverrideListWarning</p>
+                            </aside>
+                        }
                         <pre class="mcm-wizard-log mcm-wizard-mono mcm-slim-scroll mcm-pack-summary">@Vm.PackSummary</pre>
                     }
                     @if (Vm.ShowPackConfirmChecks)

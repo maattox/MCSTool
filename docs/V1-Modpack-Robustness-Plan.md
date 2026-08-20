@@ -1,6 +1,6 @@
 # V1 modpack robustness — exclude lists + mixed archives
 
-**Status:** Living. Created 2026-08-20 (docs only). **NEXT = R4**.  
+**Status:** Living. Created 2026-08-20 (docs only). **R1–R4 DONE.** V1 **NEXT = Step 8.5.2** (do not start Pass 2 until the operator says so).  
 **Parent:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **4.13**.  
 **Why now:** operator 2026-08-20 — do this **before** QA Pass 2 (Step **8.5.2**) so Modded greenfield is not tested twice.  
 **Design SoT:** blueprint **§24.3** (Layers 1–2 this plan; Layer 3 **parked**), **§22.1** (trust `env.server` then override), **§23.3** (CurseForge has no side field).
@@ -30,11 +30,17 @@ This header + **one** R-section + the files listed there. Blueprint: **named §�
 ### Operator prompt (copy-paste)
 
 ```text
-Read docs/V1-Modpack-Robustness-Plan.md in OCI-mc-server. Implement only the section marked NEXT (R3 unless I named another).
-You MAY use OCI CLI/API with profile TESTING (not DEFAULT) and SSH both test VMs with %USERPROFILE%\.ssh\mcmgr_ed25519_20260817_125552. Stay at $0. Do not tofu apply/destroy. Do not commit. Do not start Step 8.5.2, 8.6.1, or 9.1.
-This detour does not need the test VMs unless the NEXT section says so. If you do use VM1: START if STOPPED, disable idle, re-enable when finished (OS-ISSUE-7 after Minecraft start).
-When done: update this plan’s statuses and V1 plan Step 4.13, stop, tell me what you did, how to test, what’s next, and ask if I want to continue.
-Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / Plan mode only if the NEXT step is marked PARALLEL-OK. Include this same Agent-vs-Plan instruction in the prompt you give me for the following step.
+Read docs/V1-QA-Pass-2-Scope.md in OCI-mc-server (protocol + Phase A only) and the named catalog IDs in docs/V1-QA-Catalog.md. Fill docs/V1-QA-Pass-2-Results.md as you go. Do not re-run Pass 1 rows already marked Skipped in that file.
+Pass 1 is done (Vanilla, no greenfield). This chat is Pass 2 Phase A only: S0-01, S0-04, S6-01/S6-02 as live Setup, then S7-04 Delete + greenfield.
+You MAY tofu destroy then tofu apply on profile TESTING only for this Phase A stack. Destroy the existing TESTING product stack first. Never a second Always Free A1. Never DEFAULT / live Forge lab. Never Minecraft 0.0.0.0/0. Stay at $0.
+I will click Hybrid. Use MCMANAGER_CONFIG_DIR for the TESTING folder (Pass 1: mcmgr-blank-test), not repo data/config.local.json (Forge / DEFAULT). After Delete, close Manager, reopen, Setup.
+Setup: profile TESTING, Modded, sample pack BlockFront .mrpack (or homemade/fabric-strip.mrpack if we say so in chat), VM1 shape 2 OCPU / 12 GB, client-pack confirmations. Before the real pack: drop a jar-less CurseForge zip (P7 hard-block), then Simply Optimized or tests/fixtures/packs/fabric-mistag.mrpack (mis-declaration warning, continue enabled). Do not Deploy those; Deploy BlockFront (or fabric-strip).
+You MAY fn build/push/invoke product Functions on TESTING. Setup may skip the Function until Step 8.6.1 — record that; it is not a Fail of 8.6.1. Do not fire a real $1 budget alert. Do not SoftStop the door.
+If Setup/bootstrap is wrong, file lab docs/Issues.md and fix product onbox/infra/door_vm/vm_agent — do not only patch the new VMs.
+After Setup, SSH with the new wizard key in the new config, not the Pass 1 key unless config still points there. If you need VM1, disable idle while working; re-enable when you finish (OS-ISSUE-7 after Minecraft start).
+When Phase A is done: update Pass 2 results + V1 plan 8.5.2 changelog, stop, tell me what failed, how to test the doorbell, what’s next (Phase B), and ask if I want to continue.
+Do not commit. Do not start Phase B, Step 8.6.1, or 9.1 unless I say so.
+Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / Plan mode only if the NEXT step is marked PARALLEL-OK. Include this same Agent-vs-Plan instruction in the prompt you give me for the following phase.
 ```
 
 ---
@@ -63,9 +69,9 @@ Vendored itzg JSON (operator 2026-08-20, full files): [`docs/modrinth-exclude-in
 | **R1** | Matcher + vendor lists (Core only) | **DONE** | No |
 | **R2** | Apply to `.mrpack` (env + list + overrides + embedded jars) | **DONE** | No (temp dir; optional CDN) |
 | **R3** | Apply to manual / jar-root / CF-with-jars zip | **DONE** | No (temp dir) |
-| **R4** | Setup pre-check copy + optional list refresh + Guide | **NEXT** | No |
+| **R4** | Setup pre-check copy + optional list refresh + Guide | **DONE** | No |
 
-When **R4** is DONE: point V1 **NEXT** at Step **8.5.2**, update [`V1-QA-Pass-2-Scope.md`](V1-QA-Pass-2-Scope.md) pack row, then stop for the operator to start Pass 2.
+This plan is **complete**. V1 **NEXT = Step 8.5.2**. Do not start Pass 2 Phase A until the operator says so (tofu destroy).
 
 ---
 
@@ -239,7 +245,7 @@ R2 may GET Modrinth CDN URLs already in a homemade/Simply Optimized index (admin
 
 ## R4 — Setup pre-check + list refresh + Guide
 
-**Status:** NEXT  
+**Status:** DONE  
 **Depends on:** R3  
 
 **Read first**
@@ -264,14 +270,14 @@ R2 may GET Modrinth CDN URLs already in a homemade/Simply Optimized index (admin
 
 **Done when:** Setup tells the operator about auto-corrections before Deploy; Guide mentions it; refresh cannot brick Setup.
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-20 — Setup confirmable summary + Game-step aside warn when the override list skips server-side/unknown-side mods (capped examples; still `CanContinue`; not a third checkbox). Optional GitHub raw Layer 1 refresh at analyze (5s timeout; fallback to embed; never fails Setup). Guide Modded paragraph. **R1–R4 DONE.** V1 **NEXT = Step 8.5.2**.
 
 ---
 
-## After R4 (docs in that session or a tiny follow-up)
+## After R4 (done in the R4 session)
 
 1. V1 dashboard: **4.13 DONE**, **NEXT = Step 8.5.2**.  
-2. Pass 2 pack row: keep a **small** live Deploy pack (BlockFront still fine for NeoForge doorbell). S6-02 must include the mis-declaration warning (Simply Optimized or the CI mistag fixture — **not** a 300 MB zip). Still do not Deploy MMC3 / MilesPack / Infinite Horizons / jar-less CF.  
+2. Pass 2 pack row: **BlockFront** stays the small live Deploy pack. S6-02 includes the mis-declaration warning (Simply Optimized or the CI mistag fixture — **not** a 300 MB zip). Still do not Deploy MMC3 / MilesPack / Infinite Horizons / jar-less CF.  
 3. Do not start Pass 2 Phase A until the operator says so (tofu destroy).
 
 ---
@@ -280,6 +286,7 @@ R2 may GET Modrinth CDN URLs already in a homemade/Simply Optimized index (admin
 
 | Date | Note |
 |------|------|
+| 2026-08-20 | **R4 DONE.** Setup pre-check warning + optional GitHub Layer 1 refresh + Guide. **R1–R4 complete.** V1 **NEXT = Step 8.5.2** (do not start Pass 2 until the operator says so). |
 | 2026-08-20 | **R3 DONE.** Manual / jar-root / CF-with-jars use the CF exclude list; jar-root installs to `mods/`; mixed CF still hard-blocks. **NEXT = R4**. |
 | 2026-08-20 | **R2 DONE.** `.mrpack` analyze/install uses the matcher; mixed embedded+URL; override jars filtered. **NEXT = R3**. |
 | 2026-08-20 | **R1 DONE.** Core matcher + embedded itzg lists + empty `mcmgr-exclude-include.json`. **NEXT = R2**. |
