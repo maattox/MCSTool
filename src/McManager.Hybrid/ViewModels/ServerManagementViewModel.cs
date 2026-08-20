@@ -471,8 +471,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject
         var confirmed = await _dialogs.ConfirmAsync(
             "Wipe the live world?",
             "This deletes the current world on the server at "
-            + $"{plan.WorldPath}. Minecraft will be stopped, that folder removed, and Minecraft left stopped. "
-            + "The next Start generates a new world. This cannot be undone except by restoring a backup. "
+            + $"{plan.WorldPath}. Minecraft will be stopped, that folder removed, and Minecraft started again "
+            + "so a new world generates. This cannot be undone except by restoring a backup. "
             + "Mods, loader files, and server.properties are not deleted. "
             + backupHint,
             "Wipe world");
@@ -490,8 +490,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject
         {
             var result = await _ssh.WipeWorldAsync(_config.Vm1);
             StatusMessage = result.Succeeded
-                ? $"Live world wiped at {plan.WorldPath}. Minecraft is stopped. "
-                  + "Start from the top bar to generate a new world. Cloud backups were not deleted."
+                ? $"Live world wiped at {plan.WorldPath}. Minecraft start requested. "
+                  + "Cloud backups were not deleted."
                 : result.Error ?? "Wipe failed.";
         }
         finally

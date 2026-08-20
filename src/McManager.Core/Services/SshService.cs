@@ -298,6 +298,15 @@ public sealed class SshService : ISshService
                         + "Attempted to start Minecraft again.");
                 }
 
+                var start = client.RunCommand($"sudo systemctl start {EscapeShellArg(unit)}");
+                if (start.ExitStatus != 0)
+                {
+                    var err = string.IsNullOrWhiteSpace(start.Error) ? start.Result : start.Error;
+                    return ServiceResult.Fail(
+                        $"World wiped but systemctl start {unit} failed "
+                        + $"(exit {start.ExitStatus}): {err.Trim()}");
+                }
+
                 return ServiceResult.Ok();
             }
             catch (Exception ex)

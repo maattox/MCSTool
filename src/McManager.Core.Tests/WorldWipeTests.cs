@@ -24,6 +24,8 @@ public sealed class WorldWipeTests
         Assert.DoesNotContain("server.properties", plan.RemoteScript, StringComparison.Ordinal);
         Assert.DoesNotContain("backups/", plan.RemoteScript, StringComparison.Ordinal);
         Assert.DoesNotContain("objectstorage", plan.RemoteScript, StringComparison.OrdinalIgnoreCase);
+        // Start is SshService.WipeWorld after this script (same as ReplaceWorld).
+        Assert.DoesNotContain("systemctl", plan.RemoteScript, StringComparison.Ordinal);
     }
 
     [Theory]

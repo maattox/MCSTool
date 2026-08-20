@@ -1,6 +1,6 @@
 # V1 bug-fix plan — Pass 1
 
-**Status:** Living. Created 2026-08-19 from [`V1-QA-Pass-1-Results.md`](V1-QA-Pass-1-Results.md) after **operator early triage** (paused after S2). **P1–P7 DONE** (P7 2026-08-20). Catalog **S0–S7 DONE** (S7-04 Skipped). Operator **confirmed remaining severities** 2026-08-19 (including S3-07 auto-start). **NEXT = P8.** Do not start 8.6.1 or 9.1.  
+**Status:** Living. Created 2026-08-19 from [`V1-QA-Pass-1-Results.md`](V1-QA-Pass-1-Results.md) after **operator early triage** (paused after S2). **P1–P8 DONE** (P8 2026-08-20). Catalog **S0–S7 DONE** (S7-04 Skipped). Operator **confirmed remaining severities** 2026-08-19 (including S3-07 auto-start). **NEXT = none** (Pass 1 bug-fix P-sections complete). Do not start 8.6.1 or 9.1.  
 **Parent:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.5.2** (stays NEXT until Phase 8.5 exits).  
 **Catalog:** [`V1-QA-Catalog.md`](V1-QA-Catalog.md) — do not edit expected steps.
 
@@ -95,9 +95,9 @@ Pass 1 **S0–S7** are recorded in [`V1-QA-Pass-1-Results.md`](V1-QA-Pass-1-Resu
 | **P5** | Server name / icon / MOTD not applied (S4-12) | **DONE** | SEQUENTIAL vs VM1 work | Yes |
 | **P6** | Manager Start after daily exhaustion (S5-05) | **DONE** | SEQUENTIAL vs door/Hybrid Start | Yes |
 | **P7** | Incomplete CurseForge zip hard-block (S6-02 UX) | **DONE** | PARALLEL-OK vs P4 | No |
-| **P8** | Wipe world auto-starts Minecraft (S3-07) | **NEXT** | SEQUENTIAL vs Server Management | Yes |
+| **P8** | Wipe world auto-starts Minecraft (S3-07) | **DONE** | SEQUENTIAL vs Server Management | Yes |
 
-**NEXT = P8.** Do not start 8.6.1 or 9.1.
+**NEXT = none.** Pass 1 bug-fix P-sections are complete. Do not start 8.6.1 or 9.1.
 
 ---
 
@@ -320,7 +320,7 @@ Do **not** load the full PRODUCT-IDEAS or Minecraft blueprint. Do **not** weaken
 
 ## P8 — Wipe world auto-starts Minecraft (S3-07)
 
-**Status:** NEXT  
+**Status:** DONE  
 **Catalog IDs:** S3-07 (Pass 1 **Pass** for leave-stopped; operator 2026-08-19 overrode)  
 **Severity:** Minor (operator: must change; not Won't-fix)
 
@@ -346,7 +346,7 @@ Do **not** load the full PRODUCT-IDEAS or blueprint except §11.3 if needed for 
 
 **Done when:** Wipe auto-starts Minecraft. Guide + catalog expected match this plan. PRODUCT-IDEAS may still say next-Start — that is noted drift, not a revert.
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-20 — Wipe left Minecraft stopped; confirm/status copy said the next Start generates a world. Fix: `SshService.WipeWorld` `systemctl start` after a successful delete (same as ReplaceWorld). Confirm + status + button tooltip say start again. Guide + catalog S3-07 already auto-start (not reverted). TESTING: stop → empty `/opt/mcmgr/server/world` → start → unit **active**; journal **Done (10.739s)** new spawn; `level.dat` inode changed; `server.properties` kept; Object Storage `backups/` still 6 zips (wipe did not delete). Idle force-enabled by start (OS-ISSUE-7); left enabled timeout 15. SoftStop → STOPPED ~65s. Play IP on door; lock 404. No Issues.md (Manager only). Did not `tofu apply`. Did not start 8.6.1 or 9.1. **NEXT = none.**
 
 ---
 
@@ -364,3 +364,4 @@ Do **not** load the full PRODUCT-IDEAS or blueprint except §11.3 if needed for 
 | 2026-08-20 | **P5 DONE.** S4-12: Manager write OK; live agent lacked identity apply; SoT applied after Java so Vanilla stop rewrote old MOTD. `mc-boot-ledger` now Before=minecraft; TESTING redeployed. Localhost SLP showed new MOTD+icon. OS-ISSUE-10. **NEXT = P6**. Do not start 8.6.1 or 9.1. |
 | 2026-08-20 | **P6 DONE.** S5-05 Manager Start: HTTP `/api/wake` skips daily; Minecraft login still refuses; spend-brake still blocks. Hybrid Start wait ignores `BUDGET_EXHAUSTED`. TESTING: daily kick + admin PLAYABLE + lock refuse. DOOR-ISSUE-11. **NEXT = P7**. Do not start 8.6.1 or 9.1. |
 | 2026-08-20 | **P7 DONE.** Incomplete CF zip (manifest + libraries/installer, no `mods/` jars) hard-blocked with Server Files / filled-zip copy. Client export still refused. Complete Server Files + `.mrpack` still continue. No CurseForge API. **NEXT = P8**. Do not start 8.6.1 or 9.1. |
+| 2026-08-20 | **P8 DONE.** Wipe auto-starts Minecraft (`systemctl start` after live-save delete). TESTING: unit active + journal Done 10.7s new world; backups kept. Guide/catalog already auto-start. PRODUCT-IDEAS Wipe world step 4 may still say next-Start (drift, not reverted). **NEXT = none**. Do not start 8.6.1 or 9.1. |
