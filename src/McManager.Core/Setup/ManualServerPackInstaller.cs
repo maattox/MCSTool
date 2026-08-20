@@ -7,7 +7,9 @@ namespace McManager.Core.Setup;
 /// <summary>
 /// Installs a user-supplied generic server-pack zip into a destination directory
 /// (blueprint §24). Unzips documented layout; strips jars whose in-jar metadata
-/// is client-only. No catalog HTTP. Does not rewrite <see cref="MrpackInstaller"/>.
+/// is client-only or whose name matches the CurseForge exclude list. Root-only
+/// jar zips install into dest <c>mods/</c>. No catalog HTTP. Does not rewrite
+/// <see cref="MrpackInstaller"/>.
 /// </summary>
 public static class ManualServerPackInstaller
 {
@@ -101,7 +103,7 @@ public static class ManualServerPackInstaller
                 if (relative.Length == 0)
                     continue;
 
-                if (!TryMapInstallPath(relative, out var destRelative))
+                if (!TryMapInstallPath(relative, analysis.MapRootJarsToMods, out var destRelative))
                     continue;
 
                 if (clientOnly.Contains(relative))
@@ -161,7 +163,10 @@ public static class ManualServerPackInstaller
         }
     }
 
-    internal static bool TryMapInstallPath(string relative, out string destRelative)
+    internal static bool TryMapInstallPath(string relative, out string destRelative) =>
+        TryMapInstallPath(relative, mapRootJarsToMods: false, out destRelative);
+
+    internal static bool TryMapInstallPath(string relative, bool mapRootJarsToMods, out string destRelative)
     {
         destRelative = relative;
         var normalized = relative.Replace('\\', '/');
@@ -202,7 +207,16 @@ public static class ManualServerPackInstaller
 
         if (!normalized.Contains('/')
             && normalized.EndsWith(".jar", StringComparison.OrdinalIgnoreCase))
+        {
+            if (mapRootJarsToMods && ManualPackFileFilter.IsRootModJar(normalized))
+            {
+                destRelative = "mods/" + normalized;
+                return true;
+            }
+
+            destRelative = normalized;
             return true;
+        }
 
         return false;
     }
@@ -225,6 +239,10 @@ public static class ManualServerPackInstaller
         sb.Append("Client-only skipped: ").AppendLine(skippedClientOnly.Count.ToString());
         foreach (var p in skippedClientOnly)
             sb.Append("  ").AppendLine(p);
+        if (analysis.OverrideListSkipCount > 0)
+            sb.Append("  Override list: ").AppendLine(analysis.OverrideListSkipCount.ToString());
+        if (analysis.InJarMetadataSkipCount > 0)
+            sb.Append("  In-jar metadata: ").AppendLine(analysis.InJarMetadataSkipCount.ToString());
         if (!string.IsNullOrEmpty(retainedArchivePath))
             sb.Append("Original archive retained: ").AppendLine(retainedArchivePath);
         sb.AppendLine(MrpackInstallResult.ClientPackReminder);

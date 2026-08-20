@@ -183,7 +183,7 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 | **2**   | $1 spend-brake lock (Function flag, door, Manager overlay) | **DONE**                                              |
 | **3**   | Remove public/blacklist (was IP Management public mode)    | **DONE**                                              |
 | **4**   | Setup game types (Paper, loaders, pack import)             | **DONE** (Step **4.12** deferred)                     |
-| **4.13** | Modpack robustness (itzg exclude lists, mixed archives)  | **NEXT** = [R3](V1-Modpack-Robustness-Plan.md)        |
+| **4.13** | Modpack robustness (itzg exclude lists, mixed archives)  | **NEXT** = [R4](V1-Modpack-Robustness-Plan.md)        |
 | **5**   | Server Management modding inspect + re-download pack       | **DONE**                                              |
 | **6**   | Top-bar chrome + oversized-world SSH UX                    | **DONE**                                              |
 | **7**   | Remaining v1 (resize, console, storage, Connect version)   | **DONE**                                              |
@@ -193,7 +193,7 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 | **9**   | Packaging, updates, launch (old MVP Phase 8–9)             | TODO — do not start until Phase 8.5 **and** Step **8.6.1** are DONE |
 
 
-**Current NEXT step:** [Step 4.13](#step-413--modpack-robustness-exclude-lists) / robustness **R3** ([`V1-Modpack-Robustness-Plan.md`](V1-Modpack-Robustness-Plan.md)). Operator 2026-08-20: land itzg exclude lists + mixed-archive install **before** Pass 2 so Modded greenfield is not tested twice. Pass 1 **DONE**. Step **8.5.2** is **paused** (do not Destroy TESTING / do not start Phase A). **Do not start Step 8.6.1** until Phase 8.5 exits (unless the operator asks to interleave). **Do not start Step 9.1** until Phase 8.5 **and** Step **8.6.1** are DONE.
+**Current NEXT step:** [Step 4.13](#step-413--modpack-robustness-exclude-lists) / robustness **R4** ([`V1-Modpack-Robustness-Plan.md`](V1-Modpack-Robustness-Plan.md)). Operator 2026-08-20: land itzg exclude lists + mixed-archive install **before** Pass 2 so Modded greenfield is not tested twice. Pass 1 **DONE**. Step **8.5.2** is **paused** (do not Destroy TESTING / do not start Phase A). **Do not start Step 8.6.1** until Phase 8.5 exits (unless the operator asks to interleave). **Do not start Step 9.1** until Phase 8.5 **and** Step **8.6.1** are DONE.
 
 ---
 
@@ -843,7 +843,7 @@ Historical **Do** (not to be started): import a user-supplied CurseForge client 
 
 ### Step 4.13 — Modpack robustness (exclude lists)
 
-**Status:** NEXT (living: [`V1-Modpack-Robustness-Plan.md`](V1-Modpack-Robustness-Plan.md) **R3**)  
+**Status:** NEXT (living: [`V1-Modpack-Robustness-Plan.md`](V1-Modpack-Robustness-Plan.md) **R4**)  
 **Depends on:** Phase 4 DONE; **pauses** Step 8.5.2 until this step exits
 
 **Read first**
@@ -863,7 +863,7 @@ Historical **Do** (not to be started): import a user-supplied CurseForge client 
 
 **Done when:** R1–R4 **DONE** in the robustness plan; Setup warns on mis-declared client mods and still auto-strips them; mixed URL/embedded and jar-root zips install. Then point this plan’s **NEXT** at Step **8.5.2** and update Pass 2’s pack row.
 
-**Changelog:** 2026-08-20 — **R2 DONE** (`.mrpack` matcher after `env.server`; mixed embedded+URL; override-jar filter; `fabric-mistag.mrpack`). Living **NEXT = R3**. Pass 2 still paused. Do not start 8.5.2, 8.6.1, or 9.1. 2026-08-20 — **R1 DONE** (Core matcher + embedded itzg JSON; installers unchanged). Living **NEXT = R2**. Pass 2 still paused. Do not start 8.5.2, 8.6.1, or 9.1. 2026-08-20 — **Inserted** (operator). Pause Pass 2. Living plan R1 = matcher + vendor itzg JSON. Do not start 8.5.2, 8.6.1, or 9.1.
+**Changelog:** 2026-08-20 — **R3 DONE** (manual / jar-root / CF-with-jars use CF exclude list; jar-root → `mods/`; mixed CF still P7-style refuse; `jar-root.zip`). Living **NEXT = R4**. Pass 2 still paused. Do not start 8.5.2, 8.6.1, or 9.1. 2026-08-20 — **R2 DONE** (`.mrpack` matcher after `env.server`; mixed embedded+URL; override-jar filter; `fabric-mistag.mrpack`). Living **NEXT = R3**. Pass 2 still paused. Do not start 8.5.2, 8.6.1, or 9.1. 2026-08-20 — **R1 DONE** (Core matcher + embedded itzg JSON; installers unchanged). Living **NEXT = R2**. Pass 2 still paused. Do not start 8.5.2, 8.6.1, or 9.1. 2026-08-20 — **Inserted** (operator). Pause Pass 2. Living plan R1 = matcher + vendor itzg JSON. Do not start 8.5.2, 8.6.1, or 9.1.
 
 ---
 
@@ -1226,7 +1226,7 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 | `[V1-QA-Pass-2-Scope.md](V1-QA-Pass-2-Scope.md)`             | Pass 2 include/skip + phases (greenfield + modded). **Read this**, not a full catalog re-run. |
 | `[V1-QA-Pass-2-Results.md](V1-QA-Pass-2-Results.md)`         | Operator/agent fill-out for pass 2                                         |
 | `[V1-Bug-Fix-Plan-Pass-1.md](V1-Bug-Fix-Plan-Pass-1.md)`     | Pass 1 fixes; **P1–P8 DONE**. Do not re-open unless a Pass 2 regression.   |
-| `[V1-Modpack-Robustness-Plan.md](V1-Modpack-Robustness-Plan.md)` | **Current NEXT (R3).** Exclude lists + mixed archives. Pass 2 waits. |
+| `[V1-Modpack-Robustness-Plan.md](V1-Modpack-Robustness-Plan.md)` | **Current NEXT (R4).** Exclude lists + mixed archives. Pass 2 waits. |
 | `[V1-Bug-Fix-Plan-TEMPLATE.md](V1-Bug-Fix-Plan-TEMPLATE.md)` | Copy to `V1-Bug-Fix-Plan-Pass-N.md` after triage                           |
 
 
@@ -1537,6 +1537,7 @@ Former MVP Phase **8–9**. Phases **1–7** are **DONE**. Phase **8** is **SKIP
 
 | Date       | Note                                                                                                                                                                                                                                                                                                                              |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-20 | **Step 4.13 R3 DONE.** Manual / jar-root / CF-with-jars use the CF exclude list; jar-root installs to `mods/`; mixed CF still hard-blocks. Living **NEXT = R4**. Pass 2 still paused. Do not start 8.5.2, 8.6.1, or 9.1. |
 | 2026-08-20 | **Step 4.13 R2 DONE.** `.mrpack` analyze/install applies itzg lists; mixed embedded+URL; override jars filtered. Living **NEXT = R3**. Pass 2 still paused. Do not start 8.5.2, 8.6.1, or 9.1. |
 | 2026-08-20 | **Step 4.13 R1 DONE.** Core `ExcludeIncludeMatcher` + embedded itzg lists. Living **NEXT = R2**. Pass 2 still paused. Do not start 8.5.2, 8.6.1, or 9.1. |
 | 2026-08-20 | **Step 4.13 inserted.** [`V1-Modpack-Robustness-Plan.md`](V1-Modpack-Robustness-Plan.md) **NEXT = R1**. Pass 2 / Step **8.5.2** paused until R4. itzg lists vendored in `docs/`. Layer 3 quarantine and CurseForge API still out. Do not start 8.6.1 or 9.1. |

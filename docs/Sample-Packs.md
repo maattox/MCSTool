@@ -36,7 +36,7 @@ There is **no** CurseForge “Server Files” zip in the set. Mega-packs (Better
 
 1. **Many Fabric “optimized” packs mark every file `env.server = required`**, including obvious client-only mods (Fabulously Optimized, OptiFine for Fabric, MMC3, Simply Optimized Continued). They are **not** a valid “strip using `env.server` only” test — use `homemade/fabric-strip.mrpack` (and BlockFront, which tags Sodium `unsupported` correctly) for that. They **are** the right samples for Step **4.13** override-list stripping. Prefer **Simply Optimized Continued** (~9 KB) for routine mis-tag analyze; FO and MMC3 are heavier (MMC3 is ~57 MB with thousands of override files). The CurseForge FO *client* export is **not** a v1 import target (Step 4.12 deferred). If a **Server Files** zip is added later, that is the 4.9 / R3 path.
 2. **Infinite Horizons (Forge 1.20.1) is ~305 mods / ~20 MB.** Correct argfile-era Forge export, too heavy for routine parser tests. Confirm the 1.20.1 shape once, then use homemade + the 1.12.2 pack for day-to-day work.
-3. **MilesPack** has **no folders and no manifest** — only jars (plus one `.disabled`) at the archive root. Today’s 4.9 analyzer looks for `mods/`. R3 must treat this as unstructured server mods. It includes known client-only jars (embeddium, entityculling, ImmediatelyFast, entity model/texture features, …). Too large to Deploy on TESTING as the Pass 2 pack.
+3. **MilesPack** has **no folders and no manifest** — only jars (plus one `.disabled`) at the archive root. **R3** treats this as unstructured server mods (install into dest `mods/`) and skips known client jars via the CF exclude list. Too large to Deploy on TESTING as the Pass 2 pack.
 
 ## Which file for which V1 step
 

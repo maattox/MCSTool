@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using McManager.Core.Services;
 
 namespace McManager.Core.Setup;
@@ -8,7 +9,9 @@ namespace McManager.Core.Setup;
 /// <summary>
 /// Parses a user-supplied generic server-pack zip locally (blueprint §24 / §2.4).
 /// No catalog/search HTTP. Client-only jars are detected from in-jar metadata
-/// when present; raw client packs are refused rather than heuristic-stripped.
+/// and the CurseForge itzg/product exclude list. Jar-root zips install as
+/// <c>mods/</c>. Raw client packs and jar-less / mixed-ID CurseForge exports
+/// are refused rather than heuristic-stripped.
 /// </summary>
 public static class ManualServerPackAnalyzer
 {
@@ -34,10 +37,23 @@ public static class ManualServerPackAnalyzer
 
     public const string UnknownRefusal =
         "This zip does not look like a server pack (need a mods/ folder with jars, "
-        + "or a Server Files zip that already contains libraries/ and the loader). "
+        + "jars at the archive root, or a Server Files zip that already contains libraries/ and the loader). "
         + "If this is a client pack, upload the server-pack download instead.";
 
+    public const string CurseForgeMixedRefusal =
+        "This CurseForge zip includes some mod jars but the manifest still lists files that are not in the archive. "
+        + "Upload a complete Server Files zip, or a filled zip that already contains every listed jar. "
+        + "This app cannot download missing jars from CurseForge.";
+
     public const int MaxJarPeekBytes = 32 * 1024 * 1024;
+    public const int ListedFileIdCap = 20;
+
+    private static readonly Lazy<ExcludeIncludeMatcher> DefaultMatcher =
+        new(ExcludeIncludeMatcher.ForCurseForge);
+
+    private static readonly Regex MinecraftVersionRegex = new(
+        @"\d+\.\d+(?:\.\d+)?",
+        RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -53,7 +69,9 @@ public static class ManualServerPackAnalyzer
         "resourcepacks", "shaderpacks", "screenshots", "saves",
     };
 
-    public static ServiceResult<ManualServerPackAnalysis> AnalyzeFile(string path)
+    public static ServiceResult<ManualServerPackAnalysis> AnalyzeFile(
+        string path,
+        ExcludeIncludeMatcher? matcher = null)
     {
         if (string.IsNullOrWhiteSpace(path))
             return ServiceResult<ManualServerPackAnalysis>.Fail("No zip path was provided.");
@@ -63,7 +81,7 @@ public static class ManualServerPackAnalyzer
         try
         {
             using var stream = File.OpenRead(path);
-            return AnalyzeZip(stream, Path.GetFileName(path));
+            return AnalyzeZip(stream, Path.GetFileName(path), matcher);
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -75,7 +93,10 @@ public static class ManualServerPackAnalyzer
         }
     }
 
-    public static ServiceResult<ManualServerPackAnalysis> AnalyzeZip(Stream zipStream, string? sourceName = null)
+    public static ServiceResult<ManualServerPackAnalysis> AnalyzeZip(
+        Stream zipStream,
+        string? sourceName = null,
+        ExcludeIncludeMatcher? matcher = null)
     {
         ArgumentNullException.ThrowIfNull(zipStream);
 
@@ -96,10 +117,13 @@ public static class ManualServerPackAnalyzer
         }
 
         using (zip)
-            return AnalyzeArchive(zip, sourceName);
+            return AnalyzeArchive(zip, sourceName, matcher);
     }
 
-    internal static ServiceResult<ManualServerPackAnalysis> AnalyzeArchive(ZipArchive zip, string? sourceName)
+    internal static ServiceResult<ManualServerPackAnalysis> AnalyzeArchive(
+        ZipArchive zip,
+        string? sourceName,
+        ExcludeIncludeMatcher? matcher = null)
     {
         var rawNames = zip.Entries
             .Select(e => MrpackAnalyzer.NormalizeZipPath(e.FullName))
@@ -131,11 +155,10 @@ public static class ManualServerPackAnalyzer
         var hasRunSh = names.Any(n =>
             IsRootFile(n, "run.sh") || IsRootFile(n, "start.sh") || IsRootFile(n, "startserver.sh"));
         var hasInstallerJar = names.Any(IsRootInstallerJar);
-        var modJars = names
-            .Where(n => n.StartsWith("mods/", StringComparison.OrdinalIgnoreCase)
-                        && n.EndsWith(".jar", StringComparison.OrdinalIgnoreCase)
-                        && !n.EndsWith('/'))
-            .ToList();
+        var mapRootJarsToMods = LooksLikeJarRootPack(names);
+        var modJars = names.Where(ManualPackFileFilter.IsModJarPath).ToList();
+        if (modJars.Count == 0 && mapRootJarsToMods)
+            modJars = names.Where(ManualPackFileFilter.IsRootModJar).ToList();
         var looksLikeLauncher = hasOptions
             || (hasShaders && hasSaves && hasResourcepacks);
         if (looksLikeLauncher && !hasLibraries && !hasRunSh && !hasInstallerJar)
@@ -172,9 +195,25 @@ public static class ManualServerPackAnalyzer
             var refusal = hasLibraries || hasInstallerJar
                 ? CurseForgeIncompleteRefusal
                 : CurseForgeClientRefusal;
+            AddListedFileIdWarning(warnings, cfFiles);
             return OkRefused(
                 ManualServerPackKind.CurseForgeClientExport,
                 refusal,
+                sourceName,
+                wrapper,
+                names,
+                warnings,
+                cfManifest);
+        }
+
+        if (looksLikeCfExport && cfFiles.Count > modJars.Count)
+        {
+            AddListedFileIdWarning(warnings, cfFiles);
+            warnings.Add(
+                $"Manifest lists {cfFiles.Count} file(s) and the zip has {modJars.Count} mod jar(s).");
+            return OkRefused(
+                ManualServerPackKind.CurseForgeClientExport,
+                CurseForgeMixedRefusal,
                 sourceName,
                 wrapper,
                 names,
@@ -191,9 +230,21 @@ public static class ManualServerPackAnalyzer
         if (kind is ManualServerPackKind.Unknown)
             return OkRefused(ManualServerPackKind.Unknown, UnknownRefusal, sourceName, wrapper, names, warnings);
 
+        var lists = matcher ?? DefaultMatcher.Value;
+        var packName = !string.IsNullOrWhiteSpace(cfManifest?.Name)
+            ? cfManifest!.Name!.Trim()
+            : GuessPackName(sourceName);
+        var versionId = string.IsNullOrWhiteSpace(cfManifest?.Version) ? null : cfManifest!.Version!.Trim();
+        var packSlug = MrpackFileFilter.ResolvePackSlug(lists, packName, versionId, sourceName);
+
         var serverSide = new List<string>();
         var clientOnly = new List<string>();
+        var inJarSkip = new List<string>();
+        var overrideListSkip = new List<string>();
+        var forceIncluded = new List<string>();
         var unclear = new List<string>();
+        string? peekedLoader = null;
+        string? peekedMinecraft = null;
 
         foreach (var entry in zip.Entries)
         {
@@ -203,16 +254,38 @@ public static class ManualServerPackAnalyzer
             var relative = StripWrapper(raw, wrapper);
             if (relative.Length == 0)
                 continue;
-            if (!relative.StartsWith("mods/", StringComparison.OrdinalIgnoreCase)
-                || !relative.EndsWith(".jar", StringComparison.OrdinalIgnoreCase))
+            var isModJar = ManualPackFileFilter.IsModJarPath(relative)
+                || (mapRootJarsToMods && ManualPackFileFilter.IsRootModJar(relative));
+            if (!isModJar)
                 continue;
 
+            var matchPath = ManualPackFileFilter.IsModJarPath(relative)
+                ? relative
+                : "mods/" + relative;
             var peek = PeekJarEnvironment(entry);
-            if (peek.Environment == "client")
+            if (!string.IsNullOrEmpty(peek.Loader) && peekedLoader is null)
+                peekedLoader = peek.Loader;
+            if (!string.IsNullOrEmpty(peek.MinecraftVersion) && peekedMinecraft is null)
+                peekedMinecraft = peek.MinecraftVersion;
+
+            var match = lists.Match(packSlug, matchPath);
+            var action = ManualPackFileFilter.Decide(peek.Environment, match);
+            if (action == ManualPackFileFilter.Action.SkipInJarMetadata)
             {
+                inJarSkip.Add(relative);
                 clientOnly.Add(relative);
                 continue;
             }
+
+            if (action == ManualPackFileFilter.Action.SkipOverrideList)
+            {
+                overrideListSkip.Add(relative);
+                clientOnly.Add(relative);
+                continue;
+            }
+
+            if (match.Keep && peek.Environment.Equals("client", StringComparison.OrdinalIgnoreCase))
+                forceIncluded.Add(relative);
 
             if (peek.HadMetadata)
             {
@@ -224,10 +297,16 @@ public static class ManualServerPackAnalyzer
             serverSide.Add(relative);
         }
 
-        if (clientOnly.Count > 0)
+        if (inJarSkip.Count > 0)
         {
             warnings.Add(
-                $"{clientOnly.Count} jar(s) tagged client-only in fabric/quilt/Forge metadata will not be installed.");
+                $"{inJarSkip.Count} jar(s) tagged client-only in fabric/quilt/Forge metadata will not be installed.");
+        }
+
+        if (overrideListSkip.Count > 0)
+        {
+            warnings.Add(
+                $"{overrideListSkip.Count} jar(s) skipped by the CurseForge exclude list (known client-only).");
         }
 
         if (unclear.Count > 0)
@@ -237,12 +316,16 @@ public static class ManualServerPackAnalyzer
                 + "This is not a Modrinth env.server strip.");
         }
 
-        var packName = !string.IsNullOrWhiteSpace(cfManifest?.Name)
-            ? cfManifest!.Name!.Trim()
-            : GuessPackName(sourceName);
-        var versionId = string.IsNullOrWhiteSpace(cfManifest?.Version) ? null : cfManifest!.Version!.Trim();
+        if (mapRootJarsToMods)
+            warnings.Add("Archive has jars at the root (no mods/ folder); they will install into mods/.");
+
         var (loader, loaderVersion) = DetectLoader(names, cfManifest);
+        if (loader == "unknown" && peekedLoader is not null)
+            loader = peekedLoader;
+
         var minecraft = (cfManifest?.Minecraft?.Version ?? "").Trim();
+        if (minecraft.Length == 0 && peekedMinecraft is not null)
+            minecraft = peekedMinecraft;
         if (minecraft.Length == 0)
             minecraft = "(unknown)";
         int? javaMajor = null;
@@ -275,10 +358,12 @@ public static class ManualServerPackAnalyzer
             serverSide.Count,
             clientOnly.Count,
             unclear.Count,
-            clientOnly,
+            inJarSkip,
+            overrideListSkip,
             warnings,
             canInstall: true,
-            refusal: null);
+            refusal: null,
+            mapRootJarsToMods);
 
         return ServiceResult<ManualServerPackAnalysis>.Ok(new ManualServerPackAnalysis(
             kind,
@@ -299,7 +384,13 @@ public static class ManualServerPackAnalyzer
             clientOnly,
             unclear,
             warnings,
-            summary));
+            summary,
+            mapRootJarsToMods,
+            overrideListSkip.Count,
+            inJarSkip.Count,
+            overrideListSkip,
+            inJarSkip,
+            forceIncluded));
     }
 
     internal static bool ShouldIgnoreEntry(string normalizedPath)
@@ -389,31 +480,50 @@ public static class ManualServerPackAnalyzer
                     MrpackAnalyzer.NormalizeZipPath(e.FullName),
                     "fabric.mod.json",
                     StringComparison.OrdinalIgnoreCase));
-            if (fabric is not null && TryReadFabricEnvironment(fabric, out var fabricEnv))
-                return new JarEnvironmentPeek(true, fabricEnv);
+            if (fabric is not null)
+            {
+                TryReadFabricMetadata(fabric, out var fabricEnv, out var fabricMc);
+                return new JarEnvironmentPeek(true, fabricEnv, MrpackAnalyzer.LoaderFabric, fabricMc);
+            }
 
             var quilt = jar.Entries.FirstOrDefault(e =>
                 string.Equals(
                     MrpackAnalyzer.NormalizeZipPath(e.FullName),
                     "quilt.mod.json",
                     StringComparison.OrdinalIgnoreCase));
-            if (quilt is not null && TryReadQuiltEnvironment(quilt, out var quiltEnv))
-                return new JarEnvironmentPeek(true, quiltEnv);
-
-            var toml = jar.Entries.FirstOrDefault(e =>
+            if (quilt is not null)
             {
-                var n = MrpackAnalyzer.NormalizeZipPath(e.FullName);
-                return n.Equals("META-INF/mods.toml", StringComparison.OrdinalIgnoreCase)
-                    || n.Equals("META-INF/neoforge.mods.toml", StringComparison.OrdinalIgnoreCase);
-            });
-            if (toml is not null && TryReadTomlModsSide(toml, out var tomlEnv))
-                return new JarEnvironmentPeek(true, tomlEnv);
+                var hadQuilt = TryReadQuiltMetadata(quilt, out var quiltEnv, out var quiltMc);
+                return new JarEnvironmentPeek(hadQuilt, quiltEnv, MrpackAnalyzer.LoaderQuilt, quiltMc);
+            }
+
+            var neoToml = jar.Entries.FirstOrDefault(e =>
+                string.Equals(
+                    MrpackAnalyzer.NormalizeZipPath(e.FullName),
+                    "META-INF/neoforge.mods.toml",
+                    StringComparison.OrdinalIgnoreCase));
+            var forgeToml = jar.Entries.FirstOrDefault(e =>
+                string.Equals(
+                    MrpackAnalyzer.NormalizeZipPath(e.FullName),
+                    "META-INF/mods.toml",
+                    StringComparison.OrdinalIgnoreCase));
+            var toml = neoToml ?? forgeToml;
+            if (toml is not null)
+            {
+                var loaderId = neoToml is not null ? MrpackAnalyzer.LoaderNeoForge : MrpackAnalyzer.LoaderForge;
+                TryReadTomlMetadata(toml, out var tomlEnv, out var tomlMc, out var hadSide);
+                return new JarEnvironmentPeek(hadSide, tomlEnv, loaderId, tomlMc);
+            }
         }
 
         return JarEnvironmentPeek.None;
     }
 
-    internal readonly record struct JarEnvironmentPeek(bool HadMetadata, string Environment)
+    internal readonly record struct JarEnvironmentPeek(
+        bool HadMetadata,
+        string Environment,
+        string? Loader = null,
+        string? MinecraftVersion = null)
     {
         public static JarEnvironmentPeek None => new(false, "*");
     }
@@ -442,7 +552,7 @@ public static class ManualServerPackAnalyzer
         var fileCount = names.Count(n => !n.EndsWith('/'));
         var summary = BuildConfirmableSummary(
             kind, packName, versionId, minecraft, loader, loaderVersion, javaMajor, wrapper,
-            fileCount, 0, 0, 0, [], warnings, canInstall: false, refusal);
+            fileCount, 0, 0, 0, [], [], warnings, canInstall: false, refusal);
 
         return ServiceResult<ManualServerPackAnalysis>.Ok(new ManualServerPackAnalysis(
             kind,
@@ -466,9 +576,10 @@ public static class ManualServerPackAnalyzer
             summary));
     }
 
-    private static bool TryReadFabricEnvironment(ZipArchiveEntry entry, out string environment)
+    private static bool TryReadFabricMetadata(ZipArchiveEntry entry, out string environment, out string? minecraft)
     {
         environment = "*";
+        minecraft = null;
         try
         {
             using var reader = new StreamReader(entry.Open(), Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
@@ -483,6 +594,7 @@ public static class ManualServerPackAnalyzer
                     var env = ReadStringProperty(item, "environment");
                     if (!env.Equals("client", StringComparison.OrdinalIgnoreCase))
                         allClient = false;
+                    minecraft ??= ReadMinecraftFromDepends(item);
                 }
 
                 if (!any)
@@ -495,6 +607,7 @@ public static class ManualServerPackAnalyzer
                 return false;
             var single = ReadStringProperty(doc.RootElement, "environment");
             environment = string.IsNullOrEmpty(single) ? "*" : single.Trim().ToLowerInvariant();
+            minecraft = ReadMinecraftFromDepends(doc.RootElement);
             return true;
         }
         catch (JsonException)
@@ -507,9 +620,10 @@ public static class ManualServerPackAnalyzer
         }
     }
 
-    private static bool TryReadQuiltEnvironment(ZipArchiveEntry entry, out string environment)
+    private static bool TryReadQuiltMetadata(ZipArchiveEntry entry, out string environment, out string? minecraft)
     {
         environment = "*";
+        minecraft = null;
         try
         {
             using var reader = new StreamReader(entry.Open(), Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
@@ -521,6 +635,7 @@ public static class ManualServerPackAnalyzer
             {
                 var env = ReadStringProperty(loader, "environment");
                 environment = string.IsNullOrEmpty(env) ? "*" : env.Trim().ToLowerInvariant();
+                minecraft = ReadMinecraftFromDepends(loader);
                 return true;
             }
 
@@ -528,6 +643,7 @@ public static class ManualServerPackAnalyzer
             if (string.IsNullOrEmpty(top))
                 return false;
             environment = top.Trim().ToLowerInvariant();
+            minecraft = ReadMinecraftFromDepends(doc.RootElement);
             return true;
         }
         catch (JsonException)
@@ -540,14 +656,50 @@ public static class ManualServerPackAnalyzer
         }
     }
 
-    private static bool TryReadTomlModsSide(ZipArchiveEntry entry, out string environment)
+    private static bool TryReadTomlMetadata(
+        ZipArchiveEntry entry,
+        out string environment,
+        out string? minecraft,
+        out bool hadSide)
     {
         environment = "*";
+        minecraft = null;
+        hadSide = false;
+        var env = "*";
+        string? mc = null;
+        var sideFound = false;
         try
         {
             using var reader = new StreamReader(entry.Open(), Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
             var toml = reader.ReadToEnd();
             string? table = null;
+            string? pendingModId = null;
+            string? pendingVersion = null;
+            string? pendingSide = null;
+
+            void FlushTable()
+            {
+                if (table is null)
+                    return;
+                var isModsTable = table.Equals("[[mods]]", StringComparison.OrdinalIgnoreCase)
+                    || table.Equals("[mods]", StringComparison.OrdinalIgnoreCase);
+                if (isModsTable && pendingSide is not null && !sideFound)
+                {
+                    env = pendingSide.Equals("CLIENT", StringComparison.OrdinalIgnoreCase) ? "client" : "*";
+                    sideFound = true;
+                }
+
+                if (mc is null
+                    && table.Contains("dependencies", StringComparison.OrdinalIgnoreCase)
+                    && pendingModId is not null
+                    && pendingModId.Equals("minecraft", StringComparison.OrdinalIgnoreCase)
+                    && pendingVersion is not null
+                    && TryExtractMinecraftVersion(pendingVersion, out var extracted))
+                {
+                    mc = extracted;
+                }
+            }
+
             foreach (var raw in toml.Split('\n'))
             {
                 var line = raw.Trim();
@@ -555,23 +707,30 @@ public static class ManualServerPackAnalyzer
                     continue;
                 if (line.StartsWith('['))
                 {
+                    FlushTable();
                     table = line;
+                    pendingModId = null;
+                    pendingVersion = null;
+                    pendingSide = null;
                     continue;
                 }
 
                 if (table is null)
                     continue;
-                var isModsTable = table.Equals("[[mods]]", StringComparison.OrdinalIgnoreCase)
-                    || table.Equals("[mods]", StringComparison.OrdinalIgnoreCase);
-                if (!isModsTable)
-                    continue;
-                if (!TryParseTomlStringAssignment(line, "side", out var side))
-                    continue;
-                environment = side.Equals("CLIENT", StringComparison.OrdinalIgnoreCase) ? "client" : "*";
-                return true;
+                if (TryParseTomlStringAssignment(line, "side", out var side))
+                    pendingSide = side;
+                if (TryParseTomlStringAssignment(line, "modId", out var modId))
+                    pendingModId = modId;
+                if (TryParseTomlStringAssignment(line, "versionRange", out var range)
+                    || TryParseTomlStringAssignment(line, "version", out range))
+                    pendingVersion = range;
             }
 
-            return false;
+            FlushTable();
+            environment = env;
+            minecraft = mc;
+            hadSide = sideFound;
+            return sideFound || mc is not null;
         }
         catch (IOException)
         {
@@ -668,13 +827,140 @@ public static class ManualServerPackAnalyzer
         && name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
         && name.EndsWith(suffix, StringComparison.OrdinalIgnoreCase);
 
-    private static bool IsRootInstallerJar(string name)
+    private static bool IsRootInstallerJar(string name) =>
+        !name.Contains('/') && IsInstallerJarFileName(name);
+
+    internal static bool IsInstallerJarFileName(string fileName)
     {
-        var leaf = name.Contains('/') ? name[(name.LastIndexOf('/') + 1)..] : name;
-        if (name.Contains('/'))
-            return false;
+        var leaf = fileName.Contains('/') ? fileName[(fileName.LastIndexOf('/') + 1)..] : fileName;
         return leaf.EndsWith(".jar", StringComparison.OrdinalIgnoreCase)
             && leaf.Contains("installer", StringComparison.OrdinalIgnoreCase);
+    }
+
+    internal static bool LooksLikeJarRootPack(IReadOnlyList<string> names)
+    {
+        var files = names.Where(n => n.Length > 0 && !n.EndsWith('/')).ToList();
+        if (files.Count == 0)
+            return false;
+        if (files.Any(ManualPackFileFilter.IsModJarPath))
+            return false;
+        if (files.Any(n => n.Contains('/')))
+            return false;
+        if (!files.Any(ManualPackFileFilter.IsRootModJar))
+            return false;
+
+        foreach (var other in files)
+        {
+            if (ManualPackFileFilter.IsRootModJar(other) || IsRootInstallerJar(other) || IsJarRootCompanion(other))
+                continue;
+            return false;
+        }
+
+        return true;
+    }
+
+    internal static bool IsJarRootCompanion(string name)
+    {
+        if (name.Contains('/'))
+            return false;
+        return name.EndsWith(".disabled", StringComparison.OrdinalIgnoreCase)
+            || name.EndsWith(".txt", StringComparison.OrdinalIgnoreCase)
+            || name.EndsWith(".md", StringComparison.OrdinalIgnoreCase)
+            || name.EndsWith(".html", StringComparison.OrdinalIgnoreCase)
+            || name.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase)
+            || name.Equals("changelog", StringComparison.OrdinalIgnoreCase)
+            || name.Equals("readme", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static void AddListedFileIdWarning(List<string> warnings, IReadOnlyList<CurseForgeManifestFile> files)
+    {
+        if (files.Count == 0)
+            return;
+        var shown = files.Take(ListedFileIdCap).Select(f => $"{f.ProjectID}:{f.FileID}");
+        var text = string.Join(", ", shown);
+        if (files.Count > ListedFileIdCap)
+            text += $", … ({files.Count - ListedFileIdCap} more)";
+        warnings.Add("Listed CurseForge file IDs (project:file): " + text + ".");
+    }
+
+    private static string? ReadMinecraftFromDepends(JsonElement obj)
+    {
+        if (obj.ValueKind != JsonValueKind.Object)
+            return null;
+        if (!TryGetPropertyIgnoreCase(obj, "depends", out var depends)
+            && !TryGetPropertyIgnoreCase(obj, "dependencies", out depends))
+            return null;
+
+        if (depends.ValueKind == JsonValueKind.Object)
+        {
+            var raw = ReadStringOrFirstArrayString(depends, "minecraft");
+            return TryExtractMinecraftVersion(raw, out var version) ? version : null;
+        }
+
+        if (depends.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var item in depends.EnumerateArray())
+            {
+                if (item.ValueKind != JsonValueKind.Object)
+                    continue;
+                var id = ReadStringProperty(item, "id");
+                if (id.Length == 0)
+                    id = ReadStringProperty(item, "modId");
+                if (!id.Equals("minecraft", StringComparison.OrdinalIgnoreCase))
+                    continue;
+                var raw = ReadStringProperty(item, "versions");
+                if (raw.Length == 0)
+                    raw = ReadStringProperty(item, "version");
+                if (TryExtractMinecraftVersion(raw, out var version))
+                    return version;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool TryGetPropertyIgnoreCase(JsonElement obj, string name, out JsonElement value)
+    {
+        foreach (var prop in obj.EnumerateObject())
+        {
+            if (!prop.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
+                continue;
+            value = prop.Value;
+            return true;
+        }
+
+        value = default;
+        return false;
+    }
+
+    private static string ReadStringOrFirstArrayString(JsonElement obj, string name)
+    {
+        if (!TryGetPropertyIgnoreCase(obj, name, out var value))
+            return "";
+        if (value.ValueKind == JsonValueKind.String)
+            return value.GetString() ?? "";
+        if (value.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var item in value.EnumerateArray())
+            {
+                if (item.ValueKind == JsonValueKind.String)
+                    return item.GetString() ?? "";
+            }
+        }
+
+        return "";
+    }
+
+    internal static bool TryExtractMinecraftVersion(string? raw, out string version)
+    {
+        version = "";
+        if (string.IsNullOrWhiteSpace(raw))
+            return false;
+        var match = MinecraftVersionRegex.Match(raw);
+        if (!match.Success)
+            return false;
+        version = match.Value;
+        return true;
     }
 
     private static string GuessPackName(string? sourceName)
@@ -698,10 +984,12 @@ public static class ManualServerPackAnalyzer
         int serverSide,
         int clientOnly,
         int unclear,
-        IReadOnlyList<string> clientOnlyPaths,
+        IReadOnlyList<string> inJarSkipPaths,
+        IReadOnlyList<string> overrideListSkipPaths,
         IReadOnlyList<string> warnings,
         bool canInstall,
-        string? refusal)
+        string? refusal,
+        bool mapRootJarsToMods = false)
     {
         var sb = new StringBuilder();
         sb.Append("Pack: ").Append(packName);
@@ -717,11 +1005,15 @@ public static class ManualServerPackAnalyzer
         sb.Append("Required Java: ").AppendLine(javaMajor?.ToString() ?? "unknown");
         if (wrapper is not null)
             sb.Append("Wrapper folder: ").AppendLine(wrapper.TrimEnd('/'));
+        if (mapRootJarsToMods)
+            sb.AppendLine("Root jars install into mods/.");
         sb.Append("Files in zip: ").Append(fileCount).AppendLine();
         if (canInstall)
         {
             sb.Append("  Server-side jars: ").Append(serverSide).AppendLine();
-            sb.Append("  Client-only (in-jar metadata; not installed): ").AppendLine(clientOnly.ToString());
+            sb.Append("  Client-only (not installed on the server): ").AppendLine(clientOnly.ToString());
+            sb.Append("    In-jar metadata: ").AppendLine(inJarSkipPaths.Count.ToString());
+            sb.Append("    Override list: ").AppendLine(overrideListSkipPaths.Count.ToString());
             sb.Append("  No side metadata (kept): ").AppendLine(unclear.ToString());
         }
         else
@@ -729,10 +1021,17 @@ public static class ManualServerPackAnalyzer
             sb.AppendLine("Will not install this zip as a server pack.");
         }
 
-        if (clientOnlyPaths.Count > 0)
+        if (inJarSkipPaths.Count > 0)
         {
-            sb.AppendLine("Client-only jars:");
-            foreach (var p in clientOnlyPaths)
+            sb.AppendLine("In-jar client-only jars:");
+            foreach (var p in inJarSkipPaths)
+                sb.Append("  ").AppendLine(p);
+        }
+
+        if (overrideListSkipPaths.Count > 0)
+        {
+            sb.AppendLine("Override-list skipped jars:");
+            foreach (var p in overrideListSkipPaths)
                 sb.Append("  ").AppendLine(p);
         }
 

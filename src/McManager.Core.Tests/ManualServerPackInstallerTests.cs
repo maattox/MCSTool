@@ -48,6 +48,146 @@ public sealed class ManualServerPackInstallerTests
     }
 
     [Fact]
+    public void Tracked_jar_root_fixture_installs_into_mods_and_skips_exclude_list()
+    {
+        var path = FixturePath("jar-root.zip");
+        Assert.True(File.Exists(path), $"Fixture missing at {path}");
+
+        var analysis = ManualServerPackAnalyzer.AnalyzeFile(path);
+        Assert.True(analysis.Succeeded, analysis.Error);
+        var a = analysis.Value!;
+        Assert.True(a.CanInstall);
+        Assert.Equal(ManualServerPackKind.UnstructuredServer, a.Kind);
+        Assert.True(a.MapRootJarsToMods);
+        Assert.Contains("dummy-server.jar", a.ServerSidePaths);
+        Assert.Contains("embeddium-dummy.jar", a.OverrideListSkipPaths);
+        Assert.Contains("dummy-client.jar", a.InJarMetadataSkipPaths);
+        Assert.Equal(MrpackAnalyzer.LoaderForge, a.Loader);
+        Assert.Equal("1.20.1", a.MinecraftVersion);
+        Assert.Equal(17, a.JavaMajor);
+        Assert.Contains("Override list: 1", a.ConfirmableSummary, StringComparison.Ordinal);
+        Assert.DoesNotContain("api.curseforge.com", a.ConfirmableSummary, StringComparison.OrdinalIgnoreCase);
+
+        var dest = NewTempDir();
+        try
+        {
+            var result = ManualServerPackInstaller.Install(path, dest, retainDataDirectory: null);
+            Assert.True(result.Succeeded, result.Error);
+            Assert.True(File.Exists(Path.Combine(dest, "mods", "dummy-server.jar")));
+            Assert.False(File.Exists(Path.Combine(dest, "mods", "embeddium-dummy.jar")));
+            Assert.False(File.Exists(Path.Combine(dest, "mods", "dummy-client.jar")));
+            Assert.False(File.Exists(Path.Combine(dest, "dummy-server.jar")));
+            Assert.False(File.Exists(Path.Combine(dest, "embeddium-dummy.jar")));
+            Assert.Contains("embeddium-dummy.jar", result.Value!.SkippedClientOnlyPaths);
+            Assert.Contains("dummy-client.jar", result.Value.SkippedClientOnlyPaths);
+        }
+        finally
+        {
+            TryDeleteDir(dest);
+        }
+    }
+
+    [Fact]
+    public void CurseForge_zip_with_jars_applies_exclude_list()
+    {
+        var keep = Encoding.UTF8.GetBytes("keep-mod");
+        using var zip = MakeZipBytes(
+            ("manifest.json", Encoding.UTF8.GetBytes(CfManifestJson(includeFiles: true, extraFile: true))),
+            ("libraries/net/minecraftforge/example.jar", Encoding.UTF8.GetBytes("lib")),
+            ("mods/content.jar", keep),
+            ("mods/embeddium-1.20.1.jar", Encoding.UTF8.GetBytes("client-mod")),
+            ("run.sh", Encoding.UTF8.GetBytes("#!/bin/sh")));
+        var path = WriteTemp("cf-with-jars.zip", zip);
+        var dest = NewTempDir();
+        try
+        {
+            var analysis = ManualServerPackAnalyzer.AnalyzeFile(path);
+            Assert.True(analysis.Succeeded, analysis.Error);
+            var a = analysis.Value!;
+            Assert.True(a.CanInstall);
+            Assert.Equal(ManualServerPackKind.CurseForgeServerFiles, a.Kind);
+            Assert.Contains("mods/content.jar", a.ServerSidePaths);
+            Assert.Contains("mods/embeddium-1.20.1.jar", a.OverrideListSkipPaths);
+            Assert.Equal(1, a.OverrideListSkipCount);
+
+            var result = ManualServerPackInstaller.Install(path, dest, null);
+            Assert.True(result.Succeeded, result.Error);
+            Assert.True(File.Exists(Path.Combine(dest, "mods", "content.jar")));
+            Assert.False(File.Exists(Path.Combine(dest, "mods", "embeddium-1.20.1.jar")));
+        }
+        finally
+        {
+            TryDelete(path);
+            TryDeleteDir(dest);
+        }
+    }
+
+    [Fact]
+    public void Mixed_curseforge_jars_and_id_only_files_are_refused()
+    {
+        using var zip = MakeZip(
+            ("manifest.json", CfManifestJson(includeFiles: true, extraFile: true)),
+            ("mods/only-one.jar", "mod"),
+            ("libraries/net/minecraftforge/example.jar", "lib"));
+        var path = WriteTemp("cf-mixed.zip", zip);
+        try
+        {
+            var result = ManualServerPackAnalyzer.AnalyzeFile(path);
+            Assert.True(result.Succeeded, result.Error);
+            Assert.False(result.Value!.CanInstall);
+            Assert.Equal(ManualServerPackKind.CurseForgeClientExport, result.Value.Kind);
+            Assert.Equal(ManualServerPackAnalyzer.CurseForgeMixedRefusal, result.Value.RefusalReason);
+            Assert.Contains("1:1", string.Join(" ", result.Value.Warnings), StringComparison.Ordinal);
+            Assert.DoesNotContain("api.curseforge.com", result.Value.RefusalReason, StringComparison.OrdinalIgnoreCase);
+
+            var dest = NewTempDir();
+            try
+            {
+                var install = ManualServerPackInstaller.Install(path, dest, null);
+                Assert.False(install.Succeeded);
+                Assert.Contains("not in the archive", install.Error, StringComparison.OrdinalIgnoreCase);
+            }
+            finally
+            {
+                TryDeleteDir(dest);
+            }
+        }
+        finally
+        {
+            TryDelete(path);
+        }
+    }
+
+    [Fact]
+    public void Force_include_keeps_in_jar_client()
+    {
+        var lists = ExcludeIncludeLists.Parse("""
+            {
+              "globalExcludes": [],
+              "globalForceIncludes": ["iris"],
+              "modpacks": {}
+            }
+            """);
+        var matcher = new ExcludeIncludeMatcher(lists);
+        var clientJar = MakeJar(("fabric.mod.json", """{"schemaVersion":1,"id":"iris","version":"0","environment":"client"}"""));
+        using var zip = MakeZipBytes(("mods/iris.jar", clientJar));
+        var path = WriteTemp("force-keep.zip", zip);
+        try
+        {
+            var analysis = ManualServerPackAnalyzer.AnalyzeFile(path, matcher);
+            Assert.True(analysis.Succeeded, analysis.Error);
+            Assert.True(analysis.Value!.CanInstall);
+            Assert.Contains("mods/iris.jar", analysis.Value.ServerSidePaths);
+            Assert.Contains("mods/iris.jar", analysis.Value.ForceIncludedPaths);
+            Assert.Empty(analysis.Value.InJarMetadataSkipPaths);
+        }
+        finally
+        {
+            TryDelete(path);
+        }
+    }
+
+    [Fact]
     public void Refuses_mrpack_client_pack_and_curseforge_client_export()
     {
         using var mrpack = MakeZip((MrpackAnalyzer.IndexEntryName, "{\"formatVersion\":1}"));
@@ -106,6 +246,7 @@ public sealed class ManualServerPackInstallerTests
             Assert.Equal(ManualServerPackKind.CurseForgeClientExport, result.Value!.Kind);
             Assert.False(result.Value.CanInstall);
             Assert.Contains("CurseForge client export", result.Value.RefusalReason, StringComparison.Ordinal);
+            Assert.Contains("1:1", string.Join(" ", result.Value.Warnings), StringComparison.Ordinal);
         }
         finally
         {
@@ -312,10 +453,38 @@ public sealed class ManualServerPackInstallerTests
         Assert.True(result.Succeeded, result.Error);
         Assert.Equal(ManualServerPackKind.CurseForgeClientExport, result.Value!.Kind);
         Assert.False(result.Value.CanInstall);
+        Assert.Contains("Listed CurseForge file IDs", string.Join(" ", result.Value.Warnings), StringComparison.Ordinal);
     }
 
-    private static string CfManifestJson(bool includeFiles, string loaderId = "neoforge-21.1.0") =>
-        $$"""
+    [Fact]
+    public void MilesPack_jar_root_analyzes_when_present()
+    {
+        var repoRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
+        var sampleZip = Path.Combine(repoRoot, "data", "sample-packs", "real", "custom-forge-1.20.1-MilesPack.zip");
+        if (!File.Exists(sampleZip))
+            return;
+
+        var result = ManualServerPackAnalyzer.AnalyzeFile(sampleZip);
+        Assert.True(result.Succeeded, result.Error);
+        var a = result.Value!;
+        Assert.True(a.CanInstall);
+        Assert.Equal(ManualServerPackKind.UnstructuredServer, a.Kind);
+        Assert.True(a.MapRootJarsToMods);
+        Assert.NotEqual(ManualServerPackKind.Unknown, a.Kind);
+        Assert.True(a.OverrideListSkipCount > 0, "MilesPack should skip known client jars via the CF list.");
+        Assert.Contains(a.OverrideListSkipPaths, p => p.Contains("embeddium", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(a.OverrideListSkipPaths, p => p.Contains("entityculling", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain("api.curseforge.com", a.ConfirmableSummary, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string CfManifestJson(bool includeFiles, string loaderId = "neoforge-21.1.0", bool extraFile = false)
+    {
+        var files = includeFiles
+            ? extraFile
+                ? "[{ \"projectID\": 1, \"fileID\": 1, \"required\": true }, { \"projectID\": 2, \"fileID\": 2, \"required\": true }]"
+                : "[{ \"projectID\": 1, \"fileID\": 1, \"required\": true }]"
+            : "[]";
+        return $$"""
         {
           "minecraft": {
             "version": "1.21.1",
@@ -325,10 +494,11 @@ public sealed class ManualServerPackInstallerTests
           "manifestVersion": 1,
           "name": "MCMGR Synthetic CF Export",
           "version": "0.1.0",
-          "files": {{(includeFiles ? "[{ \"projectID\": 1, \"fileID\": 1, \"required\": true }]" : "[]")}},
+          "files": {{files}},
           "overrides": "overrides"
         }
         """;
+    }
 
     private static string FixturePath(string fileName) =>
         Path.Combine(AppContext.BaseDirectory, "fixtures", "packs", fileName);

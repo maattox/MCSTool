@@ -13,8 +13,8 @@ public enum ManualServerPackKind
     Mrpack,
 
     /// <summary>
-    /// CurseForge client export or incomplete Server Files (manifest file IDs, no <c>mods/</c> jars).
-    /// Do not heuristic-strip or fetch jars.
+    /// CurseForge client export, incomplete Server Files, or mixed jars + leftover
+    /// manifest file IDs (no CurseForge API). Do not heuristic-strip or fetch jars.
     /// </summary>
     CurseForgeClientExport,
 
@@ -50,7 +50,13 @@ public sealed class ManualServerPackAnalysis
         IReadOnlyList<string> clientOnlyPaths,
         IReadOnlyList<string> unclearSidePaths,
         IReadOnlyList<string> warnings,
-        string confirmableSummary)
+        string confirmableSummary,
+        bool mapRootJarsToMods = false,
+        int overrideListSkipCount = 0,
+        int inJarMetadataSkipCount = 0,
+        IReadOnlyList<string>? overrideListSkipPaths = null,
+        IReadOnlyList<string>? inJarMetadataSkipPaths = null,
+        IReadOnlyList<string>? forceIncludedPaths = null)
     {
         Kind = kind;
         CanInstall = canInstall;
@@ -71,6 +77,12 @@ public sealed class ManualServerPackAnalysis
         UnclearSidePaths = unclearSidePaths;
         Warnings = warnings;
         ConfirmableSummary = confirmableSummary;
+        MapRootJarsToMods = mapRootJarsToMods;
+        OverrideListSkipCount = overrideListSkipCount;
+        InJarMetadataSkipCount = inJarMetadataSkipCount;
+        OverrideListSkipPaths = overrideListSkipPaths ?? [];
+        InJarMetadataSkipPaths = inJarMetadataSkipPaths ?? [];
+        ForceIncludedPaths = forceIncludedPaths ?? [];
     }
 
     public ManualServerPackKind Kind { get; }
@@ -95,4 +107,22 @@ public sealed class ManualServerPackAnalysis
     public IReadOnlyList<string> UnclearSidePaths { get; }
     public IReadOnlyList<string> Warnings { get; }
     public string ConfirmableSummary { get; }
+
+    /// <summary>
+    /// Zip has no <c>mods/</c> folder; root <c>*.jar</c> entries install into dest <c>mods/</c>
+    /// (MilesPack shape).
+    /// </summary>
+    public bool MapRootJarsToMods { get; }
+
+    /// <summary>Skipped because the itzg/product CurseForge list excluded the jar.</summary>
+    public int OverrideListSkipCount { get; }
+
+    /// <summary>Skipped because in-jar fabric/quilt/Forge metadata is client-only.</summary>
+    public int InJarMetadataSkipCount { get; }
+
+    public IReadOnlyList<string> OverrideListSkipPaths { get; }
+    public IReadOnlyList<string> InJarMetadataSkipPaths { get; }
+
+    /// <summary>Kept despite in-jar <c>client</c> because a force-include matched.</summary>
+    public IReadOnlyList<string> ForceIncludedPaths { get; }
 }

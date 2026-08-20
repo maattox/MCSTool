@@ -1,6 +1,6 @@
 # V1 modpack robustness — exclude lists + mixed archives
 
-**Status:** Living. Created 2026-08-20 (docs only). **NEXT = R3**.  
+**Status:** Living. Created 2026-08-20 (docs only). **NEXT = R4**.  
 **Parent:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **4.13**.  
 **Why now:** operator 2026-08-20 — do this **before** QA Pass 2 (Step **8.5.2**) so Modded greenfield is not tested twice.  
 **Design SoT:** blueprint **§24.3** (Layers 1–2 this plan; Layer 3 **parked**), **§22.1** (trust `env.server` then override), **§23.3** (CurseForge has no side field).
@@ -45,14 +45,14 @@ Phase **4.7–4.11** already import a local file (no catalog). Strip today:
 
 | Adapter | Strips | Gap |
 |---------|--------|-----|
-| `.mrpack` | `env.server == unsupported` **and** itzg/product list (R2) | Manual / CF zip still R3. |
-| Manual / CF Server Files zip | In-jar Fabric/Quilt/Forge `environment`/`side == client` | No itzg list. Jars without metadata are **kept**. |
-| `overrides/` in `.mrpack` | Configs/datapacks copied; excluded **jars** skipped (R2) | Manual zip overrides still R3. |
+| `.mrpack` | `env.server == unsupported` **and** itzg/product list (R2) | — |
+| Manual / CF Server Files zip | In-jar `client` **and** CF itzg/product list (R3). Unclear jars **kept**. | — |
+| `overrides/` in `.mrpack` | Configs/datapacks copied; excluded **jars** skipped (R2) | Manual zip override-tree jars are not list-filtered. |
 | Index file with empty `downloads` | Copy from the zip + hash verify (R2) | — |
-| Zip of jars at archive **root** (no `mods/`, no manifest) | Likely **refused** as unknown | [`custom-forge-1.20.1-MilesPack.zip`](Sample-Packs.md) is this shape. |
-| CurseForge client export / jar-less zip | Hard-block (P7) | Keep. Step **4.12** stays deferred. |
+| Zip of jars at archive **root** (no `mods/`, no manifest) | Treated as `mods/` (R3). List + in-jar strip. | — |
+| CurseForge client export / jar-less zip | Hard-block (P7) | Keep. Mixed jars + leftover IDs also refuse. Step **4.12** stays deferred. |
 
-Vendored itzg JSON (operator 2026-08-20, full files): [`docs/modrinth-exclude-include.json`](modrinth-exclude-include.json), [`docs/cf-exclude-include.json`](cf-exclude-include.json). Attribution: [`docs/itzg-exclude-include-NOTICE.txt`](itzg-exclude-include-NOTICE.txt). **R1** embeds them in Core (`ExcludeIncludeMatcher`). **R2** applies them to `.mrpack` analyze/install.
+Vendored itzg JSON (operator 2026-08-20, full files): [`docs/modrinth-exclude-include.json`](modrinth-exclude-include.json), [`docs/cf-exclude-include.json`](cf-exclude-include.json). Attribution: [`docs/itzg-exclude-include-NOTICE.txt`](itzg-exclude-include-NOTICE.txt). **R1** embeds them in Core (`ExcludeIncludeMatcher`). **R2** applies the Modrinth list to `.mrpack`. **R3** applies the CF list to manual / jar-root / CF-with-jars zips.
 
 ---
 
@@ -62,8 +62,8 @@ Vendored itzg JSON (operator 2026-08-20, full files): [`docs/modrinth-exclude-in
 |----|---------|--------|----------------|
 | **R1** | Matcher + vendor lists (Core only) | **DONE** | No |
 | **R2** | Apply to `.mrpack` (env + list + overrides + embedded jars) | **DONE** | No (temp dir; optional CDN) |
-| **R3** | Apply to manual / jar-root / CF-with-jars zip | **NEXT** | No (temp dir) |
-| **R4** | Setup pre-check copy + optional list refresh + Guide | TODO | No |
+| **R3** | Apply to manual / jar-root / CF-with-jars zip | **DONE** | No (temp dir) |
+| **R4** | Setup pre-check copy + optional list refresh + Guide | **NEXT** | No |
 
 When **R4** is DONE: point V1 **NEXT** at Step **8.5.2**, update [`V1-QA-Pass-2-Scope.md`](V1-QA-Pass-2-Scope.md) pack row, then stop for the operator to start Pass 2.
 
@@ -207,7 +207,7 @@ R2 may GET Modrinth CDN URLs already in a homemade/Simply Optimized index (admin
 
 ## R3 — Manual zip, jar-root, CF-with-jars
 
-**Status:** NEXT  
+**Status:** DONE  
 **Depends on:** R2  
 
 **Read first**
@@ -233,13 +233,13 @@ R2 may GET Modrinth CDN URLs already in a homemade/Simply Optimized index (admin
 
 **Done when:** MilesPack-shaped zips analyze; CF-with-jars uses the list; jar-less CF still hard-blocks.
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-20 — Manual analyzer/installer uses CF `ExcludeIncludeMatcher`; in-jar `client` still strips; force-include can keep. Jar-root zips (no `mods/`, almost only `*.jar`) install into dest `mods/` and peek loader/MC from in-jar metadata. Mixed CF (listed IDs > jars) and jar-less P7 still `CanInstall=false` (file IDs in warnings). Tracked `tests/fixtures/packs/jar-root.zip`. **NEXT = R4**.
 
 ---
 
 ## R4 — Setup pre-check + list refresh + Guide
 
-**Status:** TODO  
+**Status:** NEXT  
 **Depends on:** R3  
 
 **Read first**
@@ -280,6 +280,7 @@ R2 may GET Modrinth CDN URLs already in a homemade/Simply Optimized index (admin
 
 | Date | Note |
 |------|------|
+| 2026-08-20 | **R3 DONE.** Manual / jar-root / CF-with-jars use the CF exclude list; jar-root installs to `mods/`; mixed CF still hard-blocks. **NEXT = R4**. |
 | 2026-08-20 | **R2 DONE.** `.mrpack` analyze/install uses the matcher; mixed embedded+URL; override jars filtered. **NEXT = R3**. |
 | 2026-08-20 | **R1 DONE.** Core matcher + embedded itzg lists + empty `mcmgr-exclude-include.json`. **NEXT = R2**. |
 | 2026-08-20 | Created (docs only). Operator: itzg lists in `docs/`, extra samples, Setup pre-check, pause Pass 2. **NEXT = R1**. Layer 3 and CurseForge API parked. Do not implement in the creation session. |

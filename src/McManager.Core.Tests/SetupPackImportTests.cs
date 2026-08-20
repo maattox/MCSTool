@@ -121,6 +121,26 @@ public sealed class SetupPackImportTests
     }
 
     [Fact]
+    public void Mixed_curseforge_cannot_continue()
+    {
+        using var zip = MakeZip(
+            ("manifest.json", CfManifestJsonTwoFiles()),
+            ("mods/only-one.jar", "mod"));
+        var path = WriteTemp("cf-mixed.zip", zip);
+        try
+        {
+            var result = SetupPackImport.AnalyzeFile(path);
+            Assert.True(result.Succeeded, result.Error);
+            Assert.False(result.Value!.CanContinue);
+            Assert.Equal(ManualServerPackAnalyzer.CurseForgeMixedRefusal, result.Value.BlockReason);
+        }
+        finally
+        {
+            TryDelete(path);
+        }
+    }
+
+    [Fact]
     public void Complete_curseforge_server_files_and_mrpack_can_continue()
     {
         var serverJar = MakeJar(("fabric.mod.json", """{"schemaVersion":1,"id":"content","version":"0","environment":"*"}"""));
@@ -271,6 +291,25 @@ public sealed class SetupPackImportTests
           "name": "MCMGR Synthetic CF Export",
           "version": "0.1.0",
           "files": [{ "projectID": 1, "fileID": 1, "required": true }],
+          "overrides": "overrides"
+        }
+        """;
+
+    private static string CfManifestJsonTwoFiles() =>
+        """
+        {
+          "minecraft": {
+            "version": "1.21.1",
+            "modLoaders": [{ "id": "neoforge-21.1.0", "primary": true }]
+          },
+          "manifestType": "minecraftModpack",
+          "manifestVersion": 1,
+          "name": "MCMGR Synthetic CF Export",
+          "version": "0.1.0",
+          "files": [
+            { "projectID": 1, "fileID": 1, "required": true },
+            { "projectID": 2, "fileID": 2, "required": true }
+          ],
           "overrides": "overrides"
         }
         """;
