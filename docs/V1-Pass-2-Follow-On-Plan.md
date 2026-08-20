@@ -1,6 +1,6 @@
 # V1 Pass-2 follow-on — operator notes (living)
 
-**Status:** Living. Created 2026-08-20 (docs only). **NEXT = P9.**  
+**Status:** Living. Created 2026-08-20 (docs only). **NEXT = P10.**  
 **Parent:** `[V1-Implementation-Plan.md](V1-Implementation-Plan.md)` Step **8.4**.  
 **Why now:** operator 2026-08-20 — Pass 2 closed early after greenfield Modded + join + Modding panel. Pause Step **8.5.2** and implement these notes **before** QA Pass 3.
 
@@ -127,8 +127,8 @@ Do **not** rewrite PRODUCT-IDEAS to match. Note the drift in the implementing se
 | **P6**  | Console simple vs full log                                      | **DONE** | SEQUENTIAL                 | Yes (optional)     |
 | **P7**  | Per-tab vertical scroll memory                                  | **DONE** | SEQUENTIAL                 | No                 |
 | **P8**  | Usage by day (collapsed “Detailed usage”)                       | **DONE** | SEQUENTIAL                 | No                 |
-| **P9**  | Manual / jar-root unclear-side: continue + exclude lists        | **NEXT** | PARALLEL-OK vs Hybrid-only | No                 |
-| **P10** | Pack replace — on-box full re-setup                             | TODO     | SEQUENTIAL                 | Yes                |
+| **P9**  | Manual / jar-root unclear-side: continue + exclude lists        | **DONE** | PARALLEL-OK vs Hybrid-only | No                 |
+| **P10** | Pack replace — on-box full re-setup                             | **NEXT** | SEQUENTIAL                 | Yes                |
 | **P11** | Pack replace — Server Management UI                             | TODO     | SEQUENTIAL                 | Yes                |
 | **P12** | TESTING spend-brake Function fill-in (Docker)                   | TODO     | SEQUENTIAL (owns stack)    | Yes                |
 | **P13** | Setup prefers a pre-built Function image artifact               | TODO     | SEQUENTIAL                 | No                 |
@@ -399,7 +399,7 @@ Inside: hours **by UTC day** for the current month, readable for a novice (one r
 
 ## P9 — Manual / jar-root unclear-side may continue
 
-**Status:** TODO  
+**Status:** DONE  
 **Catalog IDs:** S6-02
 
 **Read first**
@@ -424,7 +424,7 @@ If a jar-root zip still has **no** detectable Minecraft version or loader after 
 
 **Done when:** Guide Modded analyze note matches.
 
-**Changelog:** *(empty)*
+**Changelog:** 2026-08-20 — `FromManual` no longer blocks on unclear side; `UnclearSideKeepCopy` + capped examples in confirmable summary (not a third checkbox). `.mrpack` unclear `env.server` still hard-blocks. Core tests. Catalog S6-02 expected updated. Guide Modded analyze note. Drift vs PRODUCT-IDEAS (manual continue; `.mrpack` still fails) noted in Guide.
 
 ---
 
@@ -584,9 +584,10 @@ Derive OCIR username from namespace + OCI user **if that is a small change**; ot
 
 | Date       | Note                                                                                                                                                                                                                  |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-20 | **P9 DONE.** Manual / jar-root unclear-side may continue; summary warning; `.mrpack` unclear still blocked. **NEXT = P10.** Do not start Pass 3, 8.6.1, or 9.1.                                                       |
 | 2026-08-20 | **P8 DONE.** Usage **Detailed usage** expander (UTC days, closed by default). **NEXT = P9.** Do not start Pass 3, 8.6.1, or 9.1.                                                                                      |
-| 2026-08-20 | **P7 DONE.** Per-tab vertical scroll memory on tab switch. **NEXT = P8.** Do not start Pass 3, 8.6.1, or 9.1.                                                                                                          |
-| 2026-08-20 | **P6 DONE.** Console Simple vs Full log toggle; RCON plumbing hidden in Simple. **NEXT = P7.** Do not start Pass 3, 8.6.1, or 9.1.                                                                                     |
+| 2026-08-20 | **P7 DONE.** Per-tab vertical scroll memory on tab switch. **NEXT = P8.** Do not start Pass 3, 8.6.1, or 9.1.                                                                                                         |
+| 2026-08-20 | **P6 DONE.** Console Simple vs Full log toggle; RCON plumbing hidden in Simple. **NEXT = P7.** Do not start Pass 3, 8.6.1, or 9.1.                                                                                    |
 | 2026-08-20 | **P5 DONE.** “game computer” → “server” (Setup + Manager + Guide). **NEXT = P6.** Do not start Pass 3, 8.6.1, or 9.1.                                                                                                 |
 | 2026-08-20 | **P4 DONE.** Window-locked dismissible action banners (not auto-hide for long/error). **NEXT = P5.** Do not start Pass 3, 8.6.1, or 9.1.                                                                              |
 | 2026-08-20 | **P3 DONE.** Danger Zone merged into Advanced; idle only under that heading; vibrant redstone plate. **NEXT = P4.** Do not start Pass 3, 8.6.1, or 9.1.                                                               |

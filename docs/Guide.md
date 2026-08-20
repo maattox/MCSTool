@@ -164,6 +164,8 @@ A **Modded** server is **not playable** until friends install the **same exporte
 
 Some packs mark client-only mods as required on the server. Setup skips those known names automatically, shows a warning with examples, and still lets you continue. If the game later fails to start, check that skipped list first.
 
+User-made server zips, jar-root archives, and filled CurseForge **Server Files** zips may also include jars with no client/server metadata. Setup keeps those on the server after the exclude list and in-jar client strips, shows a warning in the analyze summary, and still lets you continue. A Modrinth **`.mrpack`** with unclear `env.server` still **cannot** continue — fix the pack or pick a different export.
+
 Next is not available in Setup until you check that you will give friends this same pack. The same reminder appears on the Review page before Deploy.
 
 **CurseForge files:** if the zip is a *client* export (a `manifest.json` of project/file IDs and no mod jars), Setup will refuse it. On that pack’s CurseForge page, download **Server Files** (jars already inside) and import that zip — or use a Modrinth `.mrpack` when the pack exists there. This app does not call the CurseForge API and does not reconstruct missing jars.

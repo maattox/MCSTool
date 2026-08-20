@@ -43,6 +43,15 @@ public static class SetupPackImport
         "This pack marks some mods as needed on the server that are known client-only mods. "
         + "Setup will skip those on the server. If the server fails to start, check this skipped list first.";
 
+    /// <summary>
+    /// Confirmable-summary warning when manual / jar-root zips still have jars with no in-jar side
+    /// metadata after exclude lists (R3 keep). Not a third required checkbox.
+    /// </summary>
+    public const string UnclearSideKeepCopy =
+        "Some jar files in this zip do not declare whether they are client-only or server-side. "
+        + "Setup will keep them on the server after the exclude list and in-jar client strips. "
+        + "If the server fails to start, check those jars first.";
+
     public const int OverrideListExampleCap = 6;
 
     /// <summary>Shareable identity from the analyzed pack (file import; no catalog URL).</summary>
@@ -165,12 +174,13 @@ public static class SetupPackImport
             block = QuiltRefusal;
         else if (!IsInstallableLoader(analysis.Loader))
             block = LoaderRefusal;
-        else if (analysis.UnclearSideCount > 0)
-            block = UnclearSideRefusal;
         else if (string.IsNullOrWhiteSpace(analysis.MinecraftVersion))
             block = "This pack does not declare a Minecraft version.";
 
-        var warning = FormatOverrideListWarning(analysis.OverrideListSkipCount, analysis.OverrideListSkipPaths);
+        var overrideWarning = FormatOverrideListWarning(analysis.OverrideListSkipCount, analysis.OverrideListSkipPaths);
+        var unclearWarning = FormatUnclearSideWarning(analysis.UnclearSideCount, analysis.UnclearSidePaths);
+        var summary = PrependWarning(analysis.ConfirmableSummary, unclearWarning);
+        summary = PrependWarning(summary, overrideWarning);
         return new SetupPackPreview(
             KindManualZip,
             path,
@@ -184,13 +194,43 @@ public static class SetupPackImport
             analysis.ServerSideCount,
             analysis.ClientOnlyCount,
             analysis.UnclearSideCount,
-            PrependWarning(analysis.ConfirmableSummary, warning),
+            summary,
             analysis.Warnings,
             canContinue: block is null,
             blockReason: block,
             analysis.OverrideListSkipCount,
             analysis.OverrideListSkipPaths,
-            warning);
+            overrideWarning);
+    }
+
+    /// <summary>
+    /// Novice warning plus capped filenames when manual / jar-root zips keep jars with no in-jar side metadata.
+    /// Returns null when there is nothing to warn about.
+    /// </summary>
+    public static string? FormatUnclearSideWarning(int unclearCount, IReadOnlyList<string>? unclearPaths)
+    {
+        if (unclearCount <= 0)
+            return null;
+
+        var paths = unclearPaths ?? [];
+        var examples = paths
+            .Select(ExampleFileName)
+            .Where(n => n.Length > 0)
+            .Take(OverrideListExampleCap)
+            .ToList();
+
+        var sb = new System.Text.StringBuilder();
+        sb.Append(UnclearSideKeepCopy);
+        if (examples.Count > 0)
+        {
+            sb.Append(" Examples: ").Append(string.Join(", ", examples));
+            var remaining = unclearCount - examples.Count;
+            if (remaining > 0)
+                sb.Append(" (and ").Append(remaining).Append(" more)");
+            sb.Append('.');
+        }
+
+        return sb.ToString();
     }
 
     /// <summary>

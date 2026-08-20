@@ -925,7 +925,7 @@ Do **not** `tofu apply` from these tests unless the operator authorizes it in th
 
 **Steps:** Use gitignored `data/sample-packs/` or fixtures. Analyze `.mrpack` and a server-pack zip. Drag-and-drop if you can.
 
-**Expected:** Summary (name, MC, loader, Java, strip counts). No catalog search.
+**Expected:** Summary (name, MC, loader, Java, strip counts). No catalog search. User-made / jar-root / filled Server Files zips with jars that have no side metadata: **continue** with a summary warning (jars kept after exclude lists). Modrinth **`.mrpack`** with unclear `env.server` still **blocked**. CurseForge client export / jar-less / mixed ID-only still **blocked**.
 
 ### S6-03 — Connect-existing / version skew
 

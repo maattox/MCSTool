@@ -9,6 +9,70 @@ namespace McManager.Core.Tests;
 public sealed class SetupPackImportTests
 {
     [Fact]
+    public void Tracked_jar_root_fixture_can_continue_when_present()
+    {
+        var path = FixturePath("jar-root.zip");
+        if (!File.Exists(path))
+            return;
+
+        var result = SetupPackImport.AnalyzeFile(path);
+        Assert.True(result.Succeeded, result.Error);
+        var preview = result.Value!;
+        Assert.Equal(SetupPackImport.KindManualZip, preview.Kind);
+        Assert.True(preview.CanContinue);
+        Assert.Null(preview.BlockReason);
+        Assert.NotEqual(SetupPackImport.UnclearSideRefusal, preview.BlockReason);
+        if (preview.UnclearSideCount > 0)
+        {
+            Assert.Contains(SetupPackImport.UnclearSideKeepCopy, preview.ConfirmableSummary, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
+    public void Manual_zip_with_unclear_side_jars_can_continue()
+    {
+        var serverJar = MakeJar(
+            ("fabric.mod.json",
+                """{"schemaVersion":1,"id":"content","version":"0","environment":"*","depends":{"minecraft":"1.21.1"}}"""));
+        using var zip = MakeZipBytes(
+            ("mods/content.jar", serverJar),
+            ("mods/mystery-side.jar", Encoding.UTF8.GetBytes("not-a-valid-jar")));
+        var path = WriteTemp("unclear-manual.zip", zip);
+        try
+        {
+            var result = SetupPackImport.AnalyzeFile(path);
+            Assert.True(result.Succeeded, result.Error);
+            var preview = result.Value!;
+            Assert.Equal(SetupPackImport.KindManualZip, preview.Kind);
+            Assert.True(preview.CanContinue);
+            Assert.Null(preview.BlockReason);
+            Assert.True(preview.UnclearSideCount > 0);
+            Assert.Contains(SetupPackImport.UnclearSideKeepCopy, preview.ConfirmableSummary, StringComparison.Ordinal);
+            Assert.Contains("mystery-side.jar", preview.ConfirmableSummary, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain(SetupPackImport.UnclearSideRefusal, preview.ConfirmableSummary, StringComparison.Ordinal);
+        }
+        finally
+        {
+            TryDelete(path);
+        }
+    }
+
+    [Fact]
+    public void Unclear_side_warning_caps_examples_and_stays_novice()
+    {
+        var paths = Enumerable.Range(1, 10).Select(i => $"mods/unclear-{i}.jar").ToList();
+        var text = SetupPackImport.FormatUnclearSideWarning(10, paths);
+        Assert.False(string.IsNullOrWhiteSpace(text));
+        Assert.Contains(SetupPackImport.UnclearSideKeepCopy, text, StringComparison.Ordinal);
+        Assert.Contains("unclear-1.jar", text, StringComparison.Ordinal);
+        Assert.Contains("unclear-6.jar", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("unclear-7.jar", text, StringComparison.Ordinal);
+        Assert.Contains("and 4 more", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("VM1", text, StringComparison.Ordinal);
+        Assert.Null(SetupPackImport.FormatUnclearSideWarning(0, paths));
+    }
+
+    [Fact]
     public void Tracked_mrpack_fixture_blocks_on_unclear_side()
     {
         var path = FixturePath("fabric-strip.mrpack");
