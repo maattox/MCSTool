@@ -2,11 +2,12 @@
 
 **Status:** Living test catalog for [Phase 8.5](V1-Implementation-Plan.md#phase-85--pre-packaging-qa).  
 **Parent:** `[V1-Implementation-Plan.md](V1-Implementation-Plan.md)`.  
-**Results:** fill `[V1-QA-Pass-N-Results.md](V1-QA-Pass-2-Results.md)` for the current pass. Pass 1 is historical (`[V1-QA-Pass-1-Results.md](V1-QA-Pass-1-Results.md)`). Do **not** edit expected steps in this catalog just to record an outcome.  
-**Pass 2 execution:** `[V1-QA-Pass-2-Scope.md](V1-QA-Pass-2-Scope.md)` (include/skip + phases). Do not re-run the full catalog.  
+**Results:** fill `[V1-QA-Pass-N-Results.md](V1-QA-Pass-3-Results.md)` for the current pass. Pass 1 and Pass 2 are historical. Do **not** edit expected steps in this catalog just to record an outcome. Product changes (Step 8.4) **may** update expected (S4-02, S3-01, S6-02).  
+**Pass 2 execution:** `[V1-QA-Pass-2-Scope.md](V1-QA-Pass-2-Scope.md)` (**closed early**).  
+**Pass 3 execution:** `[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)` (**blocked** until Step 8.4). Do not re-run the full catalog.  
 **Fix work:** after triage, an agent writes `[V1-Bug-Fix-Plan-Pass-N.md](V1-Bug-Fix-Plan-TEMPLATE.md)` from the filled results. Agents implement **that** plan, not this catalog.
 
-This catalog is `dotnet run` **+ TESTING**. Pass 1 used the existing Vanilla stack. Pass 2 is Delete + greenfield **Modded**. It is not the PRODUCT-IDEAS clean-room (new account + installer + real $1 budget fire). Do not start [Step 8.6.1](V1-Implementation-Plan.md#step-861--ci-built-arm-image--setup-copy-into-ocir) or [Step 9.1](V1-Implementation-Plan.md#step-91--windows-installer) from this file.
+This catalog is `dotnet run` **+ TESTING**. Pass 1 used the existing Vanilla stack. Pass 2 is Delete + greenfield **Modded** (**closed early**). Pass 3 is gap-close + Step 8.4 tests on that stack. It is not the PRODUCT-IDEAS clean-room (new account + installer + real $1 budget fire). Do not start [Step 8.6.1](V1-Implementation-Plan.md#step-861--ci-built-arm-image--setup-copy-into-ocir) or [Step 9.1](V1-Implementation-Plan.md#step-91--windows-installer) from this file.
 
 **Cost:** $0 (Always Free–eligible). Never open `0.0.0.0/0` on Minecraft, SSH, or door admin.
 
@@ -17,24 +18,25 @@ This catalog is `dotnet run` **+ TESTING**. Pass 1 used the existing Vanilla sta
 ## How to use this file
 
 1. **Pass 1 (DONE):** full S0–S7 on Vanilla (S7-04 Skipped). Bug-fix P1–P8 DONE.
-2. **Pass 2 (living):** follow [`V1-QA-Pass-2-Scope.md`](V1-QA-Pass-2-Scope.md) phases A–D. Fill [`V1-QA-Pass-2-Results.md`](V1-QA-Pass-2-Results.md). Do **not** re-run rows already `Skipped` there.
-3. **One agent chat owns the TESTING stack at a time.** Two chats shortening idle and invoking the spend-brake Function will collide. Greenfield destroy/apply is Phase A only.
-4. Fill the pass results file as you go. Do not wait until the end of a three-hour session.
-5. Later passes = **failed tests from the last pass + smoke ([S0-01](#s0-01--core-unit-tests), [S1-03](#s1-03--stack-snapshot), [S2-08](#s2-08--wake-from-stopped-unlocked), [S2-09](#s2-09--idle-softstop-short-timeout), [S2-17](#s2-17--invoke-function-with-fake-actual-alert), [S3-01](#s3-01--spend-brake-overlay--typed-confirm), [S4-01](#s4-01--novice-chrome)) + tests for files that changed** + gaps the last pass never covered (Pass 2: greenfield + live Modded). Full catalog re-run only before declaring Phase 8.5 done.
-6. Agents: read **Pass 2 scope + named catalog IDs**. Do not load the Minecraft blueprint, PRODUCT-IDEAS, or the whole V1 plan.
-7. The operator **may pause a pass after a suite** for a Blocker (write/run [`V1-Bug-Fix-Plan-Pass-N.md`](V1-Bug-Fix-Plan-TEMPLATE.md), then a delta). Do not start 8.6.1 or 9.1.
+2. **Pass 2 (DONE, closed early):** follow [`V1-QA-Pass-2-Scope.md`](V1-QA-Pass-2-Scope.md) was Phase A + join only. Filled [`V1-QA-Pass-2-Results.md`](V1-QA-Pass-2-Results.md). Do **not** re-run it.
+3. **Pass 3 (blocked):** follow [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) after Step **8.4**. Fill [`V1-QA-Pass-3-Results.md`](V1-QA-Pass-3-Results.md).
+4. **One agent chat owns the TESTING stack at a time.** Two chats shortening idle and invoking the spend-brake Function will collide. Greenfield destroy/apply was Pass 2 Phase A only.
+5. Fill the pass results file as you go. Do not wait until the end of a three-hour session.
+6. Later passes = **failed tests from the last pass + smoke ([S0-01](#s0-01--core-unit-tests), [S1-03](#s1-03--stack-snapshot), [S2-08](#s2-08--wake-from-stopped-unlocked), [S2-09](#s2-09--idle-softstop-short-timeout), [S2-17](#s2-17--invoke-function-with-fake-actual-alert), [S3-01](#s3-01--spend-brake-overlay--typed-confirm), [S4-01](#s4-01--novice-chrome)) + tests for files that changed** + gaps the last pass never covered. Full catalog re-run only before declaring Phase 8.5 done.
+7. Agents: read **the current pass scope + named catalog IDs**. Do not load the Minecraft blueprint, PRODUCT-IDEAS, or the whole V1 plan.
+8. The operator **may pause a pass after a suite** for a Blocker (write/run [`V1-Bug-Fix-Plan-Pass-N.md`](V1-Bug-Fix-Plan-TEMPLATE.md), then a delta). Do not start 8.6.1 or 9.1. Living product work during the Pass 2 pause is [`V1-Pass-2-Follow-On-Plan.md`](V1-Pass-2-Follow-On-Plan.md).
 
 
 
 ### Operator prompt (copy-paste)
 
-**Pass 2 Phase A (greenfield + modded) — current NEXT:**
+**Current follow-on (Step 8.4) — not a QA pass:**
 
-Canonical text: [`V1-QA-Pass-2-Scope.md`](V1-QA-Pass-2-Scope.md) → Operator prompts → Phase A.
+Canonical text: [`V1-Pass-2-Follow-On-Plan.md`](V1-Pass-2-Follow-On-Plan.md) → Operator prompt.
 
-**Pass 2 later phases / triage:** same file (Phase B, C, D, triage).
+**Pass 3 (blocked until 8.4):** [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md).
 
-**Historical Pass 1 agent suite (do not use):** filled [`V1-QA-Pass-1-Results.md`](V1-QA-Pass-1-Results.md).
+**Historical Pass 2 / Pass 1:** filled results files. Do not use Pass 2 Phase A (tofu destroy) again.
 
 ---
 
@@ -104,7 +106,7 @@ Optional on Fail: screenshot path, `journalctl` snippet, approximate timestamp (
 | Real Oracle **$1 budget fire**          | Clean-room / accepted spend; not TESTING day-to-day                                      |
 | Windows installer / GitHub update check | V1 Phase 9 — **after** Phase 8.6 (CI Function image)                                     |
 | Docker Desktop on the admin PC to install the spend-brake Function | **Rejected** for the product path (V1 Step **8.6.1**). TESTING `fn`/`docker` remains an agent fill-in until then. |
-| After-v1 PRODUCT-IDEAS                  | Players tab, pack replace, PTY, paid mode, …                                             |
+| After-v1 PRODUCT-IDEAS                  | Players tab, pack-replace **light swap**, PTY, paid mode, … **Change pack (full re-setup)** is v1 in Step 8.4 |
 | In-app pack browser / public Minecraft  | **Rejected**                                                                             |
 | Live Forge lab (`DEFAULT` profile)      | Forbidden                                                                                |
 | `tofu apply` / `tofu destroy`           | Still **operator-authorized per session** — Pass 2 **Phase A** authorizes TESTING destroy-then-apply for S7-04. Other chats: skip unless the operator says so |
@@ -603,15 +605,15 @@ Agent: put the fixture, watch OCI/SSH. Operator: Hybrid or Minecraft. Fill **bot
 2. Confirm **full-window** warning (not a small banner). Start blocked.
 3. Copy/paste the exact sentence (copy button OK):
   `I confirm that we have entered a new calendar month and that my free monthly usage limits have been reset. I understand that if I ignore these warnings and turn on my server before a new month has started, the card I created my Oracle Cloud account with will automatically be charged for the excess usage.`
-4. Confirm. Watch Start/reconcile.
+4. Confirm (**Clear lock** — this does **not** Start). Overlay dismisses. Watch that VM1 stays down until you click top-bar **Start**.
 
 **Agent**
 
 - Before: lock GET exists.  
-- After confirm: lock **DELETE**d (404). Play IP parked/reconciled. Door OS-refresh. Idle/daily/monthly gates still apply (do not expect Start if daily exhausted).  
+- After confirm: lock **DELETE**d (404). Play IP parked/reconciled. Door OS-refresh. VM1 **not** woken by the overlay. Idle/daily/monthly gates still apply (top-bar Start still refuses if those gates are exhausted).  
 - Fail-closed: optional — break Get (hard); skip unless easy.
 
-**Expected:** Overlay copy matches PRODUCT-IDEAS. Manager is the only clearer. No auto-clear at month rollover (do not wait a month — just confirm code/docs; UX has no “it’s a new month so skip typing”).
+**Expected:** Overlay copy matches PRODUCT-IDEAS except confirm is **unlock only** (no overlay Start — follow-on P1; PRODUCT-IDEAS may still say overlay Start). Manager is the only clearer. No auto-clear at month rollover (do not wait a month — just confirm code/docs; UX has no “it’s a new month so skip typing”).
 
 **Restore:** Lock absent. Idle as agreed.
 
@@ -705,7 +707,7 @@ For each: click the path, then Result Pass or Fail with what you saw.
 
 **Runner:** `operator` · **Duration:** `quick`
 
-**Steps:** Top bar **Status** is Running/Stopped (not a raw OCI lifecycle dump). **Play IP** visible + copy. Native Windows title bar (no custom caption). No mini-terminal.
+**Steps:** Top bar **Status** is Running/Stopped (not a raw OCI lifecycle dump). **Play IP** visible + copy. **Players** pin is `0` when Stopped and the RCON `list` count (`X / Y`) when Running. Native Windows title bar (no custom caption). No mini-terminal.
 
 **Expected:** Matches operator UI notes.
 

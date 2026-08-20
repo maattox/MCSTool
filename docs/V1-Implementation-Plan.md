@@ -27,7 +27,7 @@
   - **Stop.** Do not start the next large step unless the operator says to continue.
 4. In the chat reply: what was done, how to test, what the next step will be, ask whether to continue / pause / adjust.
 5. **Never create git commits** (operator commits in Visual Studio). You may suggest a commit message.
-6. Do **not** implement **after v1** / **later** PRODUCT-IDEAS items (Players tab, start checklist, maintenance IP, multi-deploy, pack replace, Quilt Setup entry, Purpur, PTY console, macOS/Linux Manager, **paid / spend mode**) unless the operator asks. An **in-app mod/modpack browser** is **rejected** (not after-v1) — users import a local pack file only; do not build it. **Public Minecraft / public-private toggle / blacklist** is **rejected** (not after-v1) — private allowlist only; do not rebuild it. If **this plan** disagrees with PRODUCT-IDEAS, follow this plan and note the drift (do not silently rewrite this file to match PRODUCT-IDEAS).
+6. Do **not** implement **after v1** / **later** PRODUCT-IDEAS items (Players tab, start checklist, maintenance IP, multi-deploy, Quilt Setup entry, Purpur, PTY console, macOS/Linux Manager, **paid / spend mode**) unless the operator asks. **Pack replace** was after-v1 in PRODUCT-IDEAS; operator 2026-08-20 pulled **full re-setup** into v1 via [Step 8.4](#step-84--pass-2-follow-on-operator-notes) (light swap still parked). An **in-app mod/modpack browser** is **rejected** (not after-v1) — users import a local pack file only; do not build it. **Public Minecraft / public-private toggle / blacklist** is **rejected** (not after-v1) — private allowlist only; do not rebuild it. If **this plan** disagrees with PRODUCT-IDEAS, follow this plan and note the drift (do not silently rewrite this file to match PRODUCT-IDEAS).
 7. Do **not** put Manager UI in the lab repo. On-box source (`door_vm/`, `vm_agent/`, `functions/shutdown_vm/`) lives **in this repo**. Lab changes are OK for lab docs / Python Manager only. Phase B (Blazor Hybrid) is **DONE**; do not re-open Avalonia.
 8. **Fix the product path, not only the test VM.** If you change a test VM or a **TESTING** cloud resource, make the **same** change in the local deployment SoT in the same session (`onbox/mcmgr/`, `infra/`, `door_vm/`, `vm_agent/`, `functions/shutdown_vm/`, Manager/Setup code here). The next greenfield Setup must pick it up. Patching only the live test instance is not done.
 9. `ubuntu` **Permission denied** — `sudo` or fix owner/mode (`[docs/Agent-Deploy-Pitfalls.md](Agent-Deploy-Pitfalls.md)`).
@@ -144,7 +144,8 @@ This blanket is **TESTING / until Step 8.6.1 ships**. The **product** path is a 
 
 ```text
 Read docs/V1-Implementation-Plan.md in OCI-mc-server. Implement only the step marked NEXT.
-MVP Phases 0–7 are DONE. Paid/spend mode is skipped (far future, not v1). Pre-packaging QA is Phase 8.5. Phase 8.6 is CI-built ARM Function image (no Docker on the admin PC) — required before any official release. Packaging is V1 Phase 9 — do not start 9.1 until Phase 8.5 exits AND Step 8.6.1 is DONE. Phase B (Blazor Hybrid UI) is DONE — do not re-open Avalonia.
+When NEXT is Step 8.4, also read docs/V1-Pass-2-Follow-On-Plan.md and implement only the P-section marked NEXT there (not this whole V1 file).
+MVP Phases 0–7 are DONE. Paid/spend mode is skipped (far future, not v1). Pre-packaging QA is Phase 8.5 (paused for 8.4; Pass 3 after 8.4). Phase 8.6 is CI-built ARM Function image (no Docker on the admin PC) — required before any official release. Packaging is V1 Phase 9 — do not start 9.1 until Phase 8.5 exits AND Step 8.6.1 is DONE. Phase B (Blazor Hybrid UI) is DONE — do not re-open Avalonia.
 You MAY use OCI CLI/API with profile TESTING (not DEFAULT) and SSH both test VMs with %USERPROFILE%\.ssh\mcmgr_ed25519_20260817_125552. Stay at $0. If you change a test VM or TESTING cloud resource, make the same change in the local deployment SoT (onbox/, infra/, door_vm/, vm_agent/, functions/shutdown_vm/).
 You MAY fn build, fn push, and invoke product Functions (shutdown_vm, reconcile_usage) on TESTING without asking. Do not fire a real $1 budget alert. Do not SoftStop the door. Never DEFAULT / live Forge lab.
 If you need VM1 and it is STOPPED, START it, then disable the idle agent so it does not SoftStop while you work. If VM1 is already RUNNING, confirm idle is off before other work. When you finish, turn the idle agent back on. Minecraft boot force-enables idle (OS-ISSUE-7) — disable again after a game start.
@@ -162,7 +163,7 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 
 > Flexible product on the same Always Free doorbell: **private allowlist only**, CIDR prefixes, spend-brake lock, Paper + file-imported modpacks, Danger Zone isolated from power-user Advanced, then **one** installer and GitHub updates. The spend-brake Function image is **CI-built ARM**, copied into the user’s OCIR — not built with Docker Desktop / Cloud Shell on their PC.
 
-**Explicitly out of this plan (after v1 / later):** Players tab, Start progress checklist, maintenance / reserved-IP controls, multi-deploy profiles, change/replace modpack, full per-day budget calendar, Quilt as a Setup entry point, Purpur/Folia, interactive PTY console, macOS/Linux Manager, **paid / spend mode** (far future).
+**Explicitly out of this plan (after v1 / later):** Players tab, Start progress checklist, maintenance / reserved-IP controls, multi-deploy profiles, pack-replace **light swap**, full per-day budget **calendar editor**, Quilt as a Setup entry point, Purpur/Folia, interactive PTY console, macOS/Linux Manager, **paid / spend mode** (far future). **Change/replace pack (full re-setup)** is **v1** in Step **8.4** (operator 2026-08-20; PRODUCT-IDEAS still says after-v1 — follow this plan). Danger Zone as a **separate tab** is superseded by Step **8.4** P3 (merged into Advanced).
 
 **Rejected (will not be implemented, not after-v1):** in-app mod / modpack browser (browse, search, trending, download-a-pack, pick-by-name/URL/ID). Users create or download pack files themselves and select them in Setup or Manager.
 
@@ -188,12 +189,13 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 | **6**   | Top-bar chrome + oversized-world SSH UX                    | **DONE**                                              |
 | **7**   | Remaining v1 (resize, console, storage, Connect version)   | **DONE**                                              |
 | **8**   | Paid / spend mode                                          | **SKIPPED** (operator 2026-08-18; far future, not v1) |
-| **8.5** | Pre-packaging QA (catalog + passes + bug-fix plans)        | **NEXT** = Step **8.5.2** (wait for operator)         |
+| **8.4** | Pass-2 follow-on (operator notes)                          | **NEXT** = [`V1-Pass-2-Follow-On-Plan.md`](V1-Pass-2-Follow-On-Plan.md) **P2** |
+| **8.5** | Pre-packaging QA (catalog + passes + bug-fix plans)        | **PAUSED** — Pass 2 closed early; Pass 3 after 8.4     |
 | **8.6** | CI-built ARM spend-brake Function image (no Docker on admin PC) | TODO — after 8.5 exit; **required before 9.1 / official release** |
 | **9**   | Packaging, updates, launch (old MVP Phase 8–9)             | TODO — do not start until Phase 8.5 **and** Step **8.6.1** are DONE |
 
 
-**Current NEXT step:** [Step 8.5.2](#step-852--execute-qa-passes) Pass 2 Phase A ([`V1-QA-Pass-2-Scope.md`](V1-QA-Pass-2-Scope.md)). Step **4.13** / robustness R1–R4 is **DONE**. **Do not start Pass 2** (no `tofu destroy`) until the operator says so. **Do not start Step 8.6.1** until Phase 8.5 exits (unless the operator asks to interleave). **Do not start Step 9.1** until Phase 8.5 **and** Step **8.6.1** are DONE.
+**Current NEXT step:** [Step 8.4](#step-84--pass-2-follow-on-operator-notes) / living plan **P2** ([`V1-Pass-2-Follow-On-Plan.md`](V1-Pass-2-Follow-On-Plan.md)). Pass 2 is **closed early** (greenfield Modded + join). Step **8.5.2** is **paused** until 8.4 exits, then **Pass 3** ([`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md)). **Do not start Pass 3** until the operator says so. **Do not start Step 8.6.1** until Phase 8.5 exits (P13 is Setup artifact lookup only, not CI). **Do not start Step 9.1** until Phase 8.5 **and** Step **8.6.1** are DONE.
 
 ---
 
@@ -844,7 +846,7 @@ Historical **Do** (not to be started): import a user-supplied CurseForge client 
 ### Step 4.13 — Modpack robustness (exclude lists)
 
 **Status:** DONE (living: [`V1-Modpack-Robustness-Plan.md`](V1-Modpack-Robustness-Plan.md) R1–R4)  
-**Depends on:** Phase 4 DONE; **paused** Step 8.5.2 until this step exited
+**Depends on:** Phase 4 DONE; **paused** Step 8.5.2 until this step exited (historical — 4.13 is DONE)
 
 **Read first**
 
@@ -1212,6 +1214,38 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 
 
 
+## Phase 8.4 — Pass-2 follow-on (operator notes)
+
+**Why this sits here:** QA Pass 2 closed early after greenfield Modded + join. Operator notes from that pass (UX, pack replace, Function fill-in, jar-root continue) land **before** Pass 3 so they are not tested twice.
+
+### Step 8.4 — Pass-2 follow-on (operator notes)
+
+**Status:** NEXT (living: [`V1-Pass-2-Follow-On-Plan.md`](V1-Pass-2-Follow-On-Plan.md) **P2**)  
+**Depends on:** Pass 2 closed (S7-04 / S3-05 / S4-11 recorded)
+
+**Read first**
+
+- [`V1-Pass-2-Follow-On-Plan.md`](V1-Pass-2-Follow-On-Plan.md) protocol + **only the NEXT P-section**  
+- Do **not** load Pass 3, the full blueprint, or this whole V1 file
+
+**Do**
+
+- Implement **only** the follow-on plan section marked NEXT (P1 → P13). Stop after each P-section.  
+- Same TESTING permissions as this file’s [Test stack access](#test-stack-access-oci--ssh) + [Functions blanket](#product-functions-on-testing-blanket). No `tofu apply`/`destroy` unless a P-section says to stop and ask.  
+- Do **not** start Pass 3, Step **8.6.1** CI, or **9.1**. P13 is Setup artifact lookup only.
+
+**Test**
+
+- Per the current P-section in the follow-on plan.
+
+**Done when:** P1–P13 **DONE** in the follow-on plan. Then point this plan’s **NEXT** at Step **8.5.2** Pass 3 ([`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md)). Do not start Pass 3 until the operator says so.
+
+**Changelog:** 2026-08-20 — **P1 DONE** (Start STOPPED gate, overlay unlock-only, Players pin). Living **NEXT = P2**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **Inserted** (docs only). Living **NEXT = P1**. Pass 2 closed early; Step **8.5.2** paused. Do not start Pass 3, 8.6.1 CI, or 9.1.
+
+---
+
+
+
 ## Phase 8.5 — Pre-packaging QA
 
 **Why this sits before packaging:** v1 features (Phases 1–7) are **DONE**. Phase 8 is **SKIPPED**. Find and fix bugs on `dotnet run` + the TESTING stack **before** the Function-image product path (Step **8.6.1**) and the Windows installer (Step 9.1). Repeat catalog → results → bug-fix plan until the [QA exit](V1-QA-Catalog.md#qa-exit-phase-85-done) bar is met.
@@ -1223,14 +1257,17 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 | ------------------------------------------------------------ | -------------------------------------------------------------------------- |
 | `[V1-QA-Catalog.md](V1-QA-Catalog.md)`                       | Stable tests, runners (`agent` / `hybrid` / `operator`), expected, restore |
 | `[V1-QA-Pass-1-Results.md](V1-QA-Pass-1-Results.md)`         | Pass 1 fill-out (Vanilla, existing stack; **historical**)                  |
-| `[V1-QA-Pass-2-Scope.md](V1-QA-Pass-2-Scope.md)`             | Pass 2 include/skip + phases (greenfield + modded). **Read this**, not a full catalog re-run. |
-| `[V1-QA-Pass-2-Results.md](V1-QA-Pass-2-Results.md)`         | Operator/agent fill-out for pass 2                                         |
-| `[V1-Bug-Fix-Plan-Pass-1.md](V1-Bug-Fix-Plan-Pass-1.md)`     | Pass 1 fixes; **P1–P8 DONE**. Do not re-open unless a Pass 2 regression.   |
-| `[V1-Modpack-Robustness-Plan.md](V1-Modpack-Robustness-Plan.md)` | **DONE (R1–R4).** Exclude lists + mixed archives. Pass 2 waits for the operator. |
+| `[V1-QA-Pass-2-Scope.md](V1-QA-Pass-2-Scope.md)`             | Pass 2 include/skip (**historical** — closed early after Phase A + join) |
+| `[V1-QA-Pass-2-Results.md](V1-QA-Pass-2-Results.md)`         | Pass 2 fill-out (Modded greenfield; no Pass 2 bug-fix plan)                |
+| `[V1-Pass-2-Follow-On-Plan.md](V1-Pass-2-Follow-On-Plan.md)` | **Living NEXT.** Operator notes; pause 8.5.2 until P13                     |
+| `[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)`             | Pass 3 gap-close + follow-on tests. **Blocked** until 8.4 exits            |
+| `[V1-QA-Pass-3-Results.md](V1-QA-Pass-3-Results.md)`         | Pass 3 fill-out (do not start until operator says so)                      |
+| `[V1-Bug-Fix-Plan-Pass-1.md](V1-Bug-Fix-Plan-Pass-1.md)`     | Pass 1 fixes; **P1–P8 DONE**. Do not re-open unless a regression.          |
+| `[V1-Modpack-Robustness-Plan.md](V1-Modpack-Robustness-Plan.md)` | **DONE (R1–R4).** Exclude lists + mixed archives.                          |
 | `[V1-Bug-Fix-Plan-TEMPLATE.md](V1-Bug-Fix-Plan-TEMPLATE.md)` | Copy to `V1-Bug-Fix-Plan-Pass-N.md` after triage                           |
 
 
-Pass 2 is a **delta** (Pass 1 Fails + smoke + changed files + greenfield/modded gaps). Do **not** regenerate the whole catalog each pass. Do **not** create `V1-Bug-Fix-Plan-Pass-2.md` until Pass 2 results are filled and the operator asks for triage.
+Pass 2 is **closed early** (no triage). Do **not** regenerate the whole catalog each pass. Do **not** create `V1-Bug-Fix-Plan-Pass-2.md`. Pass 3 waits for Step **8.4**.
 
 **Not this phase:** installer, GitHub Releases, CI Function-image publisher (that is **8.6.1**), real **$1 budget fire** (clean-room / accepted spend), live Forge lab, after-v1 PRODUCT-IDEAS.
 
@@ -1264,39 +1301,39 @@ Pass 2 is a **delta** (Pass 1 Fails + smoke + changed files + greenfield/modded 
 
 ### Step 8.5.2 — Execute QA passes
 
-**Status:** NEXT (do not start until the operator says Pass 2 may run)  
-**Depends on:** 8.5.1 + Step **4.13** DONE
+**Status:** PAUSED until [Step 8.4](#step-84--pass-2-follow-on-operator-notes) exits; then Pass 3  
+**Depends on:** 8.5.1 + Step **4.13** DONE + Step **8.4** (before Pass 3)
 
 **Read first**
 
-- **Pass 2:** `[V1-QA-Pass-2-Scope.md](V1-QA-Pass-2-Scope.md)` protocol + **only the phase** you were asked to run  
+- **Pass 3 (after 8.4):** `[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)` protocol + **only the phase** you were asked to run  
 - `[V1-QA-Catalog.md](V1-QA-Catalog.md)` — named IDs only  
-- `[V1-QA-Pass-2-Results.md](V1-QA-Pass-2-Results.md)`  
-- Pass 1 is **historical:** `[V1-QA-Pass-1-Results.md](V1-QA-Pass-1-Results.md)` (do not fill it)
+- `[V1-QA-Pass-3-Results.md](V1-QA-Pass-3-Results.md)`  
+- Pass 2 is **historical:** `[V1-QA-Pass-2-Results.md](V1-QA-Pass-2-Results.md)` (do not fill it). Pass 1 is historical.
 
 **Do (not product features)**
 
 **Pass 1 (DONE):** S0–S7 on the existing Vanilla TESTING stack (S7-04 Skipped). Bug-fix P1–P8 DONE. Do not re-run that catalog.
 
-**Pass 2 (living):** Step 4.13 / robustness R4 is **DONE**. Follow `[V1-QA-Pass-2-Scope.md](V1-QA-Pass-2-Scope.md)` when the operator starts Pass 2. **Do not** `tofu destroy` until that prompt. **One** agent chat on the test stack at a time.
+**Pass 2 (DONE, closed early):** Delete + greenfield **Modded** (FO; S6-01/S6-02/S7-04/S3-05/S4-11 Pass). Phase B–D not run. No Pass 2 bug-fix plan (in-pass SETUP-ISSUE-9/10). Do not `tofu destroy` again from this step.
 
-1. **Phase A (NEXT):** S0-01, S0-04, live Setup S6-01/S6-02, then **S7-04** Delete + greenfield **Modded** (sample pack; VM1 **2/12**). The Phase A operator prompt **authorizes** TESTING `tofu destroy` then `tofu apply` for that stack only. Destroy **first** — never a second A1. Fill Pass 2 results. Restore lock/idle. **Stop** after Phase A.
-2. **Phase B:** S1 + selected S2 on the **new** stack (manifest must be modded; P1 cloud-init; P2 door lock GET; S2-17 only if Setup installed the Function).
-3. **Phase C:** Hybrid delta — S3-01, S3-04 (P4), S3-05 modded join, S3-07 wipe auto-start (P8). Skip S3-02/S3-03 if Phase A already proved doorbell Start/Stop.
-4. **Phase D:** S4-01, S4-08, S4-11 Modding panel, S4-12 (P5), S5-01/S5-02, S5-05 Manager Start (P6). Do not Delete again.
-5. When Pass 2 is filled: **docs-only** session copies `[V1-Bug-Fix-Plan-TEMPLATE.md](V1-Bug-Fix-Plan-TEMPLATE.md)` → `V1-Bug-Fix-Plan-Pass-2.md`, triages Fail vs Known vs after-v1. Operator confirms severity.
-6. Agents implement **only NEXT** on that bug-fix plan. Then another delta pass if needed.
-7. Repeat until [QA exit](V1-QA-Catalog.md#qa-exit-phase-85-done). Then Step 8.5.3.
+**Pass 3 (blocked):** Follow `[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)` when the operator starts Pass 3 **after** Step **8.4**. Gap-close + follow-on tests on the **existing** TESTING stack. **Do not** `tofu destroy` unless that prompt says so. **One** agent chat on the test stack at a time.
 
-Do **not** start Step **8.6.1** or Step **9.1** from this step. Do not rewrite the catalog each pass. Do not re-run Pass 1 Skipped rows.
+1. **Phase A:** S0-01, S0-04, S1, leftover S2 (including S2-16/S2-17 if the Function exists after 8.4 P12).  
+2. **Phase B:** Hybrid leftovers + follow-on UI (S3-01 does not Start; S4-02 merged Danger Zone; Players pin; console simple/full; usage-by-day).  
+3. **Phase C:** jar-root continue (S6-02); Deployment Complete page. Do not greenfield.  
+4. When Pass 3 is filled: **docs-only** triage only if the operator asks (`V1-Bug-Fix-Plan-Pass-3.md`).  
+5. Repeat until [QA exit](V1-QA-Catalog.md#qa-exit-phase-85-done). Then Step 8.5.3.
+
+Do **not** start Step **8.6.1** or Step **9.1** from this step. Do not rewrite the catalog each pass. Do not re-run Pass 1 chrome that already Passed unless follow-on changed those files.
 
 **Test**
 
-- Pass 2 Phase A: S0-01/S0-04 recorded; S7-04 greenfield Modded playable doorbell; results file session log started.
+- Pass 3 Phase A: S0-01 recorded; S1 snapshot of the Pass 2 stack; leftover S2 filled.
 
-**Done when:** Operator agrees a pass is ready for triage **or** QA exit is met (then 8.5.3). This step stays **NEXT** across multiple chats until then.
+**Done when:** Operator agrees a pass is ready for triage **or** QA exit is met (then 8.5.3). This step stays the QA executor across chats; living **NEXT** is Step **8.4** until that plan exits.
 
-**Changelog:** 2026-08-20 — **NEXT** (4.13 / R4 DONE). Do not start Pass 2 Phase A or `tofu destroy` until the operator says so. 2026-08-20 — **PAUSED** until Step **4.13** / robustness R1–R4 (itzg exclude lists). Do not start Pass 2 Phase A or `tofu destroy`. 2026-08-19 — **Pass 2 docs.** Scope + results files. Pass 1 complete (P1–P8 DONE). Do not start 8.6.1 or 9.1.
+**Changelog:** 2026-08-20 — **PAUSED** for Step **8.4** follow-on. Pass 2 **closed early** (Modded greenfield + join; no triage). Next QA = Pass 3 after 8.4. Do not start 8.6.1 or 9.1. 2026-08-20 — **NEXT** (4.13 / R4 DONE). Do not start Pass 2 Phase A or `tofu destroy` until the operator says so. 2026-08-20 — **PAUSED** until Step **4.13** / robustness R1–R4 (itzg exclude lists). Do not start Pass 2 Phase A or `tofu destroy`. 2026-08-19 — **Pass 2 docs.** Scope + results files. Pass 1 complete (P1–P8 DONE). Do not start 8.6.1 or 9.1.
 
 ---
 
@@ -1537,6 +1574,8 @@ Former MVP Phase **8–9**. Phases **1–7** are **DONE**. Phase **8** is **SKIP
 
 | Date       | Note                                                                                                                                                                                                                                                                                                                              |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-20 | **Step 8.4 P1 DONE.** Start STOPPED gate; overlay unlock-only; Players pin. Living **NEXT = P2**. Do not start Pass 3, 8.6.1 CI, or 9.1. |
+| 2026-08-20 | **Step 8.4 inserted** (docs only). [`V1-Pass-2-Follow-On-Plan.md`](V1-Pass-2-Follow-On-Plan.md) **NEXT = P1**. Pass 2 closed early (Modded greenfield + join). Step **8.5.2** paused until P13; then Pass 3. Pack replace (full re-setup) pulled into v1. Do not start Pass 3, 8.6.1 CI, or 9.1. |
 | 2026-08-20 | **Step 4.13 R4 DONE.** Setup mis-declaration warning + optional GitHub Layer 1 refresh + Guide. **R1–R4 complete.** Living **NEXT = Step 8.5.2**. Do not start Pass 2 until the operator says so. Do not start 8.6.1 or 9.1. |
 | 2026-08-20 | **Step 4.13 R3 DONE.** Manual / jar-root / CF-with-jars use the CF exclude list; jar-root installs to `mods/`; mixed CF still hard-blocks. Living **NEXT = R4**. Pass 2 still paused. Do not start 8.5.2, 8.6.1, or 9.1. |
 | 2026-08-20 | **Step 4.13 R2 DONE.** `.mrpack` analyze/install applies itzg lists; mixed embedded+URL; override jars filtered. Living **NEXT = R3**. Pass 2 still paused. Do not start 8.5.2, 8.6.1, or 9.1. |

@@ -58,7 +58,7 @@
         }
 
         <p class="mcm-spend-brake-footnote">
-            After unlock, idle shutdown and daily/monthly free-hour limits still apply. Start will refuse if those gates are exhausted.
+            This only clears the lock. Use Start on the top bar when you are ready. Idle shutdown and daily/monthly free-hour limits still apply.
         </p>
 
         <div class="mcm-spend-brake-actions">
@@ -73,10 +73,10 @@
             }
             <button type="button"
                     class="mcm-action-btn mcm-action-btn-start"
-                    disabled="@(!Vm.CanConfirmSpendBrakeStart)"
-                    @onclick="Vm.ConfirmSpendBrakeStartAsync">
-                <i class="ti ti-player-play" aria-hidden="true"></i>
-                Start Server
+                    disabled="@(!Vm.CanConfirmSpendBrakeUnlock)"
+                    @onclick="Vm.ConfirmSpendBrakeUnlockAsync">
+                <i class="ti ti-lock-open" aria-hidden="true"></i>
+                Clear lock
             </button>
         </div>
     </div>

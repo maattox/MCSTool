@@ -51,6 +51,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private bool _hasInitialStatus;
     private bool _powerActionInFlight;
     private PowerActionKind _powerAction = PowerActionKind.None;
+    private bool _playersPollInFlight;
 
     public string Title { get; } = "mc manager";
 
@@ -64,7 +65,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private string _playIp = Placeholder;
 
     [ObservableProperty]
-    private string _playersDisplay = Placeholder;
+    private string _playersDisplay = "0";
 
     [ObservableProperty]
     private string _copyPlayIpLabel = "copy";
@@ -148,11 +149,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private string _pinRolloverHelp = AlwaysOnCapableCopy.PinRolloverHelp(false);
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(CanConfirmSpendBrakeStart))]
+    [NotifyPropertyChangedFor(nameof(CanConfirmSpendBrakeUnlock))]
     private string _spendBrakeTypedConfirm = "";
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(CanConfirmSpendBrakeStart))]
+    [NotifyPropertyChangedFor(nameof(CanConfirmSpendBrakeUnlock))]
     private bool _spendBrakeUnlockInFlight;
 
     [ObservableProperty]
@@ -161,7 +162,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public bool SpendBrakeOverlayVisible =>
         _spendBrakeUi == SpendBrakeUiState.Locked;
 
-    public bool CanConfirmSpendBrakeStart =>
+    public bool CanConfirmSpendBrakeUnlock =>
         SpendBrakeOverlayVisible
         && !SpendBrakeUnlockInFlight
         && SpendBrakeLockUx.MatchesConfirmation(SpendBrakeTypedConfirm);
@@ -210,16 +211,18 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 return "Wait — a start, stop, or restart is already in progress.";
             if (!ConfigLoaded)
                 return "Local config is missing or failed to load.";
-            if (Vm1IsRunning
+            if (ManagePowerUx.IsVm1Running(Vm1Lifecycle)
                 || string.Equals(DoorState, "PLAYABLE", StringComparison.OrdinalIgnoreCase))
                 return "The server is already on. Use Stop or Restart.";
-            if (Vm1IsComingUp
+            if (ManagePowerUx.IsVm1ComingUp(Vm1Lifecycle)
                 || string.Equals(DoorState, "STARTING", StringComparison.OrdinalIgnoreCase))
                 return "Already starting. Wait until status is Running.";
             if (_spendBrakeUi == SpendBrakeUiState.Locked)
-                return "The monthly spend brake is on. Confirm in the warning to start.";
+                return "The monthly spend brake is on. Confirm in the warning to unlock, then use Start.";
             if (_spendBrakeUi == SpendBrakeUiState.Unknown)
                 return "Can't start: spend-brake lock status is unknown. Check Object Storage, then try Start again.";
+            if (!ManagePowerUx.LifecycleAllowsStart(Vm1Lifecycle))
+                return ManagePowerUx.WaitUntilFullyStoppedToolTip;
             if (DoorState is Placeholder or "unreachable")
                 return "Can't start: the wake service is unreachable. Try Troubleshooting if this lasts.";
             return "Start is unavailable right now.";
@@ -329,7 +332,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         {
             Status = Placeholder;
             StatusIsRunning = false;
-            PlayersDisplay = Placeholder;
+            PlayersDisplay = MinecraftConsoleRemote.FormatPlayersPin(false, null, null);
             Vm1Lifecycle = Placeholder;
             DoorState = Placeholder;
         }
@@ -355,7 +358,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         {
             Status = "Stopped";
             StatusIsRunning = false;
-            PlayersDisplay = Placeholder;
+            PlayersDisplay = MinecraftConsoleRemote.FormatPlayersPin(false, null, null);
             ShowToast(_configHost.LoadResult.Error ?? "Local config failed to load.", isError: true);
             return;
         }
@@ -419,13 +422,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// Overlay Start Server: park doorbell, DELETE the lock, refresh door OS cache,
-    /// then the admin Wake path (daily gate does not apply; spend-brake still blocks
-    /// until this overlay clears it).
+    /// Overlay confirm: park doorbell, DELETE the lock, refresh door OS cache.
+    /// Does not wake VM1 — the admin uses top-bar Start.
     /// </summary>
-    public async Task ConfirmSpendBrakeStartAsync()
+    public async Task ConfirmSpendBrakeUnlockAsync()
     {
-        if (!CanConfirmSpendBrakeStart || _spendBrake is null)
+        if (!CanConfirmSpendBrakeUnlock || _spendBrake is null)
             return;
 
         SpendBrakeUnlockInFlight = true;
@@ -455,7 +457,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             if (!cleared.Succeeded)
             {
                 SpendBrakeUnlockStatus = cleared.Error
-                    ?? "Could not delete the spend-brake lock. The server was not started.";
+                    ?? "Could not delete the spend-brake lock. The lock was not cleared.";
                 ShowToast(SpendBrakeUnlockStatus, isError: true);
                 return;
             }
@@ -469,28 +471,19 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 ShowToast(
                     "Lock cleared, but the doorbell cache refresh failed. Try Troubleshooting → Refresh OS budget, then Start.",
                     isError: true);
+                SpendBrakeUnlockStatus =
+                    "Lock cleared. Use Start on the top bar when you are ready (doorbell cache refresh failed).";
+                return;
             }
 
-            SpendBrakeUnlockStatus = "";
+            SpendBrakeUnlockStatus = "Lock cleared. Use Start on the top bar when you are ready.";
+            ShowToast(SpendBrakeUnlockStatus, isError: false);
         }
         finally
         {
             SpendBrakeUnlockInFlight = false;
             UpdateCommandFlags();
         }
-
-        if (_spendBrakeUi != SpendBrakeUiState.Unlocked)
-            return;
-
-        if (_door is null)
-        {
-            ShowToast(
-                "Lock cleared. The wake service client is unavailable — use Start when the doorbell is reachable.",
-                isError: true);
-            return;
-        }
-
-        await WakeGameServerAsync();
     }
 
     public async Task CopySpendBrakeConfirmationAsync()
@@ -813,6 +806,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         ApplyNoviceStatus(doorStatus);
         _hasInitialStatus = true;
         UpdateCommandFlags(doorStatus);
+        if (StatusIsRunning && ManagePowerUx.IsVm1Running(Vm1Lifecycle) && forceDoor)
+            await RefreshPlayersPinAsync();
     }
 
     private void ApplyNoviceStatus(DoorStatus? door)
@@ -826,22 +821,32 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         StatusIsRunning = door?.IsPlayable == true;
         Status = StatusIsRunning ? "Running" : "Stopped";
         if (!StatusIsRunning)
-            PlayersDisplay = Placeholder;
+            PlayersDisplay = MinecraftConsoleRemote.FormatPlayersPin(false, null, null);
     }
 
     private void UpdateCommandFlags(DoorStatus? door = null)
     {
         door ??= CachedDoorStatus();
 
-        var allowPower = _hasInitialStatus && !_powerActionInFlight && !SpendBrakeUnlockInFlight;
         var spendBrakeBlocks = _spendBrakeUi is SpendBrakeUiState.Locked or SpendBrakeUiState.Unknown;
-        var degraded = door?.IsDegraded == true;
-        var alreadyOn = !degraded && (Vm1IsRunning || door?.IsPlayable == true);
-        var starting = !degraded && (Vm1IsComingUp || door?.IsStarting == true);
+        CanStart = ManagePowerUx.CanStart(
+            _hasInitialStatus,
+            _powerActionInFlight,
+            SpendBrakeUnlockInFlight,
+            ConfigLoaded,
+            Vm1Lifecycle,
+            door?.IsPlayable == true,
+            door?.IsStarting == true,
+            door?.IsDegraded == true,
+            spendBrakeBlocks,
+            door is not null);
 
-        CanStart = allowPower && door is not null && !alreadyOn && !starting && !spendBrakeBlocks;
+        var allowPower = _hasInitialStatus && !_powerActionInFlight && !SpendBrakeUnlockInFlight;
+        var degraded = door?.IsDegraded == true;
+        var alreadyOn = !degraded && (ManagePowerUx.IsVm1Running(Vm1Lifecycle) || door?.IsPlayable == true);
+        var starting = !degraded && (ManagePowerUx.IsVm1ComingUp(Vm1Lifecycle) || door?.IsStarting == true);
         CanStop = allowPower && (alreadyOn || starting || degraded);
-        CanRestart = allowPower && Vm1IsRunning;
+        CanRestart = allowPower && ManagePowerUx.IsVm1Running(Vm1Lifecycle);
         NotifyPowerTooltips();
     }
 
@@ -850,15 +855,31 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             ? null
             : new DoorStatus { Door = DoorState };
 
-    private bool Vm1IsRunning =>
-        string.Equals(Vm1Lifecycle, "RUNNING", StringComparison.OrdinalIgnoreCase);
-
-    private bool Vm1IsComingUp
+    private async Task RefreshPlayersPinAsync()
     {
-        get
+        if (_config is null || _playersPollInFlight || !StatusIsRunning
+            || !ManagePowerUx.IsVm1Running(Vm1Lifecycle))
+            return;
+
+        _playersPollInFlight = true;
+        try
         {
-            var life = (Vm1Lifecycle ?? "").ToUpperInvariant();
-            return life is "STARTING" or "PROVISIONING";
+            var run = await _ssh.SendMinecraftRconAsync(_config.Vm1, "list");
+            if (!StatusIsRunning)
+                return;
+
+            if (!run.Succeeded
+                || !MinecraftConsoleRemote.TryParsePlayerList(run.Output, out var online, out var max))
+            {
+                PlayersDisplay = MinecraftConsoleRemote.FormatPlayersPin(true, null, null);
+                return;
+            }
+
+            PlayersDisplay = MinecraftConsoleRemote.FormatPlayersPin(true, online, max);
+        }
+        finally
+        {
+            _playersPollInFlight = false;
         }
     }
 
@@ -889,7 +910,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             _ => Status
         };
         if (!StatusIsRunning)
-            PlayersDisplay = Placeholder;
+            PlayersDisplay = MinecraftConsoleRemote.FormatPlayersPin(false, null, null);
     }
 
     private void NotifyPowerTooltips()
@@ -921,7 +942,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             return;
         _spendBrakeUi = state;
         OnPropertyChanged(nameof(SpendBrakeOverlayVisible));
-        OnPropertyChanged(nameof(CanConfirmSpendBrakeStart));
+        OnPropertyChanged(nameof(CanConfirmSpendBrakeUnlock));
         NotifyPowerTooltips();
     }
 

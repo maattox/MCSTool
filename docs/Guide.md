@@ -16,7 +16,7 @@ Oracle still requires a **Pay As You Go (PAYG)** account for Ampere A1 capacity 
 
 **Last-resort $1 brake:** Setup creates a **$1 monthly compartment budget**. If actual spend ever reaches $1, an Oracle Function **SoftStops the Minecraft computer** and writes a lock flag in Object Storage. The small always-on doorbell stays running (it is an Always Free AMD Micro and does not use Ampere hours). That Function is not instant. Oracle bills when spend hits $1, and the Function can take several minutes, so you may see a **~$1–$2** charge **for that month**, then **no further charges** while the brake holds. This is **not** a perfect $0 guarantee.
 
-If that brake fires, friends who ping the play IP see a **MONTHLY SPEND BRAKE FIRED** message (not the daily budget one). Wait for the next calendar month, then open Manager. The app fills the window with a warning; Start stays blocked until you type the exact confirmation sentence (copy-paste is allowed). Confirming starts the doorbell if needed, parks the play IP, clears the lock, then tries a normal Start — idle and daily/monthly free-hour limits still apply. The lock is not cleared automatically at month rollover. Use **Troubleshooting** if the play IP is left on the wrong computer.
+If that brake fires, friends who ping the play IP see a **MONTHLY SPEND BRAKE FIRED** message (not the daily budget one). Wait for the next calendar month, then open Manager. The app fills the window with a warning; Start stays blocked until you type the exact confirmation sentence (copy-paste is allowed). Confirming **clears the lock** (and recovers the doorbell / play IP) but does **not** start the server — use **Start** on the top bar when you are ready. Idle and daily/monthly free-hour limits still apply. The lock is not cleared automatically at month rollover. Use **Troubleshooting** if the play IP is left on the wrong computer.
 
 Do **not** add paid shapes, extra volumes, or load balancers. Setup never opens Minecraft to the whole internet. There is no public-server toggle.
 
@@ -177,7 +177,7 @@ If a friend’s home address keeps changing but a **prefix** stays stable (for e
 
 The server is **private**. Join is allowlist-only: each friend needs an entry you Save. There is no public mode and no blacklist.
 3. Copy the **Play IP** from the top bar. Give friends that address and the Minecraft version you chose. Port is the default Minecraft port (`25565`). **Modded:** also give them the **same exported pack file** from Setup — they cannot join with vanilla Minecraft. See [Modded: friends need the client pack](#modded-friends-need-the-client-pack).
-4. Click **Start**. Status **Running** means the game itself is joinable (Modded friends still need the pack installed first). **Stopped** means they should wait or click Start again — first wake can take several minutes.
+4. Click **Start** (enabled only after the Minecraft VM is fully **Stopped** — wait if it is still shutting down). Status **Running** means the game itself is joinable (Modded friends still need the pack installed first). **Stopped** means they should wait or click Start again — first wake can take several minutes. **Players** on the top bar is `0` while Stopped and the live count while Running.
 5. Friends add a server in Minecraft Java using the play IP. Modded friends must launch the matching pack (same loader and pack file), not a vanilla profile.
 
 When everyone is done, click **Stop** (doorbell-aware). If you forget, idle timeout (default **15 minutes** with nobody online, or if Minecraft is not running) SoftStops the game VM. Daily/monthly budgets can also refuse wake with a clear Minecraft kick/MOTD when the day’s hours are exhausted.
@@ -191,6 +191,7 @@ When everyone is done, click **Stop** (doorbell-aware). If you forget, idle time
 | Want | Where |
 |------|--------|
 | See if friends can join | Top bar **Status** (`Running` / `Stopped`) |
+| How many are online | Top bar **Players** (`0` when Stopped; `X / Y` while Running) |
 | Copy the address | Top bar **Play IP** |
 | Wake / park the server | **Start** / **Stop** (not raw Compute on Advanced) |
 | Restart Minecraft only | **Restart** (game VM must already be up) |

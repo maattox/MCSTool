@@ -98,6 +98,39 @@ public sealed class MinecraftConsoleRemoteTests
         Assert.Contains("There are 0", line, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("There are 0 of a max of 20 players online:", 0, 20)]
+    [InlineData("There are 1 of a max of 20 players online:", 1, 20)]
+    [InlineData("There are 1 of a max of 20 players online:\nSteve", 1, 20)]
+    [InlineData("There are 12 of a max of 40 players online", 12, 40)]
+    public void Parses_vanilla_player_list(string payload, int online, int max)
+    {
+        Assert.True(MinecraftConsoleRemote.TryParsePlayerList(payload, out var parsedOnline, out var parsedMax));
+        Assert.Equal(online, parsedOnline);
+        Assert.Equal(max, parsedMax);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("RCON authentication failed")]
+    [InlineData("There are players online")]
+    public void Player_list_parse_rejects_non_vanilla(string? payload)
+    {
+        Assert.False(MinecraftConsoleRemote.TryParsePlayerList(payload, out _, out _));
+    }
+
+    [Fact]
+    public void Players_pin_is_zero_when_stopped_and_count_when_running()
+    {
+        Assert.Equal("0", MinecraftConsoleRemote.FormatPlayersPin(false, null, null));
+        Assert.Equal("0", MinecraftConsoleRemote.FormatPlayersPin(false, 3, 20));
+        Assert.Equal("—", MinecraftConsoleRemote.FormatPlayersPin(true, null, null));
+        Assert.Equal("1 / 20", MinecraftConsoleRemote.FormatPlayersPin(true, 1, 20));
+        Assert.Equal("0 / 20", MinecraftConsoleRemote.FormatPlayersPin(true, 0, 20));
+        Assert.Equal("2", MinecraftConsoleRemote.FormatPlayersPin(true, 2, null));
+    }
+
     [Fact]
     public void Unreachable_rcon_uses_novice_copy()
     {

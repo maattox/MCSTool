@@ -1,4 +1,6 @@
+using System.Globalization;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace McManager.Core.Services;
 
@@ -40,6 +42,10 @@ public static class MinecraftConsoleRemote
 
     public const string RconUnreachableHint =
         "Could not reach Minecraft. Is the server Running?";
+
+    private static readonly Regex VanillaPlayerList = new(
+        @"There are (\d+) of a max of (\d+) players online",
+        RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
     /// <summary>
     /// One-shot Python: auth with the on-box secret, send one command to localhost RCON.
@@ -157,6 +163,44 @@ public static class MinecraftConsoleRemote
         if (string.IsNullOrEmpty(body))
             return "> " + command;
         return "> " + command + Environment.NewLine + body;
+    }
+
+    /// <summary>
+    /// Parse vanilla / Fabric <c>list</c> RCON text. Does not read the RCON secret.
+    /// </summary>
+    public static bool TryParsePlayerList(string? rconPayload, out int online, out int? max)
+    {
+        online = 0;
+        max = null;
+        if (string.IsNullOrWhiteSpace(rconPayload))
+            return false;
+
+        var match = VanillaPlayerList.Match(rconPayload);
+        if (!match.Success)
+            return false;
+
+        if (!int.TryParse(match.Groups[1].Value, NumberStyles.None, CultureInfo.InvariantCulture, out online))
+            return false;
+        if (int.TryParse(match.Groups[2].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var parsedMax))
+            max = parsedMax;
+        return true;
+    }
+
+    /// <summary>
+    /// Players pin: <c>0</c> when Stopped; <c>X / Y</c> (or <c>X</c>) while Running;
+    /// <c>—</c> when Running but the count is unknown.
+    /// </summary>
+    public static string FormatPlayersPin(bool statusIsRunning, int? online, int? max)
+    {
+        if (!statusIsRunning)
+            return "0";
+        if (online is null)
+            return "—";
+        if (max is > 0)
+            return online.Value.ToString(CultureInfo.InvariantCulture)
+                + " / "
+                + max.Value.ToString(CultureInfo.InvariantCulture);
+        return online.Value.ToString(CultureInfo.InvariantCulture);
     }
 
     public static string OperatorHintFromRcon(SshExecResult run)

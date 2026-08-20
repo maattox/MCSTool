@@ -1,7 +1,7 @@
 # V1 QA Pass 2 — scope (greenfield + modded)
 
 **Pass:** 2  
-**Status:** **READY** — Step **4.13** / R4 is **DONE**. Do **not** run Phase A or `tofu destroy` until the operator says Pass 2 may start. Living execution slice of [Step 8.5.2](V1-Implementation-Plan.md#step-852--execute-qa-passes). Docs created 2026-08-19.  
+**Status:** **CLOSED EARLY** (2026-08-20) — Phase A greenfield Modded + join + Modding panel recorded. Phase B–D **not run**. No Pass 2 bug-fix plan. Living execution is [Step 8.4](V1-Implementation-Plan.md#step-84--pass-2-follow-on-operator-notes) ([`V1-Pass-2-Follow-On-Plan.md`](V1-Pass-2-Follow-On-Plan.md)). Pass 3: [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) (**blocked** until 8.4 exits). Do **not** run this file’s phases.  
 **Catalog:** [`V1-QA-Catalog.md`](V1-QA-Catalog.md) — IDs and expected steps stay there. Do **not** regenerate the catalog.  
 **Results:** fill [`V1-QA-Pass-2-Results.md`](V1-QA-Pass-2-Results.md) as you go.  
 **Prior pass:** [`V1-QA-Pass-1-Results.md`](V1-QA-Pass-1-Results.md) (Vanilla on the **existing** TESTING stack; **S7-04 Skipped**). Bug-fix [`V1-Bug-Fix-Plan-Pass-1.md`](V1-Bug-Fix-Plan-Pass-1.md) **P1–P8 DONE**.
@@ -52,7 +52,7 @@ This file + the named catalog IDs + [`Guide.md`](Guide.md) **Tear down and redep
 | **C** | Hybrid delta (Pass 1 Fail retests + modded join) | TODO — after B |
 | **D** | Remaining operator UI / play-path in-scope IDs | TODO — after C |
 
-**NEXT = Phase A.** Step **4.13** has exited. Do not start until the operator says Pass 2 may run. Stop after each phase unless the operator says continue.
+**NEXT = none (this pass closed).** Do not start Phase A. Follow-on work is Step **8.4**. Pass 3 waits for that plan.
 
 ---
 

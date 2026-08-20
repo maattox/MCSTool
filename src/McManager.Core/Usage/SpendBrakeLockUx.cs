@@ -9,8 +9,15 @@ namespace McManager.Core.Usage;
 public static class SpendBrakeLockUx
 {
     /// <summary>
-    /// Exact sentence the admin must type before Manager will clear the lock and Start.
-    /// Do not rephrase.
+    /// Overlay typed confirm parks the play IP, DELETEs the lock, and refreshes the
+    /// doorbell OS cache. It does not Start / wake VM1 — the admin uses top-bar Start
+    /// after the overlay dismisses.
+    /// </summary>
+    public const bool OverlayConfirmStartsServer = false;
+
+    /// <summary>
+    /// Exact sentence the admin must type before Manager will clear the lock.
+    /// Do not rephrase. Clearing the lock does not Start the server.
     /// </summary>
     public const string ConfirmationSentence =
         "I confirm that we have entered a new calendar month and that my free monthly usage limits have been reset. I understand that if I ignore these warnings and turn on my server before a new month has started, the card I created my Oracle Cloud account with will automatically be charged for the excess usage.";

@@ -1,6 +1,6 @@
 # V1 modpack robustness — exclude lists + mixed archives
 
-**Status:** Living. Created 2026-08-20 (docs only). **R1–R4 DONE.** V1 **NEXT = Step 8.5.2** (do not start Pass 2 until the operator says so).  
+**Status:** Complete (R1–R4 **DONE** 2026-08-20). Historical NEXT after this plan was Step **8.5.2**; living V1 **NEXT** is now Step **8.4** / follow-on **P1**.  
 **Parent:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **4.13**.  
 **Why now:** operator 2026-08-20 — do this **before** QA Pass 2 (Step **8.5.2**) so Modded greenfield is not tested twice.  
 **Design SoT:** blueprint **§24.3** (Layers 1–2 this plan; Layer 3 **parked**), **§22.1** (trust `env.server` then override), **§23.3** (CurseForge has no side field).

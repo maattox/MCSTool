@@ -53,6 +53,12 @@ public sealed class SpendBrakeLockUxTests
     }
 
     [Fact]
+    public void Overlay_confirm_does_not_start_the_server()
+    {
+        Assert.False(SpendBrakeLockUx.OverlayConfirmStartsServer);
+    }
+
+    [Fact]
     public void Confirmation_sentence_is_the_product_freeze()
     {
         Assert.Equal(
