@@ -197,7 +197,7 @@ When everyone is done, click **Stop** (doorbell-aware). If you forget, idle time
 | Copy the address | Top bar **Play IP** |
 | Wake / park the server | **Start** / **Stop** (not raw Compute on Advanced) |
 | Restart Minecraft only | **Restart** (game VM must already be up) |
-| Hours vs budget | Pinned usage cards + **Usage** tab |
+| Hours vs budget | Pinned usage cards + **Usage** tab (expand **Detailed usage** for hours by UTC day this month; closed by default) |
 | World zip download / replace / wipe | **Server Management** (Object Storage; ~9.5 GB backup soft cap; SSH live copy if the world is too large) |
 | Inspect mods / re-download imported pack | **Server Management** → **Modding** (original Setup file on this PC; not a zip of server mods) |
 | Name, icon, description, idle chat lines | **Server Management** → **Name, icon, and messages** (plain text; Restart Minecraft to apply) |

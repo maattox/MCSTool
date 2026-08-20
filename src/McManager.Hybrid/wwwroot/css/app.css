@@ -2055,6 +2055,83 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     text-align: right;
 }
 
+.mcm-usage-day-details {
+    background: var(--surface-2);
+    border: 0.5px solid var(--border);
+    border-radius: 12px;
+    padding: 0.75rem 1rem 1rem;
+}
+
+.mcm-usage-day-details > summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px 10px;
+    user-select: none;
+}
+
+.mcm-usage-day-details > summary::-webkit-details-marker {
+    display: none;
+}
+
+.mcm-usage-day-details > summary::before {
+    content: "▸";
+    display: inline-block;
+    margin-right: 2px;
+    color: var(--text-muted);
+    transition: transform 0.15s ease;
+}
+
+.mcm-usage-day-details[open] > summary::before {
+    transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mcm-usage-day-details > summary::before {
+        transition: none;
+    }
+}
+
+.mcm-usage-day-details-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.mcm-usage-day-details-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.mcm-usage-day-details-empty {
+    margin: 10px 0 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.mcm-usage-day-details .mcm-usage-table {
+    margin-top: 12px;
+}
+
+.mcm-usage-table tr.is-today td {
+    font-weight: 600;
+}
+
+.mcm-usage-still-on {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--text-success);
+    background: color-mix(in srgb, var(--text-success) 14%, transparent);
+    vertical-align: middle;
+}
+
 .mcm-usage {
     display: flex;
     flex-direction: column;

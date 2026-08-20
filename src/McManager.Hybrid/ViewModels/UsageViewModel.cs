@@ -142,6 +142,9 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private string _rolloverHelp = AlwaysOnCapableCopy.PinRolloverHelp(false);
 
+    [ObservableProperty]
+    private IReadOnlyList<UsageDayDisplayRow> _dayRows = [];
+
     public bool HasObjectStorage => _store is not null;
 
     public bool CanPublish => HasPendingChanges && !IsBusy && HasObjectStorage;
@@ -387,7 +390,32 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
         RolloverHoursValue = $"{(rolloverHours >= 0 ? "+" : "")}{rolloverHours:F1}h";
         RolloverHoursPositive = rolloverHours > 0.05;
         RolloverHelp = AlwaysOnCapableCopy.PinRolloverHelp(alwaysOn);
+        DayRows = BuildDayRows(report);
         CopyPins(PinnedUsageSnapshot.FromReport(report, shape));
+    }
+
+    private static IReadOnlyList<UsageDayDisplayRow> BuildDayRows(BudgetReport report)
+    {
+        if (report.Days.Count == 0)
+            return [];
+
+        var today = new DateOnly(report.Year, report.Month, report.DayOfMonth);
+        var rows = new List<UsageDayDisplayRow>(report.Days.Count);
+        foreach (var day in report.Days)
+        {
+            var isToday = day.Day == today;
+            rows.Add(new UsageDayDisplayRow
+            {
+                DateLabel = isToday
+                    ? "Today"
+                    : day.Day.ToString("d MMM", System.Globalization.CultureInfo.InvariantCulture),
+                HoursValue = $"{day.UptimeHours:F1}h",
+                IsToday = isToday,
+                StillRunning = day.StillRunning,
+            });
+        }
+
+        return rows;
     }
 
     private void CopyPins(PinnedUsageSnapshot snap)

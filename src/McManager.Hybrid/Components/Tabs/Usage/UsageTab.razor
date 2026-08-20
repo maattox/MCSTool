@@ -50,6 +50,43 @@
         </div>
     </div>
 
+    <details class="mcm-usage-day-details" open="@_detailedUsageOpen" @ontoggle="OnDetailedUsageToggled">
+        <summary>
+            <span class="mcm-usage-day-details-title">Detailed usage</span>
+            <span class="mcm-usage-day-details-hint">Hours by UTC day this month</span>
+        </summary>
+        @if (Vm.DayRows.Count == 0)
+        {
+            <p class="mcm-usage-day-details-empty">No day breakdown yet — refresh to load hours.</p>
+        }
+        else
+        {
+            <table class="mcm-usage-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Day (UTC)</th>
+                        <th scope="col">Hours on</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in Vm.DayRows)
+                    {
+                        <tr class="@(row.IsToday ? "is-today" : null)">
+                            <td>@row.DateLabel</td>
+                            <td>
+                                <span>@row.HoursValue</span>
+                                @if (row.StillRunning)
+                                {
+                                    <span class="mcm-usage-still-on">Still on</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </details>
+
     <div class="mcm-section-card">
         <div class="mcm-usage-fieldset-title">Cloud details</div>
         <p class="mcm-usage-fieldset-hint">
@@ -218,6 +255,8 @@
 </div>
 
 @code {
+    private bool _detailedUsageOpen;
+
     protected override void OnInitialized()
     {
         Vm.PropertyChanged += OnVmChanged;
@@ -232,4 +271,7 @@
 
     private void OnVmChanged(object? sender, PropertyChangedEventArgs e) =>
         _ = InvokeAsync(StateHasChanged);
+
+    private void OnDetailedUsageToggled() =>
+        _detailedUsageOpen = !_detailedUsageOpen;
 }

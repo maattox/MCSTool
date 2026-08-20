@@ -25,6 +25,9 @@ public sealed class BudgetReport
     public int DayOfMonth { get; init; }
     public double AvgHoursPerDay { get; init; }
 
+    /// <summary>UTC days from the 1st through today in the report month.</summary>
+    public IReadOnlyList<UsageDayRow> Days { get; init; } = [];
+
     public string FormatTodayBar() =>
         $"{TodayOcpu:F1}/{DailyOcpuAllowance:F1} OCPU-h";
 }

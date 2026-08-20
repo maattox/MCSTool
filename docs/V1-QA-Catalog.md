@@ -741,9 +741,9 @@ For each: click the path, then Result Pass or Fail with what you saw.
 
 **Runner:** `operator` · **Duration:** `quick`
 
-**Steps:** Refresh. Pinned cards vs tab. 2/12 vs 4/24 copy: smaller shape calmer; 4/24 remaining-hours language. Publish/save if you change budgets — ETag conflict should tell you to refresh, not silently overwrite.
+**Steps:** Refresh. Pinned cards vs tab. Expand **Detailed usage** (closed by default): one row per UTC day through today; day hours should match the month/today heroes well enough to trust. **Still on** appears on today when the server is running. 2/12 vs 4/24 copy: smaller shape calmer; 4/24 remaining-hours language. Publish/save if you change budgets — ETag conflict should tell you to refresh, not silently overwrite.
 
-**Expected:** Hours display; no paid-mode UI.
+**Expected:** Hours display; no paid-mode UI; detailed day table matches heroes.
 
 ### S4-10 — Server Management backups
 

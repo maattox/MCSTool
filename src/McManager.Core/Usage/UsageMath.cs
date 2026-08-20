@@ -41,6 +41,7 @@ public static class UsageMath
         var leftoverOcpu = rows.Take(Math.Max(0, rows.Count - 1)).Sum(r => r.LeftoverOcpuContrib);
         var leftoverGb = rows.Take(Math.Max(0, rows.Count - 1)).Sum(r => r.LeftoverGbContrib);
         var dayOfMonth = now.Day;
+        var dayRows = ToUsageDayRows(rows, ledger, now);
 
         return new BudgetReport
         {
@@ -66,7 +67,48 @@ public static class UsageMath
             HitSoftCap = monthOcpu >= softOcpuCap || monthGb >= softGbCap,
             DayOfMonth = dayOfMonth,
             AvgHoursPerDay = monthUptime / Math.Max(1, dayOfMonth),
+            Days = dayRows,
         };
+    }
+
+    private static List<UsageDayRow> ToUsageDayRows(
+        List<DayRow> rows,
+        UsageLedgerDocument ledger,
+        DateTime nowUtc)
+    {
+        var result = new List<UsageDayRow>(rows.Count);
+        foreach (var row in rows)
+            result.Add(new UsageDayRow
+            {
+                Day = row.Day,
+                UptimeHours = row.UptimeHours,
+                StillRunning = DayHasOpenInterval(ledger, row.Day, nowUtc),
+            });
+        return result;
+    }
+
+    private static bool DayHasOpenInterval(
+        UsageLedgerDocument ledger,
+        DateOnly day,
+        DateTime nowUtc)
+    {
+        var windowStart = day.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+        var windowEnd = day.AddDays(1).ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+        foreach (var item in ledger.Intervals)
+        {
+            if (!string.IsNullOrWhiteSpace(item.StoppedAt))
+                continue;
+            var parsedStart = ParseIso(item.StartedAt);
+            if (parsedStart is null)
+                continue;
+            var end = nowUtc;
+            var start = parsedStart.Value > windowStart ? parsedStart.Value : windowStart;
+            end = end < windowEnd ? end : windowEnd;
+            if (end > start)
+                return true;
+        }
+
+        return false;
     }
 
     private static List<DayRow> MonthDayRows(

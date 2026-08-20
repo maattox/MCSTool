@@ -1,6 +1,6 @@
 # V1 Pass-2 follow-on — operator notes (living)
 
-**Status:** Living. Created 2026-08-20 (docs only). **NEXT = P8.**  
+**Status:** Living. Created 2026-08-20 (docs only). **NEXT = P9.**  
 **Parent:** `[V1-Implementation-Plan.md](V1-Implementation-Plan.md)` Step **8.4**.  
 **Why now:** operator 2026-08-20 — Pass 2 closed early after greenfield Modded + join + Modding panel. Pause Step **8.5.2** and implement these notes **before** QA Pass 3.
 
@@ -126,8 +126,8 @@ Do **not** rewrite PRODUCT-IDEAS to match. Note the drift in the implementing se
 | **P5**  | “game computer” → “server” (Setup + Manager + Guide)            | **DONE** | SEQUENTIAL                 | No                 |
 | **P6**  | Console simple vs full log                                      | **DONE** | SEQUENTIAL                 | Yes (optional)     |
 | **P7**  | Per-tab vertical scroll memory                                  | **DONE** | SEQUENTIAL                 | No                 |
-| **P8**  | Usage by day (collapsed “Detailed usage”)                       | **NEXT** | SEQUENTIAL                 | No                 |
-| **P9**  | Manual / jar-root unclear-side: continue + exclude lists        | TODO     | PARALLEL-OK vs Hybrid-only | No                 |
+| **P8**  | Usage by day (collapsed “Detailed usage”)                       | **DONE** | SEQUENTIAL                 | No                 |
+| **P9**  | Manual / jar-root unclear-side: continue + exclude lists        | **NEXT** | PARALLEL-OK vs Hybrid-only | No                 |
 | **P10** | Pack replace — on-box full re-setup                             | TODO     | SEQUENTIAL                 | Yes                |
 | **P11** | Pack replace — Server Management UI                             | TODO     | SEQUENTIAL                 | Yes                |
 | **P12** | TESTING spend-brake Function fill-in (Docker)                   | TODO     | SEQUENTIAL (owns stack)    | Yes                |
@@ -367,7 +367,7 @@ Do **not** keep one scrollbar on the shared `main` that all tabs share. Saving `
 
 ## P8 — Usage by day (collapsed)
 
-**Status:** NEXT  
+**Status:** DONE  
 **Catalog IDs:** S4-09
 
 **Read first**
@@ -391,7 +391,7 @@ Inside: hours **by UTC day** for the current month, readable for a novice (one r
 
 **Done when:** Guide Usage paragraph mentions the expander.
 
-**Changelog:** *(empty)*
+**Changelog:** 2026-08-20 — Collapsed **Detailed usage** expander on Usage tab: UTC days through today, wall-clock hours, **Still on** when an open interval overlaps today. Core `UsageDayRow` + `BudgetReport.Days`; `UsageMathTests`. Catalog S4-09 expected updated. Guide one-liner.
 
 ---
 
@@ -584,6 +584,7 @@ Derive OCIR username from namespace + OCI user **if that is a small change**; ot
 
 | Date       | Note                                                                                                                                                                                                                  |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-20 | **P8 DONE.** Usage **Detailed usage** expander (UTC days, closed by default). **NEXT = P9.** Do not start Pass 3, 8.6.1, or 9.1.                                                                                      |
 | 2026-08-20 | **P7 DONE.** Per-tab vertical scroll memory on tab switch. **NEXT = P8.** Do not start Pass 3, 8.6.1, or 9.1.                                                                                                          |
 | 2026-08-20 | **P6 DONE.** Console Simple vs Full log toggle; RCON plumbing hidden in Simple. **NEXT = P7.** Do not start Pass 3, 8.6.1, or 9.1.                                                                                     |
 | 2026-08-20 | **P5 DONE.** “game computer” → “server” (Setup + Manager + Guide). **NEXT = P6.** Do not start Pass 3, 8.6.1, or 9.1.                                                                                                 |
