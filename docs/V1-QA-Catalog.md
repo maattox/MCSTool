@@ -717,7 +717,7 @@ For each: click the path, then Result Pass or Fail with what you saw.
 
 **Steps:** Open Whitelist, Usage, Server Management, Console, Troubleshooting, Advanced. There is no separate **Danger Zone** tab.
 
-**Expected:** Idle **enable/disable**, idle **timeout**, shape scale, and **Delete infrastructure** are under the **Advanced → Danger Zone** heading (typed-`confirm` still required for Delete). Troubleshooting is its own tab.
+**Expected:** Idle **enable/disable**, idle **timeout**, shape scale, and **Delete infrastructure** are under the **Advanced → Danger Zone** heading (typed-`confirm` still required for Delete). Troubleshooting is its own tab. Each tab remembers its vertical scroll when you switch away and back; unopened tabs start at the top.
 
 ### S4-03 — Whitelist add /32
 

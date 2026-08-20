@@ -8,6 +8,7 @@
 @inject ChromeViewModel Chrome
 @inject NotificationCenterViewModel Notices
 @inject ActionBannerViewModel Banner
+@inject IJSRuntime JS
 @implements IDisposable
 
 <div class="mcm-app mcm-app-manage">
@@ -265,47 +266,49 @@
                 role="tab"
                 class="mcm-tab @TabClass("whitelist")"
                 aria-selected="@(IsTab("whitelist") ? "true" : "false")"
-                @onclick="@(() => SelectTab("whitelist"))">
+                @onclick="@(() => SelectTabAsync("whitelist"))">
             Whitelist
         </button>
         <button type="button"
                 role="tab"
                 class="mcm-tab @TabClass("usage")"
                 aria-selected="@(IsTab("usage") ? "true" : "false")"
-                @onclick="@(() => SelectTab("usage"))">
+                @onclick="@(() => SelectTabAsync("usage"))">
             Usage
         </button>
         <button type="button"
                 role="tab"
                 class="mcm-tab @TabClass("server")"
                 aria-selected="@(IsTab("server") ? "true" : "false")"
-                @onclick="@(() => SelectTab("server"))">
+                @onclick="@(() => SelectTabAsync("server"))">
             Server Management
         </button>
         <button type="button"
                 role="tab"
                 class="mcm-tab @TabClass("console")"
                 aria-selected="@(IsTab("console") ? "true" : "false")"
-                @onclick="@(() => SelectTab("console"))">
+                @onclick="@(() => SelectTabAsync("console"))">
             Console
         </button>
         <button type="button"
                 role="tab"
                 class="mcm-tab @TabClass("advanced")"
                 aria-selected="@(IsTab("advanced") ? "true" : "false")"
-                @onclick="@(() => SelectTab("advanced"))">
+                @onclick="@(() => SelectTabAsync("advanced"))">
             Advanced
         </button>
         <button type="button"
                 role="tab"
                 class="mcm-tab @TabClass("troubleshooting")"
                 aria-selected="@(IsTab("troubleshooting") ? "true" : "false")"
-                @onclick="@(() => SelectTab("troubleshooting"))">
+                @onclick="@(() => SelectTabAsync("troubleshooting"))">
             Troubleshooting
         </button>
     </nav>
 
-    <main class="mcm-tab-body mcm-slim-scroll @(IsTab("console") ? "is-console" : null)" role="tabpanel">
+    <main @ref="_tabBody"
+          class="mcm-tab-body mcm-slim-scroll @(IsTab("console") ? "is-console" : null)"
+          role="tabpanel">
         <div class="mcm-tab-body-inner">
             @switch (_tab)
             {
@@ -461,7 +464,10 @@
     private string _tab = "whitelist";
     private ElementReference _chromeOverlay;
     private ElementReference _noticePanel;
+    private ElementReference _tabBody;
     private bool _noticeFocusPending;
+    private bool _tabScrollRestorePending;
+    private readonly Dictionary<string, double> _tabScrollPositions = new(StringComparer.Ordinal);
 
     protected override void OnInitialized()
     {
@@ -476,6 +482,13 @@
     {
         try
         {
+            if (_tabScrollRestorePending)
+            {
+                _tabScrollRestorePending = false;
+                var top = _tabScrollPositions.TryGetValue(_tab, out var saved) ? saved : 0;
+                await JS.InvokeVoidAsync("mcmTabScroll.set", _tabBody, top);
+            }
+
             if (Chrome.SettingsOpen || Chrome.AboutOpen)
             {
                 await _chromeOverlay.FocusAsync();
@@ -489,6 +502,10 @@
         catch (InvalidOperationException)
         {
             // Element not in the tree yet.
+        }
+        catch (JSException)
+        {
+            // Helper missing in a test host.
         }
     }
 
@@ -541,7 +558,28 @@
     private void OnVmChanged(object? sender, PropertyChangedEventArgs e) =>
         _ = InvokeAsync(StateHasChanged);
 
-    private void SelectTab(string tab) => _tab = tab;
+    private async Task SelectTabAsync(string tab)
+    {
+        if (IsTab(tab))
+            return;
+
+        try
+        {
+            var scrollTop = await JS.InvokeAsync<double>("mcmTabScroll.get", _tabBody);
+            _tabScrollPositions[_tab] = scrollTop;
+        }
+        catch (InvalidOperationException)
+        {
+            // WebView not ready.
+        }
+        catch (JSException)
+        {
+            // Helper missing in a test host.
+        }
+
+        _tab = tab;
+        _tabScrollRestorePending = true;
+    }
 
     private bool IsTab(string tab) => string.Equals(_tab, tab, StringComparison.Ordinal);
 

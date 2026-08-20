@@ -42,6 +42,16 @@
                 }
             }
         };
+        window.mcmTabScroll = {
+            get: function (el) {
+                return el && typeof el.scrollTop === "number" ? el.scrollTop : 0;
+            },
+            set: function (el, top) {
+                if (el) {
+                    el.scrollTop = top || 0;
+                }
+            }
+        };
     </script>
     <div id="app">Loading...</div>
 
