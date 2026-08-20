@@ -1,6 +1,6 @@
 # V1 modpack robustness — exclude lists + mixed archives
 
-**Status:** Living. Created 2026-08-20 (docs only). **NEXT = R2**.  
+**Status:** Living. Created 2026-08-20 (docs only). **NEXT = R3**.  
 **Parent:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **4.13**.  
 **Why now:** operator 2026-08-20 — do this **before** QA Pass 2 (Step **8.5.2**) so Modded greenfield is not tested twice.  
 **Design SoT:** blueprint **§24.3** (Layers 1–2 this plan; Layer 3 **parked**), **§22.1** (trust `env.server` then override), **§23.3** (CurseForge has no side field).
@@ -30,7 +30,7 @@ This header + **one** R-section + the files listed there. Blueprint: **named §�
 ### Operator prompt (copy-paste)
 
 ```text
-Read docs/V1-Modpack-Robustness-Plan.md in OCI-mc-server. Implement only the section marked NEXT (R1 unless I named another).
+Read docs/V1-Modpack-Robustness-Plan.md in OCI-mc-server. Implement only the section marked NEXT (R3 unless I named another).
 You MAY use OCI CLI/API with profile TESTING (not DEFAULT) and SSH both test VMs with %USERPROFILE%\.ssh\mcmgr_ed25519_20260817_125552. Stay at $0. Do not tofu apply/destroy. Do not commit. Do not start Step 8.5.2, 8.6.1, or 9.1.
 This detour does not need the test VMs unless the NEXT section says so. If you do use VM1: START if STOPPED, disable idle, re-enable when finished (OS-ISSUE-7 after Minecraft start).
 When done: update this plan’s statuses and V1 plan Step 4.13, stop, tell me what you did, how to test, what’s next, and ask if I want to continue.
@@ -45,14 +45,14 @@ Phase **4.7–4.11** already import a local file (no catalog). Strip today:
 
 | Adapter | Strips | Gap |
 |---------|--------|-----|
-| `.mrpack` | `env.server == unsupported` only | Mis-tagged `required` (Fabulously Optimized, Simply Optimized, MMC3, OptiFine-for-Fabric) installs client mods. |
+| `.mrpack` | `env.server == unsupported` **and** itzg/product list (R2) | Manual / CF zip still R3. |
 | Manual / CF Server Files zip | In-jar Fabric/Quilt/Forge `environment`/`side == client` | No itzg list. Jars without metadata are **kept**. |
-| `overrides/` | Copied wholesale | Can put client jars back after an index strip. |
-| Index file with empty `downloads` | **Fails** | Mixed packs (some CDN URLs, some jars in the zip) cannot install. |
+| `overrides/` in `.mrpack` | Configs/datapacks copied; excluded **jars** skipped (R2) | Manual zip overrides still R3. |
+| Index file with empty `downloads` | Copy from the zip + hash verify (R2) | — |
 | Zip of jars at archive **root** (no `mods/`, no manifest) | Likely **refused** as unknown | [`custom-forge-1.20.1-MilesPack.zip`](Sample-Packs.md) is this shape. |
 | CurseForge client export / jar-less zip | Hard-block (P7) | Keep. Step **4.12** stays deferred. |
 
-Vendored itzg JSON (operator 2026-08-20, full files): [`docs/modrinth-exclude-include.json`](modrinth-exclude-include.json), [`docs/cf-exclude-include.json`](cf-exclude-include.json). Attribution: [`docs/itzg-exclude-include-NOTICE.txt`](itzg-exclude-include-NOTICE.txt). **R1** embeds them in Core (`ExcludeIncludeMatcher`); installers do not call them yet.
+Vendored itzg JSON (operator 2026-08-20, full files): [`docs/modrinth-exclude-include.json`](modrinth-exclude-include.json), [`docs/cf-exclude-include.json`](cf-exclude-include.json). Attribution: [`docs/itzg-exclude-include-NOTICE.txt`](itzg-exclude-include-NOTICE.txt). **R1** embeds them in Core (`ExcludeIncludeMatcher`). **R2** applies them to `.mrpack` analyze/install.
 
 ---
 
@@ -61,8 +61,8 @@ Vendored itzg JSON (operator 2026-08-20, full files): [`docs/modrinth-exclude-in
 | ID | Section | Status | Live SSH/OCI? |
 |----|---------|--------|----------------|
 | **R1** | Matcher + vendor lists (Core only) | **DONE** | No |
-| **R2** | Apply to `.mrpack` (env + list + overrides + embedded jars) | **NEXT** | No (temp dir; optional CDN) |
-| **R3** | Apply to manual / jar-root / CF-with-jars zip | TODO | No (temp dir) |
+| **R2** | Apply to `.mrpack` (env + list + overrides + embedded jars) | **DONE** | No (temp dir; optional CDN) |
+| **R3** | Apply to manual / jar-root / CF-with-jars zip | **NEXT** | No (temp dir) |
 | **R4** | Setup pre-check copy + optional list refresh + Guide | TODO | No |
 
 When **R4** is DONE: point V1 **NEXT** at Step **8.5.2**, update [`V1-QA-Pass-2-Scope.md`](V1-QA-Pass-2-Scope.md) pack row, then stop for the operator to start Pass 2.
@@ -173,7 +173,7 @@ R2 may GET Modrinth CDN URLs already in a homemade/Simply Optimized index (admin
 
 ## R2 — Apply to `.mrpack`
 
-**Status:** NEXT  
+**Status:** DONE  
 **Depends on:** R1  
 
 **Read first**
@@ -201,13 +201,13 @@ R2 may GET Modrinth CDN URLs already in a homemade/Simply Optimized index (admin
 
 **Done when:** Mis-tagged `.mrpack` strips known client mods; mixed embedded+URL works; overrides do not reintroduce excluded jars.
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-20 — `MrpackAnalyzer` / `MrpackInstaller` apply `ExcludeIncludeMatcher` after `env.server`; force-include can keep `unsupported`; list exclude skips required/optional and resolves unclear. Empty `downloads` copy from the zip (index path, then `overrides/`, then `server-overrides/`) with hash verify. Override trees skip excluded jars, keep configs. Confirmable counts split pack-declared vs override-list. Tracked `tests/fixtures/packs/fabric-mistag.mrpack`. **NEXT = R3**.
 
 ---
 
 ## R3 — Manual zip, jar-root, CF-with-jars
 
-**Status:** TODO  
+**Status:** NEXT  
 **Depends on:** R2  
 
 **Read first**
@@ -280,5 +280,6 @@ R2 may GET Modrinth CDN URLs already in a homemade/Simply Optimized index (admin
 
 | Date | Note |
 |------|------|
+| 2026-08-20 | **R2 DONE.** `.mrpack` analyze/install uses the matcher; mixed embedded+URL; override jars filtered. **NEXT = R3**. |
 | 2026-08-20 | **R1 DONE.** Core matcher + embedded itzg lists + empty `mcmgr-exclude-include.json`. **NEXT = R2**. |
 | 2026-08-20 | Created (docs only). Operator: itzg lists in `docs/`, extra samples, Setup pre-check, pause Pass 2. **NEXT = R1**. Layer 3 and CurseForge API parked. Do not implement in the creation session. |

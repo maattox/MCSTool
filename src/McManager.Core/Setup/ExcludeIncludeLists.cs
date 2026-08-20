@@ -93,8 +93,8 @@ public enum ExcludeIncludeDecision
 }
 
 /// <summary>
-/// Why a file was skipped (or force-kept). R1 only emits <see cref="OverrideList"/>;
-/// R2/R3 add pack-declared and in-jar reasons.
+/// Why a file was skipped (or force-kept). Matcher emits <see cref="OverrideList"/>;
+/// .mrpack analyze/install also emit <see cref="PackDeclared"/>.
 /// </summary>
 public enum PackFileSkipReason
 {

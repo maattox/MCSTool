@@ -42,6 +42,88 @@ public sealed class MrpackAnalyzerTests
         Assert.Contains("mods/unclear-side.jar", a.ConfirmableSummary, StringComparison.Ordinal);
         Assert.Contains("unclear", a.Warnings[0], StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("api.modrinth.com", a.ConfirmableSummary, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(1, a.PackDeclaredSkipCount);
+        Assert.Equal(0, a.OverrideListSkipCount);
+        Assert.Contains("Pack-declared: 1", a.ConfirmableSummary, StringComparison.Ordinal);
+        Assert.Contains("Override list: 0", a.ConfirmableSummary, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Tracked_mistag_fixture_skips_required_sodium_via_override_list()
+    {
+        var path = FixturePath("fabric-mistag.mrpack");
+        Assert.True(File.Exists(path), $"Fixture missing at {path}");
+
+        var result = MrpackAnalyzer.AnalyzeFile(path);
+        Assert.True(result.Succeeded, result.Error);
+        var a = result.Value!;
+
+        Assert.Equal("CI Fabric Mistag Fixture", a.PackName);
+        Assert.Equal(2, a.FileCount);
+        Assert.Equal(1, a.ServerRequiredCount);
+        Assert.Equal(0, a.UnclearSideCount);
+        Assert.Equal(["mods/lithium-mistag.jar"], a.ServerSidePaths);
+        Assert.Equal(["mods/sodium-fabric-mistag.jar"], a.OverrideListSkipPaths);
+        Assert.Empty(a.PackDeclaredSkipPaths);
+        Assert.Equal(1, a.OverrideListSkipCount);
+        Assert.Equal(0, a.PackDeclaredSkipCount);
+        Assert.Contains("Override list: 1", a.ConfirmableSummary, StringComparison.Ordinal);
+        Assert.DoesNotContain("api.modrinth.com", a.ConfirmableSummary, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Force_include_keeps_unsupported_and_exclude_resolves_unclear()
+    {
+        var lists = ExcludeIncludeLists.Parse("""
+            {
+              "globalExcludes": ["sodium"],
+              "globalForceIncludes": ["iris"],
+              "modpacks": {}
+            }
+            """);
+        var matcher = new ExcludeIncludeMatcher(lists);
+        var json = """
+            {
+              "formatVersion": 1,
+              "game": "minecraft",
+              "name": "Force Pack",
+              "dependencies": { "minecraft": "1.21.1", "fabric-loader": "0.16.9" },
+              "files": [
+                { "path": "mods/iris-1.jar", "env": { "server": "unsupported" }, "downloads": ["https://example.invalid/iris.jar"] },
+                { "path": "mods/sodium-1.jar", "downloads": ["https://example.invalid/sodium.jar"] },
+                { "path": "mods/weird.jar", "env": { "server": "maybe" }, "downloads": ["https://example.invalid/weird.jar"] }
+              ]
+            }
+            """;
+        var result = MrpackAnalyzer.AnalyzeIndexJson(json, matcher: matcher);
+        Assert.True(result.Succeeded, result.Error);
+        var a = result.Value!;
+        Assert.Equal(["mods/iris-1.jar"], a.ServerSidePaths);
+        Assert.Equal(["mods/iris-1.jar"], a.ForceIncludedPaths);
+        Assert.Equal(["mods/sodium-1.jar"], a.OverrideListSkipPaths);
+        Assert.Equal(["mods/weird.jar"], a.UnclearSidePaths);
+        Assert.Equal(0, a.PackDeclaredSkipCount);
+    }
+
+    [Fact]
+    public void Per_pack_slug_from_name_applies_cobbleverse_exclude()
+    {
+        var json = """
+            {
+              "formatVersion": 1,
+              "game": "minecraft",
+              "name": "Cobbleverse",
+              "dependencies": { "minecraft": "1.21.1", "fabric-loader": "0.16.9" },
+              "files": [
+                { "path": "mods/cloth-config-11.jar", "env": { "server": "required" }, "downloads": ["https://example.invalid/cloth.jar"] },
+                { "path": "mods/lithium.jar", "env": { "server": "required" }, "downloads": ["https://example.invalid/lithium.jar"] }
+              ]
+            }
+            """;
+        var result = MrpackAnalyzer.AnalyzeIndexJson(json);
+        Assert.True(result.Succeeded, result.Error);
+        Assert.Contains("mods/cloth-config-11.jar", result.Value!.OverrideListSkipPaths);
+        Assert.Contains("mods/lithium.jar", result.Value.ServerSidePaths);
     }
 
     [Fact]
@@ -188,6 +270,34 @@ public sealed class MrpackAnalyzerTests
         Assert.DoesNotContain(a.ServerSidePaths, p => p.Contains("sodium", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(a.ServerSidePaths, p => p.Contains("lithium", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(a.ServerSidePaths, p => p.Contains("fabric-api", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal(1, a.PackDeclaredSkipCount);
+        Assert.Equal(0, a.OverrideListSkipCount);
+    }
+
+    [Fact]
+    public void Simply_optimized_sample_skips_mistagged_client_mods_when_present()
+    {
+        var repoRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
+        var sample = Path.Combine(
+            repoRoot,
+            "data",
+            "sample-packs",
+            "real",
+            "modrinth-fabric-Simply-Optimized-Continued-v2.1+26.2.mrpack");
+        if (!File.Exists(sample))
+            return;
+
+        var result = MrpackAnalyzer.AnalyzeFile(sample);
+        Assert.True(result.Succeeded, result.Error);
+        var a = result.Value!;
+        Assert.True(a.OverrideListSkipCount > 0);
+        Assert.Contains(a.OverrideListSkipPaths, p => p.Contains("sodium", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(a.ServerSidePaths, p => p.Contains("sodium", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal(0, a.UnclearSideCount);
+        var preview = SetupPackImport.FromMrpack(a, sample);
+        Assert.True(preview.CanContinue);
+        Assert.Null(preview.BlockReason);
+        Assert.Contains("Override list:", a.ConfirmableSummary, StringComparison.Ordinal);
     }
 
     private static string FixturePath(string fileName) =>

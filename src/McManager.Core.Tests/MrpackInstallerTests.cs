@@ -100,6 +100,8 @@ public sealed class MrpackInstallerTests
             Assert.Contains("mods/client-only.jar", value.SkippedClientOnlyPaths);
             Assert.Contains("mods/server-required.jar", value.InstalledRelativePaths);
             Assert.Contains("mods/server-optional.jar", value.InstalledRelativePaths);
+            Assert.Equal(["mods/client-only.jar"], value.SkippedPackDeclaredPaths);
+            Assert.Empty(value.SkippedOverrideListPaths);
         }
         finally
         {
@@ -227,11 +229,128 @@ public sealed class MrpackInstallerTests
             Assert.Equal("hello", File.ReadAllText(Path.Combine(dest, "config", "mcmgr-sample.txt")).Trim());
             Assert.NotNull(result.Value!.RetainedArchivePath);
             Assert.True(File.Exists(result.Value.RetainedArchivePath));
+            Assert.Contains(result.Value.SkippedPackDeclaredPaths, p => p.Contains("sodium", StringComparison.OrdinalIgnoreCase));
+            Assert.Empty(result.Value.SkippedOverrideListPaths);
         }
         finally
         {
             TryDeleteDir(dest);
             TryDeleteDir(data);
+        }
+    }
+
+    [Fact]
+    public async Task Tracked_mistag_fixture_installs_embedded_lithium_skips_sodium_and_override_jar()
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, "fixtures", "packs", "fabric-mistag.mrpack");
+        Assert.True(File.Exists(path), $"Fixture missing at {path}");
+
+        var handler = new BytesHandler();
+        using var http = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(5) };
+        var dest = NewTempDir();
+        try
+        {
+            var result = await new MrpackInstaller(http).InstallAsync(path, dest, retainDataDirectory: null);
+            Assert.True(result.Succeeded, result.Error);
+            var value = result.Value!;
+            Assert.Empty(handler.Requests);
+            Assert.True(File.Exists(Path.Combine(dest, "mods", "lithium-mistag.jar")));
+            Assert.False(File.Exists(Path.Combine(dest, "mods", "sodium-fabric-mistag.jar")));
+            Assert.True(File.Exists(Path.Combine(dest, "config", "ok.toml")));
+            Assert.Equal(["mods/lithium-mistag.jar"], value.InstalledRelativePaths);
+            Assert.Equal(["mods/sodium-fabric-mistag.jar"], value.SkippedOverrideListPaths);
+            Assert.Empty(value.SkippedPackDeclaredPaths);
+            Assert.Contains("config/ok.toml", value.CopiedOverridePaths);
+            Assert.DoesNotContain(
+                value.CopiedOverridePaths,
+                p => p.Contains("sodium", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            TryDeleteDir(dest);
+        }
+    }
+
+    [Fact]
+    public async Task Mixed_url_and_embedded_install_without_failing_empty_downloads()
+    {
+        var fromUrl = Encoding.UTF8.GetBytes("from-url");
+        var fromZip = Encoding.UTF8.GetBytes("from-zip");
+        var url = "https://cdn.modrinth.com/data/AAAA/versions/1/url-mod.jar";
+        var index = IndexJson(
+            """
+            [
+              {
+                "path": "mods/url-mod.jar",
+                "hashes": { "sha512": "HASH_URL" },
+                "env": { "server": "required" },
+                "downloads": ["URL_MOD"]
+              },
+              {
+                "path": "mods/embedded-mod.jar",
+                "hashes": { "sha512": "HASH_ZIP" },
+                "env": { "server": "required" },
+                "downloads": []
+              }
+            ]
+            """
+            .Replace("HASH_URL", Sha512Hex(fromUrl), StringComparison.Ordinal)
+            .Replace("HASH_ZIP", Sha512Hex(fromZip), StringComparison.Ordinal)
+            .Replace("URL_MOD", url, StringComparison.Ordinal));
+
+        using var mrpack = MakeZipBytes(
+            (MrpackAnalyzer.IndexEntryName, Encoding.UTF8.GetBytes(index)),
+            ("mods/embedded-mod.jar", fromZip));
+        var packPath = WriteTemp("mixed.mrpack", mrpack);
+        var dest = NewTempDir();
+        try
+        {
+            var handler = new BytesHandler();
+            handler.Map(url, fromUrl);
+            using var http = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(5) };
+            var result = await new MrpackInstaller(http).InstallAsync(packPath, dest, null);
+            Assert.True(result.Succeeded, result.Error);
+            Assert.True(File.Exists(Path.Combine(dest, "mods", "url-mod.jar")));
+            Assert.True(File.Exists(Path.Combine(dest, "mods", "embedded-mod.jar")));
+            Assert.Equal("from-zip", File.ReadAllText(Path.Combine(dest, "mods", "embedded-mod.jar")));
+            Assert.Single(handler.Requests);
+        }
+        finally
+        {
+            TryDelete(packPath);
+            TryDeleteDir(dest);
+        }
+    }
+
+    [Fact]
+    public async Task Empty_downloads_without_zip_copy_fails_clearly()
+    {
+        var index = IndexJson(
+            """
+            [{
+              "path": "mods/missing.jar",
+              "hashes": { "sha512": "abcd" },
+              "env": { "server": "required" },
+              "downloads": []
+            }]
+            """);
+        using var mrpack = MakeZip((MrpackAnalyzer.IndexEntryName, index));
+        var packPath = WriteTemp("nodl.mrpack", mrpack);
+        var dest = NewTempDir();
+        try
+        {
+            var handler = new BytesHandler();
+            using var http = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(5) };
+            var result = await new MrpackInstaller(http).InstallAsync(packPath, dest, null);
+            Assert.False(result.Succeeded);
+            Assert.Contains("no download URL", result.Error, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("not in the zip", result.Error, StringComparison.OrdinalIgnoreCase);
+            Assert.Empty(handler.Requests);
+        }
+        finally
+        {
+            TryDelete(packPath);
+            TryDeleteDir(dest);
         }
     }
 
@@ -263,6 +382,23 @@ public sealed class MrpackInstallerTests
                 var entry = zip.CreateEntry(name);
                 using var writer = new StreamWriter(entry.Open(), Encoding.UTF8);
                 writer.Write(content);
+            }
+        }
+
+        ms.Position = 0;
+        return ms;
+    }
+
+    private static MemoryStream MakeZipBytes(params (string Name, byte[] Content)[] entries)
+    {
+        var ms = new MemoryStream();
+        using (var zip = new ZipArchive(ms, ZipArchiveMode.Create, leaveOpen: true))
+        {
+            foreach (var (name, content) in entries)
+            {
+                var entry = zip.CreateEntry(name);
+                using var output = entry.Open();
+                output.Write(content);
             }
         }
 

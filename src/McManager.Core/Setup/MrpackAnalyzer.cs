@@ -8,6 +8,7 @@ namespace McManager.Core.Setup;
 /// <summary>
 /// Parses a user-supplied Modrinth <c>.mrpack</c> locally (blueprint §22 / §2.4).
 /// No catalog/search HTTP. Download URLs inside the index are not fetched.
+/// Applies itzg/product exclude lists after <c>env.server</c> (robustness R2).
 /// </summary>
 public static class MrpackAnalyzer
 {
@@ -39,7 +40,12 @@ public static class MrpackAnalyzer
         ("forge", LoaderForge),
     ];
 
-    public static ServiceResult<MrpackAnalysis> AnalyzeFile(string path)
+    private static readonly Lazy<ExcludeIncludeMatcher> DefaultMatcher =
+        new(ExcludeIncludeMatcher.ForModrinth);
+
+    public static ServiceResult<MrpackAnalysis> AnalyzeFile(
+        string path,
+        ExcludeIncludeMatcher? matcher = null)
     {
         if (string.IsNullOrWhiteSpace(path))
             return ServiceResult<MrpackAnalysis>.Fail("No .mrpack path was provided.");
@@ -49,7 +55,7 @@ public static class MrpackAnalyzer
         try
         {
             using var stream = File.OpenRead(path);
-            return AnalyzeZip(stream, Path.GetFileName(path));
+            return AnalyzeZip(stream, Path.GetFileName(path), matcher);
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -61,7 +67,10 @@ public static class MrpackAnalyzer
         }
     }
 
-    public static ServiceResult<MrpackAnalysis> AnalyzeZip(Stream zipStream, string? sourceName = null)
+    public static ServiceResult<MrpackAnalysis> AnalyzeZip(
+        Stream zipStream,
+        string? sourceName = null,
+        ExcludeIncludeMatcher? matcher = null)
     {
         ArgumentNullException.ThrowIfNull(zipStream);
 
@@ -109,13 +118,15 @@ public static class MrpackAnalyzer
             using (var reader = new StreamReader(indexEntry.Open(), Encoding.UTF8, detectEncodingFromByteOrderMarks: true))
                 json = reader.ReadToEnd();
 
-            return AnalyzeIndexJson(json, entryNames);
+            return AnalyzeIndexJson(json, entryNames, matcher, sourceName);
         }
     }
 
     public static ServiceResult<MrpackAnalysis> AnalyzeIndexJson(
         string json,
-        IReadOnlyList<string>? zipEntryNames = null)
+        IReadOnlyList<string>? zipEntryNames = null,
+        ExcludeIncludeMatcher? matcher = null,
+        string? sourceName = null)
     {
         if (string.IsNullOrWhiteSpace(json))
             return ServiceResult<MrpackAnalysis>.Fail($"{IndexEntryName} is empty.");
@@ -133,12 +144,14 @@ public static class MrpackAnalyzer
         if (index is null)
             return ServiceResult<MrpackAnalysis>.Fail($"{IndexEntryName} deserialized to null.");
 
-        return AnalyzeIndex(index, zipEntryNames);
+        return AnalyzeIndex(index, zipEntryNames, matcher, sourceName);
     }
 
     internal static ServiceResult<MrpackAnalysis> AnalyzeIndex(
         MrpackIndexDocument index,
-        IReadOnlyList<string>? zipEntryNames)
+        IReadOnlyList<string>? zipEntryNames,
+        ExcludeIncludeMatcher? matcher = null,
+        string? sourceName = null)
     {
         if (index.FormatVersion != SupportedFormatVersion)
         {
@@ -169,50 +182,66 @@ public static class MrpackAnalyzer
         else
             warnings.Add($"Could not map Minecraft {minecraftVersion} to a Java major (blueprint §9.1).");
 
+        var names = zipEntryNames ?? [];
+        var lists = matcher ?? DefaultMatcher.Value;
+        var packName = string.IsNullOrWhiteSpace(index.Name) ? "(unnamed pack)" : index.Name.Trim();
+        if (string.IsNullOrWhiteSpace(index.Name))
+            warnings.Add("Pack name is missing in modrinth.index.json.");
+
+        var versionId = string.IsNullOrWhiteSpace(index.VersionId) ? null : index.VersionId.Trim();
+        var summary = string.IsNullOrWhiteSpace(index.Summary) ? null : index.Summary.Trim();
+        var packSlug = MrpackFileFilter.ResolvePackSlug(lists, packName, versionId, sourceName);
+
         var files = index.Files ?? [];
         var serverRequired = new List<string>();
         var serverOptional = new List<string>();
-        var clientOnly = new List<string>();
+        var packDeclared = new List<string>();
+        var overrideList = new List<string>();
+        var forceIncluded = new List<string>();
         var unclear = new List<string>();
 
         for (var i = 0; i < files.Count; i++)
         {
             var file = files[i];
-            var path = string.IsNullOrWhiteSpace(file.Path) ? $"(unnamed file #{i + 1})" : file.Path.Trim().Replace('\\', '/');
-            if (file.Downloads is null || file.Downloads.Count == 0
-                || file.Downloads.All(string.IsNullOrWhiteSpace))
-            {
-                warnings.Add($"File '{path}' has no download URL in the index (install will need that URL).");
-            }
-
+            var path = string.IsNullOrWhiteSpace(file.Path)
+                ? $"(unnamed file #{i + 1})"
+                : file.Path.Trim().Replace('\\', '/');
             var serverEnv = (file.Env?.Server ?? "").Trim();
-            if (serverEnv.Length == 0)
+            var match = lists.Match(packSlug, path);
+            var action = MrpackFileFilter.Decide(serverEnv, match);
+
+            if (action == MrpackFileFilter.Action.Install && !HasDownloadUrl(file) && !ZipHasIndexedFile(names, path))
             {
-                unclear.Add(path);
-                continue;
+                warnings.Add(
+                    $"File '{path}' has no download URL in the index (install will copy from the zip if present).");
             }
 
-            if (serverEnv.Equals(EnvUnsupported, StringComparison.OrdinalIgnoreCase))
+            switch (action)
             {
-                clientOnly.Add(path);
-                continue;
-            }
+                case MrpackFileFilter.Action.SkipPackDeclared:
+                    packDeclared.Add(path);
+                    continue;
+                case MrpackFileFilter.Action.SkipOverrideList:
+                    overrideList.Add(path);
+                    continue;
+                case MrpackFileFilter.Action.Unclear:
+                    unclear.Add(path);
+                    if (serverEnv.Length > 0)
+                    {
+                        warnings.Add(
+                            $"File '{path}' has unknown env.server '{file.Env!.Server}' (expected required, optional, or unsupported).");
+                    }
 
-            if (serverEnv.Equals(EnvRequired, StringComparison.OrdinalIgnoreCase))
-            {
-                serverRequired.Add(path);
-                continue;
+                    continue;
+                default:
+                    if (match.Keep && serverEnv.Equals(EnvUnsupported, StringComparison.OrdinalIgnoreCase))
+                        forceIncluded.Add(path);
+                    if (serverEnv.Equals(EnvOptional, StringComparison.OrdinalIgnoreCase))
+                        serverOptional.Add(path);
+                    else
+                        serverRequired.Add(path);
+                    continue;
             }
-
-            if (serverEnv.Equals(EnvOptional, StringComparison.OrdinalIgnoreCase))
-            {
-                serverOptional.Add(path);
-                continue;
-            }
-
-            unclear.Add(path);
-            warnings.Add(
-                $"File '{path}' has unknown env.server '{file.Env!.Server}' (expected required, optional, or unsupported).");
         }
 
         if (unclear.Count > 0)
@@ -221,7 +250,6 @@ public static class MrpackAnalyzer
                 $"{unclear.Count} file(s) have unclear server/client side. Do not install those until reviewed (fail/warn in the install step).");
         }
 
-        var names = zipEntryNames ?? [];
         var hasOverrides = names.Any(n => n.Equals("overrides", StringComparison.OrdinalIgnoreCase)
             || n.StartsWith("overrides/", StringComparison.OrdinalIgnoreCase));
         var hasServerOverrides = names.Any(n => n.Equals("server-overrides", StringComparison.OrdinalIgnoreCase)
@@ -229,13 +257,7 @@ public static class MrpackAnalyzer
         var hasClientOverrides = names.Any(n => n.Equals("client-overrides", StringComparison.OrdinalIgnoreCase)
             || n.StartsWith("client-overrides/", StringComparison.OrdinalIgnoreCase));
 
-        var packName = string.IsNullOrWhiteSpace(index.Name) ? "(unnamed pack)" : index.Name.Trim();
-        if (string.IsNullOrWhiteSpace(index.Name))
-            warnings.Add("Pack name is missing in modrinth.index.json.");
-
-        var versionId = string.IsNullOrWhiteSpace(index.VersionId) ? null : index.VersionId.Trim();
-        var summary = string.IsNullOrWhiteSpace(index.Summary) ? null : index.Summary.Trim();
-
+        var clientOnly = packDeclared.Concat(overrideList).ToList();
         var serverSide = serverRequired.Concat(serverOptional).ToList();
         var confirmable = BuildConfirmableSummary(
             packName,
@@ -250,7 +272,8 @@ public static class MrpackAnalyzer
             serverOptional.Count,
             clientOnly.Count,
             unclear.Count,
-            clientOnly,
+            packDeclared,
+            overrideList,
             unclear,
             hasOverrides,
             hasServerOverrides,
@@ -277,7 +300,12 @@ public static class MrpackAnalyzer
             hasServerOverrides,
             hasClientOverrides,
             warnings,
-            confirmable));
+            confirmable,
+            packDeclared.Count,
+            overrideList.Count,
+            packDeclared,
+            overrideList,
+            forceIncluded));
     }
 
     public static bool TrySelectLoader(
@@ -325,6 +353,27 @@ public static class MrpackAnalyzer
         return n.TrimStart('/');
     }
 
+    internal static bool HasDownloadUrl(MrpackIndexFile file) =>
+        file.Downloads is not null && file.Downloads.Any(u => !string.IsNullOrWhiteSpace(u));
+
+    internal static bool ZipHasIndexedFile(IReadOnlyList<string> zipEntryNames, string relativePath)
+    {
+        var n = relativePath.Replace('\\', '/').Trim();
+        if (n.Length == 0 || zipEntryNames.Count == 0)
+            return false;
+        foreach (var entry in zipEntryNames)
+        {
+            if (entry.Equals(n, StringComparison.OrdinalIgnoreCase)
+                || entry.Equals(MrpackInstaller.OverridesPrefix + n, StringComparison.OrdinalIgnoreCase)
+                || entry.Equals(MrpackInstaller.ServerOverridesPrefix + n, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static bool TryGetDependency(
         IReadOnlyDictionary<string, string> dependencies,
         string key,
@@ -357,7 +406,8 @@ public static class MrpackAnalyzer
         int serverOptional,
         int clientOnly,
         int unclear,
-        IReadOnlyList<string> clientOnlyPaths,
+        IReadOnlyList<string> packDeclaredPaths,
+        IReadOnlyList<string> overrideListPaths,
         IReadOnlyList<string> unclearPaths,
         bool hasOverrides,
         bool hasServerOverrides,
@@ -379,15 +429,24 @@ public static class MrpackAnalyzer
             .Append(" (").Append(serverRequired).Append(" required, ")
             .Append(serverOptional).AppendLine(" optional)");
         sb.Append("  Client-only (not installed on the server): ").AppendLine(clientOnly.ToString());
+        sb.Append("    Pack-declared: ").AppendLine(packDeclaredPaths.Count.ToString());
+        sb.Append("    Override list: ").AppendLine(overrideListPaths.Count.ToString());
         sb.Append("  Side unclear: ").Append(unclear);
         if (unclear > 0)
             sb.Append(" — do not install until reviewed");
         sb.AppendLine();
 
-        if (clientOnlyPaths.Count > 0)
+        if (packDeclaredPaths.Count > 0)
         {
-            sb.AppendLine("Client-only files:");
-            foreach (var p in clientOnlyPaths)
+            sb.AppendLine("Pack-declared client-only files:");
+            foreach (var p in packDeclaredPaths)
+                sb.Append("  ").AppendLine(p);
+        }
+
+        if (overrideListPaths.Count > 0)
+        {
+            sb.AppendLine("Override-list skipped files:");
+            foreach (var p in overrideListPaths)
                 sb.Append("  ").AppendLine(p);
         }
 

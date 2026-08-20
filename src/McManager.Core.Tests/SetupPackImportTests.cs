@@ -25,6 +25,23 @@ public sealed class SetupPackImportTests
     }
 
     [Fact]
+    public void Tracked_mistag_mrpack_can_continue()
+    {
+        var path = FixturePath("fabric-mistag.mrpack");
+        Assert.True(File.Exists(path), $"Fixture missing at {path}");
+
+        var result = SetupPackImport.AnalyzeFile(path);
+        Assert.True(result.Succeeded, result.Error);
+        var preview = result.Value!;
+        Assert.Equal(SetupPackImport.KindMrpack, preview.Kind);
+        Assert.True(preview.CanContinue);
+        Assert.Null(preview.BlockReason);
+        Assert.Equal(1, preview.ClientOnlyCount);
+        Assert.Equal(0, preview.UnclearSideCount);
+        Assert.Contains("Override list: 1", preview.ConfirmableSummary, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Tracked_manual_zip_is_second_adapter()
     {
         var path = FixturePath("manual-server.zip");

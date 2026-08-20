@@ -1,0 +1,27 @@
+{
+  "formatVersion": 1,
+  "game": "minecraft",
+  "versionId": "0.0.1-mistag",
+  "name": "CI Fabric Mistag Fixture",
+  "summary": "Synthetic .mrpack: Sodium tagged env.server=required so the override list must skip it. Dummy bytes, no CDN.",
+  "dependencies": {
+    "minecraft": "1.21.1",
+    "fabric-loader": "0.16.9"
+  },
+  "files": [
+    {
+      "path": "mods/lithium-mistag.jar",
+      "hashes": { "sha1": "a25722ec3e465a17f6b6347a7c4c75044c035cb8", "sha512": "abe500d589f72923d8f7902f0c9a3341feb37fb499411effa653bd659be4661f4c5199a77144765891d7bd8edd23941372fd1a1a40818534d74e1d3f3c884d97" },
+      "env": { "client": "required", "server": "required" },
+      "downloads": [],
+      "fileSize": 18
+    },
+    {
+      "path": "mods/sodium-fabric-mistag.jar",
+      "hashes": { "sha1": "113f6f14ac8cae52349a3d7263952119591992c0", "sha512": "090ddfc3ecb38202a599689547ec85631247aa2a5caf6d09fd757adc94ef79feda18f24788bdb0b00b86b119296f46ed2d47c1fb171989c73f1b984ad52b749a" },
+      "env": { "client": "required", "server": "required" },
+      "downloads": [],
+      "fileSize": 17
+    }
+  ]
+}

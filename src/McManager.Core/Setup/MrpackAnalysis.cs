@@ -26,7 +26,12 @@ public sealed class MrpackAnalysis
         bool hasServerOverrides,
         bool hasClientOverrides,
         IReadOnlyList<string> warnings,
-        string confirmableSummary)
+        string confirmableSummary,
+        int packDeclaredSkipCount,
+        int overrideListSkipCount,
+        IReadOnlyList<string> packDeclaredSkipPaths,
+        IReadOnlyList<string> overrideListSkipPaths,
+        IReadOnlyList<string> forceIncludedPaths)
     {
         PackName = packName;
         VersionId = versionId;
@@ -48,6 +53,11 @@ public sealed class MrpackAnalysis
         HasClientOverrides = hasClientOverrides;
         Warnings = warnings;
         ConfirmableSummary = confirmableSummary;
+        PackDeclaredSkipCount = packDeclaredSkipCount;
+        OverrideListSkipCount = overrideListSkipCount;
+        PackDeclaredSkipPaths = packDeclaredSkipPaths;
+        OverrideListSkipPaths = overrideListSkipPaths;
+        ForceIncludedPaths = forceIncludedPaths;
     }
 
     public string PackName { get; }
@@ -73,6 +83,18 @@ public sealed class MrpackAnalysis
     public bool HasClientOverrides { get; }
     public IReadOnlyList<string> Warnings { get; }
     public string ConfirmableSummary { get; }
+
+    /// <summary>Skipped because the pack marked <c>env.server == unsupported</c>.</summary>
+    public int PackDeclaredSkipCount { get; }
+
+    /// <summary>Skipped because the itzg/product list excluded a server-side or unclear file.</summary>
+    public int OverrideListSkipCount { get; }
+
+    public IReadOnlyList<string> PackDeclaredSkipPaths { get; }
+    public IReadOnlyList<string> OverrideListSkipPaths { get; }
+
+    /// <summary>Kept despite pack <c>unsupported</c> because a force-include matched.</summary>
+    public IReadOnlyList<string> ForceIncludedPaths { get; }
 
     public int ServerSideCount => ServerRequiredCount + ServerOptionalCount;
 }
