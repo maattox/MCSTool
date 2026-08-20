@@ -28,9 +28,17 @@ public sealed class SetupBootstrapService
             var probe = await Task.Run(
                 () => RunOnce(host, user, keyPath, CloudInitProbeCommand(remoteMarker), TimeSpan.FromSeconds(30)),
                 cancellationToken).ConfigureAwait(false);
-            if (probe.Succeeded && (probe.Value ?? "").Contains("OK", StringComparison.Ordinal))
+            if (probe.Succeeded && MarkerProbeReady(probe.Value))
             {
                 log?.Report($"cloud-init ready: {remoteMarker}");
+                return ServiceResult.Ok();
+            }
+
+            if (probe.Succeeded && CloudInitFinishedWithoutMarker(probe.Value))
+            {
+                log?.Report(
+                    $"cloud-init finished without {remoteMarker} (likely invalid #cloud-config). "
+                    + "Continuing; guest repair applies OS baseline (SETUP-ISSUE-10).");
                 return ServiceResult.Ok();
             }
 
@@ -435,6 +443,9 @@ public sealed class SetupBootstrapService
             client,
             "sudo bash -c " + ShQuote(
                 "set -euo pipefail; "
+                + "export DEBIAN_FRONTEND=noninteractive; "
+                + "apt-get update -qq; "
+                + "apt-get install -y -qq firewalld unzip jq curl ca-certificates gnupg; "
                 + "systemctl disable --now netfilter-persistent 2>/dev/null || true; "
                 + "systemctl mask netfilter-persistent 2>/dev/null || true; "
                 + "ufw --force disable 2>/dev/null || true; "
@@ -451,8 +462,10 @@ public sealed class SetupBootstrapService
                 + "firewall-cmd --permanent --add-service=ssh; "
                 + "firewall-cmd --permanent --add-port=25565/tcp; "
                 + "firewall-cmd --permanent --add-port=25565/udp; "
-                + "firewall-cmd --reload"),
-            TimeSpan.FromSeconds(60),
+                + "firewall-cmd --reload; "
+                + "mkdir -p /etc/mcmgr; "
+                + "if [ ! -f /etc/mcmgr/cloud-init-done ]; then date -u +%Y-%m-%dT%H:%M:%SZ > /etc/mcmgr/cloud-init-done; fi"),
+            TimeSpan.FromMinutes(8),
             log);
     }
 
@@ -529,6 +542,7 @@ public sealed class SetupBootstrapService
         }
 
         using var client = Connect(outputs.Vm1SshHost, outputs.SshUser, keyPath);
+        EnsureVm1HostFirewall(client, log);
 
         const string agentStaging = "/tmp/mc-manager-deploy";
         log?.Report($"Idle agent src: {agent}");
@@ -924,10 +938,29 @@ public sealed class SetupBootstrapService
     /// <summary>
     /// Probe as root. The VM1 marker lives under <c>/etc/mcmgr</c> (0750 root:mcmgr);
     /// SSH user ubuntu is not in that group (SETUP-ISSUE-5). <c>sudo -n</c> avoids a
-    /// password prompt hang on non-interactive SSH.
+    /// password prompt hang on non-interactive SSH. Also prints <c>cloud-init status</c>
+    /// so a YAML-parse skip (SETUP-ISSUE-10) does not wait 20 minutes.
     /// </summary>
     internal static string CloudInitProbeCommand(string remoteMarker) =>
-        $"sudo -n test -f {ShQuote(remoteMarker)} && echo OK || echo WAIT";
+        $"sudo -n test -f {ShQuote(remoteMarker)} && echo MARKER_OK || echo MARKER_WAIT; "
+        + "sudo -n cloud-init status 2>/dev/null || true";
+
+    internal static bool MarkerProbeReady(string? stdout) =>
+        (stdout ?? "").Contains("MARKER_OK", StringComparison.Ordinal);
+
+    /// <summary>
+    /// Cloud-init reached <c>done</c> but never wrote the marker — typically invalid
+    /// #cloud-config so runcmd never ran. Guest repair applies the OS baseline.
+    /// </summary>
+    internal static bool CloudInitFinishedWithoutMarker(string? stdout)
+    {
+        var text = stdout ?? "";
+        if (text.Contains("MARKER_OK", StringComparison.Ordinal))
+            return false;
+        if (!text.Contains("MARKER_WAIT", StringComparison.Ordinal))
+            return false;
+        return text.Contains("status: done", StringComparison.OrdinalIgnoreCase);
+    }
 
     private static string ShQuote(string value) => "'" + value.Replace("'", "'\\''") + "'";
 

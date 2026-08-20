@@ -127,7 +127,7 @@ Never `tofu import` the **live Forge lab** into product state. Importing one res
 
 ## $1 budget brake
 
-- Budget + ACTUAL ABSOLUTE $1 alert (email). Residual-charge copy is in the budget description / alert message.
+- Budget + ACTUAL ABSOLUTE $1 alert (email). Residual-charge copy is in the budget description / alert message. OCI **CreateBudget `description` max 200 characters**. When this apply also creates the stack compartment, wait 2 min before OCIR `mcmgr-fn/softstop` (Artifacts 404-DENIED on a brand-new compartment; SETUP-ISSUE-9).
 - Events → Function is the live path. **No ONS topic.**
 - `softstop_instance_ids` defaults to **VM1 only**. Always Free AMD Micro stays up (does not use Ampere OCPU-hours). Function config also passes `OS_NAMESPACE` / `OS_BUCKET` / `OS_LOCK_OBJECT` for the lock PUT.
 - The v1 lock object (`meta/spend-brake-triggered.json`) is **runtime state**, not a tofu resource. Tracked Function source writes it (`functions/shutdown_vm/`). **Product path (before release):** CI-built ARM image copied into the user’s OCIR (V1 Step **8.6.1**), not Docker Desktop / Cloud Shell on the admin PC. TESTING `fn push` remains allowed for agents; do not `fn push` the live Forge lab unless the operator authorizes it.

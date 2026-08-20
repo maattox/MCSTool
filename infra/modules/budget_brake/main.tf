@@ -3,6 +3,9 @@ terraform {
     oci = {
       source = "oracle/oci"
     }
+    time = {
+      source = "hashicorp/time"
+    }
   }
 }
 
@@ -39,8 +42,21 @@ variable "object_storage_bucket_name" {
   type = string
 }
 
+variable "delay_artifacts_after_new_compartment" {
+  type        = bool
+  default     = false
+  description = "True when this apply created the stack compartment. OCIR 404-DENIED until Artifacts sees a brand-new compartment (SETUP-ISSUE-9)."
+}
+
 locals {
   create_function = trimspace(var.function_image) != ""
+  # OCI CreateBudget description must be 0–200 characters (400-InvalidParameter otherwise).
+  budget_description = "Last-resort $1 actual-spend brake. SoftStops VM1 and PUTs lock; door stays up. Residual ~$1-$2 that month possible. Not a $0 guarantee."
+}
+
+resource "time_sleep" "wait_artifacts" {
+  count           = var.delay_artifacts_after_new_compartment ? 1 : 0
+  create_duration = "2m"
 }
 
 resource "oci_budget_budget" "one_usd" {
@@ -48,12 +64,19 @@ resource "oci_budget_budget" "one_usd" {
   compartment_id                        = var.tenancy_ocid
   amount                                = 1
   display_name                          = "mcmgr-budget-1usd"
-  description                           = "Last-resort $1 actual-spend brake. If this fires, Oracle may bill ~$1-$2 that month; the Function SoftStops VM1 and PUTs the spend-brake lock. The Always Free door Micro stays running. Not a perfect $0 guarantee."
+  description                           = local.budget_description
   reset_period                          = "MONTHLY"
   processing_period_type                = "MONTH"
   budget_processing_period_start_offset = 1
   target_type                           = "COMPARTMENT"
   targets                               = [var.compartment_id]
+
+  lifecycle {
+    precondition {
+      condition     = length(local.budget_description) <= 200
+      error_message = "OCI CreateBudget description must be 0-200 characters."
+    }
+  }
 }
 
 resource "oci_budget_alert_rule" "one_usd" {
@@ -67,10 +90,17 @@ resource "oci_budget_alert_rule" "one_usd" {
 }
 
 resource "oci_artifacts_container_repository" "softstop" {
+  # Artifacts lags Identity on a brand-new compartment (404-DENIED ~1 min). Sleep + long create timeout.
+  depends_on     = [time_sleep.wait_artifacts]
   compartment_id = var.compartment_id
   display_name   = "mcmgr-fn/softstop"
   is_immutable   = false
   is_public      = false
+
+  timeouts {
+    create = "10m"
+    delete = "20m"
+  }
 }
 
 resource "oci_functions_application" "app" {

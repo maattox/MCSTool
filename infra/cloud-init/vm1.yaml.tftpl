@@ -33,12 +33,15 @@ packages:
 # (Debian #1025618). systemd may delete dbus; ACPI SoftStop then hangs (OS-ISSUE-9).
 # Drop-ins cannot reset Before=/Wants= — write a full unit override. Security List
 # remains the IP allowlist.
+# encoding: b64 — do not embed the unit as a YAML literal. OpenTofu indent() does
+# not indent the first line, so `[Unit]` parsed as a flow sequence and cloud-init
+# dropped the entire #cloud-config (no runcmd, no marker — SETUP-ISSUE-10).
 write_files:
   - path: /etc/systemd/system/firewalld.service
     owner: root:root
     permissions: "0644"
-    content: |
-${indent(6, firewalld_unit)}
+    encoding: b64
+    content: ${base64encode(firewalld_unit)}
 
 runcmd:
   - mkdir -p /opt/mcmgr/server /opt/mcmgr/backups-work /opt/mcmgr/bin /etc/mcmgr /var/lib/mcmgr

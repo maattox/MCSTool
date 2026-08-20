@@ -5,6 +5,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="McManager.Core.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <EmbeddedResource Include="..\..\tests\fixtures\game-metadata\mojang-version-manifest-v2.json">
       <LogicalName>McManager.Core.Setup.mojang-version-manifest-v2.json</LogicalName>
     </EmbeddedResource>

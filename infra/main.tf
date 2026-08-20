@@ -43,8 +43,8 @@ module "compute" {
   ssh_public_key = var.ssh_public_key
   vm1_ocpus      = var.vm1_ocpus
   vm1_memory_gb  = var.vm1_memory_gb
-  vm1_user_data  = base64gzip(templatefile("${path.module}/cloud-init/vm1.yaml.tftpl", {
-    firewalld_unit = file("${path.module}/cloud-init/firewalld-mcmgr.service")
+  vm1_user_data = base64gzip(templatefile("${path.module}/cloud-init/vm1.yaml.tftpl", {
+    firewalld_unit = replace(file("${path.module}/cloud-init/firewalld-mcmgr.service"), "\r\n", "\n")
   }))
   door_user_data = base64gzip(templatefile("${path.module}/cloud-init/door.yaml.tftpl", {}))
 }
@@ -58,13 +58,14 @@ module "iam" {
 }
 
 module "budget_brake" {
-  source                     = "./modules/budget_brake"
-  tenancy_ocid               = var.tenancy_ocid
-  compartment_id             = module.compartment.id
-  subnet_id                  = module.network.subnet_id
-  alert_email                = var.alert_email
-  function_image             = var.function_image
-  softstop_instance_ids      = local.softstop_instance_ids
-  object_storage_namespace   = module.storage.namespace
-  object_storage_bucket_name = module.storage.bucket_name
+  source                                = "./modules/budget_brake"
+  tenancy_ocid                          = var.tenancy_ocid
+  compartment_id                        = module.compartment.id
+  subnet_id                             = module.network.subnet_id
+  alert_email                           = var.alert_email
+  function_image                        = var.function_image
+  softstop_instance_ids                 = local.softstop_instance_ids
+  object_storage_namespace              = module.storage.namespace
+  object_storage_bucket_name            = module.storage.bucket_name
+  delay_artifacts_after_new_compartment = module.compartment.created
 }

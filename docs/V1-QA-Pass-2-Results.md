@@ -1,17 +1,17 @@
 # V1 QA Pass 2 — results
 
 **Pass:** 2  
-**Status:** **PAUSED** — do not fill until Step **4.13** / robustness R4 is DONE and the operator starts Phase A.  
+**Status:** **DONE** — operator closed the pass after Phase A greenfield + a modded join + Modding panel. Remaining in-scope Phase B–D IDs were **not run**. No Pass 2 bug-fix plan (operator: issues already fixed in-pass; no triage).  
 **Catalog:** [`V1-QA-Catalog.md`](V1-QA-Catalog.md)  
 **Scope:** [`V1-QA-Pass-2-Scope.md`](V1-QA-Pass-2-Scope.md) — **run in-scope IDs only**. Pre-filled `Skipped` rows are Pass 1 Pass / out of this delta; do not re-run them.  
 **Prior:** [`V1-QA-Pass-1-Results.md`](V1-QA-Pass-1-Results.md) (Vanilla, no greenfield). Pass 1 bug-fix **P1–P8 DONE**.  
-**Dates:** *(fill)*  
+**Dates:** 2026-08-20  
 **Stack:** TESTING greenfield (`dotnet run` Hybrid). Do **not** paste OCIDs, Auth Tokens, RCON passwords, or friend IPs.
 
-**Game (Phase A):** Modded — pack file: *(filename)* · loader: *(neoforge/fabric/…)* · Minecraft: *(version)* · VM1 shape: **2/12** (unless overridden)  
-**Config dir:** `MCMANAGER_CONFIG_DIR` = *(e.g. mcmgr-blank-test or mcmgr-pass-2)* — **not** repo `data/config.local.json`  
-**SSH key:** *(path only, after Setup — not the Pass 1 key unless config still names it)*  
-**Function:** present / Setup-skipped *(record after S7-04)*
+**Game (Phase A):** Modded — pack file: `modrinth-fabric-Fabulously.Optimized-v6.5.0.mrpack` · loader: **fabric** · Minecraft: *(from that pack)* · VM1 shape: **4 OCPU / 24 GB** (operator override of Pass 2 default 2/12)  
+**Config dir:** `MCMANAGER_CONFIG_DIR` = `mcmgr-blank-test` — **not** repo `data/config.local.json`  
+**SSH key:** reused Pass 1 key `%USERPROFILE%\.ssh\mcmgr_ed25519_20260817_125552` (imported in wizard; not a new wizard-generated key)  
+**Function:** Setup-skipped — `docker.exe` present; daemon pipe `dockerDesktopLinuxEngine` missing. Not a Fail of 8.6.1.
 
 **How to fill:** For each **in-scope** ID, set **Result** to `Pass` / `Fail` / `Blocked` / `Skipped` / `Known`. On Fail, set **Severity** (`Blocker` / `Major` / `Minor` / `Nit` / `After-v1` / `Won't-fix`) and write expected vs actual under [Failures expanded](#failures-expanded). `Known` needs an Issues.md id.
 
@@ -24,22 +24,22 @@ Do not start 8.6.1 or 9.1. Do not create a Pass 2 bug-fix plan until this file i
 ## Session log
 
 
-| When | Who | Suites | Idle left | Notes |
-| ---- | --- | ------ | --------- | ----- |
-|      |     |        |           |       |
+| When       | Who            | Suites                                      | Idle left | Notes                                                                                                                                                                                                                                                                                                 |
+| ---------- | -------------- | ------------------------------------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-20 | Operator + agent | Phase A S6-01/S6-02/S7-04; S3-05 join; S4-11 | *(not recorded)* | Delete then Setup TESTING. Mid-apply **SETUP-ISSUE-9** then **SETUP-ISSUE-10** (both product-fixed). Final Deploy finished; Function image skipped (Docker daemon down). MultiMC join on reserved IP. Modding panel listed mods + Download pack. Operator marked Pass 2 **DONE**; no triage. |
 
 
-**Preflight snapshot (S1-03):** *(after Phase A; no OCIDs / no friend IPs)*
+**Preflight snapshot (S1-03):** *(not taken — Phase B not run)*
 
-- **VM1 lifecycle:**
-- **Door lifecycle:**
-- **Play IP holder:**
-- **Spend-brake lock:**
-- **minecraft.service:**
-- **Idle:**
-- **Door control plane:**
-- **Security List 25565 `0.0.0.0/0`:** must be **no**
-- **game-manifest:** `distribution=` · `loader=` · `minecraft_version=`
+- **VM1 lifecycle:** RUNNING after Setup (play path left PLAYABLE)
+- **Door lifecycle:** *(not recorded)*
+- **Play IP holder:** VM1 after Setup (`promote_playable`)
+- **Spend-brake lock:** *(not recorded)*
+- **minecraft.service:** joinable (modded)
+- **Idle:** *(not recorded)*
+- **Door control plane:** PLAYABLE after Setup
+- **Security List 25565 `0.0.0.0/0`:** must be **no** *(not re-checked this fill)*
+- **game-manifest:** `distribution=` modded · `loader=` fabric · `minecraft_version=` *(from FO 6.5.0 pack)*
 
 ---
 
@@ -48,10 +48,10 @@ Do not start 8.6.1 or 9.1. Do not create a Pass 2 bug-fix plan until this file i
 
 | ID    | Result  | Severity | Notes |
 | ----- | ------- | -------- | ----- |
-| S0-01 |         |          | **In scope (Phase A).** |
+| S0-01 | Skipped |          | Not run this pass. |
 | S0-02 | Skipped |          | Pass 1 Pass; Function unit tests unchanged this pass. |
 | S0-03 | Skipped |          | Pass 1 Pass; `reconcile_usage` units unchanged this pass. |
-| S0-04 |         |          | **In scope (Phase A).** `tofu validate` only — no apply here. |
+| S0-04 | Skipped |          | Not run as a dedicated pre-apply step. Agent `tofu validate` during SETUP-ISSUE-9 fix succeeded. |
 | S0-05 | Skipped |          | Optional. Pass 1 Skipped (no gcc/WSL bash). |
 
 
@@ -60,13 +60,13 @@ Do not start 8.6.1 or 9.1. Do not create a Pass 2 bug-fix plan until this file i
 ## S1 — Preflight
 
 
-| ID    | Result | Severity | Notes |
-| ----- | ------ | -------- | ----- |
-| S1-01 |        |          | **In scope (Phase B).** TESTING, not DEFAULT. |
-| S1-02 |        |          | **In scope (Phase B).** New Setup SSH key. |
-| S1-03 |        |          | **In scope (Phase B).** QA-exit smoke. See snapshot above. |
-| S1-04 |        |          | **In scope (Phase B).** |
-| S1-05 |        |          | **In scope (Phase B).** Restore lock/idle. |
+| ID    | Result  | Severity | Notes |
+| ----- | ------- | -------- | ----- |
+| S1-01 | Skipped |          | Not run; operator closed Pass 2 after Phase A + join + S4-11. |
+| S1-02 | Skipped |          | Not run. Wizard **imported** Pass 1 key `mcmgr_ed25519_20260817_125552`. |
+| S1-03 | Skipped |          | Not run. Partial snapshot above from Setup/join only. |
+| S1-04 | Skipped |          | Not run; operator closed Pass 2. |
+| S1-05 | Skipped |          | Not run; operator closed Pass 2. |
 
 
 ---
@@ -76,26 +76,26 @@ Do not start 8.6.1 or 9.1. Do not create a Pass 2 bug-fix plan until this file i
 
 | ID     | Result  | Severity | Notes |
 | ------ | ------- | -------- | ----- |
-| S2-01  |         |          | **In scope (Phase B).** Greenfield `mcmgr` layout. |
-| S2-02  |         |          | **In scope (Phase B).** Expect **modded** + chosen loader (not Vanilla). |
-| S2-03  |         |          | **In scope (Phase B).** |
-| S2-04  |         |          | **In scope (Phase B).** |
-| S2-05  |         |          | **In scope (Phase B).** P1 must land from cloud-init. |
-| S2-06  |         |          | **In scope (Phase B).** |
-| S2-07  |         |          | **In scope (Phase B).** |
-| S2-08  |         |          | **In scope (Phase B).** QA-exit smoke. |
-| S2-09  |         |          | **In scope (Phase B).** QA-exit smoke. 2-minute timeout; restore after. |
+| S2-01  | Skipped |          | Not run; operator closed Pass 2. |
+| S2-02  | Skipped |          | Not run as SSH inspect. Live game was **modded Fabric** (FO join). |
+| S2-03  | Skipped |          | Not run; operator closed Pass 2. |
+| S2-04  | Skipped |          | Not run; operator closed Pass 2. |
+| S2-05  | Skipped |          | Not run. Greenfield cloud-init **did not** apply OS baseline until SETUP-ISSUE-10 fix + guest repair (this VM was repaired). |
+| S2-06  | Skipped |          | Not run; operator closed Pass 2. |
+| S2-07  | Skipped |          | Not run; operator closed Pass 2. |
+| S2-08  | Skipped |          | Not run; operator closed Pass 2. |
+| S2-09  | Skipped |          | Not run; operator closed Pass 2. |
 | S2-09b | Skipped |          | Optional 15-min clock. Skip if S2-09 Pass. |
-| S2-10  |         |          | **In scope (Phase B).** New ledger. |
-| S2-11  |         |          | **In scope (Phase B).** Fresh door lock GET (P2 product path). |
+| S2-10  | Skipped |          | Not run; operator closed Pass 2. |
+| S2-11  | Skipped |          | Not run; operator closed Pass 2. |
 | S2-12  | Skipped |          | Optional. Pass 1 skipped; not this delta. |
-| S2-16  |         |          | **In scope (Phase B).** Pass if v1 Function present; **Skipped** if Setup skipped Function (not a Fail of 8.6.1). |
-| S2-17  |         |          | **In scope (Phase B) only if Function exists.** Else Skipped. QA-exit smoke. Do not SoftStop the door. DELETE lock after. |
+| S2-16  | Skipped |          | Setup skipped Function (Docker daemon not running). **Not a Fail of 8.6.1.** |
+| S2-17  | Skipped |          | Function not installed. |
 | S2-18  | Skipped |          | Pass 1 Pass; RESET path unchanged. |
 | S2-19  | Skipped |          | Optional daily MOTD. Use S5-05 for P6 Manager Start only. |
 | S2-20  | Skipped |          | Pass 1 Pass; raw Compute vs door Start. |
-| S2-21  |         |          | **In scope (Phase B).** Cheap while Minecraft is up. |
-| S2-22  |         |          | **In scope (Phase B).** |
+| S2-21  | Skipped |          | Not run; operator closed Pass 2. |
+| S2-22  | Skipped |          | Not run; operator closed Pass 2. |
 | S2-26  | Skipped |          | Optional `reconcile_usage`. Pass 1 Skipped. |
 | S2-28  | Skipped |          | OS-ISSUE-7 by design. Pass 1 Pass. |
 
@@ -107,13 +107,13 @@ Do not start 8.6.1 or 9.1. Do not create a Pass 2 bug-fix plan until this file i
 
 | ID    | Result  | Severity | Notes |
 | ----- | ------- | -------- | ----- |
-| S3-01 |         |          | **In scope (Phase C).** QA-exit overlay smoke. |
-| S3-02 |         |          | Skip if Phase A S7-04 already proved door-aware Start; note the pointer. |
-| S3-03 |         |          | Skip if Phase A S7-04 already proved Stop + IP on door; note the pointer. |
-| S3-04 |         |          | **In scope (Phase C).** P4 leftover `/24` on revert. |
-| S3-05 |         |          | **In scope (Phase C).** Join with **same pack**. Vanilla client **must fail** (that is Pass). |
+| S3-01 | Skipped |          | Not run; operator closed Pass 2. |
+| S3-02 | Skipped |          | Manager Start/Stop not recorded. After Setup, reserved IP was on VM1 (`promote_playable`) and joinable. |
+| S3-03 | Skipped |          | Stop + IP handback to door not recorded. |
+| S3-04 | Skipped |          | Not run; operator closed Pass 2. |
+| S3-05 | Pass    |          | MultiMC joined on the **reserved play IP** with the deployed FO pack. Vanilla-client **fail** not recorded. |
 | S3-06 | Skipped |          | Pass 1 Pass; oversized-world bell unchanged. |
-| S3-07 |         |          | **In scope (Phase C).** P8: wipe **auto-starts** Minecraft. |
+| S3-07 | Skipped |          | Not run; operator closed Pass 2. |
 
 
 ---
@@ -123,14 +123,14 @@ Do not start 8.6.1 or 9.1. Do not create a Pass 2 bug-fix plan until this file i
 
 | ID    | Result  | Severity | Notes |
 | ----- | ------- | -------- | ----- |
-| S4-01 |         |          | **In scope (Phase D).** QA-exit smoke. |
+| S4-01 | Skipped |          | Not run; operator closed Pass 2. |
 | S4-02 | Skipped |          | Pass 1 Pass; tab split unchanged. |
 | S4-03 | Skipped |          | Pass 1 Pass; `/32` Save covered by S3-04/S4-08 this pass. |
-| S4-08 |         |          | **In scope (Phase D)** with S3-04. Restore test prefix. |
+| S4-08 | Skipped |          | Not run; operator closed Pass 2. |
 | S4-09 | Skipped |          | Pass 1 Pass; Usage chrome. |
 | S4-10 | Skipped |          | Pass 1 Pass; backups UI. New stack may have no zips yet — do not fail S4-10. |
-| S4-11 |         |          | **In scope (Phase D).** Live `mods/` inspect + **Download pack** = original archive (Pass 1 deferred). |
-| S4-12 |         |          | **In scope (Phase D).** P5 identity on Setup-installed agent. |
+| S4-11 | Pass    |          | Server Management listed the mods; **Download pack** worked. |
+| S4-12 | Skipped |          | Not run; operator closed Pass 2. |
 | S4-13 | Skipped |          | Pass 1 Pass; Console. |
 | S4-14 | Skipped |          | Pass 1 Pass; Troubleshooting. |
 | S4-15 | Skipped |          | Pass 1 Pass; Advanced technical status. |
@@ -150,11 +150,11 @@ Do not start 8.6.1 or 9.1. Do not create a Pass 2 bug-fix plan until this file i
 
 | ID    | Result  | Severity | Notes |
 | ----- | ------- | -------- | ----- |
-| S5-01 |         |          | **In scope (Phase D).** Door MOTD; matching **modded** client list ping. |
-| S5-02 |         |          | **In scope (Phase D).** One wake-from-client. First-kick = Known DOOR-ISSUE-1 unless worse. |
+| S5-01 | Skipped |          | Not run as door-off MOTD. Join was while Setup left the stack **PLAYABLE**. |
+| S5-02 | Skipped |          | Wake-from-client not recorded (game already up). |
 | S5-03 | Skipped |          | Skip if S2-09 Pass (catalog). |
 | S5-04 | Skipped |          | Skip if S2-09 Pass (catalog). |
-| S5-05 |         |          | **In scope (Phase D).** P6 only: player refuse + **Manager Start succeeds**; spend-brake still blocks. Restore daily cap. Park MOTD lag / sudden-cap chat / PT vs UTC. |
+| S5-05 | Skipped |          | Not run; operator closed Pass 2. |
 
 
 ---
@@ -164,10 +164,10 @@ Do not start 8.6.1 or 9.1. Do not create a Pass 2 bug-fix plan until this file i
 
 | ID    | Result  | Severity | Notes |
 | ----- | ------- | -------- | ----- |
-| S6-01 |         |          | **In scope (Phase A).** Live Setup **including Deploy** (Pass 1 did not click Deploy). |
-| S6-02 |         |          | **In scope (Phase A).** Chosen `.mrpack` summary; jar-less CF zip **hard-block** (P7). |
+| S6-01 | Pass    |          | Live Setup **with Deploy** on TESTING. Compartment `mcmgr`. Profile TESTING. Modded. Shape 4/24. Client-pack warning shown. |
+| S6-02 | Pass    |          | FO `.mrpack` via **drag-and-drop**; client-only skip warning (mis-declared mods). P7 jar-less CF zip **not** recorded this session. |
 | S6-03 | Skipped |          | Pass 1 Pass; Connect-existing. |
-| S6-04 | Skipped |          | Pass 1 Pass; Deploy/repair resume. |
+| S6-04 | Skipped |          | Pass 1 Pass; Deploy/repair resume. Resume after failed apply was used to finish Deploy. |
 | S6-05 | Skipped |          | Pass 1 Pass; dry-run. Live apply is S7-04. |
 
 
@@ -180,7 +180,7 @@ Do not start 8.6.1 or 9.1. Do not create a Pass 2 bug-fix plan until this file i
 | ----- | ------- | -------- | ----- |
 | S7-02 | Skipped |          | Pass 1 Pass; live 2/12 ↔ 4/24. Do not resize this pass unless a Fail requires it. |
 | S7-03 | Skipped |          | Pass 1 Pass; world replace. |
-| S7-04 |         |          | **In scope (Phase A).** Delete + greenfield Modded. Destroy **before** apply. |
+| S7-04 | Pass    |          | Delete then greenfield Modded FO. Destroy succeeded (Function delete ~4 min, not a Fail). First two applies hit SETUP-ISSUE-9 then SETUP-ISSUE-10 (**fixed** in product). Final Deploy finished; reserved IP joinable (MultiMC). Function image skipped (Docker daemon). |
 
 
 ---
@@ -188,43 +188,38 @@ Do not start 8.6.1 or 9.1. Do not create a Pass 2 bug-fix plan until this file i
 ## S8 — Known-issue checks
 
 
-| ID    | Result | Severity | Notes |
-| ----- | ------ | -------- | ----- |
-| S8-01 |        |          | DOOR-ISSUE-1 first-kick (S5-02). |
-| S8-02 |        |          | FN-ISSUE-1 on TESTING after greenfield (Function may be skipped). |
-| S8-03 |        |          | OS-ISSUE-7 docs. |
-| S8-04 |        |          | SETUP-ISSUE-7 / P1 firewalld after SoftStop reboot (S2-05/S2-09). |
+| ID    | Result  | Severity | Notes |
+| ----- | ------- | -------- | ----- |
+| S8-01 | Skipped |          | S5-02 not run. |
+| S8-02 | Skipped |          | Function not installed this pass. |
+| S8-03 | Skipped |          | Not run. |
+| S8-04 | Skipped |          | Not run. SETUP-ISSUE-10: first-boot cloud-init skipped OS baseline; repaired. |
 
 
 ---
 
 ## Failures expanded
 
-Copy one block per **Fail** (or Blocked that should become a fix):
+None open. Mid-pass apply failures were filed and **fixed** before this fill:
 
-### *(ID)* — *(short title)*
-
-- **Severity:** *(suggested; operator confirms in triage)*
-- **Expected:**
-- **Actual:**
-- **Repro:**
-- **Evidence:** *(no OCIDs / secrets)*
+- **SETUP-ISSUE-9** — budget description >200 chars + OCIR 404-DENIED on a new compartment.
+- **SETUP-ISSUE-10** — VM1 `#cloud-config` invalid (`indent()` / `[Unit]`); marker never written.
 
 ---
 
 ## Additional problems
 
-Anything not tied to a catalog ID: confusing copy, slow UI, “I also noticed…”, questions about intended behavior. Questions are **not** bugs until triage.
-
-1. 
+1. Setup Function skip: `docker.exe` on PATH, login to OCIR succeeded, `buildx --push` failed because Docker Desktop **daemon** was not running (`dockerDesktopLinuxEngine` named pipe missing). Interim Docker publisher; product path remains Step **8.6.1** (no Docker on the admin PC). Not a Fail of 8.6.1.
+2. Danger Zone Delete sat ~4 minutes on deleting the budget-brake Function. Completed; note only.
+3. Pass 2 default VM1 **2/12** was overridden to **4/24**. Pack was FO 6.5.0 (mis-declaration warning), not BlockFront.
 
 ---
 
 ## Triage notes (operator + agent, docs-only session)
 
-Fill **after** Phase A–D are recorded. Then copy [`V1-Bug-Fix-Plan-TEMPLATE.md`](V1-Bug-Fix-Plan-TEMPLATE.md) → `V1-Bug-Fix-Plan-Pass-2.md`. Do not implement in the triage chat.
+**Not held.** Operator: issues already fixed in-pass; do not create `V1-Bug-Fix-Plan-Pass-2.md`.
 
 
 | Catalog ID | Keep as fix? | Plan section id | Notes |
 | ---------- | ------------ | --------------- | ----- |
-|            |              |                 |       |
+| —          | No           | —               | SETUP-ISSUE-9 / SETUP-ISSUE-10 already in product SoT. Function skip is 8.6.1, not a Pass 2 Fail. |

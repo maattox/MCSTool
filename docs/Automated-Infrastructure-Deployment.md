@@ -347,6 +347,7 @@ OCI instances accept cloud-init via `metadata.user_data` (**base64**). Combined 
 - Register Adoptium apt **repository** (not a specific `temurin-21` package — Java major is wizard-time).
 - Optional: disable password SSH; ensure `ubuntu` sudo; set hostname `mcmgr-vm1` / `mcmgr-door`.
 - Write a tiny `/etc/mcmgr/cloud-init-done` marker so SSH bootstrap can wait. `/etc/mcmgr` is `0750 root:mcmgr`; Setup must probe with `sudo -n test -f` (SETUP-ISSUE-5). Do not chmod the directory world-readable.
+- Systemd unit files in `write_files` must use **`encoding: b64`** + OpenTofu `base64encode(...)`. Do **not** embed `[Unit]` in a YAML `|` block via `indent()` — `indent()` does not indent the first line, so YAML sees a flow sequence and cloud-init drops the whole `#cloud-config` (SETUP-ISSUE-10: no runcmd, no marker, 20 min WAIT).
 
 **Forbidden in user_data:**
 
@@ -516,7 +517,7 @@ A1 Flex is frequently out of host capacity. Setup **probes** `CreateComputeCapac
 
 The report is a **snapshot, not a reservation** — apply can still lose a race. The wizard still treats apply-time `Out of host capacity` as the same wait path (Retry / auto-retry every 5 min; no 1 s loop). Auto-retry re-runs the probe first. Do **not** silently retry in a 1 s loop (OCI-API-Usage).
 
-`CreateBudget.compartmentId` must be the **tenancy** OCID; `targets` is the stack compartment. A child-compartment `compartment_id` on the budget resource returns `400 Invalid compartmentId`.
+`CreateBudget.compartmentId` must be the **tenancy** OCID; `targets` is the stack compartment. A child-compartment `compartment_id` on the budget resource returns `400 Invalid compartmentId`. **`description` must be 0–200 characters** (`400-InvalidParameter` otherwise). Artifacts/OCIR `CreateContainerRepository` can return **`404-DENIED`** for about a minute after Identity creates the stack compartment (Functions and Object Storage in that compartment already succeed). The budget_brake module waits two minutes before creating `mcmgr-fn/softstop` when it also created the compartment, and uses a longer create timeout (SETUP-ISSUE-9).
 
 ---
 
@@ -618,7 +619,7 @@ Order of operations (Phase 3.3; 3.1 only needs the module to be plan-able):
 3. `tofu init` → `tofu plan` → show summary → user confirms.
 4. `tofu apply` with waiter-style handling of 429s (provider retry + our own).
 5. Capacity failure → do not abandon variables; retry/poll/resume.
-6. Wait instances RUNNING; wait cloud-init marker over SSH with **`sudo -n test -f`** (the VM1 marker is under `0750` `/etc/mcmgr`; a bare `test -f` as `ubuntu` is always WAIT — SETUP-ISSUE-5). **Do not** `apt upgrade` / `do-release-upgrade` on the guests (22.04 is the baseline; cloud-init already sets `package_upgrade: false`).
+6. Wait instances RUNNING; wait cloud-init marker over SSH with **`sudo -n test -f`** (the VM1 marker is under `0750` `/etc/mcmgr`; a bare `test -f` as `ubuntu` is always WAIT — SETUP-ISSUE-5). If `cloud-init status` is already **done** and the marker is missing, do not wait 20 min — `#cloud-config` was likely invalid (SETUP-ISSUE-10); guest repair applies the OS baseline. **Do not** `apt upgrade` / `do-release-upgrade` on the guests (22.04 is the baseline; cloud-init already sets `package_upgrade: false`).
 7. SSH: door deploy (`install.sh` must write Object Storage namespace/bucket into `oci.env` when OS wake is on), VM1 `onbox/mcmgr` Vanilla driver, idle agent, §10.2 config sync.
 8. Guest repair (same SSH session or Re-Deploy at `apply_stage=vm1` without re-apply): `/etc/netplan/99-mcmgr-play.yaml` for the **secondary** play IP on both VMs (reserved public IP targets that address, not the ephemeral primary); re-apply managed `server.properties` (`white-list=false`, `enforce-whitelist=false`). Setup does **not** seed `whitelist.json` from a Minecraft username (OCI Security List is the allowlist).
 9. Seed Object Storage layout if tofu did not (empty prefixes, initial budget JSON). Treat **missing** `meta/infra.json` / `ledger/usage.json` as create (greenfield GET 404 is not a fatal publish error). Log seed failures into the Setup deploy log.
@@ -850,6 +851,7 @@ Ubuntu on OCI:
 
 | Date | Note |
 |------|------|
+| 2026-08-20 | SETUP-ISSUE-10: VM1 firewalld unit in cloud-init `write_files` must be `encoding: b64` (`indent()` does not indent the first `[Unit]` line). |
 | 2026-08-19 | **Function image product path:** CI-built `linux/arm64` copied into the user’s OCIR (Auth Token). No Docker Desktop / `fn` / Cloud Shell on the admin PC. Required before official release (V1 Step **8.6.1**). Current `docker buildx` publisher is interim. |
 | 2026-08-17 | **V1 Step 2.2:** $1 Function source PUTs `meta/spend-brake-triggered.json`; **do not SoftStop the door Micro** (Always Free AMD Micro ≠ Ampere hours). HCL `softstop_instance_ids` defaults to VM1; Function config gets OS namespace/bucket/lock key. No `fn push`. |
 | 2026-08-17 | SETUP-ISSUE-5: Setup cloud-init wait uses `sudo -n test -f` (marker under `/etc/mcmgr` 0750). |
