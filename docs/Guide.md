@@ -207,7 +207,7 @@ When everyone is done, click **Stop** (doorbell-aware). If you forget, idle time
 | Turn idle timer off / idle timeout / change game computer size / delete the stack | **Advanced → Danger Zone** |
 | Program settings / About / notifications | Top-right **bell**, **gear**, and **menu** (native Windows title bar stays) |
 
-**Wipe world** on **Server Management** deletes only the live save on the game VM. Cloud backups, mods, and `server.properties` are not deleted. Download a world save first if you might want the current world back. The game VM must be running; Minecraft is stopped for the wipe and **started again** so a new world generates.
+**Wipe world** on **Server Management** deletes only the live save on the game VM. Cloud backups, mods, and `server.properties` are not deleted. Download a world save first if you might want the current world back. The game VM must be running; Minecraft is stopped for the wipe and **started again** so a new world generates. If the server is off, that warning (and other button results) shows in a banner **locked to the bottom of the Manager window** — read it, then **X** to dismiss. Short successes such as copying the play IP still fade on their own. Setup keeps its footer status.
 
 *(Pass 1 catalog recorded leave-stopped; operator 2026-08-19 overrode — bug-fix **P8**. Lab PRODUCT-IDEAS Wipe world step 4 may still say the next Start creates a world.)*
 

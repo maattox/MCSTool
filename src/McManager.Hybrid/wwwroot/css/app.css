@@ -155,7 +155,7 @@ button.mcm-btn-disabled:hover {
 .mcm-app-manage {
     display: grid;
     grid-template-columns: var(--app-pad-x) minmax(0, var(--app-chrome-width)) var(--app-pad-x);
-    grid-template-rows: auto auto auto minmax(0, 1fr);
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
     justify-content: center;
     padding-left: 0;
     padding-right: 0;
@@ -756,25 +756,119 @@ button.mcm-btn-disabled:hover {
     width: 0%;
 }
 
-.mcm-toast {
-    position: fixed;
-    top: 16px;
-    right: 16px;
-    z-index: 80;
-    max-width: 420px;
-    padding: 10px 12px;
-    background: var(--surface-1);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    font-size: 13px;
-    color: var(--text-primary);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+.mcm-app.mcm-app-manage:has(> .mcm-action-banner) {
+    padding-bottom: 0;
 }
 
-.mcm-toast.is-error {
+.mcm-action-banner {
+    display: grid;
+    grid-template-columns: var(--app-pad-x) minmax(0, var(--app-chrome-width)) var(--app-pad-x);
+    justify-content: center;
+    min-width: 0;
+    margin: 0;
+    padding: 10px 0 12px;
+    background: var(--surface-1);
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -6px 18px rgba(8, 10, 14, 0.28);
+}
+
+.mcm-action-banner-inner {
+    grid-column: 2;
+    min-width: 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.mcm-action-banner-icon {
+    flex-shrink: 0;
+    margin-top: 2px;
+    font-size: 16px;
+    color: var(--text-accent);
+}
+
+.mcm-action-banner-copy {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    max-height: 6.4em;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.mcm-action-banner-dismiss {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 7px;
+    color: var(--text-muted);
+}
+
+.mcm-action-banner-dismiss .ti {
+    font-size: 14px;
+    margin: 0;
+    color: inherit;
+}
+
+.mcm-action-banner-dismiss:hover:not(:disabled) {
+    background: var(--surface-2);
+    color: var(--text-primary);
+}
+
+.mcm-action-banner.is-error {
     background: var(--bg-danger);
-    border-color: var(--border-danger);
-    color: var(--text-danger);
+    border-top-color: var(--border-danger);
+}
+
+.mcm-action-banner.is-error .mcm-action-banner-icon,
+.mcm-action-banner.is-error .mcm-action-banner-copy {
+    color: var(--text-danger-bright);
+}
+
+.mcm-action-banner.is-warning {
+    background: color-mix(in srgb, var(--text-warning) 16%, var(--surface-1));
+    border-top-color: var(--text-warning);
+}
+
+.mcm-action-banner.is-warning .mcm-action-banner-icon,
+.mcm-action-banner.is-warning .mcm-action-banner-copy {
+    color: var(--text-warning);
+}
+
+.mcm-action-banner.is-progress {
+    border-top-color: var(--fill-accent);
+}
+
+.mcm-action-banner.is-success .mcm-action-banner-icon {
+    color: var(--text-success);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .mcm-action-banner {
+        animation: mcm-banner-in 180ms ease-out;
+    }
+}
+
+@keyframes mcm-banner-in {
+    from {
+        transform: translateY(8px);
+        opacity: 0.55;
+    }
+
+    to {
+        transform: none;
+        opacity: 1;
+    }
 }
 
 /* Trial: equal-width segmented tabs aligned to the chrome row. */
@@ -831,9 +925,8 @@ button.mcm-btn-disabled:hover {
     grid-column: 2 / 4;
 }
 
-.mcm-app-manage > .mcm-toast {
+.mcm-app-manage > .mcm-action-banner {
     grid-column: 1 / -1;
-    grid-row: 1;
 }
 
 .mcm-tab-body-inner {

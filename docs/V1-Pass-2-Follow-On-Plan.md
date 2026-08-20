@@ -1,6 +1,6 @@
 # V1 Pass-2 follow-on — operator notes (living)
 
-**Status:** Living. Created 2026-08-20 (docs only). **NEXT = P4.**  
+**Status:** Living. Created 2026-08-20 (docs only). **NEXT = P5.**  
 **Parent:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.4**.  
 **Why now:** operator 2026-08-20 — Pass 2 closed early after greenfield Modded + join + Modding panel. Pause Step **8.5.2** and implement these notes **before** QA Pass 3.
 
@@ -103,8 +103,8 @@ Do **not** rewrite PRODUCT-IDEAS to match. Note the drift in the implementing se
 | **P1** | Top-bar Start STOPPED gate + spend-brake confirm + player count | **DONE** | SEQUENTIAL | Yes (player count) |
 | **P2** | Setup “Deployment Complete” + reserved IP copy | **DONE** | SEQUENTIAL | No |
 | **P3** | Merge Danger Zone into Advanced + idle only there + vibrant red | **DONE** | SEQUENTIAL | No |
-| **P4** | Window-locked dismissible action banners | **NEXT** | SEQUENTIAL | No |
-| **P5** | “game computer” → “server” (Setup + Manager + Guide) | TODO | SEQUENTIAL | No |
+| **P4** | Window-locked dismissible action banners | **DONE** | SEQUENTIAL | No |
+| **P5** | “game computer” → “server” (Setup + Manager + Guide) | **NEXT** | SEQUENTIAL | No |
 | **P6** | Console simple vs full log | TODO | SEQUENTIAL | Yes (optional) |
 | **P7** | Per-tab vertical scroll memory | TODO | SEQUENTIAL | No |
 | **P8** | Usage by day (collapsed “Detailed usage”) | TODO | SEQUENTIAL | No |
@@ -215,7 +215,7 @@ Keep the deploy log available (below or collapsed). Do not dump OCIDs. Use “se
 
 ## P4 — Window-locked dismissible action banners
 
-**Status:** NEXT  
+**Status:** DONE  
 **Catalog IDs:** Server Management wipe path (S3-07 adjacent)
 
 **Read first**
@@ -246,13 +246,13 @@ Reuse one Hybrid mechanism; migrate Server Management first, then other manage t
 
 **Done when:** At least Server Management + other top-of-tab actions use the banner; Guide one-liner if user-visible.
 
-**Changelog:** *(empty)*
+**Changelog:** 2026-08-20 — Window-locked bottom action banner with **X**. Errors / warnings / progress / long success stay until dismiss; short success auto-hides. Replaced auto-hide toast. Migrated Server Management, Whitelist, Advanced, Troubleshooting button results off in-tab grey `StatusMessage`. Setup footer kept. Catalog S3-07 / S4-01 expected updated. Guide one-liner.
 
 ---
 
 ## P5 — “game computer” → “server”
 
-**Status:** TODO  
+**Status:** NEXT  
 
 **Read first**
 
@@ -533,6 +533,7 @@ Derive OCIR username from namespace + OCI user **if that is a small change**; ot
 
 | Date | Note |
 |------|------|
+| 2026-08-20 | **P4 DONE.** Window-locked dismissible action banners (not auto-hide for long/error). **NEXT = P5.** Do not start Pass 3, 8.6.1, or 9.1. |
 | 2026-08-20 | **P3 DONE.** Danger Zone merged into Advanced; idle only under that heading; vibrant redstone plate. **NEXT = P4.** Do not start Pass 3, 8.6.1, or 9.1. |
 | 2026-08-20 | **P2 DONE.** Setup **Deployment Complete** + reserved play IP Copy + Close. **NEXT = P3.** Do not start Pass 3, 8.6.1, or 9.1. |
 | 2026-08-20 | **P1 DONE.** Start STOPPED gate; overlay unlock-only; Players pin. **NEXT = P2.** Do not start Pass 3, 8.6.1, or 9.1. |

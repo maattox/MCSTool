@@ -8,7 +8,7 @@ using McManager.Hybrid.Ui;
 namespace McManager.Hybrid.ViewModels;
 
 /// <summary>
-/// Manage chrome: novice status, door-aware power, pinned hours, poll, toast.
+/// Manage chrome: novice status, door-aware power, pinned hours, poll, action banner.
 /// Tab Object Storage work (B6–B10) must not set <see cref="_powerActionInFlight"/>.
 /// </summary>
 public sealed partial class MainViewModel : ObservableObject, IDisposable
@@ -27,6 +27,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private readonly IClipboard _clipboard;
     private readonly WindowFocusBroker _focus;
     private readonly NotificationCenter _notices;
+    private readonly ActionBanner _banner;
 
     private ManagerLocalConfig? _config;
     private DoorClient? _door;
@@ -40,7 +41,6 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private SpendBrakeUiState _spendBrakeUi = SpendBrakeUiState.Unknown;
 
     private CancellationTokenSource? _pollCts;
-    private CancellationTokenSource? _toastCts;
     private CancellationTokenSource? _copyLabelCts;
     private DateTimeOffset _lastDoorPollUtc = DateTimeOffset.MinValue;
     private DateTimeOffset _lastOciPollUtc = DateTimeOffset.MinValue;
@@ -90,15 +90,6 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     private bool _canRestart;
-
-    [ObservableProperty]
-    private string _toastMessage = "";
-
-    [ObservableProperty]
-    private bool _toastVisible;
-
-    [ObservableProperty]
-    private bool _toastIsError;
 
     [ObservableProperty]
     private string _pinTodayValue = Placeholder;
@@ -265,7 +256,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         IUiDispatcher dispatcher,
         IClipboard clipboard,
         WindowFocusBroker focus,
-        NotificationCenter notices)
+        NotificationCenter notices,
+        ActionBanner banner)
     {
         _configHost = configHost;
         _cloud = cloud;
@@ -275,6 +267,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _clipboard = clipboard;
         _focus = focus;
         _notices = notices;
+        _banner = banner;
 
         BindFromHost();
         _session.ClientsRebuilding += OnClientsRebuilding;
@@ -712,8 +705,6 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _focus.FocusChanged -= OnWindowFocusChanged;
         _pollCts?.Cancel();
         _pollCts?.Dispose();
-        _toastCts?.Cancel();
-        _toastCts?.Dispose();
         _copyLabelCts?.Cancel();
         _copyLabelCts?.Dispose();
     }
@@ -1030,30 +1021,16 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     private void ShowToast(string message, bool isError)
     {
-        ToastMessage = message;
-        ToastIsError = isError;
-        ToastVisible = !string.IsNullOrWhiteSpace(message);
-        _toastCts?.Cancel();
-        _toastCts?.Dispose();
-        if (!ToastVisible)
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            _banner.Dismiss();
             return;
-
-        var cts = new CancellationTokenSource();
-        _toastCts = cts;
-        var delay = TimeSpan.FromSeconds(isError ? 8 : 3.5);
-        _ = HideToastAfterAsync(delay, cts.Token);
-    }
-
-    private async Task HideToastAfterAsync(TimeSpan delay, CancellationToken cancellationToken)
-    {
-        try
-        {
-            await _clock.Delay(delay, cancellationToken).ConfigureAwait(false);
-            ToastVisible = false;
         }
-        catch (OperationCanceledException)
-        {
-        }
+
+        var severity = isError
+            ? ActionBannerSeverity.Error
+            : ActionBanner.InferSeverity(message);
+        _banner.Show(message.Trim(), severity);
     }
 
     private async Task RestoreCopyLabelAsync(CancellationToken cancellationToken)

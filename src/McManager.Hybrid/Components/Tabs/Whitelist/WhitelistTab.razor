@@ -84,11 +84,6 @@
             <button type="button" disabled="@Vm.IsBusy" @onclick="Vm.UpdateAdminIpAsync">Update my IP</button>
         </div>
     </div>
-
-    @if (!string.IsNullOrWhiteSpace(Vm.StatusMessage))
-    {
-        <p style="margin:12px 0 0;opacity:0.85;font-size:13px;white-space:pre-wrap;">@Vm.StatusMessage</p>
-    }
 </div>
 
 @if (_modalOpen)

@@ -75,6 +75,8 @@ public partial class App : Application
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<NotificationCenter>();
         services.AddSingleton<NotificationCenterViewModel>();
+        services.AddSingleton<ActionBanner>();
+        services.AddSingleton<ActionBannerViewModel>();
         services.AddSingleton<ChromeViewModel>();
         services.AddSingleton<WhitelistViewModel>();
         services.AddSingleton<UsageViewModel>();

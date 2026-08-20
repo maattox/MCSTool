@@ -2,7 +2,7 @@
 
 **Status:** Living test catalog for [Phase 8.5](V1-Implementation-Plan.md#phase-85--pre-packaging-qa).  
 **Parent:** `[V1-Implementation-Plan.md](V1-Implementation-Plan.md)`.  
-**Results:** fill `[V1-QA-Pass-N-Results.md](V1-QA-Pass-3-Results.md)` for the current pass. Pass 1 and Pass 2 are historical. Do **not** edit expected steps in this catalog just to record an outcome. Product changes (Step 8.4) **may** update expected (S4-02, S3-01, S6-01, S6-02).  
+**Results:** fill `[V1-QA-Pass-N-Results.md](V1-QA-Pass-3-Results.md)` for the current pass. Pass 1 and Pass 2 are historical. Do **not** edit expected steps in this catalog just to record an outcome. Product changes (Step 8.4) **may** update expected (S4-02, S3-01, S6-01, S6-02, S4-01, S3-07).  
 **Pass 2 execution:** `[V1-QA-Pass-2-Scope.md](V1-QA-Pass-2-Scope.md)` (**closed early**).  
 **Pass 3 execution:** `[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)` (**blocked** until Step 8.4). Do not re-run the full catalog.  
 **Fix work:** after triage, an agent writes `[V1-Bug-Fix-Plan-Pass-N.md](V1-Bug-Fix-Plan-TEMPLATE.md)` from the filled results. Agents implement **that** plan, not this catalog.
@@ -687,7 +687,7 @@ Agent: put the fixture, watch OCI/SSH. Operator: Hybrid or Minecraft. Fill **bot
 
 **Agent:** Minecraft stopped then **started again**. `world` dir gone or empty under `/opt/mcmgr/server/<world>` only. `mods/`, `server.properties`, Object Storage `backups/` untouched.
 
-**Expected:** Path guard holds. Minecraft is **running** after wipe; next join is a fresh world.
+**Expected:** Path guard holds. Minecraft is **running** after wipe; next join is a fresh world. If Wipe is used while the game VM is not RUNNING, the warning appears in the window-bottom action banner (**X** to dismiss), not only as grey tab text.
 
 *(Pass 1 recorded leave-stopped. Operator 2026-08-19 overrode — [`V1-Bug-Fix-Plan-Pass-1.md`](V1-Bug-Fix-Plan-Pass-1.md) **P8**. PRODUCT-IDEAS Wipe world step 4 may still say next-Start.)*
 
@@ -707,9 +707,9 @@ For each: click the path, then Result Pass or Fail with what you saw.
 
 **Runner:** `operator` · **Duration:** `quick`
 
-**Steps:** Top bar **Status** is Running/Stopped (not a raw OCI lifecycle dump). **Play IP** visible + copy. **Players** pin is `0` when Stopped and the RCON `list` count (`X / Y`) when Running. Native Windows title bar (no custom caption). No mini-terminal.
+**Steps:** Top bar **Status** is Running/Stopped (not a raw OCI lifecycle dump). **Play IP** visible + copy. **Players** pin is `0` when Stopped and the RCON `list` count (`X / Y`) when Running. Native Windows title bar (no custom caption). No mini-terminal. Button results on manage tabs (Whitelist, Server Management, Advanced, Troubleshooting) appear in a dismissible banner locked to the **bottom of the window**, not only as grey text at the bottom of a scrolled tab.
 
-**Expected:** Matches operator UI notes.
+**Expected:** Matches operator UI notes. Wipe-while-stopped warning is readable without scrolling Server Management. **X** dismisses the banner. Setup wizard may keep an on-screen footer status.
 
 ### S4-02 — Tabs exist and split
 

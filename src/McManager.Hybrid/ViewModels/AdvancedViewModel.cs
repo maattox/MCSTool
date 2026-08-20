@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using McManager.Core.Config;
+using McManager.Core.Notifications;
 using McManager.Core.Services;
 using McManager.Core.Usage;
 using McManager.Hybrid.Ui;
@@ -29,6 +30,8 @@ public sealed partial class AdvancedViewModel : ObservableObject
     private readonly LocalConfigHost _configHost;
     private readonly ManageCloudServices _cloud;
     private readonly ManageSession _session;
+    private readonly ActionBanner _banner;
+    private bool _forwardBanner;
 
     private BudgetConfigDocument? _lastBudget;
     private InfraMetaDocument? _lastInfra;
@@ -97,7 +100,8 @@ public sealed partial class AdvancedViewModel : ObservableObject
         IUiDialogs dialogs,
         HybridShell shell,
         MainViewModel main,
-        ConnectExistingFlow connectExisting)
+        ConnectExistingFlow connectExisting,
+        ActionBanner banner)
     {
         _configHost = configHost;
         _cloud = cloud;
@@ -106,16 +110,33 @@ public sealed partial class AdvancedViewModel : ObservableObject
         _shell = shell;
         _main = main;
         _connectExisting = connectExisting;
+        _banner = banner;
 
         BindFromHost();
+        _forwardBanner = true;
         ApplyLiveStatus(_main.Vm1Lifecycle, _main.DoorState);
         _main.PropertyChanged += OnMainChanged;
         _session.Reloaded += OnSessionReloaded;
     }
 
+    partial void OnStatusMessageChanged(string value)
+    {
+        if (!_forwardBanner)
+            return;
+        _banner.ShowInferred(value);
+    }
+
     private void OnSessionReloaded(object? sender, EventArgs e) => BindFromHost();
 
     private void BindFromHost()
+    {
+        var wasForward = _forwardBanner;
+        _forwardBanner = false;
+        BindFromHostCore();
+        _forwardBanner = wasForward;
+    }
+
+    private void BindFromHostCore()
     {
         _config = _configHost.Config;
         _compute = _cloud.Compute;

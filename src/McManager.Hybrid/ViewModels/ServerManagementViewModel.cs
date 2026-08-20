@@ -35,6 +35,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject
     private readonly IUiDialogs _dialogs;
     private readonly MainViewModel _main;
     private readonly NotificationCenter _notices;
+    private readonly ActionBanner _banner;
+    private bool _forwardBanner;
     private string? _sessionError;
     private long _currentBackupBytes;
     private string _dataDirectory = "";
@@ -165,7 +167,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject
         IFilePicker filePicker,
         IUiDialogs dialogs,
         MainViewModel main,
-        NotificationCenter notices)
+        NotificationCenter notices,
+        ActionBanner banner)
     {
         _configHost = configHost;
         _cloud = cloud;
@@ -174,9 +177,32 @@ public sealed partial class ServerManagementViewModel : ObservableObject
         _dialogs = dialogs;
         _main = main;
         _notices = notices;
+        _banner = banner;
 
         BindFromHost();
+        _forwardBanner = true;
         _session.Reloaded += OnSessionReloaded;
+    }
+
+    partial void OnStatusMessageChanged(string value)
+    {
+        if (!_forwardBanner)
+            return;
+        _banner.ShowInferred(value);
+    }
+
+    partial void OnIdentityStatusChanged(string value)
+    {
+        if (!_forwardBanner || string.IsNullOrWhiteSpace(value))
+            return;
+        _banner.ShowInferred(value);
+    }
+
+    partial void OnProgressDisplayChanged(string value)
+    {
+        if (!_forwardBanner || string.IsNullOrWhiteSpace(value) || string.IsNullOrWhiteSpace(StatusMessage))
+            return;
+        _banner.Show($"{StatusMessage} {value}".Trim(), ActionBannerSeverity.Progress);
     }
 
     private void OnSessionReloaded(object? sender, EventArgs e)
@@ -186,6 +212,14 @@ public sealed partial class ServerManagementViewModel : ObservableObject
     }
 
     private void BindFromHost()
+    {
+        var wasForward = _forwardBanner;
+        _forwardBanner = false;
+        BindFromHostCore();
+        _forwardBanner = wasForward;
+    }
+
+    private void BindFromHostCore()
     {
         _config = _configHost.Config;
         _ssh = _cloud.Ssh;

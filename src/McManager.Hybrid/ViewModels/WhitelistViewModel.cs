@@ -3,6 +3,7 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using McManager.Core.Config;
+using McManager.Core.Notifications;
 using McManager.Core.Services;
 
 namespace McManager.Hybrid.ViewModels;
@@ -17,6 +18,8 @@ public sealed partial class WhitelistViewModel : ObservableObject
     private readonly LocalConfigHost _configHost;
     private readonly ManageCloudServices _cloud;
     private readonly ManageSession _session;
+    private readonly ActionBanner _banner;
+    private bool _forwardBanner;
     private string _dataDirectory = "";
     private ISecurityListService? _securityList;
     private AllowlistStore? _allowlistStore;
@@ -42,20 +45,38 @@ public sealed partial class WhitelistViewModel : ObservableObject
     public WhitelistViewModel(
         LocalConfigHost configHost,
         ManageCloudServices cloud,
-        ManageSession session)
+        ManageSession session,
+        ActionBanner banner)
     {
         _configHost = configHost;
         _cloud = cloud;
         _session = session;
+        _banner = banner;
         _dataDirectory = "";
         Friends.CollectionChanged += OnFriendsCollectionChanged;
         BindFromHost();
+        _forwardBanner = true;
         _session.Reloaded += OnSessionReloaded;
+    }
+
+    partial void OnStatusMessageChanged(string value)
+    {
+        if (!_forwardBanner)
+            return;
+        _banner.ShowInferred(value);
     }
 
     private void OnSessionReloaded(object? sender, EventArgs e) => BindFromHost();
 
     private void BindFromHost()
+    {
+        var wasForward = _forwardBanner;
+        _forwardBanner = false;
+        BindFromHostCore();
+        _forwardBanner = wasForward;
+    }
+
+    private void BindFromHostCore()
     {
         _config = _configHost.Config;
         _dataDirectory = _configHost.LoadResult.DataDirectory ?? "";

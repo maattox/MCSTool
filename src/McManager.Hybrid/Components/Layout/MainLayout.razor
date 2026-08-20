@@ -7,6 +7,7 @@
 @inject MainViewModel Vm
 @inject ChromeViewModel Chrome
 @inject NotificationCenterViewModel Notices
+@inject ActionBannerViewModel Banner
 @implements IDisposable
 
 <div class="mcm-app mcm-app-manage">
@@ -330,9 +331,23 @@
         </div>
     </main>
 
-    @if (Vm.ToastVisible)
+    @if (Banner.IsVisible)
     {
-        <div class="mcm-toast @(Vm.ToastIsError ? "is-error" : null)" role="status">@Vm.ToastMessage</div>
+        <div class="mcm-action-banner @Banner.SeverityClass"
+             role="@Banner.LiveRole"
+             aria-live="@Banner.AriaLive">
+            <div class="mcm-action-banner-inner">
+                <i class="@Banner.SeverityIcon mcm-action-banner-icon" aria-hidden="true"></i>
+                <p class="mcm-action-banner-copy mcm-slim-scroll">@Banner.Message</p>
+                <button type="button"
+                        class="mcm-action-banner-dismiss"
+                        title="Dismiss"
+                        aria-label="Dismiss"
+                        @onclick="Banner.Dismiss">
+                    <i class="ti ti-x" aria-hidden="true"></i>
+                </button>
+            </div>
+        </div>
     }
 
     @if (Chrome.OverflowOpen || Notices.PanelOpen)
@@ -453,6 +468,7 @@
         Vm.PropertyChanged += OnVmChanged;
         Chrome.PropertyChanged += OnVmChanged;
         Notices.PropertyChanged += OnVmChanged;
+        Banner.PropertyChanged += OnVmChanged;
         Vm.StartChrome();
     }
 
@@ -481,6 +497,7 @@
         Vm.PropertyChanged -= OnVmChanged;
         Chrome.PropertyChanged -= OnVmChanged;
         Notices.PropertyChanged -= OnVmChanged;
+        Banner.PropertyChanged -= OnVmChanged;
     }
 
     private void ToggleBell()
@@ -518,6 +535,7 @@
             return;
         Chrome.ClosePanels();
         Notices.Close();
+        Banner.Dismiss();
     }
 
     private void OnVmChanged(object? sender, PropertyChangedEventArgs e) =>

@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using McManager.Core.Notifications;
 using McManager.Core.Services;
 using McManager.Hybrid.Ui;
 
@@ -21,6 +22,8 @@ public sealed partial class TroubleshootingViewModel : ObservableObject
     private readonly ManageSession _session;
     private readonly IUiDialogs _dialogs;
     private readonly IClipboard _clipboard;
+    private readonly ActionBanner _banner;
+    private bool _forwardBanner;
 
     [ObservableProperty]
     private string _resultLog = DefaultLog;
@@ -37,21 +40,39 @@ public sealed partial class TroubleshootingViewModel : ObservableObject
         ManageCloudServices cloud,
         ManageSession session,
         IUiDialogs dialogs,
-        IClipboard clipboard)
+        IClipboard clipboard,
+        ActionBanner banner)
     {
         _configHost = configHost;
         _cloud = cloud;
         _session = session;
         _dialogs = dialogs;
         _clipboard = clipboard;
+        _banner = banner;
 
         BindFromHost();
+        _forwardBanner = true;
         _session.Reloaded += OnSessionReloaded;
+    }
+
+    partial void OnStatusMessageChanged(string value)
+    {
+        if (!_forwardBanner)
+            return;
+        _banner.ShowInferred(value);
     }
 
     private void OnSessionReloaded(object? sender, EventArgs e) => BindFromHost();
 
     private void BindFromHost()
+    {
+        var wasForward = _forwardBanner;
+        _forwardBanner = false;
+        BindFromHostCore();
+        _forwardBanner = wasForward;
+    }
+
+    private void BindFromHostCore()
     {
         _service = null;
         if (_configHost.Config is not null)

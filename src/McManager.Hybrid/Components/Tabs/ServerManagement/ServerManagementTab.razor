@@ -21,15 +21,6 @@
         </div>
     </div>
 
-    @if (!string.IsNullOrWhiteSpace(Vm.StatusMessage))
-    {
-        <p style="margin:0 0 8px;opacity:0.85;font-size:13px;white-space:pre-wrap;">@Vm.StatusMessage</p>
-    }
-    @if (!string.IsNullOrWhiteSpace(Vm.ProgressDisplay))
-    {
-        <p style="margin:0 0 12px;opacity:0.65;font-size:12px;">@Vm.ProgressDisplay</p>
-    }
-
     <div class="mcm-section-card" style="margin-bottom:1.25rem;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
             <div style="display:flex;align-items:center;gap:4px;">
