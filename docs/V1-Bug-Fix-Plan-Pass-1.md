@@ -1,6 +1,6 @@
 # V1 bug-fix plan — Pass 1
 
-**Status:** Living. Created 2026-08-19 from [`V1-QA-Pass-1-Results.md`](V1-QA-Pass-1-Results.md) after **operator early triage** (paused after S2). **P1–P5 DONE** (P5 2026-08-20). Catalog **S0–S7 DONE** (S7-04 Skipped). Operator **confirmed remaining severities** 2026-08-19 (including S3-07 auto-start). **NEXT = P6.** Do not start 8.6.1 or 9.1.  
+**Status:** Living. Created 2026-08-19 from [`V1-QA-Pass-1-Results.md`](V1-QA-Pass-1-Results.md) after **operator early triage** (paused after S2). **P1–P6 DONE** (P6 2026-08-20). Catalog **S0–S7 DONE** (S7-04 Skipped). Operator **confirmed remaining severities** 2026-08-19 (including S3-07 auto-start). **NEXT = P7.** Do not start 8.6.1 or 9.1.  
 **Parent:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.5.2** (stays NEXT until Phase 8.5 exits).  
 **Catalog:** [`V1-QA-Catalog.md`](V1-QA-Catalog.md) — do not edit expected steps.
 
@@ -53,7 +53,7 @@ Operator confirmed the suggested severities except **S3-07** (must auto-start af
 | -------------- | --------------- | -------- | ---- | ----- |
 | **S3-04** leftover Minecraft **prefix** CIDR after allowlist revert | **Yes** | **Minor** | **P4 DONE** | `IsManagedRule` was `/32`-only. SL already restored on TESTING. Do not strip door `wait_forge` VCN TCP 25565. |
 | **S4-12** name / icon / MOTD never appeared in Java list | **Yes** | **Major** | **P5 DONE** | Stale `/opt/mc-manager` plus apply **After=** Java. Door MOTD out of scope. |
-| **S5-05** Manager Start refused when daily exhausted | **Yes** | **Major** | **P6** | Door refuses **player** wake; **admin Start from Manager** must still work. Spend-brake lock must still block Start (S3-01). |
+| **S5-05** Manager Start refused when daily exhausted | **Yes** | **Major** | **P6 DONE** | Door refuses **player** wake; **admin Start from Manager** must still work. Spend-brake lock must still block Start (S3-01). |
 | S5-05 distinct daily vs spend-brake copy | No | — | — | Eventual Pass after one connect. Do not re-fix. |
 | S5-05 MOTD lag until first connect | **Known** | — | OS-ISSUE-4 | Door OS pull is wake + `/api/os-refresh`, not every tick. |
 | S5-05 no in-game chat on **sudden** cap drop | **Won't-fix** this pass | — | — | Warnings are remaining-time ticks (30/5 min), not “cap just rewritten.” |
@@ -93,11 +93,11 @@ Pass 1 **S0–S7** are recorded in [`V1-QA-Pass-1-Results.md`](V1-QA-Pass-1-Resu
 | **P3** | TESTING `shutdown_vm` Function image (S2-16–18) | **DONE** | SEQUENTIAL | Yes (fn/Docker) |
 | **P4** | Allowlist leftover Minecraft prefix CIDR (S3-04) | **DONE** | PARALLEL-OK vs P5/P6/P7 | Unit tests; no tofu |
 | **P5** | Server name / icon / MOTD not applied (S4-12) | **DONE** | SEQUENTIAL vs VM1 work | Yes |
-| **P6** | Manager Start after daily exhaustion (S5-05) | **NEXT** | SEQUENTIAL vs door/Hybrid Start | Yes |
-| **P7** | Incomplete CurseForge zip hard-block (S6-02 UX) | TODO | PARALLEL-OK vs P4 | No |
+| **P6** | Manager Start after daily exhaustion (S5-05) | **DONE** | SEQUENTIAL vs door/Hybrid Start | Yes |
+| **P7** | Incomplete CurseForge zip hard-block (S6-02 UX) | **NEXT** | PARALLEL-OK vs P4 | No |
 | **P8** | Wipe world auto-starts Minecraft (S3-07) | TODO | SEQUENTIAL vs Server Management | Yes |
 
-**NEXT = P6.** Do not start 8.6.1 or 9.1.
+**NEXT = P7.** Do not start 8.6.1 or 9.1.
 
 ---
 
@@ -257,7 +257,7 @@ Door MOTD/`mcdoor` is **out of scope**. Do not load the full blueprint.
 
 ## P6 — Manager Start after daily exhaustion (S5-05)
 
-**Status:** NEXT  
+**Status:** DONE  
 **Catalog IDs:** S5-05 (Manager Start half only)  
 **Severity:** Major (operator 2026-08-19)
 
@@ -286,13 +286,13 @@ Do **not** load the full PRODUCT-IDEAS or Minecraft blueprint. Do **not** weaken
 
 **Done when:** Daily exhaustion blocks friends, not the admin Start button. Spend-brake still blocks both.
 
-**Changelog:** _(empty)_
+**Changelog:** 2026-08-20 — Player Minecraft login still refuses daily (`DAILY BUDGET FULFILLED`, `last_error=daily budget exhausted`). Manager `POST /api/wake` is admin HTTP (`control_wake(..., admin_override=1)`) and skips that daily gate; spend-brake + soft monthly cap still refuse. Hybrid Start wait no longer treats `BUDGET_EXHAUSTED` as done (would return immediately). TESTING: lowered daily ~0.48 with used ~4.17; login kick daily-only; admin wake → PLAYABLE ~1 min; PUT lock → VM1 STOPPED, `SPEND_BRAKE`. Restored original budget; lock 404; idle re-enabled (15); VM1 STOPPED; play IP on door. DOOR-ISSUE-11. Did not `tofu apply`. Did not start P7 or 9.1.
 
 ---
 
 ## P7 — Incomplete CurseForge zip hard-block (optional)
 
-**Status:** TODO  
+**Status:** NEXT  
 **Catalog IDs:** Additional problem #11 (S6-02 row was **Pass**)  
 **Severity:** Minor (operator 2026-08-19)
 
@@ -362,3 +362,4 @@ Do **not** load the full PRODUCT-IDEAS or blueprint except §11.3 if needed for 
 | 2026-08-19 | Operator **confirmed** severities: P4 Minor, P5 Major, P6 Major, P7 Minor, timezone parked. **S3-07** overridden to auto-start (**P8** Minor). Authority: operator will + this plan; do not rewrite P8 to match PRODUCT-IDEAS. **NEXT = P4**. Do not start 8.6.1 or 9.1. Docs-only; no product code. |
 | 2026-08-19 | **P4 DONE.** Leftover Minecraft prefix CIDRs (TCP+UDP `/9`–`/31`) are managed and stripped; door `wait_forge` TCP-only subnet 25565 + ICMP preserved. `SecurityListIngressPlanTests` cover S3-04. **NEXT = P5**. Do not start 8.6.1 or 9.1. |
 | 2026-08-20 | **P5 DONE.** S4-12: Manager write OK; live agent lacked identity apply; SoT applied after Java so Vanilla stop rewrote old MOTD. `mc-boot-ledger` now Before=minecraft; TESTING redeployed. Localhost SLP showed new MOTD+icon. OS-ISSUE-10. **NEXT = P6**. Do not start 8.6.1 or 9.1. |
+| 2026-08-20 | **P6 DONE.** S5-05 Manager Start: HTTP `/api/wake` skips daily; Minecraft login still refuses; spend-brake still blocks. Hybrid Start wait ignores `BUDGET_EXHAUSTED`. TESTING: daily kick + admin PLAYABLE + lock refuse. DOOR-ISSUE-11. **NEXT = P7**. Do not start 8.6.1 or 9.1. |

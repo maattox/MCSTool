@@ -420,7 +420,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     /// <summary>
     /// Overlay Start Server: park doorbell, DELETE the lock, refresh door OS cache,
-    /// then the normal Wake path (idle / daily / monthly gates still apply).
+    /// then the admin Wake path (daily gate does not apply; spend-brake still blocks
+    /// until this overlay clears it).
     /// </summary>
     public async Task ConfirmSpendBrakeStartAsync()
     {
@@ -622,7 +623,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
             ActionFeedback = "Start accepted — waiting until friends can connect…";
             await WaitForDoorAsync(
-                s => s.IsPlayable || s.IsDegraded || s.IsBudgetExhausted,
+                s => s.IsPlayable || s.IsDegraded || s.IsSpendBrake,
                 TimeSpan.FromMinutes(30));
         }
         finally
@@ -1068,8 +1069,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                         ? $"Wake service degraded: {result.Value.LastError}"
                         : result.Value.IsPlayable
                             ? "Server is running."
-                            : "Server is stopped.";
-                    if (result.Value.IsDegraded || result.Value.IsBudgetExhausted)
+                            : result.Value.IsSpendBrake
+                                ? "The monthly spend brake blocked Start."
+                                : "Server is stopped.";
+                    if (result.Value.IsDegraded || result.Value.IsSpendBrake)
                         ShowToast(ActionFeedback, isError: true);
                     return;
                 }

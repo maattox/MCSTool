@@ -59,10 +59,13 @@ int control_refresh_budget(ControlContext *ctx);
  * Does not start VM1. Clears BUDGET_EXHAUSTED when limits allow. */
 int control_os_refresh(ControlContext *ctx);
 
-/* Wake VM1 if budget allows and the spend-brake lock is absent. Runs
- * asynchronously when `async` is non-zero.
+/* Wake VM1 if the spend-brake lock is absent. Runs asynchronously when
+ * `async` is non-zero. `admin_override` non-zero (Manager POST /api/wake,
+ * admin-CIDR HTTP) skips the daily OCPU gate; player login must pass 0 so
+ * friends stay refused after daily exhaustion. Soft monthly cap and the $1
+ * spend-brake lock still refuse both paths.
  * Returns 0 if wake started or is already in progress, -1 on immediate reject. */
-int control_wake(ControlContext *ctx, int async);
+int control_wake(ControlContext *ctx, int async, int admin_override);
 
 /* Stop VM1, record session end, move IP to VM2. `exhausted` sets BUDGET_EXHAUSTED.
  * Runs asynchronously when `async` is non-zero (HTTP idle-empty / budget-exhausted).
@@ -80,7 +83,7 @@ int control_set_last_keepalive(ControlContext *ctx, const char *iso);
 /* Writes status JSON into `buf` (caller provides buffer). Returns bytes written or -1. */
 int control_status_json(const ControlContext *ctx, char *buf, size_t buf_cap);
 
-/* mcdoor wake-on-join hook: same as control_wake(ctx, 1) when idle and budget OK. */
+/* mcdoor wake-on-join hook: player path — control_wake(ctx, 1, 0). */
 void control_on_login_wake(void *userdata);
 
 #endif /* VM2_CONTROL_H */

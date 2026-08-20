@@ -38,6 +38,10 @@ public sealed class DoorStatus
     public bool IsBudgetExhausted =>
         string.Equals(Door, "BUDGET_EXHAUSTED", StringComparison.OrdinalIgnoreCase);
 
+    public bool IsSpendBrake =>
+        string.Equals(Door, "SPEND_BRAKE", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Door, "DOOR_SPEND_BRAKE", StringComparison.OrdinalIgnoreCase);
+
     public bool IsDegraded =>
         string.Equals(Door, "DEGRADED", StringComparison.OrdinalIgnoreCase);
 

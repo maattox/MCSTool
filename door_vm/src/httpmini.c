@@ -255,7 +255,9 @@ static void handle_api(socket_t fd, const HttpMiniConfig *cfg, const HttpRequest
   }
 
   if (strcmp(req->path, "/api/wake") == 0 && strcmp(req->method, "POST") == 0) {
-    if (control_wake(ctl, 1) != 0) {
+    /* Admin HTTP (Security List admin /32). Skips daily exhaustion; spend-brake
+     * and soft monthly cap still refuse inside do_wake. Player wake is mcdoor. */
+    if (control_wake(ctl, 1, 1) != 0) {
       respond_json(fd, 409, "{\"ok\":false,\"error\":\"wake rejected\"}");
       return;
     }

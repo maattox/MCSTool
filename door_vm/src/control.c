@@ -28,6 +28,7 @@ struct ControlContext {
   pthread_mutex_t lock;
 #endif
   volatile int wake_in_progress;
+  volatile int wake_admin_override;
   volatile int stop_in_progress;
   volatile int stop_exhausted;
 };
@@ -351,7 +352,7 @@ static int compute_hard_stop(const ControlContext *ctx, char *out, size_t out_ca
   return budget_format_iso(deadline, out, out_cap);
 }
 
-static int do_wake(ControlContext *ctx) {
+static int do_wake(ControlContext *ctx, int admin_override) {
   int pull_rc = 0;
   if (ctx->cfg.object_storage_enabled) {
     /* Network I/O must not hold the control lock. Force-refresh OS SoT. */
@@ -398,7 +399,8 @@ static int do_wake(ControlContext *ctx) {
     unlock_ctx(ctx);
     return -1;
   }
-  if (budget_exhausted(ctx->state.used_ocpu_hours, ctx->cfg.daily_ocpu_limit)) {
+  if (!admin_override &&
+      budget_exhausted(ctx->state.used_ocpu_hours, ctx->cfg.daily_ocpu_limit)) {
     ctx->state.door = DOOR_BUDGET_EXHAUSTED;
     set_error(&ctx->state, "daily budget exhausted");
     touch_updated(&ctx->state);
@@ -471,24 +473,27 @@ static int do_wake(ControlContext *ctx) {
 #ifdef _WIN32
 static unsigned __stdcall wake_thread_main(void *arg) {
   ControlContext *ctx = (ControlContext *)arg;
-  do_wake(ctx);
+  int admin = ctx->wake_admin_override;
+  do_wake(ctx, admin);
   ctx->wake_in_progress = 0;
   return 0;
 }
 #else
 static void *wake_thread_main(void *arg) {
   ControlContext *ctx = (ControlContext *)arg;
-  do_wake(ctx);
+  int admin = ctx->wake_admin_override;
+  do_wake(ctx, admin);
   ctx->wake_in_progress = 0;
   return NULL;
 }
 #endif
 
-static int start_wake_thread(ControlContext *ctx) {
+static int start_wake_thread(ControlContext *ctx, int admin_override) {
   if (ctx->wake_in_progress) {
     return 0;
   }
   ctx->wake_in_progress = 1;
+  ctx->wake_admin_override = admin_override;
 #ifdef _WIN32
   uintptr_t h = _beginthreadex(NULL, 0, wake_thread_main, ctx, 0, NULL);
   if (h == 0) {
@@ -507,7 +512,7 @@ static int start_wake_thread(ControlContext *ctx) {
   return 0;
 }
 
-int control_wake(ControlContext *ctx, int async) {
+int control_wake(ControlContext *ctx, int async, int admin_override) {
   if (ctx == NULL) {
     return -1;
   }
@@ -523,16 +528,18 @@ int control_wake(ControlContext *ctx, int async) {
   if (ctx->cfg.object_storage_enabled) {
     /* Never reject on cached exhaustion or spend-brake alone: do_wake
      * re-pulls Object Storage first so a raised budget or a Manager
-     * DELETE of the lock can recover. */
+     * DELETE of the lock can recover. Daily refuse is inside do_wake for
+     * the player path only (admin_override == 0). */
     unlock_ctx(ctx);
     if (async) {
-      return start_wake_thread(ctx);
+      return start_wake_thread(ctx, admin_override);
     }
-    return do_wake(ctx);
+    return do_wake(ctx, admin_override);
   }
   (void)refresh_budget_unlocked(ctx);
-  if (budget_exhausted(ctx->state.used_ocpu_hours, ctx->cfg.daily_ocpu_limit) ||
-      soft_cap_exhausted_unlocked(ctx)) {
+  if (soft_cap_exhausted_unlocked(ctx) ||
+      (!admin_override &&
+       budget_exhausted(ctx->state.used_ocpu_hours, ctx->cfg.daily_ocpu_limit))) {
     ctx->state.door = DOOR_BUDGET_EXHAUSTED;
     touch_updated(&ctx->state);
     persist(ctx);
@@ -541,9 +548,9 @@ int control_wake(ControlContext *ctx, int async) {
   }
   unlock_ctx(ctx);
   if (async) {
-    return start_wake_thread(ctx);
+    return start_wake_thread(ctx, admin_override);
   }
-  return do_wake(ctx);
+  return do_wake(ctx, admin_override);
 }
 
 static int do_stop(ControlContext *ctx, int exhausted) {
@@ -820,7 +827,7 @@ void control_on_login_wake(void *userdata) {
   if (ctx == NULL) {
     return;
   }
-  control_wake(ctx, 1);
+  control_wake(ctx, 1, 0);
 }
 
 static void config_default(ControlConfig *cfg) {
