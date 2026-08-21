@@ -1,6 +1,6 @@
 # V1 Pass-2 follow-on — operator notes (living)
 
-**Status:** Living. Created 2026-08-20 (docs only). **P1–P13 DONE.** V1 **NEXT = Step 8.5.2** Pass 3 (`[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)`). Do not start Pass 3 until the operator says so.  
+**Status:** Complete. Created 2026-08-20 (docs only). **P1–P13 DONE.** Historical NEXT after this plan was Pass 3; living V1 **NEXT** is now Step **8.7** ([`V1-Modpack-Test-Follow-On-Plan.md`](V1-Modpack-Test-Follow-On-Plan.md)). Do not start Pass 3 until **8.7** and **8.8** exit and the operator says so.  
 **Parent:** `[V1-Implementation-Plan.md](V1-Implementation-Plan.md)` Step **8.4**.  
 **Why now:** operator 2026-08-20 — Pass 2 closed early after greenfield Modded + join + Modding panel. Pause Step **8.5.2** and implement these notes **before** QA Pass 3.
 
@@ -134,7 +134,7 @@ Do **not** rewrite PRODUCT-IDEAS to match. Note the drift in the implementing se
 | **P13** | Setup prefers a pre-built Function image artifact               | **DONE** | SEQUENTIAL                 | No                 |
 
 
-When **P13** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)`). Do not start Pass 3 until the operator says so.
+When **P13** is DONE: (historical) this plan pointed V1 **NEXT** at Pass 3. Operator 2026-08-21 inserted Steps **8.7** and **8.8** first. Do not start Pass 3 from this file.
 
 ---
 

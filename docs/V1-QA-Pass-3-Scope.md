@@ -1,12 +1,12 @@
 # V1 QA Pass 3 — scope (gap-close + follow-on)
 
 **Pass:** 3  
-**Status:** **BLOCKED** — do **not** run until [`V1-Pass-2-Follow-On-Plan.md`](V1-Pass-2-Follow-On-Plan.md) **P1–P13** are **DONE** and the operator says Pass 3 may start. Living execution slice of [Step 8.5.2](V1-Implementation-Plan.md#step-852--execute-qa-passes). Docs created 2026-08-20.  
+**Status:** **BLOCKED** — do **not** run until Steps **8.7** and **8.8** are **DONE** ([`V1-Modpack-Test-Follow-On-Plan.md`](V1-Modpack-Test-Follow-On-Plan.md), [`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md)) **and** the operator says Pass 3 may start. (Step **8.4** P1–P13 is already DONE.) Living execution slice of [Step 8.5.2](V1-Implementation-Plan.md#step-852--execute-qa-passes). Docs created 2026-08-20; blocked-on updated 2026-08-21.  
 **Catalog:** [`V1-QA-Catalog.md`](V1-QA-Catalog.md) — IDs and expected steps stay there. Do **not** regenerate the catalog. Implementing follow-on sections may **update expected** for product changes (S4-02 tabs, S3-01 overlay, S6-02 jar-root).  
 **Results:** fill [`V1-QA-Pass-3-Results.md`](V1-QA-Pass-3-Results.md) as you go.  
 **Prior:** [`V1-QA-Pass-2-Results.md`](V1-QA-Pass-2-Results.md) (greenfield Modded; closed early). [`V1-QA-Pass-1-Results.md`](V1-QA-Pass-1-Results.md) (Vanilla; historical).
 
-This is a **delta + gap-close**, not a second encyclopedia. Pass 1 already Passed most Vanilla chrome. Pass 2 already Passed Delete + greenfield Modded, live Setup Deploy, modded join, and Modding/Download pack. Pass 3 exists to run what those passes **skipped**, plus tests for **Step 8.4** follow-on changes.
+This is a **delta + gap-close**, not a second encyclopedia. Pass 1 already Passed most Vanilla chrome. Pass 2 already Passed Delete + greenfield Modded, live Setup Deploy, modded join, and Modding/Download pack. Pass 3 exists to run what those passes **skipped**, plus tests for **Step 8.4**, **8.7**, and **8.8** follow-on changes.
 
 **Cost:** $0. TESTING only. Never `DEFAULT` / live Forge lab. Never Minecraft `0.0.0.0/0`.  
 **Do not start** Step **8.6.1** or **9.1**. Do not create a Pass 3 bug-fix plan until this pass is filled and the operator asks for triage.  
@@ -40,7 +40,7 @@ This is a **delta + gap-close**, not a second encyclopedia. Pass 1 already Passe
 
 ### Context budget
 
-This file + the named catalog IDs + [`Guide.md`](Guide.md) for changed copy. Follow-on Fail → also the named P-section in [`V1-Pass-2-Follow-On-Plan.md`](V1-Pass-2-Follow-On-Plan.md).
+This file + the named catalog IDs + [`Guide.md`](Guide.md) for changed copy. Follow-on Fail → also the named P-section in [`V1-Pass-2-Follow-On-Plan.md`](V1-Pass-2-Follow-On-Plan.md), [`V1-Modpack-Test-Follow-On-Plan.md`](V1-Modpack-Test-Follow-On-Plan.md), or [`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md).
 
 ---
 
@@ -52,7 +52,7 @@ This file + the named catalog IDs + [`Guide.md`](Guide.md) for changed copy. Fol
 | **B** | Hybrid leftovers + follow-on UI (S3/S4/S5) | TODO — after A |
 | **C** | Setup leftovers (jar-root continue, Deploy Complete if re-opened) | TODO — after B |
 
-**NEXT = Phase A** only after Step **8.4** exits and the operator says Pass 3 may run.
+**NEXT = Phase A** only after Steps **8.7** and **8.8** exit and the operator says Pass 3 may run.
 
 ---
 
@@ -99,6 +99,18 @@ This file + the named catalog IDs + [`Guide.md`](Guide.md) for changed copy. Fol
 
 **S8:** fill as you hit known issues.
 
+### Add when Steps 8.7 / 8.8 exit (do not run now)
+
+Pass 3 writers should **add catalog expected / include-list rows** for these once those plans are DONE (do not invent IDs here until then):
+
+- Crash-loop vs slow-start fail copy (8.7 P1); Java major applied on Change pack (8.7 P4)
+- Console Simple is not a near-copy of Full (8.8 P1); no tab-open backup/infra toasts (8.8 P2)
+- Compact toasts; progress dock on Deploy / Change pack (8.8 P3–P4)
+- Setup: no Compartment step; identity page; taller deploy log; no “stack” in novice copy (8.8 P5–P7)
+- Door idle/starting/exhausted favicons from user/default icon + overlays (8.8 P8)
+- Jar-root confirm fields (8.8 P9); quarantine UI if a one-mod crash is available (8.8 P10)
+- CF client-export still blocked **with** project links (8.8 P11)
+
 ### Out of scope (do not re-run)
 
 - **S7-04** — Pass 2 already destroyed + deployed. Do not Delete again.  
@@ -121,7 +133,7 @@ DELETE spend-brake lock; restore idle timeout; re-enable idle unless the next Hy
 
 ## Operator prompts (copy-paste)
 
-Do **not** use these until Step **8.4** is DONE.
+Do **not** use these until Steps **8.7** and **8.8** are DONE.
 
 ### Phase A
 

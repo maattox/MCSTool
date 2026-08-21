@@ -2,12 +2,12 @@
 
 **Status:** Living test catalog for [Phase 8.5](V1-Implementation-Plan.md#phase-85--pre-packaging-qa).  
 **Parent:** `[V1-Implementation-Plan.md](V1-Implementation-Plan.md)`.  
-**Results:** fill `[V1-QA-Pass-N-Results.md](V1-QA-Pass-3-Results.md)` for the current pass. Pass 1 and Pass 2 are historical. Do **not** edit expected steps in this catalog just to record an outcome. Product changes (Step 8.4) **may** update expected (S4-02, S3-01, S6-01, S6-02, S4-01, S3-07).  
+**Results:** fill `[V1-QA-Pass-N-Results.md](V1-QA-Pass-3-Results.md)` for the current pass. Pass 1 and Pass 2 are historical. Do **not** edit expected steps in this catalog just to record an outcome. Product changes (Steps 8.4, **8.7**, **8.8**) **may** update expected (S4-02, S3-01, S6-01, S6-02, S4-01, S3-07, plus 8.7/8.8 chrome).  
 **Pass 2 execution:** [`archive/V1-QA-Pass-2-Scope.md`](archive/V1-QA-Pass-2-Scope.md) (**closed early**).  
-**Pass 3 execution:** [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) (**blocked** until the operator starts Pass 3). Do not re-run the full catalog.  
+**Pass 3 execution:** [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) (**blocked** until Steps **8.7** and **8.8** exit and the operator starts Pass 3). Do not re-run the full catalog.  
 **Fix work:** after triage, an agent writes `[V1-Bug-Fix-Plan-Pass-N.md](V1-Bug-Fix-Plan-TEMPLATE.md)` from the filled results. Agents implement **that** plan, not this catalog.
 
-This catalog is `dotnet run` **+ TESTING**. Pass 1 used the existing Vanilla stack. Pass 2 is Delete + greenfield **Modded** (**closed early**). Pass 3 is gap-close + Step 8.4 tests on that stack. It is not the PRODUCT-IDEAS clean-room (new account + installer + real $1 budget fire). Do not start [Step 8.6.1](V1-Implementation-Plan.md#step-861--ci-built-arm-image--setup-copy-into-ocir) or [Step 9.1](V1-Implementation-Plan.md#step-91--windows-installer) from this file.
+This catalog is `dotnet run` **+ TESTING**. Pass 1 used the existing Vanilla stack. Pass 2 is Delete + greenfield **Modded** (**closed early**). Pass 3 is gap-close + Steps **8.4 / 8.7 / 8.8** tests on that stack. It is not the PRODUCT-IDEAS clean-room (new account + installer + real $1 budget fire). Do not start [Step 8.6.1](V1-Implementation-Plan.md#step-861--ci-built-arm-image--setup-copy-into-ocir) or [Step 9.1](V1-Implementation-Plan.md#step-91--windows-installer) from this file.
 
 **Cost:** $0 (Always Free–eligible). Never open `0.0.0.0/0` on Minecraft, SSH, or door admin.
 
@@ -19,22 +19,24 @@ This catalog is `dotnet run` **+ TESTING**. Pass 1 used the existing Vanilla sta
 
 1. **Pass 1 (DONE):** full S0–S7 on Vanilla (S7-04 Skipped). Bug-fix P1–P8 DONE.
 2. **Pass 2 (DONE, closed early):** follow [`V1-QA-Pass-2-Scope.md`](V1-QA-Pass-2-Scope.md) was Phase A + join only. Filled [`V1-QA-Pass-2-Results.md`](V1-QA-Pass-2-Results.md). Do **not** re-run it.
-3. **Pass 3 (blocked):** follow [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) after Step **8.4**. Fill [`V1-QA-Pass-3-Results.md`](V1-QA-Pass-3-Results.md).
+3. **Pass 3 (blocked):** follow [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) after Steps **8.7** and **8.8**. Fill [`V1-QA-Pass-3-Results.md`](V1-QA-Pass-3-Results.md).
 4. **One agent chat owns the TESTING stack at a time.** Two chats shortening idle and invoking the spend-brake Function will collide. Greenfield destroy/apply was Pass 2 Phase A only.
 5. Fill the pass results file as you go. Do not wait until the end of a three-hour session.
 6. Later passes = **failed tests from the last pass + smoke ([S0-01](#s0-01--core-unit-tests), [S1-03](#s1-03--stack-snapshot), [S2-08](#s2-08--wake-from-stopped-unlocked), [S2-09](#s2-09--idle-softstop-short-timeout), [S2-17](#s2-17--invoke-function-with-fake-actual-alert), [S3-01](#s3-01--spend-brake-overlay--typed-confirm), [S4-01](#s4-01--novice-chrome)) + tests for files that changed** + gaps the last pass never covered. Full catalog re-run only before declaring Phase 8.5 done.
 7. Agents: read **the current pass scope + named catalog IDs**. Do not load the Minecraft blueprint, PRODUCT-IDEAS, or the whole V1 plan.
-8. The operator **may pause a pass after a suite** for a Blocker (write/run [`V1-Bug-Fix-Plan-Pass-N.md`](V1-Bug-Fix-Plan-TEMPLATE.md), then a delta). Do not start 8.6.1 or 9.1. Living product work during the Pass 2 pause is [`V1-Pass-2-Follow-On-Plan.md`](V1-Pass-2-Follow-On-Plan.md).
+8. The operator **may pause a pass after a suite** for a Blocker (write/run [`V1-Bug-Fix-Plan-Pass-N.md`](V1-Bug-Fix-Plan-TEMPLATE.md), then a delta). Do not start 8.6.1 or 9.1. Living product work: Step **8.7** [`V1-Modpack-Test-Follow-On-Plan.md`](V1-Modpack-Test-Follow-On-Plan.md), then Step **8.8** [`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md). Historical Pass 2 pause: [`V1-Pass-2-Follow-On-Plan.md`](V1-Pass-2-Follow-On-Plan.md) (**DONE**).
 
 
 
 ### Operator prompt (copy-paste)
 
-**Current follow-on (Step 8.4) — not a QA pass:**
+**Current follow-on (Step 8.7) — not a QA pass:**
 
-Canonical text: [`V1-Pass-2-Follow-On-Plan.md`](V1-Pass-2-Follow-On-Plan.md) → Operator prompt.
+Canonical text: [`V1-Modpack-Test-Follow-On-Plan.md`](V1-Modpack-Test-Follow-On-Plan.md) → Operator prompt.
 
-**Pass 3 (blocked until 8.4):** [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md).
+After 8.7: [`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md).
+
+**Pass 3 (blocked until 8.7 + 8.8):** [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md).
 
 **Historical Pass 2 / Pass 1:** filled results files. Do not use Pass 2 Phase A (tofu destroy) again.
 

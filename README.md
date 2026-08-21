@@ -6,7 +6,7 @@ This is the **official product repository**. The Manager UI is **.NET 8 + Blazor
 
 ## Status
 
-Manage + Setup are usable on the Blazor Hybrid WinExe. Happy-path user guide: [`docs/Guide.md`](docs/Guide.md). Living execution: [`docs/V1-Implementation-Plan.md`](docs/V1-Implementation-Plan.md) (**NEXT = Step 8.5.2** Pass 3 — do not start until the operator says so; follow-on P1–P13 **DONE**; do not start 9.1 until QA exits **and** Step **8.6.1** is DONE). MVP Phases 0–7 are **DONE** ([`docs/archive/MVP-Implementation-Plan.md`](docs/archive/MVP-Implementation-Plan.md)); Phase **8.6** is the CI-built ARM Function image (no Docker on the admin PC); packaging is V1 Phase 9. **Paid / spend mode is skipped** (later / far future). Danger Zone can **Delete infrastructure** (`tofu destroy` of the product stack only). Doc map: [`docs/README.md`](docs/README.md).
+Manage + Setup are usable on the Blazor Hybrid WinExe. Happy-path user guide: [`docs/Guide.md`](docs/Guide.md). Living execution: [`docs/V1-Implementation-Plan.md`](docs/V1-Implementation-Plan.md) (**NEXT = Step 8.7** pack-test follow-on — then Step **8.8** operator notes; do not start Pass 3 until both exit **and** the operator says so; Step **8.4** P1–P13 **DONE**; do not start 9.1 until QA exits **and** Step **8.6.1** is DONE). MVP Phases 0–7 are **DONE** ([`docs/archive/MVP-Implementation-Plan.md`](docs/archive/MVP-Implementation-Plan.md)); Phase **8.6** is the CI-built ARM Function image (no Docker on the admin PC); packaging is V1 Phase 9. **Paid / spend mode is skipped** (later / far future). Danger Zone can **Delete infrastructure** (`tofu destroy` of the product stack only). Doc map: [`docs/README.md`](docs/README.md).
 
 Licensing is **TBD** (no `LICENSE` file yet).
 

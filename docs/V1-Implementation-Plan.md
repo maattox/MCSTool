@@ -24,7 +24,7 @@
   - **Stop.** Do not start the next large step unless the operator says to continue.
 4. In the chat reply: what was done, how to test, what the next step will be, ask whether to continue / pause / adjust.
 5. **Never create git commits** (operator commits in Visual Studio). You may suggest a commit message.
-6. Do **not** implement **after v1** / **later** PRODUCT-IDEAS items (Players tab, start checklist, maintenance IP, multi-deploy, Quilt Setup entry, Purpur, PTY console, macOS/Linux Manager, **paid / spend mode**) unless the operator asks. **Pack replace** was after-v1 in PRODUCT-IDEAS; operator 2026-08-20 pulled **full re-setup** into v1 via [Step 8.4](#step-84--pass-2-follow-on-operator-notes) (light swap still parked). An **in-app mod/modpack browser** is **rejected** (not after-v1) — users import a local pack file only; do not build it. **Public Minecraft / public-private toggle / blacklist** is **rejected** (not after-v1) — private allowlist only; do not rebuild it. If **this plan** disagrees with PRODUCT-IDEAS, follow this plan and note the drift (do not silently rewrite this file to match PRODUCT-IDEAS).
+6. Do **not** implement **after v1** / **later** PRODUCT-IDEAS items (Players tab, start checklist, maintenance IP, multi-deploy, Quilt Setup entry, Purpur, PTY console, macOS/Linux Manager, **paid / spend mode**) unless the operator asks. **Pack replace** was after-v1 in PRODUCT-IDEAS; operator 2026-08-20 pulled **full re-setup** into v1 via [Step 8.4](#step-84--pass-2-follow-on-operator-notes) (light swap still parked). Blueprint **§24.3 Layer 3** quarantine is **v1** in [Step 8.8](#step-88--operator-notes-follow-on) (was parked in 4.13). An **in-app mod/modpack browser** is **rejected** (not after-v1) — users import a local pack file only; do not build it. **Public Minecraft / public-private toggle / blacklist** is **rejected** (not after-v1) — private allowlist only; do not rebuild it. If **this plan** disagrees with PRODUCT-IDEAS, follow this plan and note the drift (do not silently rewrite this file to match PRODUCT-IDEAS).
 7. On-box source (`door_vm/`, `vm_agent/`, `functions/shutdown_vm/`) lives **in this repo**. Phase B (Blazor Hybrid) is **DONE**; do not re-open Avalonia.
 8. **Fix the product path, not only the test VM.** If you change a test VM or a **TESTING** cloud resource, make the **same** change in the local deployment SoT in the same session (`onbox/mcmgr/`, `infra/`, `door_vm/`, `vm_agent/`, `functions/shutdown_vm/`, Manager/Setup code here). The next greenfield Setup must pick it up. Patching only the live test instance is not done.
 9. `ubuntu` **Permission denied** — `sudo` or fix owner/mode (`[docs/Agent-Deploy-Pitfalls.md](Agent-Deploy-Pitfalls.md)`).
@@ -141,8 +141,10 @@ This blanket is **TESTING / until Step 8.6.1 ships**. The **product** path is a 
 
 ```text
 Read docs/V1-Implementation-Plan.md in OCI-mc-server. Implement only the step marked NEXT.
-When NEXT is Step 8.4, also read docs/V1-Pass-2-Follow-On-Plan.md and implement only the P-section marked NEXT there (not this whole V1 file).
-MVP Phases 0–7 are DONE. Paid/spend mode is skipped (far future, not v1). Pre-packaging QA is Phase 8.5 (paused for 8.4; Pass 3 after 8.4). Phase 8.6 is CI-built ARM Function image (no Docker on the admin PC) — required before any official release. Packaging is V1 Phase 9 — do not start 9.1 until Phase 8.5 exits AND Step 8.6.1 is DONE. Phase B (Blazor Hybrid UI) is DONE — do not re-open Avalonia.
+When NEXT is Step 8.7, also read docs/V1-Modpack-Test-Follow-On-Plan.md and implement only the P-section marked NEXT there (not this whole V1 file).
+When NEXT is Step 8.8, also read docs/V1-Operator-Notes-Follow-On-Plan.md and implement only the P-section marked NEXT there (not this whole V1 file).
+When NEXT is Step 8.4, also read docs/V1-Pass-2-Follow-On-Plan.md (historical — P1–P13 DONE).
+MVP Phases 0–7 are DONE. Paid/spend mode is skipped (far future, not v1). Pre-packaging QA is Phase 8.5 (Pass 3 after 8.7 + 8.8). Phase 8.6 is CI-built ARM Function image (no Docker on the admin PC) — required before any official release. Packaging is V1 Phase 9 — do not start 9.1 until Phase 8.5 exits AND Step 8.6.1 is DONE. Phase B (Blazor Hybrid UI) is DONE — do not re-open Avalonia.
 You MAY use OCI CLI/API with profile TESTING (not DEFAULT) and SSH both test VMs with %USERPROFILE%\.ssh\mcmgr_ed25519_20260817_125552. Stay at $0. If you change a test VM or TESTING cloud resource, make the same change in the local deployment SoT (onbox/, infra/, door_vm/, vm_agent/, functions/shutdown_vm/).
 You MAY fn build, fn push, and invoke product Functions (shutdown_vm, reconcile_usage) on TESTING without asking. Do not fire a real $1 budget alert. Do not SoftStop the door. Never DEFAULT / live Forge lab.
 If you need VM1 and it is STOPPED, START it, then disable the idle agent so it does not SoftStop while you work. If VM1 is already RUNNING, confirm idle is off before other work. When you finish, turn the idle agent back on. Minecraft boot force-enables idle (OS-ISSUE-7) — disable again after a game start.
@@ -160,7 +162,7 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 
 > Flexible product on the same Always Free doorbell: **private allowlist only**, CIDR prefixes, spend-brake lock, Paper + file-imported modpacks, Danger Zone isolated from power-user Advanced, then **one** installer and GitHub updates. The spend-brake Function image is **CI-built ARM**, copied into the user’s OCIR — not built with Docker Desktop / Cloud Shell on their PC.
 
-**Explicitly out of this plan (after v1 / later):** Players tab, Start progress checklist, maintenance / reserved-IP controls, multi-deploy profiles, pack-replace **light swap**, full per-day budget **calendar editor**, Quilt as a Setup entry point, Purpur/Folia, interactive PTY console, macOS/Linux Manager, **paid / spend mode** (far future). **Change/replace pack (full re-setup)** is **v1** in Step **8.4** (operator 2026-08-20; PRODUCT-IDEAS still says after-v1 — follow this plan). Danger Zone as a **separate tab** is superseded by Step **8.4** P3 (merged into Advanced).
+**Explicitly out of this plan (after v1 / later):** Players tab, Start progress checklist, maintenance / reserved-IP controls, multi-deploy profiles, pack-replace **light swap**, full per-day budget **calendar editor**, Quilt as a Setup entry point, Purpur/Folia, interactive PTY console, macOS/Linux Manager, **paid / spend mode** (far future). **Change/replace pack (full re-setup)** is **v1** in Step **8.4** (operator 2026-08-20; PRODUCT-IDEAS still says after-v1 — follow this plan). **Layer 3 quarantine** and Setup identity/icon variants are **v1** in Step **8.8**. Danger Zone as a **separate tab** is superseded by Step **8.4** P3 (merged into Advanced).
 
 **Rejected (will not be implemented, not after-v1):** in-app mod / modpack browser (browse, search, trending, download-a-pack, pick-by-name/URL/ID). Users create or download pack files themselves and select them in Setup or Manager.
 
@@ -187,12 +189,14 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 | **7**   | Remaining v1 (resize, console, storage, Connect version)   | **DONE**                                              |
 | **8**   | Paid / spend mode                                          | **SKIPPED** (operator 2026-08-18; far future, not v1) |
 | **8.4** | Pass-2 follow-on (operator notes)                          | **DONE** (P1–P13)                                     |
-| **8.5** | Pre-packaging QA (catalog + passes + bug-fix plans)        | **NEXT** = Step **8.5.2** Pass 3 ([`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md)) — do not start until the operator says so |
+| **8.7** | Modpack-test follow-on (Change pack failures)              | **NEXT** = [`V1-Modpack-Test-Follow-On-Plan.md`](V1-Modpack-Test-Follow-On-Plan.md) **P1** |
+| **8.8** | Operator-notes follow-on (Manager / Setup / pack UX)       | TODO — after 8.7 ([`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md)) |
+| **8.5** | Pre-packaging QA (catalog + passes + bug-fix plans)        | **PAUSED** Pass 3 until **8.7 + 8.8** exit — then [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md); do not start until the operator says so |
 | **8.6** | CI-built ARM spend-brake Function image (no Docker on admin PC) | TODO — after 8.5 exit; **required before 9.1 / official release** |
 | **9**   | Packaging, updates, launch (old MVP Phase 8–9)             | TODO — do not start until Phase 8.5 **and** Step **8.6.1** are DONE |
 
 
-**Current NEXT step:** [Step 8.5.2](#step-852--execute-qa-passes) Pass 3 ([`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md)). Step **8.4** / follow-on **P1–P13** is **DONE**. **Do not start Pass 3** until the operator says so. **Do not start Step 8.6.1** until Phase 8.5 exits. **Do not start Step 9.1** until Phase 8.5 **and** Step **8.6.1** are DONE.
+**Current NEXT step:** [Step 8.7](#step-87--modpack-test-follow-on) ([`V1-Modpack-Test-Follow-On-Plan.md`](V1-Modpack-Test-Follow-On-Plan.md) **P1**). Step **8.4** / follow-on **P1–P13** is **DONE**. **Do not start Step 8.8** until 8.7 exits. **Do not start Pass 3** until 8.7 **and** 8.8 exit **and** the operator says so. **Do not start Step 8.6.1** until Phase 8.5 exits. **Do not start Step 9.1** until Phase 8.5 **and** Step **8.6.1** are DONE.
 
 ---
 
@@ -1235,9 +1239,75 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 
 - Per the current P-section in the follow-on plan.
 
-**Done when:** P1–P13 **DONE** in the follow-on plan. Then point this plan’s **NEXT** at Step **8.5.2** Pass 3 ([`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md)). Do not start Pass 3 until the operator says so.
+**Done when:** P1–P13 **DONE** in the follow-on plan. Historical: this step then pointed **NEXT** at Pass 3; operator 2026-08-21 inserted Steps **8.7** and **8.8** first.
 
-**Changelog:** 2026-08-20 — **P13 DONE** (Setup prefers pre-built ARM Function tarball; copy into OCIR without Docker; buildx fallback). **8.4 complete.** Living **NEXT = Step 8.5.2** Pass 3. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P12 DONE** (TESTING spend-brake Function fill-in: OCIR push + Function + Events via OCI CLI; synthetic RESET/ACTUAL; gitignored ARM tarball). Living **NEXT = P13**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P11 DONE** (Server Management **Change pack** UI; live FO pack not replaced). Living **NEXT = P12**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P10 DONE** (pack replace full re-setup: on-box prepare + Core `ReplacePackAsync`; keep world unless wipe). Living **NEXT = P11**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P9 DONE** (manual / jar-root unclear-side may continue; `.mrpack` unclear still blocked). Living **NEXT = P10**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P8 DONE** (Usage **Detailed usage** expander: UTC days, closed by default). Living **NEXT = P9**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P7 DONE** (per-tab vertical scroll memory). Living **NEXT = P8**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P6 DONE** (Console Simple vs Full log; RCON plumbing hidden in Simple). Living **NEXT = P7**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P5 DONE** (“game computer” → “server” in Setup, Manager, Guide). Living **NEXT = P6**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P4 DONE** (window-locked dismissible action banners). Living **NEXT = P5**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P3 DONE** (Danger Zone merged into Advanced; idle only under that heading; vibrant redstone). Living **NEXT = P4**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P2 DONE** (Setup Deployment Complete + reserved play IP Copy). Living **NEXT = P3**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P1 DONE** (Start STOPPED gate, overlay unlock-only, Players pin). Living **NEXT = P2**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **Inserted** (docs only). Living **NEXT = P1**. Pass 2 closed early; Step **8.5.2** paused. Do not start Pass 3, 8.6.1 CI, or 9.1.
+**Changelog:** 2026-08-21 — **8.4 remains DONE.** Operator postponed Pass 3 again; living **NEXT = Step 8.7**. 2026-08-20 — **P13 DONE** (Setup prefers pre-built ARM Function tarball; copy into OCIR without Docker; buildx fallback). **8.4 complete.** (Then Pass 3; superseded 2026-08-21 by 8.7/8.8.) Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P12 DONE** (TESTING spend-brake Function fill-in: OCIR push + Function + Events via OCI CLI; synthetic RESET/ACTUAL; gitignored ARM tarball). Living **NEXT = P13**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P11 DONE** (Server Management **Change pack** UI; live FO pack not replaced). Living **NEXT = P12**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P10 DONE** (pack replace full re-setup: on-box prepare + Core `ReplacePackAsync`; keep world unless wipe). Living **NEXT = P11**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P9 DONE** (manual / jar-root unclear-side may continue; `.mrpack` unclear still blocked). Living **NEXT = P10**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P8 DONE** (Usage **Detailed usage** expander: UTC days, closed by default). Living **NEXT = P9**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P7 DONE** (per-tab vertical scroll memory). Living **NEXT = P8**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P6 DONE** (Console Simple vs Full log; RCON plumbing hidden in Simple). Living **NEXT = P7**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P5 DONE** (“game computer” → “server” in Setup, Manager, Guide). Living **NEXT = P6**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P4 DONE** (window-locked dismissible action banners). Living **NEXT = P5**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P3 DONE** (Danger Zone merged into Advanced; idle only under that heading; vibrant redstone). Living **NEXT = P4**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P2 DONE** (Setup Deployment Complete + reserved play IP Copy). Living **NEXT = P3**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P1 DONE** (Start STOPPED gate, overlay unlock-only, Players pin). Living **NEXT = P2**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **Inserted** (docs only). Living **NEXT = P1**. Pass 2 closed early; Step **8.5.2** paused. Do not start Pass 3, 8.6.1 CI, or 9.1.
+
+---
+
+
+
+## Phase 8.7 — Modpack-test follow-on
+
+**Why this sits here:** Operator informal **Change pack** tests ([`Mod-Pack-Tests.md`](Mod-Pack-Tests.md), 2026-08-21) failed **4 / 5**. Pause Pass 3. Fix **generalizable** start/strip/Java gaps before operator-notes UX (Step **8.8**) so Pass 3 is not testing a known-broken pack path twice.
+
+### Step 8.7 — Modpack-test follow-on
+
+**Status:** NEXT (living: [`V1-Modpack-Test-Follow-On-Plan.md`](V1-Modpack-Test-Follow-On-Plan.md) **P1**)  
+**Depends on:** Step **8.4** DONE; Pass 3 not started
+
+**Read first**
+
+- [`V1-Modpack-Test-Follow-On-Plan.md`](V1-Modpack-Test-Follow-On-Plan.md) protocol + **only the NEXT P-section**  
+- Do **not** load Pass 3, Step **8.8**, the full blueprint, or this whole V1 file
+
+**Do**
+
+- Implement **only** the follow-on section marked NEXT (P1 → P5). Stop after each P-section.  
+- Same TESTING permissions as this file’s [Test stack access](#test-stack-access-oci--ssh) + [Functions blanket](#product-functions-on-testing-blanket). No `tofu apply`/`destroy`.  
+- Do **not** start Step **8.8**, Pass 3, **8.6.1**, or **9.1**.  
+- Do **not** denylist only the exact jars from the informal tests.
+
+**Test**
+
+- Per the current P-section in the modpack-test follow-on plan.
+
+**Done when:** P1–P5 **DONE** in that plan. Then point this plan’s **NEXT** at Step **8.8** P1. Do not start 8.8 unless the operator says to continue.
+
+**Changelog:** 2026-08-21 — **Inserted** (docs only). Living **NEXT = P1**. Informal Change pack tests 1/5. Clusters: crash-aware health, unstructured in-jar side, Fabric leftover clients, Java major on pack change, high-unclear warnings. Do not start 8.8, Pass 3, 8.6.1, or 9.1.
+
+---
+
+
+
+## Phase 8.8 — Operator-notes follow-on
+
+**Why this sits here:** After pack-start gaps (8.7), implement Manager/Setup/pack UX notes **before** Pass 3. Notes are often vague; the living plan records **scrutiny decisions** (no Oracle™ on default names, Layer 3 in v1, CF helper = links only).
+
+### Step 8.8 — Operator-notes follow-on
+
+**Status:** TODO (living: [`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md) — do not start until 8.7 exits)  
+**Depends on:** Step **8.7** DONE
+
+**Read first**
+
+- [`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md) protocol + **only the NEXT P-section**  
+- Do **not** load Pass 3, the full blueprint, or this whole V1 file
+
+**Do**
+
+- Implement **only** the follow-on section marked NEXT (P1 → P11). Stop after each P-section.  
+- UI sections must read the skills named in that plan.  
+- Same TESTING permissions as this file. No `tofu apply`/`destroy` unless a P-section says to stop and ask.  
+- Do **not** start Pass 3, **8.6.1**, or **9.1**.
+
+**Test**
+
+- Per the current P-section in the operator-notes plan.
+
+**Done when:** P1–P11 **DONE** in that plan. Then point this plan’s **NEXT** at Step **8.5.2** Pass 3 ([`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md)). Do not start Pass 3 until the operator says so.
+
+**Changelog:** 2026-08-21 — **Inserted** (docs only). Blocked on 8.7. Then **NEXT = P1**. Do not start Pass 3, 8.6.1, or 9.1.
 
 ---
 
@@ -1256,15 +1326,17 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 | `[V1-QA-Pass-1-Results.md](V1-QA-Pass-1-Results.md)`         | Pass 1 fill-out (Vanilla, existing stack; **historical**)                  |
 | `[V1-QA-Pass-2-Scope.md](V1-QA-Pass-2-Scope.md)`             | Pass 2 include/skip (**historical** — closed early after Phase A + join) |
 | `[V1-QA-Pass-2-Results.md](V1-QA-Pass-2-Results.md)`         | Pass 2 fill-out (Modded greenfield; no Pass 2 bug-fix plan)                |
-| `[V1-Pass-2-Follow-On-Plan.md](V1-Pass-2-Follow-On-Plan.md)` | **DONE (P1–P13).** Operator notes before Pass 3                            |
-| `[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)`             | Pass 3 gap-close + follow-on tests. **Do not start** until the operator says so |
+| `[V1-Pass-2-Follow-On-Plan.md](V1-Pass-2-Follow-On-Plan.md)` | **DONE (P1–P13).** Operator notes after Pass 2                            |
+| `[V1-Modpack-Test-Follow-On-Plan.md](V1-Modpack-Test-Follow-On-Plan.md)` | Step **8.7**. Informal Change pack failures. **NEXT = P1** |
+| `[V1-Operator-Notes-Follow-On-Plan.md](V1-Operator-Notes-Follow-On-Plan.md)` | Step **8.8**. Manager / Setup / pack UX notes. After 8.7 |
+| `[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)`             | Pass 3 gap-close + follow-on tests. **Do not start** until **8.7 + 8.8** exit and the operator says so |
 | `[V1-QA-Pass-3-Results.md](V1-QA-Pass-3-Results.md)`         | Pass 3 fill-out (do not start until operator says so)                      |
 | `[V1-Bug-Fix-Plan-Pass-1.md](V1-Bug-Fix-Plan-Pass-1.md)`     | Pass 1 fixes; **P1–P8 DONE**. Do not re-open unless a regression.          |
 | `[V1-Modpack-Robustness-Plan.md](V1-Modpack-Robustness-Plan.md)` | **DONE (R1–R4).** Exclude lists + mixed archives.                          |
 | `[V1-Bug-Fix-Plan-TEMPLATE.md](V1-Bug-Fix-Plan-TEMPLATE.md)` | Copy to `V1-Bug-Fix-Plan-Pass-N.md` after triage                           |
 
 
-Pass 2 is **closed early** (no triage). Do **not** regenerate the whole catalog each pass. Do **not** create `V1-Bug-Fix-Plan-Pass-2.md`. Pass 3 waits for the operator to start Step **8.5.2**.
+Pass 2 is **closed early** (no triage). Do **not** regenerate the whole catalog each pass. Do **not** create `V1-Bug-Fix-Plan-Pass-2.md`. Pass 3 waits for Steps **8.7** and **8.8**, then the operator to start Step **8.5.2**.
 
 **Not this phase:** installer, GitHub Releases, CI Function-image publisher (that is **8.6.1**), real **$1 budget fire** (clean-room / accepted spend), live Forge lab, after-v1 PRODUCT-IDEAS.
 
@@ -1298,8 +1370,8 @@ Pass 2 is **closed early** (no triage). Do **not** regenerate the whole catalog 
 
 ### Step 8.5.2 — Execute QA passes
 
-**Status:** NEXT (Pass 3) — do not start until the operator says so  
-**Depends on:** 8.5.1 + Step **4.13** DONE + Step **8.4** (before Pass 3)
+**Status:** TODO (Pass 3) — do not start until Steps **8.7** and **8.8** exit **and** the operator says so  
+**Depends on:** 8.5.1 + Step **4.13** DONE + Step **8.4** DONE + Steps **8.7** and **8.8** (before Pass 3)
 
 **Read first**
 
@@ -1314,7 +1386,7 @@ Pass 2 is **closed early** (no triage). Do **not** regenerate the whole catalog 
 
 **Pass 2 (DONE, closed early):** Delete + greenfield **Modded** (FO; S6-01/S6-02/S7-04/S3-05/S4-11 Pass). Phase B–D not run. No Pass 2 bug-fix plan (in-pass SETUP-ISSUE-9/10). Do not `tofu destroy` again from this step.
 
-**Pass 3 (blocked):** Follow `[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)` when the operator starts Pass 3 **after** Step **8.4**. Gap-close + follow-on tests on the **existing** TESTING stack. **Do not** `tofu destroy` unless that prompt says so. **One** agent chat on the test stack at a time.
+**Pass 3 (blocked):** Follow `[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)` when the operator starts Pass 3 **after** Steps **8.7** and **8.8**. Gap-close + follow-on tests (including 8.4 / 8.7 / 8.8) on the **existing** TESTING stack. **Do not** `tofu destroy` unless that prompt says so. **One** agent chat on the test stack at a time.
 
 1. **Phase A:** S0-01, S0-04, S1, leftover S2 (including S2-16/S2-17 if the Function exists after 8.4 P12).  
 2. **Phase B:** Hybrid leftovers + follow-on UI (S3-01 does not Start; S4-02 merged Danger Zone; Players pin; console simple/full; usage-by-day).  
@@ -1328,9 +1400,9 @@ Do **not** start Step **8.6.1** or Step **9.1** from this step. Do not rewrite t
 
 - Pass 3 Phase A: S0-01 recorded; S1 snapshot of the Pass 2 stack; leftover S2 filled.
 
-**Done when:** Operator agrees a pass is ready for triage **or** QA exit is met (then 8.5.3). This step stays the QA executor across chats; living **NEXT** is Step **8.4** until that plan exits.
+**Done when:** Operator agrees a pass is ready for triage **or** QA exit is met (then 8.5.3). This step stays the QA executor across chats; living **NEXT** is Step **8.7** until 8.7 and 8.8 exit.
 
-**Changelog:** 2026-08-20 — **PAUSED** for Step **8.4** follow-on. Pass 2 **closed early** (Modded greenfield + join; no triage). Next QA = Pass 3 after 8.4. Do not start 8.6.1 or 9.1. 2026-08-20 — **NEXT** (4.13 / R4 DONE). Do not start Pass 2 Phase A or `tofu destroy` until the operator says so. 2026-08-20 — **PAUSED** until Step **4.13** / robustness R1–R4 (itzg exclude lists). Do not start Pass 2 Phase A or `tofu destroy`. 2026-08-19 — **Pass 2 docs.** Scope + results files. Pass 1 complete (P1–P8 DONE). Do not start 8.6.1 or 9.1.
+**Changelog:** 2026-08-21 — **PAUSED** again for Steps **8.7** (modpack tests) and **8.8** (operator notes). Do not start Pass 3, 8.6.1, or 9.1. 2026-08-20 — **PAUSED** for Step **8.4** follow-on. Pass 2 **closed early** (Modded greenfield + join; no triage). Next QA = Pass 3 after 8.4. Do not start 8.6.1 or 9.1. 2026-08-20 — **NEXT** (4.13 / R4 DONE). Do not start Pass 2 Phase A or `tofu destroy` until the operator says so. 2026-08-20 — **PAUSED** until Step **4.13** / robustness R1–R4 (itzg exclude lists). Do not start Pass 2 Phase A or `tofu destroy`. 2026-08-19 — **Pass 2 docs.** Scope + results files. Pass 1 complete (P1–P8 DONE). Do not start 8.6.1 or 9.1.
 
 ---
 
@@ -1532,6 +1604,10 @@ Former MVP Phase **8–9**. Phases **1–7** are **DONE**. Phase **8** is **SKIP
 | QA pass 1 results         | [`archive/V1-QA-Pass-1-Results.md`](archive/V1-QA-Pass-1-Results.md) (historical)                           |
 | QA pass 2 scope           | [`archive/V1-QA-Pass-2-Scope.md`](archive/V1-QA-Pass-2-Scope.md)                                           |
 | QA pass 2 results         | [`archive/V1-QA-Pass-2-Results.md`](archive/V1-QA-Pass-2-Results.md)                                       |
+| Pass-2 follow-on (8.4)    | [`V1-Pass-2-Follow-On-Plan.md`](V1-Pass-2-Follow-On-Plan.md) (**DONE**)                                    |
+| Modpack-test follow-on    | [`V1-Modpack-Test-Follow-On-Plan.md`](V1-Modpack-Test-Follow-On-Plan.md) (Step **8.7**)                     |
+| Operator-notes follow-on  | [`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md) (Step **8.8**)                 |
+| Informal pack tests       | [`Mod-Pack-Tests.md`](Mod-Pack-Tests.md) (input to 8.7; not a living NEXT)                                 |
 | Modpack robustness (4.13) | [`archive/V1-Modpack-Robustness-Plan.md`](archive/V1-Modpack-Robustness-Plan.md)                           |
 | Bug-fix plan template     | `[V1-Bug-Fix-Plan-TEMPLATE.md](V1-Bug-Fix-Plan-TEMPLATE.md)`                                               |
 
@@ -1546,7 +1622,7 @@ Former MVP Phase **8–9**. Phases **1–7** are **DONE**. Phase **8** is **SKIP
 - Start-from-Manager **progress checklist**  
 - Maintenance / reserved-IP assignment + start-VM1-without-moving-play-IP  
 - Connect an **additional** deployment / multi-profile switcher  
-- Day-2 **change/replace modpack**  
+- Day-2 **change/replace modpack** **light swap** (full re-setup is v1 via 8.4)  
 - Full per-day budget calendar  
 - Quilt as a Setup entry point (detect-only is OK in 4.7)  
 - **Deferred (ToS):** CurseForge **API** client-export import (project/file ID resolve). Server Files zip import (4.9) stays. Not rejected.  
@@ -1570,6 +1646,7 @@ Former MVP Phase **8–9**. Phases **1–7** are **DONE**. Phase **8** is **SKIP
 
 | Date       | Note                                                                                                                                                                                                                                                                                                                              |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-21 | **Steps 8.7 + 8.8 inserted** (docs only). Informal Change pack tests 1/5 ([`Mod-Pack-Tests.md`](Mod-Pack-Tests.md)). Living **NEXT = Step 8.7 P1**. Then 8.8 operator notes. Pass 3 stays blocked until both exit. Do not start Pass 3, 8.6.1 CI, or 9.1. |
 | 2026-08-20 | **Step 8.4 P13 DONE.** Setup prefers pre-built ARM Function tarball (`artifacts/mcmgr-fn-softstop-linux-arm64.tar` or next to the app); copy into OCIR without Docker. Fallback docker buildx / skip. **8.4 complete. NEXT = Step 8.5.2** Pass 3. Do not start Pass 3, 8.6.1 CI, or 9.1. |
 | 2026-08-20 | **Step 8.4 P12 DONE.** TESTING spend-brake Function fill-in (OCIR `mcmgr-fn/softstop:setup` + Function + Events via OCI CLI; no tofu apply). Synthetic RESET skip + ACTUAL SoftStop VM1 / lock PUT. Artifact `artifacts/mcmgr-fn-softstop-linux-arm64.tar`. Living **NEXT = P13**. Do not start Pass 3, 8.6.1 CI, or 9.1. |
 | 2026-08-20 | **Step 8.4 P11 DONE.** Server Management **Change pack** UI (analyze + confirm; world kept unless wipe). Live FO pack not replaced. Living **NEXT = P12**. Do not start Pass 3, 8.6.1 CI, or 9.1. |

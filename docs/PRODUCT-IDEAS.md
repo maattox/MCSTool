@@ -1,7 +1,7 @@
 # Product vision & staged roadmap (ideas / planning)
 
 **Status:** Living product vision and staged feature plan (MVP → v1 → later).  
-**Execution:** implement **v1 features** before Windows installer / GitHub Releases / public launch. **Paid / spend mode is not v1** (later / far future). Living checklist: [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) (**NEXT = Step 8.5.2** Pass 3 — do not start until the operator says so; follow-on P1–P13 DONE). Do not start Step 9.1 until QA exits **and** Step **8.6.1** is DONE.  
+**Execution:** implement **v1 features** before Windows installer / GitHub Releases / public launch. **Paid / spend mode is not v1** (later / far future). Living checklist: [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) (**NEXT = Step 8.7** pack-test follow-on, then Step **8.8** operator notes; do not start Pass 3 until both exit **and** the operator says so; Step **8.4** P1–P13 DONE). Do not start Step 9.1 until QA exits **and** Step **8.6.1** is DONE.  
 **Not** an implementation checklist by itself — agents follow the V1 plan’s NEXT step (and must not implement **after v1** / later items from this file).  
 **Not** a substitute for architecture docs. Doc map: [`README.md`](README.md).
 
@@ -1077,6 +1077,7 @@ Parked items—not blocking the staged plan, but should be revisited:
 
 ## Changelog
 
+| 2026-08-21 | **Pass 3 postponed again:** informal Change pack tests + operator notes. Living **NEXT = Step 8.7 / P1**, then Step **8.8**. Layer 3 quarantine and Setup identity/icon variants pulled into v1 via 8.8 (this file’s parked Layer 3 / after-v1 identity headings may drift). Default MOTD names will **not** use Oracle™. Do not start Pass 3, 8.6.1 CI, or 9.1 until the V1 plan says so. |
 | 2026-08-20 | **Pass-2 follow-on (v1):** operator notes after Pass 2 closed early. Living **NEXT = Step 8.4 / P1**. Pack replace **full re-setup** pulled into v1 (this file’s [Modpack replace (after v1)](#modpack-replace-after-v1) heading may drift). Danger Zone tab merge and “game computer”→“server” are operator will. Do not start Pass 3, 8.6.1 CI, or 9.1 until the V1 plan says so. |
 | 2026-08-20 | **Modpack robustness detour (v1):** itzg exclude lists + mixed archives **before** Pass 2. Living **NEXT = Step 4.13 / R1**. Pass 2 paused. |
 | 2026-08-19 | **Spend-brake Function image:** product path is CI-built `linux/arm64` copied into the user’s OCIR (Auth Token only). No Docker Desktop / `fn` / Cloud Shell on the admin PC. Required before official release (V1 Phase **8.6**). Living **NEXT** remains Step **8.5.2**. |
