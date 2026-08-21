@@ -4,7 +4,7 @@
 
 **Scope:** Cloud resources (compartment, VCN, compute, reserved IP, IAM, Object Storage, $1 budget Function) plus the **orchestration** that runs OpenTofu and then SSH-bootstraps the boxes. This document does **not** redefine how Minecraft itself is installed — that remains [`Minecraft-Server-Deployment-Blueprint.md`](Minecraft-Server-Deployment-Blueprint.md).
 
-**Product intent:** lab [`PRODUCT-IDEAS.md`](../../OCI-mc-server-manager/PRODUCT-IDEAS.md) is vision/roadmap, **not infallible** (operator will wins). When this document and PRODUCT-IDEAS disagree on **staging** (MVP vs v1 vs later): **stop and ask**, or **follow this document** (mechanism SoT) and **note** that PRODUCT-IDEAS may drift. When they disagree on **IaC mechanism** (OpenTofu vs Resource Manager, image strategy, config hosting, state), **this document is authoritative** — do not rewrite it to match PRODUCT-IDEAS; link from PRODUCT-IDEAS instead of re-describing details.
+**Product intent:** [`PRODUCT-IDEAS.md`](PRODUCT-IDEAS.md) is vision/roadmap, **not infallible** (operator will wins). When this document and PRODUCT-IDEAS disagree on **staging** (MVP vs v1 vs later): **stop and ask**, or **follow this document** (mechanism SoT) and **note** that PRODUCT-IDEAS may drift. When they disagree on **IaC mechanism** (OpenTofu vs Resource Manager, image strategy, config hosting, state), **this document is authoritative** — do not rewrite it to match PRODUCT-IDEAS; link from PRODUCT-IDEAS instead of re-describing details.
 
 **Audience:** the operator (especially [§18](#18-operator-guide--what-to-capture-from-the-oci-console-for-ai-agents)), and coding agents implementing MVP Phase 3 (`infra/` OpenTofu, Setup wizard, apply + bootstrap).
 
@@ -53,7 +53,7 @@ These are product decisions, not open research. Agents implementing Step 3.1+ mu
 | **D7** | **Do not import the operator’s live Forge lab into product OpenTofu state.** Greenfield = new `mcmgr` compartment. Connect-existing (MVP plan **Phase 5**) hydrates from `meta/infra.json` and never needs tofu state. Importing **one resource you created out of band in the same greenfield/test stack** into that stack’s LocalAppData state is OK (`infra/README.md`). | Importing a hand-built stack would freeze ad-hoc names (`minecraft-vm3`, …) and risk `tofu apply` rebuilding or destroying the working lab. |
 | **D8** | **Custom Terraform providers = off** for both the reference stack and the product module. | The official `oracle/oci` provider from the OpenTofu / Terraform Registry is sufficient. Custom-provider buckets consume Object Storage and add a second binary-distribution problem. |
 | **D9** | **`schema.yaml` is not required** for the product module. | Schema documents only customize the *Resource Manager Console* variable UI. The product UI is the Avalonia Setup wizard. |
-| **D10** | **Bugs found on a test Setup deploy that come from HCL, IAM matching rules, cloud-init, or SSH bootstrap must be fixed in the product automated-deploy path**, not only on the live test VMs. File lab `docs/Issues.md` in the same effort. Example: SETUP-ISSUE-2 (door DG tag match + compartment-only `manage public-ips`) → product `infra/modules/iam`. | Otherwise the next greenfield run repeats the outage. |
+| **D10** | **Bugs found on a test Setup deploy that come from HCL, IAM matching rules, cloud-init, or SSH bootstrap must be fixed in the product automated-deploy path**, not only on the live test VMs. File [`Issues.md`](Issues.md) in the same effort. Example: SETUP-ISSUE-2 (door DG tag match + compartment-only `manage public-ips`) → product `infra/modules/iam`. | Otherwise the next greenfield run repeats the outage. |
 
 ---
 
@@ -61,13 +61,13 @@ These are product decisions, not open research. Agents implementing Step 3.1+ mu
 
 | Doc | Role vs this file |
 |-----|-------------------|
-| Lab `PRODUCT-IDEAS.md` | MVP/v1 *intent* (OpenTofu, dedicated compartment, `mcmgr-…` names, Setup wizard). |
-| [`MVP-Implementation-Plan.md`](MVP-Implementation-Plan.md) | Execution checklist. Phase 3 implements *this* design. |
+| [`PRODUCT-IDEAS.md`](PRODUCT-IDEAS.md) | MVP/v1 *intent* (OpenTofu, dedicated compartment, `mcmgr-…` names, Setup wizard). |
+| [`archive/MVP-Implementation-Plan.md`](archive/MVP-Implementation-Plan.md) | MVP archive (Phases 0–7 DONE). |
 | [`Minecraft-Server-Deployment-Blueprint.md`](Minecraft-Server-Deployment-Blueprint.md) §13–§14 | Game-layer vs infra-layer split; bootstrap resumability. |
 | [`Contracts-Object-Storage.md`](Contracts-Object-Storage.md) | `meta/infra.json`, flags, ledger — Setup must write these after apply. |
-| Lab `Infrastructure-Information.md` | Live lab layout (placeholders). Discovery dump is a *snapshot* of that, not a better SoT. |
+| [`Infrastructure-Information.md`](Infrastructure-Information.md) | Architecture (placeholders). Discovery dump is a *snapshot* of that, not a better SoT. |
 | [`Lab-Reference-Stack-Notes.md`](Lab-Reference-Stack-Notes.md) | Sanitized 2026-08-12 dump digest: naming table, 3-DG model, copy vs skip, Events→Function (ONS leftover). **Read this before writing `infra/`.** |
-| Lab `docs/Agent-Deploy-Pitfalls.md` | SSH/sudo/SFTP rules the Setup bootstrap must obey. |
+| [`Agent-Deploy-Pitfalls.md`](Agent-Deploy-Pitfalls.md) | SSH/sudo/SFTP rules the Setup bootstrap must obey. |
 | [`OCI-API-Usage.md`](OCI-API-Usage.md) | 429 backoff, waiters, Object Storage thrift — apply/bootstrap must follow. |
 
 **Non-goals of this document**
@@ -286,7 +286,7 @@ Root-compartment discovery would include `oci_identity_user`, `oci_identity_api_
 
 1. Console → Identity → **Dynamic groups** used by VM1, door, both-VMs Object Storage, Functions — copy **name + matching rule** (OCIDs ok in the gitignored pack).
 2. Console → Identity → **Policies** that mention those groups — copy **statement text**.
-3. Or: copy the already-redacted conceptual statements from lab `Infrastructure-Information.md` plus the exact statements from gitignored `data/Infrastructure-Deployment-Private.md`.
+3. Or: copy the already-redacted conceptual statements from [`Infrastructure-Information.md`](Infrastructure-Information.md) plus the exact statements from [`Lab-IAM-Reference.md`](Lab-IAM-Reference.md) / gitignored local config.
 
 Product IaC will **rewrite** matching rules to `instance.compartment.id = '<mcmgr compartment>'` (or equivalent tag match) rather than pinning today’s instance OCIDs.
 
@@ -309,7 +309,7 @@ When the operator provides a zip (see §18.6 for the exact pack):
 3. **Discard:** display names (`minecraft-vm3`, …), hardcoded OCIDs, public IPs, tenancy OCID, user OCID, `ignore_changes` placeholders, any `oci_objectstorage_object` bodies, anything that looks like a key/token.
 4. **Rewrite** into product HCL under `infra/` with names from PRODUCT-IDEAS (`mcmgr-vcn`, `mcmgr-vm1`, …).
 5. **Never** `tofu import` the **live Forge lab** into product state as part of Phase 3. Importing a single resource you created **out of band in the same greenfield/test stack** into that stack’s `%LOCALAPPDATA%\McManager\tofu\<stack-id>\` state is OK (see `infra/README.md` IAM import). Do not `cd` into LocalAppData — that folder has no `.tf` files.
-6. **Never** commit the dump. Place it only under a gitignored path the operator chooses (suggested: lab `data/reference-stack/` or product `data/reference-stack/`).
+6. **Never** commit the dump. Place it only under a gitignored path the operator chooses (suggested: gitignored operator notes; digest is [`Lab-Reference-Stack-Notes.md`](Lab-Reference-Stack-Notes.md)).
 7. **Identity can leak even when unchecked.** The 2026-08-12 lab capture still emitted Identity Domains (users, API public-key PEM, auth tokens). Delete that file; do not copy it.
 
 The lab pack was sanitized in place. Phase 3 agents should start from [`Lab-Reference-Stack-Notes.md`](Lab-Reference-Stack-Notes.md), not from any `ocid1.ormstack…` folder.
@@ -485,8 +485,8 @@ Aligned with PRODUCT-IDEAS naming and lab `Infrastructure-Information.md` behavi
 - Private Standard bucket `mcmgr-shared-data` (no versioning, no emit events, Oracle-managed keys)
 - Dynamic groups (tenancy OCID as `compartment_id` — Oracle requires this): `mcmgr-dg-instances` (compartment), `mcmgr-dg-door` (**door instance OCID** — hyphenated `mcmgr-role` tag matching did not enroll the door on the identity-domain 3.3 test), `mcmgr-dg-fn` (fnfunc in compartment)
 - Policies **scoped to the product compartment / bucket** where the API allows (lab today is tenancy-wide `manage`; product should tighten)
-- $1 monthly budget on the compartment + alert (email) + **Events rule → Function** (`mcmgr-events-budget-alert`; RM dump omitted the action — Console has Functions → `shutdown_vm`). Do **not** create the lab’s unused ONS topic `Budget-Alerts`. **Function image (v1, before release):** CI builds `linux/arm64`; Setup **copies** into the user’s OCIR; tofu sets `function_image`. Users do not run Docker Desktop, `fn`, or Cloud Shell. Phase 3.3’s current `docker buildx` publisher is **interim** until V1 Step **8.6.1**. 3.1 may leave `function_image` empty (Function + Events gated). Behavior is staged in lab `PRODUCT-IDEAS.md` ([$1 spend-brake lock (v1)](../../OCI-mc-server-manager/PRODUCT-IDEAS.md#1-spend-brake-lock-v1) and [Spend-brake Function image](../../OCI-mc-server-manager/PRODUCT-IDEAS.md#spend-brake-function-image-v1-before-release)):
-  - **Product v1 Function (lab `functions/shutdown_vm/`, not live-pushed in Step 2.2):** ignore budget **RESET**; on a real threshold alert SoftStop **VM1 only**, then **PUT** `meta/spend-brake-triggered.json`. **Do not SoftStop the door Micro** — AMD `VM.Standard.E2.1.Micro` is a separate Always Free allowance (up to two instances), not Ampere OCPU-hours; Oracle does not charge Always Free resources after PAYG upgrade. `softstop_instance_ids` defaults to VM1; keep it a variable for an emergency override. Function config must include `OS_NAMESPACE` / `OS_BUCKET` / `OS_LOCK_OBJECT`.
+- $1 monthly budget on the compartment + alert (email) + **Events rule → Function** (`mcmgr-events-budget-alert`; RM dump omitted the action — Console has Functions → `shutdown_vm`). Do **not** create the lab’s unused ONS topic `Budget-Alerts`. **Function image (v1, before release):** CI builds `linux/arm64`; Setup **copies** into the user’s OCIR; tofu sets `function_image`. Users do not run Docker Desktop, `fn`, or Cloud Shell. Phase 3.3’s current `docker buildx` publisher is **interim** until V1 Step **8.6.1**. 3.1 may leave `function_image` empty (Function + Events gated). Behavior is staged in `PRODUCT-IDEAS.md` ([$1 spend-brake lock (v1)](PRODUCT-IDEAS.md#1-spend-brake-lock-v1) and [Spend-brake Function image](PRODUCT-IDEAS.md#spend-brake-function-image-v1-before-release)):
+  - **Product v1 Function (`functions/shutdown_vm/`):** ignore budget **RESET**; on a real threshold alert SoftStop **VM1 only**, then **PUT** `meta/spend-brake-triggered.json`. **Do not SoftStop the door Micro** — AMD `VM.Standard.E2.1.Micro` is a separate Always Free allowance (up to two instances), not Ampere OCPU-hours; Oracle does not charge Always Free resources after PAYG upgrade. `softstop_instance_ids` defaults to VM1; keep it a variable for an emergency override. Function config must include `OS_NAMESPACE` / `OS_BUCKET` / `OS_LOCK_OBJECT`.
   - **Live lab image (until an authorized v1 push):** still SoftStops **VM1 and VM2** and does not write the lock (captured 0.0.11). TESTING agents may `fn push` v1; the **product** path after 8.6.1 is CI copy, not Cloud Shell.
   - **Do not create or delete the lock object in OpenTofu** — it is runtime state, like ledger JSON.
   - **IAM:** grant the Functions dynamic group SoftStop on the product compartment **and** object write **scoped to the product bucket**. Do **not** grant tenancy-wide `manage objects`.
@@ -744,15 +744,13 @@ Unzip the configuration. Then:
 4. You may leave OCIDs in the **gitignored** pack (agents here already see them in private markdown). If you ever attach the zip to a **public** issue or commit, replace all OCIDs and public IPs with placeholders.
 5. Re-zip. Suggested filename: `mcmgr-lab-discovery-reference-sanitized.zip`.
 
-The 2026-08-12 lab capture is already sanitized under lab `data/reference-stack/` (raw OCID folder gitignored). Tracked digest: [`Lab-Reference-Stack-Notes.md`](Lab-Reference-Stack-Notes.md). **Do not capture another dump unless the live layout changes in a way that document does not cover.**
+The 2026-08-12 lab capture digest is [`Lab-Reference-Stack-Notes.md`](Lab-Reference-Stack-Notes.md); IAM statements: [`Lab-IAM-Reference.md`](Lab-IAM-Reference.md). **Do not capture another dump unless the live layout changes in a way that document does not cover.**
 
 ### 18.6 Pack to give agents
 
 Create a gitignored folder, for example:
 
-`OCI-mc-server/data/reference-stack/`  
-or  
-`OCI-mc-server-manager/data/reference-stack/`
+`docs/` (this repo) plus gitignored operator notes. Historical Resource Manager dump: see [`Lab-Reference-Stack-Notes.md`](Lab-Reference-Stack-Notes.md).
 
 Include:
 

@@ -8,9 +8,9 @@
 | Doc | Role |
 |-----|------|
 | [`Automated-Infrastructure-Deployment.md`](Automated-Infrastructure-Deployment.md) | Locked IaC decisions (OpenTofu on the admin PC, images, state, bootstrap split) |
-| Lab `PRODUCT-IDEAS.md` → Product resource naming | `mcmgr-…` display names |
-| Lab `data/reference-stack/` (gitignored raw stubs + sanitized HCL) | Local shape encyclopedia; **this file** is the tracked SoT for GitHub clones |
-| Lab `Infrastructure-Information.md` | Live architecture (placeholders) |
+| `PRODUCT-IDEAS.md` → Product resource naming | `mcmgr-…` display names |
+| [`Lab-IAM-Reference.md`](Lab-IAM-Reference.md) | Sanitized lab IAM statements (do not copy matching rules) |
+| [`Infrastructure-Information.md`](Infrastructure-Information.md) | Architecture (placeholders) |
 
 ---
 
@@ -18,7 +18,7 @@
 
 The operator created a Resource Manager stack from **Existing compartment**, all services **except Identity**, downloaded configuration (+ state), and wrote IAM notes by hand.
 
-**Identity still leaked.** Discovery emitted `identity_domains.tf` (users, API public-key PEM, auth-token resources) even with Identity unchecked. That file was wiped from the lab pack. Do not ask for a second tenancy-root identity scan. IAM for product comes from the sanitized [`iam-reference`](../../OCI-mc-server-manager/data/reference-stack/iam-reference.md) statements plus the 3-group model below.
+**Identity still leaked.** Discovery emitted `identity_domains.tf` (users, API public-key PEM, auth-token resources) even with Identity unchecked. That file was wiped from the lab pack. Do not ask for a second tenancy-root identity scan. IAM for product comes from the sanitized [`Lab-IAM-Reference.md`](Lab-IAM-Reference.md) statements plus the 3-group model below.
 
 No need to re-run Resource Manager for Phase 3.
 

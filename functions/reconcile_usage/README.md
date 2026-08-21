@@ -71,6 +71,6 @@ No live Usage API call. No lab-tenancy run.
 
 ## Related
 
-- Product [`Contracts-Object-Storage.md`](../../docs/Contracts-Object-Storage.md) — `ledger/usage.json` daily_overrides + flags  
-- Lab [`PRODUCT-IDEAS.md`](../../../OCI-mc-server-manager/PRODUCT-IDEAS.md) — Usage API reconciliation for days older than ~48 hours  
+- [`Contracts-Object-Storage.md`](../../docs/Contracts-Object-Storage.md) — `ledger/usage.json` daily_overrides + flags  
+- [`PRODUCT-IDEAS.md`](../../docs/PRODUCT-IDEAS.md) — Usage API reconciliation for days older than ~48 hours  
 - [`OCI-API-Usage.md`](../../docs/OCI-API-Usage.md) — 429 backoff / pagination

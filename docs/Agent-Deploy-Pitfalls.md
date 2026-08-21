@@ -1,17 +1,15 @@
 # Agent deploy pitfalls (VM1 / door / Manager SSH)
 
 **Audience:** coding agents only — not operator runbooks.  
-**Why this exists:** During Object Storage Phases 1–5, deploy failures were fixed reactively after the operator pasted errors. Read this **before** writing or changing SSH/`sudo`/SFTP deploy code (product `SetupBootstrapService`, lab `app/door_deploy.py`, lab `app/ssh_ops.py`, ad-hoc SSH).
+**Why this exists:** Deploy failures were fixed reactively after the operator pasted errors. Read this **before** writing or changing SSH/`sudo`/SFTP deploy code (product `SetupBootstrapService`, ad-hoc SSH).
 
-Related live quirks for operators: lab [`docs/Issues.md`](../../OCI-mc-server-manager/docs/Issues.md). Operator copy-paste commands: lab [`docs/Operator-Troubleshooting.md`](../../OCI-mc-server-manager/docs/Operator-Troubleshooting.md). Build map: lab [`docs/VM-Software.md`](../../OCI-mc-server-manager/docs/VM-Software.md).
+Related: [`Issues.md`](Issues.md). Operator copy-paste: [`Operator-Troubleshooting.md`](Operator-Troubleshooting.md). Build map: [`VM-Software.md`](VM-Software.md).
 
 ---
 
 ## Hard rules (copy these into new deploy code)
 
-1. **`FirewallClient.sudo()` only prefixes `sudo` on the string you pass.**  
-   `fw.sudo("cp A B && mv B C")` becomes `sudo cp A B && mv B C` → **`mv` runs as `ubuntu`**.  
-   **Fix:** `fw.sudo("bash -c " + repr("cp A B && mv B C && chmod …"))` so the **entire** chain is root.
+1. **Elevate the entire command chain.** `sudo a && b` only runs `a` as root. Wrap with `sudo bash -c 'a && b && chmod …'`.
 
 2. **SFTP uploads run as `ubuntu`.** Never `sudo mkdir` a staging dir you will SFTP into.  
    **Fix:** `fw.run("mkdir -p /tmp/…")` (user), optionally `fw.sudo("chown -R ubuntu:ubuntu /tmp/…")` if a prior root mkdir poisoned it. Copy into `/opt/…` only under `sudo bash -c '…'`.
@@ -25,19 +23,19 @@ Related live quirks for operators: lab [`docs/Issues.md`](../../OCI-mc-server-ma
    `export HOME="${HOME:-/home/ubuntu}"`  
    Systemd oneshots often omit `HOME` → `HOME: unbound variable` (heal/pull looked “broken” while manual SSH worked).
 
-6. **Prefer product `door_vm/` as SoT.** Lab `app/door_deploy.py` resolves **`OCI-mc-server/door_vm` first**. If gitignored lab `development/vm2-door/...` is used as a fallback and is stale, Phase 3/4 may deploy **old** sources. Do not edit a lab `door_vm/` copy — that tree is a pointer only.
+6. **`door_vm/` in this repo is SoT.** Do not deploy from a stale copy of the door tree.
 
-7. **Manager Python on Windows:** bare `python` on PATH may lack `oci` (wrong install). Use `run.bat` / explicit Python 3.13 when running Manager or one-off scripts.
+7. **On-box Python** for the idle agent is the VM1 venv under `/opt/mc-manager`. The desktop Manager is `McManager.Hybrid`, not a local Python app.
 
 8. **Door `oci.env` must include Object Storage namespace/bucket** when `object_storage_enabled` is true. `install.sh` used to rewrite `/etc/mccontrol/oci.env` from compute OCIDs only; wake then failed `pull_os_budget.sh` and stuck **DEGRADED**. Also write guest netplan for the **secondary** play IP — the reserved public IP targets that address, not the primary/ephemeral.
 
 9. **`set -u` CR-strip:** `${UNSET//$'\r'/}` aborts before `:-default`. Default optional vars first (`POLL_INTERVAL_SEC="${POLL_INTERVAL_SEC:-10}"` then strip CR). See `wait_forge.sh`.
 
-10. **`ubuntu` is the SSH user and often cannot read/write what you need.** Recurring across many sessions: `/etc/mccontrol/oci.env` (600 root), `/etc/mc-manager/`, `/etc/mcmgr/` (**0750 `root:mcmgr`**), `/opt/mcmgr/`, systemd units, `/opt/mccontrol/` scripts. **Check `ls -l` and use `sudo` (or fix ownership/mode) before retrying as `ubuntu`.** Do not spend a session rediscovering `Permission denied`. Setup cloud-init wait must `sudo -n test -f` the marker (SETUP-ISSUE-5: `test -f /etc/mcmgr/cloud-init-done` as `ubuntu` is always WAIT). Operator runbook: lab [`docs/Operator-Troubleshooting.md`](../../OCI-mc-server-manager/docs/Operator-Troubleshooting.md).
+10. **`ubuntu` is the SSH user and often cannot read/write what you need.** Recurring across many sessions: `/etc/mccontrol/oci.env` (600 root), `/etc/mc-manager/`, `/etc/mcmgr/` (**0750 `root:mcmgr`**), `/opt/mcmgr/`, systemd units, `/opt/mccontrol/` scripts. **Check `ls -l` and use `sudo` (or fix ownership/mode) before retrying as `ubuntu`.** Do not spend a session rediscovering `Permission denied`. Setup cloud-init wait must `sudo -n test -f` the marker (SETUP-ISSUE-5: `test -f /etc/mcmgr/cloud-init-done` as `ubuntu` is always WAIT). Operator runbook: [`Operator-Troubleshooting.md`](Operator-Troubleshooting.md).
 
 11. **systemd `User=mcmgr` is a different user than SSH `ubuntu`.** `minecraft.service` `status=200/CHDIR` means **`mcmgr` cannot traverse `WorkingDirectory=`** (SETUP-ISSUE-4). Do **not** chmod a single directory; do **not** switch `User=` to `ubuntu` or `0777`. Re-apply the **whole** blueprint §5 contract via `onbox/mcmgr/repair-permissions.sh` (`layout_apply` + fail-closed `layout_verify`). Any later `mkdir` (Setup whitelist seed, vanilla/eula helpers, cloud-init) must call `layout_apply` again — skipped `layout_ready` on resume is not enough. ExecStop runs as **root** (`ExecStop=+…`) so it can read `rcon.secret` `0600`. Stop a restart storm with `systemctl stop minecraft` before diagnosing.
 
-12. **Idle-agent SoT is product `vm_agent/`.** After changing it, **Redeploy idle agent** while VM1 is RUNNING so `/opt/mc-manager` matches. Door Phase 4 does **not** push VM1.
+12. **Idle-agent SoT is `vm_agent/`.** After changing it, **Redeploy idle agent** while VM1 is RUNNING so `/opt/mc-manager` matches. Door deploy does **not** push VM1.
 
 13. **Oracle Ubuntu ships `netfilter-persistent` (SSH-only INPUT REJECT) which Conflicts with firewalld.** After SoftStop reboot, netfilter-persistent can win and leave firewalld **inactive** — Minecraft listens but door `wait_forge` and public 25565 fail (SETUP-ISSUE-7). Cloud-init and guest repair must **disable + mask `netfilter-persistent` before** `systemctl enable --now firewalld`.
 
@@ -80,10 +78,9 @@ Related live quirks for operators: lab [`docs/Issues.md`](../../OCI-mc-server-ma
 | Area | Reference |
 |------|-----------|
 | Product Setup door/VM1 upload | `src/McManager.Core/Setup/SetupBootstrapService.cs` |
-| Door Phase 3 binary replace | lab `app/door_deploy.py` — stop service + `sudo bash -c` cp/mv/chmod |
-| Door Phase 4 staging | lab `app/door_deploy.py` — ubuntu `/tmp/door-p4` + `chown` + `sudo bash -c` install |
-| VM1 agent staging | lab `app/ssh_ops.py` — comment + `/tmp/mc-manager-deploy` without sudo mkdir |
-| Config write with sudo | lab `ssh_ops._write_remote_file(..., use_sudo=True)` — SFTP to tmp then `sudo mv` |
+| Door binary replace | stop `mccontrol` + `sudo bash -c` cp `.new` / mv / chmod |
+| Staging dirs | create as `ubuntu` under `/tmp/…`; never `sudo mkdir` then SFTP |
+| Config write with sudo | SFTP to tmp then `sudo mv` |
 
 ---
 
@@ -96,8 +93,8 @@ Related live quirks for operators: lab [`docs/Issues.md`](../../OCI-mc-server-ma
 - [ ] Optional `set -u` vars defaulted **before** CR-strip
 - [ ] `oci.env` sourced as root when diagnosing
 - [ ] Replacing `mccontrol`: service stopped first
-- [ ] Sources came from the tree you intend (product `door_vm/` vs stale lab `development/`)
-- [ ] After door script changes: Testing2 **Door reconcile journal** shows expected lines (no `HOME: unbound`)
+- [ ] Sources came from `door_vm/` in this repo
+- [ ] After door script changes: door reconcile journal shows expected lines (no `HOME: unbound`) — [`Operator-Troubleshooting.md`](Operator-Troubleshooting.md)
 - [ ] After product `vm_agent/` changes: **Redeploy idle agent** on a RUNNING VM1 (door Phase 4 does not push VM1).
 - [ ] `minecraft.service` `User=mcmgr` can `chdir` `WorkingDirectory` (`namei -l`); after any `mkdir` under `/opt/mcmgr` re-run `layout_apply` / `repair-permissions.sh` — do not ship a one-path chmod
 - [ ] Setup cloud-init wait uses `sudo -n test -f` on `/etc/mcmgr/cloud-init-done` (0750; `ubuntu` `test -f` is a false WAIT)
@@ -108,4 +105,4 @@ Related live quirks for operators: lab [`docs/Issues.md`](../../OCI-mc-server-ma
 
 ## Out of scope here
 
-Operator product docs, Always Free cost policy, and Manager roadmap — see lab `PRODUCT-IDEAS.md` / `Infrastructure-Information.md`.
+Operator product docs, Always Free cost policy, and Manager roadmap — see `PRODUCT-IDEAS.md` / `Infrastructure-Information.md`.

@@ -2,8 +2,8 @@
 
 **Status:** Frozen target contract for MVP Phase 2 (2026-08-11); known deployed-code deviations are listed explicitly.  
 **Scope:** Shared Object Storage data used by the Manager, VM1 idle/backup agent, door, Setup, and Connect existing.  
-**Product intent authority:** lab [`PRODUCT-IDEAS.md`](../../OCI-mc-server-manager/PRODUCT-IDEAS.md).  
-**Live implementation authority:** product `vm_agent/`, `door_vm/`, lab Object Storage Phase 1–5 docs, and this product's `McManager.Core` DTOs.
+**Product intent authority:** [`PRODUCT-IDEAS.md`](PRODUCT-IDEAS.md).  
+**Live implementation authority:** `vm_agent/`, `door_vm/`, [`Contracts-Object-Storage.md`](Contracts-Object-Storage.md) itself, and `McManager.Core` DTOs.
 
 This document defines object names, JSON shapes, writer ownership, dirty flags, and compatibility rules. It contains placeholders only—never copy live OCIDs, public IPs, credentials, private keys, Auth Tokens, or RCON passwords into this tracked file.
 
@@ -265,7 +265,7 @@ There is no `backups` category in v1. Adding it now is unsafe because current no
 
 ## `ledger/usage.json` — usage ledger v2
 
-VM1 is the primary writer. Door writes only to close orphaned open intervals after OCI reports VM1 **`STOPPED`**. Manager Phase 1 is a reader; lab Testing2 supports manual publish. **V1 Step 7.7 (source, not deployed):** a second Function may write `daily_overrides` for UTC days whose end is older than ~48 hours, using OCI Usage API Ampere A1 OCPU-h / GB-h (`note=usage_api_reconcile`), then bump `revision` and dirty all three ledger consumers. It must not rewrite intervals, must not overwrite a non-`usage_api_reconcile` (manual) override, and must not plant a zero-API override over interval hours. Tracked tree: `functions/reconcile_usage/`. Do not `fn push` unless authorized.
+VM1 is the primary writer. Door writes only to close orphaned open intervals after OCI reports VM1 **`STOPPED`**. Manager is a reader; Hybrid Troubleshooting supports manual heal/publish. **V1 Step 7.7 (source, not deployed):** a second Function may write `daily_overrides` for UTC days whose end is older than ~48 hours, using OCI Usage API Ampere A1 OCPU-h / GB-h (`note=usage_api_reconcile`), then bump `revision` and dirty all three ledger consumers. It must not rewrite intervals, must not overwrite a non-`usage_api_reconcile` (manual) override, and must not plant a zero-API override over interval hours. Tracked tree: `functions/reconcile_usage/`. Do not `fn push` unless authorized.
 
 **Destroy:** `tofu destroy` of the product stack deletes this bucket (including `ledger/usage.json`); a later Setup seeds a new empty ledger and does not restore prior intervals. Oracle Always Free OCPU-hours for the calendar month still include the destroyed VMs. MVP has no ledger import. See [`Guide.md`](Guide.md) → Tear down and [`Automated-Infrastructure-Deployment.md`](Automated-Infrastructure-Deployment.md) §12.4.
 
@@ -581,7 +581,7 @@ Semantics:
 
 ### `meta/spend-brake-triggered.json` — v1 $1 budget lock (frozen)
 
-Exact key frozen by this contract (V1 Step 2.1). Product intent: lab `PRODUCT-IDEAS.md` ($1 spend-brake lock). Do **not** invent a second lock object.
+Exact key frozen by this contract (V1 Step 2.1). Product intent: `PRODUCT-IDEAS.md` ($1 spend-brake lock). Do **not** invent a second lock object.
 
 ```json
 {
@@ -609,7 +609,7 @@ Semantics:
 - **Fail closed:** a present object is locked even if JSON is malformed or `version` is newer than the reader supports. Transport / auth Get failures are **errors**, not unlocked.
 - **Writer:** the $1 budget Function **sets/replaces** the object when handling a real threshold alert. Ignore budget **RESET** — do not write or delete the object on RESET. A second alert may overwrite (idempotent PUT). Tracked Function write is Step **2.2** (no live `fn push` in 2.2).
 - **Clearer:** Manager **only**, via **DELETE**, after the admin types the exact confirmation statement from PRODUCT-IDEAS and Start/reconcile succeeds (Step **2.4**). Missing-object DELETE is success. Do **not** auto-clear at calendar-month rollover. Do **not** write `status: "cleared"` — unlocked = object gone.
-- **Readers:** Manager (full-window warning; block Start until typed confirm — **DONE** Step **2.4**) and the door (refuse **START VM1** while present, same poll discipline as the budget gate). Door honor is **DONE** in lab `door_vm/` (Step **2.3**; live door needs redeploy).
+- **Readers:** Manager (full-window warning; block Start until typed confirm — **DONE** Step **2.4**) and the door (refuse **START VM1** while present, same poll discipline as the budget gate). Door honor is **DONE** in `door_vm/` (Step **2.3**; live door needs redeploy).
 - **Not** a dirty-flag category. Consumers GET this small object at Manager open / Start / door wake (same pattern as oversized-world).
 - **Not** an OpenTofu / Setup seed object. Do not create or delete it from IaC.
 - **Not** a field of `meta/infra.json`. Freezing this key does **not** bump `infra_schema`.
@@ -733,11 +733,9 @@ Product:
 - `src/McManager.Core/Config/FriendRules.cs`
 - `docs/Local-Config.md`
 
-Lab/on-box:
+On-box:
 
-- Lab `app/object_storage.py`, `app/os_sync.py`, `app/usage.py`
-- Product `vm_agent/ledger.py`, `vm_agent/lease.py`, `vm_agent/os_publish.py`, `vm_agent/world_backup.py`
-- Product `door_vm/oci/pull_os_budget.sh`, `door_vm/oci/heal_os_ledger.sh`
-- Product `functions/shutdown_vm/`, `functions/reconcile_usage/`
-- Lab `docs/Object-Storage-Phase1.md` through `Object-Storage-Phase5.md`
-- `PRODUCT-IDEAS.md` — sync model, infra meta, oversized-world intent, v1 $1 spend-brake lock
+- `vm_agent/ledger.py`, `vm_agent/lease.py`, `vm_agent/os_publish.py`, `vm_agent/world_backup.py`
+- `door_vm/oci/pull_os_budget.sh`, `door_vm/oci/heal_os_ledger.sh`
+- `functions/shutdown_vm/`, `functions/reconcile_usage/`
+- [`PRODUCT-IDEAS.md`](PRODUCT-IDEAS.md) — sync model, infra meta, oversized-world intent, v1 $1 spend-brake lock

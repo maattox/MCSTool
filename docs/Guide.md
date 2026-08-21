@@ -213,7 +213,7 @@ Each Manager tab **remembers its own scroll position** when you switch away and 
 
 **Wipe world** on **Server Management** deletes only the live save on the game VM. Cloud backups, mods, and `server.properties` are not deleted. Download a world save first if you might want the current world back. The game VM must be running; Minecraft is stopped for the wipe and **started again** so a new world generates. If the server is off, that warning (and other button results) shows in a banner **locked to the bottom of the Manager window** — read it, then **X** to dismiss. Short successes such as copying the play IP still fade on their own. Setup keeps its footer status.
 
-*(Pass 1 catalog recorded leave-stopped; operator 2026-08-19 overrode — bug-fix **P8**. Lab PRODUCT-IDEAS Wipe world step 4 may still say the next Start creates a world.)*
+*(Pass 1 catalog recorded leave-stopped; operator 2026-08-19 overrode — bug-fix **P8**. [`PRODUCT-IDEAS.md`](PRODUCT-IDEAS.md) Wipe world step 4 may still say the next Start creates a world.)*
 
 **World too large for cloud backup:** If a single world zip is bigger than the ~9.5 GB free cloud cap, automatic cloud backups stop. The top-right **bell** warns you. **Download latest world save** then copies the **live** world from the game VM over SSH (the VM must be Running). That file stays on this PC and is **not** uploaded to cloud storage. Older cloud backups in the list can still be downloaded.
 
@@ -326,7 +326,7 @@ Only resources this Manager deployed (OpenTofu state on **this PC**) are removed
 
 If Delete says there is no OpenTofu state, this PC did not deploy the stack (or the `%LOCALAPPDATA%\McManager\tofu` folder is missing). Do not delete random compartments in the Console unless you know they are the product `mcmgr` stack.
 
-Developer/operator SSH command dump (not required for the happy path): lab `docs/Operator-Troubleshooting.md` in the sibling tooling repo.
+Developer/operator SSH command dump (not required for the happy path): [`Operator-Troubleshooting.md`](Operator-Troubleshooting.md).
 
 ---
 

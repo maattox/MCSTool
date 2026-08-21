@@ -31,7 +31,7 @@ This is a **delta + gap-close**, not a second encyclopedia. Pass 1 already Passe
 2. Catalog expected steps: open **named IDs** in [`V1-QA-Catalog.md`](V1-QA-Catalog.md). Do not load the Minecraft blueprint, PRODUCT-IDEAS, or the whole V1 file.  
 3. Fill [`V1-QA-Pass-3-Results.md`](V1-QA-Pass-3-Results.md). Out-of-scope rows stay `Skipped` — do **not** re-run Pass 1 chrome that already Passed unless a follow-on section changed those files.  
 4. **One agent chat owns the TESTING stack at a time.**  
-5. Mirror guest/cloud fixes into local SoT. File lab [`docs/Issues.md`](../../OCI-mc-server-manager/docs/Issues.md) for Setup/HCL/bootstrap/door bugs.  
+5. Mirror guest/cloud fixes into local SoT. File [`Issues.md`](Issues.md) for Setup/HCL/bootstrap/door bugs.  
 6. Never create git commits.  
 7. Hybrid: agents **cannot** drive the WPF window. Operator clicks; agent stages/verifies OCI/SSH.  
 8. VM1: START if needed, **disable idle** while working, **re-enable** when the phase ends (re-disable after Minecraft start — OS-ISSUE-7).  

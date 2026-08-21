@@ -1,13 +1,13 @@
 # VM1 idle agent (`vm_agent/`)
 
-Tracked source for software that runs on the **Ampere Forge host (VM1)** under `/opt/mc-manager` (plus systemd units). This tree lives in the **official product repo** (`OCI-mc-server`). Deploy via product Setup, Manager **Instance → Deploy / Update Idle Agent**, or lab Testing2 **Redeploy idle agent** (which reads this sibling tree).
+Tracked source for software that runs on the **Ampere game host (VM1)** under `/opt/mc-manager` (plus systemd units). Deploy via product Setup or Manager **Deploy / Update Idle Agent**.
 
 | Doc | Role |
 |-----|------|
-| Lab [`docs/VM-Software.md`](../../OCI-mc-server-manager/docs/VM-Software.md) | VM1 + VM2 overview + **current build status** |
-| Lab [`Infrastructure-Information.md`](../../OCI-mc-server-manager/Infrastructure-Information.md) | Full OCI architecture |
-| Lab [`docs/Object-Storage-Phase2.md`](../../OCI-mc-server-manager/docs/Object-Storage-Phase2.md) / Phase4 / Phase5 | Ledger publish, uncertain-stop repair, lease heartbeat |
-| Lab [`docs/Issues.md`](../../OCI-mc-server-manager/docs/Issues.md) | SoftStop hang, dual-write, repair rules |
+| [`docs/VM-Software.md`](../docs/VM-Software.md) | VM1 + VM2 overview + **current build status** |
+| [`docs/Infrastructure-Information.md`](../docs/Infrastructure-Information.md) | Full OCI architecture |
+| [`docs/Contracts-Object-Storage.md`](../docs/Contracts-Object-Storage.md) | Ledger publish, uncertain-stop repair, lease heartbeat |
+| [`docs/Issues.md`](../docs/Issues.md) | SoftStop hang, dual-write, repair rules |
 
 ## What it does
 

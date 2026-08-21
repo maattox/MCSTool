@@ -1,12 +1,9 @@
 # V1 Implementation Plan
 
 **Status:** Living checklist for agents and the operator.  
-**Product intent:** **Operator will** is the source of truth. Lab `[PRODUCT-IDEAS.md](../../OCI-mc-server-manager/PRODUCT-IDEAS.md)` is the living vision/roadmap (v1 table), **not infallible**. When **this plan** and PRODUCT-IDEAS disagree on *what* v1 means: do **not** silently rewrite this file to match PRODUCT-IDEAS. Either **stop and ask** the operator which document to follow (then update the other), **or follow this plan** (operator-requested execution) and **note** in the step changelog that PRODUCT-IDEAS disagrees and may drift. Newer operator-requested docs often match current will more closely.  
-**MVP archive:** `[MVP-Implementation-Plan.md](MVP-Implementation-Plan.md)` — Phases **0–7 DONE**. Packaging (old Phase 8 / Step 8.1) is **deferred** to [Phase 9](#phase-9--packaging-updates-launch) of **this** file.  
-**Suggested narrative:** lab `[docs/Development-Steps.md](../../OCI-mc-server-manager/docs/Development-Steps.md)`.  
-**Live infra docs:** lab repo (`Infrastructure-Information.md`, `docs/VM-Software.md`).  
-**On-box SoT:** **this repo** (`door_vm/`, `vm_agent/`, `functions/shutdown_vm/`, `functions/reconcile_usage/`, `onbox/mcmgr/`).  
-**Code SoT for Manager:** **this repo** (`OCI-mc-server`).
+**Product intent:** **Operator will** is the source of truth. [`PRODUCT-IDEAS.md`](PRODUCT-IDEAS.md) is the living vision/roadmap (v1 table), **not infallible**. When **this plan** and PRODUCT-IDEAS disagree on *what* v1 means: do **not** silently rewrite this file to match PRODUCT-IDEAS. Either **stop and ask** the operator which document to follow (then update the other), **or follow this plan** (operator-requested execution) and **note** in the step changelog that PRODUCT-IDEAS disagrees and may drift. Newer operator-requested docs often match current will more closely.  
+**MVP archive:** [`archive/MVP-Implementation-Plan.md`](archive/MVP-Implementation-Plan.md) — Phases **0–7 DONE**. Packaging (old Phase 8 / Step 8.1) is **deferred** to [Phase 9](#phase-9--packaging-updates-launch) of **this** file.  
+**Infra / on-box:** [`Infrastructure-Information.md`](Infrastructure-Information.md), [`VM-Software.md`](VM-Software.md). On-box SoT is **this repo** (`door_vm/`, `vm_agent/`, `functions/shutdown_vm/`, `functions/reconcile_usage/`, `onbox/mcmgr/`). Doc map: [`README.md`](README.md).
 
 **Cost rule:** keep OCI spend at **$0** (Always Free–eligible) unless the operator explicitly accepts paid changes. **Paid / spend mode is not v1** — skipped (operator 2026-08-18); the idea stays in PRODUCT-IDEAS as **later / far future**. Do not implement it under this plan.
 
@@ -28,7 +25,7 @@
 4. In the chat reply: what was done, how to test, what the next step will be, ask whether to continue / pause / adjust.
 5. **Never create git commits** (operator commits in Visual Studio). You may suggest a commit message.
 6. Do **not** implement **after v1** / **later** PRODUCT-IDEAS items (Players tab, start checklist, maintenance IP, multi-deploy, Quilt Setup entry, Purpur, PTY console, macOS/Linux Manager, **paid / spend mode**) unless the operator asks. **Pack replace** was after-v1 in PRODUCT-IDEAS; operator 2026-08-20 pulled **full re-setup** into v1 via [Step 8.4](#step-84--pass-2-follow-on-operator-notes) (light swap still parked). An **in-app mod/modpack browser** is **rejected** (not after-v1) — users import a local pack file only; do not build it. **Public Minecraft / public-private toggle / blacklist** is **rejected** (not after-v1) — private allowlist only; do not rebuild it. If **this plan** disagrees with PRODUCT-IDEAS, follow this plan and note the drift (do not silently rewrite this file to match PRODUCT-IDEAS).
-7. Do **not** put Manager UI in the lab repo. On-box source (`door_vm/`, `vm_agent/`, `functions/shutdown_vm/`) lives **in this repo**. Lab changes are OK for lab docs / Python Manager only. Phase B (Blazor Hybrid) is **DONE**; do not re-open Avalonia.
+7. On-box source (`door_vm/`, `vm_agent/`, `functions/shutdown_vm/`) lives **in this repo**. Phase B (Blazor Hybrid) is **DONE**; do not re-open Avalonia.
 8. **Fix the product path, not only the test VM.** If you change a test VM or a **TESTING** cloud resource, make the **same** change in the local deployment SoT in the same session (`onbox/mcmgr/`, `infra/`, `door_vm/`, `vm_agent/`, `functions/shutdown_vm/`, Manager/Setup code here). The next greenfield Setup must pick it up. Patching only the live test instance is not done.
 9. `ubuntu` **Permission denied** — `sudo` or fix owner/mode (`[docs/Agent-Deploy-Pitfalls.md](Agent-Deploy-Pitfalls.md)`).
 10. **UI sketches are not locked; operator notes override.** For UI-design work, use or offer `find-skills` unless already asked. **NuGet is allowed** on `McManager.Hybrid`. Do not add Avalonia packages. Keep OCI SDK on Core.
@@ -69,8 +66,8 @@ Agents **may** manage the **test** stack with OCI APIs and the OCI CLI, and **ma
 | OCI CLI              | Always pass `--profile TESTING` (or the equivalent .NET `OciSession` profile from local config). Example: `oci compute instance get --profile TESTING --instance-id <from local config>`                        |
 | SSH user             | `ubuntu`                                                                                                                                                                                                        |
 | SSH private key      | `%USERPROFILE%\.ssh\mcmgr_ed25519_20260817_125552` — **same key for both** test VMs                                                                                                                             |
-| Hosts / OCIDs / IPs  | Gitignored `data/config.local.json` (lab private markdown only if needed). **Do not copy live OCIDs, IPs, Auth Tokens, or key material into tracked docs or chat dumps.**                                       |
-| `ubuntu` permissions | Recurring `Permission denied` on `/etc/mcmgr`, `/etc/mccontrol/oci.env`, systemd units. Use `sudo` or fix mode/owner. Read `[docs/Agent-Deploy-Pitfalls.md](Agent-Deploy-Pitfalls.md)` before SSH deploy edits. |
+| Hosts / OCIDs / IPs  | Gitignored `data/config.local.json`. **Do not copy live OCIDs, IPs, Auth Tokens, or key material into tracked docs or chat dumps.**                                       |
+| `ubuntu` permissions | Recurring `Permission denied` on `/etc/mcmgr`, `/etc/mccontrol/oci.env`, systemd units. Use `sudo` or fix mode/owner. Read [`Agent-Deploy-Pitfalls.md`](Agent-Deploy-Pitfalls.md) before SSH deploy edits. |
 
 
 **Allowed**
@@ -115,7 +112,7 @@ sudo python3 -c 'import json; p="/etc/mc-manager/config.json"; c=json.load(open(
 sudo systemctl enable --now mc-idle-watch.timer
 ```
 
-More idle copy-paste: lab `[docs/Operator-Troubleshooting.md](../../OCI-mc-server-manager/docs/Operator-Troubleshooting.md)` (VM1 idle agent).
+More idle copy-paste: [`Operator-Troubleshooting.md`](Operator-Troubleshooting.md) (VM1 idle agent).
 
 ### Product Functions on TESTING (blanket)
 
@@ -212,7 +209,7 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 
 **Read first**
 
-- Lab `PRODUCT-IDEAS.md` → heading **Advanced vs Danger Zone (v1)** only  
+- `PRODUCT-IDEAS.md` → heading **Advanced vs Danger Zone (v1)** only  
 - `src/McManager.Hybrid/Components/Layout/MainLayout.razor` (tab strip + switch)  
 - `src/McManager.Hybrid/Components/Tabs/Advanced/AdvancedTab.razor`  
 - `src/McManager.Hybrid/ViewModels/AdvancedViewModel.cs`  
@@ -246,7 +243,7 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 
 **Read first**
 
-- Lab `PRODUCT-IDEAS.md` → **Allowlist CIDR ranges (v1)** only  
+- `PRODUCT-IDEAS.md` → **Allowlist CIDR ranges (v1)** only  
 - `src/McManager.Hybrid/ViewModels/WhitelistViewModel.cs`  
 - `src/McManager.Hybrid/Components/Tabs/Whitelist/WhitelistTab.razor`  
 - `src/McManager.Hybrid/ViewModels/FriendRowViewModel.cs`  
@@ -278,7 +275,7 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 
 **Read first**
 
-- Lab `PRODUCT-IDEAS.md` → **Wipe world (v1)** only  
+- `PRODUCT-IDEAS.md` → **Wipe world (v1)** only  
 - Blueprint **§11.3** only (not the rest of §11)  
 - `src/McManager.Hybrid/ViewModels/ServerManagementViewModel.cs`  
 - `src/McManager.Hybrid/Components/Tabs/ServerManagement/ServerManagementTab.razor`  
@@ -312,9 +309,9 @@ Split so Function, door, and Manager each get their own window.
 
 **Read first**
 
-- Lab `PRODUCT-IDEAS.md` → **$1 spend-brake lock (v1)** only  
+- `PRODUCT-IDEAS.md` → **$1 spend-brake lock (v1)** only  
 - `[Contracts-Object-Storage.md](Contracts-Object-Storage.md)` — existing `meta/` objects + reserved spend-brake row  
-- Lab `functions/shutdown_vm/` README (placeholders only)
+- `functions/shutdown_vm/` README (placeholders only)
 
 **Do**
 
@@ -341,14 +338,14 @@ Split so Function, door, and Manager each get their own window.
 **Read first**
 
 - Step 2.1 contract (this file + `Contracts-Object-Storage.md` spend-brake section)  
-- Lab `PRODUCT-IDEAS.md` → **What the Function must do (v1)** only  
-- Lab `functions/shutdown_vm/` source (product copy)  
+- `PRODUCT-IDEAS.md` → **What the Function must do (v1)** only  
+- `functions/shutdown_vm/` source (product copy)  
 - Oracle Always Free page (Micro vs Ampere) — re-read; **prefer leaving the door running** if AMD Micro does not accrue Ampere OCPU-hour spend
 
 **Do**
 
 - On a real threshold alert (ignore budget RESET): SoftStop **VM1**; **PUT** the lock object.  
-- Product decision in the same step: stop door or not. Default recommendation: **do not SoftStop VM2** if Micro stays Always Free; document the choice in the Function README + lab `Infrastructure-Information.md` (placeholders).  
+- Product decision in the same step: stop door or not. Default recommendation: **do not SoftStop VM2** if Micro stays Always Free; document the choice in the Function README + [`Infrastructure-Information.md`](Infrastructure-Information.md) (placeholders).  
 - Do **not** `fn push` / OCIR. Code + docs only.
 
 **Test**
@@ -370,10 +367,10 @@ Split so Function, door, and Manager each get their own window.
 
 **Read first**
 
-- Lab `docs/Agent-Deploy-Pitfalls.md` (before any door script/C change)  
+- `Agent-Deploy-Pitfalls.md` (before any door script/C change)  
 - `Contracts-Object-Storage.md` spend-brake section  
-- Lab `door_vm/src/control.c` — budget-gate / wake paths only  
-- Lab `door_vm/scripts/` wake-pull script(s) that already read budget/ledger (open only those)
+- `door_vm/src/control.c` — budget-gate / wake paths only  
+- `door_vm/scripts/` wake-pull script(s) that already read budget/ledger (open only those)
 
 **Do**
 
@@ -383,7 +380,7 @@ Split so Function, door, and Manager each get their own window.
 
 **Test**
 
-- `make test` in lab `door_vm/` (MOTD/kick + `SPEND_BRAKE` state names). This Windows session had no gcc; run that in WSL/Linux.
+- `make test` in `door_vm/` (MOTD/kick + `SPEND_BRAKE` state names). This Windows session had no gcc; run that in WSL/Linux.
 - After **redeploying the door** from `door_vm/` (Testing2 Phase 3+4 or Setup `install.sh`): SSH the door as `ubuntu`, then `sudo bash /opt/mccontrol/oci/pull_os_budget.sh --force` — expect `SPEND_BRAKE_LOCK=0` while the object is absent (wake must not DEGRADE).
 - Optional refuse check (delete the object when done): PUT a tiny `meta/spend-brake-triggered.json`, `POST /api/wake`, confirm VM1 stays STOPPED and MOTD/kick contains `MONTHLY SPEND BRAKE FIRED` (not `DAILY BUDGET`). Then DELETE the object and `/api/os-refresh`.
 
@@ -402,7 +399,7 @@ Split so Function, door, and Manager each get their own window.
 
 **Read first**
 
-- Lab `PRODUCT-IDEAS.md` → **Manager UX when the flag is set** only (keep the typed sentence exact)  
+- `PRODUCT-IDEAS.md` → **Manager UX when the flag is set** only (keep the typed sentence exact)  
 - `src/McManager.Hybrid/Components/Layout/MainLayout.razor`  
 - `src/McManager.Hybrid/ViewModels/MainViewModel.cs` (Start/Stop gating)  
 - Core Object Storage helper from 2.1  
@@ -476,7 +473,7 @@ Never implemented. OCI Security Lists have no deny. Do not ship a CIDR invert. P
 
 **Read first**
 
-- Lab `PRODUCT-IDEAS.md` → **Rejected** table (public/blacklist row) + heading **IP Management (v1)** only  
+- `PRODUCT-IDEAS.md` → **Rejected** table (public/blacklist row) + heading **IP Management (v1)** only  
 - `src/McManager.Hybrid/Components/Tabs/Whitelist/WhitelistTab.razor`  
 - `src/McManager.Hybrid/ViewModels/WhitelistViewModel.cs`  
 - `src/McManager.Core/Services/SecurityListIngressPlanner.cs`  
@@ -490,7 +487,7 @@ Never implemented. OCI Security Lists have no deny. Do not ship a CIDR invert. P
 - Remove the **public** Minecraft `0.0.0.0/0` branch from `SecurityListIngressPlanner` / `ApplyFriendsAsync`. **Keep** the planner for **private** allowlist CIDR/`/32` apply (Step 1.2). Do not revert CIDR.  
 - Delete leftover types/tests that exist only for public mode or blacklist (`BlacklistRowViewModel`, public planner tests, `IpAccessMode.Public`, etc.).  
 - Optional **TESTING** check (no `tofu apply`): `GetSecurityList` — if Minecraft 25565 is `0.0.0.0/0`, apply the private allowlist and say so. 3.2 claimed no live apply; this is only a safety net.  
-- Do **not** start Phase 4. Lab Python seed of `ip/mode.json` may stay as an unused leftover unless a one-line comment is cheap.
+- Do **not** start Phase 4. An unused leftover `ip/mode.json` may stay unless a one-line comment is cheap.
 
 **Test**
 
@@ -521,7 +518,7 @@ Each installer step: Core metadata client + `onbox/mcmgr/` module + generic unit
 **Read first**
 
 - Blueprint **§17** only  
-- Lab `PRODUCT-IDEAS.md` → **Setup game types (v1)** → Vanilla branch / Paper bullets  
+- `PRODUCT-IDEAS.md` → **Setup game types (v1)** → Vanilla branch / Paper bullets  
 - Existing Vanilla piston-meta client in Core (open only that file + its tests)  
 - Blueprint **§15** (offline fixtures pattern) — only if adding test JSON
 
@@ -550,7 +547,7 @@ Each installer step: Core metadata client + `onbox/mcmgr/` module + generic unit
 **Read first**
 
 - Blueprint **§17**, **§6.3** (jar launch), **§13.2** (SSH modules)  
-- Lab `docs/Agent-Deploy-Pitfalls.md`  
+- `Agent-Deploy-Pitfalls.md`  
 - Existing Vanilla on-box installer under `onbox/mcmgr/` (open the Vanilla module + shared layout/unit generator only)
 
 **Do**
@@ -577,7 +574,7 @@ Each installer step: Core metadata client + `onbox/mcmgr/` module + generic unit
 
 **Read first**
 
-- Lab `PRODUCT-IDEAS.md` → **Setup game types (v1)** diagram + Vanilla branch  
+- `PRODUCT-IDEAS.md` → **Setup game types (v1)** diagram + Vanilla branch  
 - `src/McManager.Hybrid/Components/Setup/SetupWizard.razor`  
 - `src/McManager.Hybrid/ViewModels/SetupWizardViewModel.cs`  
 - Vanilla version-picker code (open only that)
@@ -685,7 +682,7 @@ Each installer step: Core metadata client + `onbox/mcmgr/` module + generic unit
 **Read first**
 
 - Blueprint **§22** and **§2.4** only  
-- Lab `PRODUCT-IDEAS.md` → **Modded branch** (file picker / no catalog)  
+- `PRODUCT-IDEAS.md` → **Modded branch** (file picker / no catalog)  
 - `[Sample-Packs.md](Sample-Packs.md)` (operator-local archives; gotcha: FO/`env.server`)
 
 **Do**
@@ -764,7 +761,7 @@ Each installer step: Core metadata client + `onbox/mcmgr/` module + generic unit
 
 **Read first**
 
-- Lab `PRODUCT-IDEAS.md` → **Modded branch**  
+- `PRODUCT-IDEAS.md` → **Modded branch**  
 - Setup wizard files from 4.3  
 - Analyzer/install APIs from 4.7–4.9
 
@@ -820,7 +817,7 @@ Each installer step: Core metadata client + `onbox/mcmgr/` module + generic unit
 **Read first**
 
 - Blueprint **§23** only (ToS, API key custody, no cache/proxy, no competing catalog)  
-- Lab `PRODUCT-IDEAS.md` → Modded branch CurseForge row
+- `PRODUCT-IDEAS.md` → Modded branch CurseForge row
 
 **Decision (operator 2026-08-18)** — docs only; **do not implement** an API client.
 
@@ -882,7 +879,7 @@ Historical **Do** (not to be started): import a user-supplied CurseForge client 
 
 **Read first**
 
-- Lab `PRODUCT-IDEAS.md` → **Server Management modding (v1)** only  
+- `PRODUCT-IDEAS.md` → **Server Management modding (v1)** only  
 - `ServerManagementTab.razor` + `ServerManagementViewModel.cs`  
 - Local pack-archive path from 4.8
 
@@ -915,7 +912,7 @@ Historical **Do** (not to be started): import a user-supplied CurseForge client 
 
 **Read first**
 
-- Lab `PRODUCT-IDEAS.md` → v1 table row **Top-bar right chrome** + Manager UI top-bar notes (not the whole UI chapter)  
+- `PRODUCT-IDEAS.md` → v1 table row **Top-bar right chrome** + Manager UI top-bar notes (not the whole UI chapter)  
 - `MainLayout.razor` header/chrome only  
 - `find-skills` / existing Hybrid CSS — do not add Avalonia packages
 
@@ -969,7 +966,7 @@ Historical **Do** (not to be started): import a user-supplied CurseForge client 
 
 **Read first**
 
-- Lab `PRODUCT-IDEAS.md` → **Oversized world backup (v1)** heading (search that title)  
+- `PRODUCT-IDEAS.md` → **Oversized world backup (v1)** heading (search that title)  
 - `[Contracts-Object-Storage.md](Contracts-Object-Storage.md)` `meta/oversized-world-backup.json`  
 - `ServerManagementViewModel.cs` Download World Save path  
 - Blueprint **§11.2** only if needed
@@ -1001,7 +998,7 @@ Historical **Do** (not to be started): import a user-supplied CurseForge client 
 
 **Read first**
 
-- Lab `PRODUCT-IDEAS.md` → **VM1 shape scaling (v1)** only  
+- `PRODUCT-IDEAS.md` → **VM1 shape scaling (v1)** only  
 - Danger Zone tab from 1.1  
 - Core Compute instance update API usage (open existing Compute facade only)  
 - `[OCI-API-Usage.md](OCI-API-Usage.md)` waiters
@@ -1030,7 +1027,7 @@ Historical **Do** (not to be started): import a user-supplied CurseForge client 
 
 **Read first**
 
-- Lab `PRODUCT-IDEAS.md` v1 row **Always-on-capable small shape UX**  
+- `PRODUCT-IDEAS.md` v1 row **Always-on-capable small shape UX**  
 - Usage tab copy + door MOTD budget strings **only if** this step must change them (grep; do not rewrite door C unless copy is actually wrong)
 
 **Do**
@@ -1056,7 +1053,7 @@ Historical **Do** (not to be started): import a user-supplied CurseForge client 
 
 **Read first**
 
-- Lab `PRODUCT-IDEAS.md` → **App version vs infrastructure version**  
+- `PRODUCT-IDEAS.md` → **App version vs infrastructure version**  
 - `ConnectExistingFlow.cs`  
 - `docs/Local-Config.md` (schema fields only)
 
@@ -1083,7 +1080,7 @@ Historical **Do** (not to be started): import a user-supplied CurseForge client 
 
 **Read first**
 
-- Lab `PRODUCT-IDEAS.md` → **Central Object Storage — source of truth** writer rules  
+- `PRODUCT-IDEAS.md` → **Central Object Storage — source of truth** writer rules  
 - `[Contracts-Object-Storage.md](Contracts-Object-Storage.md)` version/etag notes  
 - Core Object Storage client only
 
@@ -1110,7 +1107,7 @@ Historical **Do** (not to be started): import a user-supplied CurseForge client 
 
 **Read first**
 
-- Lab `PRODUCT-IDEAS.md` v1 row **Server Management / customization** (console part)  
+- `PRODUCT-IDEAS.md` v1 row **Server Management / customization** (console part)  
 - Core RCON/SSH helpers (open only those)  
 - `MainLayout.razor` tab strip
 
@@ -1137,7 +1134,7 @@ Historical **Do** (not to be started): import a user-supplied CurseForge client 
 
 **Read first**
 
-- Lab `PRODUCT-IDEAS.md` same customization row (name, icon, description, automated chat in storage)  
+- `PRODUCT-IDEAS.md` same customization row (name, icon, description, automated chat in storage)  
 - Existing `messages/` Object Storage sketch in contracts
 
 **Do**
@@ -1163,8 +1160,8 @@ Historical **Do** (not to be started): import a user-supplied CurseForge client 
 
 **Read first**
 
-- Lab `PRODUCT-IDEAS.md` v1 row **Usage API reconciliation**  
-- Lab `functions/shutdown_vm/` only as a **pattern** for a second function (do not modify the $1 function in this step)  
+- `PRODUCT-IDEAS.md` v1 row **Usage API reconciliation**  
+- `functions/shutdown_vm/` only as a **pattern** for a second function (do not modify the $1 function in this step)  
 - `[OCI-API-Usage.md](OCI-API-Usage.md)`
 
 **Do**
@@ -1186,7 +1183,7 @@ Historical **Do** (not to be started): import a user-supplied CurseForge client 
 
 ## Phase 8 — Paid / spend mode
 
-**Status: SKIPPED** (operator 2026-08-18). Not v1. Product remains Always Free / $0. The idea stays in lab `PRODUCT-IDEAS.md` as **later / far future** — if it is ever built, it will not be this plan. **Do not implement Steps 8.1–8.2.**
+**Status: SKIPPED** (operator 2026-08-18). Not v1. Product remains Always Free / $0. The idea stays in `PRODUCT-IDEAS.md` as **later / far future** — if it is ever built, it will not be this plan. **Do not implement Steps 8.1–8.2.**
 
 ### Step 8.1 — Paid mode model + Danger Zone UI
 
@@ -1347,7 +1344,7 @@ Do **not** start Step **8.6.1** or Step **9.1** from this step. Do not rewrite t
 **Do**
 
 - Confirm catalog exit bar: no open Blocker/Major (or parked with operator OK); smoke IDs Pass.  
-- Point V1 **NEXT** at Step **8.6.1** (CI-built ARM Function image). **Do not** skip 8.6 and point at 9.1. Update lab `docs/Development-Steps.md` / `AGENTS.md` NEXT lines if they still say 8.5.2.
+- Point V1 **NEXT** at Step **8.6.1** (CI-built ARM Function image). **Do not** skip 8.6 and point at 9.1. Update `AGENTS.md` NEXT lines if they still say 8.5.2.
 
 **Done when:** Operator says pre-packaging QA is done. **NEXT** becomes **8.6.1**, not 9.1.
 
@@ -1375,7 +1372,7 @@ This phase is **required before any official release**. Do **not** start Step **
 **Read first**
 
 - This phase heading  
-- Lab `PRODUCT-IDEAS.md` → **Delivery packaging** (Function image subsection)  
+- `PRODUCT-IDEAS.md` → **Delivery packaging** (Function image subsection)  
 - `[Automated-Infrastructure-Deployment.md](Automated-Infrastructure-Deployment.md)` §10 Function row + §13 hybrid bundle/GitHub  
 - `src/McManager.Core/Setup/OcirFunctionPublisher.cs`  
 - `src/McManager.Core/Setup/SetupDeployOrchestrator.cs` (Function stage + skip-advances-stage)  
@@ -1506,7 +1503,7 @@ Former MVP Phase **8–9**. Phases **1–7** are **DONE**. Phase **8** is **SKIP
 
 **Do**
 
-- Tick v1 table in PRODUCT-IDEAS against this plan. Confirm **later** items were not scoped in. Update `README.md` + lab `VM-Software.md`.  
+- Tick v1 table in PRODUCT-IDEAS against this plan. Confirm **later** items were not scoped in. Update `README.md` + [`VM-Software.md`](VM-Software.md).  
 - **Operator (not agents):** clean-room test in PRODUCT-IDEAS (new account + installer + Setup + $1 brake including **lock UX**). Prefer a local VM / spare PC. May incur ~$1–$2 residual — not on the long-lived lab tenancy unless spend is accepted.
 
 **Done when:** Operator declares v1 ready to publish.
@@ -1523,20 +1520,19 @@ Former MVP Phase **8–9**. Phases **1–7** are **DONE**. Phase **8** is **SKIP
 | Need                      | Where                                                                                                      |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | This checklist            | **this file**                                                                                              |
-| MVP archive (Phases 0–7)  | `[MVP-Implementation-Plan.md](MVP-Implementation-Plan.md)`                                                 |
-| Happy-path user guide     | `[Guide.md](Guide.md)`                                                                                     |
-| MVP / v1 / later intent   | Lab `PRODUCT-IDEAS.md`                                                                                     |
-| Game install mechanism    | `[Minecraft-Server-Deployment-Blueprint.md](Minecraft-Server-Deployment-Blueprint.md)` — **named §§ only** |
-| Object Storage contracts  | `[Contracts-Object-Storage.md](Contracts-Object-Storage.md)`                                               |
-| Suggested order narrative | Lab `docs/Development-Steps.md`                                                                            |
-| What’s live on VMs        | Lab `docs/VM-Software.md`                                                                                  |
-| Deploy pitfalls           | Lab `docs/Agent-Deploy-Pitfalls.md`                                                                        |
-| OCI API usage             | `[OCI-API-Usage.md](OCI-API-Usage.md)`                                                                     |
-| Pre-packaging QA catalog  | `[V1-QA-Catalog.md](V1-QA-Catalog.md)`                                                                     |
-| QA pass 1 results         | `[V1-QA-Pass-1-Results.md](V1-QA-Pass-1-Results.md)` (historical)                                           |
-| QA pass 2 scope           | `[V1-QA-Pass-2-Scope.md](V1-QA-Pass-2-Scope.md)`                                                           |
-| QA pass 2 results         | `[V1-QA-Pass-2-Results.md](V1-QA-Pass-2-Results.md)`                                                       |
-| Modpack robustness (4.13) | `[V1-Modpack-Robustness-Plan.md](V1-Modpack-Robustness-Plan.md)`                                           |
+| MVP archive (Phases 0–7)  | [`archive/MVP-Implementation-Plan.md`](archive/MVP-Implementation-Plan.md)                                 |
+| Happy-path user guide     | [`Guide.md`](Guide.md)                                                                                     |
+| MVP / v1 / later intent   | [`PRODUCT-IDEAS.md`](PRODUCT-IDEAS.md)                                                                     |
+| Game install mechanism    | [`Minecraft-Server-Deployment-Blueprint.md`](Minecraft-Server-Deployment-Blueprint.md) — **named §§ only** |
+| Object Storage contracts  | [`Contracts-Object-Storage.md`](Contracts-Object-Storage.md)                                               |
+| What’s live on VMs        | [`VM-Software.md`](VM-Software.md)                                                                         |
+| Deploy pitfalls           | [`Agent-Deploy-Pitfalls.md`](Agent-Deploy-Pitfalls.md)                                                     |
+| OCI API usage             | [`OCI-API-Usage.md`](OCI-API-Usage.md)                                                                     |
+| Pre-packaging QA catalog  | [`V1-QA-Catalog.md`](V1-QA-Catalog.md)                                                                     |
+| QA pass 1 results         | [`archive/V1-QA-Pass-1-Results.md`](archive/V1-QA-Pass-1-Results.md) (historical)                           |
+| QA pass 2 scope           | [`archive/V1-QA-Pass-2-Scope.md`](archive/V1-QA-Pass-2-Scope.md)                                           |
+| QA pass 2 results         | [`archive/V1-QA-Pass-2-Results.md`](archive/V1-QA-Pass-2-Results.md)                                       |
+| Modpack robustness (4.13) | [`archive/V1-Modpack-Robustness-Plan.md`](archive/V1-Modpack-Robustness-Plan.md)                           |
 | Bug-fix plan template     | `[V1-Bug-Fix-Plan-TEMPLATE.md](V1-Bug-Fix-Plan-TEMPLATE.md)`                                               |
 
 
@@ -1628,7 +1624,7 @@ Former MVP Phase **8–9**. Phases **1–7** are **DONE**. Phase **8** is **SKIP
 | 2026-08-18 | **Public/blacklist rejected.** Step **3.3 CANCELLED**. Steps **3.1–3.2 WITHDRAWN**. Docs updated. **NEXT = Step 3.4** (remove 3.1/3.2 code; keep CIDR). Do not start 3.4 unless asked.                                                                                                                                            |
 | 2026-08-18 | In-app mod/modpack browser marked **rejected** (not after-v1). Users import a local pack file only. **NEXT remains Step 3.3.**                                                                                                                                                                                                    |
 | 2026-08-18 | Operator-local sample packs: gitignored `data/sample-packs/` + tracked `[Sample-Packs.md](Sample-Packs.md)`. CI stays on `tests/fixtures/`. Agents missing a pack format **pause and ask the operator**. **NEXT remains Step 3.3.**                                                                                               |
-| 2026-08-18 | **On-box SoT moved** into this repo: `door_vm/`, `vm_agent/`, `functions/shutdown_vm/`, plus `docs/Agent-Deploy-Pitfalls.md`. Lab trees are pointer READMEs. Setup `ProductPaths` no longer requires a lab checkout. **NEXT remains Step 3.3.**                                                                                   |
+| 2026-08-18 | **On-box SoT moved** into this repo: `door_vm/`, `vm_agent/`, `functions/shutdown_vm/`, plus `Agent-Deploy-Pitfalls.md`. Lab trees are pointer READMEs. Setup `ProductPaths` no longer requires a lab checkout. **NEXT remains Step 3.3.**                                                                                   |
 | 2026-08-17 | **Step 3.2 DONE.** One-list rewrite: public Minecraft `0.0.0.0/0` TCP/UDP; SSH never world-open; private restores allowlist; 3.1 confirm before public apply. Planner unit tests; no live SL apply. **NEXT = Step 3.3**. Do not start 3.3 unless asked.                                                                           |
 | 2026-08-17 | **Step 3.1 DONE.** Persist `private`/`public` + blacklist locally (`friends.local.json`) and `ip/mode.json` when present; public confirm; Apply-public stub; SL unchanged. **NEXT = Step 3.2**. Do not start 3.2 unless asked.                                                                                                    |
 | 2026-08-17 | **Step 2.4 DONE.** Manager full-window spend-brake overlay; exact typed confirm; park-IP + DELETE lock + OS-refresh + Wake (gates still apply). Core `SpendBrakeLockUx` tests. **NEXT = Step 3.1**. Do not start 3.1 unless asked.                                                                                                |

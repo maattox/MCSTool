@@ -6,7 +6,7 @@ This is the **official product repository**. The Manager UI is **.NET 8 + Blazor
 
 ## Status
 
-Manage + Setup are usable on the Blazor Hybrid WinExe. **Phase B** (Avalonia → Blazor Hybrid) is **DONE**. Happy-path user guide: [`docs/Guide.md`](docs/Guide.md). Living execution checklist: [`docs/V1-Implementation-Plan.md`](docs/V1-Implementation-Plan.md) (**NEXT = Step 8.4** / follow-on **P1**; Pass 2 closed early; Step **8.5.2** paused until 8.4, then Pass 3; Step **4.13** / R1–R4 **DONE**; do not start 9.1 until QA exits **and** Step **8.6.1** is DONE). MVP Phases 0–7 are **DONE** ([`docs/MVP-Implementation-Plan.md`](docs/MVP-Implementation-Plan.md)); Phase **8.6** is the CI-built ARM Function image (no Docker on the admin PC); packaging is V1 Phase 9. **Paid / spend mode is skipped** (later / far future). Danger Zone can **Delete infrastructure** (`tofu destroy` of the product stack only). Phase B archive: [`docs/Blazor-UI-Migration-Plan.md`](docs/Blazor-UI-Migration-Plan.md).
+Manage + Setup are usable on the Blazor Hybrid WinExe. Happy-path user guide: [`docs/Guide.md`](docs/Guide.md). Living execution: [`docs/V1-Implementation-Plan.md`](docs/V1-Implementation-Plan.md) (**NEXT = Step 8.5.2** Pass 3 — do not start until the operator says so; follow-on P1–P13 **DONE**; do not start 9.1 until QA exits **and** Step **8.6.1** is DONE). MVP Phases 0–7 are **DONE** ([`docs/archive/MVP-Implementation-Plan.md`](docs/archive/MVP-Implementation-Plan.md)); Phase **8.6** is the CI-built ARM Function image (no Docker on the admin PC); packaging is V1 Phase 9. **Paid / spend mode is skipped** (later / far future). Danger Zone can **Delete infrastructure** (`tofu destroy` of the product stack only). Doc map: [`docs/README.md`](docs/README.md).
 
 Licensing is **TBD** (no `LICENSE` file yet).
 
@@ -38,14 +38,9 @@ Stay on **Always Free–eligible** OCI resources unless you explicitly accept sp
 
 OCI SDK call patterns (throttling, waiters, request thrift): [`docs/OCI-API-Usage.md`](docs/OCI-API-Usage.md).
 
-## Dual-repo layout
+## Docs
 
-| Repo | Role |
-|------|------|
-| **This repo (`OCI-mc-server`)** | Official product: Manager (Blazor Hybrid UI + Core + Setup / OpenTofu) and on-box SoT (`door_vm/`, `vm_agent/`, `functions/shutdown_vm/`, `functions/reconcile_usage/`, `onbox/mcmgr/`) |
-| Sibling **`OCI-mc-server-manager`** (lab) | Python day-2 tool, live-Forge infra docs, product planning (`PRODUCT-IDEAS.md`) |
-
-Deep infrastructure and product-intent docs live in the lab sibling (e.g. `Infrastructure-Information.md`, `PRODUCT-IDEAS.md`). On-box source that Setup deploys lives **in this repo**.
+Architecture, vision, QA, and on-box maps live in [`docs/`](docs/README.md) (`PRODUCT-IDEAS.md`, `Infrastructure-Information.md`, `Issues.md`, and the V1 plan). On-box source that Setup deploys lives in this repo (`door_vm/`, `vm_agent/`, `functions/`, `onbox/mcmgr/`, `infra/`).
 
 ## Secrets
 
@@ -61,7 +56,7 @@ Deep infrastructure and product-intent docs live in the lab sibling (e.g. `Infra
 # Already seeded on the operator machine (gitignored). To recreate:
 copy config.local.example.json data\config.local.json
 copy friends.local.example.json data\friends.local.json
-# then fill OCIDs from the lab private deploy notes / lab data/config.json
+# then fill OCIDs from OCI Console / TESTING tofu outputs (`%LOCALAPPDATA%\McManager\tofu\<stack-id>\`)
 ```
 
 On launch the shell status line loads this config (region, play IP, friend count).

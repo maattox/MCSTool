@@ -4,7 +4,7 @@
 **Authority:** Oracle’s [REST APIs / Using the API](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/usingapi.htm) (read that page; this file is a product-oriented digest + Always Free constraints).  
 **Cost rule:** stay inside **Always Free–eligible** usage. Chatty or naïve polling can burn the Object Storage **~50,000 API requests/month** free allowance and trigger **429** throttling on other services.
 
-Lab copy (same guidance): sibling `OCI-mc-server-manager/docs/OCI-API-Usage.md`. Product intent / sync intervals: lab `PRODUCT-IDEAS.md`.
+Product intent / sync intervals: [`PRODUCT-IDEAS.md`](PRODUCT-IDEAS.md).
 
 ---
 

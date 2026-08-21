@@ -18,9 +18,9 @@ This file’s creation session **must not implement code**. Later agents impleme
 1. Read **this protocol**, the [Progress dashboard](#progress-dashboard), and **only the NEXT section**.  
 2. Implement only that section. Do not start neighbors “while you are here.”  
 3. After finishing: mark **DONE**, set the next incomplete section to **NEXT**, changelog line, **stop**.  
-4. If you change a test VM or TESTING cloud resource, make the **same** change in local SoT (`onbox/`, `infra/`, `door_vm/`, `vm_agent/`, `functions/shutdown_vm/`, Manager/Setup). File lab [`docs/Issues.md`](../../OCI-mc-server-manager/docs/Issues.md) for on-box/Setup/door bugs.  
+4. If you change a test VM or TESTING cloud resource, make the **same** change in local SoT (`onbox/`, `infra/`, `door_vm/`, `vm_agent/`, `functions/shutdown_vm/`, Manager/Setup). File [`Issues.md`](Issues.md) for on-box/Setup/door bugs.  
 5. Never create git commits. Suggest a message.  
-6. Do not start V1 Step 9.1. Do not implement after-v1 PRODUCT-IDEAS items unless the operator asks. If this plan disagrees with lab `PRODUCT-IDEAS.md`, **follow this plan** and note the drift (do not rewrite this file to match PRODUCT-IDEAS).  
+6. Do not start V1 Step 9.1. Do not implement after-v1 PRODUCT-IDEAS items unless the operator asks. If this plan disagrees with `PRODUCT-IDEAS.md`, **follow this plan** and note the drift (do not rewrite this file to match PRODUCT-IDEAS).  
 7. VM1: START if needed, **disable idle** while working, **re-enable** when finished (re-disable after Minecraft start — OS-ISSUE-7).
 
 ### Context budget

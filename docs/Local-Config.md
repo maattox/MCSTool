@@ -1,6 +1,6 @@
 # Local operator config (gitignored)
 
-The Manager WinExe (`McManager.Hybrid`, WPF + BlazorWebView) seeds connectivity from **local JSON**, not from lab private markdown at runtime. Same schema regardless of UI host.
+The Manager WinExe (`McManager.Hybrid`, WPF + BlazorWebView) seeds connectivity from **local JSON**. Same schema regardless of UI host.
 
 ## Files
 
@@ -20,9 +20,9 @@ Copy examples into `data/` and fill values, or keep the operator-seeded files al
 
 ## Sources of truth when refreshing seeds
 
-1. Lab `data/config.json` — Manager day-2 settings the Python app uses  
-2. Lab `data/Infrastructure-Deployment-Private.md` — full OCIDs (reserved IP id, private IP ids, VCN, bucket, …)  
-3. Lab `data/friends.json` — whitelist  
+1. `data/config.local.json` — Manager day-2 settings (TESTING or the connected stack)  
+2. `%LOCALAPPDATA%\McManager\tofu\<stack-id>\outputs.json` — tofu-created OCIDs  
+3. `data/friends.local.json` — whitelist  
 
 Do **not** copy Auth Tokens into `config.local.json` (OCIR only; Manager uses `~/.oci` API key). Setup stores an optional OCIR Auth Token in **Windows Credential Manager** (`McManager/ocir`), not in wizard JSON. When a pre-built ARM Function image is present (`artifacts/mcmgr-fn-softstop-linux-arm64.tar` next to the app or in the product repo, or `MCMANAGER_FUNCTION_IMAGE_TAR`), that token is for **copying** the tarball into OCIR — Docker is not required. Without the artifact, the interim publisher still **builds** with Docker. V1 Step **8.6.1** still owns CI, installer bundling, `crane`/`oras`, and deriving `MCMANAGER_OCIR_USERNAME`.
 
@@ -36,7 +36,7 @@ Included: current step, Always Free / residual / capacity flags, OCI profile + r
 
 **Step 3.3 writes:**
 
-- `data/config.local.json` after a successful (non-dry-run) Deploy — **replaces** an existing manage seed in that data directory (wizard confirms first). Prefer `MCMANAGER_CONFIG_DIR` pointing at a **new empty folder** so the lab Manager config stays intact.
+- `data/config.local.json` after a successful (non-dry-run) Deploy — **replaces** an existing manage seed in that data directory (wizard confirms first). Prefer `MCMANAGER_CONFIG_DIR` pointing at a **new empty folder** so an existing manage seed stays intact.
 - OpenTofu `terraform.tfvars` + `terraform.tfstate` under `%LOCALAPPDATA%\McManager\tofu\<stack-id>\` (not the repo, not the shared bucket). **Never** writes [`infra/terraform.tfvars`](../infra/terraform.tfvars). Manual `tofu import` / `plan` for that stack must `-state`/`-var-file` those LocalAppData files while the working directory is repo `infra/` (PowerShell: quote `-state="$state"`).
 - `friends.local.json` with the admin `/32` **only if that file is empty**.
 - Guest netplan (`/etc/netplan/99-mcmgr-play.yaml`) for the secondary play IP; managed `server.properties` with **`white-list=false`** / **`enforce-whitelist=false`** (OCI Security List is the allowlist). Setup does **not** seed `whitelist.json` from a Minecraft username.
@@ -103,7 +103,7 @@ Required for early API work:
 - `play.reserved_public_ip` (+ `reserved_public_ip_id` for IP move / diagnostics)
 - `object_storage.namespace`, `object_storage.bucket`
 
-These fields are hydratable from Object Storage **`meta/infra.json`** (full OCID set in lab `PRODUCT-IDEAS.md` / product [`Contracts-Object-Storage.md`](Contracts-Object-Storage.md)). Local file still holds SSH private key path, OCI profile, and RCON — not Object Storage. The **Console** tab does not send the local RCON password: it SSHs to the game computer and uses `/etc/mcmgr/rcon.secret` against localhost:25575.
+These fields are hydratable from Object Storage **`meta/infra.json`** (full OCID set in [`PRODUCT-IDEAS.md`](PRODUCT-IDEAS.md) / [`Contracts-Object-Storage.md`](Contracts-Object-Storage.md)). Local file still holds SSH private key path, OCI profile, and RCON — not Object Storage. The **Console** tab does not send the local RCON password: it SSHs to the game computer and uses `/etc/mcmgr/rcon.secret` against localhost:25575.
 
 **Connect existing (Phase 5 / v1 Step 7.3):** First-run **Auto-detect infrastructure** and Advanced **Auto-detect infrastructure** hydrate `config.local.json` from `meta/infra.json` after a confirm (and overwrite confirm if a seed already exists). Newer `infra_schema` / document version refuses; older schema or `stack_version` drift extra-confirms. See [Connect existing](#connect-existing-hydrate-from-metainfrajson) above.
 
@@ -111,11 +111,11 @@ These fields are hydratable from Object Storage **`meta/infra.json`** (full OCID
 
 ## Shape note
 
-Lab private doc targets **4 OCPU / 24 GB**. Lab `config.json` may show a different live shape (e.g. after resize / detect). Prefer values from the live Manager config when seeding; VM1 agent also stamps per-interval shape on the ledger.
+Lab private shape intent is **4 OCPU / 24 GB**. A live stack may show a different shape (e.g. after resize / detect). Prefer values from the live Manager config when seeding; VM1 agent also stamps per-interval shape on the ledger.
 
 ## Sync discipline
 
-When you change OCI resources in Console or lab config, update `data/config.local.json` (and lab private markdown) in the same sitting so the Manager app and Python stay aligned.
+so the Manager stays aligned with the live stack.
 
 ## Sample modpacks (Phase 4)
 
@@ -131,6 +131,6 @@ Imported packs the Manager actually installed are copied to **`data/imported-pac
 
 ## Later (after v1): deployment profiles
 
-MVP/v1 assume **one** connected stack: a single `data/config.local.json` (+ friends / wizard resume beside it). Lab `PRODUCT-IDEAS.md` **Multi-deploy profiles (after v1)** adds connecting an *additional* infrastructure deployment from Advanced (OCI API config + VM SSH keys → auto-detect/validate → profile switcher).
+MVP/v1 assume **one** connected stack: a single `data/config.local.json` (+ friends / wizard resume beside it). `PRODUCT-IDEAS.md` **Multi-deploy profiles (after v1)** adds connecting an *additional* infrastructure deployment from Advanced (OCI API config + VM SSH keys → auto-detect/validate → profile switcher).
 
 When that ships, local data should become **per-profile folders** (each with that deployment’s config, friends list, and paths to keys — still gitignored; still no secrets in Object Storage). Do **not** change the current flat `data/` layout until that feature is implemented. Connect existing in MVP remains one stack.

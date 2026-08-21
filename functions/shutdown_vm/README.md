@@ -5,7 +5,7 @@
 
 **Product path (required before official release — V1 Step 8.6.1):** CI builds `linux/arm64`; Setup **copies** the image into the user’s OCIR. Users do **not** install Docker Desktop, `fn`, or use Cloud Shell. The current Setup `docker buildx` publisher is **interim**. Cloud Shell / Code Editor remain lab break-glass only (`oci fn` never builds an image). Later code fixes ship as a new image version with the app / GitHub Release; Deploy / repair converges digest. Function **config** (VM1 OCID, bucket, lock key) stays tofu-owned — no rebuild.
 
-Tracked placeholders only — resolve OCIDs from Function config / lab `data/Infrastructure-Deployment-Private.md`. Do not bake live OCIDs into git.
+Tracked placeholders only — resolve OCIDs from Function config / gitignored `data/config.local.json`. Do not bake live OCIDs into git.
 
 ## Product decision (door Micro)
 
@@ -70,7 +70,7 @@ No live budget fire.
 
 ## Related
 
-- Product [`Contracts-Object-Storage.md`](../../docs/Contracts-Object-Storage.md) — lock key + JSON  
-- Lab [`Infrastructure-Information.md`](../../../OCI-mc-server-manager/Infrastructure-Information.md) — Budget emergency stop  
-- Lab [`PRODUCT-IDEAS.md`](../../../OCI-mc-server-manager/PRODUCT-IDEAS.md) — $1 spend-brake lock  
-- Lab [`docs/Issues.md`](../../../OCI-mc-server-manager/docs/Issues.md) — FN-ISSUE-1 (**gone on TESTING**; live **Forge lab** image may still stop the door until v1 is pushed there)
+- [`Contracts-Object-Storage.md`](../../docs/Contracts-Object-Storage.md) — lock key + JSON  
+- [`Infrastructure-Information.md`](../../docs/Infrastructure-Information.md) — Budget emergency stop  
+- [`PRODUCT-IDEAS.md`](../../docs/PRODUCT-IDEAS.md) — $1 spend-brake lock  
+- [`Issues.md`](../../docs/Issues.md) — FN-ISSUE-1 (**gone on TESTING**)

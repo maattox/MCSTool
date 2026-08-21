@@ -22,10 +22,10 @@ This file’s creation session **must not implement code**. Later agents impleme
 1. Read **this protocol**, the [Progress dashboard](#progress-dashboard), and **only the NEXT section**.
 2. Implement only that section. Do not start neighbors “while you are here.”
 3. After finishing: mark **DONE**, set the next incomplete section to **NEXT**, changelog line, update V1 plan Step **8.4** + dashboard, **stop**.
-4. If you change a test VM or TESTING cloud resource, make the **same** change in local SoT (`onbox/`, `infra/`, `door_vm/`, `vm_agent/`, `functions/shutdown_vm/`, Manager/Setup). File lab `[docs/Issues.md](../../OCI-mc-server-manager/docs/Issues.md)` for on-box/Setup/door bugs.
+4. If you change a test VM or TESTING cloud resource, make the **same** change in local SoT (`onbox/`, `infra/`, `door_vm/`, `vm_agent/`, `functions/shutdown_vm/`, Manager/Setup). File [`Issues.md`](Issues.md) for on-box/Setup/door bugs.
 5. Never create git commits. Suggest a message.
 6. Do **not** start Step **8.5.2** (Pass 3), **8.6.1** (CI Function pipeline), or **9.1**. P13 is a **Setup lookup** for a pre-built image, not the CI/Release work in 8.6.1.
-7. If this plan disagrees with lab `PRODUCT-IDEAS.md`, **follow this plan** and note drift (do not rewrite PRODUCT-IDEAS to match).
+7. If this plan disagrees with [`PRODUCT-IDEAS.md`](PRODUCT-IDEAS.md), **follow this plan** and note drift (do not rewrite PRODUCT-IDEAS to match).
 8. VM1: START if needed, **disable idle** while working, **re-enable** when finished (re-disable after Minecraft start — OS-ISSUE-7).
 9. UI-heavy sections (P3, P4, P8) **must** read the named UI skills before changing CSS/Razor. Do not invent a third visual language.
 
@@ -69,7 +69,7 @@ Only when two sections **do not** edit the same files **and** do not both own th
 - Setup last step is still the Deploy log. There is no “Deployment Complete” + reserved-IP copy block.  
 - Console shows `journalctl -u minecraft` (includes RCON listener / RCON client thread noise). No simple/full toggle.  
 - One shared `main.mcm-tab-body` scrollbar — tab switch keeps `scrollTop`.  
-- Usage tab has month/today/rollover heroes; no per-day breakdown. Lab Python Manager has a day/interval tree — **do not clone it**.  
+- Usage tab has month/today/rollover heroes; no per-day breakdown. Do **not** add a day/interval tree.  
 - PRODUCT-IDEAS **Modpack replace (after v1)** and blueprint **§28.1** exist. Operator pulled this into **v1** (this plan). **Light swap is parked**; v1 path is **full re-setup**, keep world unless the user also wipes.  
 - Step **8.6.1** (CI-built ARM image + crane/oras copy, no Docker on the user’s PC) remains **after QA exit**. This plan only fills TESTING (P12) and teaches Setup to **prefer a pre-built artifact if present** (P13). Do not start GitHub Actions / Releases / the installer.
 
@@ -377,7 +377,7 @@ Do **not** keep one scrollbar on the shared `main` that all tabs share. Saving `
 - `src/McManager.Hybrid/Components/Tabs/Usage/UsageTab.razor`  
 - `src/McManager.Hybrid/ViewModels/UsageViewModel.cs`  
 - `src/McManager.Core` ledger day/interval helpers already used by the Usage tab  
-- Lab Python Manager day tree is **reference only** (`OCI-mc-server-manager/app/ui.py`) — do not clone ttk columns
+- Do **not** add a per-day/interval usage tree; Usage tab stays month/today/rollover heroes only.
 
 **Do**
 

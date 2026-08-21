@@ -3,8 +3,8 @@
 **Status:** Living test catalog for [Phase 8.5](V1-Implementation-Plan.md#phase-85--pre-packaging-qa).  
 **Parent:** `[V1-Implementation-Plan.md](V1-Implementation-Plan.md)`.  
 **Results:** fill `[V1-QA-Pass-N-Results.md](V1-QA-Pass-3-Results.md)` for the current pass. Pass 1 and Pass 2 are historical. Do **not** edit expected steps in this catalog just to record an outcome. Product changes (Step 8.4) **may** update expected (S4-02, S3-01, S6-01, S6-02, S4-01, S3-07).  
-**Pass 2 execution:** `[V1-QA-Pass-2-Scope.md](V1-QA-Pass-2-Scope.md)` (**closed early**).  
-**Pass 3 execution:** `[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)` (**blocked** until Step 8.4). Do not re-run the full catalog.  
+**Pass 2 execution:** [`archive/V1-QA-Pass-2-Scope.md`](archive/V1-QA-Pass-2-Scope.md) (**closed early**).  
+**Pass 3 execution:** [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) (**blocked** until the operator starts Pass 3). Do not re-run the full catalog.  
 **Fix work:** after triage, an agent writes `[V1-Bug-Fix-Plan-Pass-N.md](V1-Bug-Fix-Plan-TEMPLATE.md)` from the filled results. Agents implement **that** plan, not this catalog.
 
 This catalog is `dotnet run` **+ TESTING**. Pass 1 used the existing Vanilla stack. Pass 2 is Delete + greenfield **Modded** (**closed early**). Pass 3 is gap-close + Step 8.4 tests on that stack. It is not the PRODUCT-IDEAS clean-room (new account + installer + real $1 budget fire). Do not start [Step 8.6.1](V1-Implementation-Plan.md#step-861--ci-built-arm-image--setup-copy-into-ocir) or [Step 9.1](V1-Implementation-Plan.md#step-91--windows-installer) from this file.
@@ -100,7 +100,7 @@ Optional on Fail: screenshot path, `journalctl` snippet, approximate timestamp (
 
 | Item                                    | Why                                                                                      |
 | --------------------------------------- | ---------------------------------------------------------------------------------------- |
-| Lab Python Manager                      | Product under test is `McManager.Hybrid`                                                 |
+| Archived Python Manager                 | Product under test is `McManager.Hybrid`                                                 |
 | DEBUG Advanced probes as a suite        | Optional while diagnosing; not v1 user paths                                             |
 | Core unit tests as manual steps         | S0 cites them                                                                            |
 | Real Oracle **$1 budget fire**          | Clean-room / accepted spend; not TESTING day-to-day                                      |
@@ -170,7 +170,7 @@ Before you stop:
 
 ## Known issues (pre-seeded)
 
-Treat as `Known`, not a new Fail, unless worse than documented. Living list: lab `[docs/Issues.md](../../OCI-mc-server-manager/docs/Issues.md)`.
+Treat as `Known`, not a new Fail, unless worse than documented. Living list: [`Issues.md`](Issues.md).
 
 
 | ID                           | Summary                                                              | Catalog                                                     |

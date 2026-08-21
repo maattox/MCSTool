@@ -1,13 +1,12 @@
 # Door VM (`door_vm/`) — tracked source of truth
 
-This folder is the **tracked** tree for **VM2 (door Micro)** software: `mccontrol`, OCI shell wrappers, Object Storage pull/heal, web UI, systemd units, and helper scripts. It lives in the **official product repo** (`OCI-mc-server`). Setup uploads it over SSH; lab Testing2 reads the same tree from the sibling checkout.
+This folder is the **tracked** tree for **VM2 (door Micro)** software: `mccontrol`, OCI shell wrappers, Object Storage pull/heal, web UI, systemd units, and helper scripts. Setup uploads it over SSH.
 
 | Authority | Role |
 |-----------|------|
 | **`door_vm/` (this tree)** | What to rebuild/redeploy onto a new Always Free Micro |
-| Lab `docs/Door-VM-Control-Plane.md` | Behavior / state machine explanation |
-| Lab `PRODUCT-IDEAS.md` | Product intent (wins on design conflicts) |
-| Lab `development/vm2-door/` | **Gitignored** live pull / scratch — may contain secrets; not SoT |
+| [`docs/Door-VM-Control-Plane.md`](../docs/Door-VM-Control-Plane.md) | Behavior / state machine explanation |
+| [`docs/PRODUCT-IDEAS.md`](../docs/PRODUCT-IDEAS.md) | Product intent (wins on design conflicts) |
 
 Do **not** commit `oci.env`, API keys, or tenancy OCIDs. Use `oci/config.example.env` and `config.example.json` as templates; live values stay in `/etc/mccontrol/` on the VM and in gitignored `data/`.
 
@@ -52,19 +51,16 @@ Installed on the live door (typical):
 Assumes: Ubuntu 22.04 aarch64/x86_64 Micro, `ubuntu` user, instance principal for door dynamic group, Security List allows your admin `/32` → `:22` and `:8080`, VCN can reach Object Storage / OCI APIs.
 
 1. **Packages:** `build-essential`, `curl`, OCI CLI under `/home/ubuntu/bin` (same pattern as Testing docs).
-2. **Copy this tree** to the VM (e.g. `~/MinecraftServerDeploy/vm2` or sync from Manager Testing2 deploy helpers).
+2. **Copy this tree** to the VM (Setup uploads it over SSH).
 3. **Config:** create `/etc/mccontrol/config.json` from `config.example.json`; set `object_storage_enabled`, cache paths, ports, `vm1_private_ip` as needed.
 4. **Env:** create `/etc/mccontrol/oci.env` from `oci/config.example.env` — `INSTANCE_ID` (VM1), compartment, VNIC/IP OCIDs, `OBJECT_STORAGE_NAMESPACE` / `BUCKET`, `OS_CACHE_DIR`. **Never commit this file.**
 5. **Build:** `make mccontrol` on the door (slow on Micro).
 6. **Install binary + assets:** stop `mccontrol` if running; install binary under `/opt/mccontrol/build/`; copy `oci/`, `scripts/`, `web/`.
 7. **Systemd:** install units from `systemd/`; `systemctl enable --now mccontrol.service mccontrol-reconcile.timer`.
 8. **IAM:** door instance in dynamic group(s) for compute/IP move **and** Object Storage.
-9. **Smoke:** `curl -sS http://127.0.0.1:8080/api/status`; Testing2 **Door pull OS now** / **Door reconcile journal**.
+9. **Smoke:** `curl -sS http://127.0.0.1:8080/api/status`; then Manager Troubleshooting / door journals.
 
-Manager shortcuts (when door SSH is configured in `data/config.json`):
-
-- Testing2 **Deploy door Phase 3** — rebuild + OS wake-gate enable  
-- Testing2 **Deploy door Phase 4** — install heal + reconcile + `pull_os_budget.sh` + `ip_to_vm1.sh` (no full `mccontrol` rebuild)
+Manager **Troubleshooting** / Setup door deploy covers the same operations (park IP, OS refresh, heal, redeploy from this tree).
 
 ### Functional checklist (door)
 
@@ -103,4 +99,4 @@ See `docs/Object-Storage-Phase3.md`.
 
 ## Known issues
 
-See lab [`docs/Issues.md`](../../OCI-mc-server-manager/docs/Issues.md) (MOTD first-kick race, heal/reconcile history, etc.).
+See [`docs/Issues.md`](../docs/Issues.md) (MOTD first-kick race, heal/reconcile history, etc.).
