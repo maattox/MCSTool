@@ -24,13 +24,13 @@ Copy examples into `data/` and fill values, or keep the operator-seeded files al
 2. Lab `data/Infrastructure-Deployment-Private.md` — full OCIDs (reserved IP id, private IP ids, VCN, bucket, …)  
 3. Lab `data/friends.json` — whitelist  
 
-Do **not** copy Auth Tokens into `config.local.json` (OCIR only; Manager uses `~/.oci` API key). Setup stores an optional OCIR Auth Token in **Windows Credential Manager** (`McManager/ocir`), not in wizard JSON. After V1 Step **8.6.1**, that token is for **copying** a pre-built ARM Function image into OCIR — not for Docker on this PC.
+Do **not** copy Auth Tokens into `config.local.json` (OCIR only; Manager uses `~/.oci` API key). Setup stores an optional OCIR Auth Token in **Windows Credential Manager** (`McManager/ocir`), not in wizard JSON. When a pre-built ARM Function image is present (`artifacts/mcmgr-fn-softstop-linux-arm64.tar` next to the app or in the product repo, or `MCMANAGER_FUNCTION_IMAGE_TAR`), that token is for **copying** the tarball into OCIR — Docker is not required. Without the artifact, the interim publisher still **builds** with Docker. V1 Step **8.6.1** still owns CI, installer bundling, `crane`/`oras`, and deriving `MCMANAGER_OCIR_USERNAME`.
 
 ## Setup wizard resume
 
 `McManager.Core.Config.SetupWizardStore` reads/writes `data/setup-wizard.local.json` (same data directory as manage config). Saved on each Next/Back/Close.
 
-Included: current step, Always Free / residual / capacity flags, OCI profile + region, compartment strategy, alert email, SSH **public** path/line/fingerprint (Generate creates `%USERPROFILE%\.ssh\mcmgr_ed25519_yyyyMMdd_HHmmss`, not a reused default name), **server type** (`vanilla` / `modded`), Vanilla flavor (`default` Mojang vs `optimized` Paper) + version **id**, Modded pack path/kind/name/loader + confirm flags (no catalog URL), EULA flag, whether a token was stored, **admin `/32` CIDR**, **VM1 OCPUs / memory** (`2`/`12` or `4`/`24`; default **4 / 24**). In-game `white-list` is **off**; OCI Security List is the allowlist. Also **`apply_stage`**, optional Function image after OCIR **copy** (V1 Step **8.6.1**; interim publisher may still build with Docker).
+Included: current step, Always Free / residual / capacity flags, OCI profile + region, compartment strategy, alert email, SSH **public** path/line/fingerprint (Generate creates `%USERPROFILE%\.ssh\mcmgr_ed25519_yyyyMMdd_HHmmss`, not a reused default name), **server type** (`vanilla` / `modded`), Vanilla flavor (`default` Mojang vs `optimized` Paper) + version **id**, Modded pack path/kind/name/loader + confirm flags (no catalog URL), EULA flag, whether a token was stored, **admin `/32` CIDR**, **VM1 OCPUs / memory** (`2`/`12` or `4`/`24`; default **4 / 24**). In-game `white-list` is **off**; OCI Security List is the allowlist. Also **`apply_stage`**, optional Function image after OCIR **copy** of a pre-built ARM tarball when present (Docker buildx only if the artifact is missing; CI/installer is V1 Step **8.6.1**).
 
 **Not** included: Auth Token secret, SSH private key, tenancy OCID, jar URL/sha1.
 

@@ -189,13 +189,13 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 | **6**   | Top-bar chrome + oversized-world SSH UX                    | **DONE**                                              |
 | **7**   | Remaining v1 (resize, console, storage, Connect version)   | **DONE**                                              |
 | **8**   | Paid / spend mode                                          | **SKIPPED** (operator 2026-08-18; far future, not v1) |
-| **8.4** | Pass-2 follow-on (operator notes)                          | **NEXT** = [`V1-Pass-2-Follow-On-Plan.md`](V1-Pass-2-Follow-On-Plan.md) **P12** |
-| **8.5** | Pre-packaging QA (catalog + passes + bug-fix plans)        | **PAUSED** — Pass 2 closed early; Pass 3 after 8.4     |
+| **8.4** | Pass-2 follow-on (operator notes)                          | **DONE** (P1–P13)                                     |
+| **8.5** | Pre-packaging QA (catalog + passes + bug-fix plans)        | **NEXT** = Step **8.5.2** Pass 3 ([`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md)) — do not start until the operator says so |
 | **8.6** | CI-built ARM spend-brake Function image (no Docker on admin PC) | TODO — after 8.5 exit; **required before 9.1 / official release** |
 | **9**   | Packaging, updates, launch (old MVP Phase 8–9)             | TODO — do not start until Phase 8.5 **and** Step **8.6.1** are DONE |
 
 
-**Current NEXT step:** [Step 8.4](#step-84--pass-2-follow-on-operator-notes) / living plan **P12** ([`V1-Pass-2-Follow-On-Plan.md`](V1-Pass-2-Follow-On-Plan.md)). Pass 2 is **closed early** (greenfield Modded + join). Step **8.5.2** is **paused** until 8.4 exits, then **Pass 3** ([`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md)). **Do not start Pass 3** until the operator says so. **Do not start Step 8.6.1** until Phase 8.5 exits (P13 is Setup artifact lookup only, not CI). **Do not start Step 9.1** until Phase 8.5 **and** Step **8.6.1** are DONE.
+**Current NEXT step:** [Step 8.5.2](#step-852--execute-qa-passes) Pass 3 ([`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md)). Step **8.4** / follow-on **P1–P13** is **DONE**. **Do not start Pass 3** until the operator says so. **Do not start Step 8.6.1** until Phase 8.5 exits. **Do not start Step 9.1** until Phase 8.5 **and** Step **8.6.1** are DONE.
 
 ---
 
@@ -1220,7 +1220,7 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 
 ### Step 8.4 — Pass-2 follow-on (operator notes)
 
-**Status:** NEXT (living: [`V1-Pass-2-Follow-On-Plan.md`](V1-Pass-2-Follow-On-Plan.md) **P12**)  
+**Status:** DONE (living: [`V1-Pass-2-Follow-On-Plan.md`](V1-Pass-2-Follow-On-Plan.md) **P1–P13 DONE**)  
 **Depends on:** Pass 2 closed (S7-04 / S3-05 / S4-11 recorded)
 
 **Read first**
@@ -1240,7 +1240,7 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 
 **Done when:** P1–P13 **DONE** in the follow-on plan. Then point this plan’s **NEXT** at Step **8.5.2** Pass 3 ([`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md)). Do not start Pass 3 until the operator says so.
 
-**Changelog:** 2026-08-20 — **P11 DONE** (Server Management **Change pack** UI; live FO pack not replaced). Living **NEXT = P12**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P10 DONE** (pack replace full re-setup: on-box prepare + Core `ReplacePackAsync`; keep world unless wipe). Living **NEXT = P11**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P9 DONE** (manual / jar-root unclear-side may continue; `.mrpack` unclear still blocked). Living **NEXT = P10**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P8 DONE** (Usage **Detailed usage** expander: UTC days, closed by default). Living **NEXT = P9**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P7 DONE** (per-tab vertical scroll memory). Living **NEXT = P8**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P6 DONE** (Console Simple vs Full log; RCON plumbing hidden in Simple). Living **NEXT = P7**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P5 DONE** (“game computer” → “server” in Setup, Manager, Guide). Living **NEXT = P6**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P4 DONE** (window-locked dismissible action banners). Living **NEXT = P5**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P3 DONE** (Danger Zone merged into Advanced; idle only under that heading; vibrant redstone). Living **NEXT = P4**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P2 DONE** (Setup Deployment Complete + reserved play IP Copy). Living **NEXT = P3**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P1 DONE** (Start STOPPED gate, overlay unlock-only, Players pin). Living **NEXT = P2**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **Inserted** (docs only). Living **NEXT = P1**. Pass 2 closed early; Step **8.5.2** paused. Do not start Pass 3, 8.6.1 CI, or 9.1.
+**Changelog:** 2026-08-20 — **P13 DONE** (Setup prefers pre-built ARM Function tarball; copy into OCIR without Docker; buildx fallback). **8.4 complete.** Living **NEXT = Step 8.5.2** Pass 3. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P12 DONE** (TESTING spend-brake Function fill-in: OCIR push + Function + Events via OCI CLI; synthetic RESET/ACTUAL; gitignored ARM tarball). Living **NEXT = P13**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P11 DONE** (Server Management **Change pack** UI; live FO pack not replaced). Living **NEXT = P12**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P10 DONE** (pack replace full re-setup: on-box prepare + Core `ReplacePackAsync`; keep world unless wipe). Living **NEXT = P11**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P9 DONE** (manual / jar-root unclear-side may continue; `.mrpack` unclear still blocked). Living **NEXT = P10**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P8 DONE** (Usage **Detailed usage** expander: UTC days, closed by default). Living **NEXT = P9**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P7 DONE** (per-tab vertical scroll memory). Living **NEXT = P8**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P6 DONE** (Console Simple vs Full log; RCON plumbing hidden in Simple). Living **NEXT = P7**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P5 DONE** (“game computer” → “server” in Setup, Manager, Guide). Living **NEXT = P6**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P4 DONE** (window-locked dismissible action banners). Living **NEXT = P5**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P3 DONE** (Danger Zone merged into Advanced; idle only under that heading; vibrant redstone). Living **NEXT = P4**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P2 DONE** (Setup Deployment Complete + reserved play IP Copy). Living **NEXT = P3**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **P1 DONE** (Start STOPPED gate, overlay unlock-only, Players pin). Living **NEXT = P2**. Do not start Pass 3, 8.6.1 CI, or 9.1. 2026-08-20 — **Inserted** (docs only). Living **NEXT = P1**. Pass 2 closed early; Step **8.5.2** paused. Do not start Pass 3, 8.6.1 CI, or 9.1.
 
 ---
 
@@ -1259,15 +1259,15 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 | `[V1-QA-Pass-1-Results.md](V1-QA-Pass-1-Results.md)`         | Pass 1 fill-out (Vanilla, existing stack; **historical**)                  |
 | `[V1-QA-Pass-2-Scope.md](V1-QA-Pass-2-Scope.md)`             | Pass 2 include/skip (**historical** — closed early after Phase A + join) |
 | `[V1-QA-Pass-2-Results.md](V1-QA-Pass-2-Results.md)`         | Pass 2 fill-out (Modded greenfield; no Pass 2 bug-fix plan)                |
-| `[V1-Pass-2-Follow-On-Plan.md](V1-Pass-2-Follow-On-Plan.md)` | **Living NEXT.** Operator notes; pause 8.5.2 until P13                     |
-| `[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)`             | Pass 3 gap-close + follow-on tests. **Blocked** until 8.4 exits            |
+| `[V1-Pass-2-Follow-On-Plan.md](V1-Pass-2-Follow-On-Plan.md)` | **DONE (P1–P13).** Operator notes before Pass 3                            |
+| `[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)`             | Pass 3 gap-close + follow-on tests. **Do not start** until the operator says so |
 | `[V1-QA-Pass-3-Results.md](V1-QA-Pass-3-Results.md)`         | Pass 3 fill-out (do not start until operator says so)                      |
 | `[V1-Bug-Fix-Plan-Pass-1.md](V1-Bug-Fix-Plan-Pass-1.md)`     | Pass 1 fixes; **P1–P8 DONE**. Do not re-open unless a regression.          |
 | `[V1-Modpack-Robustness-Plan.md](V1-Modpack-Robustness-Plan.md)` | **DONE (R1–R4).** Exclude lists + mixed archives.                          |
 | `[V1-Bug-Fix-Plan-TEMPLATE.md](V1-Bug-Fix-Plan-TEMPLATE.md)` | Copy to `V1-Bug-Fix-Plan-Pass-N.md` after triage                           |
 
 
-Pass 2 is **closed early** (no triage). Do **not** regenerate the whole catalog each pass. Do **not** create `V1-Bug-Fix-Plan-Pass-2.md`. Pass 3 waits for Step **8.4**.
+Pass 2 is **closed early** (no triage). Do **not** regenerate the whole catalog each pass. Do **not** create `V1-Bug-Fix-Plan-Pass-2.md`. Pass 3 waits for the operator to start Step **8.5.2**.
 
 **Not this phase:** installer, GitHub Releases, CI Function-image publisher (that is **8.6.1**), real **$1 budget fire** (clean-room / accepted spend), live Forge lab, after-v1 PRODUCT-IDEAS.
 
@@ -1301,7 +1301,7 @@ Pass 2 is **closed early** (no triage). Do **not** regenerate the whole catalog 
 
 ### Step 8.5.2 — Execute QA passes
 
-**Status:** PAUSED until [Step 8.4](#step-84--pass-2-follow-on-operator-notes) exits; then Pass 3  
+**Status:** NEXT (Pass 3) — do not start until the operator says so  
 **Depends on:** 8.5.1 + Step **4.13** DONE + Step **8.4** (before Pass 3)
 
 **Read first**
@@ -1574,6 +1574,8 @@ Former MVP Phase **8–9**. Phases **1–7** are **DONE**. Phase **8** is **SKIP
 
 | Date       | Note                                                                                                                                                                                                                                                                                                                              |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-20 | **Step 8.4 P13 DONE.** Setup prefers pre-built ARM Function tarball (`artifacts/mcmgr-fn-softstop-linux-arm64.tar` or next to the app); copy into OCIR without Docker. Fallback docker buildx / skip. **8.4 complete. NEXT = Step 8.5.2** Pass 3. Do not start Pass 3, 8.6.1 CI, or 9.1. |
+| 2026-08-20 | **Step 8.4 P12 DONE.** TESTING spend-brake Function fill-in (OCIR `mcmgr-fn/softstop:setup` + Function + Events via OCI CLI; no tofu apply). Synthetic RESET skip + ACTUAL SoftStop VM1 / lock PUT. Artifact `artifacts/mcmgr-fn-softstop-linux-arm64.tar`. Living **NEXT = P13**. Do not start Pass 3, 8.6.1 CI, or 9.1. |
 | 2026-08-20 | **Step 8.4 P11 DONE.** Server Management **Change pack** UI (analyze + confirm; world kept unless wipe). Live FO pack not replaced. Living **NEXT = P12**. Do not start Pass 3, 8.6.1 CI, or 9.1. |
 | 2026-08-20 | **Step 8.4 P10 DONE.** Pack replace full re-setup (on-box prepare + Core `ReplacePackAsync`; keep world unless wipe). Living **NEXT = P11**. Do not start Pass 3, 8.6.1 CI, or 9.1. |
 | 2026-08-20 | **Step 8.4 P9 DONE.** Manual / jar-root unclear-side may continue; `.mrpack` unclear still blocked. Living **NEXT = P10**. Do not start Pass 3, 8.6.1 CI, or 9.1. |

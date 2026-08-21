@@ -57,7 +57,7 @@ public static class InfraPlanSummary
             + "  • Dynamic groups mcmgr-dg-instances, mcmgr-dg-door, mcmgr-dg-fn + policy mcmgr-stack\n"
             + "  • $1 budget mcmgr-budget-1usd + email alert\n"
             + "  • Functions application mcmgr-fn-app + OCIR repo mcmgr-fn/softstop\n"
-            + "  • Function + Events rule skipped until an image is pushed (Step 3.3)\n\n"
-            + "Not in this apply: writing repo infra/terraform.tfvars (Setup uses LocalAppData). Function/Events need Docker + Auth Token after first apply.";
+            + "  • Function + Events after a pre-built ARM image is copied (Auth Token; Docker only if no artifact)\n\n"
+            + "Not in this apply: writing repo infra/terraform.tfvars (Setup uses LocalAppData). Function/Events need Auth Token after first apply; a pre-built ARM tarball next to the app or in artifacts/ means Docker is not required.";
     }
 }

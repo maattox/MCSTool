@@ -1,6 +1,6 @@
 # V1 Pass-2 follow-on — operator notes (living)
 
-**Status:** Living. Created 2026-08-20 (docs only). **NEXT = P12.**  
+**Status:** Living. Created 2026-08-20 (docs only). **P1–P13 DONE.** V1 **NEXT = Step 8.5.2** Pass 3 (`[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)`). Do not start Pass 3 until the operator says so.  
 **Parent:** `[V1-Implementation-Plan.md](V1-Implementation-Plan.md)` Step **8.4**.  
 **Why now:** operator 2026-08-20 — Pass 2 closed early after greenfield Modded + join + Modding panel. Pause Step **8.5.2** and implement these notes **before** QA Pass 3.
 
@@ -130,8 +130,8 @@ Do **not** rewrite PRODUCT-IDEAS to match. Note the drift in the implementing se
 | **P9**  | Manual / jar-root unclear-side: continue + exclude lists        | **DONE** | PARALLEL-OK vs Hybrid-only | No                 |
 | **P10** | Pack replace — on-box full re-setup                             | **DONE** | SEQUENTIAL                 | Yes                |
 | **P11** | Pack replace — Server Management UI                             | **DONE** | SEQUENTIAL                 | Yes                |
-| **P12** | TESTING spend-brake Function fill-in (Docker)                   | **NEXT** | SEQUENTIAL (owns stack)    | Yes                |
-| **P13** | Setup prefers a pre-built Function image artifact               | TODO     | SEQUENTIAL                 | No                 |
+| **P12** | TESTING spend-brake Function fill-in (Docker)                   | **DONE** | SEQUENTIAL (owns stack)    | Yes                |
+| **P13** | Setup prefers a pre-built Function image artifact               | **DONE** | SEQUENTIAL                 | No                 |
 
 
 When **P13** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)`). Do not start Pass 3 until the operator says so.
@@ -499,7 +499,7 @@ Server Management **Change pack** (wording up to you): pick / drop a `.mrpack` o
 
 ## P12 — TESTING spend-brake Function fill-in
 
-**Status:** NEXT  
+**Status:** DONE  
 **Catalog IDs:** S2-16, S2-17 (Pass 3)
 
 **Read first**
@@ -527,7 +527,7 @@ Pass 2 skipped the Function (Docker daemon was down). Docker Desktop is **runnin
 
 **Done when:** S2-16 would be Pass on this stack; notes in Pass 2 results additional-problems can stay historical.
 
-**Changelog:** *(empty)*
+**Changelog:** 2026-08-20 — Pushed product `shutdown_vm` `linux/arm64` to existing OCIR `mcmgr-fn/softstop:setup` (app `mcmgr-fn-app` already existed; Function + Events were missing after Pass 2 skip). Created `mcmgr-fn-softstop` + `mcmgr-events-budget-alert` via OCI CLI (no `tofu apply`; tfvars `function_image` still empty — P13 must not second-apply a duplicate). Config: VM1 only + lock PUT. Synthetic RESET → `SKIPPED`; ACTUAL → VM1 SoftStop + lock v1 `source=budget_function` `alert_type=ACTUAL`; door stayed RUNNING. DELETE lock. Idle re-enabled. Gitignored tarball `artifacts/mcmgr-fn-softstop-linux-arm64.tar`. Hint `rpgo24yh5lizi9tj4h5m8drh0` was not the current local image or OCIR repo (rebuilt from product source). **NEXT = P13.** Do not start Pass 3, 8.6.1, or 9.1.
 
 ---
 
@@ -535,8 +535,8 @@ Pass 2 skipped the Function (Docker daemon was down). Docker Desktop is **runnin
 
 ## P13 — Setup prefers a pre-built Function image
 
-**Status:** TODO  
-**Depends on:** P12 (artifact path known)  
+**Status:** DONE  
+**Depends on:** P12 (artifact path known: gitignored `artifacts/mcmgr-fn-softstop-linux-arm64.tar`)  
 **Does not finish 8.6.1**
 
 **Read first**
@@ -545,7 +545,8 @@ Pass 2 skipped the Function (Docker daemon was down). Docker Desktop is **runnin
 - `src/McManager.Core/Setup/OcirFunctionPublisher.cs`  
 - `src/McManager.Core/Setup/SetupDeployOrchestrator.cs`  
 - `[Guide.md](Guide.md)` Auth Token / Deploy Function paragraphs  
-- `[docs/Local-Config.md](Local-Config.md)` repair/Function skip note
+- `[docs/Local-Config.md](Local-Config.md)` repair/Function skip note  
+- P12 artifact: gitignored `artifacts/mcmgr-fn-softstop-linux-arm64.tar`. TESTING Function + Events already exist (OCI CLI); tofu `function_image` is still empty — do not `tofu apply` a duplicate without asking.
 
 **Do**
 
@@ -563,7 +564,7 @@ Derive OCIR username from namespace + OCI user **if that is a small change**; ot
 
 **Done when:** Guide says a bundled/pre-built image is used when present; Docker is not required if the artifact exists. V1 **NEXT** → Step **8.5.2** Pass 3. Do not start Pass 3 unless the operator says so.
 
-**Changelog:** *(empty)*
+**Changelog:** 2026-08-20 — Setup prefers `mcmgr-fn-softstop-linux-arm64.tar` (env `MCMANAGER_FUNCTION_IMAGE_TAR`, next to the app, or gitignored `artifacts/`). Copies into the user’s OCIR via Registry HTTP API (no Docker daemon). No artifact → docker buildx as today; missing artifact+Docker → skip. Auth Token + `MCMANAGER_OCIR_USERNAME` still required (username derivation is 8.6.1). Guide + Local-Config. Did not `tofu apply`. **V1 NEXT = Step 8.5.2** Pass 3. Do not start Pass 3, 8.6.1, or 9.1.
 
 ---
 
@@ -584,6 +585,8 @@ Derive OCIR username from namespace + OCI user **if that is a small change**; ot
 
 | Date       | Note                                                                                                                                                                                                                  |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-20 | **P13 DONE.** Setup prefers a pre-built ARM Function tarball (copy into OCIR, no Docker). Fallback docker buildx / skip unchanged. **V1 NEXT = Step 8.5.2** Pass 3. Do not start Pass 3, 8.6.1, or 9.1. |
+| 2026-08-20 | **P12 DONE.** TESTING spend-brake Function fill-in: OCIR `mcmgr-fn/softstop:setup` + Function + Events via OCI CLI (no tofu apply). Synthetic RESET skip + ACTUAL SoftStop VM1 / lock PUT; door up. Artifact `artifacts/mcmgr-fn-softstop-linux-arm64.tar`. **NEXT = P13.** Do not start Pass 3, 8.6.1, or 9.1. |
 | 2026-08-20 | **P11 DONE.** Server Management **Change pack** UI (analyze + confirm; world kept unless wipe). Live FO pack not replaced. **NEXT = P12.** Do not start Pass 3, 8.6.1, or 9.1. |
 | 2026-08-20 | **P10 DONE.** Pack replace full re-setup: on-box prepare + Core `ReplacePackAsync` (keep world unless wipe). **NEXT = P11.** Do not start Pass 3, 8.6.1, or 9.1. |
 | 2026-08-20 | **P9 DONE.** Manual / jar-root unclear-side may continue; summary warning; `.mrpack` unclear still blocked. **NEXT = P10.** Do not start Pass 3, 8.6.1, or 9.1.                                                       |

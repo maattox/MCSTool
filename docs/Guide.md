@@ -30,7 +30,7 @@ Do **not** add paid shapes, extra volumes, or load balancers. Setup never opens 
 | [Evergreen WebView2](https://go.microsoft.com/fwlink/p/?LinkId=2124703) | The app tells you if this is missing. |
 | Oracle Cloud account | PAYG as needed (see below). Prefer the **home region**. |
 | API key files | `%USERPROFILE%\.oci\config` + PEM (not an SSH key). |
-| Auth Token | **Needed** to install the $1 spend-brake Function image (Oracle Container Registry login). **Not** Docker Desktop — Setup copies a pre-built ARM image. Until [V1 Step 8.6.1](V1-Implementation-Plan.md#step-861--ci-built-arm-image--setup-copy-into-ocir) ships, from-source Setup may still skip the Function if Docker is missing. |
+| Auth Token | **Needed** to install the $1 spend-brake Function image (Oracle Container Registry login). **Not** Docker Desktop when a pre-built ARM tarball is present (`artifacts/mcmgr-fn-softstop-linux-arm64.tar` next to the app or in the repo). Without that artifact, from-source Setup still builds with Docker. CI / installer bundling remains [V1 Step 8.6.1](V1-Implementation-Plan.md#step-861--ci-built-arm-image--setup-copy-into-ocir). |
 | Public IPv4 | Yours, and each friend’s, for the allowlist. Home IPs change. |
 | Minecraft Java Edition | Same release Setup chooses: Vanilla/Paper picker, or the version declared in a Modded pack. **Modded:** friends also need **that same exported pack file** — vanilla Minecraft cannot join. See [Modded: friends need the client pack](#modded-friends-need-the-client-pack). |
 
@@ -88,7 +88,7 @@ If Oracle returns **401 NotAuthenticated** with a valid key, check that this PC�
 
 The Auth Token is a **separate** secret used to put the spend-brake Function image into **your** Oracle Container Registry. It is **not** stored in `%USERPROFILE%\.oci\config`. Setup can keep it in **Windows Credential Manager** (`McManager/ocir`).
 
-You do **not** install Docker Desktop, the `fn` CLI, or Oracle Cloud Shell to finish Setup. The product builds the ARM Function image in CI and Setup **copies** it into your tenancy. (Oracle Cloud Shell was how the lab prototype was first built; that is operator break-glass, not the user path.)
+You do **not** install Docker Desktop, the `fn` CLI, or Oracle Cloud Shell to finish Setup **when a pre-built ARM Function image is present**. Setup copies that tarball into **your** Oracle Container Registry. Look next to the app, or in repo `artifacts/mcmgr-fn-softstop-linux-arm64.tar` (gitignored; not committed). You can point at a file with `MCMANAGER_FUNCTION_IMAGE_TAR`. (Oracle Cloud Shell was how the lab prototype was first built; that is operator break-glass, not the user path.)
 
 Official reference: [Getting an Auth Token](https://docs.oracle.com/en-us/iaas/Content/Registry/Tasks/registrygettingauthtoken.htm).
 
@@ -100,7 +100,7 @@ Official reference: [Getting an Auth Token](https://docs.oracle.com/en-us/iaas/C
 
 Each user may have at most **two** Auth Tokens. If you lose it, generate a new one.
 
-**Until V1 Step 8.6.1 ships:** from-source Manager still tries to **build** the image with Docker on this PC and skips if Docker is not running. That is a gap, not the intended product. After 8.6.1, only the Auth Token is required for the copy.
+**If a pre-built ARM image is present:** Docker is not required; Setup copies it. **If it is missing** (typical from-source checkout without `artifacts/`): Setup still tries to **build** with Docker on this PC and skips if Docker is not running. [V1 Step 8.6.1](V1-Implementation-Plan.md#step-861--ci-built-arm-image--setup-copy-into-ocir) is the CI / installer path that always ships the artifact. Auth Token is required for the copy either way. `MCMANAGER_OCIR_USERNAME` (`<namespace>/<username>`) is still required until 8.6.1 derives it.
 
 ---
 
@@ -137,7 +137,7 @@ Walk the wizard. You can close and resume later from **Advanced → Deploy / rep
 | SSH | **Generate a new key** (recommended). This is **not** the API key. The private key stays on disk; Setup does not put it in the resume file. |
 | Game | **Vanilla** or **Modded**. Vanilla: **Default Vanilla** (official Mojang) or **Optimized Vanilla** (Paper), then pick a **release**. Snapshots are Advanced and apply only to Default Vanilla. Paper’s list hides versions Paper does not build. Paper is a faster server, not a Forge/Fabric modpack. **Modded:** choose a local **`.mrpack` or server-pack zip** (file picker or drag-and-drop). Setup analyzes it and shows name, Minecraft version, loader, Java, and file counts. Confirm two checkboxes, including that you will give friends the **same exported pack**. There is no pack search box. Prefer a **Modrinth `.mrpack`**, or a CurseForge **Server Files** zip (the jars are already inside). CurseForge *client* exports (manifest IDs, no jars) are refused — download Server Files from that pack’s CurseForge page instead. Quilt packs are detected but not installable yet. Details: [Modded: friends need the client pack](#modded-friends-need-the-client-pack). |
 | EULA | Open and accept the [Minecraft EULA](https://aka.ms/MinecraftEULA). Setup will not auto-accept it. |
-| Auth Token | Paste the token and **Store token**. Needed to install the $1 spend-brake Function (copy a pre-built image into your registry). Skip only if you accept that the Function may not install this run. You do **not** need Docker Desktop. |
+| Auth Token | Paste the token and **Store token**. Needed to install the $1 spend-brake Function (copy a pre-built image into your registry when the ARM tarball is present). Skip only if you accept that the Function may not install this run. You do **not** need Docker Desktop if that artifact exists. |
 | Summary | Confirm **your public IPv4** as `x.x.x.x/32`. Pick the server size (**4 OCPU / 24 GB** recommended, or **2 OCPU / 12 GB**). Read the plan. Check the create-resources box. Click **Deploy**. |
 
 **After Deploy starts:** Back and Deploy stay locked. Do not start a second Deploy. Resume / Re-Deploy is a separate Advanced action.
@@ -150,7 +150,7 @@ Deploy creates the compartment, network, reserved play IP, game VM, doorbell VM,
 
 When Deploy **succeeds**, Setup shows **Deployment Complete** and the **reserved play IP** friends should use, with a **Copy** button. Click **Close** (footer) to continue to the Manager app. The deploy log stays on that page, collapsed under **Deploy log**. Reopening a finished Setup from **Advanced → Deploy / repair** shows the same complete page — do not click Deploy again.
 
-The Function image is a **pre-built ARM** copy into your OCIR, not a Docker build on this PC (V1 Step 8.6.1). Until that step ships, from-source Deploy may log that the Function was skipped if Docker is missing.
+The Function image is copied into your OCIR from a **pre-built ARM** tarball when present (next to the app or gitignored `artifacts/mcmgr-fn-softstop-linux-arm64.tar`). Docker is not required for that copy. Without the artifact, from-source Deploy may log that the Function was skipped if Docker is missing. CI / installer bundling is V1 Step 8.6.1.
 
 ---
 

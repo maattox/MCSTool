@@ -5,9 +5,15 @@ using McManager.Core.Services;
 
 namespace McManager.Core.Setup;
 
-/// <summary>Best-effort OCIR push for the $1 Function. Never fails the whole Setup if Docker/token is missing.</summary>
+/// <summary>
+/// Best-effort OCIR push for the $1 Function. Prefers a pre-built ARM tarball (no Docker).
+/// Falls back to docker buildx. Never fails the whole Setup if Docker/token/artifact is missing.
+/// </summary>
 public static class OcirFunctionPublisher
 {
+    public const string ImageRepository = "mcmgr-fn/softstop";
+    public const string ImageTag = "setup";
+
     private const string Dockerfile = """
         FROM fnproject/python:3.12-dev AS build
         WORKDIR /function
@@ -31,10 +37,12 @@ public static class OcirFunctionPublisher
         IProgress<string>? log,
         CancellationToken cancellationToken = default)
     {
+        var artifact = FunctionImageArtifact.Find();
         if (ProductPaths.IsTofuDryRun())
         {
-            log?.Report("[dry-run] OCIR push skipped.");
-            return ServiceResult<string>.Fail("dry-run: OCIR push skipped.");
+            var dry = DryRunMessage(artifact);
+            log?.Report(dry);
+            return ServiceResult<string>.Fail(dry);
         }
 
         if (!WindowsCredentialStore.TryRead(WindowsCredentialStore.OcirTarget, out var token)
@@ -42,23 +50,6 @@ public static class OcirFunctionPublisher
         {
             return ServiceResult<string>.Fail(
                 "No Auth Token in Windows Credential Manager (McManager/ocir). Function/Events stay skipped.");
-        }
-
-        var docker = FindOnPath("docker.exe") ?? FindOnPath("docker");
-        var fn = FindOnPath("fn.exe") ?? FindOnPath("fn");
-        if (docker is null)
-        {
-            return ServiceResult<string>.Fail(
-                fn is null
-                    ? "Docker and fn CLI were not found. Function/Events stay skipped until an image is pushed."
-                    : "fn CLI is present, but Step 3.3 pushes linux/arm64 via Docker buildx. Install Docker or skip; Function/Events stay skipped.");
-        }
-
-        var funcDir = ProductPaths.FindFunctionDirectory();
-        if (funcDir is null)
-        {
-            return ServiceResult<string>.Fail(
-                "Product functions/shutdown_vm/ not found (expected OCI-mc-server/functions/shutdown_vm).");
         }
 
         var region = string.IsNullOrWhiteSpace(outputs.Region) ? state.OciRegion : outputs.Region;
@@ -70,13 +61,43 @@ public static class OcirFunctionPublisher
         if (string.IsNullOrWhiteSpace(ocirUser))
         {
             return ServiceResult<string>.Fail(
-                "Set MCMANAGER_OCIR_USERNAME to <namespace>/<username> for docker login. "
-                + "Function/Events stay skipped.");
+                "Set MCMANAGER_OCIR_USERNAME to <namespace>/<username> for OCIR login. "
+                + "Function/Events stay skipped. (Deriving this from the OCI user is V1 Step 8.6.1.)");
         }
 
         var host = $"{region}.ocir.io";
-        var image = $"{host}/{ns}/mcmgr-fn/softstop:setup";
+        var image = $"{host}/{ns}/{ImageRepository}:{ImageTag}";
         log?.Report($"OCIR image: {image}");
+
+        if (!string.IsNullOrWhiteSpace(artifact))
+        {
+            log?.Report("Using pre-built Function image (Docker not required): " + artifact);
+            var copied = await CopyPrebuiltAsync(
+                artifact,
+                host,
+                ns,
+                ocirUser,
+                token,
+                log,
+                cancellationToken).ConfigureAwait(false);
+            return copied.Succeeded
+                ? ServiceResult<string>.Ok(image)
+                : ServiceResult<string>.Fail(copied.Error ?? "Pre-built Function image copy failed.");
+        }
+
+        var docker = FindOnPath("docker.exe") ?? FindOnPath("docker");
+        var fn = FindOnPath("fn.exe") ?? FindOnPath("fn");
+        if (docker is null)
+        {
+            return ServiceResult<string>.Fail(SkipNoArtifactNoDocker(fn is not null));
+        }
+
+        var funcDir = ProductPaths.FindFunctionDirectory();
+        if (funcDir is null)
+        {
+            return ServiceResult<string>.Fail(
+                "Product functions/shutdown_vm/ not found (expected OCI-mc-server/functions/shutdown_vm).");
+        }
 
         var login = await RunAsync(
             docker,
@@ -141,6 +162,62 @@ public static class OcirFunctionPublisher
         }
 
         File.WriteAllText(Path.Combine(staging, "Dockerfile"), Dockerfile.Replace("\r\n", "\n"));
+    }
+
+    internal static string DryRunMessage(string? artifactPath) =>
+        string.IsNullOrWhiteSpace(artifactPath)
+            ? "[dry-run] OCIR push skipped (no pre-built artifact; would docker buildx)."
+            : "[dry-run] would copy pre-built Function image into OCIR (Docker not required): " + artifactPath;
+
+    internal static string SkipNoArtifactNoDocker(bool fnPresent) =>
+        fnPresent
+            ? "No pre-built Function image (" + FunctionImageArtifact.FileName
+              + " next to the app or in artifacts/) and Docker was not found. "
+              + "fn CLI is present, but without an artifact Setup still needs Docker buildx. Function/Events stay skipped."
+            : "No pre-built Function image (" + FunctionImageArtifact.FileName
+              + " next to the app or in artifacts/) and Docker was not found. Function/Events stay skipped.";
+
+    private static async Task<ServiceResult> CopyPrebuiltAsync(
+        string artifactPath,
+        string registryHost,
+        string ns,
+        string username,
+        string password,
+        IProgress<string>? log,
+        CancellationToken cancellationToken)
+    {
+        var work = Path.Combine(Path.GetTempPath(), "mcmgr-fn-copy-" + Guid.NewGuid().ToString("N")[..10]);
+        try
+        {
+            Directory.CreateDirectory(work);
+            var prepared = DockerArchiveFunctionImage.Prepare(artifactPath, work);
+            if (!prepared.Succeeded || prepared.Value is null)
+                return ServiceResult.Fail(prepared.Error ?? "Failed to read pre-built Function image.");
+
+            var repository = ns.Trim() + "/" + ImageRepository;
+            return await OcirRegistryPusher.PushAsync(
+                registryHost,
+                repository,
+                ImageTag,
+                username,
+                password,
+                prepared.Value,
+                log,
+                handler: null,
+                cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            try
+            {
+                if (Directory.Exists(work))
+                    Directory.Delete(work, recursive: true);
+            }
+            catch
+            {
+                // temp cleanup is best-effort
+            }
+        }
     }
 
     private static async Task<TofuCommandResult> RunAsync(

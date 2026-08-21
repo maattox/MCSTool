@@ -1,7 +1,7 @@
 # `shutdown_vm` — $1 budget emergency Function
 
 **Status:** Product **v1** source (V1 Step **2.2**). `func.yaml` version **0.0.12**.  
-**TESTING (2026-08-19 P3):** `mcmgr-fn-softstop` / `mcmgr-fn/softstop:setup` runs this v1 image (S2-16–18 Pass). Live **Forge lab** may still be **0.0.11** (SoftStop both VMs, no lock PUT). TESTING agents **may** `fn build` / `fn push` / invoke this tree without asking — stay at **$0**, do **not** fire a real $1 budget alert, **do not SoftStop the door**. Never `DEFAULT` / live Forge lab.
+**TESTING (2026-08-20 P12):** Pass 2 Setup skipped the image (Docker daemon down). P12 pushed product `linux/arm64` to OCIR `mcmgr-fn/softstop:setup` and created `mcmgr-fn-softstop` + Events via OCI CLI (no `tofu apply`; tfvars `function_image` still empty). Synthetic RESET skip + ACTUAL SoftStop **VM1** + lock PUT; door stays up. Live **Forge lab** may still be **0.0.11** (SoftStop both VMs, no lock PUT). TESTING agents **may** `fn build` / `fn push` / invoke this tree without asking — stay at **$0**, do **not** fire a real $1 budget alert, **do not SoftStop the door**. Never `DEFAULT` / live Forge lab.
 
 **Product path (required before official release — V1 Step 8.6.1):** CI builds `linux/arm64`; Setup **copies** the image into the user’s OCIR. Users do **not** install Docker Desktop, `fn`, or use Cloud Shell. The current Setup `docker buildx` publisher is **interim**. Cloud Shell / Code Editor remain lab break-glass only (`oci fn` never builds an image). Later code fixes ship as a new image version with the app / GitHub Release; Deploy / repair converges digest. Function **config** (VM1 OCID, bucket, lock key) stays tofu-owned — no rebuild.
 
