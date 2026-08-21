@@ -10,6 +10,7 @@
 onbox/mcmgr/
   repair-permissions.sh         root wrapper: layout_ensure_accounts + apply + verify
   repair-server-properties.sh   root wrapper: re-apply managed server.properties (§7.3)
+  prepare-pack-replace.sh       day-2 full pack replace: stop + clear loader/pack, keep world/RCON
   common/driver.sh              shared stages (… → manifest → idle_agent_sync)
   common/layout.sh              §5 accounts / apply / fail-closed verify
   common/*.sh                   helpers (incl. idle_agent_sync.sh §10.2)
@@ -56,6 +57,19 @@ sudo bash /opt/mcmgr/bin/repair-server-properties.sh
 
 Then re-apply permissions if you wrote under `/opt/mcmgr`.
 
+Day-2 **full pack replace** (keep the world unless wiping). Manager `SetupBootstrapService.ReplacePackAsync` is the Core entry point (P11 wires Server Management). On-box prepare, then the same `driver.sh` + pack copy Setup uses:
+
+```bash
+# Stop Minecraft, clear loader/mods/config, keep world + rcon.secret + eula/properties:
+KEEP_WORLD=1 sudo -E bash /path/to/onbox/mcmgr/prepare-pack-replace.sh
+# or, once installed:
+KEEP_WORLD=1 sudo -E bash /opt/mcmgr/bin/prepare-pack-replace.sh
+# Then the same driver.sh as Setup (DISTRIBUTION + MINECRAFT_VERSION from the new pack).
+# WIPE_WORLD=1 also deletes world/ (identity/RCON still kept).
+```
+
+Do **not** delete `/opt/mcmgr` or `/etc/mcmgr/rcon.secret`. Light swap (converge `mods/` only) is parked.
+
 ## Offline dry-run (Windows / CI)
 
 From Git Bash (or any bash with `python` + `curl`):
@@ -67,6 +81,7 @@ DISTRIBUTION=paper MINECRAFT_VERSION=1.21.10 bash dry-run/run-dry-run.sh
 DISTRIBUTION=fabric MINECRAFT_VERSION=1.21.8 bash dry-run/run-dry-run.sh
 DISTRIBUTION=neoforge MINECRAFT_VERSION=1.21.1 bash dry-run/run-dry-run.sh
 DISTRIBUTION=forge MINECRAFT_VERSION=1.12.2 bash dry-run/run-dry-run.sh
+bash dry-run/run-pack-replace-dry.sh   # KEEP_WORLD vs WIPE_WORLD (no driver download)
 ```
 
 Uses [`tests/fixtures/game-metadata/`](../../tests/fixtures/game-metadata/) — no apt, no systemctl, no real jar download. Asserts a §4.1 (Vanilla), §4.2 (Paper), Fabric loader (§18 / §4.4 artifact shape, `modpack` still null), NeoForge argfile tree (§19 / §4.3 artifact shape without a pack), or Forge legacy single jar (§20 / 1.12.2 recommended pin) manifest + the **generic** unit (`User=mcmgr`, Vanilla/Fabric/Forge-legacy `nogui` / Paper `--nogui` / NeoForge `@user_jvm_args.txt @unix_args --nogui`, `ExecStop=+`, `RestartPreventExitStatus=200`) + §7.3 `white-list=false` / `enforce-whitelist=false` / `online-mode=true`.

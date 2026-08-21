@@ -1,6 +1,6 @@
 # V1 Pass-2 follow-on — operator notes (living)
 
-**Status:** Living. Created 2026-08-20 (docs only). **NEXT = P10.**  
+**Status:** Living. Created 2026-08-20 (docs only). **NEXT = P11.**  
 **Parent:** `[V1-Implementation-Plan.md](V1-Implementation-Plan.md)` Step **8.4**.  
 **Why now:** operator 2026-08-20 — Pass 2 closed early after greenfield Modded + join + Modding panel. Pause Step **8.5.2** and implement these notes **before** QA Pass 3.
 
@@ -128,8 +128,8 @@ Do **not** rewrite PRODUCT-IDEAS to match. Note the drift in the implementing se
 | **P7**  | Per-tab vertical scroll memory                                  | **DONE** | SEQUENTIAL                 | No                 |
 | **P8**  | Usage by day (collapsed “Detailed usage”)                       | **DONE** | SEQUENTIAL                 | No                 |
 | **P9**  | Manual / jar-root unclear-side: continue + exclude lists        | **DONE** | PARALLEL-OK vs Hybrid-only | No                 |
-| **P10** | Pack replace — on-box full re-setup                             | **NEXT** | SEQUENTIAL                 | Yes                |
-| **P11** | Pack replace — Server Management UI                             | TODO     | SEQUENTIAL                 | Yes                |
+| **P10** | Pack replace — on-box full re-setup                             | **DONE** | SEQUENTIAL                 | Yes                |
+| **P11** | Pack replace — Server Management UI                             | **NEXT** | SEQUENTIAL                 | Yes                |
 | **P12** | TESTING spend-brake Function fill-in (Docker)                   | TODO     | SEQUENTIAL (owns stack)    | Yes                |
 | **P13** | Setup prefers a pre-built Function image artifact               | TODO     | SEQUENTIAL                 | No                 |
 
@@ -432,7 +432,7 @@ If a jar-root zip still has **no** detectable Minecraft version or loader after 
 
 ## P10 — Pack replace, on-box full re-setup
 
-**Status:** TODO  
+**Status:** DONE  
 **Catalog IDs:** new check (Pass 3); blueprint §28.1 **full** path only
 
 **Read first**
@@ -459,7 +459,7 @@ Operator pulled **change pack** into v1. Implement the **full re-setup** path on
 
 **Done when:** A documented Core/on-box entry point can full-replace a pack and keep the world; product SoT updated (not only the live VM).
 
-**Changelog:** *(empty)*
+**Changelog:** 2026-08-20 — Core `PackReplacePlanner` + `SetupBootstrapService.ReplacePackAsync`. On-box `prepare-pack-replace.sh` clears loader/mods/config, keeps world (unless wipe) + RCON/identity, then existing `driver.sh` + pack copy. Save-compat warning when MC/loader changes. Dry-run + Core tests. Live FO pack not replaced.
 
 ---
 
@@ -467,7 +467,7 @@ Operator pulled **change pack** into v1. Implement the **full re-setup** path on
 
 ## P11 — Pack replace, Server Management UI
 
-**Status:** TODO  
+**Status:** NEXT  
 **Depends on:** P10  
 **Catalog IDs:** S4-11 adjacent; add a catalog ID in a gap if needed (do not renumber)
 
@@ -584,6 +584,7 @@ Derive OCIR username from namespace + OCI user **if that is a small change**; ot
 
 | Date       | Note                                                                                                                                                                                                                  |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-20 | **P10 DONE.** Pack replace full re-setup: on-box prepare + Core `ReplacePackAsync` (keep world unless wipe). **NEXT = P11.** Do not start Pass 3, 8.6.1, or 9.1. |
 | 2026-08-20 | **P9 DONE.** Manual / jar-root unclear-side may continue; summary warning; `.mrpack` unclear still blocked. **NEXT = P10.** Do not start Pass 3, 8.6.1, or 9.1.                                                       |
 | 2026-08-20 | **P8 DONE.** Usage **Detailed usage** expander (UTC days, closed by default). **NEXT = P9.** Do not start Pass 3, 8.6.1, or 9.1.                                                                                      |
 | 2026-08-20 | **P7 DONE.** Per-tab vertical scroll memory on tab switch. **NEXT = P8.** Do not start Pass 3, 8.6.1, or 9.1.                                                                                                         |

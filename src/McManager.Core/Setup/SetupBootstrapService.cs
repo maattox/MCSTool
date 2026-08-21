@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using McManager.Core.Config;
 using McManager.Core.Onbox;
 using McManager.Core.Services;
@@ -112,6 +113,34 @@ public sealed class SetupBootstrapService
                 catch (Exception ex)
                 {
                     return ServiceResult.Fail("VM1 bootstrap failed: " + ex.Message);
+                }
+            },
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Day-2 full pack replace (blueprint §28.1). Stops Minecraft, clears the previous game
+    /// install, re-runs Setup bootstrap + pack copy, starts, health-checks. Keeps the world
+    /// unless <see cref="PackReplaceRequest.WipeWorld"/>. Does not redeploy the idle agent.
+    /// </summary>
+    public Task<ServiceResult<PackReplaceResult>> ReplacePackAsync(
+        Vm1Settings vm1,
+        PackReplaceRequest request,
+        IProgress<string>? log,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(vm1);
+        ArgumentNullException.ThrowIfNull(request);
+        return Task.Run(
+            () =>
+            {
+                try
+                {
+                    return ReplacePack(vm1, request, log);
+                }
+                catch (Exception ex)
+                {
+                    return ServiceResult<PackReplaceResult>.Fail("Pack replace failed: " + ex.Message);
                 }
             },
             cancellationToken);
@@ -562,23 +591,14 @@ public sealed class SetupBootstrapService
         WriteAgentConfig(client, outputs, log);
 
         const string onboxStaging = "/tmp/mcmgr-onbox";
-        var loaderPin = SetupPackImport.LoaderPin(state.PackLoader, state.PackLoaderVersion);
-        var pinExport = loaderPin is { } pin
-            ? $" {pin.Name}={ShQuote(pin.Value)}"
-            : "";
         log?.Report($"onbox src: {onbox} DISTRIBUTION={dist} MINECRAFT_VERSION={minecraftVersion}");
         Exec(client, $"rm -rf {onboxStaging} && mkdir -p {onboxStaging}", TimeSpan.FromSeconds(30), log);
         UploadTree(client, onbox, onboxStaging, log);
-        var driver =
-            "set -euo pipefail; "
-            + $"find {onboxStaging} -type f \\( -name '*.sh' -o -name '*.in' -o -name '*.py' \\) -exec sed -i 's/\\r$//' {{}} +; "
-            + $"export EULA_ACCEPTED=true MINECRAFT_VERSION={ShQuote(minecraftVersion)} DISTRIBUTION={ShQuote(dist)}{pinExport} HOME=\"${{HOME:-/home/ubuntu}}\"; "
-            + $"sudo -E bash {onboxStaging}/common/driver.sh";
-        Exec(client, "bash -c " + ShQuote(driver), TimeSpan.FromMinutes(20), log);
+        RunOnboxDriver(client, onboxStaging, state, log);
 
         if (SetupServerType.IsModded(state.ServerType))
         {
-            var pack = InstallModdedPack(client, onboxStaging, state, log);
+            var pack = InstallModdedPack(client, onboxStaging, state, keepWorld: false, log);
             if (!pack.Succeeded)
                 return pack;
         }
@@ -591,13 +611,180 @@ public sealed class SetupBootstrapService
         return ServiceResult.Ok();
     }
 
-    private static ServiceResult InstallModdedPack(
+    private static ServiceResult<PackReplaceResult> ReplacePack(
+        Vm1Settings vm1,
+        PackReplaceRequest request,
+        IProgress<string>? log)
+    {
+        var onbox = ProductPaths.FindOnboxDirectory();
+        if (onbox is null)
+            return ServiceResult<PackReplaceResult>.Fail("Product onbox/mcmgr/ not found.");
+
+        if (string.IsNullOrWhiteSpace(vm1.SshHost))
+            return ServiceResult<PackReplaceResult>.Fail("VM1 SSH host is missing.");
+
+        var user = string.IsNullOrWhiteSpace(vm1.SshUser) ? "ubuntu" : vm1.SshUser.Trim();
+        var analysis = SetupPackImport.AnalyzeFile(request.PackPath);
+        if (!analysis.Succeeded)
+            return ServiceResult<PackReplaceResult>.Fail(analysis.Error!);
+
+        var preview = analysis.Value!;
+        if (!preview.CanContinue)
+        {
+            return ServiceResult<PackReplaceResult>.Fail(
+                preview.BlockReason ?? "This pack cannot be installed.");
+        }
+
+        var state = PackReplacePlanner.ToWizardState(preview);
+        var dist = SetupPackImport.ToDistribution(state);
+        if (!SetupPackImport.IsOnboxDistribution(dist))
+        {
+            return ServiceResult<PackReplaceResult>.Fail(
+                "Pack replace needs a Fabric, Forge, or NeoForge pack.");
+        }
+
+        using var client = Connect(vm1.SshHost, user, vm1.SshKeyPath);
+        TryReadCurrentGame(client, out var currentMc, out var currentLoader);
+        var warning = request.WipeWorld
+            ? null
+            : PackReplaceSaveCompatibility.Warn(
+                currentMc,
+                currentLoader,
+                preview.MinecraftVersion,
+                preview.Loader);
+        if (!string.IsNullOrWhiteSpace(warning))
+            log?.Report(warning);
+
+        const string onboxStaging = "/tmp/mcmgr-onbox";
+        log?.Report(
+            $"Pack replace: {preview.PackName} DISTRIBUTION={dist} "
+            + $"MINECRAFT_VERSION={preview.MinecraftVersion} wipe_world={request.WipeWorld}");
+        Exec(client, $"rm -rf {onboxStaging} && mkdir -p {onboxStaging}", TimeSpan.FromSeconds(30), log);
+        UploadTree(client, onbox, onboxStaging, log);
+
+        var keep = request.WipeWorld ? "0" : "1";
+        var wipe = request.WipeWorld ? "1" : "0";
+        Exec(
+            client,
+            "sudo bash -c " + ShQuote(
+                "set -euo pipefail; "
+                + "HOME=\"${HOME:-/home/ubuntu}\"; "
+                + $"KEEP_WORLD={keep} WIPE_WORLD={wipe} "
+                + $"bash {onboxStaging}/prepare-pack-replace.sh"),
+            TimeSpan.FromMinutes(3),
+            log);
+
+        RunOnboxDriver(client, onboxStaging, state, log);
+
+        var pack = InstallModdedPack(
+            client,
+            onboxStaging,
+            state,
+            keepWorld: !request.WipeWorld,
+            log,
+            request.DataDirectory);
+        if (!pack.Succeeded)
+            return ServiceResult<PackReplaceResult>.Fail(pack.Error ?? "Pack copy failed.");
+
+        var health = WaitRcon(client, log);
+        if (!health.Succeeded)
+            return ServiceResult<PackReplaceResult>.Fail(health.Error ?? "RCON health check failed.");
+
+        log?.Report("Pack replace finished.");
+        return ServiceResult<PackReplaceResult>.Ok(
+            new PackReplaceResult(
+                preview.PackName,
+                preview.MinecraftVersion,
+                preview.Loader,
+                request.WipeWorld,
+                warning));
+    }
+
+    private static void RunOnboxDriver(
         SshClient client,
         string onboxStaging,
         SetupWizardState state,
         IProgress<string>? log)
     {
-        var dataDir = LocalConfigStore.TryFindDataDirectory();
+        var minecraftVersion = state.MinecraftVersion.Trim();
+        var dist = SetupPackImport.ToDistribution(state);
+        var loaderPin = SetupPackImport.LoaderPin(state.PackLoader, state.PackLoaderVersion);
+        var pinExport = loaderPin is { } pin
+            ? $" {pin.Name}={ShQuote(pin.Value)}"
+            : "";
+        var driver =
+            "set -euo pipefail; "
+            + $"find {onboxStaging} -type f \\( -name '*.sh' -o -name '*.in' -o -name '*.py' \\) -exec sed -i 's/\\r$//' {{}} +; "
+            + $"export EULA_ACCEPTED=true MINECRAFT_VERSION={ShQuote(minecraftVersion)} DISTRIBUTION={ShQuote(dist)}{pinExport} HOME=\"${{HOME:-/home/ubuntu}}\"; "
+            + $"sudo -E bash {onboxStaging}/common/driver.sh";
+        Exec(client, "bash -c " + ShQuote(driver), TimeSpan.FromMinutes(20), log);
+    }
+
+    private static void TryReadCurrentGame(
+        SshClient client,
+        out string? minecraftVersion,
+        out string? loaderOrDistribution)
+    {
+        minecraftVersion = null;
+        loaderOrDistribution = null;
+        var text = ExecAllowFail(
+            client,
+            "sudo cat /etc/mcmgr/game-manifest.json",
+            TimeSpan.FromSeconds(20));
+        if (string.IsNullOrWhiteSpace(text))
+            return;
+        try
+        {
+            using var doc = JsonDocument.Parse(text);
+            var root = doc.RootElement;
+            if (root.TryGetProperty("minecraft_version", out var mc)
+                && mc.ValueKind == JsonValueKind.String)
+            {
+                var s = mc.GetString();
+                if (!string.IsNullOrWhiteSpace(s))
+                    minecraftVersion = s.Trim();
+            }
+
+            string? loader = null;
+            if (root.TryGetProperty("loader", out var loaderEl)
+                && loaderEl.ValueKind == JsonValueKind.String)
+            {
+                loader = loaderEl.GetString();
+            }
+
+            string? dist = null;
+            if (root.TryGetProperty("distribution", out var distEl)
+                && distEl.ValueKind == JsonValueKind.String)
+            {
+                dist = distEl.GetString();
+            }
+
+            if (!string.IsNullOrWhiteSpace(loader)
+                && !loader.Equals("none", StringComparison.OrdinalIgnoreCase)
+                && !loader.Equals("vanilla", StringComparison.OrdinalIgnoreCase))
+            {
+                loaderOrDistribution = loader.Trim();
+            }
+            else if (!string.IsNullOrWhiteSpace(dist))
+            {
+                loaderOrDistribution = dist.Trim();
+            }
+        }
+        catch (JsonException)
+        {
+            // Warning is best-effort; replace can still proceed.
+        }
+    }
+
+    private static ServiceResult InstallModdedPack(
+        SshClient client,
+        string onboxStaging,
+        SetupWizardState state,
+        bool keepWorld,
+        IProgress<string>? log,
+        string? dataDirectory = null)
+    {
+        var dataDir = dataDirectory ?? LocalConfigStore.TryFindDataDirectory();
         var dest = Path.Combine(Path.GetTempPath(), "mcmgr-setup-pack-" + Guid.NewGuid().ToString("N"));
         log?.Report("Installing server-side pack files on this PC, then copying them to the game VM…");
 
@@ -620,7 +807,7 @@ public sealed class SetupBootstrapService
                 log?.Report(result.Value!.Summary);
             }
 
-            return CopyStagedPackToVm1(client, onboxStaging, dest, log);
+            return CopyStagedPackToVm1(client, onboxStaging, dest, keepWorld, log);
         }
         finally
         {
@@ -640,11 +827,12 @@ public sealed class SetupBootstrapService
         SshClient client,
         string onboxStaging,
         string localDest,
+        bool keepWorld,
         IProgress<string>? log)
     {
         const string remoteStaging = "/tmp/mcmgr-pack";
         Exec(client, $"rm -rf {remoteStaging} && mkdir -p {remoteStaging}", TimeSpan.FromSeconds(30), log);
-        UploadPackTree(client, localDest, remoteStaging, log);
+        UploadPackTree(client, localDest, remoteStaging, keepWorld, log);
         Exec(
             client,
             "sudo bash -c " + ShQuote(
@@ -656,11 +844,19 @@ public sealed class SetupBootstrapService
                 + "systemctl start minecraft"),
             TimeSpan.FromMinutes(10),
             log);
-        log?.Report("Copied server-side pack files to /opt/mcmgr/server (kept bootstrap eula.txt and server.properties).");
+        log?.Report(
+            keepWorld
+                ? "Copied server-side pack files to /opt/mcmgr/server (kept world, eula.txt, and server.properties)."
+                : "Copied server-side pack files to /opt/mcmgr/server (kept bootstrap eula.txt and server.properties).");
         return ServiceResult.Ok();
     }
 
-    private static void UploadPackTree(SshClient client, string localDir, string remoteDir, IProgress<string>? log)
+    private static void UploadPackTree(
+        SshClient client,
+        string localDir,
+        string remoteDir,
+        bool keepWorld,
+        IProgress<string>? log)
     {
         using var sftp = new SftpClient(client.ConnectionInfo);
         sftp.Connect();
@@ -671,7 +867,8 @@ public sealed class SetupBootstrapService
             var rel = Path.GetRelativePath(localDir, file).Replace('\\', '/');
             var name = Path.GetFileName(file);
             if (name.Equals("eula.txt", StringComparison.OrdinalIgnoreCase)
-                || name.Equals("server.properties", StringComparison.OrdinalIgnoreCase))
+                || name.Equals("server.properties", StringComparison.OrdinalIgnoreCase)
+                || (keepWorld && PackReplaceSaveCompatibility.IsWorldOverlayRelative(rel)))
             {
                 skipped++;
                 continue;
@@ -684,7 +881,7 @@ public sealed class SetupBootstrapService
             uploaded++;
         }
 
-        log?.Report($"uploaded pack files ({uploaded} files, skipped {skipped} eula/properties) → {remoteDir}");
+        log?.Report($"uploaded pack files ({uploaded} files, skipped {skipped} eula/properties/world) → {remoteDir}");
     }
 
     private static void WriteAgentConfig(SshClient client, TofuApplyOutputs o, IProgress<string>? log)

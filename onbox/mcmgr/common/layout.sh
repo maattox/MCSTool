@@ -65,6 +65,7 @@ _layout_install_repair_helpers() {
   _layout_cp_unless_same "${src_common}/server_properties.sh" "${OPT_MCMGR}/lib/server_properties.sh"
   _layout_cp_unless_same "${src_home}/repair-permissions.sh" "${BIN_DIR}/repair-permissions.sh"
   _layout_cp_unless_same "${src_home}/repair-server-properties.sh" "${BIN_DIR}/repair-server-properties.sh"
+  _layout_cp_unless_same "${src_home}/prepare-pack-replace.sh" "${BIN_DIR}/prepare-pack-replace.sh"
   _layout_cp_unless_same "${src_common}/rcon-graceful-stop.sh" "${BIN_DIR}/rcon-graceful-stop.sh"
   if _layout_is_live; then
     chown root:mcmgr "${OPT_MCMGR}/lib" "${OPT_MCMGR}/lib/env.sh" "${OPT_MCMGR}/lib/layout.sh" "${OPT_MCMGR}/lib/server_properties.sh" 2>/dev/null || true
@@ -78,6 +79,10 @@ _layout_install_repair_helpers() {
       chown root:mcmgr "${BIN_DIR}/repair-server-properties.sh"
       chmod 0755 "${BIN_DIR}/repair-server-properties.sh"
     fi
+    if [[ -f "${BIN_DIR}/prepare-pack-replace.sh" ]]; then
+      chown root:mcmgr "${BIN_DIR}/prepare-pack-replace.sh"
+      chmod 0755 "${BIN_DIR}/prepare-pack-replace.sh"
+    fi
     if [[ -f "${BIN_DIR}/rcon-graceful-stop.sh" ]]; then
       chown root:mcmgr "${BIN_DIR}/rcon-graceful-stop.sh"
       chmod 0755 "${BIN_DIR}/rcon-graceful-stop.sh"
@@ -85,6 +90,7 @@ _layout_install_repair_helpers() {
   else
     chmod 0755 "${BIN_DIR}/repair-permissions.sh" 2>/dev/null || true
     chmod 0755 "${BIN_DIR}/repair-server-properties.sh" 2>/dev/null || true
+    chmod 0755 "${BIN_DIR}/prepare-pack-replace.sh" 2>/dev/null || true
     chmod 0755 "${BIN_DIR}/rcon-graceful-stop.sh" 2>/dev/null || true
   fi
 }
