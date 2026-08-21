@@ -1,7 +1,6 @@
 using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using McManager.Core.Services;
 
 namespace McManager.Core.Setup;
@@ -50,10 +49,6 @@ public static class ManualServerPackAnalyzer
 
     private static readonly Lazy<ExcludeIncludeMatcher> DefaultMatcher =
         new(ExcludeIncludeMatcher.ForCurseForge);
-
-    private static readonly Regex MinecraftVersionRegex = new(
-        @"\d+\.\d+(?:\.\d+)?",
-        RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -300,7 +295,7 @@ public static class ManualServerPackAnalyzer
         if (inJarSkip.Count > 0)
         {
             warnings.Add(
-                $"{inJarSkip.Count} jar(s) tagged client-only in fabric/quilt/Forge metadata will not be installed.");
+                $"{inJarSkip.Count} jar(s) detected as client-only from in-jar metadata will not be installed.");
         }
 
         if (overrideListSkip.Count > 0)
@@ -432,12 +427,12 @@ public static class ManualServerPackAnalyzer
         return normalizedPath;
     }
 
-    internal static JarEnvironmentPeek PeekJarEnvironment(ZipArchiveEntry entry)
+    internal static InJarSideDetector.PeekResult PeekJarEnvironment(ZipArchiveEntry entry)
     {
         if (entry.Length <= 0)
-            return JarEnvironmentPeek.None;
+            return InJarSideDetector.PeekResult.None;
         if (entry.Length > MaxJarPeekBytes)
-            return JarEnvironmentPeek.None;
+            return InJarSideDetector.PeekResult.None;
 
         try
         {
@@ -445,87 +440,16 @@ public static class ManualServerPackAnalyzer
             using (var input = entry.Open())
                 input.CopyTo(owned);
             owned.Position = 0;
-            return PeekJarEnvironment(owned);
+            return InJarSideDetector.Peek(owned);
         }
         catch (InvalidDataException)
         {
-            return JarEnvironmentPeek.None;
+            return InJarSideDetector.PeekResult.None;
         }
         catch (IOException)
         {
-            return JarEnvironmentPeek.None;
+            return InJarSideDetector.PeekResult.None;
         }
-    }
-
-    internal static JarEnvironmentPeek PeekJarEnvironment(Stream jarStream)
-    {
-        ZipArchive jar;
-        try
-        {
-            jar = new ZipArchive(jarStream, ZipArchiveMode.Read, leaveOpen: true);
-        }
-        catch (InvalidDataException)
-        {
-            return JarEnvironmentPeek.None;
-        }
-        catch (NotSupportedException)
-        {
-            return JarEnvironmentPeek.None;
-        }
-
-        using (jar)
-        {
-            var fabric = jar.Entries.FirstOrDefault(e =>
-                string.Equals(
-                    MrpackAnalyzer.NormalizeZipPath(e.FullName),
-                    "fabric.mod.json",
-                    StringComparison.OrdinalIgnoreCase));
-            if (fabric is not null)
-            {
-                TryReadFabricMetadata(fabric, out var fabricEnv, out var fabricMc);
-                return new JarEnvironmentPeek(true, fabricEnv, MrpackAnalyzer.LoaderFabric, fabricMc);
-            }
-
-            var quilt = jar.Entries.FirstOrDefault(e =>
-                string.Equals(
-                    MrpackAnalyzer.NormalizeZipPath(e.FullName),
-                    "quilt.mod.json",
-                    StringComparison.OrdinalIgnoreCase));
-            if (quilt is not null)
-            {
-                var hadQuilt = TryReadQuiltMetadata(quilt, out var quiltEnv, out var quiltMc);
-                return new JarEnvironmentPeek(hadQuilt, quiltEnv, MrpackAnalyzer.LoaderQuilt, quiltMc);
-            }
-
-            var neoToml = jar.Entries.FirstOrDefault(e =>
-                string.Equals(
-                    MrpackAnalyzer.NormalizeZipPath(e.FullName),
-                    "META-INF/neoforge.mods.toml",
-                    StringComparison.OrdinalIgnoreCase));
-            var forgeToml = jar.Entries.FirstOrDefault(e =>
-                string.Equals(
-                    MrpackAnalyzer.NormalizeZipPath(e.FullName),
-                    "META-INF/mods.toml",
-                    StringComparison.OrdinalIgnoreCase));
-            var toml = neoToml ?? forgeToml;
-            if (toml is not null)
-            {
-                var loaderId = neoToml is not null ? MrpackAnalyzer.LoaderNeoForge : MrpackAnalyzer.LoaderForge;
-                TryReadTomlMetadata(toml, out var tomlEnv, out var tomlMc, out var hadSide);
-                return new JarEnvironmentPeek(hadSide, tomlEnv, loaderId, tomlMc);
-            }
-        }
-
-        return JarEnvironmentPeek.None;
-    }
-
-    internal readonly record struct JarEnvironmentPeek(
-        bool HadMetadata,
-        string Environment,
-        string? Loader = null,
-        string? MinecraftVersion = null)
-    {
-        public static JarEnvironmentPeek None => new(false, "*");
     }
 
     private static ServiceResult<ManualServerPackAnalysis> OkRefused(
@@ -574,195 +498,6 @@ public static class ManualServerPackAnalyzer
             [],
             warnings,
             summary));
-    }
-
-    private static bool TryReadFabricMetadata(ZipArchiveEntry entry, out string environment, out string? minecraft)
-    {
-        environment = "*";
-        minecraft = null;
-        try
-        {
-            using var reader = new StreamReader(entry.Open(), Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
-            using var doc = JsonDocument.Parse(reader.ReadToEnd());
-            if (doc.RootElement.ValueKind == JsonValueKind.Array)
-            {
-                var allClient = true;
-                var any = false;
-                foreach (var item in doc.RootElement.EnumerateArray())
-                {
-                    any = true;
-                    var env = ReadStringProperty(item, "environment");
-                    if (!env.Equals("client", StringComparison.OrdinalIgnoreCase))
-                        allClient = false;
-                    minecraft ??= ReadMinecraftFromDepends(item);
-                }
-
-                if (!any)
-                    return false;
-                environment = allClient ? "client" : "*";
-                return true;
-            }
-
-            if (doc.RootElement.ValueKind != JsonValueKind.Object)
-                return false;
-            var single = ReadStringProperty(doc.RootElement, "environment");
-            environment = string.IsNullOrEmpty(single) ? "*" : single.Trim().ToLowerInvariant();
-            minecraft = ReadMinecraftFromDepends(doc.RootElement);
-            return true;
-        }
-        catch (JsonException)
-        {
-            return false;
-        }
-        catch (IOException)
-        {
-            return false;
-        }
-    }
-
-    private static bool TryReadQuiltMetadata(ZipArchiveEntry entry, out string environment, out string? minecraft)
-    {
-        environment = "*";
-        minecraft = null;
-        try
-        {
-            using var reader = new StreamReader(entry.Open(), Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
-            using var doc = JsonDocument.Parse(reader.ReadToEnd());
-            if (doc.RootElement.ValueKind != JsonValueKind.Object)
-                return false;
-            if (doc.RootElement.TryGetProperty("quilt_loader", out var loader)
-                && loader.ValueKind == JsonValueKind.Object)
-            {
-                var env = ReadStringProperty(loader, "environment");
-                environment = string.IsNullOrEmpty(env) ? "*" : env.Trim().ToLowerInvariant();
-                minecraft = ReadMinecraftFromDepends(loader);
-                return true;
-            }
-
-            var top = ReadStringProperty(doc.RootElement, "environment");
-            if (string.IsNullOrEmpty(top))
-                return false;
-            environment = top.Trim().ToLowerInvariant();
-            minecraft = ReadMinecraftFromDepends(doc.RootElement);
-            return true;
-        }
-        catch (JsonException)
-        {
-            return false;
-        }
-        catch (IOException)
-        {
-            return false;
-        }
-    }
-
-    private static bool TryReadTomlMetadata(
-        ZipArchiveEntry entry,
-        out string environment,
-        out string? minecraft,
-        out bool hadSide)
-    {
-        environment = "*";
-        minecraft = null;
-        hadSide = false;
-        var env = "*";
-        string? mc = null;
-        var sideFound = false;
-        try
-        {
-            using var reader = new StreamReader(entry.Open(), Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
-            var toml = reader.ReadToEnd();
-            string? table = null;
-            string? pendingModId = null;
-            string? pendingVersion = null;
-            string? pendingSide = null;
-
-            void FlushTable()
-            {
-                if (table is null)
-                    return;
-                var isModsTable = table.Equals("[[mods]]", StringComparison.OrdinalIgnoreCase)
-                    || table.Equals("[mods]", StringComparison.OrdinalIgnoreCase);
-                if (isModsTable && pendingSide is not null && !sideFound)
-                {
-                    env = pendingSide.Equals("CLIENT", StringComparison.OrdinalIgnoreCase) ? "client" : "*";
-                    sideFound = true;
-                }
-
-                if (mc is null
-                    && table.Contains("dependencies", StringComparison.OrdinalIgnoreCase)
-                    && pendingModId is not null
-                    && pendingModId.Equals("minecraft", StringComparison.OrdinalIgnoreCase)
-                    && pendingVersion is not null
-                    && TryExtractMinecraftVersion(pendingVersion, out var extracted))
-                {
-                    mc = extracted;
-                }
-            }
-
-            foreach (var raw in toml.Split('\n'))
-            {
-                var line = raw.Trim();
-                if (line.Length == 0 || line.StartsWith('#'))
-                    continue;
-                if (line.StartsWith('['))
-                {
-                    FlushTable();
-                    table = line;
-                    pendingModId = null;
-                    pendingVersion = null;
-                    pendingSide = null;
-                    continue;
-                }
-
-                if (table is null)
-                    continue;
-                if (TryParseTomlStringAssignment(line, "side", out var side))
-                    pendingSide = side;
-                if (TryParseTomlStringAssignment(line, "modId", out var modId))
-                    pendingModId = modId;
-                if (TryParseTomlStringAssignment(line, "versionRange", out var range)
-                    || TryParseTomlStringAssignment(line, "version", out range))
-                    pendingVersion = range;
-            }
-
-            FlushTable();
-            environment = env;
-            minecraft = mc;
-            hadSide = sideFound;
-            return sideFound || mc is not null;
-        }
-        catch (IOException)
-        {
-            return false;
-        }
-    }
-
-    private static bool TryParseTomlStringAssignment(string line, string key, out string value)
-    {
-        value = "";
-        var eq = line.IndexOf('=');
-        if (eq <= 0)
-            return false;
-        if (!line[..eq].Trim().Equals(key, StringComparison.OrdinalIgnoreCase))
-            return false;
-        var rhs = line[(eq + 1)..].Trim().Trim('"').Trim('\'');
-        if (rhs.Length == 0)
-            return false;
-        value = rhs;
-        return true;
-    }
-
-    private static string ReadStringProperty(JsonElement obj, string name)
-    {
-        foreach (var prop in obj.EnumerateObject())
-        {
-            if (!prop.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
-                continue;
-            return prop.Value.ValueKind == JsonValueKind.String ? prop.Value.GetString() ?? "" : "";
-        }
-
-        return "";
     }
 
     private static (string Loader, string Version) DetectLoader(
@@ -883,85 +618,8 @@ public static class ManualServerPackAnalyzer
         warnings.Add("Listed CurseForge file IDs (project:file): " + text + ".");
     }
 
-    private static string? ReadMinecraftFromDepends(JsonElement obj)
-    {
-        if (obj.ValueKind != JsonValueKind.Object)
-            return null;
-        if (!TryGetPropertyIgnoreCase(obj, "depends", out var depends)
-            && !TryGetPropertyIgnoreCase(obj, "dependencies", out depends))
-            return null;
-
-        if (depends.ValueKind == JsonValueKind.Object)
-        {
-            var raw = ReadStringOrFirstArrayString(depends, "minecraft");
-            return TryExtractMinecraftVersion(raw, out var version) ? version : null;
-        }
-
-        if (depends.ValueKind == JsonValueKind.Array)
-        {
-            foreach (var item in depends.EnumerateArray())
-            {
-                if (item.ValueKind != JsonValueKind.Object)
-                    continue;
-                var id = ReadStringProperty(item, "id");
-                if (id.Length == 0)
-                    id = ReadStringProperty(item, "modId");
-                if (!id.Equals("minecraft", StringComparison.OrdinalIgnoreCase))
-                    continue;
-                var raw = ReadStringProperty(item, "versions");
-                if (raw.Length == 0)
-                    raw = ReadStringProperty(item, "version");
-                if (TryExtractMinecraftVersion(raw, out var version))
-                    return version;
-            }
-        }
-
-        return null;
-    }
-
-    private static bool TryGetPropertyIgnoreCase(JsonElement obj, string name, out JsonElement value)
-    {
-        foreach (var prop in obj.EnumerateObject())
-        {
-            if (!prop.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
-                continue;
-            value = prop.Value;
-            return true;
-        }
-
-        value = default;
-        return false;
-    }
-
-    private static string ReadStringOrFirstArrayString(JsonElement obj, string name)
-    {
-        if (!TryGetPropertyIgnoreCase(obj, name, out var value))
-            return "";
-        if (value.ValueKind == JsonValueKind.String)
-            return value.GetString() ?? "";
-        if (value.ValueKind == JsonValueKind.Array)
-        {
-            foreach (var item in value.EnumerateArray())
-            {
-                if (item.ValueKind == JsonValueKind.String)
-                    return item.GetString() ?? "";
-            }
-        }
-
-        return "";
-    }
-
-    internal static bool TryExtractMinecraftVersion(string? raw, out string version)
-    {
-        version = "";
-        if (string.IsNullOrWhiteSpace(raw))
-            return false;
-        var match = MinecraftVersionRegex.Match(raw);
-        if (!match.Success)
-            return false;
-        version = match.Value;
-        return true;
-    }
+    internal static bool TryExtractMinecraftVersion(string? raw, out string version) =>
+        InJarSideDetector.TryExtractMinecraftVersion(raw, out version);
 
     private static string GuessPackName(string? sourceName)
     {

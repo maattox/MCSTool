@@ -2,7 +2,7 @@ namespace McManager.Core.Setup;
 
 /// <summary>
 /// Combine in-jar side with the itzg/product CurseForge exclude lists (blueprint §24.3).
-/// Matcher runs after reading in-jar metadata (robustness R3). Same keep/exclude
+/// Matcher runs after reading in-jar metadata (robustness R3 / Step 8.7 P2). Same keep/exclude
 /// order as <see cref="MrpackFileFilter"/>: force-include, pack/in-jar client, list exclude.
 /// Unclear jars stay kept (server pack assumed).
 /// </summary>

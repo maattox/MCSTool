@@ -457,6 +457,81 @@ public sealed class ManualServerPackInstallerTests
     }
 
     [Fact]
+    public void Unstructured_zip_strips_clientSideOnly_keeps_server_toml_and_unclear()
+    {
+        var clientJar = MakeJar(("META-INF/mods.toml", """
+            [[mods]]
+            modId="fancyui"
+            clientSideOnly=true
+            """));
+        var serverJar = MakeJar(("META-INF/mods.toml", """
+            [[mods]]
+            modId="apisupport"
+            side="SERVER"
+            """));
+        var unclearJar = Encoding.UTF8.GetBytes("not-a-jar");
+        using var zip = MakeZipBytes(
+            ("mods/fancyui.jar", clientJar),
+            ("mods/apisupport.jar", serverJar),
+            ("mods/mystery.jar", unclearJar));
+        var path = WriteTemp("in-jar-side.zip", zip);
+        var dest = NewTempDir();
+        try
+        {
+            var analysis = ManualServerPackAnalyzer.AnalyzeFile(path);
+            Assert.True(analysis.Succeeded, analysis.Error);
+            var a = analysis.Value!;
+            Assert.True(a.CanInstall);
+            Assert.Contains("mods/fancyui.jar", a.InJarMetadataSkipPaths);
+            Assert.Contains("mods/apisupport.jar", a.ServerSidePaths);
+            Assert.DoesNotContain("mods/apisupport.jar", a.ClientOnlyPaths);
+            Assert.DoesNotContain("mods/apisupport.jar", a.UnclearSidePaths);
+            Assert.Contains("mods/mystery.jar", a.UnclearSidePaths);
+            Assert.Contains("mods/mystery.jar", a.ServerSidePaths);
+            Assert.DoesNotContain("holdmyitems", a.ConfirmableSummary, StringComparison.OrdinalIgnoreCase);
+
+            var result = ManualServerPackInstaller.Install(path, dest, null);
+            Assert.True(result.Succeeded, result.Error);
+            Assert.False(File.Exists(Path.Combine(dest, "mods", "fancyui.jar")));
+            Assert.True(File.Exists(Path.Combine(dest, "mods", "apisupport.jar")));
+            Assert.True(File.Exists(Path.Combine(dest, "mods", "mystery.jar")));
+        }
+        finally
+        {
+            TryDelete(path);
+            TryDeleteDir(dest);
+        }
+    }
+
+    [Fact]
+    public void Unstructured_zip_strips_common_client_mixin_and_keeps_client_gated_mixin()
+    {
+        var killer = MakeJar(
+            ("example.mixins.json", """{"package":"com.example.mixin","mixins":["HeldItemMixin"]}"""),
+            ("example.refmap.json", """{"mappings":{"com/example/mixin/HeldItemMixin":{"net/minecraft/client/renderer/ItemInHandRenderer":"Lnet/minecraft/client/renderer/ItemInHandRenderer;"}}}"""));
+        var gated = MakeJar(
+            ("example.mixins.json", """{"package":"com.example.mixin","mixins":[],"client":["GuiMixin"]}"""),
+            ("example.refmap.json", """{"mappings":{"com/example/mixin/GuiMixin":{"net/minecraft/client/gui/screens/Screen":"Lnet/minecraft/client/gui/screens/Screen;"}}}"""));
+        using var zip = MakeZipBytes(
+            ("mods/client-mixin-killer.jar", killer),
+            ("mods/client-gated-mixin.jar", gated));
+        var path = WriteTemp("mixin-side.zip", zip);
+        try
+        {
+            var analysis = ManualServerPackAnalyzer.AnalyzeFile(path);
+            Assert.True(analysis.Succeeded, analysis.Error);
+            var a = analysis.Value!;
+            Assert.Contains("mods/client-mixin-killer.jar", a.InJarMetadataSkipPaths);
+            Assert.Contains("mods/client-gated-mixin.jar", a.UnclearSidePaths);
+            Assert.DoesNotContain("mods/client-gated-mixin.jar", a.ClientOnlyPaths);
+        }
+        finally
+        {
+            TryDelete(path);
+        }
+    }
+
+    [Fact]
     public void MilesPack_jar_root_analyzes_when_present()
     {
         var repoRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".."));

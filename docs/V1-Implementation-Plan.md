@@ -189,14 +189,14 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 | **7**   | Remaining v1 (resize, console, storage, Connect version)   | **DONE**                                              |
 | **8**   | Paid / spend mode                                          | **SKIPPED** (operator 2026-08-18; far future, not v1) |
 | **8.4** | Pass-2 follow-on (operator notes)                          | **DONE** (P1–P13)                                     |
-| **8.7** | Modpack-test follow-on (Change pack failures)              | **NEXT** = [`V1-Modpack-Test-Follow-On-Plan.md`](V1-Modpack-Test-Follow-On-Plan.md) **P2** |
+| **8.7** | Modpack-test follow-on (Change pack failures)              | **NEXT** = [`V1-Modpack-Test-Follow-On-Plan.md`](V1-Modpack-Test-Follow-On-Plan.md) **P3** |
 | **8.8** | Operator-notes follow-on (Manager / Setup / pack UX)       | TODO — after 8.7 ([`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md)) |
 | **8.5** | Pre-packaging QA (catalog + passes + bug-fix plans)        | **PAUSED** Pass 3 until **8.7 + 8.8** exit — then [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md); do not start until the operator says so |
 | **8.6** | CI-built ARM spend-brake Function image (no Docker on admin PC) | TODO — after 8.5 exit; **required before 9.1 / official release** |
 | **9**   | Packaging, updates, launch (old MVP Phase 8–9)             | TODO — do not start until Phase 8.5 **and** Step **8.6.1** are DONE |
 
 
-**Current NEXT step:** [Step 8.7](#step-87--modpack-test-follow-on) ([`V1-Modpack-Test-Follow-On-Plan.md`](V1-Modpack-Test-Follow-On-Plan.md) **P2**). Step **8.4** / follow-on **P1–P13** is **DONE**. **Do not start Step 8.8** until 8.7 exits. **Do not start Pass 3** until 8.7 **and** 8.8 exit **and** the operator says so. **Do not start Step 8.6.1** until Phase 8.5 exits. **Do not start Step 9.1** until Phase 8.5 **and** Step **8.6.1** are DONE.
+**Current NEXT step:** [Step 8.7](#step-87--modpack-test-follow-on) ([`V1-Modpack-Test-Follow-On-Plan.md`](V1-Modpack-Test-Follow-On-Plan.md) **P3**). Step **8.4** / follow-on **P1–P13** is **DONE**. **Do not start Step 8.8** until 8.7 exits. **Do not start Pass 3** until 8.7 **and** 8.8 exit **and** the operator says so. **Do not start Step 8.6.1** until Phase 8.5 exits. **Do not start Step 9.1** until Phase 8.5 **and** Step **8.6.1** are DONE.
 
 ---
 
@@ -1253,7 +1253,7 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 
 ### Step 8.7 — Modpack-test follow-on
 
-**Status:** NEXT (living: [`V1-Modpack-Test-Follow-On-Plan.md`](V1-Modpack-Test-Follow-On-Plan.md) **P2**)  
+**Status:** NEXT (living: [`V1-Modpack-Test-Follow-On-Plan.md`](V1-Modpack-Test-Follow-On-Plan.md) **P3**)  
 **Depends on:** Step **8.4** DONE; Pass 3 not started
 
 **Read first**
@@ -1274,7 +1274,7 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 
 **Done when:** P1–P5 **DONE** in that plan. Then point this plan’s **NEXT** at Step **8.8** P1. Do not start 8.8 unless the operator says to continue.
 
-**Changelog:** 2026-08-21 — **P1 DONE** (crash-aware Setup/Change pack health). Living **NEXT = P2**. 2026-08-21 — **Inserted** (docs only). Living **NEXT = P1**. Informal Change pack tests 1/5. Clusters: crash-aware health, unstructured in-jar side, Fabric leftover clients, Java major on pack change, high-unclear warnings. Do not start 8.8, Pass 3, 8.6.1, or 9.1.
+**Changelog:** 2026-08-21 — **P2 DONE** (unstructured zip in-jar side: `InJarSideDetector` side fields, client entrypoints, high-confidence common mixin targets). Living **NEXT = P3**. 2026-08-21 — **P1 DONE** (crash-aware Setup/Change pack health). Living **NEXT = P2**. 2026-08-21 — **Inserted** (docs only). Living **NEXT = P1**. Informal Change pack tests 1/5. Clusters: crash-aware health, unstructured in-jar side, Fabric leftover clients, Java major on pack change, high-unclear warnings. Do not start 8.8, Pass 3, 8.6.1, or 9.1.
 
 ---
 
@@ -1327,7 +1327,7 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 | `[V1-QA-Pass-2-Scope.md](V1-QA-Pass-2-Scope.md)`             | Pass 2 include/skip (**historical** — closed early after Phase A + join) |
 | `[V1-QA-Pass-2-Results.md](V1-QA-Pass-2-Results.md)`         | Pass 2 fill-out (Modded greenfield; no Pass 2 bug-fix plan)                |
 | `[V1-Pass-2-Follow-On-Plan.md](V1-Pass-2-Follow-On-Plan.md)` | **DONE (P1–P13).** Operator notes after Pass 2                            |
-| `[V1-Modpack-Test-Follow-On-Plan.md](V1-Modpack-Test-Follow-On-Plan.md)` | Step **8.7**. Informal Change pack failures. **NEXT = P2** (P1 DONE) |
+| `[V1-Modpack-Test-Follow-On-Plan.md](V1-Modpack-Test-Follow-On-Plan.md)` | Step **8.7**. Informal Change pack failures. **NEXT = P3** (P1–P2 DONE) |
 | `[V1-Operator-Notes-Follow-On-Plan.md](V1-Operator-Notes-Follow-On-Plan.md)` | Step **8.8**. Manager / Setup / pack UX notes. After 8.7 |
 | `[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)`             | Pass 3 gap-close + follow-on tests. **Do not start** until **8.7 + 8.8** exit and the operator says so |
 | `[V1-QA-Pass-3-Results.md](V1-QA-Pass-3-Results.md)`         | Pass 3 fill-out (do not start until operator says so)                      |
@@ -1646,6 +1646,7 @@ Former MVP Phase **8–9**. Phases **1–7** are **DONE**. Phase **8** is **SKIP
 
 | Date       | Note                                                                                                                                                                                                                                                                                                                              |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-21 | **Step 8.7 P2 DONE.** Unstructured zip in-jar side detection (`InJarSideDetector`: Forge/Fabric side fields, client entrypoints, high-confidence common mixin targets). Living **NEXT = Step 8.7 P3**. Do not start 8.8, Pass 3, 8.6.1 CI, or 9.1. |
 | 2026-08-21 | **Step 8.7 P1 DONE.** Crash-aware Setup/Change pack health (fail-fast crash-loop/FATAL, stop unit, capped journal). Living **NEXT = Step 8.7 P2**. Do not start 8.8, Pass 3, 8.6.1 CI, or 9.1. |
 | 2026-08-21 | **Steps 8.7 + 8.8 inserted** (docs only). Informal Change pack tests 1/5 ([`Mod-Pack-Tests.md`](Mod-Pack-Tests.md)). Living **NEXT = Step 8.7 P1**. Then 8.8 operator notes. Pass 3 stays blocked until both exit. Do not start Pass 3, 8.6.1 CI, or 9.1. |
 | 2026-08-20 | **Step 8.4 P13 DONE.** Setup prefers pre-built ARM Function tarball (`artifacts/mcmgr-fn-softstop-linux-arm64.tar` or next to the app); copy into OCIR without Docker. Fallback docker buildx / skip. **8.4 complete. NEXT = Step 8.5.2** Pass 3. Do not start Pass 3, 8.6.1 CI, or 9.1. |

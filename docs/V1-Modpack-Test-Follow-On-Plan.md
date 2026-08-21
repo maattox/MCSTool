@@ -1,6 +1,6 @@
 # V1 modpack-test follow-on (living)
 
-**Status:** Living. Created 2026-08-21 (docs only). **NEXT = P2.**  
+**Status:** Living. Created 2026-08-21 (docs only). **NEXT = P3.**  
 **Parent:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.7**.  
 **Why now:** operator 2026-08-21 — informal **Change pack** tests in [`Mod-Pack-Tests.md`](Mod-Pack-Tests.md) failed **4 / 5**. Pause Step **8.5.2** Pass 3. Fix **generalizable** pack-start gaps **before** [`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md) (Step **8.8**) and before QA Pass 3.
 
@@ -144,8 +144,8 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 | ID | Section | Status | Parallel? | Live SSH/OCI? |
 |----|---------|--------|-----------|----------------|
 | **P1** | Crash-aware readiness (fail fast + journal) | **DONE** | SEQUENTIAL | Yes |
-| **P2** | Unstructured zip in-jar side detection | **NEXT** | SEQUENTIAL | Optional |
-| **P3** | Fabric / `.mrpack` leftover client mods | TODO | SEQUENTIAL | Optional |
+| **P2** | Unstructured zip in-jar side detection | **DONE** | SEQUENTIAL | Optional |
+| **P3** | Fabric / `.mrpack` leftover client mods | **NEXT** | SEQUENTIAL | Optional |
 | **P4** | Java major on Setup + Change pack | TODO | SEQUENTIAL | Yes |
 | **P5** | Analyze warnings when many jars lack side data | TODO | SEQUENTIAL | No |
 
@@ -196,7 +196,7 @@ When **P5** is DONE: point V1 **NEXT** at Step **8.8** ([`V1-Operator-Notes-Foll
 
 ## P2 — Unstructured zip in-jar side detection
 
-**Status:** NEXT  
+**Status:** DONE  
 **Catalog IDs:** S6-02 (expected may change); Change pack analyze
 
 **Read first**
@@ -225,7 +225,7 @@ When **P5** is DONE: point V1 **NEXT** at Step **8.8** ([`V1-Operator-Notes-Foll
 
 **Done when:** Unstructured/manual leftover jars use in-jar signals; fixtures cover strip vs keep vs unclear; Guide one-liner if the confirmable summary changes.
 
-**Changelog:** *(empty until implemented)*
+**Changelog:** 2026-08-21 — **P2 DONE.** Core `InJarSideDetector` after Layer 1–2: Fabric/Quilt `environment` + client-only entrypoints (`client`/`client_init` and no `main`/`server`/`preLaunch`/`init`); Forge/NeoForge `clientSideOnly`, `displayTest=IGNORE_SERVER_VERSION`, `side=CLIENT`. Mixin heuristic only if a **common** `mixins` array targets `net/minecraft/client/`, `com/mojang/blaze3d/`, Forge/NeoForge/Fabric client packages (via mixin JSON FQCN or `*.refmap.json`). Client-gated `client` arrays and mixin-file presence alone do not strip. Unclear jars still kept (8.4 P9). Same path for Setup and Change pack. **NEXT = P3.**
 
 ---
 
@@ -233,7 +233,7 @@ When **P5** is DONE: point V1 **NEXT** at Step **8.8** ([`V1-Operator-Notes-Foll
 
 ## P3 — Fabric / `.mrpack` leftover client mods
 
-**Status:** TODO  
+**Status:** NEXT  
 **Catalog IDs:** Setup / Change pack `.mrpack` strip
 
 **Read first**
@@ -347,5 +347,6 @@ When **P5** is DONE: point V1 **NEXT** at Step **8.8** ([`V1-Operator-Notes-Foll
 
 | Date | Note |
 |------|------|
+| 2026-08-21 | **P2 DONE** (unstructured in-jar side). `InJarSideDetector`: side fields, client entrypoints, high-confidence common mixin targets. Unclear still kept. **NEXT = P3.** Do not start 8.8, Pass 3, 8.6.1, or 9.1. |
 | 2026-08-21 | **P1 DONE** (crash-aware readiness). Fail-fast on crash-loop/FATAL; stop unit; capped journal + implicated mod. **NEXT = P2.** Do not start 8.8, Pass 3, 8.6.1, or 9.1. |
 | 2026-08-21 | Created (docs only). Operator: postpone Pass 3; informal Change pack tests 1/5. **NEXT = P1**. Layer 3 quarantine, jar-root confirm UI, CurseForge API parked (8.8 / 4.12). Do not implement in the creation session. |
