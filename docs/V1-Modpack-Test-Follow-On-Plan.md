@@ -1,6 +1,6 @@
 # V1 modpack-test follow-on (living)
 
-**Status:** Living. Created 2026-08-21 (docs only). **NEXT = P1.**  
+**Status:** Living. Created 2026-08-21 (docs only). **NEXT = P2.**  
 **Parent:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.7**.  
 **Why now:** operator 2026-08-21 — informal **Change pack** tests in [`Mod-Pack-Tests.md`](Mod-Pack-Tests.md) failed **4 / 5**. Pause Step **8.5.2** Pass 3. Fix **generalizable** pack-start gaps **before** [`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md) (Step **8.8**) and before QA Pass 3.
 
@@ -67,7 +67,7 @@ Only when two sections **do not** edit the same files **and** do not both own th
 - CurseForge **API** (Step **4.12**) stays **deferred**. Jar-less / mixed-ID CF zips stay hard-blocked.
 - Blueprint **§24.3 Layer 3** crash quarantine is **not this plan** — it is Step **8.8** P10. This plan must still **detect crash-loops** so quarantine has a signal later.
 - On-box Java: `onbox/mcmgr/common/java.sh` already installs Temurin by **major** (apt, then Adoptium REST). `forge_meta.py` already maps MC **26.x → Java 25**. The 2026-08-21 Simply Optimized failure is **lifecycle** (Change pack did not select/install Java 25), not “Java 25 is impossible.”
-- Health fail copy today: `Minecraft unit started but RCON list did not succeed in time. Re-Deploy can resume on-box stages.` (`SetupBootstrapService`). Crash-loops look the same as a slow first world gen.
+- Health fail copy (P1): crash-loop / FATAL fail fast with a capped journal excerpt; timeout without a crash says RCON never came up. Success is still RCON `list`. Pre-P1 copy was `Minecraft unit started but RCON list did not succeed in time. Re-Deploy can resume on-box stages.`
 
 ---
 
@@ -143,8 +143,8 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 
 | ID | Section | Status | Parallel? | Live SSH/OCI? |
 |----|---------|--------|-----------|----------------|
-| **P1** | Crash-aware readiness (fail fast + journal) | **NEXT** | SEQUENTIAL | Yes |
-| **P2** | Unstructured zip in-jar side detection | TODO | SEQUENTIAL | Optional |
+| **P1** | Crash-aware readiness (fail fast + journal) | **DONE** | SEQUENTIAL | Yes |
+| **P2** | Unstructured zip in-jar side detection | **NEXT** | SEQUENTIAL | Optional |
 | **P3** | Fabric / `.mrpack` leftover client mods | TODO | SEQUENTIAL | Optional |
 | **P4** | Java major on Setup + Change pack | TODO | SEQUENTIAL | Yes |
 | **P5** | Analyze warnings when many jars lack side data | TODO | SEQUENTIAL | No |
@@ -158,7 +158,7 @@ When **P5** is DONE: point V1 **NEXT** at Step **8.8** ([`V1-Operator-Notes-Foll
 
 ## P1 — Crash-aware readiness
 
-**Status:** NEXT  
+**Status:** DONE  
 **Catalog IDs:** new (Pass 3); related fail copy in Change pack / Setup health
 
 **Read first**
@@ -188,7 +188,7 @@ When **P5** is DONE: point V1 **NEXT** at Step **8.8** ([`V1-Operator-Notes-Foll
 
 **Done when:** Fail copy is specific; crash-loops do not consume the full RCON budget; tests exist; Guide one-liner if user-visible Setup/Change pack errors change.
 
-**Changelog:** *(empty until implemented)*
+**Changelog:** 2026-08-21 — **P1 DONE.** Journal excerpt cap **30** lines (probe 80; `--since` health-wait start). After a detected crash-loop, **`systemctl stop minecraft`** (leave files on disk). Classifier is Core `MinecraftReadiness` (fixture journals: Forge mixin invalid dist, Fabric `NoClassDefFoundError` abort, `UnsupportedClassVersionError`, healthy spawn-area). Success remains RCON `list`. Cadence unchanged (12×10s). Not Layer 3 quarantine (8.8 P10). **NEXT = P2.**
 
 ---
 
@@ -196,7 +196,7 @@ When **P5** is DONE: point V1 **NEXT** at Step **8.8** ([`V1-Operator-Notes-Foll
 
 ## P2 — Unstructured zip in-jar side detection
 
-**Status:** TODO  
+**Status:** NEXT  
 **Catalog IDs:** S6-02 (expected may change); Change pack analyze
 
 **Read first**
@@ -347,4 +347,5 @@ When **P5** is DONE: point V1 **NEXT** at Step **8.8** ([`V1-Operator-Notes-Foll
 
 | Date | Note |
 |------|------|
+| 2026-08-21 | **P1 DONE** (crash-aware readiness). Fail-fast on crash-loop/FATAL; stop unit; capped journal + implicated mod. **NEXT = P2.** Do not start 8.8, Pass 3, 8.6.1, or 9.1. |
 | 2026-08-21 | Created (docs only). Operator: postpone Pass 3; informal Change pack tests 1/5. **NEXT = P1**. Layer 3 quarantine, jar-root confirm UI, CurseForge API parked (8.8 / 4.12). Do not implement in the creation session. |

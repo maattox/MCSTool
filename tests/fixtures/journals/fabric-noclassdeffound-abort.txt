@@ -1,0 +1,14 @@
+[main/INFO]: Loading Minecraft 1.21.1 with Fabric Loader 0.16.9
+[main/INFO]: Loading 42 mods:
+	- fabricloader 0.16.9
+	- exampleguimod 1.0.0
+[main/ERROR]: Failed to start the minecraft server
+net.fabricmc.loader.impl.FormattedException: java.lang.RuntimeException: Could not execute entrypoint stage 'main' due to errors, provided by 'exampleguimod'!
+	at net.fabricmc.loader.impl.FormattedException.ofLocalized(FormattedException.java:63)
+	at net.fabricmc.loader.impl.launch.knot.Knot.init(Knot.java:148)
+Caused by: java.lang.NoClassDefFoundError: com/formdev/flatlaf/FlatLaf
+	at exampleguimod.ServerInit.onInitialize(ServerInit.java:12)
+	at net.fabricmc.loader.impl.entrypoint.EntrypointUtils.invoke0(EntrypointUtils.java:47)
+	... 8 more
+Caused by: java.lang.ClassNotFoundException: com.formdev.flatlaf.FlatLaf
+	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:641)

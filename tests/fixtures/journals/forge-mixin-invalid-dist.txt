@@ -1,0 +1,9 @@
+[main/INFO] [minecraft/DedicatedServer]: Starting minecraft server version 1.20.1
+[main/INFO] [ne.mi.co.MinecraftForge/CORE]: Forge loaded
+[main/FATAL] [mixin/]: Mixin apply failed exampleclientmod.mixins.json:ItemRendererMixin -> net.minecraft.client.renderer.entity.ItemRenderer: org.spongepowered.asm.mixin.transformer.throwables.InvalidMixinException: @Mixin target type could not be remapped
+Caused by: org.spongepowered.asm.mixin.throwables.ClassMetadataNotFoundException: net.minecraft.client.renderer.entity.ItemRenderer
+[main/FATAL] [minecraft/]: Attempted to load class net/minecraft/client/renderer/entity/ItemRenderer for invalid dist DEDICATED_SERVER
+[main/FATAL] [ne.mi.co.MinecraftForge/CORE]: The following mods caused the server to crash:
+exampleclientmod
+Exception in thread "main" net.minecraftforge.fml.ModLoadingException: exampleclientmod (exampleclientmod) encountered an error during the dedicatedserver setup phase
+	at net.minecraftforge.fml.ModLoader.waitForTransition(ModLoader.java:223)

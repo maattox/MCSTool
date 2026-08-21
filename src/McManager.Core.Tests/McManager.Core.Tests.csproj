@@ -48,6 +48,10 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>fixtures\infra\%(Filename)%(Extension)</Link>
     </None>
+    <None Include="..\..\tests\fixtures\journals\*.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>fixtures\journals\%(Filename)%(Extension)</Link>
+    </None>
   </ItemGroup>
 
 </Project>

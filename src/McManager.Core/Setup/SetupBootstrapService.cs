@@ -926,36 +926,43 @@ public sealed class SetupBootstrapService
 
     private static ServiceResult WaitRcon(SshClient client, IProgress<string>? log)
     {
-        for (var i = 0; i < 12; i++)
+        var sinceRaw = ExecAllowFail(
+            client,
+            MinecraftReadiness.JournalSinceDateCommand,
+            TimeSpan.FromSeconds(20)).Trim();
+        var since = MinecraftReadiness.IsSafeSinceTimestamp(sinceRaw) ? sinceRaw : null;
+        MinecraftHealthProbe? last = null;
+
+        for (var i = 0; i < MinecraftReadiness.MaxRconAttempts; i++)
         {
-            var active = ExecAllowFail(client, "systemctl is-active minecraft", TimeSpan.FromSeconds(20));
-            var list = ExecAllowFail(
+            var blob = ExecAllowFail(
                 client,
-                "sudo python3 - <<'PY'\n"
-                + "import socket,struct,sys\n"
-                + "pw=open('/etc/mcmgr/rcon.secret').read().strip()\n"
-                + "def pkt(k,p):\n"
-                + " b=struct.pack('<ii',1,k)+p.encode()+b'\\x00\\x00'\n"
-                + " return struct.pack('<i',len(b))+b\n"
-                + "s=socket.create_connection(('127.0.0.1',25575),timeout=5)\n"
-                + "s.sendall(pkt(3,pw)); s.recv(4096)\n"
-                + "s.sendall(pkt(2,'list')); data=s.recv(4096); s.close()\n"
-                + "sys.stdout.buffer.write(data); sys.exit(0 if data else 1)\n"
-                + "PY",
-                TimeSpan.FromSeconds(20));
-            if (list.Contains("players", StringComparison.OrdinalIgnoreCase)
-                || list.Contains("There are", StringComparison.OrdinalIgnoreCase))
+                MinecraftReadiness.ProbeCommand(since),
+                TimeSpan.FromSeconds(30));
+            last = MinecraftReadiness.ParseProbe(blob);
+            var report = MinecraftReadiness.Classify(last);
+
+            if (report.Kind == MinecraftReadinessKind.Joinable)
             {
-                log?.Report("RCON list succeeded.");
+                log?.Report(MinecraftReadiness.JoinableLog);
                 return ServiceResult.Ok();
             }
 
-            log?.Report($"RCON not ready yet (minecraft={active.Trim()}); retry {i + 1}/12…");
-            Thread.Sleep(TimeSpan.FromSeconds(10));
+            if (report.Kind == MinecraftReadinessKind.Crash)
+            {
+                log?.Report(MinecraftReadiness.CrashDetectedLog);
+                ExecAllowFail(
+                    client,
+                    MinecraftReadiness.StopUnitCommand,
+                    TimeSpan.FromSeconds(45));
+                return ServiceResult.Fail(MinecraftReadiness.FormatCrashMessage(report));
+            }
+
+            log?.Report(MinecraftReadiness.StillStartingLog(i + 1, last));
+            Thread.Sleep(MinecraftReadiness.RetryDelay);
         }
 
-        return ServiceResult.Fail(
-            "Minecraft unit started but RCON list did not succeed in time. Re-Deploy can resume on-box stages.");
+        return ServiceResult.Fail(MinecraftReadiness.FormatTimeoutMessage(last));
     }
 
     private static void UploadAgentFiles(SshClient client, string agent, string staging, IProgress<string>? log)

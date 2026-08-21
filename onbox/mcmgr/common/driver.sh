@@ -178,7 +178,7 @@ sys.stdout.buffer.write(("\n".join(flags) + "\n").encode("utf-8"))
   layout_verify
 
   if [[ "${DRY_RUN}" != "1" ]]; then
-    # Optional start + light health check (RCON may not be ready until first world gen).
+    # Start only. Joinable health (RCON list + crash-loop fail-fast) is Manager WaitRcon.
     systemctl start "${MINECRAFT_UNIT}.service" || mcmgr_log "warning: systemctl start failed (first boot may need manual start)"
   fi
 

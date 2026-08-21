@@ -245,6 +245,14 @@ Product roadmap stays in `PRODUCT-IDEAS.md`. Architecture stays in `Infrastructu
 **Retry:** Do **not** destroy. Restart Hybrid (C# waiter/repair), same TESTING config dir, Setup resume → **Deploy**. Marker may already exist if an agent wrote it on the live VM.  
 **Refs:** `infra/cloud-init/vm1.yaml.tftpl`, `infra/main.tf`, `SetupBootstrapService.WaitCloudInitAsync` / `EnsureVm1HostFirewall`
 
+### SETUP-ISSUE-11 — Setup / Change pack health treated crash-loops as an RCON timeout
+**Status:** Fixed (2026-08-21) — product Manager health check  
+**Summary:** Informal Change pack tests (cluster A) failed with `Minecraft unit started but RCON list did not succeed in time` while the unit was crash-looping (`status=1`, journal `FATAL` / loader abort). Slow first world gen used the same copy, so operators could not tell the difference and the waiter burned the full RCON budget.  
+**Cause:** `WaitRcon` only polled `systemctl is-active` + localhost RCON `list`. Joinable still correctly requires RCON (blueprint §12.1 step 9); the gap was no fail-fast on crash-loop / FATAL.  
+**Fix (product path):** Combined SSH probe (localhost RCON + `NRestarts`/`ActiveState` + `journalctl -u minecraft`). Crash-loop / FATAL / loader “caused the server to crash” / `NoClassDefFoundError` abort / `UnsupportedClassVersionError` fail immediately, stop the unit so it does not keep restarting, and show a capped journal excerpt plus the implicated mod when the loader printed one. RCON success still wins. Timeout without a crash says so.  
+**Verify:** `dotnet test` filter `MinecraftReadinessTests`. Optional live Change pack that is known to crash should no longer sit on the generic RCON message.  
+**Refs:** `src/McManager.Core/Setup/MinecraftReadiness.cs`, `SetupBootstrapService.WaitRcon`, `docs/V1-Modpack-Test-Follow-On-Plan.md` P1
+
 ### DOOR-ISSUE-4 — `wait_forge.sh` / `ip_to_vm1.sh` abort wake (`set -u` CR-strip, missing `--force`)
 **Status:** Fixed (2026-08-14)  
 **Summary:** After Minecraft was reachable on VM1 private `:25565`, door wake still went **DEGRADED**. First `POLL_INTERVAL_SEC: unbound variable` (CR-strip under `set -u` before `:-10`). After a live patch, `ip_to_vm1.sh failed` until IAM (SETUP-ISSUE-2) plus `--force` (reserved IP parked on the door secondary). Sourcing `/etc/mccontrol/oci.env` as `ubuntu` is **Permission denied** (mode 600 root) — expected; not a misdeploy.  
