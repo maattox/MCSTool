@@ -19,7 +19,9 @@ public static class ModdingPanelLogic
     public const string HelpTitle =
         "Lists server-side mods on the game VM. Download pack copies the original file you "
         + "imported in Setup (saved on this PC). That is not a zip of the server mods folder "
-        + "— Setup strips client-only files, so a server-side zip would not work for friends.";
+        + "— Setup strips client-only files, so a server-side zip would not work for friends. "
+        + "Change pack reinstalls Minecraft from a new .mrpack or server-pack zip; "
+        + "the world is kept unless you also wipe.";
 
     public static bool IsModdedServerKind(string? serverKind)
     {

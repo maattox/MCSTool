@@ -152,9 +152,16 @@
                     <span class="sr-only">About Modding</span>
                 </button>
             </div>
-            @if (Vm.IsModdedServer)
-            {
-                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button type="button"
+                        disabled="@(!Vm.CanPickPack)"
+                        title="@Vm.ChangePackTitle"
+                        @onclick="Vm.BeginChangePack">
+                    <i class="ti ti-package" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
+                    Change pack
+                </button>
+                @if (Vm.IsModdedServer)
+                {
                     <button type="button"
                             disabled="@(!Vm.CanDownloadPack)"
                             title="@Vm.DownloadPackTitle"
@@ -169,13 +176,13 @@
                         <i class="ti ti-refresh" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
                         Refresh list
                     </button>
-                </div>
-            }
+                }
+            </div>
         </div>
 
         @if (!Vm.IsModdedServer)
         {
-            <p style="margin:0;font-size:13px;color:var(--text-muted);">@Vm.VanillaEmptyState</p>
+            <p style="margin:0 0 12px;font-size:13px;color:var(--text-muted);">@Vm.VanillaEmptyState</p>
         }
         else
         {
@@ -204,6 +211,113 @@
                     }
                 </div>
             }
+        }
+
+        @if (Vm.ShowChangePackUi)
+        {
+            <div style="margin-top:12px;">
+            <aside class="mcm-client-pack-notice" role="note">
+                <p class="mcm-wizard-kicker">@Vm.ClientPackTitle</p>
+                <p>@Vm.ClientPackCopy</p>
+                @if (Vm.ShowPackConfirmChecks)
+                {
+                    <p class="mcm-wizard-lead">@Vm.ClientPackFriendsNeed</p>
+                }
+            </aside>
+            <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);">
+                This reinstalls Minecraft on the server. The world is kept unless you also wipe. There is no pack search box.
+            </p>
+            <div class="mcm-pack-drop @(Vm.IsAnalyzingPack ? "is-busy" : "")"
+                 aria-label="Drop a modpack file">
+                <InputFile class="mcm-pack-drop-input"
+                           OnChange="OnPackInputAsync"
+                           accept=".mrpack,.zip"
+                           disabled="@(!Vm.CanPickPack || Vm.IsAnalyzingPack)" />
+                <i class="ti ti-file-zip" aria-hidden="true"></i>
+                <p class="mcm-pack-drop-title">Drop a .mrpack or server-pack zip here</p>
+                <p class="mcm-wizard-hint">Very large packs: use Choose pack file so Windows can pass the path.</p>
+            </div>
+            <div class="mcm-wizard-actions">
+                <button type="button"
+                        disabled="@(!Vm.CanPickPack || Vm.IsAnalyzingPack)"
+                        title="@Vm.ChangePackTitle"
+                        @onclick="Vm.PickPackAsync">
+                    Choose pack file…
+                </button>
+                <button type="button"
+                        disabled="@(Vm.AnyBusy)"
+                        @onclick="Vm.CancelChangePack">
+                    Cancel
+                </button>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Vm.PackFileNameDisplay))
+            {
+                <p class="mcm-wizard-hint mcm-wizard-mono">@Vm.PackFileNameDisplay</p>
+            }
+            @if (Vm.IsAnalyzingPack)
+            {
+                <div class="mcm-wizard-progress">
+                    <div class="mcm-wizard-progress-row">
+                        <span>@Vm.PackAnalyzeCaption</span>
+                    </div>
+                    <div class="mcm-progress-track" role="progressbar" aria-busy="true" aria-valuemin="0" aria-valuemax="100">
+                        <div class="mcm-progress-fill mcm-progress-indeterminate"></div>
+                    </div>
+                </div>
+            }
+            @if (Vm.ShowPackSummary)
+            {
+                @if (!string.IsNullOrWhiteSpace(Vm.PackBlockReason))
+                {
+                    <p class="mcm-wizard-error">@Vm.PackBlockReason</p>
+                }
+                @if (Vm.ShowOverrideListWarning)
+                {
+                    <aside class="mcm-pack-list-warning" role="status">
+                        <p class="mcm-wizard-kicker">Some client-only mods will be skipped</p>
+                        <p>@Vm.PackOverrideListWarning</p>
+                    </aside>
+                }
+                @if (Vm.ShowSaveCompatibilityWarning)
+                {
+                    <aside class="mcm-pack-list-warning" role="status">
+                        <p class="mcm-wizard-kicker">Existing world</p>
+                        <p>@Vm.SaveCompatibilityWarning</p>
+                    </aside>
+                }
+                <pre class="mcm-wizard-log mcm-wizard-mono mcm-slim-scroll mcm-pack-summary">@Vm.PackSummary</pre>
+            }
+            @if (Vm.ShowPackConfirmChecks)
+            {
+                <label class="mcm-checkbox-row">
+                    <input type="checkbox"
+                           disabled="@Vm.AnyBusy"
+                           @bind="Vm.PackConfirmed" />
+                    <span>@Vm.PackConfirmLabel</span>
+                </label>
+                <label class="mcm-checkbox-row">
+                    <input type="checkbox"
+                           disabled="@Vm.AnyBusy"
+                           @bind="Vm.ClientPackAcknowledged" />
+                    <span>@Vm.ClientPackAckLabel</span>
+                </label>
+                <label class="mcm-checkbox-row">
+                    <input type="checkbox"
+                           disabled="@Vm.AnyBusy"
+                           @bind="Vm.WipeWorld" />
+                    <span>@Vm.WipeWorldLabel</span>
+                </label>
+                <div class="mcm-wizard-actions" style="margin-top:8px;">
+                    <button type="button"
+                            class="mcm-primary"
+                            disabled="@(!Vm.CanInstallPack)"
+                            title="@Vm.InstallPackTitle"
+                            @onclick="Vm.InstallPackReplaceAsync">
+                        Install this pack
+                    </button>
+                </div>
+            }
+            </div>
         }
     </div>
 
@@ -305,6 +419,27 @@
         Vm.ChatTemplates.CollectionChanged -= OnChatChanged;
         Vm.ChatTemplates.CollectionChanged -= OnChatChanged;
         Vm.ModFiles.CollectionChanged -= OnModsChanged;
+    }
+
+    private async Task OnPackInputAsync(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file is null)
+            return;
+
+        try
+        {
+            await using var stream = file.OpenReadStream(PackReplaceUx.PackDropMaxBytes);
+            await Vm.ImportDroppedPackAsync(file.Name, stream);
+        }
+        catch (IOException ex)
+        {
+            Vm.StatusMessage = "Could not read the dropped file. Use Choose pack file for large packs. " + ex.Message;
+        }
+        catch (InvalidOperationException ex)
+        {
+            Vm.StatusMessage = "Drop failed. Use Choose pack file. " + ex.Message;
+        }
     }
 
     private void OnVmChanged(object? sender, PropertyChangedEventArgs e) =>

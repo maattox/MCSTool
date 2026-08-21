@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using McManager.Core.Config;
@@ -19,6 +20,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject
     private static readonly FileTypeFilter ZipFilter = new("ZIP files", ".zip");
     private static readonly FileTypeFilter PngFilter = new("PNG images", ".png");
     private static readonly FileTypeFilter AllFilesFilter = new("All files", ".*");
+    private static readonly FileTypeFilter PackFilter = new("Modpack archives", ".mrpack", ".zip");
+    private static readonly FileTypeFilter MrpackFilter = new("Modrinth pack", ".mrpack");
 
     private ManagerLocalConfig? _config;
     private BackupStore? _backups;
@@ -36,7 +39,11 @@ public sealed partial class ServerManagementViewModel : ObservableObject
     private readonly MainViewModel _main;
     private readonly NotificationCenter _notices;
     private readonly ActionBanner _banner;
+    private readonly SetupBootstrapService _bootstrap;
     private bool _forwardBanner;
+    private string? _currentMinecraftVersion;
+    private string? _currentLoaderOrDistribution;
+    private SetupPackPreview? _packPreview;
     private string? _sessionError;
     private long _currentBackupBytes;
     private string _dataDirectory = "";
@@ -103,10 +110,66 @@ public sealed partial class ServerManagementViewModel : ObservableObject
 
     public bool HasObjectStorage => _backups is not null;
 
-    public bool AnyBusy => IsBusy || IsModdingBusy;
+    public bool AnyBusy => IsBusy || IsModdingBusy || IsAnalyzingPack;
+
+    public bool Vm1IsRunning => ManagePowerUx.IsVm1Running(_main.Vm1Lifecycle);
 
     public bool CanDownloadPack =>
         ModdingPanelLogic.CanDownloadPack(IsModdedServer, HasLocalPackArchive) && !AnyBusy;
+
+    public bool CanPickPack => PackReplaceUx.CanPick(Vm1IsRunning, AnyBusy);
+
+    public bool CanInstallPack =>
+        PackReplaceUx.CanInstall(
+            Vm1IsRunning,
+            AnyBusy,
+            PackCanContinue,
+            PackConfirmed,
+            ClientPackAcknowledged);
+
+    public string ChangePackTitle =>
+        CanPickPack
+            ? "Reinstall Minecraft from a new .mrpack or server-pack zip. The world is kept unless you also wipe."
+            : PackReplaceUx.PickDisabledReason(Vm1IsRunning, AnyBusy);
+
+    public string InstallPackTitle =>
+        CanInstallPack
+            ? PackReplaceUx.ConfirmBody(WipeWorld)
+            : PackReplaceUx.InstallDisabledReason(
+                Vm1IsRunning,
+                AnyBusy,
+                PackCanContinue,
+                PackConfirmed,
+                ClientPackAcknowledged);
+
+    public string PackFileNameDisplay =>
+        string.IsNullOrWhiteSpace(PackPath) ? "" : Path.GetFileName(PackPath);
+
+    public bool ShowPackSummary =>
+        ShowChangePackUi
+        && !IsAnalyzingPack
+        && (!string.IsNullOrWhiteSpace(PackSummary) || !string.IsNullOrWhiteSpace(PackBlockReason));
+
+    public bool ShowPackConfirmChecks => ShowPackSummary && PackCanContinue;
+
+    public bool ShowOverrideListWarning =>
+        ShowPackConfirmChecks && !string.IsNullOrWhiteSpace(PackOverrideListWarning);
+
+    public bool ShowSaveCompatibilityWarning =>
+        ShowPackConfirmChecks && !string.IsNullOrWhiteSpace(SaveCompatibilityWarning);
+
+    public string ClientPackTitle => SetupPackImport.ClientPackTitle;
+
+    public string ClientPackCopy => SetupPackImport.ClientPackCopy;
+
+    public string ClientPackAckLabel => SetupPackImport.ClientPackAckLabel;
+
+    public string ClientPackFriendsNeed =>
+        SetupPackImport.FriendsNeedLine(PackName, PackMinecraftVersion, PackLoader, PackLoaderVersion);
+
+    public string PackConfirmLabel => PackReplaceUx.PackConfirmLabel;
+
+    public string WipeWorldLabel => PackReplaceUx.WipeWorldLabel;
 
     public string DownloadPackTitle =>
         CanDownloadPack
@@ -160,6 +223,77 @@ public sealed partial class ServerManagementViewModel : ObservableObject
     [ObservableProperty]
     private string _identityStatus = "";
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowPackSummary))]
+    [NotifyPropertyChangedFor(nameof(ShowPackConfirmChecks))]
+    [NotifyPropertyChangedFor(nameof(ShowOverrideListWarning))]
+    [NotifyPropertyChangedFor(nameof(ShowSaveCompatibilityWarning))]
+    private bool _showChangePackUi;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(AnyBusy))]
+    [NotifyPropertyChangedFor(nameof(ShowPackSummary))]
+    private bool _isAnalyzingPack;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(PackFileNameDisplay))]
+    private string _packPath = "";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ClientPackFriendsNeed))]
+    private string _packName = "";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ClientPackFriendsNeed))]
+    private string _packMinecraftVersion = "";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ClientPackFriendsNeed))]
+    private string _packLoader = "";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ClientPackFriendsNeed))]
+    private string _packLoaderVersion = "";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowPackSummary))]
+    private string _packSummary = "";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowPackSummary))]
+    private string _packBlockReason = "";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowOverrideListWarning))]
+    private string _packOverrideListWarning = "";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowSaveCompatibilityWarning))]
+    private string _saveCompatibilityWarning = "";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowPackConfirmChecks))]
+    [NotifyPropertyChangedFor(nameof(CanInstallPack))]
+    private bool _packCanContinue;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanInstallPack))]
+    [NotifyPropertyChangedFor(nameof(InstallPackTitle))]
+    private bool _packConfirmed;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanInstallPack))]
+    [NotifyPropertyChangedFor(nameof(InstallPackTitle))]
+    private bool _clientPackAcknowledged;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(InstallPackTitle))]
+    [NotifyPropertyChangedFor(nameof(ShowSaveCompatibilityWarning))]
+    private bool _wipeWorld;
+
+    [ObservableProperty]
+    private string _packAnalyzeCaption = "";
+
     public ServerManagementViewModel(
         LocalConfigHost configHost,
         ManageCloudServices cloud,
@@ -168,7 +302,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject
         IUiDialogs dialogs,
         MainViewModel main,
         NotificationCenter notices,
-        ActionBanner banner)
+        ActionBanner banner,
+        SetupBootstrapService bootstrap)
     {
         _configHost = configHost;
         _cloud = cloud;
@@ -178,10 +313,12 @@ public sealed partial class ServerManagementViewModel : ObservableObject
         _main = main;
         _notices = notices;
         _banner = banner;
+        _bootstrap = bootstrap;
 
         BindFromHost();
         _forwardBanner = true;
         _session.Reloaded += OnSessionReloaded;
+        _main.PropertyChanged += OnMainPropertyChanged;
     }
 
     partial void OnStatusMessageChanged(string value)
@@ -210,6 +347,16 @@ public sealed partial class ServerManagementViewModel : ObservableObject
         BindFromHost();
         _ = RefreshMinecraftVersionAsync();
     }
+
+    private void OnMainPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(MainViewModel.Vm1Lifecycle) or null)
+            NotifyModdingCommands();
+    }
+
+    partial void OnWipeWorldChanged(bool value) => RefreshSaveCompatibilityWarning();
+
+    partial void OnIsAnalyzingPackChanged(bool value) => NotifyModdingCommands();
 
     private void BindFromHost()
     {
@@ -539,6 +686,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject
         BindLocalPack();
         if (_infra is null)
         {
+            _currentMinecraftVersion = null;
+            MinecraftVersionDisplay = "—";
             ApplyServerKind(null);
             return;
         }
@@ -546,14 +695,17 @@ public sealed partial class ServerManagementViewModel : ObservableObject
         var read = await _infra.GetAsync();
         if (!read.Succeeded || read.Value?.Document is null)
         {
+            _currentMinecraftVersion = null;
             ApplyServerKind(null);
             return;
         }
 
         var doc = read.Value.Document;
         var version = doc.Game.MinecraftVersion;
-        MinecraftVersionDisplay = string.IsNullOrWhiteSpace(version) ? "—" : version.Trim();
+        _currentMinecraftVersion = string.IsNullOrWhiteSpace(version) ? null : version.Trim();
+        MinecraftVersionDisplay = _currentMinecraftVersion ?? "—";
         ApplyServerKind(doc.Game.ServerKind);
+        RefreshSaveCompatibilityWarning();
         await RefreshLiveModsAsync();
     }
 
@@ -682,6 +834,288 @@ public sealed partial class ServerManagementViewModel : ObservableObject
         }
     }
 
+    public void BeginChangePack()
+    {
+        if (!PackReplaceUx.CanPick(Vm1IsRunning, AnyBusy))
+        {
+            StatusMessage = PackReplaceUx.PickDisabledReason(Vm1IsRunning, AnyBusy);
+            return;
+        }
+
+        ShowChangePackUi = true;
+    }
+
+    public void CancelChangePack()
+    {
+        if (IsBusy || IsAnalyzingPack)
+            return;
+        ClearPackReplaceFields(hidePanel: true);
+        StatusMessage = "Change pack cancelled.";
+    }
+
+    public async Task PickPackAsync()
+    {
+        if (IsAnalyzingPack)
+            return;
+        if (!PackReplaceUx.CanPick(Vm1IsRunning, AnyBusy))
+        {
+            StatusMessage = PackReplaceUx.PickDisabledReason(Vm1IsRunning, AnyBusy);
+            return;
+        }
+
+        ShowChangePackUi = true;
+        var path = await _filePicker.OpenFileAsync(new FilePickRequest
+        {
+            Title = "Choose a modpack file (.mrpack or server-pack zip)",
+            Filters = [PackFilter, MrpackFilter, ZipFilter, AllFilesFilter],
+        });
+        if (string.IsNullOrWhiteSpace(path))
+            return;
+
+        await AnalyzePackPathAsync(path);
+    }
+
+    public async Task ImportDroppedPackAsync(string fileName, Stream content)
+    {
+        if (IsAnalyzingPack || content is null)
+            return;
+        if (!PackReplaceUx.CanPick(Vm1IsRunning, AnyBusy))
+        {
+            StatusMessage = PackReplaceUx.PickDisabledReason(Vm1IsRunning, AnyBusy);
+            return;
+        }
+
+        ShowChangePackUi = true;
+        var safeName = Path.GetFileName(fileName);
+        if (string.IsNullOrWhiteSpace(safeName))
+            safeName = "dropped-pack.zip";
+
+        var dir = Path.Combine(Path.GetTempPath(), "mcmgr-change-pack-drop");
+        Directory.CreateDirectory(dir);
+        var dest = Path.Combine(dir, safeName);
+        try
+        {
+            await using (var fs = new FileStream(dest, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                await content.CopyToAsync(fs);
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = "Could not save the dropped pack: " + ex.Message;
+            return;
+        }
+
+        await AnalyzePackPathAsync(dest);
+    }
+
+    public async Task InstallPackReplaceAsync()
+    {
+        if (!CanInstallPack)
+        {
+            StatusMessage = PackReplaceUx.InstallDisabledReason(
+                Vm1IsRunning,
+                AnyBusy,
+                PackCanContinue,
+                PackConfirmed,
+                ClientPackAcknowledged);
+            return;
+        }
+
+        if (_config is null)
+        {
+            StatusMessage = "Local config is missing.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(PackPath) || !File.Exists(PackPath))
+        {
+            StatusMessage = "Could not resolve the pack file.";
+            return;
+        }
+
+        var confirmed = await _dialogs.ConfirmAsync(
+            PackReplaceUx.ConfirmTitle,
+            PackReplaceUx.ConfirmBody(WipeWorld),
+            "Install this pack");
+        if (!confirmed)
+        {
+            StatusMessage = "Change pack cancelled.";
+            return;
+        }
+
+        IsBusy = true;
+        var wasForward = _forwardBanner;
+        _forwardBanner = false;
+        StatusMessage = "Reinstalling Minecraft from this pack…";
+        _banner.Show(StatusMessage, ActionBannerSeverity.Progress);
+        try
+        {
+            var progress = new Progress<string>(line =>
+            {
+                if (string.IsNullOrWhiteSpace(line))
+                    return;
+                StatusMessage = line.Trim();
+                _banner.Show(StatusMessage, ActionBannerSeverity.Progress);
+            });
+            var result = await _bootstrap.ReplacePackAsync(
+                _config.Vm1,
+                new PackReplaceRequest(PackPath, WipeWorld, _dataDirectory),
+                progress);
+            if (!result.Succeeded || result.Value is null)
+            {
+                StatusMessage = result.Error ?? "Pack replace failed.";
+                _banner.Show(StatusMessage, ActionBannerSeverity.Error);
+                return;
+            }
+
+            var meta = await PublishGameMetaAfterReplaceAsync(result.Value);
+            BindLocalPack();
+            await RefreshMinecraftVersionAsync();
+            StatusMessage = PackReplaceUx.SuccessMessage(result.Value);
+            if (!meta.Succeeded)
+            {
+                StatusMessage += " Shared game info did not update: "
+                    + (meta.Error ?? "publish failed.");
+            }
+
+            _banner.Show(StatusMessage, ActionBannerSeverity.Success);
+            ClearPackReplaceFields(hidePanel: true);
+        }
+        finally
+        {
+            _forwardBanner = wasForward;
+            IsBusy = false;
+        }
+    }
+
+    private async Task AnalyzePackPathAsync(string path)
+    {
+        IsAnalyzingPack = true;
+        PackAnalyzeCaption = "Analyzing modpack…";
+        PackBlockReason = "";
+        PackSummary = "";
+        PackOverrideListWarning = "";
+        SaveCompatibilityWarning = "";
+        PackCanContinue = false;
+        PackConfirmed = false;
+        ClientPackAcknowledged = false;
+        StatusMessage = "Analyzing modpack…";
+        try
+        {
+            var result = await Task.Run(() =>
+                SetupPackImport.AnalyzeFile(path, ExcludeIncludeListRefresh.Shared));
+            if (!result.Succeeded || result.Value is null)
+            {
+                _packPreview = null;
+                PackPath = path;
+                PackCanContinue = false;
+                PackBlockReason = result.Error ?? "Could not analyze this file.";
+                StatusMessage = PackBlockReason;
+                _banner.Show(StatusMessage, ActionBannerSeverity.Error);
+                return;
+            }
+
+            ApplyPackPreview(result.Value);
+            if (result.Value.CanContinue)
+            {
+                StatusMessage = "Review the pack summary, then confirm before installing.";
+            }
+            else
+            {
+                StatusMessage = result.Value.BlockReason ?? "This pack cannot be installed.";
+                _banner.Show(StatusMessage, ActionBannerSeverity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            _packPreview = null;
+            PackCanContinue = false;
+            PackConfirmed = false;
+            PackBlockReason = "Analyze failed: " + ex.Message;
+            StatusMessage = PackBlockReason;
+            _banner.Show(StatusMessage, ActionBannerSeverity.Error);
+        }
+        finally
+        {
+            IsAnalyzingPack = false;
+            PackAnalyzeCaption = "";
+        }
+    }
+
+    private void ApplyPackPreview(SetupPackPreview preview)
+    {
+        _packPreview = preview;
+        PackPath = preview.SourcePath;
+        PackName = preview.PackName;
+        PackMinecraftVersion = preview.MinecraftVersion;
+        PackLoader = preview.Loader;
+        PackLoaderVersion = preview.LoaderVersion;
+        PackSummary = preview.ConfirmableSummary;
+        PackOverrideListWarning = preview.OverrideListWarning ?? "";
+        PackBlockReason = preview.BlockReason ?? "";
+        PackCanContinue = preview.CanContinue;
+        PackConfirmed = false;
+        ClientPackAcknowledged = false;
+        RefreshSaveCompatibilityWarning();
+        NotifyModdingCommands();
+    }
+
+    private void RefreshSaveCompatibilityWarning()
+    {
+        if (_packPreview is null || !_packPreview.CanContinue)
+        {
+            SaveCompatibilityWarning = "";
+            return;
+        }
+
+        var warning = PackReplaceSaveCompatibility.Warn(
+            _currentMinecraftVersion,
+            _currentLoaderOrDistribution,
+            _packPreview.MinecraftVersion,
+            _packPreview.Loader);
+        SaveCompatibilityWarning = PackReplaceUx.VisibleSaveCompatibilityWarning(WipeWorld, warning) ?? "";
+        OnPropertyChanged(nameof(ShowSaveCompatibilityWarning));
+        OnPropertyChanged(nameof(InstallPackTitle));
+    }
+
+    private void ClearPackReplaceFields(bool hidePanel)
+    {
+        _packPreview = null;
+        PackPath = "";
+        PackName = "";
+        PackMinecraftVersion = "";
+        PackLoader = "";
+        PackLoaderVersion = "";
+        PackSummary = "";
+        PackBlockReason = "";
+        PackOverrideListWarning = "";
+        SaveCompatibilityWarning = "";
+        PackCanContinue = false;
+        PackConfirmed = false;
+        ClientPackAcknowledged = false;
+        WipeWorld = false;
+        PackAnalyzeCaption = "";
+        if (hidePanel)
+            ShowChangePackUi = false;
+        NotifyModdingCommands();
+    }
+
+    private async Task<ServiceResult> PublishGameMetaAfterReplaceAsync(PackReplaceResult result)
+    {
+        if (_infra is null || _config is null)
+            return ServiceResult.Ok();
+
+        var kind = PackReplaceUx.ServerKindForMeta(result.Loader);
+        var published = await _infra.PublishFromLocalAsync(
+            _config,
+            serverKind: string.IsNullOrWhiteSpace(kind) ? null : kind,
+            minecraftVersion: result.MinecraftVersion);
+        if (!published.Succeeded)
+            return ServiceResult.Fail(published.Error ?? "Could not update shared game info.");
+        return ServiceResult.Ok();
+    }
+
     private void BindLocalPack()
     {
         _localPack = ImportedPackArchiveStore.TryFindLatest(_dataDirectory);
@@ -694,6 +1128,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject
 
     private void ApplyServerKind(string? serverKind)
     {
+        _currentLoaderOrDistribution = string.IsNullOrWhiteSpace(serverKind) ? null : serverKind.Trim();
         IsModdedServer = ModdingPanelLogic.IsModdedServerKind(serverKind);
         if (!IsModdedServer)
         {
@@ -708,20 +1143,29 @@ public sealed partial class ServerManagementViewModel : ObservableObject
     private void ResetModdingState()
     {
         _localPack = null;
+        _packPreview = null;
+        _currentMinecraftVersion = null;
+        _currentLoaderOrDistribution = null;
         IsModdedServer = false;
         HasLocalPackArchive = false;
         PackIdentityDisplay = "";
         ModdingSummary = "";
         ModdingHint = "";
         ModFiles.Clear();
+        ClearPackReplaceFields(hidePanel: true);
         NotifyModdingCommands();
     }
 
     private void NotifyModdingCommands()
     {
         OnPropertyChanged(nameof(AnyBusy));
+        OnPropertyChanged(nameof(Vm1IsRunning));
         OnPropertyChanged(nameof(CanDownloadPack));
         OnPropertyChanged(nameof(DownloadPackTitle));
+        OnPropertyChanged(nameof(CanPickPack));
+        OnPropertyChanged(nameof(ChangePackTitle));
+        OnPropertyChanged(nameof(CanInstallPack));
+        OnPropertyChanged(nameof(InstallPackTitle));
         OnPropertyChanged(nameof(CanSaveIdentity));
         OnPropertyChanged(nameof(CanClearIcon));
     }

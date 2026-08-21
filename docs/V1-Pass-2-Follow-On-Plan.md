@@ -1,6 +1,6 @@
 # V1 Pass-2 follow-on — operator notes (living)
 
-**Status:** Living. Created 2026-08-20 (docs only). **NEXT = P11.**  
+**Status:** Living. Created 2026-08-20 (docs only). **NEXT = P12.**  
 **Parent:** `[V1-Implementation-Plan.md](V1-Implementation-Plan.md)` Step **8.4**.  
 **Why now:** operator 2026-08-20 — Pass 2 closed early after greenfield Modded + join + Modding panel. Pause Step **8.5.2** and implement these notes **before** QA Pass 3.
 
@@ -129,8 +129,8 @@ Do **not** rewrite PRODUCT-IDEAS to match. Note the drift in the implementing se
 | **P8**  | Usage by day (collapsed “Detailed usage”)                       | **DONE** | SEQUENTIAL                 | No                 |
 | **P9**  | Manual / jar-root unclear-side: continue + exclude lists        | **DONE** | PARALLEL-OK vs Hybrid-only | No                 |
 | **P10** | Pack replace — on-box full re-setup                             | **DONE** | SEQUENTIAL                 | Yes                |
-| **P11** | Pack replace — Server Management UI                             | **NEXT** | SEQUENTIAL                 | Yes                |
-| **P12** | TESTING spend-brake Function fill-in (Docker)                   | TODO     | SEQUENTIAL (owns stack)    | Yes                |
+| **P11** | Pack replace — Server Management UI                             | **DONE** | SEQUENTIAL                 | Yes                |
+| **P12** | TESTING spend-brake Function fill-in (Docker)                   | **NEXT** | SEQUENTIAL (owns stack)    | Yes                |
 | **P13** | Setup prefers a pre-built Function image artifact               | TODO     | SEQUENTIAL                 | No                 |
 
 
@@ -467,7 +467,7 @@ Operator pulled **change pack** into v1. Implement the **full re-setup** path on
 
 ## P11 — Pack replace, Server Management UI
 
-**Status:** NEXT  
+**Status:** DONE  
 **Depends on:** P10  
 **Catalog IDs:** S4-11 adjacent; add a catalog ID in a gap if needed (do not renumber)
 
@@ -491,7 +491,7 @@ Server Management **Change pack** (wording up to you): pick / drop a `.mrpack` o
 
 **Done when:** Guide Modding documents Change pack; catalog expected updated.
 
-**Changelog:** *(empty)*
+**Changelog:** 2026-08-20 — Server Management **Change pack**: pick/drop `.mrpack` or zip, Setup analyze + client-pack checkboxes, wipe optional, ConfirmAsync, P10 `ReplacePackAsync`, P4 banner. Start-first when VM1 is not RUNNING. Catalog S4-11 expected updated. Guide Modding. Live FO pack not replaced.
 
 ---
 
@@ -499,7 +499,7 @@ Server Management **Change pack** (wording up to you): pick / drop a `.mrpack` o
 
 ## P12 — TESTING spend-brake Function fill-in
 
-**Status:** TODO  
+**Status:** NEXT  
 **Catalog IDs:** S2-16, S2-17 (Pass 3)
 
 **Read first**
@@ -584,6 +584,7 @@ Derive OCIR username from namespace + OCI user **if that is a small change**; ot
 
 | Date       | Note                                                                                                                                                                                                                  |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-20 | **P11 DONE.** Server Management **Change pack** UI (analyze + confirm; world kept unless wipe). Live FO pack not replaced. **NEXT = P12.** Do not start Pass 3, 8.6.1, or 9.1. |
 | 2026-08-20 | **P10 DONE.** Pack replace full re-setup: on-box prepare + Core `ReplacePackAsync` (keep world unless wipe). **NEXT = P11.** Do not start Pass 3, 8.6.1, or 9.1. |
 | 2026-08-20 | **P9 DONE.** Manual / jar-root unclear-side may continue; summary warning; `.mrpack` unclear still blocked. **NEXT = P10.** Do not start Pass 3, 8.6.1, or 9.1.                                                       |
 | 2026-08-20 | **P8 DONE.** Usage **Detailed usage** expander (UTC days, closed by default). **NEXT = P9.** Do not start Pass 3, 8.6.1, or 9.1.                                                                                      |

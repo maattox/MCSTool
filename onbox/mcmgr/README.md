@@ -57,7 +57,7 @@ sudo bash /opt/mcmgr/bin/repair-server-properties.sh
 
 Then re-apply permissions if you wrote under `/opt/mcmgr`.
 
-Day-2 **full pack replace** (keep the world unless wiping). Manager `SetupBootstrapService.ReplacePackAsync` is the Core entry point (P11 wires Server Management). On-box prepare, then the same `driver.sh` + pack copy Setup uses:
+Day-2 **full pack replace** (keep the world unless wiping). Manager Server Management **Change pack** calls `SetupBootstrapService.ReplacePackAsync`. On-box prepare, then the same `driver.sh` + pack copy Setup uses:
 
 ```bash
 # Stop Minecraft, clear loader/mods/config, keep world + rcon.secret + eula/properties:

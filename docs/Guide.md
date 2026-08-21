@@ -201,7 +201,7 @@ When everyone is done, click **Stop** (doorbell-aware). If you forget, idle time
 | Restart Minecraft only | **Restart** (game VM must already be up) |
 | Hours vs budget | Pinned usage cards + **Usage** tab (expand **Detailed usage** for hours by UTC day this month; closed by default) |
 | World zip download / replace / wipe | **Server Management** (Object Storage; ~9.5 GB backup soft cap; SSH live copy if the world is too large) |
-| Inspect mods / re-download imported pack | **Server Management** → **Modding** (original Setup file on this PC; not a zip of server mods) |
+| Inspect mods / re-download imported pack / **Change pack** | **Server Management** → **Modding** (original Setup file on this PC; not a zip of server mods) |
 | Name, icon, description, idle chat lines | **Server Management** → **Name, icon, and messages** (plain text; Restart Minecraft to apply) |
 | Send Minecraft commands / view logs | **Console** (not a live terminal) |
 | Stuck play IP / doorbell | **Troubleshooting** (confirm-gated one-shots) |
@@ -217,7 +217,7 @@ Each Manager tab **remembers its own scroll position** when you switch away and 
 
 **World too large for cloud backup:** If a single world zip is bigger than the ~9.5 GB free cloud cap, automatic cloud backups stop. The top-right **bell** warns you. **Download latest world save** then copies the **live** world from the game VM over SSH (the VM must be Running). That file stays on this PC and is **not** uploaded to cloud storage. Older cloud backups in the list can still be downloaded.
 
-**Modding** on the same tab: Vanilla and Paper show a short “not a modded server” note. On a Modded stack you can inspect the server-side files in `mods/` (game VM must be running) and **Download pack** — that copies the **original imported archive** saved on this PC, not a zip of the live server mods (that zip would not work for friends). If the original file is missing from this PC, Manager cannot rebuild a client pack. **Change pack** (full reinstall from a new file, world kept unless you also wipe) is not on this tab yet — that UI is the next follow-on step.
+**Modding** on the same tab: Vanilla and Paper show a short “not a modded server” note. **Change pack** is still available (it reinstalls Minecraft from a new `.mrpack` or server-pack zip). The game VM must be **Running**. Confirm the same two Setup checkboxes (use this pack; friends get the same file). The world is **kept** unless you also check wipe. Friends need the new exported pack on their PCs — Manager cannot rebuild a client pack from server `mods/`. On a Modded stack you can inspect the server-side files in `mods/` and **Download pack** — that copies the **original imported archive** saved on this PC, not a zip of the live server mods. If the original file is missing from this PC, download is disabled.
 
 **Name, icon, and messages** on Server Management: set the name and description friends see in their Minecraft server list (plain text, two lines), pick a **64×64 PNG** icon, and optionally edit the automated chat lines used before an idle or budget stop. Save writes the shared copy. **Restart** Minecraft (or **Start**) applies it. The doorbell message while the server is off is not edited here.
 

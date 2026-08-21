@@ -2,6 +2,7 @@
 using System.Windows.Threading;
 using McManager.Core.Config;
 using McManager.Core.Notifications;
+using McManager.Core.Setup;
 using McManager.Hybrid.Ui;
 using McManager.Hybrid.Ui.Wpf;
 using McManager.Hybrid.ViewModels;
@@ -80,6 +81,7 @@ public partial class App : Application
         services.AddSingleton<ChromeViewModel>();
         services.AddSingleton<WhitelistViewModel>();
         services.AddSingleton<UsageViewModel>();
+        services.AddSingleton<SetupBootstrapService>();
         services.AddSingleton<ServerManagementViewModel>();
         services.AddSingleton<ConsoleViewModel>();
         services.AddSingleton<TroubleshootingViewModel>();
