@@ -43,6 +43,19 @@ public sealed class MinecraftReadinessTests
     }
 
     [Fact]
+    public void Forge_mixin_target_not_found_on_client_class_is_not_fatal()
+    {
+        var journal = Fixture("forge-mixin-target-not-found-benign.txt");
+        Assert.False(MinecraftReadiness.HasFatalJournal(journal));
+        var report = MinecraftReadiness.Classify(
+            "could not reach Minecraft RCON on localhost",
+            Systemd(nRestarts: 1, active: "active", exec: 0, result: "success"),
+            journal);
+        Assert.Equal(MinecraftReadinessKind.StillStarting, report.Kind);
+        Assert.True(string.IsNullOrEmpty(MinecraftReadiness.CrashCauseLine(report)));
+    }
+
+    [Fact]
     public void Forge_mixin_invalid_dist_fails_fast_with_mod_name()
     {
         var journal = Fixture("forge-mixin-invalid-dist.txt");

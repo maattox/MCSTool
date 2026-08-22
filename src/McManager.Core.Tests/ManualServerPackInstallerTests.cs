@@ -551,7 +551,7 @@ public sealed class ManualServerPackInstallerTests
         Assert.Contains(a.OverrideListSkipPaths, p => p.Contains("entityculling", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(a.InJarMetadataSkipPaths, p => p.Contains("cofh_core", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(a.InJarMetadataSkipPaths, p => p.Contains("insanelib", StringComparison.OrdinalIgnoreCase));
-        Assert.DoesNotContain(a.InJarMetadataSkipPaths, p => p.Contains("holdmyitems", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(a.InJarMetadataSkipPaths, p => p.Contains("holdmyitems", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(a.ServerSidePaths, p => p.Contains("cofh_core", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(a.ServerSidePaths, p => p.Contains("insanelib", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(a.OverrideListSkipPaths, p => p.Contains("mob_grinding", StringComparison.OrdinalIgnoreCase));

@@ -8,7 +8,9 @@ namespace McManager.Core.Setup;
 /// <summary>
 /// Setup / Change pack joinable health (blueprint §12.1 step 9 + §14.3 health-check row).
 /// Success is still a working RCON <c>list</c>. Crash-loops and loader FATAL fail fast
-/// instead of looking like a slow first world gen.
+/// instead of looking like a slow first world gen. A RuntimeDistCleaner ERROR for a
+/// missing client mixin <em>target</em> (library jar, <c>@Mixin target … was not found</c>)
+/// is not treated as fatal — the dedicated server can still reach Done.
 /// </summary>
 public static class MinecraftReadiness
 {
@@ -174,7 +176,7 @@ public static class MinecraftReadiness
             return true;
         if (text.Contains("UnsupportedClassVersionError", StringComparison.Ordinal))
             return true;
-        if (text.Contains("invalid dist DEDICATED_SERVER", StringComparison.OrdinalIgnoreCase))
+        if (HasFatalInvalidDist(text))
             return true;
         if (text.Contains("caused the server to crash", StringComparison.OrdinalIgnoreCase)
             || text.Contains("caused the game to crash", StringComparison.OrdinalIgnoreCase))
@@ -187,6 +189,36 @@ public static class MinecraftReadiness
             return true;
         if (text.Contains("Exception in thread \"main\"", StringComparison.Ordinal))
             return true;
+        return false;
+    }
+
+    /// <summary>
+    /// Dedicated-server invalid-dist lines are only fatal when the loader aborts
+    /// (FATAL / mixin prepare failed / crash report). A missing client mixin target
+    /// on a dual-side library (CoFH Core) logs ERROR + "target was not found" and
+    /// the server can still start.
+    /// </summary>
+    internal static bool HasFatalInvalidDist(string? journal)
+    {
+        var text = journal ?? "";
+        if (!text.Contains("invalid dist DEDICATED_SERVER", StringComparison.OrdinalIgnoreCase))
+            return false;
+        if (text.Contains("Mixin prepare failed", StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (text.Contains("InvalidMixinException", StringComparison.Ordinal))
+            return true;
+        if (text.Contains("/FATAL]", StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (text.Contains("caused the server to crash", StringComparison.OrdinalIgnoreCase)
+            || text.Contains("caused the game to crash", StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (text.Contains("Failed to start the minecraft server", StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (text.Contains("Exception in thread \"main\"", StringComparison.Ordinal))
+            return true;
+        if (text.Contains("@Mixin target", StringComparison.Ordinal)
+            && text.Contains("was not found", StringComparison.OrdinalIgnoreCase))
+            return false;
         return false;
     }
 
@@ -297,7 +329,7 @@ public static class MinecraftReadiness
         var journal = report.JournalExcerpt ?? "";
         if (journal.Contains("UnsupportedClassVersionError", StringComparison.Ordinal))
             return JavaTooOldCause;
-        if (journal.Contains("invalid dist DEDICATED_SERVER", StringComparison.OrdinalIgnoreCase))
+        if (HasFatalInvalidDist(journal))
             return ClientDistCause;
         return "";
     }

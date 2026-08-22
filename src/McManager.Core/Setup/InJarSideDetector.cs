@@ -16,10 +16,12 @@ namespace McManager.Core.Setup;
 /// load-side. <c>IGNORE_SERVER_VERSION</c> is used by libraries and server-only mods
 /// and must not strip a jar. Explicit client-only markers are <c>clientSideOnly=true</c>
 /// and <c>[[mods]] side=CLIENT</c>. Dependency <c>side=BOTH</c> is not the mod's environment.
-/// When a mods.toml exists without those client markers, Forge will load the jar on the
-/// dedicated server — mixin heuristics must not override that (prefer keeping a server
-/// API jar over stripping it because one common mixin targets a client class).
-/// Mixin heuristic (no loader metadata only, high-confidence): common <c>mixins</c>
+/// When a mods.toml exists without those client markers, do not strip just because
+/// one common mixin <em>targets</em> a client class (CoFH Core). Do strip when a
+/// mixin listed in the common <c>mixins</c> array is itself annotated
+/// <c>@OnlyIn(Dist.CLIENT)</c> / <c>@Environment(CLIENT)</c> — that class fails
+/// FML DistCleaner on a dedicated server (Hold My Items).
+/// Mixin target heuristic (no loader toml only, high-confidence): common <c>mixins</c>
 /// targets are <strong>exclusively</strong> <see cref="ClientClassPrefixes"/>. Any
 /// common mixin targeting a dedicated-safe class keeps the jar. The config's
 /// <c>client</c> array is dist-gated and is not a reason to strip. Presence of a
@@ -131,17 +133,26 @@ internal static class InJarSideDetector
             {
                 loader = neoToml is not null ? MrpackAnalyzer.LoaderNeoForge : MrpackAnalyzer.LoaderForge;
                 TryReadTomlMetadata(toml, out tomlEnv, out tomlMc, out hadSide);
-                if (hadSide)
+                if (hadSide && tomlEnv.Equals("client", StringComparison.OrdinalIgnoreCase))
                     return new PeekResult(true, tomlEnv, loader, tomlMc);
-                // Toml present without an explicit client-only marker: keep.
-                // Dual-side libraries (CoFH Core, InsaneLib, …) often have one
-                // client-class mixin in the common list; stripping them breaks
-                // other mods that require the jar on the dedicated server.
-                return new PeekResult(false, "*", loader, tomlMc);
             }
 
-            if (HasDedicatedServerKillingMixin(jar))
+            // Common-list mixin *classes* annotated @OnlyIn(CLIENT) crash FML
+            // DistCleaner on dedicated server even when the mixin target is a
+            // world class and mods.toml omits clientSideOnly (Hold My Items).
+            if (HasClientDistAnnotatedCommonMixin(jar))
                 return new PeekResult(true, "client", loader, tomlMc);
+
+            if (hadSide)
+                return new PeekResult(true, tomlEnv, loader, tomlMc);
+
+            // Target-class heuristic only when there is no loader toml: a dual-side
+            // library may list one client class in the common mixins array (CoFH).
+            if (toml is null && HasDedicatedServerKillingMixin(jar))
+                return new PeekResult(true, "client", loader, tomlMc);
+
+            if (loader is not null || tomlMc is not null)
+                return new PeekResult(false, "*", loader, tomlMc);
         }
 
         return PeekResult.None;
@@ -487,6 +498,318 @@ internal static class InJarSideDetector
         }
 
         return sawClient && !sawDedicatedSafe;
+    }
+
+    private static bool HasClientDistAnnotatedCommonMixin(ZipArchive jar)
+    {
+        foreach (var entry in jar.Entries)
+        {
+            var path = MrpackAnalyzer.NormalizeZipPath(entry.FullName);
+            if (!IsMixinConfigPath(path))
+                continue;
+            if (CommonMixinsHaveClientDistClass(jar, entry))
+                return true;
+        }
+
+        return false;
+    }
+
+    private static bool CommonMixinsHaveClientDistClass(ZipArchive jar, ZipArchiveEntry configEntry)
+    {
+        try
+        {
+            using var reader = new StreamReader(configEntry.Open(), Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+            using var doc = JsonDocument.Parse(
+                reader.ReadToEnd(),
+                new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
+            if (doc.RootElement.ValueKind != JsonValueKind.Object)
+                return false;
+
+            var package = ReadStringProperty(doc.RootElement, "package");
+            var common = ReadMixinNames(doc.RootElement, "mixins");
+            foreach (var mixin in common)
+            {
+                var classPath = MixinClassEntryPath(package, mixin);
+                var classEntry = FindEntry(jar, classPath);
+                if (classEntry is null || classEntry.Length <= 0 || classEntry.Length > 512 * 1024)
+                    continue;
+                using var stream = classEntry.Open();
+                var buffer = new byte[classEntry.Length];
+                var read = 0;
+                while (read < buffer.Length)
+                {
+                    var n = stream.Read(buffer, read, buffer.Length - read);
+                    if (n <= 0)
+                        break;
+                    read += n;
+                }
+
+                if (read == buffer.Length && ClassFileHasClientDistAnnotation(buffer))
+                    return true;
+            }
+        }
+        catch (JsonException)
+        {
+        }
+        catch (IOException)
+        {
+        }
+
+        return false;
+    }
+
+    internal static string MixinClassEntryPath(string package, string mixin)
+    {
+        var slashPackage = package.Replace('.', '/').Trim('/');
+        var slashMixin = mixin.Replace('.', '/').Replace('\\', '/').Trim('/');
+        if (slashPackage.Length == 0)
+            return slashMixin + ".class";
+        return slashPackage + "/" + slashMixin + ".class";
+    }
+
+    internal static bool ClassFileHasClientDistAnnotation(ReadOnlySpan<byte> data)
+    {
+        if (data.Length < 10
+            || data[0] != 0xCA || data[1] != 0xFE || data[2] != 0xBA || data[3] != 0xBE)
+            return false;
+        try
+        {
+            var reader = new ClassFileCursor(data);
+            reader.Offset = 8;
+            var utf8 = reader.ReadConstantPoolUtf8();
+            reader.Skip(6);
+            var interfaces = reader.ReadU2();
+            reader.Skip(interfaces * 2);
+            SkipClassMembers(ref reader, reader.ReadU2());
+            SkipClassMembers(ref reader, reader.ReadU2());
+            var attrCount = reader.ReadU2();
+            for (var i = 0; i < attrCount; i++)
+            {
+                var nameIndex = reader.ReadU2();
+                var length = reader.ReadU4();
+                var name = Utf8At(utf8, nameIndex);
+                var body = reader.ReadBytes(length);
+                if (name is "RuntimeVisibleAnnotations" or "RuntimeInvisibleAnnotations"
+                    && AnnotationsIncludeClientDist(utf8, body))
+                    return true;
+            }
+        }
+        catch (InvalidDataException)
+        {
+            return false;
+        }
+
+        return false;
+    }
+
+    private static void SkipClassMembers(ref ClassFileCursor reader, int count)
+    {
+        for (var i = 0; i < count; i++)
+        {
+            reader.Skip(6);
+            var attrCount = reader.ReadU2();
+            for (var a = 0; a < attrCount; a++)
+            {
+                reader.Skip(2);
+                reader.Skip(reader.ReadU4());
+            }
+        }
+    }
+
+    private static bool AnnotationsIncludeClientDist(string?[] utf8, ReadOnlySpan<byte> body)
+    {
+        var reader = new ClassFileCursor(body);
+        var count = reader.ReadU2();
+        for (var i = 0; i < count; i++)
+        {
+            if (ReadAnnotationIsClientDist(utf8, ref reader))
+                return true;
+        }
+
+        return false;
+    }
+
+    private static bool ReadAnnotationIsClientDist(string?[] utf8, ref ClassFileCursor reader)
+    {
+        var type = Utf8At(utf8, reader.ReadU2());
+        var pairs = reader.ReadU2();
+        var isQuiltClientOnly = type is not null
+            && type.Equals("Lorg/quiltmc/loader/api/minecraft/ClientOnly;", StringComparison.Ordinal);
+        var isDistAnnotation = isQuiltClientOnly
+            || (type is not null
+                && (type.Contains("distmarker/OnlyIn;", StringComparison.Ordinal)
+                    || type.Equals("Lnet/fabricmc/api/Environment;", StringComparison.Ordinal)));
+        var sawClientEnum = false;
+        for (var i = 0; i < pairs; i++)
+        {
+            reader.ReadU2();
+            if (ReadElementValueIsClientEnum(utf8, ref reader))
+                sawClientEnum = true;
+        }
+
+        return isQuiltClientOnly || (isDistAnnotation && sawClientEnum);
+    }
+
+    private static bool ReadElementValueIsClientEnum(string?[] utf8, ref ClassFileCursor reader)
+    {
+        var tag = reader.ReadU1();
+        switch (tag)
+        {
+            case (byte)'B':
+            case (byte)'C':
+            case (byte)'D':
+            case (byte)'F':
+            case (byte)'I':
+            case (byte)'J':
+            case (byte)'S':
+            case (byte)'Z':
+            case (byte)'s':
+            case (byte)'c':
+                reader.Skip(2);
+                return false;
+            case (byte)'e':
+            {
+                var enumType = Utf8At(utf8, reader.ReadU2());
+                var enumName = Utf8At(utf8, reader.ReadU2());
+                return enumName is not null
+                    && enumName.Equals("CLIENT", StringComparison.Ordinal)
+                    && enumType is not null
+                    && (enumType.Contains("distmarker/Dist;", StringComparison.Ordinal)
+                        || enumType.Equals("Lnet/fabricmc/api/EnvType;", StringComparison.Ordinal));
+            }
+            case (byte)'@':
+                return ReadAnnotationIsClientDist(utf8, ref reader);
+            case (byte)'[':
+            {
+                var n = reader.ReadU2();
+                var any = false;
+                for (var i = 0; i < n; i++)
+                {
+                    if (ReadElementValueIsClientEnum(utf8, ref reader))
+                        any = true;
+                }
+
+                return any;
+            }
+            default:
+                throw new InvalidDataException();
+        }
+    }
+
+    private static string? Utf8At(string?[] utf8, int index)
+    {
+        if (index <= 0 || index >= utf8.Length)
+            return null;
+        return utf8[index];
+    }
+
+    private struct ClassFileCursor
+    {
+        private readonly ReadOnlyMemory<byte> _memory;
+        public int Offset;
+
+        public ClassFileCursor(ReadOnlySpan<byte> data)
+        {
+            _memory = data.ToArray();
+            Offset = 0;
+        }
+
+        public string?[] ReadConstantPoolUtf8()
+        {
+            var count = ReadU2();
+            var utf8 = new string?[count];
+            for (var i = 1; i < count; i++)
+            {
+                var tag = ReadU1();
+                switch (tag)
+                {
+                    case 1:
+                    {
+                        var len = ReadU2();
+                        utf8[i] = Encoding.UTF8.GetString(ReadBytes(len));
+                        break;
+                    }
+                    case 7:
+                    case 8:
+                    case 16:
+                    case 19:
+                    case 20:
+                        Skip(2);
+                        break;
+                    case 3:
+                    case 4:
+                    case 9:
+                    case 10:
+                    case 11:
+                    case 12:
+                    case 17:
+                    case 18:
+                        Skip(4);
+                        break;
+                    case 15:
+                        Skip(3);
+                        break;
+                    case 5:
+                    case 6:
+                        Skip(8);
+                        i++;
+                        break;
+                    default:
+                        throw new InvalidDataException();
+                }
+            }
+
+            return utf8;
+        }
+
+        public byte ReadU1()
+        {
+            var span = Span;
+            if (Offset >= span.Length)
+                throw new InvalidDataException();
+            return span[Offset++];
+        }
+
+        public int ReadU2()
+        {
+            var span = Span;
+            if (Offset + 2 > span.Length)
+                throw new InvalidDataException();
+            var value = (span[Offset] << 8) | span[Offset + 1];
+            Offset += 2;
+            return value;
+        }
+
+        public int ReadU4()
+        {
+            var span = Span;
+            if (Offset + 4 > span.Length)
+                throw new InvalidDataException();
+            var value = (span[Offset] << 24) | (span[Offset + 1] << 16) | (span[Offset + 2] << 8) | span[Offset + 3];
+            Offset += 4;
+            if (value < 0)
+                throw new InvalidDataException();
+            return value;
+        }
+
+        public ReadOnlySpan<byte> ReadBytes(int length)
+        {
+            var span = Span;
+            if (length < 0 || Offset + length > span.Length)
+                throw new InvalidDataException();
+            var slice = span.Slice(Offset, length);
+            Offset += length;
+            return slice;
+        }
+
+        public void Skip(int length)
+        {
+            if (length < 0 || Offset + length > Span.Length)
+                throw new InvalidDataException();
+            Offset += length;
+        }
+
+        private ReadOnlySpan<byte> Span => _memory.Span;
     }
 
     internal static bool IsMixinConfigPath(string normalizedPath)
