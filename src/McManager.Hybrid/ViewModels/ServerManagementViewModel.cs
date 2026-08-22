@@ -323,14 +323,16 @@ public sealed partial class ServerManagementViewModel : ObservableObject
 
     partial void OnStatusMessageChanged(string value)
     {
-        if (!_forwardBanner)
+        if (!_forwardBanner || !TabStatusBannerPolicy.ShouldForwardServerManagementStatus(value))
             return;
         _banner.ShowInferred(value);
     }
 
     partial void OnIdentityStatusChanged(string value)
     {
-        if (!_forwardBanner || string.IsNullOrWhiteSpace(value))
+        if (!_forwardBanner
+            || string.IsNullOrWhiteSpace(value)
+            || !TabStatusBannerPolicy.ShouldForwardServerManagementIdentityStatus(value))
             return;
         _banner.ShowInferred(value);
     }
@@ -440,6 +442,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject
             return;
 
         IsBusy = true;
+        var wasForward = _forwardBanner;
+        _forwardBanner = false;
         StatusMessage = "Listing backups…";
         ProgressDisplay = "";
 
@@ -450,7 +454,9 @@ public sealed partial class ServerManagementViewModel : ObservableObject
             var result = await _backups.ListWorldBackupsAsync();
             if (!result.Succeeded || result.Value is null)
             {
-                StatusMessage = result.Error ?? "List failed.";
+                var error = result.Error ?? "List failed.";
+                StatusMessage = error;
+                _banner.Show(error, ActionBannerSeverity.Error);
                 return;
             }
 
@@ -463,6 +469,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject
         }
         finally
         {
+            _forwardBanner = wasForward;
             IsBusy = false;
         }
     }

@@ -1,6 +1,6 @@
 # V1 operator-notes follow-on (living)
 
-**Status:** Living. Created 2026-08-21 (docs only). **NEXT = P2** (P1 **DONE**). Step **8.7** P1–P5 are **DONE**.  
+**Status:** Living. Created 2026-08-21 (docs only). **NEXT = P3** (P1–P2 **DONE**). Step **8.7** P1–P5 are **DONE**.  
 **Parent:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.8**.  
 **Why now:** operator 2026-08-21 — after modpack-test fixes, implement Manager / Setup / pack-UX notes **before** QA Pass 3. Many notes are vague; agents **decide inside each section’s bounds** and record the choice. Stop and ask for spend, tofu destroy, CurseForge **API keys**, or pulling parked after-v1 items.
 
@@ -150,8 +150,8 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 | ID | Section | Status | Parallel? | Live SSH/OCI? |
 |----|---------|--------|-----------|----------------|
 | **P1** | Console Simple: drop RCON + plumbing noise | **DONE** | PARALLEL-OK vs P2 if no shared files | Optional |
-| **P2** | Stop tab-open toasts (backups, infra.json) | **NEXT** | PARALLEL-OK vs P1 | No |
-| **P3** | Compact toasts + auto-dismiss completed progress | TODO | SEQUENTIAL | No |
+| **P2** | Stop tab-open toasts (backups, infra.json) | **DONE** | PARALLEL-OK vs P1 | No |
+| **P3** | Compact toasts + auto-dismiss completed progress | **NEXT** | SEQUENTIAL | No |
 | **P4** | Bottom progress dock (Setup + Change pack) | TODO | SEQUENTIAL | No |
 | **P5** | Setup wizard UX (copy, layout, log height, humanize) | TODO | SEQUENTIAL | No |
 | **P6** | Auto compartment name; drop wizard step | TODO | SEQUENTIAL | No |
@@ -203,7 +203,7 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 
 ## P2 — Stop tab-open toasts
 
-**Status:** NEXT  
+**Status:** DONE  
 **Catalog IDs:** S4-11 (backups), S4-02 (Advanced)
 
 **Read first**
@@ -225,7 +225,7 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 
 **Done when:** Those two loads are silent; tests if cheap.
 
-**Changelog:** *(empty until implemented)*
+**Changelog:** 2026-08-21 — **P2 DONE.** Tab-open backup list + infra meta load no longer post action banners; `TabStatusBannerPolicy` gates forwarding; list/publish failures still toast explicitly. Core tests. **NEXT = P3.**
 
 ---
 
@@ -233,7 +233,7 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 
 ## P3 — Compact toasts + completed-progress dismiss
 
-**Status:** TODO  
+**Status:** NEXT  
 **UI skill:** required  
 **Catalog IDs:** S4-01 chrome; 8.4 P4 expected
 
@@ -558,5 +558,6 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 
 | Date | Note |
 |------|------|
+| 2026-08-21 | **P2 DONE.** Stop tab-open toasts (backup list, infra meta load). **NEXT = P3.** |
 | 2026-08-21 | **P1 DONE.** Console Simple filter stricter (RCON, journal, mixin/modloader boot noise). **NEXT = P2.** |
 | 2026-08-21 | Created (docs only). Operator notes after informal pack tests. **Do not start until 8.7 DONE.** Then **NEXT = P1**. Oracle™ dropped from default names. Layer 3 pulled into v1 (P10). CF helper = links only. Do not implement in the creation session. |

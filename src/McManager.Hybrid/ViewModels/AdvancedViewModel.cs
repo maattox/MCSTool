@@ -121,7 +121,7 @@ public sealed partial class AdvancedViewModel : ObservableObject
 
     partial void OnStatusMessageChanged(string value)
     {
-        if (!_forwardBanner)
+        if (!_forwardBanner || !TabStatusBannerPolicy.ShouldForwardAdvancedStatus(value))
             return;
         _banner.ShowInferred(value);
     }
@@ -460,7 +460,9 @@ public sealed partial class AdvancedViewModel : ObservableObject
                 minecraftVersion: minecraftVersion);
             if (!published.Succeeded || published.Value is null)
             {
-                StatusMessage = published.Error ?? "Publish meta failed.";
+                var error = published.Error ?? "Publish meta failed.";
+                StatusMessage = error;
+                _banner.Show(error, ActionBannerSeverity.Error);
                 return;
             }
 
@@ -480,9 +482,18 @@ public sealed partial class AdvancedViewModel : ObservableObject
 
     private async Task RefreshAdvancedTabAsync()
     {
-        await RefreshDoorVmLifecycleAsync();
-        await RefreshIdleFromOsCoreAsync();
-        await RefreshInfraMetaCoreAsync();
+        var wasForward = _forwardBanner;
+        _forwardBanner = false;
+        try
+        {
+            await RefreshDoorVmLifecycleAsync();
+            await RefreshIdleFromOsCoreAsync();
+            await RefreshInfraMetaCoreAsync();
+        }
+        finally
+        {
+            _forwardBanner = wasForward;
+        }
     }
 
     private void ApplyLiveStatus(string gameVmLifecycle, string doorServiceState)
@@ -559,7 +570,6 @@ public sealed partial class AdvancedViewModel : ObservableObject
             return;
 
         IsBusy = true;
-        StatusMessage = "Loading meta/infra.json…";
 
         try
         {
@@ -567,12 +577,10 @@ public sealed partial class AdvancedViewModel : ObservableObject
             if (!read.Succeeded || read.Value is null)
             {
                 InfraSummary = read.Error ?? "Failed to read meta/infra.json.";
-                StatusMessage = InfraSummary;
                 return;
             }
 
             ApplyInfraRead(read.Value);
-            StatusMessage = read.Value.Notes;
         }
         finally
         {

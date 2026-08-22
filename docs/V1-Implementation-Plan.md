@@ -190,13 +190,13 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 | **8**   | Paid / spend mode                                          | **SKIPPED** (operator 2026-08-18; far future, not v1) |
 | **8.4** | Pass-2 follow-on (operator notes)                          | **DONE** (P1–P13)                                     |
 | **8.7** | Modpack-test follow-on (Change pack failures)              | **DONE** — [`V1-Modpack-Test-Follow-On-Plan.md`](V1-Modpack-Test-Follow-On-Plan.md) P1–P5 |
-| **8.8** | Operator-notes follow-on (Manager / Setup / pack UX)       | **NEXT** = [`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md) **P2** |
+| **8.8** | Operator-notes follow-on (Manager / Setup / pack UX)       | **NEXT** = [`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md) **P3** |
 | **8.5** | Pre-packaging QA (catalog + passes + bug-fix plans)        | **PAUSED** Pass 3 until **8.7 + 8.8** exit — then [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md); do not start until the operator says so |
 | **8.6** | CI-built ARM spend-brake Function image (no Docker on admin PC) | TODO — after 8.5 exit; **required before 9.1 / official release** |
 | **9**   | Packaging, updates, launch (old MVP Phase 8–9)             | TODO — do not start until Phase 8.5 **and** Step **8.6.1** are DONE |
 
 
-**Current NEXT step:** [Step 8.8](#step-88--operator-notes-follow-on) ([`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md) **P2**). Step **8.7** / modpack-test follow-on **P1–P5** is **DONE**. **Do not start Pass 3** until 8.8 exits **and** the operator says so. **Do not start Step 8.6.1** until Phase 8.5 exits. **Do not start Step 9.1** until Phase 8.5 **and** Step **8.6.1** are DONE.
+**Current NEXT step:** [Step 8.8](#step-88--operator-notes-follow-on) ([`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md) **P3**). Step **8.7** / modpack-test follow-on **P1–P5** is **DONE**. **Do not start Pass 3** until 8.8 exits **and** the operator says so. **Do not start Step 8.6.1** until Phase 8.5 exits. **Do not start Step 9.1** until Phase 8.5 **and** Step **8.6.1** are DONE.
 
 ---
 
@@ -1286,7 +1286,7 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 
 ### Step 8.8 — Operator-notes follow-on
 
-**Status:** NEXT (living: [`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md) **P2**)  
+**Status:** NEXT (living: [`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md) **P3**)  
 **Depends on:** Step **8.7** DONE
 
 **Read first**
@@ -1307,7 +1307,7 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 
 **Done when:** P1–P11 **DONE** in that plan. Then point this plan’s **NEXT** at Step **8.5.2** Pass 3 ([`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md)). Do not start Pass 3 until the operator says so.
 
-**Changelog:** 2026-08-21 — **P1 DONE** (Console Simple filter: RCON/journal/mixin/modloader noise). Living **NEXT = P2**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **Inserted** (docs only). Blocked on 8.7. Then **NEXT = P1**. Do not start Pass 3, 8.6.1, or 9.1.
+**Changelog:** 2026-08-21 — **P2 DONE** (stop tab-open toasts: backup list, infra meta load). Living **NEXT = P3**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **P1 DONE** (Console Simple filter: RCON/journal/mixin/modloader noise). Living **NEXT = P2**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **Inserted** (docs only). Blocked on 8.7. Then **NEXT = P1**. Do not start Pass 3, 8.6.1, or 9.1.
 
 ---
 
@@ -1328,7 +1328,7 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 | `[V1-QA-Pass-2-Results.md](V1-QA-Pass-2-Results.md)`         | Pass 2 fill-out (Modded greenfield; no Pass 2 bug-fix plan)                |
 | `[V1-Pass-2-Follow-On-Plan.md](V1-Pass-2-Follow-On-Plan.md)` | **DONE (P1–P13).** Operator notes after Pass 2                            |
 | `[V1-Modpack-Test-Follow-On-Plan.md](V1-Modpack-Test-Follow-On-Plan.md)` | Step **8.7**. Informal Change pack failures. **DONE** (P1–P5) |
-| `[V1-Operator-Notes-Follow-On-Plan.md](V1-Operator-Notes-Follow-On-Plan.md)` | Step **8.8**. Manager / Setup / pack UX notes. **NEXT = P2** |
+| `[V1-Operator-Notes-Follow-On-Plan.md](V1-Operator-Notes-Follow-On-Plan.md)` | Step **8.8**. Manager / Setup / pack UX notes. **NEXT = P3** |
 | `[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)`             | Pass 3 gap-close + follow-on tests. **Do not start** until **8.7 + 8.8** exit and the operator says so |
 | `[V1-QA-Pass-3-Results.md](V1-QA-Pass-3-Results.md)`         | Pass 3 fill-out (do not start until operator says so)                      |
 | `[V1-Bug-Fix-Plan-Pass-1.md](V1-Bug-Fix-Plan-Pass-1.md)`     | Pass 1 fixes; **P1–P8 DONE**. Do not re-open unless a regression.          |
@@ -1646,6 +1646,7 @@ Former MVP Phase **8–9**. Phases **1–7** are **DONE**. Phase **8** is **SKIP
 
 | Date       | Note                                                                                                                                                                                                                                                                                                                              |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-21 | **Step 8.8 P2 DONE.** Stop tab-open toasts (backup list, infra meta load). Living **NEXT = Step 8.8 P3**. Do not start Pass 3, 8.6.1 CI, or 9.1. |
 | 2026-08-21 | **Step 8.8 P1 DONE.** Console Simple filter stricter (RCON, journal, mixin/modloader boot). Living **NEXT = Step 8.8 P2**. Do not start Pass 3, 8.6.1 CI, or 9.1. |
 | 2026-08-21 | **Step 8.7 DONE** (modpack-test P1–P5). High-unclear analyze warning (≥10 or ≥50%). Living **NEXT = Step 8.8 P1**. Do not start Pass 3, 8.6.1 CI, or 9.1. |
 | 2026-08-21 | **Step 8.7 P4 DONE.** Java major on Setup + Change pack (`JAVA_MAJOR` → driver, Fabric 26.x → 25, clear Temurin fail). Living **NEXT = Step 8.7 P5**. Do not start 8.8, Pass 3, 8.6.1 CI, or 9.1. |
