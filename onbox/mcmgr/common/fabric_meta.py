@@ -49,12 +49,22 @@ def java_major_for_minecraft(minecraft_version: str) -> int:
             return False
         return len(ident) == len(prefix) or not ident[len(prefix)].isdigit()
 
+    if ident.startswith("26.") or starts("26"):
+        return 25
     if starts("1.21") or starts("1.22") or starts("1.20.5") or starts("1.20.6"):
         return 21
     if starts("1.18") or starts("1.19") or starts("1.20"):
         return 17
     if starts("1.17"):
         return 16
+    if (
+        starts("1.12")
+        or starts("1.13")
+        or starts("1.14")
+        or starts("1.15")
+        or starts("1.16")
+    ):
+        return 8
     return 21
 
 
@@ -220,6 +230,9 @@ def cmd_self_test(fixtures_dir: str) -> None:
     assert resolved["hash_algorithm"] == "none_published"
     assert resolved["artifact_kind"] == "launcher_jar"
     assert resolved["java_major"] == 21
+    assert java_major_for_minecraft("26.1") == 25
+    assert java_major_for_minecraft("26.2") == 25
+    assert java_major_for_minecraft("1.20.1") == 17
     assert count_version_axes(resolved["download_url"]) == 3
 
     pinned = resolve("1.21.8", loaders, installers, loader_version="0.19.3")

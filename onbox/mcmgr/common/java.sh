@@ -9,10 +9,19 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/env.sh"
 # Outputs (exported for driver):
 #   JAVA_MAJOR, JAVA_EXECUTABLE, JAVA_INSTALL_PATH, JAVA_SOURCE, JAVA_RESOLVED_AT
 
+_java_install_fail() {
+  local major="$1"
+  mcmgr_die "This pack needs Java ${major}, and the installer could not provide it."
+}
+
 java_install() {
   local major="${1:?java major required}"
   JAVA_MAJOR="${major}"
   JAVA_RESOLVED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+  if [[ "${MCMGR_JAVA_INSTALL_FAIL:-}" == "1" ]]; then
+    _java_install_fail "${major}"
+  fi
 
   if [[ "${DRY_RUN}" == "1" ]]; then
     JAVA_SOURCE="distro_package"
@@ -30,7 +39,9 @@ java_install() {
     JAVA_SOURCE="distro_package"
   else
     mcmgr_log "java: apt path failed; trying Adoptium REST archive fallback"
-    java_try_adoptium_api "${major}"
+    if ! java_try_adoptium_api "${major}"; then
+      _java_install_fail "${major}"
+    fi
     JAVA_SOURCE="adoptium_api_archive"
   fi
 
@@ -79,11 +90,18 @@ java_try_adoptium_api() {
   local url="https://api.adoptium.net/v3/binary/latest/${major}/ga/linux/aarch64/jre/hotspot/normal/eclipse"
   local tmp
   tmp="$(mktemp /tmp/temurin-XXXXXX.tar.gz)"
-  curl -fsSL -o "${tmp}" "${url}"
+  if ! curl -fsSL -o "${tmp}" "${url}"; then
+    rm -f "${tmp}"
+    return 1
+  fi
   mkdir -p "${dest}"
-  tar -xzf "${tmp}" -C "${dest}" --strip-components=1
+  if ! tar -xzf "${tmp}" -C "${dest}" --strip-components=1; then
+    rm -f "${tmp}"
+    return 1
+  fi
   rm -f "${tmp}"
   JAVA_EXECUTABLE="${dest}/bin/java"
   JAVA_INSTALL_PATH="${dest}"
-  [[ -x "${JAVA_EXECUTABLE}" ]] || mcmgr_die "Adoptium extract missing java at ${JAVA_EXECUTABLE}"
+  [[ -x "${JAVA_EXECUTABLE}" ]] || return 1
+  return 0
 }

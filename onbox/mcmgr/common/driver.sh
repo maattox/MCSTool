@@ -107,6 +107,12 @@ main() {
     java_major_from_module="${VANILLA_JAVA_MAJOR:-}"
   fi
 
+  if [[ -n "${JAVA_MAJOR:-}" ]]; then
+    java_major_from_module="${JAVA_MAJOR}"
+    mcmgr_log "java: using JAVA_MAJOR=${JAVA_MAJOR} from environment (pack analyze / Manager)"
+  fi
+  [[ -n "${java_major_from_module}" ]] || mcmgr_die "could not resolve required Java major for ${DISTRIBUTION} ${MINECRAFT_VERSION}"
+
   run_stage java_resolved java_install "${java_major_from_module}"
 
   if [[ "${DISTRIBUTION}" == "neoforge" ]]; then

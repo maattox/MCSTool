@@ -216,18 +216,8 @@ public sealed class FabricMetaClient
     /// Fabric meta has no per-version Java floor API. Static Minecraft table (§9.1).
     /// Do not use launcherMeta.min_java_version (that is the launcher's own floor, often 8).
     /// </summary>
-    public static int JavaMajorForMinecraft(string minecraftVersion)
-    {
-        var id = minecraftVersion.Trim();
-        if (StartsWithMc(id, "1.21") || StartsWithMc(id, "1.22")
-            || StartsWithMc(id, "1.20.5") || StartsWithMc(id, "1.20.6"))
-            return 21;
-        if (StartsWithMc(id, "1.18") || StartsWithMc(id, "1.19") || StartsWithMc(id, "1.20"))
-            return 17;
-        if (StartsWithMc(id, "1.17"))
-            return 16;
-        return 21;
-    }
+    public static int JavaMajorForMinecraft(string minecraftVersion) =>
+        MinecraftJavaFloor.TryGet(minecraftVersion, out var major) ? major : 21;
 
     public static int CountVersionAxes(string serverJarUrl)
     {

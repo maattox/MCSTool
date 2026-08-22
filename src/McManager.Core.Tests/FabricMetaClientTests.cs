@@ -123,6 +123,8 @@ public sealed class FabricMetaClientTests
         Assert.Equal(21, FabricMetaClient.JavaMajorForMinecraft("1.20.5"));
         Assert.Equal(17, FabricMetaClient.JavaMajorForMinecraft("1.20.4"));
         Assert.Equal(16, FabricMetaClient.JavaMajorForMinecraft("1.17.1"));
+        Assert.Equal(25, FabricMetaClient.JavaMajorForMinecraft("26.1"));
+        Assert.Equal(25, FabricMetaClient.JavaMajorForMinecraft("26.2"));
     }
 
     [Fact]

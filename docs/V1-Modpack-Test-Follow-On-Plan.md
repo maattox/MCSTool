@@ -1,6 +1,6 @@
 # V1 modpack-test follow-on (living)
 
-**Status:** Living. Created 2026-08-21 (docs only). **NEXT = P4.**  
+**Status:** Living. Created 2026-08-21 (docs only). **NEXT = P5.**  
 **Parent:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.7**.  
 **Why now:** operator 2026-08-21 — informal **Change pack** tests in [`Mod-Pack-Tests.md`](Mod-Pack-Tests.md) failed **4 / 5**. Pause Step **8.5.2** Pass 3. Fix **generalizable** pack-start gaps **before** [`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md) (Step **8.8**) and before QA Pass 3.
 
@@ -146,8 +146,8 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 | **P1** | Crash-aware readiness (fail fast + journal) | **DONE** | SEQUENTIAL | Yes |
 | **P2** | Unstructured zip in-jar side detection | **DONE** | SEQUENTIAL | Optional |
 | **P3** | Fabric / `.mrpack` leftover client mods | **DONE** | SEQUENTIAL | Optional |
-| **P4** | Java major on Setup + Change pack | **NEXT** | SEQUENTIAL | Yes |
-| **P5** | Analyze warnings when many jars lack side data | TODO | SEQUENTIAL | No |
+| **P4** | Java major on Setup + Change pack | **DONE** | SEQUENTIAL | Yes |
+| **P5** | Analyze warnings when many jars lack side data | **NEXT** | SEQUENTIAL | No |
 
 
 When **P5** is DONE: point V1 **NEXT** at Step **8.8** ([`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md) **P1**). Do **not** start Pass 3.
@@ -267,7 +267,7 @@ When **P5** is DONE: point V1 **NEXT** at Step **8.8** ([`V1-Operator-Notes-Foll
 
 ## P4 — Java major on Setup and Change pack
 
-**Status:** NEXT  
+**Status:** DONE  
 **Catalog IDs:** new (Pass 3 pack replace / Setup game)
 
 **Read first**
@@ -294,7 +294,7 @@ When **P5** is DONE: point V1 **NEXT** at Step **8.8** ([`V1-Operator-Notes-Foll
 
 **Done when:** Change pack / Setup bootstrap installs and selects the analyzed Java major; missing major is a clear pre-start error; Guide one-liner.
 
-**Changelog:** *(empty until implemented)*
+**Changelog:** 2026-08-21 — **P4 DONE.** Manager exports analyzed `JAVA_MAJOR` into `driver.sh` (Setup + Change pack); driver prefers env override; on-box `fabric_meta.py` maps MC **26.x → 25** (aligned with Forge/NeoForge + Core `MinecraftJavaFloor`). `java.sh` fails before start with “This pack needs Java N…” when apt/Adoptium cannot install (`MCMGR_JAVA_INSTALL_FAIL` test hook). `minecraft.service` regenerated with new `JAVA_EXECUTABLE`. Core `OnboxDriverExports` + dry-run scripts `test-java-major.sh` / `test-java-install-fail.sh`. Side-by-side JREs kept. **NEXT = P5.**
 
 ---
 
@@ -302,7 +302,7 @@ When **P5** is DONE: point V1 **NEXT** at Step **8.8** ([`V1-Operator-Notes-Foll
 
 ## P5 — Analyze warnings when many jars lack side data
 
-**Status:** TODO  
+**Status:** NEXT  
 **Catalog IDs:** Setup Game step / Change pack confirm
 
 **Read first**
@@ -347,6 +347,7 @@ When **P5** is DONE: point V1 **NEXT** at Step **8.8** ([`V1-Operator-Notes-Foll
 
 | Date | Note |
 |------|------|
+| 2026-08-21 | **P4 DONE** (Java major on Setup + Change pack). `JAVA_MAJOR` env → driver; Fabric 26.x → 25 on-box; clear pre-start fail when Temurin missing. **NEXT = P5.** Do not start 8.8, Pass 3, 8.6.1, or 9.1. |
 | 2026-08-21 | **P3 DONE** (Fabric / `.mrpack` leftover client mods). Overlay classes `loading-screen` / `konkrete` / `titlebar` / `flatlaf`; leftover in-jar client skip; `fabric-gui-client.mrpack`. **NEXT = P4.** Do not start 8.8, Pass 3, 8.6.1, or 9.1. |
 | 2026-08-21 | **P2 DONE** (unstructured in-jar side). `InJarSideDetector`: side fields, client entrypoints, high-confidence common mixin targets. Unclear still kept. **NEXT = P3.** Do not start 8.8, Pass 3, 8.6.1, or 9.1. |
 | 2026-08-21 | **P1 DONE** (crash-aware readiness). Fail-fast on crash-loop/FATAL; stop unit; capped journal + implicated mod. **NEXT = P2.** Do not start 8.8, Pass 3, 8.6.1, or 9.1. |

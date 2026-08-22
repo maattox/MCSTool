@@ -594,7 +594,7 @@ public sealed class SetupBootstrapService
         log?.Report($"onbox src: {onbox} DISTRIBUTION={dist} MINECRAFT_VERSION={minecraftVersion}");
         Exec(client, $"rm -rf {onboxStaging} && mkdir -p {onboxStaging}", TimeSpan.FromSeconds(30), log);
         UploadTree(client, onbox, onboxStaging, log);
-        RunOnboxDriver(client, onboxStaging, state, log);
+        RunOnboxDriver(client, onboxStaging, state, analyzedJavaMajor: null, log);
 
         if (SetupServerType.IsModded(state.ServerType))
         {
@@ -674,7 +674,7 @@ public sealed class SetupBootstrapService
             TimeSpan.FromMinutes(3),
             log);
 
-        RunOnboxDriver(client, onboxStaging, state, log);
+        RunOnboxDriver(client, onboxStaging, state, preview.JavaMajor, log);
 
         var pack = InstallModdedPack(
             client,
@@ -704,18 +704,14 @@ public sealed class SetupBootstrapService
         SshClient client,
         string onboxStaging,
         SetupWizardState state,
+        int? analyzedJavaMajor,
         IProgress<string>? log)
     {
-        var minecraftVersion = state.MinecraftVersion.Trim();
-        var dist = SetupPackImport.ToDistribution(state);
-        var loaderPin = SetupPackImport.LoaderPin(state.PackLoader, state.PackLoaderVersion);
-        var pinExport = loaderPin is { } pin
-            ? $" {pin.Name}={ShQuote(pin.Value)}"
-            : "";
+        var exports = OnboxDriverExports.Build(state, analyzedJavaMajor);
         var driver =
             "set -euo pipefail; "
             + $"find {onboxStaging} -type f \\( -name '*.sh' -o -name '*.in' -o -name '*.py' \\) -exec sed -i 's/\\r$//' {{}} +; "
-            + $"export EULA_ACCEPTED=true MINECRAFT_VERSION={ShQuote(minecraftVersion)} DISTRIBUTION={ShQuote(dist)}{pinExport} HOME=\"${{HOME:-/home/ubuntu}}\"; "
+            + $"{exports}; "
             + $"sudo -E bash {onboxStaging}/common/driver.sh";
         Exec(client, "bash -c " + ShQuote(driver), TimeSpan.FromMinutes(20), log);
     }
