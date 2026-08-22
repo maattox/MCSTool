@@ -21,7 +21,8 @@ public static class MinecraftConsoleRemote
 
     public const string HelpTitle =
         "Send commands as if you typed them in the Minecraft server console. "
-        + "Recent logs show game activity by default; switch to Full for the raw service log. "
+        + "Recent logs show player-facing activity by default (chat, joins, commands, errors); "
+        + "switch to Full for the raw service log including RCON and modloader startup noise. "
         + "This is not a live terminal.";
 
     public const string SimpleLogEmptyHint =
@@ -170,9 +171,9 @@ public static class MinecraftConsoleRemote
     }
 
     /// <summary>
-    /// Console Simple view: drop known RCON listener/thread/auth plumbing from an unfiltered
-    /// <c>journalctl -o cat</c> buffer. Keeps chat, joins, command transcript, errors, and
-    /// <c>[Rcon:</c> command echoes.
+    /// Console Simple view: drop RCON plumbing, journal wrappers, modloader/mixin boot noise, and
+    /// Netty worker lines from an unfiltered <c>journalctl -o cat</c> buffer. Keeps chat, joins,
+    /// world-prep progress, command transcript, <c>[Rcon:</c> echoes, and WARN/ERROR/FATAL.
     /// </summary>
     public static string FilterSimpleLog(string? full)
     {
@@ -198,8 +199,53 @@ public static class MinecraftConsoleRemote
         if (string.IsNullOrWhiteSpace(line))
             return false;
 
+        if (IsSimpleLogKeepLine(line))
+            return false;
+
         var lower = line.ToLowerInvariant();
+        if (IsRconPlumbingNoise(lower))
+            return true;
+        if (IsJournalWrapperNoise(line, lower))
+            return true;
+        if (IsNettyNoise(line, lower))
+            return true;
+        if (IsMixinDebugNoise(line, lower))
+            return true;
+        if (IsModloaderBootInfoNoise(line, lower))
+            return true;
+        return false;
+    }
+
+    /// <summary>Player-facing lines that must survive even when they match a noise substring.</summary>
+    private static bool IsSimpleLogKeepLine(string line)
+    {
+        if (line.StartsWith("> ", StringComparison.Ordinal))
+            return true;
+        if (line.StartsWith("[Rcon:", StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (line.StartsWith("There are ", StringComparison.Ordinal)
+            && line.Contains("players online", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        var lower = line.ToLowerInvariant();
+        if (lower.Contains("joined the game", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("left the game", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("preparing spawn area", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("done (", StringComparison.Ordinal) && lower.Contains(")!", StringComparison.Ordinal))
+            return true;
+        if (line.Contains("]: <", StringComparison.Ordinal))
+            return true;
+        return false;
+    }
+
+    private static bool IsRconPlumbingNoise(string lower)
+    {
         if (lower.Contains("thread rcon client", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("thread rcon listener", StringComparison.Ordinal))
             return true;
         if (lower.Contains("rcon listener", StringComparison.Ordinal))
             return true;
@@ -208,6 +254,142 @@ public static class MinecraftConsoleRemote
         if (lower.Contains("rcon connection from", StringComparison.Ordinal))
             return true;
         if (lower.Contains("rcon authenticated", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("starting rcon listener", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("rcon client /", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("rcon client started", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("rcon client shutting down", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("rcon listener #", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("rcon shutting down", StringComparison.Ordinal))
+            return true;
+        return false;
+    }
+
+    private static bool IsJournalWrapperNoise(string line, string lower)
+    {
+        var trimmed = line.TrimStart();
+        if (trimmed.StartsWith("-- ", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("-- logs begin at", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("-- journal begins", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("-- reboot --", StringComparison.Ordinal))
+            return true;
+        if (lower.StartsWith("defined-by: systemd", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("systemd[1]: started minecraft", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("systemd[1]: stopped minecraft", StringComparison.Ordinal))
+            return true;
+        return false;
+    }
+
+    private static bool IsNettyNoise(string line, string lower)
+    {
+        if (!lower.Contains("netty", StringComparison.Ordinal))
+            return false;
+        if (lower.Contains("/error]", StringComparison.Ordinal) || lower.Contains("/fatal]", StringComparison.Ordinal))
+            return false;
+        if (lower.Contains("exception", StringComparison.Ordinal))
+            return false;
+        return true;
+    }
+
+    private static bool IsMixinDebugNoise(string line, string lower)
+    {
+        if (!lower.Contains("mixin", StringComparison.Ordinal))
+            return false;
+
+        if (lower.Contains("mixin apply failed", StringComparison.Ordinal))
+            return false;
+        if (lower.Contains("mixin prepare failed", StringComparison.Ordinal))
+            return false;
+        if (lower.Contains("caused the server to crash", StringComparison.Ordinal))
+            return false;
+        if (lower.Contains("/fatal]", StringComparison.Ordinal) || lower.Contains("/error]", StringComparison.Ordinal))
+            return false;
+
+        if (lower.Contains("/info]", StringComparison.Ordinal) || lower.Contains("/warn]", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("reference map", StringComparison.Ordinal)
+            && lower.Contains("could not be read", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("error loading class", StringComparison.Ordinal)
+            && lower.Contains("classnotfoundexception", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("@mixin target", StringComparison.Ordinal)
+            && lower.Contains("was not found", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("spongepowered mixin subsystem", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("compatibility level set to", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("instancing error handler", StringComparison.Ordinal))
+            return true;
+        return false;
+    }
+
+    private static bool IsModloaderBootInfoNoise(string line, string lower)
+    {
+        var isInfoOrStdout =
+            lower.Contains("/info]", StringComparison.Ordinal)
+            || lower.Contains("[stdout/", StringComparison.Ordinal)
+            || lower.Contains("]: [org.", StringComparison.Ordinal);
+        if (!isInfoOrStdout)
+            return false;
+
+        if (lower.Contains("preparing spawn area", StringComparison.Ordinal))
+            return false;
+        if (lower.Contains("done (", StringComparison.Ordinal) && lower.Contains(")!", StringComparison.Ordinal))
+            return false;
+        if (lower.Contains("joined the game", StringComparison.Ordinal))
+            return false;
+        if (lower.Contains("left the game", StringComparison.Ordinal))
+            return false;
+
+        if (lower.Contains("modlauncher running:", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("modlauncher ", StringComparison.Ordinal) && lower.Contains("starting: java version", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("immediatewindowprovider", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("dependencies adding them to mods", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("launching target", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("loaded configuration file for", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("applying nashorn fix", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("applied forge config corruption patch", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("with fabric loader", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains(" mods:", StringComparison.Ordinal) && lower.Contains("loading ", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("starting minecraft server version", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("loading properties", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("default game type:", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("generating keypair", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("starting minecraft server on", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("starting net.minecraft", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("forge loaded", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("jarinjjardependencylocator", StringComparison.Ordinal))
+            return true;
+        if (lower.Contains("[stdout/", StringComparison.Ordinal) || lower.Contains("]: [org.", StringComparison.Ordinal))
             return true;
         return false;
     }

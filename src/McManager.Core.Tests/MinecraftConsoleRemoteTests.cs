@@ -169,6 +169,71 @@ public sealed class MinecraftConsoleRemoteTests
         Assert.Contains("FAIL RCON bind on startup", simple, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Filter_simple_log_drops_modded_boot_noise_keeps_spawn_progress_and_errors()
+    {
+        var full =
+            "-- Logs begin at Fri 2026-08-21 21:44:51 UTC, end at Fri 2026-08-21 21:45:00 UTC. --\n"
+            + "[21:44:51] [main/INFO] [cp.mo.mo.Launcher/MODLAUNCHER]: ModLauncher running: args [--launchTarget, forgeserver, --nogui]\n"
+            + "[21:44:51] [main/INFO] [cp.mo.mo.Launcher/MODLAUNCHER]: ModLauncher 10.0.9 starting: java version 17.0.20\n"
+            + "[21:44:52] [main/INFO] [mixin/]: SpongePowered MIXIN Subsystem Version=0.8.5\n"
+            + "[21:44:57] [main/WARN] [mixin/]: Reference map 'yungsextras.refmap.json' could not be read\n"
+            + "[21:44:59] [main/WARN] [mixin/]: Error loading class: dev/tr7zw/skinlayers/render/CustomizableModelPart (java.lang.ClassNotFoundException)\n"
+            + "[21:44:58] [main/INFO] [STDOUT/]: [org.valkyrienskies.mod.forge.mixin.ValkyrienForgeMixinConfigPlugin:onLoad:32]: six-seven\n"
+            + "[Server thread/INFO]: Preparing spawn area: 45%\n"
+            + "[Server thread/INFO]: Done (12.345s)! For help, type help\n"
+            + "[21:45:00] [main/ERROR] [ne.mi.fm.lo.RuntimeDistCleaner/DISTXFORM]: Attempted to load class for invalid dist DEDICATED_SERVER\n"
+            + "[21:45:00] [main/FATAL] [mixin/]: Mixin prepare failed preparing LivingEntityMixin\n"
+            + "[16:00:01] [Netty Server IO #1/INFO]: Channel read complete\n"
+            + "[16:00:01] [RCON Listener #2/INFO]: Thread RCON Client /127.0.0.1 authenticated\n";
+
+        var simple = MinecraftConsoleRemote.FilterSimpleLog(full);
+
+        Assert.DoesNotContain("ModLauncher running", simple, StringComparison.Ordinal);
+        Assert.DoesNotContain("SpongePowered MIXIN", simple, StringComparison.Ordinal);
+        Assert.DoesNotContain("Reference map", simple, StringComparison.Ordinal);
+        Assert.DoesNotContain("Error loading class", simple, StringComparison.Ordinal);
+        Assert.DoesNotContain("six-seven", simple, StringComparison.Ordinal);
+        Assert.DoesNotContain("Logs begin at", simple, StringComparison.Ordinal);
+        Assert.DoesNotContain("Netty", simple, StringComparison.Ordinal);
+        Assert.DoesNotContain("Thread RCON Client", simple, StringComparison.Ordinal);
+        Assert.Contains("Preparing spawn area: 45%", simple, StringComparison.Ordinal);
+        Assert.Contains("Done (12.345s)!", simple, StringComparison.Ordinal);
+        Assert.Contains("invalid dist DEDICATED_SERVER", simple, StringComparison.Ordinal);
+        Assert.Contains("Mixin prepare failed", simple, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Filter_simple_log_keeps_world_prep_fixture()
+    {
+        var fixturePath = Path.Combine(
+            FindRepoRoot(),
+            "tests",
+            "fixtures",
+            "journals",
+            "still-loading-spawn-area.txt");
+        var full = File.ReadAllText(fixturePath);
+        var simple = MinecraftConsoleRemote.FilterSimpleLog(full);
+
+        Assert.Contains("Preparing spawn area: 12%", simple, StringComparison.Ordinal);
+        Assert.Contains("Preparing spawn area: 78%", simple, StringComparison.Ordinal);
+        Assert.DoesNotContain("Starting minecraft server version", simple, StringComparison.Ordinal);
+        Assert.DoesNotContain("Generating keypair", simple, StringComparison.Ordinal);
+    }
+
+    private static string FindRepoRoot()
+    {
+        var dir = AppContext.BaseDirectory;
+        while (!string.IsNullOrEmpty(dir))
+        {
+            if (File.Exists(Path.Combine(dir, "AGENTS.md")))
+                return dir;
+            dir = Directory.GetParent(dir)?.FullName ?? "";
+        }
+
+        throw new InvalidOperationException("Could not find repo root from test output directory.");
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]
