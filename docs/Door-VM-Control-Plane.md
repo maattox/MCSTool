@@ -55,7 +55,7 @@ Installed from **`door_vm/`** (`install.sh` and/or Manager Testing2 deploy helpe
 | `/opt/mccontrol/oci/*.sh` | OCI wrappers + `pull_os_budget.sh` + `heal_os_ledger.sh` |
 | `/opt/mccontrol/scripts/` | `reconcile_vm1.sh`, `reset_door_state.sh`, diagnostics, … |
 | `/opt/mccontrol/web/static/` | Admin SPA (HTML/JS/CSS) |
-| `/opt/mccontrol/assets/icons/` | MOTD favicons (`idle.png`, `starting.png`, `exhausted.png`) |
+| `/opt/mccontrol/assets/icons/` | MOTD favicons (`idle.png`, `starting.png`, `exhausted.png` — user/default icon + overlays) |
 | `/etc/mccontrol/config.json` | Ports, paths, `object_storage_enabled`, OS cache paths |
 | `/etc/mccontrol/oci.env` | OCIDs + OS namespace/bucket + `OCI_CLI_AUTH=instance_principal` (**secrets; mode 600**) |
 | `/var/lib/mccontrol/state.json` | Persisted door/play state |
@@ -90,7 +90,7 @@ Tracked under sibling [`OCI-mc-server/door_vm/`](../../door_vm/):
 | `Makefile` | `make mccontrol`, `make test`, … |
 | `config.example.json`, `oci/config.example.env` | Templates (no live secrets) |
 | `systemd/` | `mccontrol.service` + reconcile timer/service |
-| `assets/icons/` | MOTD PNGs (`gen_icons.py` regenerates solid-color placeholders) |
+| `assets/icons/` | MOTD PNGs (Manager-composed greyscale+overlay defaults; `gen_icons.py` is solid-color fallback) |
 
 Language: **C11**, linked with **pthread**. No Python in the hot path (Python is used in install CRLF strip, reconcile JSON sniff, heal snippets, icon gen).
 

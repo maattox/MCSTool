@@ -257,7 +257,7 @@ The last rule is the target. The deployed `pull_os_budget.sh` currently fetches 
 | VM1 patches detected shape or boot force-enables idle | `budget.manager=true`, `budget.door=true`, `budget.vm1=false` |
 | Setup/Manager publishes infra meta | `meta.manager=false`, `meta.door=true`, `meta.vm1=true` |
 | Manager publishes IP config | `ip.manager=false`; set only consumers implemented by that stack |
-| Manager publishes messages | `messages.manager=false`, `messages.vm1=true`; door remains false unless it gains a message consumer |
+| Manager publishes messages | `messages.manager=false`, `messages.vm1=true`, `messages.door=true` (door favicon variants) |
 
 There is no `backups` category in v1. Adding it now is unsafe because current normalizers drop unknown categories.
 
@@ -497,7 +497,7 @@ A leftover object may still exist in some buckets from V1 Step 3.1 (`version`, `
 ```
 
 - Manager is the intended writer; VM1 is the consumer (`mc-boot-ledger.service` force-pulls **before** Java starts so this Minecraft process loads the new MOTD/icon).
-- **v1 (Step 7.6):** additive identity fields on the same document version: `server_name`, `description` (plain-text MOTD; name then description as two lines), optional `icon_object` pointing at `messages/server-icon.png` (64×64 PNG). Door MOTD/favicon while idle is **not** this object (operational copy stays in `mcdoor`).
+- **v1 (Step 7.6):** additive identity fields on the same document version: `server_name`, `description` (plain-text MOTD; name then description as two lines), optional `icon_object` pointing at `messages/server-icon.png` (64×64 PNG). **Step 8.8 P8:** Manager composes that color PNG on the admin PC (contain-fit to 64×64) and also writes `messages/door-idle.png`, `messages/door-starting.png`, and `messages/door-exhausted.png` (greyscale + overlays). The door pulls those three into `/opt/mccontrol/assets/icons/{idle,starting,exhausted}.png`. Unavailable and spend-brake share exhausted art. Absence of a user upload uses `assets/server-icons/default-icon.png`.
 - Unknown/missing template keys fall back to built-in defaults. `idle_stop_inactive` is additive; older seeds without it still work.
 - Invalid format placeholders must not crash the agent; current formatter returns the unformatted template.
 - RCON credentials never belong in this object.
@@ -506,7 +506,11 @@ A leftover object may still exist in some buckets from V1 Step 3.1 (`version`, `
 
 ### `messages/server-icon.png`
 
-Optional binary sibling of `messages/chat.json`. Minecraft list icon (64×64 PNG). Manager is the only writer. Absence means no custom icon.
+64×64 PNG Minecraft list icon while the game VM holds the play IP. Manager is the only writer (contain-fit on the admin PC). Absence is unusual after Setup/P8 — the product default icon is stored when the user does not upload one.
+
+### `messages/door-idle.png` / `door-starting.png` / `door-exhausted.png`
+
+64×64 PNG doorbell favicons (greyscale user/default art + overlays). Manager writes; the door pulls into `idle.png` / `starting.png` / `exhausted.png`. Exhausted is also used for spend-brake.
 
 ---
 

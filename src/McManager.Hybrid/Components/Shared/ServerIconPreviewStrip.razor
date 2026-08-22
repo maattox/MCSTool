@@ -1,0 +1,59 @@
+@code {
+    [Parameter] public string ColorUrl { get; set; } = "";
+    [Parameter] public string IdleUrl { get; set; } = "";
+    [Parameter] public string StartingUrl { get; set; } = "";
+    [Parameter] public string ExhaustedUrl { get; set; } = "";
+}
+
+<div class="mcm-icon-variants" role="group" aria-label="Server list icons">
+    <figure class="mcm-icon-variant">
+        @if (!string.IsNullOrWhiteSpace(ColorUrl))
+        {
+            <img class="mcm-server-icon"
+                 src="@ColorUrl"
+                 width="64"
+                 height="64"
+                 alt="In-game server icon" />
+        }
+        else
+        {
+            <div class="mcm-server-icon mcm-server-icon-empty" aria-hidden="true">
+                <i class="ti ti-photo"></i>
+            </div>
+        }
+        <figcaption>In-game</figcaption>
+    </figure>
+    <figure class="mcm-icon-variant">
+        @if (!string.IsNullOrWhiteSpace(IdleUrl))
+        {
+            <img class="mcm-server-icon"
+                 src="@IdleUrl"
+                 width="64"
+                 height="64"
+                 alt="Offline doorbell icon" />
+        }
+        <figcaption>Offline</figcaption>
+    </figure>
+    <figure class="mcm-icon-variant">
+        @if (!string.IsNullOrWhiteSpace(StartingUrl))
+        {
+            <img class="mcm-server-icon"
+                 src="@StartingUrl"
+                 width="64"
+                 height="64"
+                 alt="Starting doorbell icon" />
+        }
+        <figcaption>Starting</figcaption>
+    </figure>
+    <figure class="mcm-icon-variant">
+        @if (!string.IsNullOrWhiteSpace(ExhaustedUrl))
+        {
+            <img class="mcm-server-icon"
+                 src="@ExhaustedUrl"
+                 width="64"
+                 height="64"
+                 alt="Unavailable doorbell icon" />
+        }
+        <figcaption>Unavailable</figcaption>
+    </figure>
+</div>

@@ -60,13 +60,16 @@ public static class ServerIdentityUx
         if (png is null || png.Length == 0)
             return "Choose a PNG file.";
         if (png.Length > MaxIconBytes)
-            return $"Icon is too large ({png.Length} bytes). Use a 64×64 PNG under 256 KB.";
+            return $"Icon is too large ({png.Length} bytes). Use a PNG that fits under 256 KB after 64×64.";
         if (!TryReadPngSize(png, out var width, out var height))
             return "Icon must be a PNG file.";
         if (width != IconWidth || height != IconHeight)
             return $"Minecraft needs a {IconWidth}×{IconHeight} PNG (this file is {width}×{height}).";
         return null;
     }
+
+    /// <summary>User-picked source before contain-fit. Any reasonable PNG; size is not required to be 64×64.</summary>
+    public static string? ValidateSourceIcon(byte[]? png) => ServerIconComposer.ValidateSourceIcon(png);
 
     public static bool TryReadPngSize(ReadOnlySpan<byte> png, out int width, out int height)
     {
@@ -118,7 +121,8 @@ public static class ServerIdentityUx
     }
 
     /// <summary>
-    /// Read a local PNG for Setup seed. Returns null when missing or invalid (caller may skip).
+    /// Read a local PNG for Setup seed. Returns null when missing (caller uses the product default).
+    /// Invalid files still return null with <paramref name="skipReason"/>.
     /// </summary>
     public static byte[]? TryReadSetupIcon(string? path, out string? skipReason)
     {
@@ -127,7 +131,7 @@ public static class ServerIdentityUx
             return null;
         if (!File.Exists(path))
         {
-            skipReason = "Icon file is missing; continuing without a custom icon.";
+            skipReason = "Icon file is missing; using the default icon.";
             return null;
         }
 
@@ -142,7 +146,7 @@ public static class ServerIdentityUx
             return null;
         }
 
-        var error = ValidateIcon(bytes);
+        var error = ValidateSourceIcon(bytes);
         if (error is not null)
         {
             skipReason = error;

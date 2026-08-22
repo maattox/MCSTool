@@ -23,6 +23,9 @@ public sealed class ChatMessagesStore
     private readonly ObjectStoragePrefixes _prefixes;
     private readonly string _objectName;
     private readonly string _iconObjectName;
+    private readonly string _doorIdleObjectName;
+    private readonly string _doorStartingObjectName;
+    private readonly string _doorExhaustedObjectName;
     private readonly string _flagsObjectName;
 
     public ChatMessagesStore(IObjectStorageService objectStorage, ObjectStoragePrefixes prefixes)
@@ -31,12 +34,17 @@ public sealed class ChatMessagesStore
         _prefixes = prefixes;
         _objectName = Combine(prefixes.Messages, ChatMessagesDocument.FileName);
         _iconObjectName = Combine(prefixes.Messages, ChatMessagesDocument.IconFileName);
+        _doorIdleObjectName = Combine(prefixes.Messages, ChatMessagesDocument.DoorIdleFileName);
+        _doorStartingObjectName = Combine(prefixes.Messages, ChatMessagesDocument.DoorStartingFileName);
+        _doorExhaustedObjectName = Combine(prefixes.Messages, ChatMessagesDocument.DoorExhaustedFileName);
         _flagsObjectName = Combine(prefixes.Meta, "flags.json");
     }
 
     public string ObjectName => _objectName;
 
     public string IconObjectName => _iconObjectName;
+
+    public string DoorIdleObjectName => _doorIdleObjectName;
 
     public async Task<ServiceResult<ChatMessagesReadResult>> GetAsync(
         CancellationToken cancellationToken = default)
@@ -115,7 +123,43 @@ public sealed class ChatMessagesStore
     {
         var existing = await _objectStorage.GetObjectAsync(_objectName, cancellationToken).ConfigureAwait(false);
         if (existing.Succeeded && existing.Value is not null)
+        {
+            var idleGot = await _objectStorage.GetBytesAsync(_doorIdleObjectName, cancellationToken)
+                .ConfigureAwait(false);
+            if (idleGot.Succeeded && idleGot.Value is { Length: > 0 })
+                return ServiceResult.Ok();
+
+            byte[]? source = iconPng;
+            if (source is not { Length: > 0 })
+            {
+                try
+                {
+                    var prev = JsonSerializer.Deserialize<ChatMessagesDocument>(
+                        existing.Value.Content, JsonOptions);
+                    if (!string.IsNullOrWhiteSpace(prev?.IconObject))
+                    {
+                        var gotIcon = await _objectStorage.GetBytesAsync(prev.IconObject.Trim(), cancellationToken)
+                            .ConfigureAwait(false);
+                        if (gotIcon.Succeeded && gotIcon.Value is { Length: > 0 })
+                            source = gotIcon.Value;
+                    }
+                }
+                catch (JsonException)
+                {
+                    source = iconPng;
+                }
+            }
+
+            var backfill = ComposeIcons(source);
+            if (!backfill.Succeeded || backfill.Value is null)
+                return ServiceResult.Ok();
+
+            var putBackfill = await PutIconSetAsync(backfill.Value, cancellationToken).ConfigureAwait(false);
+            if (!putBackfill.Succeeded)
+                return putBackfill;
+            await DirtyMessagesFlagsAsync(dirtyDoor: true, cancellationToken).ConfigureAwait(false);
             return ServiceResult.Ok();
+        }
         if (!OciErrorFormatter.IsNotFoundMessage(existing.Error))
             return ServiceResult.Fail(existing.Error ?? $"Get {_objectName} failed.");
 
@@ -127,9 +171,11 @@ public sealed class ChatMessagesStore
         }
 
         doc.FillMissingChatKeys();
-        var iconOk = iconPng is { Length: > 0 } && ServerIdentityUx.ValidateIcon(iconPng) is null;
-        if (iconOk)
-            doc.IconObject = _iconObjectName;
+        var icons = ComposeIcons(iconPng);
+        if (!icons.Succeeded || icons.Value is null)
+            return ServiceResult.Fail(icons.Error ?? "Could not build server icons.");
+
+        doc.IconObject = _iconObjectName;
 
         var json = JsonSerializer.Serialize(doc, JsonOptions);
         var bytes = Encoding.UTF8.GetBytes(json.EndsWith('\n') ? json : json + "\n");
@@ -138,15 +184,11 @@ public sealed class ChatMessagesStore
         if (!put.Succeeded)
             return ServiceResult.Fail(put.Error ?? $"Put {_objectName} failed.");
 
-        if (iconOk)
-        {
-            var putIcon = await _objectStorage.PutBytesAsync(
-                _iconObjectName, iconPng!, "image/png", ifMatch: null, cancellationToken).ConfigureAwait(false);
-            if (!putIcon.Succeeded)
-                return ServiceResult.Fail(putIcon.Error ?? $"Put {_iconObjectName} failed.");
-        }
+        var putIcons = await PutIconSetAsync(icons.Value, cancellationToken).ConfigureAwait(false);
+        if (!putIcons.Succeeded)
+            return putIcons;
 
-        await DirtyVm1MessagesFlagAsync(cancellationToken).ConfigureAwait(false);
+        await DirtyMessagesFlagsAsync(dirtyDoor: true, cancellationToken).ConfigureAwait(false);
         return ServiceResult.Ok();
     }
 
@@ -160,7 +202,7 @@ public sealed class ChatMessagesStore
 
         if (iconPng is { Length: > 0 })
         {
-            var iconError = ServerIdentityUx.ValidateIcon(iconPng);
+            var iconError = ServerIdentityUx.ValidateSourceIcon(iconPng);
             if (iconError is not null)
                 return ServiceResult<ChatMessagesPublishResult>.Fail(iconError);
         }
@@ -216,12 +258,26 @@ public sealed class ChatMessagesStore
         document.Description = document.Description?.Trim() ?? "";
         document.StampUpdated();
 
+        byte[]? composeSource = iconPng;
         if (clearIcon)
-            document.IconObject = null;
-        else if (iconPng is { Length: > 0 })
-            document.IconObject = _iconObjectName;
-        else if (!string.IsNullOrWhiteSpace(previous?.IconObject))
-            document.IconObject = previous.IconObject;
+            composeSource = null;
+        else if (composeSource is not { Length: > 0 }
+                 && !string.IsNullOrWhiteSpace(previous?.IconObject))
+        {
+            var existingIcon = await _objectStorage.GetBytesAsync(previous.IconObject.Trim(), cancellationToken)
+                .ConfigureAwait(false);
+            if (existingIcon.Succeeded && existingIcon.Value is { Length: > 0 })
+                composeSource = existingIcon.Value;
+        }
+
+        var icons = ComposeIcons(composeSource);
+        if (!icons.Succeeded || icons.Value is null)
+        {
+            return ServiceResult<ChatMessagesPublishResult>.Fail(
+                icons.Error ?? "Could not build server icons.");
+        }
+
+        document.IconObject = _iconObjectName;
 
         var json = JsonSerializer.Serialize(document, JsonOptions);
         var putBytes = Encoding.UTF8.GetBytes(json.EndsWith('\n') ? json : json + "\n");
@@ -230,22 +286,14 @@ public sealed class ChatMessagesStore
         if (!put.Succeeded)
             return ServiceResult<ChatMessagesPublishResult>.Fail(put.Error ?? $"Put {_objectName} failed.");
 
-        if (clearIcon)
+        var putIcons = await PutIconSetAsync(icons.Value, cancellationToken).ConfigureAwait(false);
+        if (!putIcons.Succeeded)
         {
-            await _objectStorage.DeleteObjectAsync(_iconObjectName, cancellationToken).ConfigureAwait(false);
-        }
-        else if (iconPng is { Length: > 0 })
-        {
-            var putIcon = await _objectStorage.PutBytesAsync(
-                _iconObjectName, iconPng, "image/png", ifMatch: null, cancellationToken).ConfigureAwait(false);
-            if (!putIcon.Succeeded)
-            {
-                return ServiceResult<ChatMessagesPublishResult>.Fail(
-                    putIcon.Error ?? $"Put {_iconObjectName} failed.");
-            }
+            return ServiceResult<ChatMessagesPublishResult>.Fail(
+                putIcons.Error ?? "Put server icons failed.");
         }
 
-        var flagsNote = await DirtyVm1MessagesFlagAsync(cancellationToken).ConfigureAwait(false);
+        var flagsNote = await DirtyMessagesFlagsAsync(dirtyDoor: true, cancellationToken).ConfigureAwait(false);
         return ServiceResult<ChatMessagesPublishResult>.Ok(new ChatMessagesPublishResult
         {
             Document = document,
@@ -255,7 +303,34 @@ public sealed class ChatMessagesStore
         });
     }
 
-    private async Task<string> DirtyVm1MessagesFlagAsync(CancellationToken cancellationToken)
+    private static ServiceResult<ServerIconSet> ComposeIcons(byte[]? sourcePng) =>
+        ServerIconComposer.Compose(sourcePng);
+
+    private async Task<ServiceResult> PutIconSetAsync(ServerIconSet icons, CancellationToken cancellationToken)
+    {
+        var colorError = ServerIdentityUx.ValidateIcon(icons.ColorPng);
+        if (colorError is not null)
+            return ServiceResult.Fail(colorError);
+
+        var puts = new (string Name, byte[] Bytes)[]
+        {
+            (_iconObjectName, icons.ColorPng),
+            (_doorIdleObjectName, icons.IdlePng),
+            (_doorStartingObjectName, icons.StartingPng),
+            (_doorExhaustedObjectName, icons.ExhaustedPng),
+        };
+        foreach (var (name, bytes) in puts)
+        {
+            var put = await _objectStorage.PutBytesAsync(
+                name, bytes, "image/png", ifMatch: null, cancellationToken).ConfigureAwait(false);
+            if (!put.Succeeded)
+                return ServiceResult.Fail(put.Error ?? $"Put {name} failed.");
+        }
+
+        return ServiceResult.Ok();
+    }
+
+    private async Task<string> DirtyMessagesFlagsAsync(bool dirtyDoor, CancellationToken cancellationToken)
     {
         var flagsResult = await _objectStorage.GetObjectAsync(_flagsObjectName, cancellationToken)
             .ConfigureAwait(false);
@@ -290,7 +365,10 @@ public sealed class ChatMessagesStore
             return flagsResult.Error ?? "Messages saved but failed to load flags.";
         }
 
-        flags.MarkDirty("messages", ["vm1"], clearWriter: "manager");
+        flags.MarkDirty(
+            "messages",
+            dirtyDoor ? ["vm1", "door"] : ["vm1"],
+            clearWriter: "manager");
         var json = JsonSerializer.Serialize(flags, JsonOptions);
         var bytes = Encoding.UTF8.GetBytes(json.EndsWith('\n') ? json : json + "\n");
         var put = await _objectStorage.PutBytesAsync(

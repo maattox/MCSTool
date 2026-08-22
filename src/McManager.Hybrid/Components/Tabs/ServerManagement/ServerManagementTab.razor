@@ -41,7 +41,7 @@
             </button>
         </div>
         <p style="margin:0 0 12px;font-size:13px;color:var(--text-muted);">
-            Friends see the name, description, and icon in their Minecraft server list while the game is running. This is plain text — not a formatted MOTD editor. The doorbell message while the server is off stays as-is.
+            Friends see the name, description, and in-game icon in their Minecraft server list while the game is running. This is plain text — not a formatted MOTD editor. Offline / starting / unavailable icons show on the doorbell while the server is off.
         </p>
         <div class="mcm-identity-grid">
             <div>
@@ -72,38 +72,30 @@
                 </p>
             </div>
             <div>
-                <div class="mcm-identity-icon-row">
-                    @if (!string.IsNullOrWhiteSpace(Vm.IconPreviewDataUrl))
-                    {
-                        <img class="mcm-server-icon"
-                             src="@Vm.IconPreviewDataUrl"
-                             width="64"
-                             height="64"
-                             alt="Server icon" />
-                    }
-                    else
-                    {
-                        <div class="mcm-server-icon mcm-server-icon-empty" aria-hidden="true">
-                            <i class="ti ti-photo"></i>
-                        </div>
-                    }
-                    <div>
-                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                            <button type="button"
-                                    disabled="@Vm.AnyBusy"
-                                    title="Minecraft needs a 64×64 PNG."
-                                    @onclick="Vm.PickIconAsync">
-                                Choose icon
-                            </button>
-                            <button type="button"
-                                    disabled="@(!Vm.CanClearIcon)"
-                                    @onclick="Vm.ClearIcon">
-                                Remove icon
-                            </button>
-                        </div>
-                        <p style="margin:6px 0 0;font-size:12px;color:var(--text-muted);">64×64 PNG</p>
-                    </div>
+                <ServerIconPreviewStrip ColorUrl="@Vm.IconPreviewDataUrl"
+                                        IdleUrl="@Vm.IdleIconPreviewDataUrl"
+                                        StartingUrl="@Vm.StartingIconPreviewDataUrl"
+                                        ExhaustedUrl="@Vm.ExhaustedIconPreviewDataUrl" />
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                    <button type="button"
+                            disabled="@Vm.AnyBusy"
+                            title="Any PNG. Manager fits it to 64×64."
+                            @onclick="Vm.PickIconAsync">
+                        Choose icon
+                    </button>
+                    <button type="button"
+                            disabled="@(!Vm.CanClearIcon)"
+                            @onclick="Vm.ClearIcon">
+                        Use default
+                    </button>
+                    <button type="button"
+                            class="mcm-help"
+                            title="@Vm.IconStatesHelp">
+                        <i class="ti ti-help" aria-hidden="true"></i>
+                        <span class="sr-only">About doorbell list icons</span>
+                    </button>
                 </div>
+                <p style="margin:6px 0 0;font-size:12px;color:var(--text-muted);">PNG — fitted to 64×64</p>
             </div>
         </div>
         @if (!string.IsNullOrWhiteSpace(Vm.IdentityStatus))

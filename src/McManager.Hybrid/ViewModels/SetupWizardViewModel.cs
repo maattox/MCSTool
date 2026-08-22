@@ -94,7 +94,10 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         "Smaller Always Free size. Vanilla can often stay on all month; less room if you add mods or more players later.";
 
     public const string IdentityHelp =
-        "Friends see the name, description, and icon in Minecraft’s server list while the game is running. Two plain-text lines — not a formatted MOTD editor. You can change this later in Server Management. The doorbell message while the server is off is not this page.";
+        "Friends see the name, description, and in-game icon in Minecraft’s server list while the game is running. Two plain-text lines — not a formatted MOTD editor. You can change this later in Server Management.";
+
+    public const string IconStatesHelp =
+        "In-game is the color icon while Minecraft is up. Offline, Starting, and Unavailable are greyscale copies with overlays for the doorbell list while the server is off, waking, or cannot start (daily hours or spend-brake).";
 
     private static readonly TimeSpan LogFlushPeriod = TimeSpan.FromMilliseconds(250);
     private static readonly TimeSpan ElapsedTickPeriod = TimeSpan.FromSeconds(1);
@@ -259,6 +262,15 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     [ObservableProperty]
     private string _iconPreviewDataUrl = "";
+
+    [ObservableProperty]
+    private string _idleIconPreviewDataUrl = "";
+
+    [ObservableProperty]
+    private string _startingIconPreviewDataUrl = "";
+
+    [ObservableProperty]
+    private string _exhaustedIconPreviewDataUrl = "";
 
     [ObservableProperty]
     private string _identityHint = "";
@@ -516,7 +528,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     public string MotdPreview => ServerIdentityUx.BuildMotd(IdentityName, IdentityDescription);
 
     public bool CanClearIdentityIcon =>
-        !string.IsNullOrWhiteSpace(IdentityIconPath) || !string.IsNullOrWhiteSpace(IconPreviewDataUrl);
+        !string.IsNullOrWhiteSpace(IdentityIconPath);
 
     public int IdentityNameMaxLength => ServerIdentityUx.MaxNameLength;
 
@@ -692,7 +704,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
         var path = await _picker.OpenFileAsync(new FilePickRequest
         {
-            Title = "Choose a 64×64 PNG server icon",
+            Title = "Choose a PNG server icon",
             Filters =
             [
                 new FileTypeFilter("PNG images", ".png"),
@@ -712,8 +724,8 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         if (IsDeployLocked)
             return;
         IdentityIconPath = "";
-        IconPreviewDataUrl = "";
         IdentityHint = "";
+        ApplyDefaultIconPreviews();
         OnPropertyChanged(nameof(CanClearIdentityIcon));
         Persist();
     }
@@ -1673,7 +1685,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         if (string.IsNullOrWhiteSpace(path))
         {
             IdentityIconPath = "";
-            IconPreviewDataUrl = "";
+            ApplyDefaultIconPreviews();
             if (persistHint)
                 IdentityHint = "";
             OnPropertyChanged(nameof(CanClearIdentityIcon));
@@ -1683,8 +1695,8 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         if (!File.Exists(path))
         {
             IdentityIconPath = path;
-            IconPreviewDataUrl = "";
-            IdentityHint = "That icon file is missing. Choose it again, or continue without an icon.";
+            ApplyDefaultIconPreviews();
+            IdentityHint = "That icon file is missing. Choose it again, or continue with the default.";
             OnPropertyChanged(nameof(CanClearIdentityIcon));
             return;
         }
@@ -1701,18 +1713,44 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             return;
         }
 
-        var error = ServerIdentityUx.ValidateIcon(bytes);
-        if (error is not null)
+        var composed = ServerIconComposer.Compose(bytes);
+        if (!composed.Succeeded || composed.Value is null)
         {
-            IdentityHint = error;
+            IdentityHint = composed.Error ?? "Could not use that PNG.";
             OnPropertyChanged(nameof(CanClearIdentityIcon));
             return;
         }
 
         IdentityIconPath = path;
-        IconPreviewDataUrl = "data:image/png;base64," + Convert.ToBase64String(bytes);
+        ApplyIconPreviews(composed.Value);
         IdentityHint = "";
         OnPropertyChanged(nameof(CanClearIdentityIcon));
+    }
+
+    private void ApplyDefaultIconPreviews()
+    {
+        var composed = ServerIconComposer.Compose();
+        if (composed.Succeeded && composed.Value is not null)
+            ApplyIconPreviews(composed.Value);
+        else
+            ApplyIconPreviews(null);
+    }
+
+    private void ApplyIconPreviews(ServerIconSet? set)
+    {
+        if (set is null)
+        {
+            IconPreviewDataUrl = "";
+            IdleIconPreviewDataUrl = "";
+            StartingIconPreviewDataUrl = "";
+            ExhaustedIconPreviewDataUrl = "";
+            return;
+        }
+
+        IconPreviewDataUrl = set.ColorDataUrl;
+        IdleIconPreviewDataUrl = set.IdleDataUrl;
+        StartingIconPreviewDataUrl = set.StartingDataUrl;
+        ExhaustedIconPreviewDataUrl = set.ExhaustedDataUrl;
     }
 
     protected override void OnPropertyChanged(PropertyChangedEventArgs e)
@@ -1783,6 +1821,9 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             case nameof(CanClearIdentityIcon):
             case nameof(IdentityHint):
             case nameof(IconPreviewDataUrl):
+            case nameof(IdleIconPreviewDataUrl):
+            case nameof(StartingIconPreviewDataUrl):
+            case nameof(ExhaustedIconPreviewDataUrl):
             case nameof(Profiles):
             case nameof(VersionIds):
             case nameof(CapacityDialogOpen):

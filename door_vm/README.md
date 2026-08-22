@@ -24,7 +24,7 @@ door_vm/
   oci/                      ← start/stop VM1, IP move, wait_forge, pull/heal OS
   scripts/                  ← reconcile, reset, diagnose helpers
   web/static/               ← door admin UI (served on :8080)
-  assets/icons/             ← MOTD favicons (idle/starting/exhausted.png; regen via gen_icons.py)
+  assets/icons/             ← MOTD favicons (idle/starting/exhausted.png; Manager-composed defaults)
   systemd/                  ← mccontrol.service + reconcile timer/service
   tests/                    ← unit smoke (optional on Micro)
 ```

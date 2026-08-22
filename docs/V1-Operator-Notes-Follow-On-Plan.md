@@ -1,6 +1,6 @@
 # V1 operator-notes follow-on (living)
 
-**Status:** Living. Created 2026-08-21 (docs only). **NEXT = P8** (P1–P7 **DONE**). Step **8.7** P1–P5 are **DONE**.  
+**Status:** Living. Created 2026-08-21 (docs only). **NEXT = P9** (P1–P8 **DONE**). Step **8.7** P1–P5 are **DONE**.  
 **Parent:** `[V1-Implementation-Plan.md](V1-Implementation-Plan.md)` Step **8.8**.  
 **Why now:** operator 2026-08-21 — after modpack-test fixes, implement Manager / Setup / pack-UX notes **before** QA Pass 3. Many notes are vague; agents **decide inside each section’s bounds** and record the choice. Stop and ask for spend, tofu destroy, CurseForge **API keys**, or pulling parked after-v1 items.
 
@@ -156,8 +156,8 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 | **P5**  | Setup wizard UX (copy, layout, log height, humanize)       | **DONE** | SEQUENTIAL                           | No              |
 | **P6**  | Auto compartment name; drop wizard step                    | **DONE** | SEQUENTIAL                           | No              |
 | **P7**  | Setup identity page (name / description / icon)            | **DONE** | SEQUENTIAL                           | No              |
-| **P8**  | Icon state variants from overlays                          | **NEXT** | SEQUENTIAL                           | Yes (door push) |
-| **P9**  | Jar-root confirm + derived manifest                        | TODO     | SEQUENTIAL                           | Optional        |
+| **P8**  | Icon state variants from overlays                          | **DONE** | SEQUENTIAL                           | Yes (door push) |
+| **P9**  | Jar-root confirm + derived manifest                        | **NEXT** | SEQUENTIAL                           | Optional        |
 | **P10** | Layer 3 crash quarantine                                   | TODO     | SEQUENTIAL                           | Yes             |
 | **P11** | CurseForge refuse helper (links, optional Modrinth search) | TODO     | SEQUENTIAL                           | No              |
 
@@ -407,7 +407,7 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 
 ## P8 — Server icon state variants
 
-**Status:** NEXT  
+**Status:** DONE  
 **UI skill:** required for any in-app preview  
 **Catalog IDs:** S4-12; door MOTD favicon
 
@@ -438,7 +438,7 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 
 **Done when:** Pipeline + door/VM1 publish; defaults work with no upload; Issues.md if live TESTING door path was wrong.
 
-**Changelog:** *(empty until implemented)*
+**Changelog:** 2026-08-21 — **P8 DONE.** Admin-PC ImageSharp pipeline: contain-fit 64×64 color (`messages/server-icon.png`) plus greyscale+overlay door variants (`door-idle/starting/exhausted.png`). Default `assets/server-icons/default-icon.png` when none uploaded. Setup seed + identity Save PUT Object Storage and `messages.door`; door `pull_os_icons.sh` + mccontrol reload on os-refresh/wake. Unavailable and spend-brake share exhausted art. In-app preview strip. Core tests + greenfield `door_vm/assets/icons`. Guide + S4-12. **NEXT = P9.**
 
 ---
 
@@ -446,7 +446,7 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 
 ## P9 — Jar-root confirm + derived manifest
 
-**Status:** TODO  
+**Status:** NEXT  
 **Catalog IDs:** S6-02; Change pack
 
 **Read first**
@@ -558,6 +558,7 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 
 | Date       | Note                                                                                                                                                                                                                                                    |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-21 | **P8 DONE.** Admin-PC icon variants (color 64×64 + door greyscale overlays); Object Storage + door pull. **NEXT = P9.**                                                                                                                                              |
 | 2026-08-21 | **P7 DONE.** Setup Name and icon page (type-based defaults, no Oracle™); seeds `messages/chat.json`. **NEXT = P8.**                                                                                                                                              |
 | 2026-08-21 | **P6 DONE.** Auto compartment name (`mcmgr` / `mcmgr-2`…); Compartment wizard page removed. **NEXT = P7.**                                                                                                                                              |
 | 2026-08-21 | **P5 DONE.** Setup wizard copy/layout/help hovers; taller deploy log; humanized dock status. **NEXT = P6.**                                                                                                                                              |

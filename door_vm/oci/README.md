@@ -14,6 +14,7 @@ The C control plane (Task 9+) invokes these with fixed paths; they do not source
 | `ip_to_vm2.sh` | Reassign reserved public IP to VM2 private IP |
 | `wait_forge.sh` | Poll `VM1_PRIVATE_IP:25565` until TCP accepts |
 | `pull_os_budget.sh` | GET ledger/budget (flag-aware or `--force`) and **always** GET `meta/spend-brake-triggered.json` (404 = unlocked) |
+| `pull_os_icons.sh` | GET `messages/door-*.png` into `/opt/mccontrol/assets/icons/` (flag-aware or `--force`); fail-open |
 
 See `config.example.env` for required variables.
 

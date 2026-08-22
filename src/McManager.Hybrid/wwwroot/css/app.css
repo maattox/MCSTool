@@ -2882,7 +2882,7 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 
 .mcm-identity-icon-row {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 12px;
 }
 
@@ -2903,6 +2903,42 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     justify-content: center;
     color: var(--text-muted);
     font-size: 22px;
+}
+
+.mcm-icon-variants {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 14px;
+    margin: 0 0 8px;
+    min-width: 0;
+}
+
+.mcm-icon-variant {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+}
+
+.mcm-icon-variant figcaption {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.2;
+    text-align: center;
+}
+
+.mcm-icon-variant .mcm-server-icon {
+    width: 48px;
+    height: 48px;
+    flex-basis: 48px;
+}
+
+.mcm-icon-variant:first-child .mcm-server-icon {
+    width: 64px;
+    height: 64px;
+    flex-basis: 64px;
 }
 
 .mcm-motd-preview {

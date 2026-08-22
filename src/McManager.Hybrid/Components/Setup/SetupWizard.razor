@@ -351,37 +351,26 @@
                             </p>
                         </div>
                         <div>
-                            <div class="mcm-identity-icon-row">
-                                @if (!string.IsNullOrWhiteSpace(Vm.IconPreviewDataUrl))
-                                {
-                                    <img class="mcm-server-icon"
-                                         src="@Vm.IconPreviewDataUrl"
-                                         width="64"
-                                         height="64"
-                                         alt="Server icon" />
-                                }
-                                else
-                                {
-                                    <div class="mcm-server-icon mcm-server-icon-empty" aria-hidden="true">
-                                        <i class="ti ti-photo"></i>
-                                    </div>
-                                }
-                                <div>
-                                    <div class="mcm-wizard-actions">
-                                        <button type="button"
-                                                disabled="@(!Vm.CanMutateWizard)"
-                                                title="Minecraft needs a 64×64 PNG."
-                                                @onclick="Vm.PickIdentityIconAsync">
-                                            Choose PNG
-                                        </button>
-                                        <button type="button"
-                                                disabled="@(!Vm.CanMutateWizard || !Vm.CanClearIdentityIcon)"
-                                                @onclick="Vm.ClearIdentityIcon">
-                                            Remove
-                                        </button>
-                                    </div>
-                                    <p class="mcm-wizard-hint">Optional 64×64 PNG</p>
+                            <div>
+                                <ServerIconPreviewStrip ColorUrl="@Vm.IconPreviewDataUrl"
+                                                        IdleUrl="@Vm.IdleIconPreviewDataUrl"
+                                                        StartingUrl="@Vm.StartingIconPreviewDataUrl"
+                                                        ExhaustedUrl="@Vm.ExhaustedIconPreviewDataUrl" />
+                                <div class="mcm-wizard-actions">
+                                    <button type="button"
+                                            disabled="@(!Vm.CanMutateWizard)"
+                                            title="Any PNG. Manager fits it to 64×64."
+                                            @onclick="Vm.PickIdentityIconAsync">
+                                        Choose PNG
+                                    </button>
+                                    <button type="button"
+                                            disabled="@(!Vm.CanMutateWizard || !Vm.CanClearIdentityIcon)"
+                                            @onclick="Vm.ClearIdentityIcon">
+                                        Use default
+                                    </button>
+                                    <WizardHelp Title="@SetupWizardViewModel.IconStatesHelp" AriaLabel="About doorbell list icons" />
                                 </div>
+                                <p class="mcm-wizard-hint">Optional PNG — default if you skip</p>
                             </div>
                         </div>
                     </div>

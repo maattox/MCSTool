@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Generate 64x64 solid-color PNG icons for mcdoor favicons."""
+"""Generate 64x64 solid-color PNG icons for mcdoor favicons.
+
+Greenfield defaults are the Manager-composed variants (user or default-icon.png
+plus overlays) written to idle.png / starting.png / exhausted.png. This script
+is a last-resort solid-color fallback when those files are missing.
+"""
 from __future__ import annotations
 
 import struct

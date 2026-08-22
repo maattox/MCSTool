@@ -17,6 +17,7 @@
 
 #include "jsonmin.h"
 #include "keepalive.h"
+#include "mcdoor.h"
 
 struct ControlContext {
   ControlConfig cfg;
@@ -308,6 +309,10 @@ int control_os_refresh(ControlContext *ctx) {
   /* Pull without holding the control lock (network I/O). Always --force so
    * wake/refresh do not trust a stale cache when dirty flags were lost. */
   int pull_rc = run_script_args(&ctx->cfg, "pull_os_budget.sh", "--force");
+  (void)run_script_args(&ctx->cfg, "pull_os_icons.sh", "--force");
+  if (ctx->cfg.icons_dir[0] != '\0') {
+    (void)mcdoor_load_icons(ctx->cfg.icons_dir);
+  }
   lock_ctx(ctx);
   if (reload_os_caches_unlocked(ctx) != 0) {
     ctx->state.door = DOOR_DEGRADED;
@@ -357,6 +362,10 @@ static int do_wake(ControlContext *ctx, int admin_override) {
   if (ctx->cfg.object_storage_enabled) {
     /* Network I/O must not hold the control lock. Force-refresh OS SoT. */
     pull_rc = run_script_args(&ctx->cfg, "pull_os_budget.sh", "--force");
+    (void)run_script_args(&ctx->cfg, "pull_os_icons.sh", NULL);
+    if (ctx->cfg.icons_dir[0] != '\0') {
+      (void)mcdoor_load_icons(ctx->cfg.icons_dir);
+    }
   }
 
   lock_ctx(ctx);

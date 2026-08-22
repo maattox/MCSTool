@@ -237,7 +237,10 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     public string WorldBackupsHelpTitle => OversizedWorldBackupUx.HelpTitle;
 
     public string IdentityHelpTitle =>
-        "Name and description show in Minecraft’s server list when the game is running (plain text, two lines). The 64×64 PNG is the list icon. Automated chat is what the idle timer says in-game before a stop. Save, then Restart Minecraft (or Start) to apply. The doorbell MOTD while the server is off is not edited here.";
+        "Name and description show in Minecraft’s server list when the game is running (plain text, two lines). The in-game PNG is the list icon while Minecraft is up. Offline / starting / unavailable copies show on the doorbell while the server is off. Automated chat is what the idle timer says in-game before a stop. Save, then Restart Minecraft (or Start) to apply the in-game icon. The doorbell icon updates on Save.";
+
+    public string IconStatesHelp =>
+        "In-game is the color icon while Minecraft is up. Offline, Starting, and Unavailable are greyscale copies with overlays for the doorbell list while the server is off, waking, or cannot start (daily hours or spend-brake).";
 
     public string MotdPreview => ServerIdentityUx.BuildMotd(IdentityName, IdentityDescription);
 
@@ -260,6 +263,15 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
     [ObservableProperty]
     private string _iconPreviewDataUrl = "";
+
+    [ObservableProperty]
+    private string _idleIconPreviewDataUrl = "";
+
+    [ObservableProperty]
+    private string _startingIconPreviewDataUrl = "";
+
+    [ObservableProperty]
+    private string _exhaustedIconPreviewDataUrl = "";
 
     [ObservableProperty]
     private bool _showChatTemplates;
@@ -433,6 +445,9 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         IdentityDescription = "";
         HasCustomIcon = false;
         IconPreviewDataUrl = "";
+        IdleIconPreviewDataUrl = "";
+        StartingIconPreviewDataUrl = "";
+        ExhaustedIconPreviewDataUrl = "";
         IdentityStatus = "";
         ChatTemplates.Clear();
         ServerNameDisplay = "—";
@@ -1507,7 +1522,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     {
         var path = await _filePicker.OpenFileAsync(new FilePickRequest
         {
-            Title = "Choose a 64×64 PNG server icon",
+            Title = "Choose a PNG server icon",
             Filters = [PngFilter, AllFilesFilter],
         });
         if (string.IsNullOrWhiteSpace(path))
@@ -1519,16 +1534,17 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         }
 
         var bytes = await File.ReadAllBytesAsync(path);
-        var error = ServerIdentityUx.ValidateIcon(bytes);
-        if (error is not null)
+        var composed = ServerIconComposer.Compose(bytes);
+        if (!composed.Succeeded || composed.Value is null)
         {
-            IdentityStatus = error;
+            IdentityStatus = composed.Error ?? "Could not use that PNG.";
             return;
         }
 
         _pendingIconPng = bytes;
         _clearIcon = false;
-        ApplyIconPreview(bytes);
+        ApplyIconSet(composed.Value);
+        HasCustomIcon = true;
         IdentityStatus = "Icon selected. Save to store it.";
         OnPropertyChanged(nameof(CanClearIcon));
     }
@@ -1537,8 +1553,9 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     {
         _pendingIconPng = null;
         _clearIcon = HasCustomIcon || !string.IsNullOrWhiteSpace(IconPreviewDataUrl);
-        ApplyIconPreview(null);
-        IdentityStatus = _clearIcon ? "Icon will be removed on Save." : "";
+        ApplyDefaultIconSet();
+        HasCustomIcon = false;
+        IdentityStatus = _clearIcon ? "Default icon will be used on Save." : "";
         OnPropertyChanged(nameof(CanClearIcon));
     }
 
@@ -1568,8 +1585,12 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
             _pendingIconPng = null;
             _clearIcon = false;
             await LoadIdentityAsync();
+            var doorNote = await TryRefreshDoorIconsAsync();
             IdentityStatus =
-                "Saved. Restart Minecraft (or Start) to apply the name, icon, and chat lines.";
+                "Saved. Restart Minecraft (or Start) to apply the in-game name and icon. "
+                + (string.IsNullOrWhiteSpace(doorNote)
+                    ? "Doorbell list icons update on Save."
+                    : doorNote);
         }
         finally
         {
@@ -1582,6 +1603,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         if (_chat is null)
         {
             FillDefaultChatRows();
+            ApplyDefaultIconSet();
             return;
         }
 
@@ -1590,6 +1612,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         {
             IdentityStatus = got.Error ?? "Could not load server identity.";
             FillDefaultChatRows();
+            ApplyDefaultIconSet();
             return;
         }
 
@@ -1600,11 +1623,28 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         ApplyChatRows(doc.ChatMessages);
         _pendingIconPng = null;
         _clearIcon = false;
-        ApplyIconPreview(got.Value.IconPng is { Length: > 0 } ? got.Value.IconPng : null);
+        ApplyIconSetFromPng(got.Value.IconPng);
 
         IdentityStatus = got.Value.Present
             ? ""
             : "No saved identity yet — defaults are shown. Save to create the shared file.";
+    }
+
+    private async Task<string> TryRefreshDoorIconsAsync()
+    {
+        if (_cloud.Door is null)
+            return "Could not reach the doorbell to load list icons; they apply on the next wake.";
+        try
+        {
+            var refresh = await _cloud.Door.RefreshOsAsync();
+            if (!refresh.Succeeded)
+                return "Doorbell icon refresh failed: " + (refresh.Error ?? "unknown") + " They apply on the next wake.";
+            return "Doorbell list icons updated.";
+        }
+        catch (Exception ex)
+        {
+            return "Doorbell icon refresh failed: " + ex.Message;
+        }
     }
 
     private void FillDefaultChatRows() => ApplyChatRows(ServerIdentityUx.DefaultChatMessages);
@@ -1635,18 +1675,45 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         }
     }
 
-    private void ApplyIconPreview(byte[]? png)
+    private void ApplyIconSetFromPng(byte[]? png)
     {
-        if (png is { Length: > 0 })
+        var composed = ServerIconComposer.Compose(png is { Length: > 0 } ? png : null);
+        if (!composed.Succeeded || composed.Value is null)
         {
-            HasCustomIcon = true;
-            IconPreviewDataUrl = "data:image/png;base64," + Convert.ToBase64String(png);
+            ApplyDefaultIconSet();
+            HasCustomIcon = png is { Length: > 0 };
+            return;
         }
+
+        ApplyIconSet(composed.Value);
+        HasCustomIcon = png is { Length: > 0 };
+    }
+
+    private void ApplyDefaultIconSet()
+    {
+        var composed = ServerIconComposer.Compose();
+        if (composed.Succeeded && composed.Value is not null)
+            ApplyIconSet(composed.Value);
         else
+            ApplyIconSet(null);
+        HasCustomIcon = false;
+    }
+
+    private void ApplyIconSet(ServerIconSet? set)
+    {
+        if (set is null)
         {
-            HasCustomIcon = false;
             IconPreviewDataUrl = "";
+            IdleIconPreviewDataUrl = "";
+            StartingIconPreviewDataUrl = "";
+            ExhaustedIconPreviewDataUrl = "";
+            return;
         }
+
+        IconPreviewDataUrl = set.ColorDataUrl;
+        IdleIconPreviewDataUrl = set.IdleDataUrl;
+        StartingIconPreviewDataUrl = set.StartingDataUrl;
+        ExhaustedIconPreviewDataUrl = set.ExhaustedDataUrl;
     }
 }
 

@@ -131,7 +131,7 @@ RCON stays **localhost only** (`25575` never public).
 1. Hold **reserved play IP** on secondary private IP while idle  
 2. Answer Minecraft **status MOTD** / login kick; wake VM1 when allowed  
 3. Move reserved IP to VM1 after Forge accepts connections; hand back on stop  
-4. **Object Storage wake:** `pull_os_budget.sh` before spend-brake lock + budget gate (`do_wake`)  
+4. **Object Storage wake:** `pull_os_budget.sh` before spend-brake lock + budget gate (`do_wake`); `pull_os_icons.sh` loads Manager-composed MOTD favicons (`idle` / `starting` / `exhausted`)  
 5. **Reconcile** (~1 min): external SoftStop → idle-empty; **no** routine budget pull; heal OS ledger **at most once** per VM1-down episode when **STOPPED** (`ledger_heal_verified`); clear latch when VM1 is up / `ip_to_vm1.sh`  
 
 Door stays **C-first**; heavy Python is not the control plane. OCI CLI + small python3 snippets are OK for OS I/O. Scripts must default `HOME` (systemd oneshots omit it — see Issues OS-ISSUE-1).

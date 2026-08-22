@@ -767,9 +767,9 @@ For each: click the path, then Result Pass or Fail with what you saw.
 
 **Runner:** `operator` · **Duration:** `quick`
 
-**Steps:** Set a harmless description. Save. Restart Minecraft to apply. Icon 64×64 PNG optional. Setup also has a **Name and icon** page that seeds the same `messages/chat.json` (and optional PNG).
+**Steps:** Set a harmless description. Save. Restart Minecraft to apply the in-game name/icon. Optional PNG (any size; Manager fits 64×64). Setup also has a **Name and icon** page that seeds the same `messages/chat.json` (default icon if none chosen). Save also refreshes doorbell favicons (offline / starting / unavailable).
 
-**Expected:** MOTD/list name updates after restart. Door-off MOTD is **not** edited here. Setup defaults are Vanilla/Paper/Modded Server (no Oracle™). Manager remains the day-2 editor.
+**Expected:** MOTD/list name and color icon update after restart while the game holds the play IP. Door-off list ping shows the greyscale+overlay idle (or starting/unavailable) favicon, not a solid color. Setup defaults are Vanilla/Paper/Modded Server (no Oracle™). Manager remains the day-2 editor.
 
 **Restore:** Put the old name back if you care.
 

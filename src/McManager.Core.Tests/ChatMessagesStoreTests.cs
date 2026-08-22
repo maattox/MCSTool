@@ -18,6 +18,7 @@ public sealed class ChatMessagesStoreTests
         var store = new ChatMessagesStore(new EtagMemoryStorage(), Prefixes);
         Assert.Equal("messages/chat.json", store.ObjectName);
         Assert.Equal("messages/server-icon.png", store.IconObjectName);
+        Assert.Equal("messages/door-idle.png", store.DoorIdleObjectName);
     }
 
     [Fact]
@@ -42,7 +43,7 @@ public sealed class ChatMessagesStoreTests
         doc.Description = "Weekend world";
         doc.ChatMessages["idle_stop"] = "Empty for {minutes} minutes. Saving.";
 
-        var png = Png64();
+        var png = RealPng();
         var put = await store.PublishAsync(doc, iconPng: png);
         Assert.True(put.Succeeded, put.Error);
         Assert.Contains("messages/chat.json", put.Value!.Message, StringComparison.Ordinal);
@@ -55,13 +56,17 @@ public sealed class ChatMessagesStoreTests
         Assert.Equal("messages/server-icon.png", got.Value.Document.IconObject);
         Assert.Equal("Empty for {minutes} minutes. Saving.", got.Value.Document.ChatMessages["idle_stop"]);
         Assert.Equal("Usage limits reached. Server shutting down.", got.Value.Document.ChatMessages["budget_stop"]);
-        Assert.Equal(png, got.Value.IconPng);
+        Assert.NotNull(got.Value.IconPng);
+        Assert.Null(ServerIdentityUx.ValidateIcon(got.Value.IconPng));
+        Assert.True(storage.Objects.ContainsKey("messages/door-idle.png"));
+        Assert.True(storage.Objects.ContainsKey("messages/door-starting.png"));
+        Assert.True(storage.Objects.ContainsKey("messages/door-exhausted.png"));
 
         var flagsJson = Encoding.UTF8.GetString(storage.Content("meta/flags.json"));
         using var flags = JsonDocument.Parse(flagsJson);
         Assert.True(flags.RootElement.GetProperty("categories").GetProperty("messages").GetProperty("vm1").GetBoolean());
+        Assert.True(flags.RootElement.GetProperty("categories").GetProperty("messages").GetProperty("door").GetBoolean());
         Assert.False(flags.RootElement.GetProperty("categories").GetProperty("messages").GetProperty("manager").GetBoolean());
-        Assert.False(flags.RootElement.GetProperty("categories").GetProperty("messages").GetProperty("door").GetBoolean());
     }
 
     [Fact]
@@ -111,7 +116,7 @@ public sealed class ChatMessagesStoreTests
         var doc = ChatMessagesDocument.Defaults();
         doc.ServerName = "Vanilla Server";
         doc.Description = ServerIdentityUx.DefaultDescription;
-        var first = await store.SeedIfMissingAsync(doc, Png64());
+        var first = await store.SeedIfMissingAsync(doc, iconPng: null);
         Assert.True(first.Succeeded, first.Error);
 
         var got = await store.GetAsync();
@@ -120,6 +125,7 @@ public sealed class ChatMessagesStoreTests
         Assert.Equal(ServerIdentityUx.DefaultDescription, got.Value.Document.Description);
         Assert.Equal("messages/server-icon.png", got.Value.Document.IconObject);
         Assert.NotNull(got.Value.IconPng);
+        Assert.True(storage.Objects.ContainsKey("messages/door-idle.png"));
 
         var again = ChatMessagesDocument.Defaults();
         again.ServerName = "Overwrite";
@@ -131,13 +137,30 @@ public sealed class ChatMessagesStoreTests
     }
 
     [Fact]
-    public async Task Rejects_non_64_png()
+    public async Task Publish_fits_non_square_png_to_64()
     {
         var store = new ChatMessagesStore(new EtagMemoryStorage(), Prefixes);
-        var tiny = PngWithSize(1, 1);
-        var put = await store.PublishAsync(ChatMessagesDocument.Defaults(), iconPng: tiny);
-        Assert.False(put.Succeeded);
-        Assert.Contains("64", put.Error, StringComparison.Ordinal);
+        var tall = ServerIconComposerTests.SolidPng(32, 48, 200, 40, 40);
+        var put = await store.PublishAsync(ChatMessagesDocument.Defaults(), iconPng: tall);
+        Assert.True(put.Succeeded, put.Error);
+        var got = await store.GetAsync();
+        Assert.True(got.Succeeded, got.Error);
+        Assert.Null(ServerIdentityUx.ValidateIcon(got.Value!.IconPng));
+    }
+
+    [Fact]
+    public async Task Seed_backfills_door_icons_when_chat_json_already_exists()
+    {
+        var storage = new EtagMemoryStorage();
+        storage.Seed(
+            "messages/chat.json",
+            Encoding.UTF8.GetBytes("""{"version":1,"server_name":"Already","chat_messages":{}}""" + "\n"),
+            "etag-keep");
+        var store = new ChatMessagesStore(storage, Prefixes);
+        var seed = await store.SeedIfMissingAsync();
+        Assert.True(seed.Succeeded, seed.Error);
+        Assert.True(storage.Objects.ContainsKey("messages/door-idle.png"));
+        Assert.Contains("Already", Encoding.UTF8.GetString(storage.Content("messages/chat.json")), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -154,29 +177,7 @@ public sealed class ChatMessagesStoreTests
         Assert.Contains("newer", got.Error, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static byte[] Png64() => PngWithSize(64, 64);
-
-    private static byte[] PngWithSize(int width, int height)
-    {
-        var png = new byte[24];
-        png[0] = 0x89;
-        png[1] = 0x50;
-        png[2] = 0x4E;
-        png[3] = 0x47;
-        png[4] = 0x0D;
-        png[5] = 0x0A;
-        png[6] = 0x1A;
-        png[7] = 0x0A;
-        png[16] = (byte)(width >> 24);
-        png[17] = (byte)(width >> 16);
-        png[18] = (byte)(width >> 8);
-        png[19] = (byte)width;
-        png[20] = (byte)(height >> 24);
-        png[21] = (byte)(height >> 16);
-        png[22] = (byte)(height >> 8);
-        png[23] = (byte)height;
-        return png;
-    }
+    private static byte[] RealPng() => ServerIconComposer.Compose().Value!.ColorPng;
 
     private sealed class EtagMemoryStorage : IObjectStorageService
     {
@@ -367,32 +368,16 @@ public sealed class ServerIdentityUxTests
         var path = Path.Combine(Path.GetTempPath(), "mcmgr-setup-icon-" + Guid.NewGuid().ToString("N") + ".png");
         try
         {
-            File.WriteAllBytes(path, Png64Stub());
+            File.WriteAllBytes(path, ServerIconComposerTests.SolidPng(40, 40, 10, 180, 40));
             var bytes = ServerIdentityUx.TryReadSetupIcon(path, out var skip);
             Assert.Null(skip);
             Assert.NotNull(bytes);
-            Assert.Equal(24, bytes!.Length);
+            Assert.True(bytes!.Length > 24);
         }
         finally
         {
             try { File.Delete(path); } catch { /* temp */ }
         }
-    }
-
-    private static byte[] Png64Stub()
-    {
-        var png = new byte[24];
-        png[0] = 0x89;
-        png[1] = 0x50;
-        png[2] = 0x4E;
-        png[3] = 0x47;
-        png[4] = 0x0D;
-        png[5] = 0x0A;
-        png[6] = 0x1A;
-        png[7] = 0x0A;
-        png[19] = 64;
-        png[23] = 64;
-        return png;
     }
 
     [Fact]
@@ -413,6 +398,7 @@ public sealed class ServerIdentityUxTests
 
         png[19] = 32;
         Assert.Contains("64", ServerIdentityUx.ValidateIcon(png), StringComparison.Ordinal);
+        Assert.Null(ServerIdentityUx.ValidateSourceIcon(png));
         Assert.Equal("Choose a PNG file.", ServerIdentityUx.ValidateIcon(null));
         Assert.Equal("Icon must be a PNG file.", ServerIdentityUx.ValidateIcon([1, 2, 3]));
     }

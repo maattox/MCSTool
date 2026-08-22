@@ -11,6 +11,9 @@ public sealed class ChatMessagesDocument
     public const int DocumentVersion = 1;
     public const string FileName = "chat.json";
     public const string IconFileName = "server-icon.png";
+    public const string DoorIdleFileName = "door-idle.png";
+    public const string DoorStartingFileName = "door-starting.png";
+    public const string DoorExhaustedFileName = "door-exhausted.png";
 
     public static readonly IReadOnlyDictionary<string, string> DefaultChatMessages =
         new Dictionary<string, string>(StringComparer.Ordinal)

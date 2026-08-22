@@ -291,6 +291,10 @@ public sealed class SetupDeployOrchestrator
                 return SetupDeployResult.Fail(stage, os.Error ?? "Object Storage seed failed.");
             }
 
+            var icons = await TryRefreshDoorIconsAsync(outputs, log, cancellationToken).ConfigureAwait(false);
+            if (!icons.Succeeded)
+                log?.Report("Door icon refresh skipped: " + (icons.Error ?? "unknown"));
+
             stage = SetupApplyStage.OsMeta;
             PersistStage(state, stage);
             ReportProgress(progress, stage, complete: true);
@@ -477,6 +481,30 @@ public sealed class SetupDeployOrchestrator
 
         log?.Report("Published budget/config.json, ledger/usage.json, meta/infra.json, and messages/chat.json.");
         return ServiceResult.Ok();
+    }
+
+    private static async Task<ServiceResult> TryRefreshDoorIconsAsync(
+        TofuApplyOutputs outputs,
+        IProgress<string>? log,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(outputs.DoorSshHost))
+            return ServiceResult.Fail("Door SSH host missing; cannot refresh doorbell icons.");
+
+        var port = outputs.DoorHttpPort > 0 ? outputs.DoorHttpPort : 8080;
+        try
+        {
+            using var door = new DoorClient($"http://{outputs.DoorSshHost}:{port}");
+            var refresh = await door.RefreshOsAsync(cancellationToken).ConfigureAwait(false);
+            if (!refresh.Succeeded)
+                return ServiceResult.Fail(refresh.Error ?? "POST /api/os-refresh failed.");
+            log?.Report("Asked the doorbell to load the new list icons.");
+            return ServiceResult.Ok();
+        }
+        catch (Exception ex)
+        {
+            return ServiceResult.Fail(ex.Message);
+        }
     }
 
     private static void SeedAdminFriend(SetupWizardState state)
