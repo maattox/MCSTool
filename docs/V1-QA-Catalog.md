@@ -761,7 +761,7 @@ For each: click the path, then Result Pass or Fail with what you saw.
 
 **Steps:** Vanilla/Paper: empty “not modded” note; **Change pack** is still offered. Modded: inspect `mods/` when VM1 up; **Download pack** is the **original** `data/imported-packs/` archive, not a zip of live `mods/`. Missing local archive disables download with reconstruct warning. **Change pack**: VM1 must be RUNNING; pick/drop `.mrpack` or server-pack zip; Setup analyze + two client-pack checkboxes; world kept unless wipe is checked; confirm reinstalls Minecraft. Not a catalog / per-mod IDE.
 
-**Expected:** Matches Guide. Change pack Start-first when VM1 is down. Wipe optional; friends still need the new client pack.
+**Expected:** Matches Guide. Change pack Start-first when VM1 is down. Wipe optional; friends still need the new client pack. **Install** / **Cancel** and job progress (elapsed; indeterminate bar) live in the window-locked bottom dock, not only in the scrolling panel. Compact toasts stay for success/error, not the running Change pack job.
 
 ### S4-12 — Name / icon / messages
 
@@ -919,7 +919,7 @@ Do **not** `tofu apply` from these tests unless the operator authorizes it in th
 
 **Steps:** If you can open Setup without destroying manage config: walk Always Free checkboxes ($1 residual honesty), profile picker, compartment default `mcmgr`, game Vanilla vs Modded, Paper vs Default Vanilla, EULA link, Auth Token skip copy, shape 2/12 vs 4/24, admin `/32`. **Do not click Deploy** unless S7. If Setup already finished, reopen the last step from **Advanced → Deploy / repair** (no second Deploy) to check the finish page.
 
-**Expected:** Copy matches Guide. Back/Deploy lock behavior is described (cannot verify without Deploy). Modded: file picker/drop only; client-pack checkboxes; Quilt cannot continue; CurseForge **client** export refused. After a successful Deploy (or resume of a finished wizard): heading **Deployment Complete**, reserved play IP with **Copy**, Close to continue to Manager; deploy log may be collapsed below.
+**Expected:** Copy matches Guide. Back/Deploy lock behavior is described (cannot verify without Deploy). While Deploy runs, percent, elapsed time, and status live in the **bottom dock** (same bar as Back/Deploy/Close); the detailed log stays on the page. Modded: file picker/drop only; client-pack checkboxes; Quilt cannot continue; CurseForge **client** export refused. After a successful Deploy (or resume of a finished wizard): heading **Deployment Complete**, reserved play IP with **Copy**, Close to continue to Manager; deploy log may be collapsed below.
 
 ### S6-02 — Modded analyze (local file)
 

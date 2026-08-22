@@ -16,6 +16,10 @@ public sealed class TabStatusBannerPolicyTests
     [InlineData("List failed.", true)]
     [InlineData("Upload failed.", true)]
     [InlineData("Wiping live world via SSH…", true)]
+    [InlineData("Analyzing modpack…", false)]
+    [InlineData("Reinstalling Minecraft from this pack…", false)]
+    [InlineData("Choose a pack file, then install.", false)]
+    [InlineData("Review the pack, then install.", false)]
     public void ServerManagement_status_gate(string message, bool forward) =>
         Assert.Equal(forward, TabStatusBannerPolicy.ShouldForwardServerManagementStatus(message));
 

@@ -1,7 +1,7 @@
 # V1 operator-notes follow-on (living)
 
-**Status:** Living. Created 2026-08-21 (docs only). **NEXT = P4** (P1–P3 **DONE**). Step **8.7** P1–P5 are **DONE**.  
-**Parent:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.8**.  
+**Status:** Living. Created 2026-08-21 (docs only). **NEXT = P5** (P1–P4 **DONE**). Step **8.7** P1–P5 are **DONE**.  
+**Parent:** `[V1-Implementation-Plan.md](V1-Implementation-Plan.md)` Step **8.8**.  
 **Why now:** operator 2026-08-21 — after modpack-test fixes, implement Manager / Setup / pack-UX notes **before** QA Pass 3. Many notes are vague; agents **decide inside each section’s bounds** and record the choice. Stop and ask for spend, tofu destroy, CurseForge **API keys**, or pulling parked after-v1 items.
 
 This file’s creation session **must not implement code**. Later agents implement **only the single section marked NEXT**.
@@ -24,16 +24,14 @@ Pack-handling notes apply to **both** Setup and Manager **Change pack** unless a
 1. Read **this protocol**, the [Progress dashboard](#progress-dashboard), and **only the NEXT section**.
 2. Implement only that section. Do not start neighbors “while you are here.”
 3. After finishing: mark **DONE**, set the next incomplete section to **NEXT**, changelog line, update V1 plan Step **8.8** + dashboard, **stop**.
-4. Mirror TESTING / guest fixes into local SoT. File [`Issues.md`](Issues.md) for on-box/Setup/door bugs.
+4. Mirror TESTING / guest fixes into local SoT. File `[Issues.md](Issues.md)` for on-box/Setup/door bugs.
 5. Never create git commits. Suggest a message.
 6. Do **not** start Step **8.5.2** (Pass 3), **8.6.1**, or **9.1**. Do not start this file until **8.7** is DONE.
-7. If this plan disagrees with [`PRODUCT-IDEAS.md`](PRODUCT-IDEAS.md), **follow this plan** and note drift (do not rewrite PRODUCT-IDEAS).
+7. If this plan disagrees with `[PRODUCT-IDEAS.md](PRODUCT-IDEAS.md)`, **follow this plan** and note drift (do not rewrite PRODUCT-IDEAS).
 8. VM1: START if needed, **disable idle** while working, **re-enable** when finished (OS-ISSUE-7).
 9. **UI-heavy sections (P3, P4, P5, P7, P8)** must read the named UI skills **before** changing CSS/Razor. Do not invent a third visual language. Reuse existing tokens (`mcm-help` info hover, wizard footer, action banner chrome). **NuGet is allowed** on `McManager.Hybrid` only. No Avalonia.
 
 Vague notes: **decide** (layout, copy, animation ms, color) inside the section. **Stop and ask** for legal/ToS, spend, or scope listed in [Parked](#parked-not-this-plan).
-
-
 
 ### Context budget
 
@@ -111,15 +109,16 @@ These are **plan decisions**, not optional flavor. Implementing agents follow th
 ## Drift vs PRODUCT-IDEAS (follow this plan)
 
 
-| Topic | PRODUCT-IDEAS / older V1 | This plan |
-|-------|--------------------------|-----------|
-| Layer 3 quarantine | Parked after 4.13 | **v1 now** (P10), blueprint §24.3 bounds |
-| Setup identity | Seed chat.json; edit in Manager | **Setup page** for name / description / icon (P7) |
-| Door favicons | Solid color gen_icons.py | **User icon** + overlays (P8) |
-| Compartment | Wizard step | **Hidden**; auto `mcmgr` (+ numeric suffix) |
-| Default MOTD name | Operator / Manager | Type-based defaults; **no Oracle™** |
-| CF client export | Refuse + Guide | Refuse **plus** project links / optional Modrinth search (still no API key) |
-| Jar-root | Detect + continue | Detect + **user correct** + derived archive |
+| Topic              | PRODUCT-IDEAS / older V1        | This plan                                                                   |
+| ------------------ | ------------------------------- | --------------------------------------------------------------------------- |
+| Layer 3 quarantine | Parked after 4.13               | **v1 now** (P10), blueprint §24.3 bounds                                    |
+| Setup identity     | Seed chat.json; edit in Manager | **Setup page** for name / description / icon (P7)                           |
+| Door favicons      | Solid color gen_icons.py        | **User icon** + overlays (P8)                                               |
+| Compartment        | Wizard step                     | **Hidden**; auto `mcmgr` (+ numeric suffix)                                 |
+| Default MOTD name  | Operator / Manager              | Type-based defaults; **no Oracle™**                                         |
+| CF client export   | Refuse + Guide                  | Refuse **plus** project links / optional Modrinth search (still no API key) |
+| Jar-root           | Detect + continue               | Detect + **user correct** + derived archive                                 |
+
 
 Do **not** rewrite PRODUCT-IDEAS to match.
 
@@ -130,15 +129,16 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 ## Parked (not this plan)
 
 
-| Item | Why |
-|------|-----|
-| CurseForge **API** (4.12) / downloading jars by file ID | ToS + no product key. P11 is links only. |
-| In-app pack browser / catalog | **Rejected**. |
-| Pack replace **light swap** | After-v1. |
-| MultiMC-perfect round-trip as a hard gate | P9 best-effort `modrinth.index.json`; sidecar always. |
-| Players tab, paid mode, PTY console, Quilt Setup, public Minecraft | Unchanged out of scope. |
-| `tofu destroy` / second greenfield | Pass 3 / later. |
-| Step **8.6.1** CI Function image | After QA exit. |
+| Item                                                               | Why                                                   |
+| ------------------------------------------------------------------ | ----------------------------------------------------- |
+| CurseForge **API** (4.12) / downloading jars by file ID            | ToS + no product key. P11 is links only.              |
+| In-app pack browser / catalog                                      | **Rejected**.                                         |
+| Pack replace **light swap**                                        | After-v1.                                             |
+| MultiMC-perfect round-trip as a hard gate                          | P9 best-effort `modrinth.index.json`; sidecar always. |
+| Players tab, paid mode, PTY console, Quilt Setup, public Minecraft | Unchanged out of scope.                               |
+| `tofu destroy` / second greenfield                                 | Pass 3 / later.                                       |
+| Step **8.6.1** CI Function image                                   | After QA exit.                                        |
+
 
 ---
 
@@ -147,19 +147,19 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 ## Progress dashboard
 
 
-| ID | Section | Status | Parallel? | Live SSH/OCI? |
-|----|---------|--------|-----------|----------------|
-| **P1** | Console Simple: drop RCON + plumbing noise | **DONE** | PARALLEL-OK vs P2 if no shared files | Optional |
-| **P2** | Stop tab-open toasts (backups, infra.json) | **DONE** | PARALLEL-OK vs P1 | No |
-| **P3** | Compact toasts + auto-dismiss completed progress | **DONE** | SEQUENTIAL | No |
-| **P4** | Bottom progress dock (Setup + Change pack) | **NEXT** | SEQUENTIAL | No |
-| **P5** | Setup wizard UX (copy, layout, log height, humanize) | TODO | SEQUENTIAL | No |
-| **P6** | Auto compartment name; drop wizard step | TODO | SEQUENTIAL | No |
-| **P7** | Setup identity page (name / description / icon) | TODO | SEQUENTIAL | No |
-| **P8** | Icon state variants from overlays | TODO | SEQUENTIAL | Yes (door push) |
-| **P9** | Jar-root confirm + derived manifest | TODO | SEQUENTIAL | Optional |
-| **P10** | Layer 3 crash quarantine | TODO | SEQUENTIAL | Yes |
-| **P11** | CurseForge refuse helper (links, optional Modrinth search) | TODO | SEQUENTIAL | No |
+| ID      | Section                                                    | Status   | Parallel?                            | Live SSH/OCI?   |
+| ------- | ---------------------------------------------------------- | -------- | ------------------------------------ | --------------- |
+| **P1**  | Console Simple: drop RCON + plumbing noise                 | **DONE** | PARALLEL-OK vs P2 if no shared files | Optional        |
+| **P2**  | Stop tab-open toasts (backups, infra.json)                 | **DONE** | PARALLEL-OK vs P1                    | No              |
+| **P3**  | Compact toasts + auto-dismiss completed progress           | **DONE** | SEQUENTIAL                           | No              |
+| **P4**  | Bottom progress dock (Setup + Change pack)                 | **DONE** | SEQUENTIAL                           | No              |
+| **P5**  | Setup wizard UX (copy, layout, log height, humanize)       | **NEXT** | SEQUENTIAL                           | No              |
+| **P6**  | Auto compartment name; drop wizard step                    | TODO     | SEQUENTIAL                           | No              |
+| **P7**  | Setup identity page (name / description / icon)            | TODO     | SEQUENTIAL                           | No              |
+| **P8**  | Icon state variants from overlays                          | TODO     | SEQUENTIAL                           | Yes (door push) |
+| **P9**  | Jar-root confirm + derived manifest                        | TODO     | SEQUENTIAL                           | Optional        |
+| **P10** | Layer 3 crash quarantine                                   | TODO     | SEQUENTIAL                           | Yes             |
+| **P11** | CurseForge refuse helper (links, optional Modrinth search) | TODO     | SEQUENTIAL                           | No              |
 
 
 When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)`). Do **not** start Pass 3 until the operator says so.
@@ -178,7 +178,7 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 - `src/McManager.Core/Services/MinecraftConsoleRemote.cs` (`FilterSimpleLog`, `IsSimpleLogNoiseLine`)
 - `src/McManager.Core.Tests/MinecraftConsoleRemoteTests.cs`
 - `src/McManager.Hybrid/ViewModels/ConsoleViewModel.cs`
-- Real noise examples in [`Mod-Pack-Tests.md`](Mod-Pack-Tests.md) / live journal if VM1 is up — Full view must still show everything
+- Real noise examples in `[Mod-Pack-Tests.md](Mod-Pack-Tests.md)` / live journal if VM1 is up — Full view must still show everything
 
 **Do**
 
@@ -267,7 +267,7 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 
 ## P4 — Bottom progress dock
 
-**Status:** TODO  
+**Status:** DONE  
 **UI skill:** required  
 **Catalog IDs:** S6-01 deploy; S4-11 Change pack
 
@@ -294,7 +294,7 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 
 **Done when:** Dock exists for both flows; animation present; no second mystery progress bar in the panel **as the only** indicator.
 
-**Changelog:** *(empty until implemented)*
+**Changelog:** 2026-08-21 — **P4 DONE.** Shared window-locked progress dock for Setup Deploy and Change pack (percent when known, elapsed, one-line status, Deploy/Install/Cancel on the same bar). In-page progress is no longer the only indicator. Compact toasts stay above the dock for outcomes. Catalog S6-01/S4-11 + Guide. **NEXT = P5.**
 
 ---
 
@@ -302,7 +302,7 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 
 ## P5 — Setup wizard UX
 
-**Status:** TODO  
+**Status:** NEXT  
 **UI skill:** required (impeccable + web-design-guidelines; frontend-design optional)  
 **Catalog IDs:** S6-01; Guide Setup chapter
 
@@ -380,16 +380,16 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 - UI skills
 - Server Management name/icon/messages (Step 7.6) — **reuse** store + 64×64 PNG rules
 - Setup seed of `messages/chat.json` today
-- Contracts **`messages/chat.json`** / **`messages/server-icon.png`** headings only
+- Contracts `messages/chat.json` / `messages/server-icon.png` headings only
 
 **Do**
 
 1. Add a Setup step: **server name**, **description**, **icon upload** (PNG). Place it where the wizard flow is natural (after game type / pack confirm is known, before Review) — **decide** after P5/P6 step list.
 2. Defaults (no Oracle wording):
-   - Vanilla (Mojang): `Vanilla Server`
-   - Paper: `Paper Server`
-   - Modded: `Modded Server`
-   - Description: `made with github.com/maattox/oci-mc-server`
+  - Vanilla (Mojang): `Vanilla Server`
+  - Paper: `Paper Server`
+  - Modded: `Modded Server`
+  - Description: `made with github.com/maattox/oci-mc-server`
 3. Empty icon → P8 will use `assets/server-icons/default-icon.png` (if P8 not done yet, skip variants and still seed name/description).
 4. Manager identity page remains the day-2 editor. Setup writes the same objects.
 
@@ -417,15 +417,15 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 - `assets/server-icons/` (`default-icon.png`, `overlay-offline.png`, `overlay-starting.png`, `overlay-unavailable.png`; examples are **not** shipped as live assets unless useful as test fixtures)
 - `door_vm/assets/icons/` + `mcdoor` favicon load
 - `ChatMessagesStore` / VM1 `server-icon.png`
-- [`Contracts-Object-Storage.md`](Contracts-Object-Storage.md) messages heading
+- `[Contracts-Object-Storage.md](Contracts-Object-Storage.md)` messages heading
 
 **Do**
 
 1. On admin PC: user (or default) PNG → 64×64 color (Minecraft `server-icon.png` when the game is up).
 2. Greyscale copy + overlay:
-   - offline → `overlay-offline.png` → door **idle**
-   - starting → `overlay-starting.png` → door **starting**
-   - unavailable (usage / spend-brake) → `overlay-unavailable.png` → door **exhausted** (and spend-brake if that uses the same slot — **decide**, prefer one “cannot play” art)
+  - offline → `overlay-offline.png` → door **idle**
+  - starting → `overlay-starting.png` → door **starting**
+  - unavailable (usage / spend-brake) → `overlay-unavailable.png` → door **exhausted** (and spend-brake if that uses the same slot — **decide**, prefer one “cannot play” art)
 3. Publish variants to the **door** (Setup + identity save). Prefer Object Storage + door pull if that avoids SSH-only drift; if pull is too large, SCP/SFTP from Manager like other door deploys — **decide**, mirror into `door_vm/` defaults for greenfield.
 4. Do not process on the E2 Micro beyond writing files mcdoor already loads.
 5. Image library: **Hybrid/Core** (e.g. ImageSharp if needed — ask only if the license is not OSS-friendly). Tests compare against `example-*.png` loosely (size/overlay presence), not pixel-perfect unless cheap.
@@ -545,7 +545,7 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 ## After this plan (do not do it here)
 
 1. V1 dashboard: **8.8 DONE**, **NEXT = Step 8.5.2** Pass 3.
-2. Update [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) include-list for 8.7/8.8 behaviors if not already listed.
+2. Update `[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)` include-list for 8.7/8.8 behaviors if not already listed.
 3. `AGENTS.md` + product rule NEXT lines.
 4. Do **not** start Pass 3 until the operator says so.
 
@@ -556,9 +556,12 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 ## Plan changelog
 
 
-| Date | Note |
-|------|------|
-| 2026-08-21 | **P3 DONE.** Compact lower-right toasts; Start/Stop progress dismiss on completion. **NEXT = P4.** |
-| 2026-08-21 | **P2 DONE.** Stop tab-open toasts (backup list, infra meta load). **NEXT = P3.** |
-| 2026-08-21 | **P1 DONE.** Console Simple filter stricter (RCON, journal, mixin/modloader boot noise). **NEXT = P2.** |
+| Date       | Note                                                                                                                                                                                                                                                    |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-21 | **P4 DONE.** Shared bottom progress dock (Setup Deploy + Change pack). **NEXT = P5.**                                                                                                                                                                    |
+| 2026-08-21 | **P3 DONE.** Compact lower-right toasts; Start/Stop progress dismiss on completion. **NEXT = P4.**                                                                                                                                                      |
+| 2026-08-21 | **P2 DONE.** Stop tab-open toasts (backup list, infra meta load). **NEXT = P3.**                                                                                                                                                                        |
+| 2026-08-21 | **P1 DONE.** Console Simple filter stricter (RCON, journal, mixin/modloader boot noise). **NEXT = P2.**                                                                                                                                                 |
 | 2026-08-21 | Created (docs only). Operator notes after informal pack tests. **Do not start until 8.7 DONE.** Then **NEXT = P1**. Oracle™ dropped from default names. Layer 3 pulled into v1 (P10). CF helper = links only. Do not implement in the creation session. |
+
+

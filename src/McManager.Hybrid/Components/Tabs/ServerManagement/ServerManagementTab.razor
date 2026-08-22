@@ -244,26 +244,10 @@
                         @onclick="Vm.PickPackAsync">
                     Choose pack file…
                 </button>
-                <button type="button"
-                        disabled="@(Vm.AnyBusy)"
-                        @onclick="Vm.CancelChangePack">
-                    Cancel
-                </button>
             </div>
             @if (!string.IsNullOrWhiteSpace(Vm.PackFileNameDisplay))
             {
                 <p class="mcm-wizard-hint mcm-wizard-mono">@Vm.PackFileNameDisplay</p>
-            }
-            @if (Vm.IsAnalyzingPack)
-            {
-                <div class="mcm-wizard-progress">
-                    <div class="mcm-wizard-progress-row">
-                        <span>@Vm.PackAnalyzeCaption</span>
-                    </div>
-                    <div class="mcm-progress-track" role="progressbar" aria-busy="true" aria-valuemin="0" aria-valuemax="100">
-                        <div class="mcm-progress-fill mcm-progress-indeterminate"></div>
-                    </div>
-                </div>
             }
             @if (Vm.ShowPackSummary)
             {
@@ -307,15 +291,6 @@
                            @bind="Vm.WipeWorld" />
                     <span>@Vm.WipeWorldLabel</span>
                 </label>
-                <div class="mcm-wizard-actions" style="margin-top:8px;">
-                    <button type="button"
-                            class="mcm-primary"
-                            disabled="@(!Vm.CanInstallPack)"
-                            title="@Vm.InstallPackTitle"
-                            @onclick="Vm.InstallPackReplaceAsync">
-                        Install this pack
-                    </button>
-                </div>
             }
             </div>
         }

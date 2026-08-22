@@ -15,13 +15,14 @@ namespace McManager.Hybrid.ViewModels;
 /// Server Management tab: Object Storage world backups + SSH replace/wipe when VM1 is RUNNING.
 /// Own <see cref="IsBusy"/> only — does not grey Start/Stop/Restart or dispose <c>OciSession</c>.
 /// </summary>
-public sealed partial class ServerManagementViewModel : ObservableObject
+public sealed partial class ServerManagementViewModel : ObservableObject, IDisposable
 {
     private static readonly FileTypeFilter ZipFilter = new("ZIP files", ".zip");
     private static readonly FileTypeFilter PngFilter = new("PNG images", ".png");
     private static readonly FileTypeFilter AllFilesFilter = new("All files", ".*");
     private static readonly FileTypeFilter PackFilter = new("Modpack archives", ".mrpack", ".zip");
     private static readonly FileTypeFilter MrpackFilter = new("Modrinth pack", ".mrpack");
+    private static readonly TimeSpan PackElapsedTickPeriod = TimeSpan.FromSeconds(1);
 
     private ManagerLocalConfig? _config;
     private BackupStore? _backups;
@@ -40,6 +41,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject
     private readonly NotificationCenter _notices;
     private readonly ActionBanner _banner;
     private readonly SetupBootstrapService _bootstrap;
+    private readonly IUiClock _clock;
+    private readonly IUiDispatcher _dispatcher;
     private bool _forwardBanner;
     private string? _currentMinecraftVersion;
     private string? _currentLoaderOrDistribution;
@@ -48,6 +51,11 @@ public sealed partial class ServerManagementViewModel : ObservableObject
     private long _currentBackupBytes;
     private string _dataDirectory = "";
     private ImportedPackArchiveInfo? _localPack;
+    private CancellationTokenSource? _packElapsedCts;
+    private DateTimeOffset? _packElapsedRunningSince;
+    private TimeSpan _packElapsedAccumulated;
+    private bool _packElapsedStarted;
+    private bool _packReplaceRunning;
 
     public ObservableCollection<WorldBackupInfo> Backups { get; } = [];
 
@@ -182,6 +190,42 @@ public sealed partial class ServerManagementViewModel : ObservableObject
 
     public string ModdingHelpTitle => ModdingPanelLogic.HelpTitle;
 
+    public bool ShowChangePackDock => ProgressDockUx.ShowChangePackDock(ShowChangePackUi);
+
+    public bool ShowPackJobProgress =>
+        ProgressDockUx.ShowJobProgress(IsAnalyzingPack, _packReplaceRunning);
+
+    public bool ShowPackElapsed => _packElapsedStarted;
+
+    public string PackElapsedDisplay => ProgressDockUx.FormatElapsed(CurrentPackElapsed());
+
+    public string DockStatus
+    {
+        get
+        {
+            if (IsAnalyzingPack)
+            {
+                return ProgressDockUx.OneLineStatus(
+                    true,
+                    PackAnalyzeCaption,
+                    ProgressDockUx.ChangePackAnalyzeFallback);
+            }
+
+            if (_packReplaceRunning)
+            {
+                return ProgressDockUx.OneLineStatus(
+                    true,
+                    StatusMessage,
+                    ProgressDockUx.ChangePackInstallFallback);
+            }
+
+            if (ShowPackConfirmChecks)
+                return ProgressDockUx.ChangePackReviewStatus;
+
+            return ProgressDockUx.ChangePackPickStatus;
+        }
+    }
+
     public string DownloadLatestTitle =>
         OversizedWorldBackupUx.DownloadLatestTitle(
             OversizedWorldBlocked,
@@ -303,7 +347,9 @@ public sealed partial class ServerManagementViewModel : ObservableObject
         MainViewModel main,
         NotificationCenter notices,
         ActionBanner banner,
-        SetupBootstrapService bootstrap)
+        SetupBootstrapService bootstrap,
+        IUiClock clock,
+        IUiDispatcher dispatcher)
     {
         _configHost = configHost;
         _cloud = cloud;
@@ -314,6 +360,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject
         _notices = notices;
         _banner = banner;
         _bootstrap = bootstrap;
+        _clock = clock;
+        _dispatcher = dispatcher;
 
         BindFromHost();
         _forwardBanner = true;
@@ -323,6 +371,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject
 
     partial void OnStatusMessageChanged(string value)
     {
+        NotifyDock();
         if (!_forwardBanner || !TabStatusBannerPolicy.ShouldForwardServerManagementStatus(value))
             return;
         _banner.ShowInferred(value);
@@ -952,10 +1001,12 @@ public sealed partial class ServerManagementViewModel : ObservableObject
         }
 
         IsBusy = true;
+        _packReplaceRunning = true;
         var wasForward = _forwardBanner;
         _forwardBanner = false;
-        StatusMessage = "Reinstalling Minecraft from this pack…";
-        _banner.Show(StatusMessage, ActionBannerSeverity.Progress);
+        StatusMessage = ProgressDockUx.ChangePackInstallFallback;
+        BeginPackElapsed();
+        NotifyDock();
         try
         {
             var progress = new Progress<string>(line =>
@@ -963,7 +1014,6 @@ public sealed partial class ServerManagementViewModel : ObservableObject
                 if (string.IsNullOrWhiteSpace(line))
                     return;
                 StatusMessage = line.Trim();
-                _banner.Show(StatusMessage, ActionBannerSeverity.Progress);
             });
             var result = await _bootstrap.ReplacePackAsync(
                 _config.Vm1,
@@ -991,15 +1041,18 @@ public sealed partial class ServerManagementViewModel : ObservableObject
         }
         finally
         {
+            PausePackElapsed();
+            _packReplaceRunning = false;
             _forwardBanner = wasForward;
             IsBusy = false;
+            NotifyDock();
         }
     }
 
     private async Task AnalyzePackPathAsync(string path)
     {
         IsAnalyzingPack = true;
-        PackAnalyzeCaption = "Analyzing modpack…";
+        PackAnalyzeCaption = ProgressDockUx.ChangePackAnalyzeFallback;
         PackBlockReason = "";
         PackSummary = "";
         PackOverrideListWarning = "";
@@ -1007,7 +1060,11 @@ public sealed partial class ServerManagementViewModel : ObservableObject
         PackCanContinue = false;
         PackConfirmed = false;
         ClientPackAcknowledged = false;
-        StatusMessage = "Analyzing modpack…";
+        StatusMessage = ProgressDockUx.ChangePackAnalyzeFallback;
+        var wasForward = _forwardBanner;
+        _forwardBanner = false;
+        BeginPackElapsed();
+        NotifyDock();
         try
         {
             var result = await Task.Run(() =>
@@ -1026,7 +1083,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject
             ApplyPackPreview(result.Value);
             if (result.Value.CanContinue)
             {
-                StatusMessage = "Review the pack summary, then confirm before installing.";
+                StatusMessage = ProgressDockUx.ChangePackReviewStatus;
             }
             else
             {
@@ -1045,8 +1102,11 @@ public sealed partial class ServerManagementViewModel : ObservableObject
         }
         finally
         {
+            PausePackElapsed();
             IsAnalyzingPack = false;
             PackAnalyzeCaption = "";
+            _forwardBanner = wasForward;
+            NotifyDock();
         }
     }
 
@@ -1103,6 +1163,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject
         ClientPackAcknowledged = false;
         WipeWorld = false;
         PackAnalyzeCaption = "";
+        ResetPackElapsed();
         if (hidePanel)
             ShowChangePackUi = false;
         NotifyModdingCommands();
@@ -1175,6 +1236,96 @@ public sealed partial class ServerManagementViewModel : ObservableObject
         OnPropertyChanged(nameof(InstallPackTitle));
         OnPropertyChanged(nameof(CanSaveIdentity));
         OnPropertyChanged(nameof(CanClearIcon));
+        NotifyDock();
+    }
+
+    partial void OnShowChangePackUiChanged(bool value) => NotifyDock();
+
+    partial void OnPackAnalyzeCaptionChanged(string value) => NotifyDock();
+
+    private void NotifyDock()
+    {
+        OnPropertyChanged(nameof(ShowChangePackDock));
+        OnPropertyChanged(nameof(ShowPackJobProgress));
+        OnPropertyChanged(nameof(ShowPackElapsed));
+        OnPropertyChanged(nameof(PackElapsedDisplay));
+        OnPropertyChanged(nameof(DockStatus));
+    }
+
+    private void BeginPackElapsed()
+    {
+        _packElapsedStarted = true;
+        _packElapsedAccumulated = TimeSpan.Zero;
+        _packElapsedRunningSince = _clock.UtcNow;
+        StartPackElapsedTicker();
+        NotifyDock();
+    }
+
+    private void PausePackElapsed()
+    {
+        if (_packElapsedRunningSince is DateTimeOffset start)
+        {
+            var next = _packElapsedAccumulated + (_clock.UtcNow - start);
+            _packElapsedAccumulated = next < TimeSpan.Zero ? TimeSpan.Zero : next;
+            _packElapsedRunningSince = null;
+        }
+
+        StopPackElapsedTicker();
+        NotifyDock();
+    }
+
+    private void ResetPackElapsed()
+    {
+        StopPackElapsedTicker();
+        _packElapsedStarted = false;
+        _packElapsedAccumulated = TimeSpan.Zero;
+        _packElapsedRunningSince = null;
+        NotifyDock();
+    }
+
+    private void StartPackElapsedTicker()
+    {
+        if (_packElapsedCts is not null)
+            return;
+        _packElapsedCts = new CancellationTokenSource();
+        _ = RunPackElapsedTickLoopAsync(_packElapsedCts.Token);
+    }
+
+    private void StopPackElapsedTicker()
+    {
+        _packElapsedCts?.Cancel();
+        _packElapsedCts?.Dispose();
+        _packElapsedCts = null;
+    }
+
+    private TimeSpan CurrentPackElapsed()
+    {
+        var value = _packElapsedAccumulated;
+        if (_packElapsedRunningSince is DateTimeOffset start)
+            value += _clock.UtcNow - start;
+        return value < TimeSpan.Zero ? TimeSpan.Zero : value;
+    }
+
+    private async Task RunPackElapsedTickLoopAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var timer = _clock.CreatePeriodicTimer(PackElapsedTickPeriod);
+            while (await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false))
+            {
+                await _dispatcher.InvokeAsync(NotifyDock, cancellationToken).ConfigureAwait(false);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    public void Dispose()
+    {
+        StopPackElapsedTicker();
+        _session.Reloaded -= OnSessionReloaded;
+        _main.PropertyChanged -= OnMainPropertyChanged;
     }
 
     partial void OnIsBusyChanged(bool value) => NotifyModdingCommands();

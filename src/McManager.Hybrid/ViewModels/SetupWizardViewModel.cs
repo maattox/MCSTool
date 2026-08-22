@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using CommunityToolkit.Mvvm.ComponentModel;
 using McManager.Core.Config;
+using McManager.Core.Notifications;
 using McManager.Core.Services;
 using McManager.Core.Setup;
 using McManager.Hybrid.Ui;
@@ -313,7 +314,10 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     public bool ShowDeployElapsed => _elapsedStarted;
 
-    public string DeployElapsedDisplay => FormatDeployElapsed(CurrentDeployElapsed());
+    public string DeployElapsedDisplay => ProgressDockUx.FormatElapsed(CurrentDeployElapsed());
+
+    public string DockStatus =>
+        ProgressDockUx.OneLineStatus(ShowDeployProgress, DeployProgressCaption, StatusMessage);
 
     public bool ShowDeployRemaining =>
         IsBusy
@@ -1038,19 +1042,6 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         return value < TimeSpan.Zero ? TimeSpan.Zero : value;
     }
 
-    internal static string FormatDeployElapsed(TimeSpan elapsed)
-    {
-        if (elapsed < TimeSpan.Zero)
-            elapsed = TimeSpan.Zero;
-        var totalSeconds = (int)Math.Floor(elapsed.TotalSeconds);
-        var hours = totalSeconds / 3600;
-        var minutes = (totalSeconds % 3600) / 60;
-        var seconds = totalSeconds % 60;
-        return hours > 0
-            ? $"Time elapsed: {hours}:{minutes:D2}:{seconds:D2}"
-            : $"Time elapsed: {minutes}:{seconds:D2}";
-    }
-
     private void NotifyDeployProgressTick()
     {
         if (!_progressStageComplete)
@@ -1064,6 +1055,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         OnPropertyChanged(nameof(DeployElapsedDisplay));
         OnPropertyChanged(nameof(ShowDeployRemaining));
         OnPropertyChanged(nameof(DeployRemainingDisplay));
+        OnPropertyChanged(nameof(DockStatus));
     }
 
     private async Task RunElapsedTickLoopAsync(CancellationToken cancellationToken)
@@ -1519,6 +1511,10 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             case nameof(SshImportMode):
             case nameof(AuthTokenStoredDisplay):
             case nameof(StatusMessage):
+            case nameof(DeployProgressCaption):
+                OnPropertyChanged(nameof(DockStatus));
+                return;
+            case nameof(DockStatus):
             case nameof(AuthTokenInput):
             case nameof(DeployLog):
             case nameof(CanDeploy):
@@ -1590,6 +1586,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         OnPropertyChanged(nameof(ShowDeployProgress));
         OnPropertyChanged(nameof(ShowDeployRemaining));
         OnPropertyChanged(nameof(DeployRemainingDisplay));
+        OnPropertyChanged(nameof(DockStatus));
         OnPropertyChanged(nameof(CanCloseWizard));
         OnPropertyChanged(nameof(CanMutateWizard));
         OnPropertyChanged(nameof(DeployToolTip));

@@ -1,0 +1,95 @@
+@using System.Globalization
+
+@if (IsOpen)
+{
+    <footer class="mcm-progress-dock @(AnimateEnter ? "is-enter" : null) @(ShowProgress ? "is-busy" : null)"
+         role="region"
+         aria-label="@AriaLabel">
+        @if (ShowProgress)
+        {
+            <div class="mcm-progress-dock-meter">
+                <div class="mcm-progress-track"
+                     role="progressbar"
+                     aria-busy="@(Indeterminate ? "true" : "false")"
+                     aria-valuemin="0"
+                     aria-valuemax="100"
+                     aria-valuenow="@(Indeterminate ? null : ((int)Math.Round(Percent)).ToString(CultureInfo.InvariantCulture))"
+                     aria-valuetext="@ProgressAriaText">
+                    <div class="mcm-progress-fill @(Indeterminate ? "mcm-progress-indeterminate" : null)"
+                         style="@(Indeterminate ? null : FillStyle)"></div>
+                </div>
+                <div class="mcm-progress-dock-meta">
+                    @if (!string.IsNullOrWhiteSpace(ElapsedDisplay))
+                    {
+                        <span class="mcm-wizard-elapsed">@ElapsedDisplay</span>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(RemainingDisplay))
+                    {
+                        <span class="mcm-wizard-remaining">@RemainingDisplay</span>
+                    }
+                    @if (!Indeterminate && !string.IsNullOrWhiteSpace(PercentDisplay))
+                    {
+                        <span class="mcm-wizard-mono mcm-progress-dock-percent">@PercentDisplay</span>
+                    }
+                </div>
+            </div>
+        }
+        <div class="mcm-progress-dock-row">
+            <p class="mcm-progress-dock-status"
+               title="@Status"
+               role="status"
+               aria-live="polite">@Status</p>
+            <div class="mcm-progress-dock-actions">
+                @ChildContent
+            </div>
+        </div>
+    </footer>
+}
+
+@code {
+    [Parameter]
+    public bool IsOpen { get; set; } = true;
+
+    [Parameter]
+    public bool AnimateEnter { get; set; }
+
+    [Parameter]
+    public string AriaLabel { get; set; } = "Progress";
+
+    [Parameter]
+    public string Status { get; set; } = "";
+
+    [Parameter]
+    public bool ShowProgress { get; set; }
+
+    [Parameter]
+    public bool Indeterminate { get; set; }
+
+    [Parameter]
+    public double Percent { get; set; }
+
+    [Parameter]
+    public string? PercentDisplay { get; set; }
+
+    [Parameter]
+    public string? ElapsedDisplay { get; set; }
+
+    [Parameter]
+    public string? RemainingDisplay { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    private string FillStyle =>
+        $"width: {Percent.ToString("0.##", CultureInfo.InvariantCulture)}%";
+
+    private string ProgressAriaText
+    {
+        get
+        {
+            if (Indeterminate)
+                return string.IsNullOrWhiteSpace(ElapsedDisplay) ? "In progress" : ElapsedDisplay;
+            return string.IsNullOrWhiteSpace(PercentDisplay) ? $"{(int)Math.Round(Percent)}%" : PercentDisplay;
+        }
+    }
+}

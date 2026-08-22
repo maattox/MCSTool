@@ -8,6 +8,7 @@
 @inject ChromeViewModel Chrome
 @inject NotificationCenterViewModel Notices
 @inject ActionBannerViewModel Banner
+@inject ServerManagementViewModel Server
 @inject IJSRuntime JS
 @implements IDisposable
 
@@ -334,6 +335,31 @@
         </div>
     </main>
 
+    <ProgressDock IsOpen="@Server.ShowChangePackDock"
+                  AnimateEnter="true"
+                  AriaLabel="Change pack"
+                  Status="@Server.DockStatus"
+                  ShowProgress="@Server.ShowPackJobProgress"
+                  Indeterminate="true"
+                  ElapsedDisplay="@(Server.ShowPackElapsed ? Server.PackElapsedDisplay : null)">
+        <button type="button"
+                disabled="@(Server.AnyBusy)"
+                title="Close Change pack without installing."
+                @onclick="Server.CancelChangePack">
+            Cancel
+        </button>
+        @if (Server.ShowPackConfirmChecks)
+        {
+            <button type="button"
+                    class="mcm-primary"
+                    disabled="@(!Server.CanInstallPack)"
+                    title="@Server.InstallPackTitle"
+                    @onclick="Server.InstallPackReplaceAsync">
+                Install this pack
+            </button>
+        }
+    </ProgressDock>
+
     @if (Banner.IsVisible)
     {
         <div class="mcm-action-banner @Banner.SeverityClass"
@@ -476,6 +502,7 @@
         Chrome.PropertyChanged += OnVmChanged;
         Notices.PropertyChanged += OnVmChanged;
         Banner.PropertyChanged += OnVmChanged;
+        Server.PropertyChanged += OnVmChanged;
         Vm.StartChrome();
     }
 
@@ -516,6 +543,7 @@
         Chrome.PropertyChanged -= OnVmChanged;
         Notices.PropertyChanged -= OnVmChanged;
         Banner.PropertyChanged -= OnVmChanged;
+        Server.PropertyChanged -= OnVmChanged;
     }
 
     private void ToggleBell()

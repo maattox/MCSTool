@@ -157,7 +157,7 @@ button.mcm-btn-disabled:hover {
     --mcm-toast-bottom: 16px;
     display: grid;
     grid-template-columns: var(--app-pad-x) minmax(0, var(--app-chrome-width)) var(--app-pad-x);
-    grid-template-rows: auto auto auto minmax(0, 1fr);
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
     justify-content: center;
     padding-left: 0;
     padding-right: 0;
@@ -2046,6 +2046,114 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     justify-content: flex-end;
     gap: 8px;
     flex: 0 0 auto;
+}
+
+.mcm-progress-dock {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 0 0 auto;
+    margin: 0;
+    padding: 10px 16px 12px;
+    border-top: 0.5px solid var(--border);
+    background: var(--surface-1);
+}
+
+.mcm-progress-dock-meter {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.mcm-progress-dock-meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 12px;
+    min-width: 0;
+}
+
+.mcm-progress-dock-percent {
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+}
+
+.mcm-progress-dock-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-width: 0;
+}
+
+.mcm-progress-dock-status {
+    margin: 0;
+    flex: 1 1 auto;
+    min-width: 0;
+    max-height: 2.8em;
+    overflow: hidden;
+    font-size: 13px;
+    color: var(--text-secondary);
+    overflow-wrap: anywhere;
+}
+
+.mcm-progress-dock-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+    flex: 0 0 auto;
+}
+
+.mcm-app-manage > .mcm-progress-dock {
+    grid-column: 2;
+    grid-row: 5;
+    z-index: 20;
+    margin: 0 0 4px;
+    border: 0.5px solid var(--border);
+    border-radius: 12px;
+}
+
+.mcm-wizard .mcm-progress-dock {
+    border: none;
+    border-top: 0.5px solid var(--border);
+    border-radius: 0;
+    margin: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .mcm-app-manage > .mcm-progress-dock.is-enter {
+        animation: mcm-dock-in 200ms ease-out;
+    }
+
+    .mcm-progress-dock.is-busy .mcm-progress-dock-meter {
+        animation: mcm-dock-meter-in 180ms ease-out;
+    }
+}
+
+@keyframes mcm-dock-in {
+    from {
+        transform: translateY(12px);
+        opacity: 0.55;
+    }
+
+    to {
+        transform: none;
+        opacity: 1;
+    }
+}
+
+@keyframes mcm-dock-meter-in {
+    from {
+        transform: translateY(6px);
+        opacity: 0.4;
+    }
+
+    to {
+        transform: none;
+        opacity: 1;
+    }
 }
 
 .mcm-capacity-actions {

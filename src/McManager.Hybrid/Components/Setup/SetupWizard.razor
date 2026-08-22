@@ -495,32 +495,6 @@
 
                 <p class="mcm-wizard-duration">@SetupWizardViewModel.DeployDurationHint</p>
 
-                @if (Vm.ShowDeployProgress)
-                {
-                    <div class="mcm-wizard-progress">
-                        <div class="mcm-wizard-progress-row">
-                            <span>@Vm.DeployProgressCaption</span>
-                            <span class="mcm-wizard-progress-meta">
-                                @if (Vm.ShowDeployElapsed)
-                                {
-                                    <span class="mcm-wizard-elapsed">@Vm.DeployElapsedDisplay</span>
-                                }
-                                @if (Vm.ShowDeployRemaining)
-                                {
-                                    <span class="mcm-wizard-remaining">@Vm.DeployRemainingDisplay</span>
-                                }
-                                <span class="mcm-wizard-mono">@Vm.DeployProgressPercentDisplay</span>
-                            </span>
-                        </div>
-                        <div class="mcm-progress-track" role="progressbar"
-                             aria-valuemin="0"
-                             aria-valuemax="100"
-                             aria-valuenow="@((int)Math.Round(Vm.DeployProgressPercent))">
-                            <div class="mcm-progress-fill" style="width: @(Vm.DeployProgressPercent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%"></div>
-                        </div>
-                    </div>
-                }
-
                 <div class="mcm-wizard-log-stack">
                     <div class="mcm-wizard-log-block mcm-wizard-plan-block">
                         <div class="mcm-wizard-log-label">
@@ -542,51 +516,54 @@
             }
         </div>
 
-        <footer class="mcm-wizard-footer">
-            <p class="mcm-wizard-status" title="@Vm.StatusMessage">@Vm.StatusMessage</p>
-            <div class="mcm-wizard-nav">
+        <ProgressDock AriaLabel="Setup"
+                      Status="@Vm.DockStatus"
+                      ShowProgress="@Vm.ShowDeployProgress"
+                      Percent="@Vm.DeployProgressPercent"
+                      PercentDisplay="@Vm.DeployProgressPercentDisplay"
+                      ElapsedDisplay="@(Vm.ShowDeployElapsed ? Vm.DeployElapsedDisplay : null)"
+                      RemainingDisplay="@(Vm.ShowDeployRemaining ? Vm.DeployRemainingDisplay : null)">
+            <button type="button"
+                    disabled="@(!Vm.CanGoBack)"
+                    title="Go to the previous step. Disabled after Deploy starts."
+                    @onclick="Vm.Back">
+                Back
+            </button>
+            @if (!Vm.IsLastStep)
+            {
                 <button type="button"
-                        disabled="@(!Vm.CanGoBack)"
-                        title="Go to the previous step. Disabled after Deploy starts."
-                        @onclick="Vm.Back">
-                    Back
+                        class="mcm-primary"
+                        disabled="@(!Vm.CanGoNext)"
+                        @onclick="Vm.NextAsync">
+                    Next
                 </button>
-                @if (!Vm.IsLastStep)
-                {
-                    <button type="button"
-                            class="mcm-primary"
-                            disabled="@(!Vm.CanGoNext)"
-                            @onclick="Vm.NextAsync">
-                        Next
-                    </button>
-                }
-                @if (Vm.ShowDeployButton)
-                {
-                    <button type="button"
-                            class="mcm-primary"
-                            disabled="@(!Vm.CanDeploy)"
-                            title="@Vm.DeployToolTip"
-                            @onclick="Vm.DeployAsync">
-                        Deploy
-                    </button>
-                }
-                @if (Vm.ShowCapacityOptionsButton)
-                {
-                    <button type="button" @onclick="Vm.ShowCapacityOptionsAsync">Retry options…</button>
-                }
-                @if (Vm.IsPollingCapacity)
-                {
-                    <button type="button" @onclick="Vm.StopCapacityPoll">Pause auto-retry</button>
-                }
+            }
+            @if (Vm.ShowDeployButton)
+            {
                 <button type="button"
-                        class="@(Vm.ShowDeploySuccess ? "mcm-primary" : null)"
-                        disabled="@(!Vm.CanCloseWizard)"
-                        title="@(Vm.ShowDeploySuccess ? "Close Setup and continue to the Manager app." : "You can close while a deploy is not running. Resume later from Advanced → Deploy / repair.")"
-                        @onclick="Close">
-                    Close
+                        class="mcm-primary"
+                        disabled="@(!Vm.CanDeploy)"
+                        title="@Vm.DeployToolTip"
+                        @onclick="Vm.DeployAsync">
+                    Deploy
                 </button>
-            </div>
-        </footer>
+            }
+            @if (Vm.ShowCapacityOptionsButton)
+            {
+                <button type="button" @onclick="Vm.ShowCapacityOptionsAsync">Retry options…</button>
+            }
+            @if (Vm.IsPollingCapacity)
+            {
+                <button type="button" @onclick="Vm.StopCapacityPoll">Pause auto-retry</button>
+            }
+            <button type="button"
+                    class="@(Vm.ShowDeploySuccess ? "mcm-primary" : null)"
+                    disabled="@(!Vm.CanCloseWizard)"
+                    title="@(Vm.ShowDeploySuccess ? "Close Setup and continue to the Manager app." : "You can close while a deploy is not running. Resume later from Advanced → Deploy / repair.")"
+                    @onclick="Close">
+                Close
+            </button>
+        </ProgressDock>
     </div>
 </div>
 

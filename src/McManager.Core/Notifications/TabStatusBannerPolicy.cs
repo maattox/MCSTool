@@ -28,6 +28,18 @@ public static class TabStatusBannerPolicy
             && text.Contains("backup(s)", StringComparison.OrdinalIgnoreCase))
             return false;
 
+        if (text.Equals(ProgressDockUx.ChangePackAnalyzeFallback, StringComparison.Ordinal))
+            return false;
+
+        if (text.Equals(ProgressDockUx.ChangePackInstallFallback, StringComparison.Ordinal))
+            return false;
+
+        if (text.Equals(ProgressDockUx.ChangePackPickStatus, StringComparison.Ordinal))
+            return false;
+
+        if (text.Equals(ProgressDockUx.ChangePackReviewStatus, StringComparison.Ordinal))
+            return false;
+
         return true;
     }
 
