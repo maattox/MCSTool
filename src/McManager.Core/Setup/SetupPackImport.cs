@@ -52,6 +52,21 @@ public static class SetupPackImport
         + "Setup will keep them on the server after the exclude list and in-jar client strips. "
         + "If the server fails to start, check those jars first.";
 
+    /// <summary>
+    /// Stronger confirmable-summary warning when many mod jars still lack side metadata (Step 8.7 P5).
+    /// Manual / jar-root only — <c>.mrpack</c> unclear rules are unchanged.
+    /// </summary>
+    public const string UnclearSideHighRiskCopy =
+        "Many jar files in this zip do not declare whether they are client-only or server-side. "
+        + "Setup will keep them, but the server may fail to start. "
+        + "If it does, check Console for a short crash log before retrying or changing the pack.";
+
+    /// <summary>Escalate unclear-side copy when at least this many mod jars lack side metadata.</summary>
+    public const int UnclearSideHighCountThreshold = 10;
+
+    /// <summary>Escalate when unclear jars are at least this fraction of all mod jars in the zip.</summary>
+    public const double UnclearSideHighFractionThreshold = 0.5;
+
     public const int OverrideListExampleCap = 6;
 
     /// <summary>Shareable identity from the analyzed pack (file import; no catalog URL).</summary>
@@ -178,7 +193,11 @@ public static class SetupPackImport
             block = "This pack does not declare a Minecraft version.";
 
         var overrideWarning = FormatOverrideListWarning(analysis.OverrideListSkipCount, analysis.OverrideListSkipPaths);
-        var unclearWarning = FormatUnclearSideWarning(analysis.UnclearSideCount, analysis.UnclearSidePaths);
+        var totalModJars = analysis.ServerSideCount + analysis.ClientOnlyCount;
+        var unclearWarning = FormatUnclearSideWarning(
+            analysis.UnclearSideCount,
+            analysis.UnclearSidePaths,
+            totalModJars);
         var summary = PrependWarning(analysis.ConfirmableSummary, unclearWarning);
         summary = PrependWarning(summary, overrideWarning);
         return new SetupPackPreview(
@@ -204,10 +223,27 @@ public static class SetupPackImport
     }
 
     /// <summary>
+    /// True when manual / jar-root analyze should show the stronger unclear-side warning (count or fraction).
+    /// </summary>
+    public static bool IsHighUnclearSideRisk(int unclearCount, int totalModJarCount)
+    {
+        if (unclearCount <= 0)
+            return false;
+        if (unclearCount >= UnclearSideHighCountThreshold)
+            return true;
+        if (totalModJarCount <= 0)
+            return false;
+        return unclearCount >= totalModJarCount * UnclearSideHighFractionThreshold;
+    }
+
+    /// <summary>
     /// Novice warning plus capped filenames when manual / jar-root zips keep jars with no in-jar side metadata.
     /// Returns null when there is nothing to warn about.
     /// </summary>
-    public static string? FormatUnclearSideWarning(int unclearCount, IReadOnlyList<string>? unclearPaths)
+    public static string? FormatUnclearSideWarning(
+        int unclearCount,
+        IReadOnlyList<string>? unclearPaths,
+        int totalModJarCount = 0)
     {
         if (unclearCount <= 0)
             return null;
@@ -220,7 +256,9 @@ public static class SetupPackImport
             .ToList();
 
         var sb = new System.Text.StringBuilder();
-        sb.Append(UnclearSideKeepCopy);
+        sb.Append(IsHighUnclearSideRisk(unclearCount, totalModJarCount)
+            ? UnclearSideHighRiskCopy
+            : UnclearSideKeepCopy);
         if (examples.Count > 0)
         {
             sb.Append(" Examples: ").Append(string.Join(", ", examples));

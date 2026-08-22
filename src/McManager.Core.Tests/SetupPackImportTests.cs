@@ -36,6 +36,8 @@ public sealed class SetupPackImportTests
                 """{"schemaVersion":1,"id":"content","version":"0","environment":"*","depends":{"minecraft":"1.21.1"}}"""));
         using var zip = MakeZipBytes(
             ("mods/content.jar", serverJar),
+            ("mods/extra-server.jar", serverJar),
+            ("mods/another-server.jar", serverJar),
             ("mods/mystery-side.jar", Encoding.UTF8.GetBytes("not-a-valid-jar")));
         var path = WriteTemp("unclear-manual.zip", zip);
         try
@@ -46,8 +48,9 @@ public sealed class SetupPackImportTests
             Assert.Equal(SetupPackImport.KindManualZip, preview.Kind);
             Assert.True(preview.CanContinue);
             Assert.Null(preview.BlockReason);
-            Assert.True(preview.UnclearSideCount > 0);
+            Assert.Equal(1, preview.UnclearSideCount);
             Assert.Contains(SetupPackImport.UnclearSideKeepCopy, preview.ConfirmableSummary, StringComparison.Ordinal);
+            Assert.DoesNotContain(SetupPackImport.UnclearSideHighRiskCopy, preview.ConfirmableSummary, StringComparison.Ordinal);
             Assert.Contains("mystery-side.jar", preview.ConfirmableSummary, StringComparison.OrdinalIgnoreCase);
             Assert.DoesNotContain(SetupPackImport.UnclearSideRefusal, preview.ConfirmableSummary, StringComparison.Ordinal);
         }
@@ -61,15 +64,68 @@ public sealed class SetupPackImportTests
     public void Unclear_side_warning_caps_examples_and_stays_novice()
     {
         var paths = Enumerable.Range(1, 10).Select(i => $"mods/unclear-{i}.jar").ToList();
-        var text = SetupPackImport.FormatUnclearSideWarning(10, paths);
+        var text = SetupPackImport.FormatUnclearSideWarning(10, paths, totalModJarCount: 20);
         Assert.False(string.IsNullOrWhiteSpace(text));
-        Assert.Contains(SetupPackImport.UnclearSideKeepCopy, text, StringComparison.Ordinal);
+        Assert.Contains(SetupPackImport.UnclearSideHighRiskCopy, text, StringComparison.Ordinal);
+        Assert.DoesNotContain(SetupPackImport.UnclearSideKeepCopy, text, StringComparison.Ordinal);
         Assert.Contains("unclear-1.jar", text, StringComparison.Ordinal);
         Assert.Contains("unclear-6.jar", text, StringComparison.Ordinal);
         Assert.DoesNotContain("unclear-7.jar", text, StringComparison.Ordinal);
         Assert.Contains("and 4 more", text, StringComparison.Ordinal);
         Assert.DoesNotContain("VM1", text, StringComparison.Ordinal);
         Assert.Null(SetupPackImport.FormatUnclearSideWarning(0, paths));
+    }
+
+    [Fact]
+    public void Low_unclear_side_count_uses_standard_warning()
+    {
+        var paths = new[] { "mods/mystery.jar" };
+        var text = SetupPackImport.FormatUnclearSideWarning(1, paths, totalModJarCount: 12);
+        Assert.Contains(SetupPackImport.UnclearSideKeepCopy, text, StringComparison.Ordinal);
+        Assert.DoesNotContain(SetupPackImport.UnclearSideHighRiskCopy, text, StringComparison.Ordinal);
+        Assert.False(SetupPackImport.IsHighUnclearSideRisk(1, 12));
+    }
+
+    [Fact]
+    public void High_unclear_side_fraction_uses_stronger_warning()
+    {
+        Assert.True(SetupPackImport.IsHighUnclearSideRisk(5, 10));
+        var text = SetupPackImport.FormatUnclearSideWarning(5, ["mods/a.jar", "mods/b.jar"], totalModJarCount: 10);
+        Assert.Contains(SetupPackImport.UnclearSideHighRiskCopy, text, StringComparison.Ordinal);
+        Assert.DoesNotContain(SetupPackImport.UnclearSideKeepCopy, text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Manual_zip_with_many_unclear_jars_can_continue_with_high_risk_warning()
+    {
+        var serverJar = MakeJar(
+            ("fabric.mod.json",
+                """{"schemaVersion":1,"id":"content","version":"0","environment":"*","depends":{"minecraft":"1.21.1"}}"""));
+        var entries = new List<(string Name, byte[] Content)>
+        {
+            ("mods/content.jar", serverJar),
+        };
+        for (var i = 1; i <= 12; i++)
+        {
+            entries.Add(($"mods/unclear-{i}.jar", Encoding.UTF8.GetBytes("not-a-valid-jar")));
+        }
+
+        using var zip = MakeZipBytes(entries.ToArray());
+        var path = WriteTemp("unclear-high-manual.zip", zip);
+        try
+        {
+            var result = SetupPackImport.AnalyzeFile(path);
+            Assert.True(result.Succeeded, result.Error);
+            var preview = result.Value!;
+            Assert.True(preview.CanContinue, preview.BlockReason);
+            Assert.Equal(12, preview.UnclearSideCount);
+            Assert.Contains(SetupPackImport.UnclearSideHighRiskCopy, preview.ConfirmableSummary, StringComparison.Ordinal);
+            Assert.DoesNotContain(SetupPackImport.UnclearSideKeepCopy, preview.ConfirmableSummary, StringComparison.Ordinal);
+        }
+        finally
+        {
+            TryDelete(path);
+        }
     }
 
     [Fact]

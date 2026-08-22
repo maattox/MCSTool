@@ -1,6 +1,6 @@
 # V1 modpack-test follow-on (living)
 
-**Status:** Living. Created 2026-08-21 (docs only). **NEXT = P5.**  
+**Status:** Living. Created 2026-08-21 (docs only). **8.7 complete — do not implement here.** Step **8.8** is next ([`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md) **P1**).  
 **Parent:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.7**.  
 **Why now:** operator 2026-08-21 — informal **Change pack** tests in [`Mod-Pack-Tests.md`](Mod-Pack-Tests.md) failed **4 / 5**. Pause Step **8.5.2** Pass 3. Fix **generalizable** pack-start gaps **before** [`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md) (Step **8.8**) and before QA Pass 3.
 
@@ -147,7 +147,7 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 | **P2** | Unstructured zip in-jar side detection | **DONE** | SEQUENTIAL | Optional |
 | **P3** | Fabric / `.mrpack` leftover client mods | **DONE** | SEQUENTIAL | Optional |
 | **P4** | Java major on Setup + Change pack | **DONE** | SEQUENTIAL | Yes |
-| **P5** | Analyze warnings when many jars lack side data | **NEXT** | SEQUENTIAL | No |
+| **P5** | Analyze warnings when many jars lack side data | **DONE** | SEQUENTIAL | No |
 
 
 When **P5** is DONE: point V1 **NEXT** at Step **8.8** ([`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md) **P1**). Do **not** start Pass 3.
@@ -302,7 +302,7 @@ When **P5** is DONE: point V1 **NEXT** at Step **8.8** ([`V1-Operator-Notes-Foll
 
 ## P5 — Analyze warnings when many jars lack side data
 
-**Status:** NEXT  
+**Status:** DONE  
 **Catalog IDs:** Setup Game step / Change pack confirm
 
 **Read first**
@@ -326,7 +326,7 @@ When **P5** is DONE: point V1 **NEXT** at Step **8.8** ([`V1-Operator-Notes-Foll
 
 **Done when:** High-unclear packs get a louder warning; low-unclear unchanged; V1 **NEXT** → Step **8.8** P1.
 
-**Changelog:** *(empty until implemented)*
+**Changelog:** 2026-08-21 — **P5 DONE.** High-unclear warning when ≥10 unclear mod jars **or** ≥50% of mod jars lack side metadata (`UnclearSideHighRiskCopy`); low count unchanged (`UnclearSideKeepCopy`). Manual/jar-root only; `.mrpack` unclear rules unchanged. Thresholds in `SetupPackImport`; capped examples unchanged. Guide one-liner. **8.7 complete — NEXT = Step 8.8 P1.**
 
 ---
 
@@ -347,6 +347,7 @@ When **P5** is DONE: point V1 **NEXT** at Step **8.8** ([`V1-Operator-Notes-Foll
 
 | Date | Note |
 |------|------|
+| 2026-08-21 | **P5 DONE** (high-unclear analyze warning: ≥10 jars or ≥50% of mod jars). **8.7 complete.** V1 **NEXT = Step 8.8 P1**. Do not start Pass 3, 8.6.1, or 9.1. |
 | 2026-08-21 | **P4 DONE** (Java major on Setup + Change pack). `JAVA_MAJOR` env → driver; Fabric 26.x → 25 on-box; clear pre-start fail when Temurin missing. **NEXT = P5.** Do not start 8.8, Pass 3, 8.6.1, or 9.1. |
 | 2026-08-21 | **P3 DONE** (Fabric / `.mrpack` leftover client mods). Overlay classes `loading-screen` / `konkrete` / `titlebar` / `flatlaf`; leftover in-jar client skip; `fabric-gui-client.mrpack`. **NEXT = P4.** Do not start 8.8, Pass 3, 8.6.1, or 9.1. |
 | 2026-08-21 | **P2 DONE** (unstructured in-jar side). `InJarSideDetector`: side fields, client entrypoints, high-confidence common mixin targets. Unclear still kept. **NEXT = P3.** Do not start 8.8, Pass 3, 8.6.1, or 9.1. |
