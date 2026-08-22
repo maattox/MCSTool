@@ -61,16 +61,41 @@ public sealed class InJarSideDetectorTests
     }
 
     [Fact]
-    public void Forge_displayTest_ignore_server_version_is_client()
+    public void Forge_displayTest_is_not_a_side_signal()
     {
         var peek = PeekJar(("META-INF/neoforge.mods.toml", """
             [[mods]]
-            modId="minimap"
+            modId="insanelib"
             displayTest="IGNORE_SERVER_VERSION"
             """));
-        Assert.True(peek.HadMetadata);
-        Assert.Equal("client", peek.Environment);
+        Assert.False(peek.HadMetadata);
+        Assert.Equal("*", peek.Environment);
         Assert.Equal(MrpackAnalyzer.LoaderNeoForge, peek.Loader);
+    }
+
+    [Fact]
+    public void Forge_toml_without_client_marker_is_kept_despite_one_client_common_mixin()
+    {
+        var peek = PeekJar(
+            ("META-INF/mods.toml", """
+                [[mods]]
+                modId="cofh_core"
+                [[dependencies.cofh_core]]
+                modId="minecraft"
+                side="BOTH"
+                """),
+            ("mixins.cofhcore.json", """
+                {"package":"cofh.core.mixin","client":["GameRendererMixin"],"mixins":["LivingEntityMixin","MultiPlayerGameModeMixin"]}
+                """),
+            ("mixins.cofhcore.refmap.json", """
+                {"mappings":{
+                  "cofh/core/mixin/LivingEntityMixin":{"hurt":"Lnet/minecraft/world/entity/LivingEntity;hurt()Z"},
+                  "cofh/core/mixin/MultiPlayerGameModeMixin":{"sameDestroyTarget":"Lnet/minecraft/client/multiplayer/MultiPlayerGameMode;sameDestroyTarget()Z"}
+                }}
+                """));
+        Assert.False(peek.HadMetadata);
+        Assert.Equal("*", peek.Environment);
+        Assert.Equal(MrpackAnalyzer.LoaderForge, peek.Loader);
     }
 
     [Fact]
@@ -107,6 +132,21 @@ public sealed class InJarSideDetectorTests
                 """));
         Assert.True(peek.HadMetadata);
         Assert.Equal("client", peek.Environment);
+    }
+
+    [Fact]
+    public void Common_mixins_with_world_and_client_targets_are_kept()
+    {
+        var peek = PeekJar(
+            ("example.mixins.json", """{"package":"com.example.mixin","mixins":["HeldItemMixin","LivingEntityMixin"],"client":[]}"""),
+            ("example.refmap.json", """
+                {"mappings":{
+                  "com/example/mixin/HeldItemMixin":{"net/minecraft/client/renderer/ItemInHandRenderer":"Lnet/minecraft/client/renderer/ItemInHandRenderer;"},
+                  "com/example/mixin/LivingEntityMixin":{"hurt":"Lnet/minecraft/world/entity/LivingEntity;hurt()Z"}
+                }}
+                """));
+        Assert.False(peek.HadMetadata);
+        Assert.Equal("*", peek.Environment);
     }
 
     [Fact]
@@ -160,6 +200,9 @@ public sealed class InJarSideDetectorTests
         Assert.True(InJarSideDetector.LooksLikeClientClass("net.minecraft.client.Minecraft"));
         Assert.True(InJarSideDetector.LooksLikeClientClass("Lnet/minecraft/client/gui/screens/Screen;"));
         Assert.False(InJarSideDetector.LooksLikeClientClass("net.minecraft.world.entity.Entity"));
+        Assert.True(InJarSideDetector.LooksLikeDedicatedSafeClass("net.minecraft.world.entity.Entity"));
+        Assert.True(InJarSideDetector.LooksLikeDedicatedSafeClass("Lnet/minecraft/world/entity/LivingEntity;hurt()Z"));
+        Assert.False(InJarSideDetector.LooksLikeDedicatedSafeClass("net.minecraft.client.Minecraft"));
     }
 
     [Fact]

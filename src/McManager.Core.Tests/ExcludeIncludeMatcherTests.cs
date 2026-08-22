@@ -155,6 +155,30 @@ public sealed class ExcludeIncludeMatcherTests
         Assert.Equal(ExcludeIncludeDecision.NoMatch, bundled.Match(null, "mods/lithium-fabric.jar").Decision);
     }
 
+    [Fact]
+    public void Short_exclude_term_does_not_match_inside_a_longer_mod_name()
+    {
+        var lists = ExcludeIncludeLists.Parse("""
+            {
+              "globalExcludes": ["ding"],
+              "globalForceIncludes": [],
+              "modpacks": {}
+            }
+            """);
+        var matcher = new ExcludeIncludeMatcher(lists);
+        Assert.Equal(ExcludeIncludeDecision.NoMatch, matcher.Match(null, "mods/mob_grinding_utils-1.20.1-1.1.0.jar").Decision);
+        Assert.Equal(ExcludeIncludeDecision.Exclude, matcher.Match(null, "mods/ding-1.20.1.jar").Decision);
+
+        var overlay = ExcludeIncludeMatcher.ForModrinth();
+        Assert.Equal(ExcludeIncludeDecision.Exclude, overlay.Match(null, "mods/titlebarchanger-0.4.jar").Decision);
+
+        var cf = ExcludeIncludeMatcher.ForCurseForge();
+        Assert.Equal(
+            ExcludeIncludeDecision.NoMatch,
+            cf.Match(null, "mob_grinding_utils-1.20.1-1.1.0.jar").Decision);
+        Assert.Equal(ExcludeIncludeDecision.Exclude, cf.Match(null, "mods/embeddium-0.3.31+mc1.20.1.jar").Decision);
+    }
+
     private static ExcludeIncludeMatcher Layer1Only() =>
         new(ExcludeIncludeLists.Parse(Read("layer1-fixture.json")), ExcludeIncludeLists.Empty);
 

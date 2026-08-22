@@ -123,7 +123,7 @@ public sealed class ManualServerPackAnalysis
     /// <summary>Skipped because the itzg/product CurseForge list excluded the jar.</summary>
     public int OverrideListSkipCount { get; }
 
-    /// <summary>Skipped because in-jar metadata (side fields, client entrypoints, or client mixin targets) is client-only.</summary>
+    /// <summary>Skipped because in-jar metadata (explicit client side fields, client entrypoints, or exclusively client mixin targets) is client-only.</summary>
     public int InJarMetadataSkipCount { get; }
 
     public IReadOnlyList<string> OverrideListSkipPaths { get; }

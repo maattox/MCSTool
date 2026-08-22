@@ -8,11 +8,14 @@ namespace McManager.Core.Setup;
 /// </summary>
 /// <remarks>
 /// Matching rule (itzg <c>FileInclusionCalculator</c> + <c>MultiMatcher</c>,
-/// https://github.com/itzg/mc-image-helper main):
+/// https://github.com/itzg/mc-image-helper main), with a product token-boundary
+/// guard so short slugs cannot strip unrelated jars:
 /// <list type="bullet">
 /// <item>Case-insensitive. Path backslashes become slashes when the path has no forward slash.</item>
 /// <item>A term wrapped in <c>/.../</c> is a regex <c>Matcher.find()</c> against the lowered path.</item>
-/// <item>Any other term is <c>String.contains</c> on the lowered path.</item>
+/// <item>Any other term is a case-insensitive substring that is not a suffix of a longer
+/// alphabetic word (so <c>ding</c> matches <c>ding-1.20.jar</c> but not <c>mob_grinding_utils</c>;
+/// prefix class names like <c>titlebar</c> still match <c>titlebarchanger</c>).</item>
 /// <item>Within a layer, global and per-pack terms are merged; force-include is checked before exclude
 /// (itzg <c>includeModFile</c>).</item>
 /// </list>
@@ -134,6 +137,34 @@ public sealed class ExcludeIncludeMatcher
         return collapsedNeedle.Length > 0 && candidate.ContainsCollapsed(collapsedNeedle);
     }
 
+    /// <summary>
+    /// Substring match that is not a suffix/infix of a longer alphabetic word.
+    /// The start of the haystack and non-letters are left boundaries, so
+    /// <c>titlebar</c> matches <c>titlebarchanger</c> but <c>ding</c> does not
+    /// match <c>mob_grinding_utils</c>.
+    /// </summary>
+    internal static bool ContainsAsToken(string haystack, string needle)
+    {
+        if (string.IsNullOrEmpty(haystack) || string.IsNullOrEmpty(needle) || needle.Length > haystack.Length)
+            return false;
+
+        var start = 0;
+        while (start <= haystack.Length - needle.Length)
+        {
+            var idx = haystack.IndexOf(needle, start, StringComparison.Ordinal);
+            if (idx < 0)
+                return false;
+            if (idx == 0 || !IsAsciiLetter(haystack[idx - 1]))
+                return true;
+            start = idx + 1;
+        }
+
+        return false;
+    }
+
+    private static bool IsAsciiLetter(char c) =>
+        (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+
     internal static string SanitizePath(string path)
     {
         if (path.Contains('\\') && !path.Contains('/'))
@@ -180,13 +211,13 @@ public sealed class ExcludeIncludeMatcher
         }
 
         public bool ContainsLiteral(string needle) =>
-            PathLower.Contains(needle, StringComparison.Ordinal)
-            || FileNameLower.Contains(needle, StringComparison.Ordinal)
-            || (!string.IsNullOrEmpty(SlugLower) && SlugLower.Contains(needle, StringComparison.Ordinal));
+            ContainsAsToken(PathLower, needle)
+            || ContainsAsToken(FileNameLower, needle)
+            || (!string.IsNullOrEmpty(SlugLower) && ContainsAsToken(SlugLower, needle));
 
         public bool ContainsCollapsed(string needle) =>
-            PathCollapsed.Contains(needle, StringComparison.Ordinal)
-            || FileNameCollapsed.Contains(needle, StringComparison.Ordinal)
-            || (!string.IsNullOrEmpty(SlugCollapsed) && SlugCollapsed.Contains(needle, StringComparison.Ordinal));
+            ContainsAsToken(PathCollapsed, needle)
+            || ContainsAsToken(FileNameCollapsed, needle)
+            || (!string.IsNullOrEmpty(SlugCollapsed) && ContainsAsToken(SlugCollapsed, needle));
     }
 }

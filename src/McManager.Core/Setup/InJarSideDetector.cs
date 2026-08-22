@@ -12,10 +12,17 @@ namespace McManager.Core.Setup;
 /// <see cref="ExcludeIncludeMatcher"/>. Does not call CurseForge or Modrinth APIs.
 /// </summary>
 /// <remarks>
-/// Mixin heuristic (high-confidence only): a Mixin config's <strong>common</strong>
-/// <c>mixins</c> array (applied on a dedicated server) must target one of
-/// <see cref="ClientClassPrefixes"/>. Mixins listed only under the config's
-/// <c>client</c> array are dist-gated and are not a reason to strip. Presence of a
+/// Forge/NeoForge <c>displayTest</c> is a connection-screen version check, not a
+/// load-side. <c>IGNORE_SERVER_VERSION</c> is used by libraries and server-only mods
+/// and must not strip a jar. Explicit client-only markers are <c>clientSideOnly=true</c>
+/// and <c>[[mods]] side=CLIENT</c>. Dependency <c>side=BOTH</c> is not the mod's environment.
+/// When a mods.toml exists without those client markers, Forge will load the jar on the
+/// dedicated server — mixin heuristics must not override that (prefer keeping a server
+/// API jar over stripping it because one common mixin targets a client class).
+/// Mixin heuristic (no loader metadata only, high-confidence): common <c>mixins</c>
+/// targets are <strong>exclusively</strong> <see cref="ClientClassPrefixes"/>. Any
+/// common mixin targeting a dedicated-safe class keeps the jar. The config's
+/// <c>client</c> array is dist-gated and is not a reason to strip. Presence of a
 /// mixin JSON file alone is not a reason to strip.
 /// </remarks>
 internal static class InJarSideDetector
@@ -126,13 +133,15 @@ internal static class InJarSideDetector
                 TryReadTomlMetadata(toml, out tomlEnv, out tomlMc, out hadSide);
                 if (hadSide)
                     return new PeekResult(true, tomlEnv, loader, tomlMc);
+                // Toml present without an explicit client-only marker: keep.
+                // Dual-side libraries (CoFH Core, InsaneLib, …) often have one
+                // client-class mixin in the common list; stripping them breaks
+                // other mods that require the jar on the dedicated server.
+                return new PeekResult(false, "*", loader, tomlMc);
             }
 
             if (HasDedicatedServerKillingMixin(jar))
                 return new PeekResult(true, "client", loader, tomlMc);
-
-            if (loader is not null || tomlMc is not null)
-                return new PeekResult(false, "*", loader, tomlMc);
         }
 
         return PeekResult.None;
@@ -149,6 +158,28 @@ internal static class InJarSideDetector
                 return true;
         }
 
+        return false;
+    }
+
+    /// <summary>
+    /// Minecraft / loader classes that exist on a dedicated server. Used so a
+    /// dual-side jar with one client-class mixin in the common list is kept.
+    /// </summary>
+    internal static bool LooksLikeDedicatedSafeClass(string? raw)
+    {
+        if (LooksLikeClientClass(raw))
+            return false;
+        var normalized = NormalizeClassName(raw);
+        if (normalized.Length == 0)
+            return false;
+        if (normalized.Contains("net/minecraft/", StringComparison.Ordinal))
+            return true;
+        if (normalized.Contains("net/minecraftforge/", StringComparison.Ordinal))
+            return true;
+        if (normalized.Contains("net/neoforged/", StringComparison.Ordinal))
+            return true;
+        if (normalized.Contains("net/fabricmc/", StringComparison.Ordinal))
+            return true;
         return false;
     }
 
@@ -329,7 +360,6 @@ internal static class InJarSideDetector
             string? pendingModId = null;
             string? pendingVersion = null;
             string? pendingSide = null;
-            string? pendingDisplayTest = null;
             string? pendingClientSideOnly = null;
 
             void FlushTable()
@@ -350,12 +380,6 @@ internal static class InJarSideDetector
                              && pendingClientSideOnly.Equals("false", StringComparison.OrdinalIgnoreCase))
                     {
                         env = "*";
-                        sideFound = true;
-                    }
-                    else if (pendingDisplayTest is not null
-                             && pendingDisplayTest.Equals("IGNORE_SERVER_VERSION", StringComparison.OrdinalIgnoreCase))
-                    {
-                        env = "client";
                         sideFound = true;
                     }
                     else if (pendingSide is not null)
@@ -388,7 +412,6 @@ internal static class InJarSideDetector
                     pendingModId = null;
                     pendingVersion = null;
                     pendingSide = null;
-                    pendingDisplayTest = null;
                     pendingClientSideOnly = null;
                     continue;
                 }
@@ -397,8 +420,6 @@ internal static class InJarSideDetector
                     continue;
                 if (TryParseTomlAssignment(line, "side", out var side))
                     pendingSide = side;
-                if (TryParseTomlAssignment(line, "displayTest", out var displayTest))
-                    pendingDisplayTest = displayTest;
                 if (TryParseTomlAssignment(line, "clientSideOnly", out var clientSideOnly))
                     pendingClientSideOnly = clientSideOnly;
                 if (TryParseTomlAssignment(line, "modId", out var modId))
@@ -453,16 +474,19 @@ internal static class InJarSideDetector
     private static bool HasDedicatedServerKillingMixin(ZipArchive jar)
     {
         var refmapTargets = LoadRefmapTargets(jar);
+        var sawClient = false;
+        var sawDedicatedSafe = false;
         foreach (var entry in jar.Entries)
         {
             var path = MrpackAnalyzer.NormalizeZipPath(entry.FullName);
             if (!IsMixinConfigPath(path))
                 continue;
-            if (MixinConfigHasClientTargetInCommonList(entry, refmapTargets))
-                return true;
+            ClassifyCommonMixinTargets(entry, refmapTargets, ref sawClient, ref sawDedicatedSafe);
+            if (sawDedicatedSafe)
+                return false;
         }
 
-        return false;
+        return sawClient && !sawDedicatedSafe;
     }
 
     internal static bool IsMixinConfigPath(string normalizedPath)
@@ -476,9 +500,11 @@ internal static class InJarSideDetector
         return leaf.Contains("mixins", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static bool MixinConfigHasClientTargetInCommonList(
+    private static void ClassifyCommonMixinTargets(
         ZipArchiveEntry entry,
-        IReadOnlyDictionary<string, IReadOnlyList<string>> refmapTargets)
+        IReadOnlyDictionary<string, IReadOnlyList<string>> refmapTargets,
+        ref bool sawClient,
+        ref bool sawDedicatedSafe)
     {
         try
         {
@@ -487,39 +513,39 @@ internal static class InJarSideDetector
                 reader.ReadToEnd(),
                 new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
             if (doc.RootElement.ValueKind != JsonValueKind.Object)
-                return false;
+                return;
 
             var package = ReadStringProperty(doc.RootElement, "package");
             var common = ReadMixinNames(doc.RootElement, "mixins");
             if (common.Count == 0)
-                return false;
+                return;
 
             foreach (var mixin in common)
             {
-                if (LooksLikeClientClass(mixin))
-                    return true;
+                NoteTargetClass(mixin, ref sawClient, ref sawDedicatedSafe);
                 foreach (var key in MixinLookupKeys(package, mixin))
                 {
                     if (!refmapTargets.TryGetValue(key, out var targets))
                         continue;
                     foreach (var target in targets)
-                    {
-                        if (LooksLikeClientClass(target))
-                            return true;
-                    }
+                        NoteTargetClass(target, ref sawClient, ref sawDedicatedSafe);
                 }
             }
-
-            return false;
         }
         catch (JsonException)
         {
-            return false;
         }
         catch (IOException)
         {
-            return false;
         }
+    }
+
+    private static void NoteTargetClass(string? raw, ref bool sawClient, ref bool sawDedicatedSafe)
+    {
+        if (LooksLikeClientClass(raw))
+            sawClient = true;
+        else if (LooksLikeDedicatedSafeClass(raw))
+            sawDedicatedSafe = true;
     }
 
     private static List<string> ReadMixinNames(JsonElement root, string property)

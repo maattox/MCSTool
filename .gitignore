@@ -407,3 +407,6 @@ publish/
 *.msix
 *.msixbundle
 )
+
+# Development / Testing
+development/
