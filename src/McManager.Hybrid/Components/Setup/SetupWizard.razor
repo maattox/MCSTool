@@ -311,6 +311,86 @@
                     }
                 }
             }
+            else if (Vm.IsStepIdentity)
+            {
+                <div class="mcm-wizard-identity">
+                    <p class="mcm-wizard-inline-help">
+                        Friends see this in Minecraft’s server list.
+                        <WizardHelp Title="@SetupWizardViewModel.IdentityHelp" AriaLabel="About the server name and icon" />
+                    </p>
+                    <div class="mcm-identity-grid">
+                        <div>
+                            <div class="mcm-field">
+                                <label for="mcm-setup-server-name" class="mcm-field-head">Server name</label>
+                                <input id="mcm-setup-server-name"
+                                       type="text"
+                                       name="server-name"
+                                       autocomplete="off"
+                                       maxlength="@Vm.IdentityNameMaxLength"
+                                       disabled="@(!Vm.CanMutateWizard)"
+                                       @bind="Vm.IdentityName"
+                                       @bind:event="oninput" />
+                            </div>
+                            <div class="mcm-field">
+                                <label for="mcm-setup-server-desc" class="mcm-field-head">Description</label>
+                                <textarea id="mcm-setup-server-desc"
+                                          name="server-description"
+                                          autocomplete="off"
+                                          maxlength="@Vm.IdentityDescriptionMaxLength"
+                                          rows="2"
+                                          disabled="@(!Vm.CanMutateWizard)"
+                                          @bind="Vm.IdentityDescription"
+                                          @bind:event="oninput"></textarea>
+                            </div>
+                            <p class="mcm-motd-preview">
+                                <span>Server list preview</span>
+                                @foreach (var line in Vm.MotdPreview.Split("\\n", StringSplitOptions.None))
+                                {
+                                    <span class="mcm-motd-line">@line</span>
+                                }
+                            </p>
+                        </div>
+                        <div>
+                            <div class="mcm-identity-icon-row">
+                                @if (!string.IsNullOrWhiteSpace(Vm.IconPreviewDataUrl))
+                                {
+                                    <img class="mcm-server-icon"
+                                         src="@Vm.IconPreviewDataUrl"
+                                         width="64"
+                                         height="64"
+                                         alt="Server icon" />
+                                }
+                                else
+                                {
+                                    <div class="mcm-server-icon mcm-server-icon-empty" aria-hidden="true">
+                                        <i class="ti ti-photo"></i>
+                                    </div>
+                                }
+                                <div>
+                                    <div class="mcm-wizard-actions">
+                                        <button type="button"
+                                                disabled="@(!Vm.CanMutateWizard)"
+                                                title="Minecraft needs a 64×64 PNG."
+                                                @onclick="Vm.PickIdentityIconAsync">
+                                            Choose PNG
+                                        </button>
+                                        <button type="button"
+                                                disabled="@(!Vm.CanMutateWizard || !Vm.CanClearIdentityIcon)"
+                                                @onclick="Vm.ClearIdentityIcon">
+                                            Remove
+                                        </button>
+                                    </div>
+                                    <p class="mcm-wizard-hint">Optional 64×64 PNG</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(Vm.IdentityHint))
+                    {
+                        <p class="mcm-wizard-error" role="status" aria-live="polite">@Vm.IdentityHint</p>
+                    }
+                </div>
+            }
             else if (Vm.IsStepEula)
             {
                 <p class="mcm-wizard-inline-help">

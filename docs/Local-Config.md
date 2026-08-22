@@ -30,7 +30,7 @@ Do **not** copy Auth Tokens into `config.local.json` (OCIR only; Manager uses `~
 
 `McManager.Core.Config.SetupWizardStore` reads/writes `data/setup-wizard.local.json` (same data directory as manage config). Saved on each Next/Back/Close.
 
-Included: current step, Always Free / residual / capacity flags, OCI profile + region, compartment strategy, alert email, SSH **public** path/line/fingerprint (Generate creates `%USERPROFILE%\.ssh\mcmgr_ed25519_yyyyMMdd_HHmmss`, not a reused default name), **server type** (`vanilla` / `modded`), Vanilla flavor (`default` Mojang vs `optimized` Paper) + version **id**, Modded pack path/kind/name/loader + confirm flags (no catalog URL), EULA flag, whether a token was stored, **admin `/32` CIDR**, **VM1 OCPUs / memory** (`2`/`12` or `4`/`24`; default **4 / 24**). In-game `white-list` is **off**; OCI Security List is the allowlist. Also **`apply_stage`**, optional Function image after OCIR **copy** of a pre-built ARM tarball when present (Docker buildx only if the artifact is missing; CI/installer is V1 Step **8.6.1**).
+Included: current step, Always Free / residual / capacity flags, OCI profile + region, compartment strategy, alert email, SSH **public** path/line/fingerprint (Generate creates `%USERPROFILE%\.ssh\mcmgr_ed25519_yyyyMMdd_HHmmss`, not a reused default name), **server type** (`vanilla` / `modded`), Vanilla flavor (`default` Mojang vs `optimized` Paper) + version **id**, Modded pack path/kind/name/loader + confirm flags (no catalog URL), **server list name / description / optional 64×64 PNG path** (Setup identity; same Object Storage objects as Server Management), EULA flag, whether a token was stored, **admin `/32` CIDR**, **VM1 OCPUs / memory** (`2`/`12` or `4`/`24`; default **4 / 24**). In-game `white-list` is **off**; OCI Security List is the allowlist. Also **`apply_stage`**, optional Function image after OCIR **copy** of a pre-built ARM tarball when present (Docker buildx only if the artifact is missing; CI/installer is V1 Step **8.6.1**).
 
 **Not** included: Auth Token secret, SSH private key, tenancy OCID, jar URL/sha1.
 
@@ -127,7 +127,7 @@ Imported packs the Manager actually installed are copied to **`data/imported-pac
 
 **Notifications (bell):** in-memory this session only (not a file). Manager posts when `meta/oversized-world-backup.json` is present (world too large for cloud backup). Debug builds can post a sample, or PUT/clear an oversized-world fixture, from Advanced → DEBUG host probes.
 
-**Server identity (Server Management):** name, description, 64×64 PNG icon, and idle/budget chat templates persist in Object Storage `messages/chat.json` (optional `messages/server-icon.png`). Manager **If-Match** on save; first create is unconditional. VM1 applies immediately **before** the next Minecraft start (`mc-boot-ledger.service` / `record_boot.py`, `Before=minecraft`). Not stored in `config.local.json`.
+**Server identity (Server Management):** name, description, 64×64 PNG icon, and idle/budget chat templates persist in Object Storage `messages/chat.json` (optional `messages/server-icon.png`). **Setup** writes the same objects on first seed (Name and icon page). Manager **If-Match** on save; first create is unconditional. VM1 applies immediately **before** the next Minecraft start (`mc-boot-ledger.service` / `record_boot.py`, `Before=minecraft`). Not stored in `config.local.json`.
 
 ## Later (after v1): deployment profiles
 

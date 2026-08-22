@@ -101,7 +101,17 @@ public sealed class ChatMessagesStore
     }
 
     /// <summary>Create default <c>messages/chat.json</c> when missing. Does not overwrite.</summary>
-    public async Task<ServiceResult> SeedIfMissingAsync(CancellationToken cancellationToken = default)
+    public Task<ServiceResult> SeedIfMissingAsync(CancellationToken cancellationToken = default) =>
+        SeedIfMissingAsync(seed: null, iconPng: null, cancellationToken);
+
+    /// <summary>
+    /// Create <c>messages/chat.json</c> (and optional 64×64 PNG) when missing.
+    /// Does not overwrite an existing object. Marks <c>messages.vm1</c> so the first boot applies identity.
+    /// </summary>
+    public async Task<ServiceResult> SeedIfMissingAsync(
+        ChatMessagesDocument? seed,
+        byte[]? iconPng,
+        CancellationToken cancellationToken = default)
     {
         var existing = await _objectStorage.GetObjectAsync(_objectName, cancellationToken).ConfigureAwait(false);
         if (existing.Succeeded && existing.Value is not null)
@@ -109,11 +119,35 @@ public sealed class ChatMessagesStore
         if (!OciErrorFormatter.IsNotFoundMessage(existing.Error))
             return ServiceResult.Fail(existing.Error ?? $"Get {_objectName} failed.");
 
-        var json = JsonSerializer.Serialize(ChatMessagesDocument.Defaults(), JsonOptions);
+        var doc = ChatMessagesDocument.Defaults();
+        if (seed is not null)
+        {
+            doc.ServerName = seed.ServerName?.Trim() ?? "";
+            doc.Description = seed.Description?.Trim() ?? "";
+        }
+
+        doc.FillMissingChatKeys();
+        var iconOk = iconPng is { Length: > 0 } && ServerIdentityUx.ValidateIcon(iconPng) is null;
+        if (iconOk)
+            doc.IconObject = _iconObjectName;
+
+        var json = JsonSerializer.Serialize(doc, JsonOptions);
         var bytes = Encoding.UTF8.GetBytes(json.EndsWith('\n') ? json : json + "\n");
         var put = await _objectStorage.PutBytesAsync(
             _objectName, bytes, "application/json", ifMatch: null, cancellationToken).ConfigureAwait(false);
-        return put.Succeeded ? ServiceResult.Ok() : ServiceResult.Fail(put.Error ?? $"Put {_objectName} failed.");
+        if (!put.Succeeded)
+            return ServiceResult.Fail(put.Error ?? $"Put {_objectName} failed.");
+
+        if (iconOk)
+        {
+            var putIcon = await _objectStorage.PutBytesAsync(
+                _iconObjectName, iconPng!, "image/png", ifMatch: null, cancellationToken).ConfigureAwait(false);
+            if (!putIcon.Succeeded)
+                return ServiceResult.Fail(putIcon.Error ?? $"Put {_iconObjectName} failed.");
+        }
+
+        await DirtyVm1MessagesFlagAsync(cancellationToken).ConfigureAwait(false);
+        return ServiceResult.Ok();
     }
 
     public async Task<ServiceResult<ChatMessagesPublishResult>> PublishAsync(

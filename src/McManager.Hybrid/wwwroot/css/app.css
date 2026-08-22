@@ -2927,11 +2927,36 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 .mcm-motd-line {
     font-family: var(--font-sans);
     line-height: 1.35;
+    overflow-wrap: anywhere;
 }
 
 .mcm-chat-templates {
     display: grid;
     gap: 0;
+}
+
+.mcm-wizard-identity {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+.mcm-wizard-identity .mcm-identity-grid {
+    margin-bottom: 0;
+}
+
+.mcm-wizard-identity .mcm-field input[type="text"],
+.mcm-wizard-identity .mcm-field textarea {
+    margin-bottom: 8px;
+}
+
+.mcm-wizard-identity .mcm-wizard-actions {
+    margin: 0;
+}
+
+.mcm-wizard-identity .mcm-wizard-hint {
+    margin: 6px 0 0 !important;
 }
 
 @media (max-width: 720px) {

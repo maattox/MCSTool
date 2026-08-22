@@ -1,4 +1,5 @@
 using McManager.Core.Config;
+using McManager.Core.Services;
 
 namespace McManager.Core.Setup;
 
@@ -30,6 +31,9 @@ public static class InfraPlanSummary
 
         var shape = Vm1ShapeChoice.Format(state.Vm1Ocpus, state.Vm1MemoryGb);
         var hours = Vm1ShapeChoice.HoursHint(state.Vm1Ocpus, state.Vm1MemoryGb);
+        var identityName = string.IsNullOrWhiteSpace(state.IdentityName)
+            ? ServerIdentityUx.DefaultServerName(state.ServerType, state.VanillaFlavor)
+            : state.IdentityName.Trim();
         var friendsLine = SetupServerType.IsModded(state.ServerType)
             ? "  Friends: same exported pack required to join (vanilla Minecraft is not enough; "
               + "cannot rebuild a client pack from server mods)\n"
@@ -47,6 +51,7 @@ public static class InfraPlanSummary
             + $"  SSH: {ssh}\n"
             + $"  Server size: {shape} ({hours})\n"
             + $"  Game: {flavor} {version} (EULA {(state.EulaAccepted ? "accepted" : "not accepted")})\n"
+            + $"  Server list name: {identityName}\n"
             + friendsLine
             + $"  OCIR Auth Token stored: {(state.AuthTokenStored ? "yes (Windows Credential Manager McManager/ocir)" : "no — optional until Function push")}\n\n"
             + "OpenTofu will create (on confirmed Deploy)\n"

@@ -19,8 +19,8 @@ public enum CapacityWaitChoice
 }
 
 /// <summary>
-/// Eight-step Setup wizard (Always Free → OCI → email → SSH →
-/// game (Vanilla Default/Paper or Modded pack file) → EULA → Auth Token → summary).
+/// Nine-step Setup wizard (Always Free → OCI → email → SSH →
+/// game (Vanilla Default/Paper or Modded pack file) → name/icon → EULA → Auth Token → summary).
 /// Compartment is auto-named <c>mcmgr</c> / <c>mcmgr-2</c> at Deploy. No Window Host —
 /// pickers/clipboard/dialogs/clock via B3 interfaces. Does not tofu apply unless the
 /// operator clicks Deploy; agents use <c>MCMANAGER_TOFU_DRY_RUN=1</c>.
@@ -93,6 +93,9 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     public const string ShapeSmallerHelp =
         "Smaller Always Free size. Vanilla can often stay on all month; less room if you add mods or more players later.";
 
+    public const string IdentityHelp =
+        "Friends see the name, description, and icon in Minecraft’s server list while the game is running. Two plain-text lines — not a formatted MOTD editor. You can change this later in Server Management. The doorbell message while the server is off is not this page.";
+
     private static readonly TimeSpan LogFlushPeriod = TimeSpan.FromMilliseconds(250);
     private static readonly TimeSpan ElapsedTickPeriod = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan CapacityPollPeriod = TimeSpan.FromMinutes(5);
@@ -125,6 +128,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     private string _functionImage = "";
     private string _resumeMinecraftVersion = "";
     private bool _navReady;
+    private bool _applyingIdentityDefault;
 
     public IReadOnlyList<OciConfigProfile> Profiles => _profiles;
 
@@ -237,6 +241,27 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _clientPackAcknowledged;
+
+    [ObservableProperty]
+    private string _identityName = "";
+
+    [ObservableProperty]
+    private string _identityDescription = "";
+
+    [ObservableProperty]
+    private bool _identityNameCustomized;
+
+    [ObservableProperty]
+    private bool _identityDescriptionCustomized;
+
+    [ObservableProperty]
+    private string _identityIconPath = "";
+
+    [ObservableProperty]
+    private string _iconPreviewDataUrl = "";
+
+    [ObservableProperty]
+    private string _identityHint = "";
 
     [ObservableProperty]
     private bool _eulaAccepted;
@@ -421,6 +446,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     public bool IsStepAlertEmail => CurrentStep == SetupWizardState.StepAlertEmail;
     public bool IsStepSsh => CurrentStep == SetupWizardState.StepSsh;
     public bool IsStepGame => CurrentStep == SetupWizardState.StepGame;
+    public bool IsStepIdentity => CurrentStep == SetupWizardState.StepIdentity;
     public bool IsStepEula => CurrentStep == SetupWizardState.StepEula;
     public bool IsStepAuthToken => CurrentStep == SetupWizardState.StepAuthToken;
     public bool IsStepSummary => CurrentStep == SetupWizardState.StepSummary;
@@ -487,6 +513,15 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     public string ClientPackFriendsNeed =>
         SetupPackImport.FriendsNeedLine(PackName, MinecraftVersion, PackLoader, PackLoaderVersion);
 
+    public string MotdPreview => ServerIdentityUx.BuildMotd(IdentityName, IdentityDescription);
+
+    public bool CanClearIdentityIcon =>
+        !string.IsNullOrWhiteSpace(IdentityIconPath) || !string.IsNullOrWhiteSpace(IconPreviewDataUrl);
+
+    public int IdentityNameMaxLength => ServerIdentityUx.MaxNameLength;
+
+    public int IdentityDescriptionMaxLength => ServerIdentityUx.MaxDescriptionLength;
+
     public void SelectDefaultVanilla() => VanillaFlavor = SetupVanillaFlavor.Default;
 
     public void SelectOptimizedVanilla() => VanillaFlavor = SetupVanillaFlavor.Optimized;
@@ -502,6 +537,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         SetupWizardState.StepAlertEmail => "Budget alert email",
         SetupWizardState.StepSsh => "SSH key",
         SetupWizardState.StepGame => "Minecraft",
+        SetupWizardState.StepIdentity => "Name and icon",
         SetupWizardState.StepEula => "Mojang EULA",
         SetupWizardState.StepAuthToken => "Optional Auth Token",
         SetupWizardState.StepSummary => ShowDeploySuccess ? "Deployment Complete" : "Review and deploy",
@@ -647,6 +683,39 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         }
 
         await AnalyzePackPathAsync(dest, keepConfirm: false).ConfigureAwait(true);
+    }
+
+    public async Task PickIdentityIconAsync()
+    {
+        if (IsDeployLocked)
+            return;
+
+        var path = await _picker.OpenFileAsync(new FilePickRequest
+        {
+            Title = "Choose a 64×64 PNG server icon",
+            Filters =
+            [
+                new FileTypeFilter("PNG images", ".png"),
+                new FileTypeFilter("All files", ".*"),
+            ],
+        }).ConfigureAwait(true);
+
+        if (string.IsNullOrWhiteSpace(path))
+            return;
+
+        ApplyIdentityIconPath(path);
+        Persist();
+    }
+
+    public void ClearIdentityIcon()
+    {
+        if (IsDeployLocked)
+            return;
+        IdentityIconPath = "";
+        IconPreviewDataUrl = "";
+        IdentityHint = "";
+        OnPropertyChanged(nameof(CanClearIdentityIcon));
+        Persist();
     }
 
     public void ClearPack()
@@ -1411,6 +1480,15 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         PackSummary = state.PackSummary;
         PackConfirmed = state.PackConfirmed;
         ClientPackAcknowledged = state.ClientPackAcknowledged;
+        _applyingIdentityDefault = true;
+        IdentityName = state.IdentityName ?? "";
+        IdentityDescription = state.IdentityDescription ?? "";
+        IdentityNameCustomized = state.IdentityNameCustomized;
+        IdentityDescriptionCustomized = state.IdentityDescriptionCustomized;
+        IdentityIconPath = state.IdentityIconPath ?? "";
+        _applyingIdentityDefault = false;
+        ApplyIdentityDefaultsIfUntouched();
+        ApplyIdentityIconPath(IdentityIconPath, persistHint: false);
         EulaAccepted = state.EulaAccepted;
         AuthTokenStored = state.AuthTokenStored;
         AdminCidr = state.AdminCidr;
@@ -1462,6 +1540,11 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         PackSummary = PackSummary,
         PackConfirmed = PackConfirmed,
         ClientPackAcknowledged = ClientPackAcknowledged,
+        IdentityName = IdentityName?.Trim() ?? "",
+        IdentityDescription = IdentityDescription?.Trim() ?? "",
+        IdentityNameCustomized = IdentityNameCustomized,
+        IdentityDescriptionCustomized = IdentityDescriptionCustomized,
+        IdentityIconPath = IdentityIconPath ?? "",
         EulaAccepted = EulaAccepted,
         AuthTokenStored = AuthTokenStored,
         AdminCidr = AdminCidr,
@@ -1485,6 +1568,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
                     string.IsNullOrWhiteSpace(MinecraftVersion) ? _resumeMinecraftVersion : MinecraftVersion)
             : !string.IsNullOrWhiteSpace(
                 string.IsNullOrWhiteSpace(MinecraftVersion) ? _resumeMinecraftVersion : MinecraftVersion),
+        SetupWizardState.StepIdentity => !string.IsNullOrWhiteSpace(IdentityName),
         SetupWizardState.StepEula => EulaAccepted,
         SetupWizardState.StepAuthToken => true,
         _ => false,
@@ -1521,6 +1605,8 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         OnPropertyChanged(nameof(ShowSnapshotToggle));
         if (_navReady && ServerTypeIsVanilla)
             RebuildVersionList(keepSelection: true);
+        if (_navReady)
+            ApplyIdentityDefaultsIfUntouched();
     }
 
     partial void OnServerTypeChanged(string value)
@@ -1534,6 +1620,8 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         OnPropertyChanged(nameof(ShowPackConfirmChecks));
         if (_navReady && ServerTypeIsVanilla)
             RebuildVersionList(keepSelection: true);
+        if (_navReady)
+            ApplyIdentityDefaultsIfUntouched();
     }
 
     partial void OnPackConfirmedChanged(bool value)
@@ -1546,6 +1634,85 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     {
         if (value && PackConfirmed)
             RetainCurrentPack();
+    }
+
+    partial void OnIdentityNameChanged(string value)
+    {
+        if (_navReady && !_applyingIdentityDefault)
+            IdentityNameCustomized = true;
+        OnPropertyChanged(nameof(MotdPreview));
+    }
+
+    partial void OnIdentityDescriptionChanged(string value)
+    {
+        if (_navReady && !_applyingIdentityDefault)
+            IdentityDescriptionCustomized = true;
+        OnPropertyChanged(nameof(MotdPreview));
+    }
+
+    private void ApplyIdentityDefaultsIfUntouched()
+    {
+        _applyingIdentityDefault = true;
+        try
+        {
+            if (!IdentityNameCustomized)
+                IdentityName = ServerIdentityUx.DefaultServerName(ServerType, VanillaFlavor);
+            if (!IdentityDescriptionCustomized)
+                IdentityDescription = ServerIdentityUx.DefaultDescription;
+        }
+        finally
+        {
+            _applyingIdentityDefault = false;
+        }
+    }
+
+    private void ApplyIdentityIconPath(string? path, bool persistHint = true)
+    {
+        if (!persistHint)
+            IdentityHint = "";
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            IdentityIconPath = "";
+            IconPreviewDataUrl = "";
+            if (persistHint)
+                IdentityHint = "";
+            OnPropertyChanged(nameof(CanClearIdentityIcon));
+            return;
+        }
+
+        if (!File.Exists(path))
+        {
+            IdentityIconPath = path;
+            IconPreviewDataUrl = "";
+            IdentityHint = "That icon file is missing. Choose it again, or continue without an icon.";
+            OnPropertyChanged(nameof(CanClearIdentityIcon));
+            return;
+        }
+
+        byte[] bytes;
+        try
+        {
+            bytes = File.ReadAllBytes(path);
+        }
+        catch (Exception ex)
+        {
+            IdentityHint = "Could not read that icon file. " + ex.Message;
+            OnPropertyChanged(nameof(CanClearIdentityIcon));
+            return;
+        }
+
+        var error = ServerIdentityUx.ValidateIcon(bytes);
+        if (error is not null)
+        {
+            IdentityHint = error;
+            OnPropertyChanged(nameof(CanClearIdentityIcon));
+            return;
+        }
+
+        IdentityIconPath = path;
+        IconPreviewDataUrl = "data:image/png;base64," + Convert.ToBase64String(bytes);
+        IdentityHint = "";
+        OnPropertyChanged(nameof(CanClearIdentityIcon));
     }
 
     protected override void OnPropertyChanged(PropertyChangedEventArgs e)
@@ -1564,6 +1731,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             case nameof(IsStepAlertEmail):
             case nameof(IsStepSsh):
             case nameof(IsStepGame):
+            case nameof(IsStepIdentity):
             case nameof(IsStepEula):
             case nameof(IsStepAuthToken):
             case nameof(IsStepSummary):
@@ -1611,6 +1779,10 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             case nameof(ClientPackCopy):
             case nameof(ClientPackAckLabel):
             case nameof(ClientPackFriendsNeed):
+            case nameof(MotdPreview):
+            case nameof(CanClearIdentityIcon):
+            case nameof(IdentityHint):
+            case nameof(IconPreviewDataUrl):
             case nameof(Profiles):
             case nameof(VersionIds):
             case nameof(CapacityDialogOpen):
@@ -1631,6 +1803,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         OnPropertyChanged(nameof(IsStepAlertEmail));
         OnPropertyChanged(nameof(IsStepSsh));
         OnPropertyChanged(nameof(IsStepGame));
+        OnPropertyChanged(nameof(IsStepIdentity));
         OnPropertyChanged(nameof(IsStepEula));
         OnPropertyChanged(nameof(IsStepAuthToken));
         OnPropertyChanged(nameof(IsStepSummary));
@@ -1665,6 +1838,8 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         OnPropertyChanged(nameof(ShowPackConfirmChecks));
         OnPropertyChanged(nameof(ShowOverrideListWarning));
         OnPropertyChanged(nameof(ClientPackFriendsNeed));
+        OnPropertyChanged(nameof(MotdPreview));
+        OnPropertyChanged(nameof(CanClearIdentityIcon));
         OnPropertyChanged(nameof(SshImportMode));
         OnPropertyChanged(nameof(AuthTokenStoredDisplay));
     }

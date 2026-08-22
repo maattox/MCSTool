@@ -50,8 +50,9 @@ public static class SetupWizardStore
     }
 
     /// <summary>
-    /// Bump schema, remap step indexes after the Compartment page was removed,
-    /// and force create-compartment (paste-OCID is Advanced Auto-detect only).
+    /// Bump schema, remap step indexes after the Compartment page was removed
+    /// and Name and icon was inserted, and force create-compartment
+    /// (paste-OCID is Advanced Auto-detect only).
     /// </summary>
     public static SetupWizardState Normalize(SetupWizardState state)
     {
@@ -61,6 +62,8 @@ public static class SetupWizardStore
         {
             if (state.SchemaVersion <= 1)
                 state.CurrentStep = MigrateStepIndexFromV1(state.CurrentStep);
+            if (state.SchemaVersion <= 2)
+                state.CurrentStep = MigrateStepIndexFromV2(state.CurrentStep);
             state.SchemaVersion = SetupWizardState.CurrentSchemaVersion;
         }
 
@@ -88,6 +91,13 @@ public static class SetupWizardStore
     /// </summary>
     public static int MigrateStepIndexFromV1(int oldStep) =>
         oldStep > 2 ? oldStep - 1 : oldStep;
+
+    /// <summary>
+    /// v2: 0 Always Free … 4 Game, 5 EULA, 6 Auth, 7 Review.
+    /// v3: inserts Name and icon at 5; EULA and later shift +1.
+    /// </summary>
+    public static int MigrateStepIndexFromV2(int oldStep) =>
+        oldStep >= 5 ? oldStep + 1 : oldStep;
 
     public static ServiceResult Save(SetupWizardState state)
     {

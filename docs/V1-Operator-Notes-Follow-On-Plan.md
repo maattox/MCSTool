@@ -1,6 +1,6 @@
 # V1 operator-notes follow-on (living)
 
-**Status:** Living. Created 2026-08-21 (docs only). **NEXT = P7** (P1–P6 **DONE**). Step **8.7** P1–P5 are **DONE**.  
+**Status:** Living. Created 2026-08-21 (docs only). **NEXT = P8** (P1–P7 **DONE**). Step **8.7** P1–P5 are **DONE**.  
 **Parent:** `[V1-Implementation-Plan.md](V1-Implementation-Plan.md)` Step **8.8**.  
 **Why now:** operator 2026-08-21 — after modpack-test fixes, implement Manager / Setup / pack-UX notes **before** QA Pass 3. Many notes are vague; agents **decide inside each section’s bounds** and record the choice. Stop and ask for spend, tofu destroy, CurseForge **API keys**, or pulling parked after-v1 items.
 
@@ -72,7 +72,7 @@ Only when two sections **do not** edit the same files **and** do not both own th
 
 - Console **Simple vs Full** (8.4 P6): `MinecraftConsoleRemote.FilterSimpleLog` drops only a handful of RCON listener/thread strings. Operator 2026-08-21: Simple still shows RCON and other noise. That is **P1**, not a new toggle.
 - Action banners (8.4 P4): window-locked full-width bar; short success auto-hides (~3.5s); **progress / warning / error persist** until X. That is why “Stopping the game server…” stays up. Tab `StatusMessage` on Advanced **forwards** to the banner (`OnStatusMessageChanged`) — loading `meta/infra.json` posts `FormatSummary()` (play IP, bucket, …). Server Management posts `Listed N backup(s). Select one to download.` on tab open.
-- Setup steps today: Always Free → OCI profile → budget email → SSH → Minecraft → EULA → Auth Token → Review/deploy. Compartment is auto-named `mcmgr` (or `mcmgr-2` / `mcmgr-3` if taken) — no wizard page. Connect-existing / paste OCID stays on Advanced auto-detect. Default window + wizard footer (Back / Next / Close) exist. Deploy log is short. Progress sits in the page, not a second dock.
+- Setup steps today: Always Free → OCI profile → budget email → SSH → Minecraft → Name and icon → EULA → Auth Token → Review/deploy. Compartment is auto-named `mcmgr` (or `mcmgr-2` / `mcmgr-3` if taken) — no wizard page. Connect-existing / paste OCID stays on Advanced auto-detect. Default window + wizard footer (Back / Next / Close) exist. Deploy log is short. Progress sits in the page, not a second dock.
 - Server identity (Step 7.6): Manager **Name, icon, and messages** → `messages/chat.json` + optional 64×64 `messages/server-icon.png`. Door MOTD **favicons** are separate: `/opt/mccontrol/assets/icons/` (`idle.png`, `starting.png`, `exhausted.png`) from `door_vm/assets/icons/`. Operator overlays live in `assets/server-icons/`.
 - Pack replace full re-setup is **v1**. Jar-root may continue with unclear jars (8.4 P9). Layer 3 quarantine was **parked** in 4.13; operator pulled it into **this** plan (P10).
 - CurseForge **API** deferred (4.12, ToS). Client exports / mixed-ID zips **refused**. In-app pack **catalog** is **rejected**.
@@ -155,8 +155,8 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 | **P4**  | Bottom progress dock (Setup + Change pack)                 | **DONE** | SEQUENTIAL                           | No              |
 | **P5**  | Setup wizard UX (copy, layout, log height, humanize)       | **DONE** | SEQUENTIAL                           | No              |
 | **P6**  | Auto compartment name; drop wizard step                    | **DONE** | SEQUENTIAL                           | No              |
-| **P7**  | Setup identity page (name / description / icon)            | **NEXT** | SEQUENTIAL                           | No              |
-| **P8**  | Icon state variants from overlays                          | TODO     | SEQUENTIAL                           | Yes (door push) |
+| **P7**  | Setup identity page (name / description / icon)            | **DONE** | SEQUENTIAL                           | No              |
+| **P8**  | Icon state variants from overlays                          | **NEXT** | SEQUENTIAL                           | Yes (door push) |
 | **P9**  | Jar-root confirm + derived manifest                        | TODO     | SEQUENTIAL                           | Optional        |
 | **P10** | Layer 3 crash quarantine                                   | TODO     | SEQUENTIAL                           | Yes             |
 | **P11** | CurseForge refuse helper (links, optional Modrinth search) | TODO     | SEQUENTIAL                           | No              |
@@ -371,7 +371,7 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 
 ## P7 — Setup identity page
 
-**Status:** NEXT  
+**Status:** DONE  
 **UI skill:** required  
 **Catalog IDs:** S4-12 (identity still applied); new Setup step
 
@@ -399,7 +399,7 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 
 **Done when:** Step exists; defaults as above; no Oracle™; reuse existing persistence.
 
-**Changelog:** *(empty until implemented)*
+**Changelog:** 2026-08-21 — **P7 DONE.** Setup **Name and icon** after Minecraft (before EULA). Defaults Vanilla/Paper/Modded Server + `made with github.com/maattox/oci-mc-server` (no Oracle™); name default updates until the user edits. Optional 64×64 PNG. Seeds `messages/chat.json` via existing store (icon if chosen). Resume schema 3. Guide + S6-01/S4-12. **NEXT = P8.**
 
 ---
 
@@ -407,7 +407,7 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 
 ## P8 — Server icon state variants
 
-**Status:** TODO  
+**Status:** NEXT  
 **UI skill:** required for any in-app preview  
 **Catalog IDs:** S4-12; door MOTD favicon
 
@@ -558,6 +558,7 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 
 | Date       | Note                                                                                                                                                                                                                                                    |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-21 | **P7 DONE.** Setup Name and icon page (type-based defaults, no Oracle™); seeds `messages/chat.json`. **NEXT = P8.**                                                                                                                                              |
 | 2026-08-21 | **P6 DONE.** Auto compartment name (`mcmgr` / `mcmgr-2`…); Compartment wizard page removed. **NEXT = P7.**                                                                                                                                              |
 | 2026-08-21 | **P5 DONE.** Setup wizard copy/layout/help hovers; taller deploy log; humanized dock status. **NEXT = P6.**                                                                                                                                              |
 | 2026-08-21 | **P4 DONE.** Shared bottom progress dock (Setup Deploy + Change pack). **NEXT = P5.**                                                                                                                                                                    |

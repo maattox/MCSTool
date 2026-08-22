@@ -38,7 +38,8 @@ public sealed class SetupWizardStoreTests
         Assert.True(state.CreateCompartment);
         Assert.Equal("", state.ExistingCompartmentId);
         Assert.Equal(CompartmentNamer.BaseName, state.CompartmentName);
-        Assert.Equal(8, SetupWizardState.StepCount);
+        Assert.Equal(9, SetupWizardState.StepCount);
+        Assert.Equal(SetupWizardState.StepIdentity, 5);
     }
 
     [Fact]
@@ -52,16 +53,50 @@ public sealed class SetupWizardStoreTests
         Assert.Equal(SetupWizardState.StepAlertEmail, state.CurrentStep);
     }
 
+    [Theory]
+    [InlineData(4, 4)]
+    [InlineData(5, 6)]
+    [InlineData(6, 7)]
+    [InlineData(7, 8)]
+    public void V2_step_index_inserts_identity_page(int oldStep, int expected)
+    {
+        Assert.Equal(expected, SetupWizardStore.MigrateStepIndexFromV2(oldStep));
+    }
+
     [Fact]
-    public void Normalize_v2_does_not_shift_again()
+    public void Normalize_v2_review_lands_on_review()
     {
         var state = SetupWizardStore.Normalize(new SetupWizardState
         {
             SchemaVersion = 2,
+            CurrentStep = 7,
+            CompartmentName = "mcmgr-2",
+        });
+        Assert.Equal(SetupWizardState.StepSummary, state.CurrentStep);
+        Assert.Equal("mcmgr-2", state.CompartmentName);
+    }
+
+    [Fact]
+    public void Normalize_v2_eula_lands_on_eula()
+    {
+        var state = SetupWizardStore.Normalize(new SetupWizardState
+        {
+            SchemaVersion = 2,
+            CurrentStep = 5,
+        });
+        Assert.Equal(SetupWizardState.StepEula, state.CurrentStep);
+    }
+
+    [Fact]
+    public void Normalize_v3_does_not_shift_again()
+    {
+        var state = SetupWizardStore.Normalize(new SetupWizardState
+        {
+            SchemaVersion = 3,
             CurrentStep = 6,
             CompartmentName = "mcmgr-2",
         });
-        Assert.Equal(6, state.CurrentStep);
+        Assert.Equal(SetupWizardState.StepEula, state.CurrentStep);
         Assert.Equal("mcmgr-2", state.CompartmentName);
     }
 
@@ -70,7 +105,7 @@ public sealed class SetupWizardStoreTests
     {
         var state = SetupWizardStore.Normalize(new SetupWizardState
         {
-            SchemaVersion = 2,
+            SchemaVersion = 3,
             CurrentStep = 99,
         });
         Assert.Equal(0, state.CurrentStep);

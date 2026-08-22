@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using McManager.Core.Config;
 using McManager.Core.Services;
+using McManager.Core.Setup;
 using McManager.Core.Usage;
 using Xunit;
 
@@ -100,6 +101,33 @@ public sealed class ChatMessagesStoreTests
         var second = await store.SeedIfMissingAsync();
         Assert.True(second.Succeeded, second.Error);
         Assert.Contains("Already", Encoding.UTF8.GetString(storage.Content("messages/chat.json")), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Seed_if_missing_writes_setup_identity_and_icon_once()
+    {
+        var storage = new EtagMemoryStorage();
+        var store = new ChatMessagesStore(storage, Prefixes);
+        var doc = ChatMessagesDocument.Defaults();
+        doc.ServerName = "Vanilla Server";
+        doc.Description = ServerIdentityUx.DefaultDescription;
+        var first = await store.SeedIfMissingAsync(doc, Png64());
+        Assert.True(first.Succeeded, first.Error);
+
+        var got = await store.GetAsync();
+        Assert.True(got.Succeeded, got.Error);
+        Assert.Equal("Vanilla Server", got.Value!.Document.ServerName);
+        Assert.Equal(ServerIdentityUx.DefaultDescription, got.Value.Document.Description);
+        Assert.Equal("messages/server-icon.png", got.Value.Document.IconObject);
+        Assert.NotNull(got.Value.IconPng);
+
+        var again = ChatMessagesDocument.Defaults();
+        again.ServerName = "Overwrite";
+        var second = await store.SeedIfMissingAsync(again, iconPng: null);
+        Assert.True(second.Succeeded, second.Error);
+        var json = Encoding.UTF8.GetString(storage.Content("messages/chat.json"));
+        Assert.Contains("Vanilla Server", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("Overwrite", json, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -283,6 +311,88 @@ public sealed class ServerIdentityUxTests
         Assert.Equal("Friends SMP", ServerIdentityUx.DisplayName("Friends SMP", "mcmgr-vm1"));
         Assert.Equal("mcmgr-vm1", ServerIdentityUx.DisplayName("  ", "mcmgr-vm1"));
         Assert.Equal("—", ServerIdentityUx.DisplayName(null, null));
+    }
+
+    [Fact]
+    public void Default_setup_names_follow_game_type_without_oracle()
+    {
+        Assert.Equal("Vanilla Server", ServerIdentityUx.DefaultServerName(SetupServerType.Vanilla, SetupVanillaFlavor.Default));
+        Assert.Equal("Paper Server", ServerIdentityUx.DefaultServerName(SetupServerType.Vanilla, SetupVanillaFlavor.Optimized));
+        Assert.Equal("Modded Server", ServerIdentityUx.DefaultServerName(SetupServerType.Modded, SetupVanillaFlavor.Default));
+        Assert.Equal(ServerIdentityUx.DefaultDescription, "made with github.com/maattox/oci-mc-server");
+
+        foreach (var name in new[]
+                 {
+                     ServerIdentityUx.DefaultVanillaName,
+                     ServerIdentityUx.DefaultPaperName,
+                     ServerIdentityUx.DefaultModdedName,
+                     ServerIdentityUx.DefaultDescription,
+                 })
+        {
+            Assert.DoesNotContain("Oracle", name, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    [Fact]
+    public void Setup_seed_uses_defaults_until_description_is_customized_empty()
+    {
+        var vanilla = ServerIdentityUx.CreateSetupSeed(new SetupWizardState
+        {
+            ServerType = SetupServerType.Vanilla,
+            VanillaFlavor = SetupVanillaFlavor.Default,
+        });
+        Assert.Equal("Vanilla Server", vanilla.ServerName);
+        Assert.Equal(ServerIdentityUx.DefaultDescription, vanilla.Description);
+
+        var custom = ServerIdentityUx.CreateSetupSeed(new SetupWizardState
+        {
+            ServerType = SetupServerType.Modded,
+            IdentityName = "Friends SMP",
+            IdentityDescription = "",
+            IdentityDescriptionCustomized = true,
+        });
+        Assert.Equal("Friends SMP", custom.ServerName);
+        Assert.Equal("", custom.Description);
+    }
+
+    [Fact]
+    public void Try_read_setup_icon_skips_missing_and_accepts_64_png()
+    {
+        Assert.Null(ServerIdentityUx.TryReadSetupIcon("", out var emptySkip));
+        Assert.Null(emptySkip);
+
+        Assert.Null(ServerIdentityUx.TryReadSetupIcon(@"C:\missing-mcmgr-icon.png", out var missingSkip));
+        Assert.Contains("missing", missingSkip, StringComparison.OrdinalIgnoreCase);
+
+        var path = Path.Combine(Path.GetTempPath(), "mcmgr-setup-icon-" + Guid.NewGuid().ToString("N") + ".png");
+        try
+        {
+            File.WriteAllBytes(path, Png64Stub());
+            var bytes = ServerIdentityUx.TryReadSetupIcon(path, out var skip);
+            Assert.Null(skip);
+            Assert.NotNull(bytes);
+            Assert.Equal(24, bytes!.Length);
+        }
+        finally
+        {
+            try { File.Delete(path); } catch { /* temp */ }
+        }
+    }
+
+    private static byte[] Png64Stub()
+    {
+        var png = new byte[24];
+        png[0] = 0x89;
+        png[1] = 0x50;
+        png[2] = 0x4E;
+        png[3] = 0x47;
+        png[4] = 0x0D;
+        png[5] = 0x0A;
+        png[6] = 0x1A;
+        png[7] = 0x0A;
+        png[19] = 64;
+        png[23] = 64;
+        return png;
     }
 
     [Fact]

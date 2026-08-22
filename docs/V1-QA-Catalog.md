@@ -767,9 +767,9 @@ For each: click the path, then Result Pass or Fail with what you saw.
 
 **Runner:** `operator` · **Duration:** `quick`
 
-**Steps:** Set a harmless description. Save. Restart Minecraft to apply. Icon 64×64 PNG optional.
+**Steps:** Set a harmless description. Save. Restart Minecraft to apply. Icon 64×64 PNG optional. Setup also has a **Name and icon** page that seeds the same `messages/chat.json` (and optional PNG).
 
-**Expected:** MOTD/list name updates after restart. Door-off MOTD is **not** edited here.
+**Expected:** MOTD/list name updates after restart. Door-off MOTD is **not** edited here. Setup defaults are Vanilla/Paper/Modded Server (no Oracle™). Manager remains the day-2 editor.
 
 **Restore:** Put the old name back if you care.
 
@@ -917,9 +917,9 @@ Do **not** `tofu apply` from these tests unless the operator authorizes it in th
 
 **Runner:** `operator` · **Duration:** `wait`
 
-**Steps:** If you can open Setup without destroying manage config: walk Always Free checkboxes ($1 residual honesty), profile picker, game Vanilla vs Modded, Paper vs Default Vanilla, EULA link, Auth Token skip copy, shape 2/12 vs 4/24, admin `/32`. **No Compartment page** — Setup auto-names `mcmgr` (or `mcmgr-2` if taken). **Do not click Deploy** unless S7. If Setup already finished, reopen the last step from **Advanced → Deploy / repair** (no second Deploy) to check the finish page.
+**Steps:** If you can open Setup without destroying manage config: walk Always Free checkboxes ($1 residual honesty), profile picker, game Vanilla vs Modded, Paper vs Default Vanilla, **Name and icon** (defaults Vanilla/Paper/Modded Server; no Oracle™; optional 64×64 PNG), EULA link, Auth Token skip copy, shape 2/12 vs 4/24, admin `/32`. **No Compartment page** — Setup auto-names `mcmgr` (or `mcmgr-2` if taken). **Do not click Deploy** unless S7. If Setup already finished, reopen the last step from **Advanced → Deploy / repair** (no second Deploy) to check the finish page.
 
-**Expected:** Copy matches Guide. Pages are short; extra Always Free / EULA / pack copy is on info-icon hover. Back/Deploy lock behavior is described (cannot verify without Deploy). While Deploy runs, percent, elapsed time, and a **humanized** status live in the **bottom dock** (same bar as Back/Deploy/Close) — never a raw `> rm -rf …` line. The detailed log stays on the page and is the tall viewport (review form and plan hidden). Modded: file picker/drop only; client-pack checkboxes; Quilt cannot continue; CurseForge **client** export refused. After a successful Deploy (or resume of a finished wizard): heading **Deployment Complete**, reserved play IP with **Copy**, Close to continue to Manager; deploy log may be collapsed below.
+**Expected:** Copy matches Guide. Pages are short; extra Always Free / EULA / pack copy is on info-icon hover. Name and icon sits after Minecraft; changing game type updates the default name until you edit it. Back/Deploy lock behavior is described (cannot verify without Deploy). While Deploy runs, percent, elapsed time, and a **humanized** status live in the **bottom dock** (same bar as Back/Deploy/Close) — never a raw `> rm -rf …` line. The detailed log stays on the page and is the tall viewport (review form and plan hidden). Modded: file picker/drop only; client-pack checkboxes; Quilt cannot continue; CurseForge **client** export refused. After a successful Deploy (or resume of a finished wizard): heading **Deployment Complete**, reserved play IP with **Copy**, Close to continue to Manager; deploy log may be collapsed below.
 
 ### S6-02 — Modded analyze (local file)
 

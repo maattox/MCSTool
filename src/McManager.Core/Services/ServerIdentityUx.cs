@@ -1,4 +1,6 @@
 using System.Buffers.Binary;
+using McManager.Core.Config;
+using McManager.Core.Setup;
 using McManager.Core.Usage;
 
 namespace McManager.Core.Services;
@@ -11,7 +13,13 @@ public static class ServerIdentityUx
     public const int IconWidth = 64;
     public const int IconHeight = 64;
     public const int MaxIconBytes = 256 * 1024;
+    public const int MaxNameLength = 40;
+    public const int MaxDescriptionLength = 80;
     public const string DefaultMotd = "A Minecraft Server";
+    public const string DefaultDescription = "made with github.com/maattox/oci-mc-server";
+    public const string DefaultVanillaName = "Vanilla Server";
+    public const string DefaultPaperName = "Paper Server";
+    public const string DefaultModdedName = "Modded Server";
 
     public static IReadOnlyDictionary<string, string> DefaultChatMessages =>
         ChatMessagesDocument.DefaultChatMessages;
@@ -79,6 +87,69 @@ public static class ServerIdentityUx
             return custom;
         var fallback = CollapseWhitespace(fallbackVmDisplayName);
         return fallback.Length > 0 ? fallback : "—";
+    }
+
+    /// <summary>
+    /// Type-based Setup default. No Oracle trademark wording.
+    /// Vanilla (Mojang) vs Paper vs Modded.
+    /// </summary>
+    public static string DefaultServerName(string? serverType, string? vanillaFlavor)
+    {
+        if (SetupServerType.IsModded(serverType))
+            return DefaultModdedName;
+        if (SetupVanillaFlavor.IsOptimized(vanillaFlavor))
+            return DefaultPaperName;
+        return DefaultVanillaName;
+    }
+
+    public static ChatMessagesDocument CreateSetupSeed(SetupWizardState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        var doc = ChatMessagesDocument.Defaults();
+        var name = state.IdentityName?.Trim() ?? "";
+        doc.ServerName = name.Length > 0
+            ? name
+            : DefaultServerName(state.ServerType, state.VanillaFlavor);
+        var desc = state.IdentityDescription?.Trim() ?? "";
+        doc.Description = desc.Length > 0 || state.IdentityDescriptionCustomized
+            ? desc
+            : DefaultDescription;
+        return doc;
+    }
+
+    /// <summary>
+    /// Read a local PNG for Setup seed. Returns null when missing or invalid (caller may skip).
+    /// </summary>
+    public static byte[]? TryReadSetupIcon(string? path, out string? skipReason)
+    {
+        skipReason = null;
+        if (string.IsNullOrWhiteSpace(path))
+            return null;
+        if (!File.Exists(path))
+        {
+            skipReason = "Icon file is missing; continuing without a custom icon.";
+            return null;
+        }
+
+        byte[] bytes;
+        try
+        {
+            bytes = File.ReadAllBytes(path);
+        }
+        catch (Exception ex)
+        {
+            skipReason = "Could not read the icon file: " + ex.Message;
+            return null;
+        }
+
+        var error = ValidateIcon(bytes);
+        if (error is not null)
+        {
+            skipReason = error;
+            return null;
+        }
+
+        return bytes;
     }
 
     private static string CollapseWhitespace(string? value)
