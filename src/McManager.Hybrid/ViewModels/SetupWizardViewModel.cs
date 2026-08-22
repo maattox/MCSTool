@@ -228,6 +228,23 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     private string _packLoaderVersion = "";
 
     [ObservableProperty]
+    private string _packJavaMajorText = "";
+
+    [ObservableProperty]
+    private bool _packNeedsIdentityConfirm;
+
+    [ObservableProperty]
+    private string _packSourcePath = "";
+
+    [ObservableProperty]
+    private string _detectedMinecraftVersion = "";
+
+    [ObservableProperty]
+    private string _detectedLoader = "";
+
+    private bool _javaMajorCustomized;
+
+    [ObservableProperty]
     private string _packSummary = "";
 
     [ObservableProperty]
@@ -513,6 +530,32 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     public bool ShowPackConfirmChecks => ShowPackSummary && PackCanContinue;
 
+    public bool ShowPackIdentityFields =>
+        ShowPackSummary && PackCanContinue && PackNeedsIdentityConfirm;
+
+    public bool PackIdentityComplete =>
+        !PackNeedsIdentityConfirm
+        || DerivedPackIdentity.IsComplete(
+            MinecraftVersion,
+            PackLoader,
+            PackLoaderVersion,
+            PackJavaMajorText);
+
+    public bool ShowDetectionMismatch =>
+        ShowPackIdentityFields
+        && DerivedPackIdentity.DisagreesWithDetection(
+            DetectedMinecraftVersion,
+            DetectedLoader,
+            MinecraftVersion,
+            PackLoader);
+
+    public string DetectionMismatchWarning =>
+        DerivedPackIdentity.FormatDetectionMismatchWarning(
+            DetectedMinecraftVersion,
+            DetectedLoader,
+            MinecraftVersion,
+            PackLoader);
+
     public bool ShowOverrideListWarning =>
         ShowPackSummary && PackCanContinue && !string.IsNullOrWhiteSpace(PackOverrideListWarning);
 
@@ -740,6 +783,12 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         PackVersionId = "";
         PackLoader = "";
         PackLoaderVersion = "";
+        PackJavaMajorText = "";
+        PackNeedsIdentityConfirm = false;
+        PackSourcePath = "";
+        DetectedMinecraftVersion = "";
+        DetectedLoader = "";
+        _javaMajorCustomized = false;
         PackSummary = "";
         PackOverrideListWarning = "";
         PackBlockReason = "";
@@ -846,6 +895,11 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         PackVersionId = preview.VersionId ?? "";
         PackLoader = preview.Loader;
         PackLoaderVersion = preview.LoaderVersion;
+        PackNeedsIdentityConfirm = preview.NeedsIdentityConfirm;
+        DetectedMinecraftVersion = preview.DetectedMinecraftVersion;
+        DetectedLoader = preview.DetectedLoader;
+        if (!preview.IsDerived)
+            PackSourcePath = preview.SourcePath;
         PackSummary = preview.ConfirmableSummary;
         PackOverrideListWarning = preview.OverrideListWarning ?? "";
         PackBlockReason = preview.BlockReason ?? "";
@@ -857,8 +911,13 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             return;
         }
 
-        MinecraftVersion = preview.MinecraftVersion;
-        _resumeMinecraftVersion = preview.MinecraftVersion;
+        var mc = string.Equals(preview.MinecraftVersion, "(unknown)", StringComparison.OrdinalIgnoreCase)
+            ? ""
+            : preview.MinecraftVersion;
+        MinecraftVersion = mc;
+        _resumeMinecraftVersion = mc;
+        PackJavaMajorText = preview.JavaMajor?.ToString() ?? "";
+        _javaMajorCustomized = false;
         if (keepConfirm && PackConfirmed && ClientPackAcknowledged)
             RetainCurrentPack();
         else if (!keepConfirm)
@@ -866,14 +925,58 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             PackConfirmed = false;
             ClientPackAcknowledged = false;
         }
+        NotifyPackIdentityUi();
     }
 
     private void RetainCurrentPack()
     {
-        if (string.IsNullOrWhiteSpace(PackPath) || !File.Exists(PackPath) || !PackCanContinue)
+        if (string.IsNullOrWhiteSpace(PackPath) || !PackCanContinue)
             return;
-        var dataDir = LocalConfigStore.TryFindDataDirectory();
-        if (string.IsNullOrWhiteSpace(dataDir))
+
+        if (PackNeedsIdentityConfirm)
+        {
+            if (!PackIdentityComplete)
+                return;
+            var dataDir = LocalConfigStore.TryFindDataDirectory();
+            if (string.IsNullOrWhiteSpace(dataDir))
+            {
+                StatusMessage = "Could not find Manager data directory for the derived pack.";
+                return;
+            }
+
+            var source = string.IsNullOrWhiteSpace(PackSourcePath) ? PackPath : PackSourcePath;
+            if (!File.Exists(source))
+            {
+                StatusMessage = "Original pack file is missing. Choose the pack again.";
+                return;
+            }
+
+            var build = DerivedPackWorkflow.BuildAndRetain(
+                source,
+                PackName,
+                string.IsNullOrWhiteSpace(PackVersionId) ? null : PackVersionId,
+                MinecraftVersion,
+                PackLoader,
+                PackLoaderVersion,
+                PackJavaMajorText,
+                dataDir,
+                Path.GetFileName(source));
+            if (!build.Succeeded || string.IsNullOrWhiteSpace(build.Value))
+            {
+                StatusMessage = build.Error ?? "Could not build the derived pack.";
+                return;
+            }
+
+            PackPath = build.Value;
+            StatusMessage = "Derived pack saved for install and Download pack.";
+            Persist();
+            return;
+        }
+
+        if (!File.Exists(PackPath))
+            return;
+        var retainDir = LocalConfigStore.TryFindDataDirectory();
+        if (string.IsNullOrWhiteSpace(retainDir))
             return;
         var retained = ImportedPackArchiveStore.Retain(
             PackPath,
@@ -881,7 +984,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             string.IsNullOrWhiteSpace(PackVersionId) ? null : PackVersionId,
             PackLoader,
             MinecraftVersion,
-            dataDir);
+            retainDir);
         if (!retained.Succeeded)
             StatusMessage = retained.Error ?? "Could not keep a local copy of the pack.";
     }
@@ -1489,6 +1592,10 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         PackVersionId = state.PackVersionId;
         PackLoader = state.PackLoader;
         PackLoaderVersion = state.PackLoaderVersion;
+        PackJavaMajorText = state.PackJavaMajor?.ToString() ?? "";
+        PackSourcePath = state.PackSourcePath ?? "";
+        PackNeedsIdentityConfirm = false;
+        _javaMajorCustomized = state.PackJavaMajor is not null;
         PackSummary = state.PackSummary;
         PackConfirmed = state.PackConfirmed;
         ClientPackAcknowledged = state.ClientPackAcknowledged;
@@ -1549,6 +1656,8 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         PackVersionId = PackVersionId,
         PackLoader = PackLoader,
         PackLoaderVersion = PackLoaderVersion,
+        PackJavaMajor = DerivedPackIdentity.TryNormalizeJavaMajor(PackJavaMajorText, out var j) ? j : null,
+        PackSourcePath = PackSourcePath,
         PackSummary = PackSummary,
         PackConfirmed = PackConfirmed,
         ClientPackAcknowledged = ClientPackAcknowledged,
@@ -1576,6 +1685,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             ? PackConfirmed
                 && ClientPackAcknowledged
                 && PackCanContinue
+                && PackIdentityComplete
                 && !string.IsNullOrWhiteSpace(
                     string.IsNullOrWhiteSpace(MinecraftVersion) ? _resumeMinecraftVersion : MinecraftVersion)
             : !string.IsNullOrWhiteSpace(
@@ -1605,6 +1715,20 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         if (string.IsNullOrWhiteSpace(value))
             return;
         _resumeMinecraftVersion = value;
+        if (PackNeedsIdentityConfirm && !_javaMajorCustomized)
+            PackJavaMajorText = DerivedPackIdentity.JavaMajorForMinecraftOrNull(value)?.ToString() ?? "";
+        NotifyPackIdentityUi();
+    }
+
+    partial void OnPackLoaderChanged(string value) => NotifyPackIdentityUi();
+
+    partial void OnPackLoaderVersionChanged(string value) => NotifyPackIdentityUi();
+
+    partial void OnPackJavaMajorTextChanged(string value)
+    {
+        if (_navReady)
+            _javaMajorCustomized = true;
+        NotifyPackIdentityUi();
     }
 
     partial void OnIncludeSnapshotsChanged(bool value) => RebuildVersionList(keepSelection: true);
@@ -1646,6 +1770,16 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     {
         if (value && PackConfirmed)
             RetainCurrentPack();
+    }
+
+    private void NotifyPackIdentityUi()
+    {
+        OnPropertyChanged(nameof(PackIdentityComplete));
+        OnPropertyChanged(nameof(ShowPackIdentityFields));
+        OnPropertyChanged(nameof(ShowDetectionMismatch));
+        OnPropertyChanged(nameof(DetectionMismatchWarning));
+        OnPropertyChanged(nameof(ClientPackFriendsNeed));
+        OnPropertyChanged(nameof(ShowPackConfirmChecks));
     }
 
     partial void OnIdentityNameChanged(string value)

@@ -263,6 +263,17 @@
                 }
                 <pre class="mcm-wizard-log mcm-wizard-mono mcm-slim-scroll mcm-pack-summary">@Vm.PackSummary</pre>
             }
+            @if (Vm.ShowPackIdentityFields)
+            {
+                <PackIdentityFields IdPrefix="change-pack"
+                                    Disabled="@Vm.AnyBusy"
+                                    @bind-MinecraftVersion="Vm.PackMinecraftVersion"
+                                    @bind-Loader="Vm.PackLoader"
+                                    @bind-LoaderVersion="Vm.PackLoaderVersion"
+                                    @bind-JavaMajorText="Vm.PackJavaMajorText"
+                                    ShowDetectionMismatch="@Vm.ShowDetectionMismatch"
+                                    DetectionMismatchWarning="@Vm.DetectionMismatchWarning" />
+            }
             @if (Vm.ShowPackConfirmChecks)
             {
                 <label class="mcm-checkbox-row">

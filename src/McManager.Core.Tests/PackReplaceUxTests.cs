@@ -35,6 +35,21 @@ public sealed class PackReplaceUxTests
     }
 
     [Fact]
+    public void Install_requires_identity_when_incomplete()
+    {
+        Assert.False(PackReplaceUx.CanInstall(
+            vm1Running: true,
+            busy: false,
+            canContinue: true,
+            packConfirmed: true,
+            clientPackAcknowledged: true,
+            identityComplete: false));
+        Assert.Equal(
+            DerivedPackIdentity.IdentityIncompleteReason,
+            PackReplaceUx.InstallDisabledReason(true, false, true, true, true, identityComplete: false));
+    }
+
+    [Fact]
     public void Busy_blocks_pick_and_install()
     {
         Assert.False(PackReplaceUx.CanPick(vm1Running: true, busy: true));

@@ -115,6 +115,13 @@ public sealed class SetupWizardState
     [JsonPropertyName("pack_loader_version")]
     public string PackLoaderVersion { get; set; } = "";
 
+    [JsonPropertyName("pack_java_major")]
+    public int? PackJavaMajor { get; set; }
+
+    /// <summary>Original user-selected path before derived archive (resume rebuild).</summary>
+    [JsonPropertyName("pack_source_path")]
+    public string PackSourcePath { get; set; } = "";
+
     [JsonPropertyName("pack_summary")]
     public string PackSummary { get; set; } = "";
 

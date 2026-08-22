@@ -1,0 +1,88 @@
+@using McManager.Core.Setup
+@using McManager.Hybrid.Components.Setup
+
+<div class="mcm-pack-identity">
+    <p class="mcm-wizard-inline-help">
+        Confirm pack versions before install.
+        <WizardHelp Title="@DerivedPackIdentity.IdentityHelp" AriaLabel="About pack versions" />
+    </p>
+  @if (ShowDetectionMismatch && !string.IsNullOrWhiteSpace(DetectionMismatchWarning))
+    {
+        <aside class="mcm-pack-list-warning" role="status">
+            <p>@DetectionMismatchWarning</p>
+        </aside>
+    }
+    <div class="mcm-identity-grid">
+        <div class="mcm-field">
+            <label for="@McInputId">@DerivedPackIdentity.MinecraftVersionLabel</label>
+            <input id="@McInputId"
+                   type="text"
+                   autocomplete="off"
+                   disabled="@Disabled"
+                   value="@MinecraftVersion"
+                   @oninput="OnMinecraftInput" />
+        </div>
+        <div class="mcm-field">
+            <label for="@LoaderInputId">@DerivedPackIdentity.LoaderLabel</label>
+            <select id="@LoaderInputId"
+                    disabled="@Disabled"
+                    value="@Loader"
+                    @onchange="OnLoaderChange">
+                <option value="@MrpackAnalyzer.LoaderFabric">Fabric</option>
+                <option value="@MrpackAnalyzer.LoaderForge">Forge</option>
+                <option value="@MrpackAnalyzer.LoaderNeoForge">NeoForge</option>
+            </select>
+        </div>
+        <div class="mcm-field">
+            <label for="@LoaderVerInputId">@DerivedPackIdentity.LoaderVersionLabel</label>
+            <input id="@LoaderVerInputId"
+                   type="text"
+                   autocomplete="off"
+                   disabled="@Disabled"
+                   value="@LoaderVersion"
+                   @oninput="OnLoaderVersionInput" />
+        </div>
+        <div class="mcm-field">
+            <label for="@JavaInputId">@DerivedPackIdentity.JavaMajorLabel</label>
+            <input id="@JavaInputId"
+                   type="text"
+                   inputmode="numeric"
+                   autocomplete="off"
+                   disabled="@Disabled"
+                   value="@JavaMajorText"
+                   @oninput="OnJavaInput" />
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string IdPrefix { get; set; } = "pack";
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string MinecraftVersion { get; set; } = "";
+    [Parameter] public EventCallback<string> MinecraftVersionChanged { get; set; }
+    [Parameter] public string Loader { get; set; } = "";
+    [Parameter] public EventCallback<string> LoaderChanged { get; set; }
+    [Parameter] public string LoaderVersion { get; set; } = "";
+    [Parameter] public EventCallback<string> LoaderVersionChanged { get; set; }
+    [Parameter] public string JavaMajorText { get; set; } = "";
+    [Parameter] public EventCallback<string> JavaMajorTextChanged { get; set; }
+    [Parameter] public bool ShowDetectionMismatch { get; set; }
+    [Parameter] public string? DetectionMismatchWarning { get; set; }
+
+    private string McInputId => $"{IdPrefix}-mc-version";
+    private string LoaderInputId => $"{IdPrefix}-loader";
+    private string LoaderVerInputId => $"{IdPrefix}-loader-version";
+    private string JavaInputId => $"{IdPrefix}-java-major";
+
+    private async Task OnMinecraftInput(ChangeEventArgs e) =>
+        await MinecraftVersionChanged.InvokeAsync(e.Value?.ToString() ?? "");
+
+    private async Task OnLoaderChange(ChangeEventArgs e) =>
+        await LoaderChanged.InvokeAsync(e.Value?.ToString() ?? "");
+
+    private async Task OnLoaderVersionInput(ChangeEventArgs e) =>
+        await LoaderVersionChanged.InvokeAsync(e.Value?.ToString() ?? "");
+
+    private async Task OnJavaInput(ChangeEventArgs e) =>
+        await JavaMajorTextChanged.InvokeAsync(e.Value?.ToString() ?? "");
+}

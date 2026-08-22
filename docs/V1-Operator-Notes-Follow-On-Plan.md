@@ -1,6 +1,6 @@
 # V1 operator-notes follow-on (living)
 
-**Status:** Living. Created 2026-08-21 (docs only). **NEXT = P9** (P1–P8 **DONE**). Step **8.7** P1–P5 are **DONE**.  
+**Status:** Living. Created 2026-08-21 (docs only). **NEXT = P10** (P1–P9 **DONE**). Step **8.7** P1–P5 are **DONE**.  
 **Parent:** `[V1-Implementation-Plan.md](V1-Implementation-Plan.md)` Step **8.8**.  
 **Why now:** operator 2026-08-21 — after modpack-test fixes, implement Manager / Setup / pack-UX notes **before** QA Pass 3. Many notes are vague; agents **decide inside each section’s bounds** and record the choice. Stop and ask for spend, tofu destroy, CurseForge **API keys**, or pulling parked after-v1 items.
 
@@ -157,8 +157,8 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 | **P6**  | Auto compartment name; drop wizard step                    | **DONE** | SEQUENTIAL                           | No              |
 | **P7**  | Setup identity page (name / description / icon)            | **DONE** | SEQUENTIAL                           | No              |
 | **P8**  | Icon state variants from overlays                          | **DONE** | SEQUENTIAL                           | Yes (door push) |
-| **P9**  | Jar-root confirm + derived manifest                        | **NEXT** | SEQUENTIAL                           | Optional        |
-| **P10** | Layer 3 crash quarantine                                   | TODO     | SEQUENTIAL                           | Yes             |
+| **P9**  | Jar-root confirm + derived manifest                        | **DONE** | SEQUENTIAL                           | Optional        |
+| **P10** | Layer 3 crash quarantine                                   | **NEXT** | SEQUENTIAL                           | Yes             |
 | **P11** | CurseForge refuse helper (links, optional Modrinth search) | TODO     | SEQUENTIAL                           | No              |
 
 
@@ -446,7 +446,7 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 
 ## P9 — Jar-root confirm + derived manifest
 
-**Status:** NEXT  
+**Status:** DONE  
 **Catalog IDs:** S6-02; Change pack
 
 **Read first**
@@ -472,7 +472,7 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 
 **Done when:** Confirm UI + derived archive on both Setup and Change pack; original file untouched.
 
-**Changelog:** *(empty until implemented)*
+**Changelog:** 2026-08-22 — **P9 DONE.** Jar-root / unstructured confirm UI (MC, loader, loader version, Java); derived zip with `mcmgr-pack.json` + `modrinth.index.json`; `ManualServerPackInstaller` routing (not `MrpackInstaller`); Setup + Change pack + Download pack. Core tests + Guide + S6-02. **NEXT = P10.**
 
 ---
 
@@ -558,6 +558,7 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 
 | Date       | Note                                                                                                                                                                                                                                                    |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-22 | **P9 DONE.** Jar-root confirm + derived manifest (editable MC/loader/Java; `mcmgr-pack.json` + index; Manual install path). **NEXT = P10.**                                                                                                              |
 | 2026-08-21 | **P8 DONE.** Admin-PC icon variants (color 64×64 + door greyscale overlays); Object Storage + door pull. **NEXT = P9.**                                                                                                                                              |
 | 2026-08-21 | **P7 DONE.** Setup Name and icon page (type-based defaults, no Oracle™); seeds `messages/chat.json`. **NEXT = P8.**                                                                                                                                              |
 | 2026-08-21 | **P6 DONE.** Auto compartment name (`mcmgr` / `mcmgr-2`…); Compartment wizard page removed. **NEXT = P7.**                                                                                                                                              |

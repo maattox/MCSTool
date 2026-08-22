@@ -22,7 +22,7 @@ internal static class OnboxDriverExports
             ? $" {pin.Name}={ShQuote(pin.Value)}"
             : "";
 
-        int? javaMajor = analyzedJavaMajor;
+        int? javaMajor = state.PackJavaMajor ?? analyzedJavaMajor;
         if (javaMajor is null && MinecraftJavaFloor.TryGet(minecraftVersion, out var mapped))
             javaMajor = mapped;
 

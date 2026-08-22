@@ -133,7 +133,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
             AnyBusy,
             PackCanContinue,
             PackConfirmed,
-            ClientPackAcknowledged);
+            ClientPackAcknowledged,
+            PackIdentityComplete);
 
     public string ChangePackTitle =>
         CanPickPack
@@ -148,7 +149,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
                 AnyBusy,
                 PackCanContinue,
                 PackConfirmed,
-                ClientPackAcknowledged);
+                ClientPackAcknowledged,
+                PackIdentityComplete);
 
     public string PackFileNameDisplay =>
         string.IsNullOrWhiteSpace(PackPath) ? "" : Path.GetFileName(PackPath);
@@ -159,6 +161,32 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         && (!string.IsNullOrWhiteSpace(PackSummary) || !string.IsNullOrWhiteSpace(PackBlockReason));
 
     public bool ShowPackConfirmChecks => ShowPackSummary && PackCanContinue;
+
+    public bool ShowPackIdentityFields =>
+        ShowPackSummary && PackCanContinue && PackNeedsIdentityConfirm;
+
+    public bool PackIdentityComplete =>
+        !PackNeedsIdentityConfirm
+        || DerivedPackIdentity.IsComplete(
+            PackMinecraftVersion,
+            PackLoader,
+            PackLoaderVersion,
+            PackJavaMajorText);
+
+    public bool ShowDetectionMismatch =>
+        ShowPackIdentityFields
+        && DerivedPackIdentity.DisagreesWithDetection(
+            DetectedMinecraftVersion,
+            DetectedLoader,
+            PackMinecraftVersion,
+            PackLoader);
+
+    public string DetectionMismatchWarning =>
+        DerivedPackIdentity.FormatDetectionMismatchWarning(
+            DetectedMinecraftVersion,
+            DetectedLoader,
+            PackMinecraftVersion,
+            PackLoader);
 
     public bool ShowOverrideListWarning =>
         ShowPackConfirmChecks && !string.IsNullOrWhiteSpace(PackOverrideListWarning);
@@ -181,7 +209,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
     public string DownloadPackTitle =>
         CanDownloadPack
-            ? "Save a copy of the original pack file imported in Setup (not a zip of server mods)."
+            ? "Save a copy of the confirmed pack file (manifest added for jar-root zips when you corrected versions)."
             : ModdingPanelLogic.DownloadDisabledReason(IsModdedServer, HasLocalPackArchive);
 
     public string VanillaEmptyState => ModdingPanelLogic.VanillaEmptyState;
@@ -310,6 +338,26 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ClientPackFriendsNeed))]
     private string _packLoaderVersion = "";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(PackIdentityComplete))]
+    [NotifyPropertyChangedFor(nameof(CanInstallPack))]
+    private string _packJavaMajorText = "";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowPackIdentityFields))]
+    private bool _packNeedsIdentityConfirm;
+
+    [ObservableProperty]
+    private string _packSourcePath = "";
+
+    [ObservableProperty]
+    private string _detectedMinecraftVersion = "";
+
+    [ObservableProperty]
+    private string _detectedLoader = "";
+
+    private bool _javaMajorCustomized;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowPackSummary))]
@@ -892,8 +940,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         try
         {
             await Task.Run(() => File.Copy(archivePath, localPath, overwrite: true));
-            StatusMessage = $"Saved original pack to {localPath}";
-            ModdingHint = "This is the original imported file, not a zip of server mods.";
+            StatusMessage = $"Saved confirmed pack to {localPath}";
+            ModdingHint = "This is the confirmed pack file saved on this PC, not a zip of server mods.";
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -1005,6 +1053,51 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
             return;
         }
 
+        var installPath = PackPath;
+        if (PackNeedsIdentityConfirm)
+        {
+            if (!PackIdentityComplete)
+            {
+                StatusMessage = DerivedPackIdentity.IdentityIncompleteReason;
+                return;
+            }
+
+            var source = string.IsNullOrWhiteSpace(PackSourcePath) ? PackPath : PackSourcePath;
+            if (!File.Exists(source))
+            {
+                StatusMessage = "Original pack file is missing. Choose the pack again.";
+                return;
+            }
+
+            var dataDir = _dataDirectory ?? LocalConfigStore.TryFindDataDirectory();
+            if (string.IsNullOrWhiteSpace(dataDir))
+            {
+                StatusMessage = "Could not find Manager data directory for the derived pack.";
+                _banner.Show(StatusMessage, ActionBannerSeverity.Error);
+                return;
+            }
+
+            var build = DerivedPackWorkflow.BuildAndRetain(
+                source,
+                PackName,
+                null,
+                PackMinecraftVersion,
+                PackLoader,
+                PackLoaderVersion,
+                PackJavaMajorText,
+                dataDir,
+                Path.GetFileName(source));
+            if (!build.Succeeded || string.IsNullOrWhiteSpace(build.Value))
+            {
+                StatusMessage = build.Error ?? "Could not build the derived pack.";
+                _banner.Show(StatusMessage, ActionBannerSeverity.Error);
+                return;
+            }
+
+            installPath = build.Value;
+            PackPath = installPath;
+        }
+
         var confirmed = await _dialogs.ConfirmAsync(
             PackReplaceUx.ConfirmTitle,
             PackReplaceUx.ConfirmBody(WipeWorld),
@@ -1034,7 +1127,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
             });
             var result = await _bootstrap.ReplacePackAsync(
                 _config.Vm1,
-                new PackReplaceRequest(PackPath, WipeWorld, _dataDirectory),
+                new PackReplaceRequest(installPath, WipeWorld, _dataDirectory),
                 progress);
             if (!result.Succeeded || result.Value is null)
             {
@@ -1132,9 +1225,18 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         _packPreview = preview;
         PackPath = preview.SourcePath;
         PackName = preview.PackName;
-        PackMinecraftVersion = preview.MinecraftVersion;
+        PackMinecraftVersion = string.Equals(preview.MinecraftVersion, "(unknown)", StringComparison.OrdinalIgnoreCase)
+            ? ""
+            : preview.MinecraftVersion;
         PackLoader = preview.Loader;
         PackLoaderVersion = preview.LoaderVersion;
+        PackNeedsIdentityConfirm = preview.NeedsIdentityConfirm;
+        DetectedMinecraftVersion = preview.DetectedMinecraftVersion;
+        DetectedLoader = preview.DetectedLoader;
+        if (!preview.IsDerived)
+            PackSourcePath = preview.SourcePath;
+        PackJavaMajorText = preview.JavaMajor?.ToString() ?? "";
+        _javaMajorCustomized = false;
         PackSummary = preview.ConfirmableSummary;
         PackOverrideListWarning = preview.OverrideListWarning ?? "";
         PackBlockReason = preview.BlockReason ?? "";
@@ -1143,6 +1245,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         ClientPackAcknowledged = false;
         RefreshSaveCompatibilityWarning();
         NotifyModdingCommands();
+        NotifyPackIdentityUi();
     }
 
     private void RefreshSaveCompatibilityWarning()
@@ -1156,8 +1259,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         var warning = PackReplaceSaveCompatibility.Warn(
             _currentMinecraftVersion,
             _currentLoaderOrDistribution,
-            _packPreview.MinecraftVersion,
-            _packPreview.Loader);
+            PackMinecraftVersion,
+            PackLoader);
         SaveCompatibilityWarning = PackReplaceUx.VisibleSaveCompatibilityWarning(WipeWorld, warning) ?? "";
         OnPropertyChanged(nameof(ShowSaveCompatibilityWarning));
         OnPropertyChanged(nameof(InstallPackTitle));
@@ -1171,6 +1274,12 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         PackMinecraftVersion = "";
         PackLoader = "";
         PackLoaderVersion = "";
+        PackJavaMajorText = "";
+        PackNeedsIdentityConfirm = false;
+        PackSourcePath = "";
+        DetectedMinecraftVersion = "";
+        DetectedLoader = "";
+        _javaMajorCustomized = false;
         PackSummary = "";
         PackBlockReason = "";
         PackOverrideListWarning = "";
@@ -1253,7 +1362,40 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         OnPropertyChanged(nameof(InstallPackTitle));
         OnPropertyChanged(nameof(CanSaveIdentity));
         OnPropertyChanged(nameof(CanClearIcon));
+        NotifyPackIdentityUi();
         NotifyDock();
+    }
+
+    private void NotifyPackIdentityUi()
+    {
+        OnPropertyChanged(nameof(PackIdentityComplete));
+        OnPropertyChanged(nameof(ShowPackIdentityFields));
+        OnPropertyChanged(nameof(ShowDetectionMismatch));
+        OnPropertyChanged(nameof(DetectionMismatchWarning));
+        OnPropertyChanged(nameof(ClientPackFriendsNeed));
+        OnPropertyChanged(nameof(ShowPackConfirmChecks));
+    }
+
+    partial void OnPackMinecraftVersionChanged(string value)
+    {
+        if (PackNeedsIdentityConfirm && !_javaMajorCustomized)
+            PackJavaMajorText = DerivedPackIdentity.JavaMajorForMinecraftOrNull(value)?.ToString() ?? "";
+        RefreshSaveCompatibilityWarning();
+        NotifyPackIdentityUi();
+    }
+
+    partial void OnPackLoaderChanged(string value)
+    {
+        RefreshSaveCompatibilityWarning();
+        NotifyPackIdentityUi();
+    }
+
+    partial void OnPackLoaderVersionChanged(string value) => NotifyPackIdentityUi();
+
+    partial void OnPackJavaMajorTextChanged(string value)
+    {
+        _javaMajorCustomized = true;
+        NotifyPackIdentityUi();
     }
 
     partial void OnShowChangePackUiChanged(bool value) => NotifyDock();

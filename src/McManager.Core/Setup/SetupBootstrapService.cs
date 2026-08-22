@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
 using McManager.Core.Config;
@@ -786,7 +787,14 @@ public sealed class SetupBootstrapService
 
         try
         {
-            if (string.Equals(state.PackKind, SetupPackImport.KindMrpack, StringComparison.OrdinalIgnoreCase)
+            if (ShouldUseManualInstaller(state.PackPath, state.PackKind))
+            {
+                var result = ManualServerPackInstaller.Install(state.PackPath, dest, dataDir);
+                if (!result.Succeeded)
+                    return ServiceResult.Fail(result.Error ?? "Server-pack zip install failed.");
+                log?.Report(result.Value!.Summary);
+            }
+            else if (string.Equals(state.PackKind, SetupPackImport.KindMrpack, StringComparison.OrdinalIgnoreCase)
                 || Path.GetExtension(state.PackPath).Equals(".mrpack", StringComparison.OrdinalIgnoreCase))
             {
                 var installer = new MrpackInstaller();
@@ -1169,4 +1177,37 @@ public sealed class SetupBootstrapService
 
     private static string Truncate(string s, int max) =>
         s.Length <= max ? s : s[..max] + "…";
+
+    internal static bool ShouldUseManualInstaller(string packPath, string? packKind)
+    {
+        if (string.Equals(packKind, SetupPackImport.KindManualZip, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (string.IsNullOrWhiteSpace(packPath) || !File.Exists(packPath))
+            return false;
+        if (!packPath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        try
+        {
+            using var stream = File.OpenRead(packPath);
+            using var zip = new ZipArchive(stream, ZipArchiveMode.Read, leaveOpen: false);
+            return zip.Entries.Any(e =>
+            {
+                var n = MrpackAnalyzer.NormalizeZipPath(e.FullName);
+                return string.Equals(n, DerivedPackIdentity.SidecarEntryName, StringComparison.OrdinalIgnoreCase);
+            });
+        }
+        catch (IOException)
+        {
+            return false;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return false;
+        }
+        catch (InvalidDataException)
+        {
+            return false;
+        }
+    }
 }

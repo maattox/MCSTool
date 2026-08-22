@@ -52,6 +52,7 @@ public static class PackReplacePlanner
             PackVersionId = preview.VersionId ?? "",
             PackLoader = preview.Loader,
             PackLoaderVersion = preview.LoaderVersion,
+            PackJavaMajor = preview.JavaMajor,
             PackSummary = preview.ConfirmableSummary,
             PackConfirmed = true,
             ClientPackAcknowledged = true,

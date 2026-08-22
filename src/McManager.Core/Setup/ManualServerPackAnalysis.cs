@@ -56,7 +56,10 @@ public sealed class ManualServerPackAnalysis
         int inJarMetadataSkipCount = 0,
         IReadOnlyList<string>? overrideListSkipPaths = null,
         IReadOnlyList<string>? inJarMetadataSkipPaths = null,
-        IReadOnlyList<string>? forceIncludedPaths = null)
+        IReadOnlyList<string>? forceIncludedPaths = null,
+        string? detectedMinecraftVersion = null,
+        string? detectedLoader = null,
+        bool isDerived = false)
     {
         Kind = kind;
         CanInstall = canInstall;
@@ -67,6 +70,9 @@ public sealed class ManualServerPackAnalysis
         Loader = loader;
         LoaderVersion = loaderVersion;
         JavaMajor = javaMajor;
+        DetectedMinecraftVersion = detectedMinecraftVersion ?? minecraftVersion;
+        DetectedLoader = detectedLoader ?? loader;
+        IsDerived = isDerived;
         WrapperPrefix = wrapperPrefix;
         FileCount = fileCount;
         ServerSideCount = serverSideCount;
@@ -125,4 +131,13 @@ public sealed class ManualServerPackAnalysis
 
     /// <summary>Kept despite in-jar <c>client</c> because a force-include matched.</summary>
     public IReadOnlyList<string> ForceIncludedPaths { get; }
+
+    /// <summary>Peeked or layout-detected Minecraft version before user / sidecar override.</summary>
+    public string DetectedMinecraftVersion { get; }
+
+    /// <summary>Peeked or layout-detected loader before user / sidecar override.</summary>
+    public string DetectedLoader { get; }
+
+    /// <summary>Zip contains product <see cref="DerivedPackIdentity.SidecarEntryName"/>.</summary>
+    public bool IsDerived { get; }
 }

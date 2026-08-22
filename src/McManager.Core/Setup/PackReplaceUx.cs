@@ -40,8 +40,9 @@ public static class PackReplaceUx
         bool busy,
         bool canContinue,
         bool packConfirmed,
-        bool clientPackAcknowledged) =>
-        vm1Running && !busy && canContinue && packConfirmed && clientPackAcknowledged;
+        bool clientPackAcknowledged,
+        bool identityComplete = true) =>
+        vm1Running && !busy && canContinue && packConfirmed && clientPackAcknowledged && identityComplete;
 
     public static string PickDisabledReason(bool vm1Running, bool busy)
     {
@@ -57,7 +58,8 @@ public static class PackReplaceUx
         bool busy,
         bool canContinue,
         bool packConfirmed,
-        bool clientPackAcknowledged)
+        bool clientPackAcknowledged,
+        bool identityComplete = true)
     {
         if (busy)
             return "Wait until the current action finishes.";
@@ -65,6 +67,8 @@ public static class PackReplaceUx
             return StartFirstMessage;
         if (!canContinue)
             return "Choose a pack that can be installed first.";
+        if (!identityComplete)
+            return DerivedPackIdentity.IdentityIncompleteReason;
         if (!packConfirmed || !clientPackAcknowledged)
             return "Confirm the pack and that friends will get the same file.";
         return "";

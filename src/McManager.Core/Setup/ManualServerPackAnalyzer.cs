@@ -137,9 +137,15 @@ public static class ManualServerPackAnalyzer
         if (wrapper is not null)
             warnings.Add($"Stripped wrapper folder '{wrapper.TrimEnd('/')}/'.");
 
+        var hasSidecar = names.Any(n =>
+            string.Equals(n, DerivedPackIdentity.SidecarEntryName, StringComparison.OrdinalIgnoreCase));
+        DerivedPackSidecar? sidecar = hasSidecar ? TryReadSidecar(zip, wrapper) : null;
+        if (hasSidecar && sidecar is null)
+            warnings.Add($"{DerivedPackIdentity.SidecarEntryName} is present but could not be read.");
+
         var hasMrpackIndex = names.Any(n =>
             string.Equals(n, MrpackAnalyzer.IndexEntryName, StringComparison.OrdinalIgnoreCase));
-        if (hasMrpackIndex)
+        if (hasMrpackIndex && !hasSidecar)
             return OkRefused(ManualServerPackKind.Mrpack, MrpackRefusal, sourceName, wrapper, names, warnings);
 
         var hasOptions = names.Any(n => IsRootFile(n, "options.txt") || IsRootFile(n, "optionsof.txt"));
@@ -150,8 +156,10 @@ public static class ManualServerPackAnalyzer
         var hasRunSh = names.Any(n =>
             IsRootFile(n, "run.sh") || IsRootFile(n, "start.sh") || IsRootFile(n, "startserver.sh"));
         var hasInstallerJar = names.Any(IsRootInstallerJar);
-        var mapRootJarsToMods = LooksLikeJarRootPack(names);
+        var mapRootJarsToMods = !hasSidecar && LooksLikeJarRootPack(names);
         var modJars = names.Where(ManualPackFileFilter.IsModJarPath).ToList();
+        if (hasSidecar)
+            modJars = names.Where(IsDerivedModJarPath).ToList();
         if (modJars.Count == 0 && mapRootJarsToMods)
             modJars = names.Where(ManualPackFileFilter.IsRootModJar).ToList();
         var looksLikeLauncher = hasOptions
@@ -249,14 +257,13 @@ public static class ManualServerPackAnalyzer
             var relative = StripWrapper(raw, wrapper);
             if (relative.Length == 0)
                 continue;
-            var isModJar = ManualPackFileFilter.IsModJarPath(relative)
+            var isModJar = IsDerivedModJarPath(relative)
+                || ManualPackFileFilter.IsModJarPath(relative)
                 || (mapRootJarsToMods && ManualPackFileFilter.IsRootModJar(relative));
             if (!isModJar)
                 continue;
 
-            var matchPath = ManualPackFileFilter.IsModJarPath(relative)
-                ? relative
-                : "mods/" + relative;
+            var matchPath = ResolveModMatchPath(relative, mapRootJarsToMods);
             var peek = PeekJarEnvironment(entry);
             if (!string.IsNullOrEmpty(peek.Loader) && peekedLoader is null)
                 peekedLoader = peek.Loader;
@@ -331,11 +338,25 @@ public static class ManualServerPackAnalyzer
         else
             warnings.Add("Minecraft version is not declared in this zip (no CurseForge manifest).");
 
-        if (loader == "unknown")
+        if (loader == "unknown" && !hasSidecar)
         {
             warnings.Add(
                 "Loader not found in this zip. A documented mods/+config/ layout still installs; "
                 + "install the matching loader separately if the pack does not already include it.");
+        }
+
+        var detectedMinecraft = minecraft;
+        var detectedLoader = loader;
+        if (sidecar is not null)
+        {
+            minecraft = sidecar.MinecraftVersion;
+            loader = sidecar.Loader;
+            loaderVersion = sidecar.LoaderVersion;
+            javaMajor = sidecar.JavaMajor;
+            if (!string.IsNullOrWhiteSpace(sidecar.DetectedMinecraftVersion))
+                detectedMinecraft = sidecar.DetectedMinecraftVersion!;
+            if (!string.IsNullOrWhiteSpace(sidecar.DetectedLoader))
+                detectedLoader = sidecar.DetectedLoader!;
         }
 
         var fileCount = names.Count(n => !n.EndsWith('/'));
@@ -385,7 +406,49 @@ public static class ManualServerPackAnalyzer
             inJarSkip.Count,
             overrideListSkip,
             inJarSkip,
-            forceIncluded));
+            forceIncluded,
+            detectedMinecraft,
+            detectedLoader,
+            hasSidecar));
+    }
+
+    internal static bool IsDerivedModJarPath(string relative)
+    {
+        var n = (relative ?? "").Replace('\\', '/');
+        return n.StartsWith("overrides/mods/", StringComparison.OrdinalIgnoreCase)
+            && n.EndsWith(".jar", StringComparison.OrdinalIgnoreCase)
+            && !n.EndsWith('/');
+    }
+
+    private static string ResolveModMatchPath(string relative, bool mapRootJarsToMods)
+    {
+        if (IsDerivedModJarPath(relative))
+            return "mods/" + relative["overrides/mods/".Length..];
+        if (ManualPackFileFilter.IsModJarPath(relative))
+            return relative;
+        return "mods/" + relative;
+    }
+
+    private static DerivedPackSidecar? TryReadSidecar(ZipArchive zip, string? wrapper)
+    {
+        var entry = zip.Entries.FirstOrDefault(e =>
+        {
+            var n = StripWrapper(MrpackAnalyzer.NormalizeZipPath(e.FullName), wrapper);
+            return string.Equals(n, DerivedPackIdentity.SidecarEntryName, StringComparison.OrdinalIgnoreCase);
+        });
+        if (entry is null)
+            return null;
+
+        try
+        {
+            using var reader = new StreamReader(
+                entry.Open(), Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+            return JsonSerializer.Deserialize<DerivedPackSidecar>(reader.ReadToEnd(), JsonOptions);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
     }
 
     internal static bool ShouldIgnoreEntry(string normalizedPath)

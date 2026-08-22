@@ -17,11 +17,11 @@ public static class ModdingPanelLogic
         "Start the game VM to list the mods currently on the server.";
 
     public const string HelpTitle =
-        "Lists server-side mods on the game VM. Download pack copies the original file you "
-        + "imported in Setup (saved on this PC). That is not a zip of the server mods folder "
-        + "— Setup strips client-only files, so a server-side zip would not work for friends. "
-        + "Change pack reinstalls Minecraft from a new .mrpack or server-pack zip; "
-        + "the world is kept unless you also wipe.";
+        "Lists server-side mods on the game VM. Download pack copies the confirmed pack file "
+        + "saved on this PC (with manifest added for jar-root zips when you corrected versions). "
+        + "That is not a zip of the server mods folder — Setup strips client-only files, so a "
+        + "server-side zip would not work for friends. Change pack reinstalls Minecraft from a "
+        + "new .mrpack or server-pack zip; the world is kept unless you also wipe.";
 
     public static bool IsModdedServerKind(string? serverKind)
     {

@@ -59,6 +59,23 @@ public sealed class OnboxDriverExportsTests
     }
 
     [Fact]
+    public void Build_pack_java_major_on_state_wins_over_floor()
+    {
+        var state = new SetupWizardState
+        {
+            ServerType = SetupServerType.Modded,
+            MinecraftVersion = "1.21.1",
+            PackLoader = "fabric",
+            PackLoaderVersion = "0.17.2",
+            PackJavaMajor = 25,
+        };
+
+        var exports = OnboxDriverExports.Build(state);
+
+        Assert.Contains("JAVA_MAJOR=25", exports, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Build_vanilla_omits_java_major_when_version_unknown()
     {
         var state = new SetupWizardState

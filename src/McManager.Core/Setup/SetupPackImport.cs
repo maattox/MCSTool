@@ -176,21 +176,30 @@ public static class SetupPackImport
             blockReason: block,
             analysis.OverrideListSkipCount,
             analysis.OverrideListSkipPaths,
-            warning);
+            warning,
+            needsIdentityConfirm: false,
+            detectedMinecraftVersion: analysis.MinecraftVersion,
+            detectedLoader: analysis.Loader,
+            isDerived: false);
     }
 
     public static SetupPackPreview FromManual(ManualServerPackAnalysis analysis, string path)
     {
         ArgumentNullException.ThrowIfNull(analysis);
+        var needsIdentity = DerivedPackIdentity.NeedsIdentityConfirm(analysis.Kind);
         string? block = null;
         if (!analysis.CanInstall)
             block = analysis.RefusalReason ?? ManualServerPackAnalyzer.UnknownRefusal;
-        else if (string.Equals(analysis.Loader, MrpackAnalyzer.LoaderQuilt, StringComparison.OrdinalIgnoreCase))
-            block = QuiltRefusal;
-        else if (!IsInstallableLoader(analysis.Loader))
-            block = LoaderRefusal;
-        else if (string.IsNullOrWhiteSpace(analysis.MinecraftVersion))
-            block = "This pack does not declare a Minecraft version.";
+        else if (!needsIdentity)
+        {
+            if (string.Equals(analysis.Loader, MrpackAnalyzer.LoaderQuilt, StringComparison.OrdinalIgnoreCase))
+                block = QuiltRefusal;
+            else if (!IsInstallableLoader(analysis.Loader))
+                block = LoaderRefusal;
+            else if (string.IsNullOrWhiteSpace(analysis.MinecraftVersion)
+                     || string.Equals(analysis.MinecraftVersion, "(unknown)", StringComparison.OrdinalIgnoreCase))
+                block = "This pack does not declare a Minecraft version.";
+        }
 
         var overrideWarning = FormatOverrideListWarning(analysis.OverrideListSkipCount, analysis.OverrideListSkipPaths);
         var totalModJars = analysis.ServerSideCount + analysis.ClientOnlyCount;
@@ -219,7 +228,11 @@ public static class SetupPackImport
             blockReason: block,
             analysis.OverrideListSkipCount,
             analysis.OverrideListSkipPaths,
-            overrideWarning);
+            overrideWarning,
+            needsIdentity,
+            analysis.DetectedMinecraftVersion,
+            analysis.DetectedLoader,
+            analysis.IsDerived);
     }
 
     /// <summary>
@@ -400,7 +413,11 @@ public sealed class SetupPackPreview
         string? blockReason,
         int overrideListSkipCount = 0,
         IReadOnlyList<string>? overrideListSkipPaths = null,
-        string? overrideListWarning = null)
+        string? overrideListWarning = null,
+        bool needsIdentityConfirm = false,
+        string? detectedMinecraftVersion = null,
+        string? detectedLoader = null,
+        bool isDerived = false)
     {
         Kind = kind;
         SourcePath = sourcePath;
@@ -421,6 +438,10 @@ public sealed class SetupPackPreview
         OverrideListSkipCount = overrideListSkipCount;
         OverrideListSkipPaths = overrideListSkipPaths ?? [];
         OverrideListWarning = overrideListWarning;
+        NeedsIdentityConfirm = needsIdentityConfirm;
+        DetectedMinecraftVersion = detectedMinecraftVersion ?? minecraftVersion;
+        DetectedLoader = detectedLoader ?? loader;
+        IsDerived = isDerived;
     }
 
     public string Kind { get; }
@@ -447,4 +468,13 @@ public sealed class SetupPackPreview
 
     /// <summary>Novice warning when <see cref="OverrideListSkipCount"/> is positive; otherwise null.</summary>
     public string? OverrideListWarning { get; }
+
+    /// <summary>Unstructured / jar-root packs need user-confirmed identity before install.</summary>
+    public bool NeedsIdentityConfirm { get; }
+
+    public string DetectedMinecraftVersion { get; }
+
+    public string DetectedLoader { get; }
+
+    public bool IsDerived { get; }
 }
