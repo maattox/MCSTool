@@ -253,6 +253,14 @@ Product roadmap stays in `PRODUCT-IDEAS.md`. Architecture stays in `Infrastructu
 **Verify:** `dotnet test` filter `MinecraftReadinessTests`. Optional live Change pack that is known to crash should no longer sit on the generic RCON message.  
 **Refs:** `src/McManager.Core/Setup/MinecraftReadiness.cs`, `SetupBootstrapService.WaitRcon`, `docs/V1-Modpack-Test-Follow-On-Plan.md` P1
 
+### SETUP-ISSUE-12 — Fabric `.mrpack` leftover client GUI mods still installed
+**Status:** Fixed (2026-08-21) — product Layer 2 overlay + leftover in-jar peek  
+**Summary:** Informal Change pack Test 4 (cluster C) installed a loading-screen / FlatLaf-class Fabric GUI mod. Analyze showed **Pack-declared: 0** / override-list 22: the pack tagged every file `env.server=required` (env was not ignored; authors mis-declared). itzg Layer 1 caught Sodium/Iris-class names; leftover GUI/loading-screen jars were not a list class and were not peeked.  
+**Cause:** `.mrpack` filter trusted `env.server` then Layer 1–2 only. Product overlay was empty. In-jar Fabric `environment` / client-only entrypoints (P2) ran on unstructured zips, not leftover `.mrpack` files.  
+**Fix (product path):** Overlay classes `loading-screen`, `konkrete`, `titlebar`, `flatlaf` (not a single Test 4 filename). After env + list, leftover jars with in-jar client metadata are skipped (missing `env.server` + client entrypoints only counts as client). Analyze peeks jars embedded in the archive; install also peeks downloaded jars. Force-include still wins.  
+**Verify:** `dotnet test` filter `MrpackAnalyzerTests|MrpackInstallerTests|ExcludeIncludeMatcherTests`. Optional: Change pack OptiFine-for-Fabric should skip loading-screen class in the confirmable summary.  
+**Refs:** `src/McManager.Core/Setup/pack-lists/mcmgr-exclude-include.json`, `MrpackFileFilter`, `MrpackAnalyzer` / `MrpackInstaller`, `docs/V1-Modpack-Test-Follow-On-Plan.md` P3
+
 ### DOOR-ISSUE-4 — `wait_forge.sh` / `ip_to_vm1.sh` abort wake (`set -u` CR-strip, missing `--force`)
 **Status:** Fixed (2026-08-14)  
 **Summary:** After Minecraft was reachable on VM1 private `:25565`, door wake still went **DEGRADED**. First `POLL_INTERVAL_SEC: unbound variable` (CR-strip under `set -u` before `:-10`). After a live patch, `ip_to_vm1.sh failed` until IAM (SETUP-ISSUE-2) plus `--force` (reserved IP parked on the door secondary). Sourcing `/etc/mccontrol/oci.env` as `ubuntu` is **Permission denied** (mode 600 root) — expected; not a misdeploy.  

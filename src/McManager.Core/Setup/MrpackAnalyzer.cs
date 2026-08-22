@@ -8,7 +8,8 @@ namespace McManager.Core.Setup;
 /// <summary>
 /// Parses a user-supplied Modrinth <c>.mrpack</c> locally (blueprint §22 / §2.4).
 /// No catalog/search HTTP. Download URLs inside the index are not fetched.
-/// Applies itzg/product exclude lists after <c>env.server</c> (robustness R2).
+/// Applies itzg/product exclude lists after <c>env.server</c> (robustness R2),
+/// then leftover in-jar client signals for embedded jars (Step 8.7 P3).
 /// </summary>
 public static class MrpackAnalyzer
 {
@@ -118,7 +119,7 @@ public static class MrpackAnalyzer
             using (var reader = new StreamReader(indexEntry.Open(), Encoding.UTF8, detectEncodingFromByteOrderMarks: true))
                 json = reader.ReadToEnd();
 
-            return AnalyzeIndexJson(json, entryNames, matcher, sourceName);
+            return AnalyzeIndexJson(json, entryNames, matcher, sourceName, zip);
         }
     }
 
@@ -126,7 +127,8 @@ public static class MrpackAnalyzer
         string json,
         IReadOnlyList<string>? zipEntryNames = null,
         ExcludeIncludeMatcher? matcher = null,
-        string? sourceName = null)
+        string? sourceName = null,
+        ZipArchive? zip = null)
     {
         if (string.IsNullOrWhiteSpace(json))
             return ServiceResult<MrpackAnalysis>.Fail($"{IndexEntryName} is empty.");
@@ -144,14 +146,15 @@ public static class MrpackAnalyzer
         if (index is null)
             return ServiceResult<MrpackAnalysis>.Fail($"{IndexEntryName} deserialized to null.");
 
-        return AnalyzeIndex(index, zipEntryNames, matcher, sourceName);
+        return AnalyzeIndex(index, zipEntryNames, matcher, sourceName, zip);
     }
 
     internal static ServiceResult<MrpackAnalysis> AnalyzeIndex(
         MrpackIndexDocument index,
         IReadOnlyList<string>? zipEntryNames,
         ExcludeIncludeMatcher? matcher = null,
-        string? sourceName = null)
+        string? sourceName = null,
+        ZipArchive? zip = null)
     {
         if (index.FormatVersion != SupportedFormatVersion)
         {
@@ -197,6 +200,7 @@ public static class MrpackAnalyzer
         var serverOptional = new List<string>();
         var packDeclared = new List<string>();
         var overrideList = new List<string>();
+        var inJarSkip = new List<string>();
         var forceIncluded = new List<string>();
         var unclear = new List<string>();
 
@@ -208,7 +212,8 @@ public static class MrpackAnalyzer
                 : file.Path.Trim().Replace('\\', '/');
             var serverEnv = (file.Env?.Server ?? "").Trim();
             var match = lists.Match(packSlug, path);
-            var action = MrpackFileFilter.Decide(serverEnv, match);
+            var inJar = PeekEmbeddedJar(zip, path);
+            var action = MrpackFileFilter.Decide(serverEnv, match, inJar.Environment);
 
             if (action == MrpackFileFilter.Action.Install && !HasDownloadUrl(file) && !ZipHasIndexedFile(names, path))
             {
@@ -223,6 +228,9 @@ public static class MrpackAnalyzer
                     continue;
                 case MrpackFileFilter.Action.SkipOverrideList:
                     overrideList.Add(path);
+                    continue;
+                case MrpackFileFilter.Action.SkipInJarMetadata:
+                    inJarSkip.Add(path);
                     continue;
                 case MrpackFileFilter.Action.Unclear:
                     unclear.Add(path);
@@ -244,6 +252,12 @@ public static class MrpackAnalyzer
             }
         }
 
+        if (inJarSkip.Count > 0)
+        {
+            warnings.Add(
+                $"{inJarSkip.Count} file(s) detected as client-only from in-jar metadata will not be installed.");
+        }
+
         if (unclear.Count > 0)
         {
             warnings.Add(
@@ -257,7 +271,7 @@ public static class MrpackAnalyzer
         var hasClientOverrides = names.Any(n => n.Equals("client-overrides", StringComparison.OrdinalIgnoreCase)
             || n.StartsWith("client-overrides/", StringComparison.OrdinalIgnoreCase));
 
-        var clientOnly = packDeclared.Concat(overrideList).ToList();
+        var clientOnly = packDeclared.Concat(overrideList).Concat(inJarSkip).ToList();
         var serverSide = serverRequired.Concat(serverOptional).ToList();
         var confirmable = BuildConfirmableSummary(
             packName,
@@ -274,6 +288,7 @@ public static class MrpackAnalyzer
             unclear.Count,
             packDeclared,
             overrideList,
+            inJarSkip,
             unclear,
             hasOverrides,
             hasServerOverrides,
@@ -305,7 +320,9 @@ public static class MrpackAnalyzer
             overrideList.Count,
             packDeclared,
             overrideList,
-            forceIncluded));
+            forceIncluded,
+            inJarSkip.Count,
+            inJarSkip));
     }
 
     public static bool TrySelectLoader(
@@ -374,6 +391,42 @@ public static class MrpackAnalyzer
         return false;
     }
 
+    internal static InJarSideDetector.PeekResult PeekEmbeddedJar(ZipArchive? zip, string relativePath)
+    {
+        if (zip is null || !MrpackFileFilter.IsJarPath(relativePath))
+            return InJarSideDetector.PeekResult.None;
+        var entry = FindEmbeddedEntry(zip, relativePath);
+        if (entry is null)
+            return InJarSideDetector.PeekResult.None;
+        return ManualServerPackAnalyzer.PeekJarEnvironment(entry);
+    }
+
+    internal static ZipArchiveEntry? FindEmbeddedEntry(ZipArchive zip, string relativePath)
+    {
+        var n = relativePath.Replace('\\', '/').Trim();
+        if (n.Length == 0)
+            return null;
+        string[] candidates =
+        [
+            n,
+            MrpackInstaller.OverridesPrefix + n,
+            MrpackInstaller.ServerOverridesPrefix + n,
+        ];
+        foreach (var candidate in candidates)
+        {
+            var found = zip.Entries.FirstOrDefault(e =>
+                string.Equals(
+                    NormalizeZipPath(e.FullName),
+                    candidate,
+                    StringComparison.OrdinalIgnoreCase)
+                && !NormalizeZipPath(e.FullName).EndsWith('/'));
+            if (found is not null)
+                return found;
+        }
+
+        return null;
+    }
+
     private static bool TryGetDependency(
         IReadOnlyDictionary<string, string> dependencies,
         string key,
@@ -408,6 +461,7 @@ public static class MrpackAnalyzer
         int unclear,
         IReadOnlyList<string> packDeclaredPaths,
         IReadOnlyList<string> overrideListPaths,
+        IReadOnlyList<string> inJarSkipPaths,
         IReadOnlyList<string> unclearPaths,
         bool hasOverrides,
         bool hasServerOverrides,
@@ -431,6 +485,7 @@ public static class MrpackAnalyzer
         sb.Append("  Client-only (not installed on the server): ").AppendLine(clientOnly.ToString());
         sb.Append("    Pack-declared: ").AppendLine(packDeclaredPaths.Count.ToString());
         sb.Append("    Override list: ").AppendLine(overrideListPaths.Count.ToString());
+        sb.Append("    In-jar metadata: ").AppendLine(inJarSkipPaths.Count.ToString());
         sb.Append("  Side unclear: ").Append(unclear);
         if (unclear > 0)
             sb.Append(" — do not install until reviewed");
@@ -447,6 +502,13 @@ public static class MrpackAnalyzer
         {
             sb.AppendLine("Override-list skipped files:");
             foreach (var p in overrideListPaths)
+                sb.Append("  ").AppendLine(p);
+        }
+
+        if (inJarSkipPaths.Count > 0)
+        {
+            sb.AppendLine("In-jar client-only files:");
+            foreach (var p in inJarSkipPaths)
                 sb.Append("  ").AppendLine(p);
         }
 

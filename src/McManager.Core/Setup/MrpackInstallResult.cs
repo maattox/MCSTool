@@ -16,7 +16,8 @@ public sealed class MrpackInstallResult
         IReadOnlyList<string> warnings,
         string summary,
         IReadOnlyList<string>? skippedPackDeclaredPaths = null,
-        IReadOnlyList<string>? skippedOverrideListPaths = null)
+        IReadOnlyList<string>? skippedOverrideListPaths = null,
+        IReadOnlyList<string>? skippedInJarMetadataPaths = null)
     {
         Analysis = analysis;
         DestDirectory = destDirectory;
@@ -28,6 +29,7 @@ public sealed class MrpackInstallResult
         Summary = summary;
         SkippedPackDeclaredPaths = skippedPackDeclaredPaths ?? [];
         SkippedOverrideListPaths = skippedOverrideListPaths ?? [];
+        SkippedInJarMetadataPaths = skippedInJarMetadataPaths ?? [];
     }
 
     public MrpackAnalysis Analysis { get; }
@@ -40,6 +42,7 @@ public sealed class MrpackInstallResult
     public string Summary { get; }
     public IReadOnlyList<string> SkippedPackDeclaredPaths { get; }
     public IReadOnlyList<string> SkippedOverrideListPaths { get; }
+    public IReadOnlyList<string> SkippedInJarMetadataPaths { get; }
 
     public const string ClientPackReminder =
         "Friends cannot join until they install the same exported pack you imported. "

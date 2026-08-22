@@ -272,6 +272,136 @@ public sealed class MrpackInstallerTests
     }
 
     [Fact]
+    public async Task Tracked_gui_client_fixture_installs_lithium_skips_overlay_and_in_jar()
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, "fixtures", "packs", "fabric-gui-client.mrpack");
+        Assert.True(File.Exists(path), $"Fixture missing at {path}");
+
+        var handler = new BytesHandler();
+        using var http = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(5) };
+        var dest = NewTempDir();
+        try
+        {
+            var result = await new MrpackInstaller(http).InstallAsync(path, dest, retainDataDirectory: null);
+            Assert.True(result.Succeeded, result.Error);
+            var value = result.Value!;
+            Assert.Empty(handler.Requests);
+            Assert.True(File.Exists(Path.Combine(dest, "mods", "lithium-keep.jar")));
+            Assert.False(File.Exists(Path.Combine(dest, "mods", "example-loading-screen-1.0.jar")));
+            Assert.False(File.Exists(Path.Combine(dest, "mods", "early-splash.jar")));
+            Assert.Equal(["mods/lithium-keep.jar"], value.InstalledRelativePaths);
+            Assert.Equal(["mods/example-loading-screen-1.0.jar"], value.SkippedOverrideListPaths);
+            Assert.Equal(["mods/early-splash.jar"], value.SkippedInJarMetadataPaths);
+        }
+        finally
+        {
+            TryDeleteDir(dest);
+        }
+    }
+
+    [Fact]
+    public async Task Overlay_and_in_jar_skip_client_gui_jars_and_keep_server_mod()
+    {
+        var splashJar = MakeJar(("fabric.mod.json", """
+            {"schemaVersion":1,"id":"splash","version":"0","entrypoints":{"client":["com.example.Splash"]}}
+            """));
+        var lithiumJar = MakeJar(("fabric.mod.json", """
+            {"schemaVersion":1,"id":"lithium","version":"0","environment":"*","entrypoints":{"main":["com.example.Main"]}}
+            """));
+        var loadingBytes = Encoding.UTF8.GetBytes("not-a-real-jar");
+        var index = IndexJson(
+            """
+            [
+              {
+                "path": "mods/example-loading-screen-1.0.jar",
+                "env": { "client": "required", "server": "required" },
+                "downloads": []
+              },
+              {
+                "path": "mods/early-splash.jar",
+                "env": { "client": "required", "server": "required" },
+                "downloads": []
+              },
+              {
+                "path": "mods/lithium-keep.jar",
+                "env": { "server": "required" },
+                "downloads": []
+              }
+            ]
+            """);
+
+        using var mrpack = MakeZipBytes(
+            (MrpackAnalyzer.IndexEntryName, Encoding.UTF8.GetBytes(index)),
+            ("mods/example-loading-screen-1.0.jar", loadingBytes),
+            ("mods/early-splash.jar", splashJar),
+            ("mods/lithium-keep.jar", lithiumJar));
+        var packPath = WriteTemp("gui-client.mrpack", mrpack);
+        var dest = NewTempDir();
+        try
+        {
+            var handler = new BytesHandler();
+            using var http = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(5) };
+            var result = await new MrpackInstaller(http).InstallAsync(packPath, dest, null);
+            Assert.True(result.Succeeded, result.Error);
+            var value = result.Value!;
+            Assert.Empty(handler.Requests);
+            Assert.True(File.Exists(Path.Combine(dest, "mods", "lithium-keep.jar")));
+            Assert.False(File.Exists(Path.Combine(dest, "mods", "example-loading-screen-1.0.jar")));
+            Assert.False(File.Exists(Path.Combine(dest, "mods", "early-splash.jar")));
+            Assert.Equal(["mods/lithium-keep.jar"], value.InstalledRelativePaths);
+            Assert.Equal(["mods/example-loading-screen-1.0.jar"], value.SkippedOverrideListPaths);
+            Assert.Equal(["mods/early-splash.jar"], value.SkippedInJarMetadataPaths);
+            Assert.Contains("In-jar metadata skipped: 1", value.Summary, StringComparison.Ordinal);
+        }
+        finally
+        {
+            TryDelete(packPath);
+            TryDeleteDir(dest);
+        }
+    }
+
+    [Fact]
+    public async Task Downloaded_client_only_jar_is_stripped_after_place()
+    {
+        var clientJar = MakeJar(("fabric.mod.json", """
+            {"schemaVersion":1,"id":"gui","version":"0","environment":"client"}
+            """));
+        var url = "https://cdn.modrinth.com/data/AAAA/versions/1/gui-only.jar";
+        var index = IndexJson(
+            """
+            [{
+              "path": "mods/gui-only.jar",
+              "hashes": { "sha512": "HASH_GUI" },
+              "env": { "server": "required" },
+              "downloads": ["URL_GUI"]
+            }]
+            """
+            .Replace("HASH_GUI", Sha512Hex(clientJar), StringComparison.Ordinal)
+            .Replace("URL_GUI", url, StringComparison.Ordinal));
+
+        using var mrpack = MakeZip((MrpackAnalyzer.IndexEntryName, index));
+        var packPath = WriteTemp("cdn-gui.mrpack", mrpack);
+        var dest = NewTempDir();
+        try
+        {
+            var handler = new BytesHandler();
+            handler.Map(url, clientJar);
+            using var http = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(5) };
+            var result = await new MrpackInstaller(http).InstallAsync(packPath, dest, null);
+            Assert.True(result.Succeeded, result.Error);
+            Assert.Single(handler.Requests);
+            Assert.False(File.Exists(Path.Combine(dest, "mods", "gui-only.jar")));
+            Assert.Empty(result.Value!.InstalledRelativePaths);
+            Assert.Equal(["mods/gui-only.jar"], result.Value.SkippedInJarMetadataPaths);
+        }
+        finally
+        {
+            TryDelete(packPath);
+            TryDeleteDir(dest);
+        }
+    }
+
+    [Fact]
     public async Task Mixed_url_and_embedded_install_without_failing_empty_downloads()
     {
         var fromUrl = Encoding.UTF8.GetBytes("from-url");
@@ -404,6 +534,12 @@ public sealed class MrpackInstallerTests
 
         ms.Position = 0;
         return ms;
+    }
+
+    private static byte[] MakeJar(params (string Name, string Content)[] entries)
+    {
+        using var zip = MakeZip(entries);
+        return zip.ToArray();
     }
 
     private static string WriteTemp(string fileName, MemoryStream zip)

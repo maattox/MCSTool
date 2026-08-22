@@ -9,8 +9,8 @@ namespace McManager.Core.Setup;
 /// <summary>
 /// Installs a user-supplied Modrinth <c>.mrpack</c> into a destination directory
 /// (blueprint §22). Plain GET of URLs already in the index — no catalog/search API.
-/// Strips <c>env.server == unsupported</c> and itzg/product override-list matches;
-/// fails loudly when side is still unclear. Empty <c>downloads</c> copy from the zip.
+/// Strips <c>env.server == unsupported</c>, itzg/product override-list matches, and leftover
+/// in-jar client-only jars; fails loudly when side is still unclear. Empty <c>downloads</c> copy from the zip.
 /// </summary>
 public sealed class MrpackInstaller
 {
@@ -101,6 +101,7 @@ public sealed class MrpackInstaller
             var installed = new List<string>();
             var skippedPackDeclared = new List<string>();
             var skippedOverrideList = new List<string>();
+            var skippedInJar = new List<string>();
             var skippedClientOnly = new List<string>();
             var skippedIndexPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var warnings = new List<string>(analysis.Warnings);
@@ -116,7 +117,8 @@ public sealed class MrpackInstaller
                 var label = relative.Length == 0 ? "(unnamed file)" : relative;
                 var serverEnv = (file.Env?.Server ?? "").Trim();
                 var match = _matcher.Match(packSlug, label);
-                var action = MrpackFileFilter.Decide(serverEnv, match);
+                var inJar = MrpackAnalyzer.PeekEmbeddedJar(zip, label);
+                var action = MrpackFileFilter.Decide(serverEnv, match, inJar.Environment);
 
                 if (action == MrpackFileFilter.Action.SkipPackDeclared)
                 {
@@ -129,6 +131,14 @@ public sealed class MrpackInstaller
                 if (action == MrpackFileFilter.Action.SkipOverrideList)
                 {
                     skippedOverrideList.Add(label);
+                    skippedClientOnly.Add(label);
+                    skippedIndexPaths.Add(label);
+                    continue;
+                }
+
+                if (action == MrpackFileFilter.Action.SkipInJarMetadata)
+                {
+                    skippedInJar.Add(label);
                     skippedClientOnly.Add(label);
                     skippedIndexPaths.Add(label);
                     continue;
@@ -153,6 +163,19 @@ public sealed class MrpackInstaller
                 if (!placed.Succeeded)
                     return ServiceResult<MrpackInstallResult>.Fail(placed.Error!);
 
+                if (MrpackFileFilter.IsJarPath(label) && !match.Keep)
+                {
+                    var placedPeek = InJarSideDetector.PeekFile(destPath.Value!);
+                    if (placedPeek.Environment.Equals("client", StringComparison.OrdinalIgnoreCase))
+                    {
+                        try { File.Delete(destPath.Value!); } catch (IOException) { }
+                        skippedInJar.Add(label);
+                        skippedClientOnly.Add(label);
+                        skippedIndexPaths.Add(label);
+                        continue;
+                    }
+                }
+
                 installed.Add(relative);
             }
 
@@ -169,7 +192,7 @@ public sealed class MrpackInstaller
             if (!serverOverridesResult.Succeeded)
                 return ServiceResult<MrpackInstallResult>.Fail(serverOverridesResult.Error!);
             foreach (var skippedJar in skippedOverrideJars)
-                warnings.Add($"Skipped override jar '{skippedJar}' (override list or already stripped).");
+                warnings.Add($"Skipped override jar '{skippedJar}' (override list, in-jar client, or already stripped).");
 
             string? retained = null;
             if (!string.IsNullOrWhiteSpace(retainDataDirectory))
@@ -191,6 +214,7 @@ public sealed class MrpackInstaller
                 installed,
                 skippedPackDeclared,
                 skippedOverrideList,
+                skippedInJar,
                 copiedOverrides,
                 warnings);
 
@@ -204,7 +228,8 @@ public sealed class MrpackInstaller
                 warnings,
                 summary,
                 skippedPackDeclared,
-                skippedOverrideList));
+                skippedOverrideList,
+                skippedInJar));
         }
         catch (OperationCanceledException)
         {
@@ -377,26 +402,8 @@ public sealed class MrpackInstaller
             + string.Join(" ", errors));
     }
 
-    internal static ZipArchiveEntry? FindEmbeddedEntry(ZipArchive zip, string relativePath)
-    {
-        var n = relativePath.Replace('\\', '/').Trim();
-        if (n.Length == 0)
-            return null;
-        string[] candidates = [n, OverridesPrefix + n, ServerOverridesPrefix + n];
-        foreach (var candidate in candidates)
-        {
-            var found = zip.Entries.FirstOrDefault(e =>
-                string.Equals(
-                    MrpackAnalyzer.NormalizeZipPath(e.FullName),
-                    candidate,
-                    StringComparison.OrdinalIgnoreCase)
-                && !MrpackAnalyzer.NormalizeZipPath(e.FullName).EndsWith('/'));
-            if (found is not null)
-                return found;
-        }
-
-        return null;
-    }
+    internal static ZipArchiveEntry? FindEmbeddedEntry(ZipArchive zip, string relativePath) =>
+        MrpackAnalyzer.FindEmbeddedEntry(zip, relativePath);
 
     private static ServiceResult CopyEmbeddedVerified(
         ZipArchive zip,
@@ -458,6 +465,14 @@ public sealed class MrpackInstaller
                 continue;
             }
 
+            if (MrpackFileFilter.IsJarPath(relative)
+                && ManualServerPackAnalyzer.PeekJarEnvironment(entry).Environment
+                    .Equals("client", StringComparison.OrdinalIgnoreCase))
+            {
+                skippedJarPaths.Add(relative.Replace('\\', '/'));
+                continue;
+            }
+
             var destPath = ResolveUnderDest(destDirectory, relative);
             if (!destPath.Succeeded)
                 return ServiceResult.Fail(destPath.Error!);
@@ -498,6 +513,7 @@ public sealed class MrpackInstaller
         IReadOnlyList<string> installed,
         IReadOnlyList<string> skippedPackDeclared,
         IReadOnlyList<string> skippedOverrideList,
+        IReadOnlyList<string> skippedInJar,
         IReadOnlyList<string> copiedOverrides,
         IReadOnlyList<string> warnings)
     {
@@ -513,6 +529,9 @@ public sealed class MrpackInstaller
             sb.Append("  ").AppendLine(p);
         sb.Append("Override-list skipped: ").AppendLine(skippedOverrideList.Count.ToString());
         foreach (var p in skippedOverrideList)
+            sb.Append("  ").AppendLine(p);
+        sb.Append("In-jar metadata skipped: ").AppendLine(skippedInJar.Count.ToString());
+        foreach (var p in skippedInJar)
             sb.Append("  ").AppendLine(p);
         if (copiedOverrides.Count > 0)
         {

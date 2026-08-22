@@ -139,12 +139,20 @@ public sealed class ExcludeIncludeMatcherTests
         Assert.NotEmpty(cf.GlobalExcludes);
 
         var overlay = ExcludeIncludeMatcher.LoadEmbedded(ExcludeIncludeMatcher.ProductOverlayEmbeddedName);
-        Assert.Empty(overlay.GlobalExcludes);
+        Assert.Contains(overlay.GlobalExcludes, s => s.Equals("loading-screen", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(overlay.GlobalExcludes, s => s.Equals("konkrete", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(overlay.GlobalExcludes, s => s.Equals("titlebar", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(overlay.GlobalExcludes, s => s.Equals("flatlaf", StringComparison.OrdinalIgnoreCase));
         Assert.Empty(overlay.GlobalForceIncludes);
         Assert.Empty(overlay.Modpacks);
 
         var bundled = ExcludeIncludeMatcher.ForModrinth();
         Assert.Equal(ExcludeIncludeDecision.Exclude, bundled.Match(null, "mods/sodium-0.5.jar").Decision);
+        Assert.Equal(
+            ExcludeIncludeDecision.Exclude,
+            bundled.Match(null, "mods/example-loading-screen-1.0.jar").Decision);
+        Assert.Equal(ExcludeIncludeDecision.Exclude, bundled.Match(null, "mods/konkrete-1.9.9.jar").Decision);
+        Assert.Equal(ExcludeIncludeDecision.NoMatch, bundled.Match(null, "mods/lithium-fabric.jar").Decision);
     }
 
     private static ExcludeIncludeMatcher Layer1Only() =>

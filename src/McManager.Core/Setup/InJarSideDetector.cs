@@ -7,7 +7,8 @@ namespace McManager.Core.Setup;
 
 /// <summary>
 /// Cheap in-jar client/server side signals for unstructured / manual / jar-root zips
-/// (Step 8.7 P2). Pack-declared <c>env.server</c> is R2; Layer 1–2 lists stay in
+/// (Step 8.7 P2) and leftover <c>.mrpack</c> jars after <c>env.server</c> + overlay (P3).
+/// Pack-declared <c>env.server</c> is R2; Layer 1–2 lists stay in
 /// <see cref="ExcludeIncludeMatcher"/>. Does not call CurseForge or Modrinth APIs.
 /// </summary>
 /// <remarks>
@@ -55,6 +56,29 @@ internal static class InJarSideDetector
         string? MinecraftVersion = null)
     {
         public static PeekResult None => new(false, "*");
+    }
+
+    internal static PeekResult PeekFile(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+            return PeekResult.None;
+
+        try
+        {
+            var length = new FileInfo(path).Length;
+            if (length <= 0 || length > ManualServerPackAnalyzer.MaxJarPeekBytes)
+                return PeekResult.None;
+            using var stream = File.OpenRead(path);
+            return Peek(stream);
+        }
+        catch (IOException)
+        {
+            return PeekResult.None;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return PeekResult.None;
+        }
     }
 
     public static PeekResult Peek(Stream jarStream)

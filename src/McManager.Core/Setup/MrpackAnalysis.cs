@@ -31,7 +31,9 @@ public sealed class MrpackAnalysis
         int overrideListSkipCount,
         IReadOnlyList<string> packDeclaredSkipPaths,
         IReadOnlyList<string> overrideListSkipPaths,
-        IReadOnlyList<string> forceIncludedPaths)
+        IReadOnlyList<string> forceIncludedPaths,
+        int inJarMetadataSkipCount = 0,
+        IReadOnlyList<string>? inJarMetadataSkipPaths = null)
     {
         PackName = packName;
         VersionId = versionId;
@@ -58,6 +60,8 @@ public sealed class MrpackAnalysis
         PackDeclaredSkipPaths = packDeclaredSkipPaths;
         OverrideListSkipPaths = overrideListSkipPaths;
         ForceIncludedPaths = forceIncludedPaths;
+        InJarMetadataSkipCount = inJarMetadataSkipCount;
+        InJarMetadataSkipPaths = inJarMetadataSkipPaths ?? [];
     }
 
     public string PackName { get; }
@@ -92,6 +96,11 @@ public sealed class MrpackAnalysis
 
     public IReadOnlyList<string> PackDeclaredSkipPaths { get; }
     public IReadOnlyList<string> OverrideListSkipPaths { get; }
+
+    /// <summary>Skipped because leftover in-jar Fabric/Forge metadata is client-only (P3).</summary>
+    public int InJarMetadataSkipCount { get; }
+
+    public IReadOnlyList<string> InJarMetadataSkipPaths { get; }
 
     /// <summary>Kept despite pack <c>unsupported</c> because a force-include matched.</summary>
     public IReadOnlyList<string> ForceIncludedPaths { get; }

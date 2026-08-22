@@ -46,6 +46,7 @@ public sealed class MrpackAnalyzerTests
         Assert.Equal(0, a.OverrideListSkipCount);
         Assert.Contains("Pack-declared: 1", a.ConfirmableSummary, StringComparison.Ordinal);
         Assert.Contains("Override list: 0", a.ConfirmableSummary, StringComparison.Ordinal);
+        Assert.Contains("In-jar metadata: 0", a.ConfirmableSummary, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -69,6 +70,29 @@ public sealed class MrpackAnalyzerTests
         Assert.Equal(0, a.PackDeclaredSkipCount);
         Assert.Contains("Override list: 1", a.ConfirmableSummary, StringComparison.Ordinal);
         Assert.DoesNotContain("api.modrinth.com", a.ConfirmableSummary, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Tracked_gui_client_fixture_skips_overlay_class_and_in_jar_client()
+    {
+        var path = FixturePath("fabric-gui-client.mrpack");
+        Assert.True(File.Exists(path), $"Fixture missing at {path}");
+
+        var result = MrpackAnalyzer.AnalyzeFile(path);
+        Assert.True(result.Succeeded, result.Error);
+        var a = result.Value!;
+
+        Assert.Equal("CI Fabric GUI Client Fixture", a.PackName);
+        Assert.Equal(3, a.FileCount);
+        Assert.Equal(["mods/lithium-keep.jar"], a.ServerSidePaths);
+        Assert.Equal(["mods/example-loading-screen-1.0.jar"], a.OverrideListSkipPaths);
+        Assert.Equal(["mods/early-splash.jar"], a.InJarMetadataSkipPaths);
+        Assert.Equal(0, a.PackDeclaredSkipCount);
+        Assert.Equal(0, a.UnclearSideCount);
+        Assert.Contains("In-jar metadata: 1", a.ConfirmableSummary, StringComparison.Ordinal);
+        var preview = SetupPackImport.FromMrpack(a, path);
+        Assert.True(preview.CanContinue);
+        Assert.Null(preview.BlockReason);
     }
 
     [Fact]
@@ -303,6 +327,101 @@ public sealed class MrpackAnalyzerTests
         Assert.Contains("Override list:", a.ConfirmableSummary, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Overlay_class_skips_loading_screen_and_gui_loader_filenames()
+    {
+        var json = """
+            {
+              "formatVersion": 1,
+              "game": "minecraft",
+              "name": "GUI Overlay Pack",
+              "dependencies": { "minecraft": "1.21.1", "fabric-loader": "0.16.9" },
+              "files": [
+                { "path": "mods/example-loading-screen-1.0.jar", "env": { "client": "required", "server": "required" }, "downloads": ["https://example.invalid/load.jar"] },
+                { "path": "mods/konkrete-1.9.9.jar", "env": { "server": "required" }, "downloads": ["https://example.invalid/k.jar"] },
+                { "path": "mods/titlebarchanger-0.4.jar", "env": { "server": "required" }, "downloads": ["https://example.invalid/t.jar"] },
+                { "path": "mods/lithium.jar", "env": { "server": "required" }, "downloads": ["https://example.invalid/li.jar"] }
+              ]
+            }
+            """;
+        var result = MrpackAnalyzer.AnalyzeIndexJson(json);
+        Assert.True(result.Succeeded, result.Error);
+        var a = result.Value!;
+        Assert.Equal(["mods/lithium.jar"], a.ServerSidePaths);
+        Assert.Equal(0, a.PackDeclaredSkipCount);
+        Assert.Equal(3, a.OverrideListSkipCount);
+        Assert.Equal(0, a.InJarMetadataSkipCount);
+        Assert.Contains("mods/example-loading-screen-1.0.jar", a.OverrideListSkipPaths);
+        Assert.Contains("mods/konkrete-1.9.9.jar", a.OverrideListSkipPaths);
+        Assert.Contains("mods/titlebarchanger-0.4.jar", a.OverrideListSkipPaths);
+        Assert.Contains("Override list: 3", a.ConfirmableSummary, StringComparison.Ordinal);
+        Assert.Contains("In-jar metadata: 0", a.ConfirmableSummary, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Embedded_client_entrypoints_only_are_stripped_when_env_server_is_required()
+    {
+        var clientJar = MakeJar(("fabric.mod.json", """
+            {"schemaVersion":1,"id":"splash","version":"0","entrypoints":{"client":["com.example.Splash"]}}
+            """));
+        var serverJar = MakeJar(("fabric.mod.json", """
+            {"schemaVersion":1,"id":"lithium","version":"0","environment":"*","entrypoints":{"main":["com.example.Main"]}}
+            """));
+        var index = """
+            {
+              "formatVersion": 1,
+              "game": "minecraft",
+              "name": "In-jar leftover",
+              "dependencies": { "minecraft": "1.21.1", "fabric-loader": "0.16.9" },
+              "files": [
+                { "path": "mods/early-splash.jar", "env": { "client": "required", "server": "required" }, "downloads": [] },
+                { "path": "mods/lithium-keep.jar", "env": { "server": "required" }, "downloads": [] }
+              ]
+            }
+            """;
+        using var zip = MakeZipBytes(
+            (MrpackAnalyzer.IndexEntryName, Encoding.UTF8.GetBytes(index)),
+            ("mods/early-splash.jar", clientJar),
+            ("mods/lithium-keep.jar", serverJar));
+        var result = MrpackAnalyzer.AnalyzeZip(zip, "in-jar-leftover.mrpack");
+        Assert.True(result.Succeeded, result.Error);
+        var a = result.Value!;
+        Assert.Equal(["mods/lithium-keep.jar"], a.ServerSidePaths);
+        Assert.Equal(["mods/early-splash.jar"], a.InJarMetadataSkipPaths);
+        Assert.Equal(1, a.InJarMetadataSkipCount);
+        Assert.Equal(0, a.UnclearSideCount);
+        Assert.Equal(0, a.OverrideListSkipCount);
+        Assert.Contains("In-jar metadata: 1", a.ConfirmableSummary, StringComparison.Ordinal);
+        Assert.Contains("mods/early-splash.jar", a.ConfirmableSummary, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Missing_env_plus_client_entrypoints_is_client_not_unclear()
+    {
+        var clientJar = MakeJar(("fabric.mod.json", """
+            {"schemaVersion":1,"id":"gui","version":"0","environment":"client"}
+            """));
+        var index = """
+            {
+              "formatVersion": 1,
+              "game": "minecraft",
+              "name": "Missing env client",
+              "dependencies": { "minecraft": "1.21.1", "fabric-loader": "0.16.9" },
+              "files": [
+                { "path": "mods/gui-only.jar", "downloads": [] }
+              ]
+            }
+            """;
+        using var zip = MakeZipBytes(
+            (MrpackAnalyzer.IndexEntryName, Encoding.UTF8.GetBytes(index)),
+            ("mods/gui-only.jar", clientJar));
+        var result = MrpackAnalyzer.AnalyzeZip(zip, "missing-env.mrpack");
+        Assert.True(result.Succeeded, result.Error);
+        Assert.Equal(0, result.Value!.UnclearSideCount);
+        Assert.Equal(["mods/gui-only.jar"], result.Value.InJarMetadataSkipPaths);
+        Assert.True(SetupPackImport.FromMrpack(result.Value, "missing-env.mrpack").CanContinue);
+    }
+
     private static string FixturePath(string fileName) =>
         Path.Combine(AppContext.BaseDirectory, "fixtures", "packs", fileName);
 
@@ -335,5 +454,28 @@ public sealed class MrpackAnalyzerTests
 
         ms.Position = 0;
         return ms;
+    }
+
+    private static MemoryStream MakeZipBytes(params (string Name, byte[] Content)[] entries)
+    {
+        var ms = new MemoryStream();
+        using (var zip = new ZipArchive(ms, ZipArchiveMode.Create, leaveOpen: true))
+        {
+            foreach (var (name, content) in entries)
+            {
+                var entry = zip.CreateEntry(name);
+                using var output = entry.Open();
+                output.Write(content);
+            }
+        }
+
+        ms.Position = 0;
+        return ms;
+    }
+
+    private static byte[] MakeJar(params (string Name, string Content)[] entries)
+    {
+        using var zip = MakeZip(entries);
+        return zip.ToArray();
     }
 }

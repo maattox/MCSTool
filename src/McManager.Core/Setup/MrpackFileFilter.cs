@@ -3,16 +3,20 @@ using System.Text;
 namespace McManager.Core.Setup;
 
 /// <summary>
-/// Combine pack <c>env.server</c> with the itzg/product exclude lists (blueprint §22.1 + §24.3).
-/// Matcher runs after reading the pack declaration (robustness R2).
+/// Combine pack <c>env.server</c> with the itzg/product exclude lists (blueprint §22.1 + §24.3)
+/// and leftover in-jar Fabric/Forge side (Step 8.7 P3). Matcher runs after the pack declaration
+/// (robustness R2). <c>env.client</c> is not a skip signal (both-required is the format default).
 /// </summary>
 /// <remarks>
 /// Precedence:
 /// <list type="number">
-/// <item>Force-include (Layer 2 then Layer 1) keeps the file even when <c>env.server == unsupported</c>.</item>
+/// <item>Force-include (Layer 2 then Layer 1) keeps the file even when <c>env.server == unsupported</c>
+/// or in-jar says client.</item>
 /// <item>Pack <c>unsupported</c> skips as <see cref="PackFileSkipReason.PackDeclared"/> (even if the list would also exclude it).</item>
 /// <item>List exclude skips required/optional/unclear as <see cref="PackFileSkipReason.OverrideList"/>.</item>
-/// <item>Required/optional with no list match install.</item>
+/// <item>In-jar client-only (environment / client-only entrypoints / high-confidence mixin) skips leftover
+/// required/optional/missing env — including packs that mis-tag every file as server-required.</item>
+/// <item>Required/optional with no list or in-jar client match install.</item>
 /// <item>Still-unclear <c>env.server</c> stays unclear (install must fail; do not guess).</item>
 /// </list>
 /// </remarks>
@@ -23,10 +27,14 @@ internal static class MrpackFileFilter
         Install,
         SkipPackDeclared,
         SkipOverrideList,
+        SkipInJarMetadata,
         Unclear,
     }
 
-    public static Action Decide(string? serverEnv, ExcludeIncludeMatch match)
+    public static Action Decide(
+        string? serverEnv,
+        ExcludeIncludeMatch match,
+        string? inJarEnvironment = null)
     {
         var env = (serverEnv ?? "").Trim();
         if (match.Keep)
@@ -37,6 +45,9 @@ internal static class MrpackFileFilter
 
         if (match.Exclude)
             return Action.SkipOverrideList;
+
+        if ((inJarEnvironment ?? "").Equals("client", StringComparison.OrdinalIgnoreCase))
+            return Action.SkipInJarMetadata;
 
         if (env.Equals(MrpackAnalyzer.EnvRequired, StringComparison.OrdinalIgnoreCase)
             || env.Equals(MrpackAnalyzer.EnvOptional, StringComparison.OrdinalIgnoreCase))

@@ -1,5 +1,10 @@
 {
-  "globalExcludes": [],
+  "globalExcludes": [
+    "loading-screen",
+    "konkrete",
+    "titlebar",
+    "flatlaf"
+  ],
   "globalForceIncludes": [],
   "modpacks": {}
 }

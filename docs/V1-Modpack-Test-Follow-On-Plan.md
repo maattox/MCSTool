@@ -1,6 +1,6 @@
 # V1 modpack-test follow-on (living)
 
-**Status:** Living. Created 2026-08-21 (docs only). **NEXT = P3.**  
+**Status:** Living. Created 2026-08-21 (docs only). **NEXT = P4.**  
 **Parent:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.7**.  
 **Why now:** operator 2026-08-21 — informal **Change pack** tests in [`Mod-Pack-Tests.md`](Mod-Pack-Tests.md) failed **4 / 5**. Pause Step **8.5.2** Pass 3. Fix **generalizable** pack-start gaps **before** [`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md) (Step **8.8**) and before QA Pass 3.
 
@@ -145,8 +145,8 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 |----|---------|--------|-----------|----------------|
 | **P1** | Crash-aware readiness (fail fast + journal) | **DONE** | SEQUENTIAL | Yes |
 | **P2** | Unstructured zip in-jar side detection | **DONE** | SEQUENTIAL | Optional |
-| **P3** | Fabric / `.mrpack` leftover client mods | **NEXT** | SEQUENTIAL | Optional |
-| **P4** | Java major on Setup + Change pack | TODO | SEQUENTIAL | Yes |
+| **P3** | Fabric / `.mrpack` leftover client mods | **DONE** | SEQUENTIAL | Optional |
+| **P4** | Java major on Setup + Change pack | **NEXT** | SEQUENTIAL | Yes |
 | **P5** | Analyze warnings when many jars lack side data | TODO | SEQUENTIAL | No |
 
 
@@ -233,7 +233,7 @@ When **P5** is DONE: point V1 **NEXT** at Step **8.8** ([`V1-Operator-Notes-Foll
 
 ## P3 — Fabric / `.mrpack` leftover client mods
 
-**Status:** NEXT  
+**Status:** DONE  
 **Catalog IDs:** Setup / Change pack `.mrpack` strip
 
 **Read first**
@@ -259,7 +259,7 @@ When **P5** is DONE: point V1 **NEXT** at Step **8.8** ([`V1-Operator-Notes-Foll
 
 **Done when:** Leftover client GUI mods are stripped by metadata and/or overlay class; fixture test; Guide if summary counts change.
 
-**Changelog:** *(empty until implemented)*
+**Changelog:** 2026-08-21 — **P3 DONE.** Product overlay classes: `loading-screen`, `konkrete`, `titlebar`, `flatlaf` (not a Test 4 filename denylist). Test 4 **Pack-declared: 0** was mis-tagged `env.server=required` on every file — `env.client` is not a skip signal. Leftover jars after env + Layer 1–2: in-jar client (`environment`, client-only entrypoints, high-confidence mixin) skip, including **no env + client entrypoints only**. Analyze peeks embedded jars; install also peeks downloaded jars. Force-include still wins. Fixture `tests/fixtures/packs/fabric-gui-client.mrpack`. **NEXT = P4.**
 
 ---
 
@@ -267,7 +267,7 @@ When **P5** is DONE: point V1 **NEXT** at Step **8.8** ([`V1-Operator-Notes-Foll
 
 ## P4 — Java major on Setup and Change pack
 
-**Status:** TODO  
+**Status:** NEXT  
 **Catalog IDs:** new (Pass 3 pack replace / Setup game)
 
 **Read first**
@@ -347,6 +347,7 @@ When **P5** is DONE: point V1 **NEXT** at Step **8.8** ([`V1-Operator-Notes-Foll
 
 | Date | Note |
 |------|------|
+| 2026-08-21 | **P3 DONE** (Fabric / `.mrpack` leftover client mods). Overlay classes `loading-screen` / `konkrete` / `titlebar` / `flatlaf`; leftover in-jar client skip; `fabric-gui-client.mrpack`. **NEXT = P4.** Do not start 8.8, Pass 3, 8.6.1, or 9.1. |
 | 2026-08-21 | **P2 DONE** (unstructured in-jar side). `InJarSideDetector`: side fields, client entrypoints, high-confidence common mixin targets. Unclear still kept. **NEXT = P3.** Do not start 8.8, Pass 3, 8.6.1, or 9.1. |
 | 2026-08-21 | **P1 DONE** (crash-aware readiness). Fail-fast on crash-loop/FATAL; stop unit; capped journal + implicated mod. **NEXT = P2.** Do not start 8.8, Pass 3, 8.6.1, or 9.1. |
 | 2026-08-21 | Created (docs only). Operator: postpone Pass 3; informal Change pack tests 1/5. **NEXT = P1**. Layer 3 quarantine, jar-root confirm UI, CurseForge API parked (8.8 / 4.12). Do not implement in the creation session. |

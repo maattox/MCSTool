@@ -1,0 +1,34 @@
+{
+  "formatVersion": 1,
+  "game": "minecraft",
+  "versionId": "0.0.1-gui-client",
+  "name": "CI Fabric GUI Client Fixture",
+  "summary": "Synthetic .mrpack: mistagged env.server=required. Overlay class strips loading-screen; in-jar client entrypoints strip early-splash. Dummy bytes, no CDN.",
+  "dependencies": {
+    "minecraft": "1.21.1",
+    "fabric-loader": "0.16.9"
+  },
+  "files": [
+    {
+      "path": "mods/lithium-keep.jar",
+      "hashes": { "sha1": "95e8ca6f8343a6c4e3bb7c8fbd027c42ac170e37", "sha512": "54000be491961d86a9dd7592a84b5f6fe7611b574e7d588a79f8164ebf75ade4a591b09e2430dd570e56b48039904357617f12b1ac0aa734d66e766bef186457" },
+      "env": { "client": "required", "server": "required" },
+      "downloads": [],
+      "fileSize": 222
+    },
+    {
+      "path": "mods/example-loading-screen-1.0.jar",
+      "hashes": { "sha1": "339fb9c61760ba75cceffc4ebae1e1b0877cf0d8", "sha512": "3bc4e3016e27a982c6103d46fe453a46bb22bec1ccb38ee5436eaa723a04c92243fb45ff5dae1d2aad9bd42aceecd0a66c0a61d51ac84f8e18ccb6b67e3f1e71" },
+      "env": { "client": "required", "server": "required" },
+      "downloads": [],
+      "fileSize": 14
+    },
+    {
+      "path": "mods/early-splash.jar",
+      "hashes": { "sha1": "c34b89f0e7deb5572c763514621f5f8e26b4feee", "sha512": "cb3b90ee320f1e35b493f0f1f03a3e134fd03cdfd3b74346ef280b5e52ff2a81c27c01ce437860146db94f5d51d6d03da401380915d8447503d3fa503868a2ad" },
+      "env": { "client": "required", "server": "required" },
+      "downloads": [],
+      "fileSize": 211
+    }
+  ]
+}
