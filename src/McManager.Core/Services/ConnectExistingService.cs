@@ -23,7 +23,7 @@ public static class ConnectExistingService
 
     public static bool IsProductCompartment(string? displayName, IDictionary<string, string>? freeformTags)
     {
-        if (string.Equals(displayName?.Trim(), ProductCompartmentName, StringComparison.OrdinalIgnoreCase))
+        if (CompartmentNamer.IsProductName(displayName))
             return true;
 
         return freeformTags is not null
@@ -205,7 +205,7 @@ public static class ConnectExistingService
         if (compartments.Count == 0)
         {
             notes.Add(
-                $"Profile '{profile.Name}': no compartment named '{ProductCompartmentName}' "
+                $"Profile '{profile.Name}': no compartment named '{ProductCompartmentName}' / '{ProductCompartmentName}-2' "
                 + $"or tagged {DomainTagKey}={DomainTagValue}.");
             return new ConnectExistingScanResult { Notes = notes };
         }

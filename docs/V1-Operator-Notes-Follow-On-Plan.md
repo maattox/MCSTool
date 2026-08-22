@@ -1,6 +1,6 @@
 # V1 operator-notes follow-on (living)
 
-**Status:** Living. Created 2026-08-21 (docs only). **NEXT = P6** (P1–P5 **DONE**). Step **8.7** P1–P5 are **DONE**.  
+**Status:** Living. Created 2026-08-21 (docs only). **NEXT = P7** (P1–P6 **DONE**). Step **8.7** P1–P5 are **DONE**.  
 **Parent:** `[V1-Implementation-Plan.md](V1-Implementation-Plan.md)` Step **8.8**.  
 **Why now:** operator 2026-08-21 — after modpack-test fixes, implement Manager / Setup / pack-UX notes **before** QA Pass 3. Many notes are vague; agents **decide inside each section’s bounds** and record the choice. Stop and ask for spend, tofu destroy, CurseForge **API keys**, or pulling parked after-v1 items.
 
@@ -72,7 +72,7 @@ Only when two sections **do not** edit the same files **and** do not both own th
 
 - Console **Simple vs Full** (8.4 P6): `MinecraftConsoleRemote.FilterSimpleLog` drops only a handful of RCON listener/thread strings. Operator 2026-08-21: Simple still shows RCON and other noise. That is **P1**, not a new toggle.
 - Action banners (8.4 P4): window-locked full-width bar; short success auto-hides (~3.5s); **progress / warning / error persist** until X. That is why “Stopping the game server…” stays up. Tab `StatusMessage` on Advanced **forwards** to the banner (`OnStatusMessageChanged`) — loading `meta/infra.json` posts `FormatSummary()` (play IP, bucket, …). Server Management posts `Listed N backup(s). Select one to download.` on tab open.
-- Setup steps today: Always Free → OCI profile → **Compartment** → budget email → SSH → Minecraft → EULA → Auth Token → Review/deploy. Compartment default name is already `mcmgr`. Default window + wizard footer (Back / Next / Close) exist. Deploy log is short. Progress sits in the page, not a second dock.
+- Setup steps today: Always Free → OCI profile → budget email → SSH → Minecraft → EULA → Auth Token → Review/deploy. Compartment is auto-named `mcmgr` (or `mcmgr-2` / `mcmgr-3` if taken) — no wizard page. Connect-existing / paste OCID stays on Advanced auto-detect. Default window + wizard footer (Back / Next / Close) exist. Deploy log is short. Progress sits in the page, not a second dock.
 - Server identity (Step 7.6): Manager **Name, icon, and messages** → `messages/chat.json` + optional 64×64 `messages/server-icon.png`. Door MOTD **favicons** are separate: `/opt/mccontrol/assets/icons/` (`idle.png`, `starting.png`, `exhausted.png`) from `door_vm/assets/icons/`. Operator overlays live in `assets/server-icons/`.
 - Pack replace full re-setup is **v1**. Jar-root may continue with unclear jars (8.4 P9). Layer 3 quarantine was **parked** in 4.13; operator pulled it into **this** plan (P10).
 - CurseForge **API** deferred (4.12, ToS). Client exports / mixed-ID zips **refused**. In-app pack **catalog** is **rejected**.
@@ -154,8 +154,8 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 | **P3**  | Compact toasts + auto-dismiss completed progress           | **DONE** | SEQUENTIAL                           | No              |
 | **P4**  | Bottom progress dock (Setup + Change pack)                 | **DONE** | SEQUENTIAL                           | No              |
 | **P5**  | Setup wizard UX (copy, layout, log height, humanize)       | **DONE** | SEQUENTIAL                           | No              |
-| **P6**  | Auto compartment name; drop wizard step                    | **NEXT** | SEQUENTIAL                           | No              |
-| **P7**  | Setup identity page (name / description / icon)            | TODO     | SEQUENTIAL                           | No              |
+| **P6**  | Auto compartment name; drop wizard step                    | **DONE** | SEQUENTIAL                           | No              |
+| **P7**  | Setup identity page (name / description / icon)            | **NEXT** | SEQUENTIAL                           | No              |
 | **P8**  | Icon state variants from overlays                          | TODO     | SEQUENTIAL                           | Yes (door push) |
 | **P9**  | Jar-root confirm + derived manifest                        | TODO     | SEQUENTIAL                           | Optional        |
 | **P10** | Layer 3 crash quarantine                                   | TODO     | SEQUENTIAL                           | Yes             |
@@ -339,7 +339,7 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 
 ## P6 — Auto compartment name
 
-**Status:** NEXT  
+**Status:** DONE  
 **Catalog IDs:** S6-01 (step list)
 
 **Read first**
@@ -363,7 +363,7 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 
 **Done when:** Step gone; default `mcmgr`; suffix logic tested; Guide.
 
-**Changelog:** *(empty until implemented)*
+**Changelog:** 2026-08-21 — **P6 DONE.** Removed Compartment wizard page. Setup always creates `mcmgr`, or `mcmgr-2` / `mcmgr-3` … (hyphen; ListCompartments then create). Resume schema 2 remaps old step indexes. Connect-existing still matches name `mcmgr` / `mcmgr-N` or tag. Guide + S6-01. **NEXT = P7.**
 
 ---
 
@@ -371,7 +371,7 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 
 ## P7 — Setup identity page
 
-**Status:** TODO  
+**Status:** NEXT  
 **UI skill:** required  
 **Catalog IDs:** S4-12 (identity still applied); new Setup step
 
@@ -558,6 +558,7 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 
 | Date       | Note                                                                                                                                                                                                                                                    |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-21 | **P6 DONE.** Auto compartment name (`mcmgr` / `mcmgr-2`…); Compartment wizard page removed. **NEXT = P7.**                                                                                                                                              |
 | 2026-08-21 | **P5 DONE.** Setup wizard copy/layout/help hovers; taller deploy log; humanized dock status. **NEXT = P6.**                                                                                                                                              |
 | 2026-08-21 | **P4 DONE.** Shared bottom progress dock (Setup Deploy + Change pack). **NEXT = P5.**                                                                                                                                                                    |
 | 2026-08-21 | **P3 DONE.** Compact lower-right toasts; Start/Stop progress dismiss on completion. **NEXT = P4.**                                                                                                                                                      |

@@ -80,54 +80,6 @@
                          class="mcm-wizard-mono mcm-wizard-profile-pre mcm-slim-scroll">@Vm.ProfileDetailsText</pre>
                 </div>
             }
-            else if (Vm.IsStepCompartment)
-            {
-                <p class="mcm-wizard-inline-help">
-                    Create a compartment named mcmgr, or use an existing empty one.
-                    <WizardHelp Title="@SetupWizardViewModel.CompartmentHelp" AriaLabel="About the compartment" />
-                </p>
-                <label class="mcm-radio-row">
-                    <input type="radio"
-                           name="mcm-setup-compartment"
-                           disabled="@(!Vm.CanMutateWizard)"
-                           checked="@Vm.CreateCompartment"
-                           @onchange="@(() => Vm.CreateCompartment = true)" />
-                    <span>Create compartment named mcmgr (default)</span>
-                </label>
-                <div class="mcm-field">
-                    <label for="mcm-setup-comp-name">Compartment name</label>
-                    <input id="mcm-setup-comp-name"
-                           type="text"
-                           name="compartment-name"
-                           autocomplete="off"
-                           spellcheck="false"
-                           placeholder="mcmgr"
-                           disabled="@(!Vm.CanMutateWizard || !Vm.CreateCompartment)"
-                           @bind="Vm.CompartmentName"
-                           @bind:event="oninput" />
-                </div>
-                <label class="mcm-radio-row">
-                    <input type="radio"
-                           name="mcm-setup-compartment"
-                           disabled="@(!Vm.CanMutateWizard)"
-                           checked="@Vm.UseExistingCompartment"
-                           @onchange="@(() => Vm.CreateCompartment = false)" />
-                    <span>Use an existing empty compartment OCID</span>
-                </label>
-                <div class="mcm-field">
-                    <label for="mcm-setup-comp-ocid">Existing compartment OCID</label>
-                    <input id="mcm-setup-comp-ocid"
-                           type="text"
-                           name="compartment-ocid"
-                           class="mcm-wizard-mono"
-                           autocomplete="off"
-                           spellcheck="false"
-                           placeholder="ocid1.compartment.oc1…"
-                           disabled="@(!Vm.CanMutateWizard || Vm.CreateCompartment)"
-                           @bind="Vm.ExistingCompartmentId"
-                           @bind:event="oninput" />
-                </div>
-            }
             else if (Vm.IsStepAlertEmail)
             {
                 <div class="mcm-field">

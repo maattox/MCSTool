@@ -93,7 +93,14 @@ public sealed class SetupDeployOrchestrator
         if (infra is null)
             return SetupDeployResult.Fail(state.ApplyStage, "Could not find product infra/ (main.tf).");
 
-        var stackId = state.CreateCompartment ? state.CompartmentName : TofuWorkspace.DefaultStackId;
+        var named = await CompartmentNameResolver.AssignAsync(state, log, cancellationToken, _dryRun)
+            .ConfigureAwait(false);
+        if (!named.Succeeded)
+            return SetupDeployResult.Fail(state.ApplyStage, named.Error ?? "Could not pick a compartment name.");
+
+        var stackId = string.IsNullOrWhiteSpace(state.CompartmentName)
+            ? TofuWorkspace.DefaultStackId
+            : state.CompartmentName;
         if (_dryRun)
             stackId += "-dry";
         var workspace = TofuWorkspace.ForStack(stackId);

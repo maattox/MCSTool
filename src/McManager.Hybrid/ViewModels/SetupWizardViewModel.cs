@@ -19,10 +19,11 @@ public enum CapacityWaitChoice
 }
 
 /// <summary>
-/// Nine-step Setup wizard (Always Free → OCI → compartment → email → SSH →
+/// Eight-step Setup wizard (Always Free → OCI → email → SSH →
 /// game (Vanilla Default/Paper or Modded pack file) → EULA → Auth Token → summary).
-/// No Window Host — pickers/clipboard/dialogs/clock via B3 interfaces. Does not
-/// tofu apply unless the operator clicks Deploy; agents use <c>MCMANAGER_TOFU_DRY_RUN=1</c>.
+/// Compartment is auto-named <c>mcmgr</c> / <c>mcmgr-2</c> at Deploy. No Window Host —
+/// pickers/clipboard/dialogs/clock via B3 interfaces. Does not tofu apply unless the
+/// operator clicks Deploy; agents use <c>MCMANAGER_TOFU_DRY_RUN=1</c>.
 /// </summary>
 public sealed partial class SetupWizardViewModel : ObservableObject
 {
@@ -53,9 +54,6 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     public const string OciProfileHelp =
         "Region and account details come from ~/.oci/config on this PC. Prefer the tenancy home region so Always Free A1 and Micro eligibility apply.";
-
-    public const string CompartmentHelp =
-        "A first deploy creates a dedicated compartment named mcmgr. Repair or a disposable test can target an existing empty compartment instead.";
 
     public const string AlertEmailHelp =
         "Oracle emails the $1 last-resort budget alert here. Use a comma between addresses if more than one.";
@@ -418,21 +416,14 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     public string AutoRetryBannerText =>
         "Auto-retrying every 5 minutes until A1 capacity is available. Failures stay silent. Use Pause auto-retry to stop.";
 
-    public bool IsStepAlwaysFree => CurrentStep == 0;
-    public bool IsStepOci => CurrentStep == 1;
-    public bool IsStepCompartment => CurrentStep == 2;
-    public bool IsStepAlertEmail => CurrentStep == 3;
-    public bool IsStepSsh => CurrentStep == 4;
-    public bool IsStepGame => CurrentStep == 5;
-    public bool IsStepEula => CurrentStep == 6;
-    public bool IsStepAuthToken => CurrentStep == 7;
-    public bool IsStepSummary => CurrentStep == 8;
-
-    public bool UseExistingCompartment
-    {
-        get => !CreateCompartment;
-        set => CreateCompartment = !value;
-    }
+    public bool IsStepAlwaysFree => CurrentStep == SetupWizardState.StepAlwaysFree;
+    public bool IsStepOci => CurrentStep == SetupWizardState.StepOci;
+    public bool IsStepAlertEmail => CurrentStep == SetupWizardState.StepAlertEmail;
+    public bool IsStepSsh => CurrentStep == SetupWizardState.StepSsh;
+    public bool IsStepGame => CurrentStep == SetupWizardState.StepGame;
+    public bool IsStepEula => CurrentStep == SetupWizardState.StepEula;
+    public bool IsStepAuthToken => CurrentStep == SetupWizardState.StepAuthToken;
+    public bool IsStepSummary => CurrentStep == SetupWizardState.StepSummary;
 
     public bool SshImportMode
     {
@@ -506,15 +497,14 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     public string StepTitle => CurrentStep switch
     {
-        0 => "Always Free",
-        1 => "Oracle Cloud profile",
-        2 => "Compartment",
-        3 => "Budget alert email",
-        4 => "SSH key",
-        5 => "Minecraft",
-        6 => "Mojang EULA",
-        7 => "Optional Auth Token",
-        8 => ShowDeploySuccess ? "Deployment Complete" : "Review and deploy",
+        SetupWizardState.StepAlwaysFree => "Always Free",
+        SetupWizardState.StepOci => "Oracle Cloud profile",
+        SetupWizardState.StepAlertEmail => "Budget alert email",
+        SetupWizardState.StepSsh => "SSH key",
+        SetupWizardState.StepGame => "Minecraft",
+        SetupWizardState.StepEula => "Mojang EULA",
+        SetupWizardState.StepAuthToken => "Optional Auth Token",
+        SetupWizardState.StepSummary => ShowDeploySuccess ? "Deployment Complete" : "Review and deploy",
         _ => "Setup",
     };
 
@@ -552,7 +542,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         if (!CanGoNext)
             return;
 
-        if (CurrentStep == 7)
+        if (CurrentStep == SetupWizardState.StepAuthToken)
             TryStoreAuthToken();
 
         CurrentStep++;
@@ -942,6 +932,10 @@ public sealed partial class SetupWizardViewModel : ObservableObject
                     await orch.RunAsync(state, log, CancellationToken.None, progress).ConfigureAwait(false))
                 .ConfigureAwait(true);
             ApplyStage = result.Stage;
+            CreateCompartment = true;
+            ExistingCompartmentId = "";
+            if (!string.IsNullOrWhiteSpace(state.CompartmentName))
+                CompartmentName = state.CompartmentName;
             var saved = SetupWizardStore.LoadOrNew();
             _functionImage = saved.FunctionImage ?? _functionImage;
             FlushLog();
@@ -1392,9 +1386,11 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         CapacityWaitConsent = state.CapacityWaitConsent;
         OciProfile = string.IsNullOrWhiteSpace(state.OciProfile) ? "DEFAULT" : state.OciProfile;
         OciRegion = state.OciRegion;
-        CreateCompartment = state.CreateCompartment;
-        CompartmentName = string.IsNullOrWhiteSpace(state.CompartmentName) ? "mcmgr" : state.CompartmentName;
-        ExistingCompartmentId = state.ExistingCompartmentId;
+        CreateCompartment = true;
+        ExistingCompartmentId = "";
+        CompartmentName = string.IsNullOrWhiteSpace(state.CompartmentName)
+            ? CompartmentNamer.BaseName
+            : state.CompartmentName;
         AlertEmail = state.AlertEmail;
         SshGenerateMode = !string.Equals(state.SshMode, "import", StringComparison.OrdinalIgnoreCase);
         SshPublicKeyPath = state.SshPublicKeyPath;
@@ -1435,15 +1431,16 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     public SetupWizardState ToState() => new()
     {
+        SchemaVersion = SetupWizardState.CurrentSchemaVersion,
         CurrentStep = CurrentStep,
         AlwaysFreeConfirmed = AlwaysFreeConfirmed,
         ResidualChargeDisclosed = ResidualChargeDisclosed,
         CapacityWaitConsent = CapacityWaitConsent,
         OciProfile = OciProfile,
         OciRegion = OciRegion,
-        CreateCompartment = CreateCompartment,
-        CompartmentName = CompartmentName,
-        ExistingCompartmentId = ExistingCompartmentId,
+        CreateCompartment = true,
+        CompartmentName = string.IsNullOrWhiteSpace(CompartmentName) ? CompartmentNamer.BaseName : CompartmentName,
+        ExistingCompartmentId = "",
         AlertEmail = AlertEmail,
         SshMode = SshGenerateMode ? "generate" : "import",
         SshPublicKeyPath = SshPublicKeyPath,
@@ -1476,14 +1473,11 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     private bool StepIsValid(int step) => step switch
     {
-        0 => AlwaysFreeConfirmed && ResidualChargeDisclosed && CapacityWaitConsent,
-        1 => !string.IsNullOrWhiteSpace(OciProfile) && !string.IsNullOrWhiteSpace(OciRegion),
-        2 => CreateCompartment
-            ? !string.IsNullOrWhiteSpace(CompartmentName)
-            : ExistingCompartmentId.Trim().StartsWith("ocid1.compartment.", StringComparison.Ordinal),
-        3 => AlertEmail.Contains('@', StringComparison.Ordinal),
-        4 => SshKeyHelper.LooksLikePublicKey(SshPublicKey),
-        5 => SetupServerType.IsModded(ServerType)
+        SetupWizardState.StepAlwaysFree => AlwaysFreeConfirmed && ResidualChargeDisclosed && CapacityWaitConsent,
+        SetupWizardState.StepOci => !string.IsNullOrWhiteSpace(OciProfile) && !string.IsNullOrWhiteSpace(OciRegion),
+        SetupWizardState.StepAlertEmail => AlertEmail.Contains('@', StringComparison.Ordinal),
+        SetupWizardState.StepSsh => SshKeyHelper.LooksLikePublicKey(SshPublicKey),
+        SetupWizardState.StepGame => SetupServerType.IsModded(ServerType)
             ? PackConfirmed
                 && ClientPackAcknowledged
                 && PackCanContinue
@@ -1491,8 +1485,8 @@ public sealed partial class SetupWizardViewModel : ObservableObject
                     string.IsNullOrWhiteSpace(MinecraftVersion) ? _resumeMinecraftVersion : MinecraftVersion)
             : !string.IsNullOrWhiteSpace(
                 string.IsNullOrWhiteSpace(MinecraftVersion) ? _resumeMinecraftVersion : MinecraftVersion),
-        6 => EulaAccepted,
-        7 => true,
+        SetupWizardState.StepEula => EulaAccepted,
+        SetupWizardState.StepAuthToken => true,
         _ => false,
     };
 
@@ -1505,8 +1499,6 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         OciRegion = selected.Region;
         OnPropertyChanged(nameof(ProfileDetailsText));
     }
-
-    partial void OnCreateCompartmentChanged(bool value) => OnPropertyChanged(nameof(UseExistingCompartment));
 
     partial void OnSshGenerateModeChanged(bool value) => OnPropertyChanged(nameof(SshImportMode));
 
@@ -1569,14 +1561,12 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             case nameof(PlanSummaryText):
             case nameof(IsStepAlwaysFree):
             case nameof(IsStepOci):
-            case nameof(IsStepCompartment):
             case nameof(IsStepAlertEmail):
             case nameof(IsStepSsh):
             case nameof(IsStepGame):
             case nameof(IsStepEula):
             case nameof(IsStepAuthToken):
             case nameof(IsStepSummary):
-            case nameof(UseExistingCompartment):
             case nameof(SshImportMode):
             case nameof(AuthTokenStoredDisplay):
             case nameof(StatusMessage):
@@ -1638,7 +1628,6 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         OnPropertyChanged(nameof(PlanSummaryText));
         OnPropertyChanged(nameof(IsStepAlwaysFree));
         OnPropertyChanged(nameof(IsStepOci));
-        OnPropertyChanged(nameof(IsStepCompartment));
         OnPropertyChanged(nameof(IsStepAlertEmail));
         OnPropertyChanged(nameof(IsStepSsh));
         OnPropertyChanged(nameof(IsStepGame));
@@ -1676,7 +1665,6 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         OnPropertyChanged(nameof(ShowPackConfirmChecks));
         OnPropertyChanged(nameof(ShowOverrideListWarning));
         OnPropertyChanged(nameof(ClientPackFriendsNeed));
-        OnPropertyChanged(nameof(UseExistingCompartment));
         OnPropertyChanged(nameof(SshImportMode));
         OnPropertyChanged(nameof(AuthTokenStoredDisplay));
     }
@@ -1697,7 +1685,9 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     private string? TryReadPlayIpFromTofuOutputs()
     {
-        var stackId = CreateCompartment ? CompartmentName : TofuWorkspace.DefaultStackId;
+        var stackId = string.IsNullOrWhiteSpace(CompartmentName)
+            ? TofuWorkspace.DefaultStackId
+            : CompartmentName;
         var path = Path.Combine(
             TofuWorkspace.TofuRootDirectory(),
             TofuWorkspace.Sanitize(stackId),

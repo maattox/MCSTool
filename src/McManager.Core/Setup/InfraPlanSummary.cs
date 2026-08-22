@@ -9,9 +9,12 @@ public static class InfraPlanSummary
 {
     public static string Build(SetupWizardState state)
     {
-        var compartment = state.CreateCompartment
-            ? $"Create compartment `{state.CompartmentName}` (tagged mcmgr-domain=mc-server-compartment)"
-            : $"Use existing compartment `{state.ExistingCompartmentId}` (must be empty / disposable)";
+        var name = string.IsNullOrWhiteSpace(state.CompartmentName)
+            ? CompartmentNamer.BaseName
+            : state.CompartmentName.Trim();
+        var compartment = string.Equals(name, CompartmentNamer.BaseName, StringComparison.OrdinalIgnoreCase)
+            ? $"Create compartment `{CompartmentNamer.BaseName}` (or `{CompartmentNamer.BaseName}-2` / `{CompartmentNamer.BaseName}-3` if that name is taken; tagged mcmgr-domain=mc-server-compartment)"
+            : $"Create compartment `{name}` (tagged mcmgr-domain=mc-server-compartment)";
 
         var version = string.IsNullOrWhiteSpace(state.MinecraftVersion)
             ? "(not chosen yet)"
@@ -47,7 +50,7 @@ public static class InfraPlanSummary
             + friendsLine
             + $"  OCIR Auth Token stored: {(state.AuthTokenStored ? "yes (Windows Credential Manager McManager/ocir)" : "no — optional until Function push")}\n\n"
             + "OpenTofu will create (on confirmed Deploy)\n"
-            + "  • Compartment mcmgr (unless using an existing OCID)\n"
+            + $"  • Compartment {name}\n"
             + "  • VCN mcmgr-vcn (10.0.0.0/16), IGW, public route table\n"
             + "  • Public subnet mcmgr-subnet-public + Security List mcmgr-sl\n"
             + $"  • VM1 mcmgr-vm1 — VM.Standard.A1.Flex {shape}\n"

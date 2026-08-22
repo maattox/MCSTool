@@ -62,7 +62,7 @@ public sealed class ConnectExistingFlow
             progress?.Report("No product stacks found.");
             await _dialogs.ShowInfoAsync(
                 "No existing stack found",
-                "Auto-detect did not find a product compartment (name mcmgr or tag mcmgr-domain=mc-server-compartment) "
+                "Auto-detect did not find a product compartment (name mcmgr / mcmgr-2 or tag mcmgr-domain=mc-server-compartment) "
                 + "with meta/infra.json.\n\nUse Setup to deploy a new stack, or seed data/config.local.json by hand."
                 + extra,
                 cancellationToken);
