@@ -26,7 +26,8 @@ public sealed class ActionBanner
 
     /// <summary>
     /// Errors, warnings, progress, and long success copy stay until dismiss
-    /// (or a newer <see cref="Show"/>). Short success may auto-hide in the UI.
+    /// (or a newer <see cref="Show"/>). Progress is not timer-auto-hidden — callers
+    /// replace it with success/error when the job ends. Short success may auto-hide in the UI.
     /// </summary>
     public static bool ShouldPersist(string message, ActionBannerSeverity severity)
     {

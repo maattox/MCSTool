@@ -1070,8 +1070,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                             : result.Value.IsSpendBrake
                                 ? "The monthly spend brake blocked Start."
                                 : "Server is stopped.";
-                    if (result.Value.IsDegraded || result.Value.IsSpendBrake)
-                        ShowToast(ActionFeedback, isError: true);
+                    ShowToast(
+                        ActionFeedback,
+                        isError: result.Value.IsDegraded || result.Value.IsSpendBrake);
                     return;
                 }
             }

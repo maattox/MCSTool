@@ -5,7 +5,7 @@ using McManager.Hybrid.Ui;
 namespace McManager.Hybrid.ViewModels;
 
 /// <summary>
-/// Window-locked action banner. Posts go through <see cref="ActionBanner"/>.
+/// Compact window-locked toast (lower-right). Posts go through <see cref="ActionBanner"/>.
 /// Short success auto-hides; long copy, progress, warning, and error wait for X.
 /// </summary>
 public sealed partial class ActionBannerViewModel : ObservableObject, IDisposable
@@ -46,9 +46,18 @@ public sealed partial class ActionBannerViewModel : ObservableObject, IDisposabl
         Severity switch
         {
             ActionBannerSeverity.Error => "ti ti-alert-triangle",
-            ActionBannerSeverity.Warning => "ti ti-alert-triangle",
+            ActionBannerSeverity.Warning => "ti ti-alert-circle",
             ActionBannerSeverity.Progress => "ti ti-loader",
             _ => "ti ti-circle-check",
+        };
+
+    public string SeverityName =>
+        Severity switch
+        {
+            ActionBannerSeverity.Error => "Error",
+            ActionBannerSeverity.Warning => "Warning",
+            ActionBannerSeverity.Progress => "In progress",
+            _ => "Done",
         };
 
     public string LiveRole =>
@@ -71,6 +80,7 @@ public sealed partial class ActionBannerViewModel : ObservableObject, IDisposabl
         CopyFromBanner();
         OnPropertyChanged(nameof(SeverityClass));
         OnPropertyChanged(nameof(SeverityIcon));
+        OnPropertyChanged(nameof(SeverityName));
         OnPropertyChanged(nameof(LiveRole));
         OnPropertyChanged(nameof(AriaLive));
 
