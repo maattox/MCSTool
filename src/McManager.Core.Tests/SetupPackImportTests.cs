@@ -364,6 +364,7 @@ public sealed class SetupPackImportTests
         var text = InfraPlanSummary.Build(state);
         Assert.Contains("Modded — CI Fabric Strip Fixture (fabric 0.16.9) 1.21.1", text, StringComparison.Ordinal);
         Assert.Contains("same exported pack required to join", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("lab stack", text, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("search", text, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("0.0.0.0/0", text, StringComparison.Ordinal);
     }

@@ -589,6 +589,7 @@ button.mcm-btn-disabled:hover {
     border-radius: 11px;
     color: var(--text-muted);
     line-height: 1;
+    flex-shrink: 0;
 }
 
 .mcm-help:hover:not(:disabled) {
@@ -1548,6 +1549,16 @@ button.mcm-btn-disabled:hover {
     margin-bottom: 4px;
 }
 
+.mcm-field-head {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.mcm-field label.mcm-field-head {
+    display: inline-flex;
+}
+
 .mcm-field input[type="text"] {
     width: 100%;
     background: var(--surface-1);
@@ -1580,6 +1591,28 @@ button.mcm-btn-disabled:hover {
 }
 
 .mcm-checkbox-row input {
+    margin-top: 2px;
+}
+
+.mcm-check-hit {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    flex: 1 1 auto;
+    min-width: 0;
+    cursor: pointer;
+}
+
+.mcm-wizard-body .mcm-checkbox-row {
+    margin-bottom: 10px;
+    align-items: center;
+}
+
+.mcm-wizard-body .mcm-radio-row {
+    align-items: center;
+}
+
+.mcm-wizard-body .mcm-check-hit input {
     margin-top: 2px;
 }
 
@@ -1631,6 +1664,13 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     font-weight: 400;
 }
 
+.mcm-radio-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
 .mcm-field select,
 .mcm-field textarea,
 .mcm-field input[type="password"] {
@@ -1678,6 +1718,7 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     margin: 0;
     font-size: 18px;
     font-weight: 600;
+    text-wrap: pretty;
 }
 
 .mcm-wizard-header p {
@@ -1694,6 +1735,42 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     display: flex;
     flex-direction: column;
     gap: 4px;
+}
+
+.mcm-wizard-body.is-deploying {
+    overflow: hidden;
+}
+
+.mcm-wizard-review-form {
+    flex: 0 0 auto;
+}
+
+.mcm-wizard-body.is-deploying .mcm-wizard-review-form,
+.mcm-wizard-body.is-deploying .mcm-wizard-plan-details {
+    display: none;
+}
+
+.mcm-wizard-inline-help {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.mcm-wizard-inline-help .mcm-wizard-kicker {
+    margin: 0 !important;
+}
+
+.mcm-wizard-profile-pre {
+    max-height: 5.4em;
+    overflow: auto;
+    margin: 0 0 12px;
+    padding: 8px 10px;
+    background: var(--surface-2);
+    border: 0.5px solid var(--border);
+    border-radius: 8px;
+    white-space: pre-wrap;
+    word-break: break-word;
 }
 
 .mcm-wizard-body > p {
@@ -1734,6 +1811,7 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 .mcm-wizard-actions {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: 8px;
     margin-bottom: 12px;
 }
@@ -1816,8 +1894,8 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     border: 1px solid var(--text-accent);
     background: var(--surface-2);
     border-radius: var(--radius);
-    padding: 12px 14px;
-    margin: 0 0 14px;
+    padding: 8px 12px;
+    margin: 0 0 10px;
 }
 
 .mcm-client-pack-notice .mcm-wizard-kicker {
@@ -1913,9 +1991,9 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     align-items: center;
     justify-content: center;
     gap: 4px;
-    min-height: 108px;
-    margin: 4px 0 12px;
-    padding: 16px 12px;
+    min-height: 72px;
+    margin: 4px 0 8px;
+    padding: 12px;
     border: 1px dashed var(--border);
     border-radius: 10px;
     background: var(--surface-2);
@@ -1956,9 +2034,9 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 }
 
 .mcm-pack-summary {
-    max-height: 180px;
+    max-height: 110px;
     flex: 0 0 auto;
-    min-height: 64px;
+    min-height: 48px;
     margin-bottom: 12px;
 }
 
@@ -1972,9 +2050,9 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 .mcm-wizard-log-stack {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 12px;
     flex: 1 1 auto;
-    min-height: 280px;
+    min-height: 0;
     margin-top: 8px;
 }
 
@@ -1993,6 +2071,27 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 .mcm-wizard-log-grow {
     flex: 1 1 auto;
     min-height: 140px;
+}
+
+.mcm-wizard-body.is-deploying .mcm-wizard-log-stack {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin-top: 0;
+    gap: 8px;
+}
+
+.mcm-wizard-body.is-deploying .mcm-wizard-log-grow {
+    flex: 1 1 auto;
+    min-height: 350px;
+}
+
+.mcm-wizard-body.is-deploying .mcm-wizard-log-grow .mcm-wizard-log {
+    min-height: 350px;
+}
+
+.mcm-wizard-plan-details .mcm-wizard-log {
+    min-height: 72px;
+    max-height: 160px;
 }
 
 .mcm-wizard-log-label {

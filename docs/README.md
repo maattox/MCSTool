@@ -8,7 +8,7 @@ Read **only** what the current V1 / QA step names. Do not load this whole folder
 |-----|-----|
 | [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) | **Execution checklist.** Implement only the step marked NEXT. |
 | [`V1-Modpack-Test-Follow-On-Plan.md`](V1-Modpack-Test-Follow-On-Plan.md) | Step **8.7**. **DONE** (P1–P5). Informal Change pack failures. |
-| [`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md) | Step **8.8**. **NEXT = P5.** Manager / Setup / pack UX notes. |
+| [`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md) | Step **8.8**. **NEXT = P6.** Manager / Setup / pack UX notes. |
 | [`Mod-Pack-Tests.md`](Mod-Pack-Tests.md) | Operator informal pack tests (input to 8.7; not a living NEXT). |
 | [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) | Pass 3 (blocked until **8.7 + 8.8** exit and the operator starts it). |
 | [`V1-QA-Pass-3-Results.md`](V1-QA-Pass-3-Results.md) | Fill during Pass 3. |

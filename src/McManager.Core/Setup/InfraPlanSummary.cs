@@ -35,7 +35,7 @@ public static class InfraPlanSummary
         return
             "OpenTofu apply from this window creates Always Free resources (state under %LOCALAPPDATA%\\McManager\\tofu). "
             + $"VM1 is {shape} ({hours}). "
-            + "A second A1 in the same tenancy as an existing lab stack competes for Always Free hours. Deploy writes config.local.json after success.\n\n"
+            + "A second A1 in the same tenancy as other Ampere computers competes for Always Free hours. Deploy writes config.local.json after success.\n\n"
             + "Chosen variables\n"
             + $"  OCI profile: {profile}\n"
             + $"  Region (prefer home region): {region}\n"

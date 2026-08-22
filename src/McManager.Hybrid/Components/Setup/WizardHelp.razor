@@ -1,0 +1,17 @@
+<button type="button"
+        class="mcm-help"
+        title="@Title"
+        aria-label="@ResolvedAria">
+    <i class="ti ti-help" aria-hidden="true"></i>
+</button>
+
+@code {
+    [Parameter]
+    public string Title { get; set; } = "";
+
+    [Parameter]
+    public string? AriaLabel { get; set; }
+
+    private string ResolvedAria =>
+        string.IsNullOrWhiteSpace(AriaLabel) ? "More information" : AriaLabel;
+}

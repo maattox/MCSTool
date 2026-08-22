@@ -32,15 +32,68 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     public const string MinecraftEulaUrl = "https://aka.ms/MinecraftEULA";
 
     public const string CapacityWaitExplanation =
-        "Always Free A1 Flex host capacity is unavailable in this region right now. VM1 was not created.\n\n"
-        + "Other Always Free resources from this Setup (compartment, VCN, door Micro, reserved IP, IAM) may already exist. Retry reuses them; it does not start from scratch.\n\n"
+        "Always Free A1 Flex host capacity is unavailable in this region right now. The game server was not created.\n\n"
+        + "Other Always Free resources from this Setup (compartment, network, doorbell, reserved IP) may already exist. Retry reuses them; it does not start from scratch.\n\n"
         + "Try again now, or auto-retry every 5 minutes while Setup stays open. Auto-retry checks capacity first and stays silent on later failures.\n\n"
-        + "Close returns to Setup so you can pause later or resume another time.";
+        + "Close returns to Setup so you can pause or resume later.";
 
     public const string DeployDurationHint =
-        "Creating the cloud computers and installing Minecraft often takes a long time. Leave this window open until it finishes.";
+        "Often 10–25 minutes. Leave this window open until it finishes.";
 
     public const long PackDropMaxBytes = 512L * 1024 * 1024;
+
+    public const string AlwaysFreeStayHelp =
+        "This product uses Always Free Ampere A1 for the game server plus a tiny doorbell computer. There is no paid mode. A1 capacity can be unavailable in the region.";
+
+    public const string AlwaysFreeResidualHelp =
+        "A $1 monthly budget is a last-resort brake that stops the game server. Oracle may still bill a small residual (~$1–$2) after that brake fires. This is not a hard $0 guarantee.";
+
+    public const string AlwaysFreeCapacityHelp =
+        "If A1 Flex is out of capacity, a window offers try again now, auto-retry every 5 minutes, or resume later. It does not spam the Oracle API.";
+
+    public const string OciProfileHelp =
+        "Region and account details come from ~/.oci/config on this PC. Prefer the tenancy home region so Always Free A1 and Micro eligibility apply.";
+
+    public const string CompartmentHelp =
+        "A first deploy creates a dedicated compartment named mcmgr. Repair or a disposable test can target an existing empty compartment instead.";
+
+    public const string AlertEmailHelp =
+        "Oracle emails the $1 last-resort budget alert here. Use a comma between addresses if more than one.";
+
+    public const string SshKeyHelp =
+        "Create a new key on this PC, or import an existing public key. The private key stays on disk and is not saved in Setup’s resume file. This is not the Oracle API key.";
+
+    public const string VanillaHelp =
+        "Official Mojang jar, or Optimized Vanilla (Paper) for better multiplayer. Friends join with the same Java version. Paper is not Forge or Fabric.";
+
+    public const string ModdedHelp =
+        "Choose a local .mrpack or server-pack zip you already exported. There is no pack search. Friends need that same pack to join.";
+
+    public const string DefaultVanillaHelp =
+        "Official Mojang server jar. Same path as before.";
+
+    public const string OptimizedVanillaHelp =
+        "Better multiplayer performance. Not Forge or Fabric mods. Paper is a faster vanilla-compatible server.";
+
+    public const string PackFileHelp =
+        "Export the pack on Modrinth, CurseForge (Server Files), or another tool first. Very large packs: use Choose pack file so Windows can pass the path.";
+
+    public const string ClientPackHelp = SetupPackImport.ClientPackCopy;
+
+    public const string EulaHelp =
+        "The installer writes eula.txt only if this is checked. This product will not auto-accept the EULA for you.";
+
+    public const string AuthTokenHelp =
+        "Needed later to push the spend-brake Function image. Stored in Windows Credential Manager, not in the Setup resume file. Skip and finish Setup if you do not have one yet.";
+
+    public const string AdminCidrHelp =
+        "Oracle’s cloud firewall allowlist. Friends you add later also need their public IPv4 as /32.";
+
+    public const string ShapeDefaultHelp =
+        "More room for players and later mods. Uses Always Free hours faster while the server is on. Chosen once at deploy — not a later resize.";
+
+    public const string ShapeSmallerHelp =
+        "Smaller Always Free size. Vanilla can often stay on all month; less room if you add mods or more players later.";
 
     private static readonly TimeSpan LogFlushPeriod = TimeSpan.FromMilliseconds(250);
     private static readonly TimeSpan ElapsedTickPeriod = TimeSpan.FromSeconds(1);
@@ -360,7 +413,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     public string CreateResourcesConfirmText =>
         IsTofuDryRun
             ? "I understand this is a dry-run (no Oracle resources and config.local.json will not be written)."
-            : $"Create Always Free game VM ({Vm1ShapeChoice.Format(Vm1Ocpus, Vm1MemoryGb)}) + doorbell VM + reserved play IP in the selected tenancy.";
+            : $"Create the Always Free game server ({Vm1ShapeChoice.Format(Vm1Ocpus, Vm1MemoryGb)}), doorbell, and reserved play IP in this Oracle account.";
 
     public string AutoRetryBannerText =>
         "Auto-retrying every 5 minutes until A1 capacity is available. Failures stay silent. Use Pause auto-retry to stop.";
@@ -1115,6 +1168,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         if (string.IsNullOrWhiteSpace(line))
             return;
         var stamp = DateTime.Now.ToString("HH:mm:ss");
+        string? human = null;
         lock (_logLock)
         {
             foreach (var raw in line.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n'))
@@ -1122,8 +1176,23 @@ public sealed partial class SetupWizardViewModel : ObservableObject
                 if (string.IsNullOrWhiteSpace(raw))
                     continue;
                 _logBuffer.Append('[').Append(stamp).Append("] ").AppendLine(raw.TrimEnd());
+                human = ProgressDockUx.TryHumanizeLogLine(raw) ?? human;
             }
         }
+
+        if (human is null)
+            return;
+
+        void ApplyCaption()
+        {
+            DeployProgressCaption = human;
+            OnPropertyChanged(nameof(DockStatus));
+        }
+
+        if (_dispatcher.CheckAccess())
+            ApplyCaption();
+        else
+            _ = _dispatcher.InvokeAsync(ApplyCaption);
     }
 
     private void FlushLog()

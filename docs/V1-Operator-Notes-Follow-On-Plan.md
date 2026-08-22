@@ -1,6 +1,6 @@
 # V1 operator-notes follow-on (living)
 
-**Status:** Living. Created 2026-08-21 (docs only). **NEXT = P5** (P1–P4 **DONE**). Step **8.7** P1–P5 are **DONE**.  
+**Status:** Living. Created 2026-08-21 (docs only). **NEXT = P6** (P1–P5 **DONE**). Step **8.7** P1–P5 are **DONE**.  
 **Parent:** `[V1-Implementation-Plan.md](V1-Implementation-Plan.md)` Step **8.8**.  
 **Why now:** operator 2026-08-21 — after modpack-test fixes, implement Manager / Setup / pack-UX notes **before** QA Pass 3. Many notes are vague; agents **decide inside each section’s bounds** and record the choice. Stop and ask for spend, tofu destroy, CurseForge **API keys**, or pulling parked after-v1 items.
 
@@ -153,8 +153,8 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 | **P2**  | Stop tab-open toasts (backups, infra.json)                 | **DONE** | PARALLEL-OK vs P1                    | No              |
 | **P3**  | Compact toasts + auto-dismiss completed progress           | **DONE** | SEQUENTIAL                           | No              |
 | **P4**  | Bottom progress dock (Setup + Change pack)                 | **DONE** | SEQUENTIAL                           | No              |
-| **P5**  | Setup wizard UX (copy, layout, log height, humanize)       | **NEXT** | SEQUENTIAL                           | No              |
-| **P6**  | Auto compartment name; drop wizard step                    | TODO     | SEQUENTIAL                           | No              |
+| **P5**  | Setup wizard UX (copy, layout, log height, humanize)       | **DONE** | SEQUENTIAL                           | No              |
+| **P6**  | Auto compartment name; drop wizard step                    | **NEXT** | SEQUENTIAL                           | No              |
 | **P7**  | Setup identity page (name / description / icon)            | TODO     | SEQUENTIAL                           | No              |
 | **P8**  | Icon state variants from overlays                          | TODO     | SEQUENTIAL                           | Yes (door push) |
 | **P9**  | Jar-root confirm + derived manifest                        | TODO     | SEQUENTIAL                           | Optional        |
@@ -302,7 +302,7 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 
 ## P5 — Setup wizard UX
 
-**Status:** NEXT  
+**Status:** DONE  
 **UI skill:** required (impeccable + web-design-guidelines; frontend-design optional)  
 **Catalog IDs:** S6-01; Guide Setup chapter
 
@@ -331,7 +331,7 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 
 **Done when:** Copy/layout pass landed; log taller; humanized status map for the noisiest bootstrap lines; Guide if needed.
 
-**Changelog:** *(empty until implemented)*
+**Changelog:** 2026-08-21 — **P5 DONE.** Short Setup copy + `mcm-help` hovers (no “stack”); Review log ≥2.5× during Deploy (form/plan hidden); humanized dock status (`ProgressDockUx.TryHumanizeLogLine`, never raw `rm`). Guide + S6-01. **NEXT = P6.**
 
 ---
 
@@ -339,7 +339,7 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 
 ## P6 — Auto compartment name
 
-**Status:** TODO  
+**Status:** NEXT  
 **Catalog IDs:** S6-01 (step list)
 
 **Read first**
@@ -558,6 +558,7 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 
 | Date       | Note                                                                                                                                                                                                                                                    |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-21 | **P5 DONE.** Setup wizard copy/layout/help hovers; taller deploy log; humanized dock status. **NEXT = P6.**                                                                                                                                              |
 | 2026-08-21 | **P4 DONE.** Shared bottom progress dock (Setup Deploy + Change pack). **NEXT = P5.**                                                                                                                                                                    |
 | 2026-08-21 | **P3 DONE.** Compact lower-right toasts; Start/Stop progress dismiss on completion. **NEXT = P4.**                                                                                                                                                      |
 | 2026-08-21 | **P2 DONE.** Stop tab-open toasts (backup list, infra meta load). **NEXT = P3.**                                                                                                                                                                        |

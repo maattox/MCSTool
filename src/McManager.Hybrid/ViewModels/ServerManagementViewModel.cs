@@ -1013,7 +1013,9 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
             {
                 if (string.IsNullOrWhiteSpace(line))
                     return;
-                StatusMessage = line.Trim();
+                StatusMessage = ProgressDockUx.HumanizeOrFallback(
+                    line,
+                    ProgressDockUx.ChangePackInstallFallback);
             });
             var result = await _bootstrap.ReplacePackAsync(
                 _config.Vm1,

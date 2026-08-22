@@ -126,11 +126,11 @@ On first launch with no local manage config, choose **Deploy a new stack (Setup)
 
 (If you already deployed from another PC, use **Find an existing stack** instead — see [Connect an existing stack](#connect-an-existing-stack).)
 
-Walk the wizard. You can close and resume later from **Advanced → Deploy / repair** (progress is saved locally; secrets are not).
+Walk the wizard. Pages are short; hover the **info (i)** next to a label for the extra detail. You can close and resume later from **Advanced → Deploy / repair** (progress is saved locally; secrets are not).
 
 | Step | What to do |
 |------|------------|
-| Always Free | Open the Always Free docs link. Check all three boxes: stay on Always Free–eligible compute, understand the **$1 brake and possible ~$1–$2 residual**, understand capacity wait. |
+| Always Free | Open the Always Free docs link. Check all three boxes: stay on Always Free–eligible compute, understand the **$1 brake and possible ~$1–$2 residual**, understand capacity wait. Extra explanation is on the **info (i)** hover next to each box. |
 | OCI profile | Pick the profile from `%USERPROFILE%\.oci\config`. Confirm tenancy and **home region**. |
 | Compartment | Default: create compartment named **`mcmgr`**. Do not point a first deploy at a compartment that already has unrelated resources. |
 | Alert email | Where Oracle should email the $1 budget alert. |
@@ -140,7 +140,7 @@ Walk the wizard. You can close and resume later from **Advanced → Deploy / rep
 | Auth Token | Paste the token and **Store token**. Needed to install the $1 spend-brake Function (copy a pre-built image into your registry when the ARM tarball is present). Skip only if you accept that the Function may not install this run. You do **not** need Docker Desktop if that artifact exists. |
 | Summary | Confirm **your public IPv4** as `x.x.x.x/32`. Pick the server size (**4 OCPU / 24 GB** recommended, or **2 OCPU / 12 GB**). Read the plan. Check the create-resources box. Click **Deploy**. |
 
-**After Deploy starts:** percent, elapsed time, and status stay in the **bottom bar** with Back and Deploy locked — they stay reachable if you scroll the log. Do not start a second Deploy. Resume / Re-Deploy is a separate Advanced action.
+**After Deploy starts:** percent, elapsed time, and a short English status stay in the **bottom bar** with Back and Deploy locked — they stay reachable if you scroll. The status is never a raw SSH command (those stay in the **Deploy log**, which grows to fill the page while Deploy runs). The plan summary is collapsed under **Plan summary**. Do not start a second Deploy. Resume / Re-Deploy is a separate Advanced action.
 
 **If the log times out waiting for `/etc/mcmgr/cloud-init-done` with `Last: WAIT`:** cloud-init likely already finished; `ubuntu` cannot see that file (`0750`). Rebuild Manager and resume from **Advanced → Deploy / repair** (skips `tofu apply` if apply already succeeded). Do not wait longer, reboot, or chmod `/etc/mcmgr`.
 

@@ -185,7 +185,7 @@ public sealed class SetupDeployOrchestrator
 
         if (!SetupApplyStage.Reached(stage, SetupApplyStage.CloudInit))
         {
-            ReportProgress(progress, SetupApplyStage.CloudInit, "Waiting for VMs to finish setup…");
+            ReportProgress(progress, SetupApplyStage.CloudInit, "Waiting for the servers to finish starting…");
             var waitVm = await WaitRunningAsync(outputs, state, log, cancellationToken).ConfigureAwait(false);
             if (!waitVm.Succeeded)
                 return SetupDeployResult.Fail(stage, waitVm.Error ?? "Wait RUNNING failed.");
@@ -210,7 +210,7 @@ public sealed class SetupDeployOrchestrator
 
         if (!SetupApplyStage.Reached(stage, SetupApplyStage.Door))
         {
-            ReportProgress(progress, SetupApplyStage.Door, "Installing door software…");
+            ReportProgress(progress, SetupApplyStage.Door, "Installing doorbell software…");
             var door = await _bootstrap.DeployDoorAsync(outputs, state, log, cancellationToken).ConfigureAwait(false);
             if (!door.Succeeded)
                 return SetupDeployResult.Fail(stage, door.Error ?? "Door bootstrap failed.");
