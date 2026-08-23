@@ -1,10 +1,10 @@
 # V1 operator-notes follow-on (living)
 
-**Status:** Living. Created 2026-08-21 (docs only). **NEXT = P11** (P1–P10 **DONE**). Step **8.7** P1–P5 are **DONE**.  
-**Parent:** `[V1-Implementation-Plan.md](V1-Implementation-Plan.md)` Step **8.8**.  
+**Status:** **COMPLETE** (P1–P10 **DONE**; **P11 DEFERRED**). Created 2026-08-21. Closed 2026-08-23. **Live NEXT:** [`NEXT.md`](NEXT.md).  
+**Parent:** `[V1-Implementation-Plan.md](V1-Implementation-Plan.md)` Step **8.8** — **DONE**.  
 **Why now:** operator 2026-08-21 — after modpack-test fixes, implement Manager / Setup / pack-UX notes **before** QA Pass 3. Many notes are vague; agents **decide inside each section’s bounds** and record the choice. Stop and ask for spend, tofu destroy, CurseForge **API keys**, or pulling parked after-v1 items.
 
-This file’s creation session **must not implement code**. Later agents implement **only the single section marked NEXT**.
+This plan is **closed**. For current work, read [`NEXT.md`](NEXT.md). Historical sections remain for reference.
 
 **Cost:** $0. TESTING profile only. Never `DEFAULT` / live Forge lab. Never Minecraft `0.0.0.0/0`.  
 **Functions:** agents **may** `fn build` / `fn push` / invoke **product** Functions on TESTING without asking, still $0 — no real $1 budget fire; do not SoftStop the door.  
@@ -25,7 +25,7 @@ Pack-handling notes apply to **both** Setup and Manager **Change pack** unless a
 2. Implement only that section. Do not start neighbors “while you are here.”
 3. After finishing: mark **DONE**, set the next incomplete section to **NEXT**, changelog line, update V1 plan Step **8.8** + dashboard, **stop**.
 4. Mirror TESTING / guest fixes into local SoT. File `[Issues.md](Issues.md)` for on-box/Setup/door bugs.
-5. Never create git commits. Suggest a message.
+5. Git: commits allowed per `git-policy`; never push/PR unless the operator asks.
 6. Do **not** start Step **8.5.2** (Pass 3), **8.6.1**, or **9.1**. Do not start this file until **8.7** is DONE.
 7. If this plan disagrees with `[PRODUCT-IDEAS.md](PRODUCT-IDEAS.md)`, **follow this plan** and note drift (do not rewrite PRODUCT-IDEAS).
 8. VM1: START if needed, **disable idle** while working, **re-enable** when finished (OS-ISSUE-7).
@@ -46,17 +46,9 @@ Read **before** CSS/Razor (paths on the operator PC):
 
 Optional if the section is a visual pass: `C:\Users\matto\.agents\skills\frontend-design\SKILL.md`. Do not skip impeccable + web-design-guidelines when the section marks **UI skill**.
 
-### Operator prompt (copy-paste for the next agent)
+### Operator entry (closed plan)
 
-```text
-Read docs/V1-Operator-Notes-Follow-On-Plan.md in OCI-mc-server. Implement only the section marked NEXT (or the PARALLEL-OK section I named).
-You MAY use OCI CLI/API with profile TESTING (not DEFAULT) and SSH both test VMs with %USERPROFILE%\.ssh\mcmgr_ed25519_20260817_125552 (confirm path in the TESTING config). You MAY fn build/push/invoke product Functions on TESTING. Stay at $0. Do not tofu apply/destroy unless I authorize it in this chat. Do not commit. Do not start Step 8.5.2 (Pass 3), 8.6.1, or 9.1.
-Use MCMANAGER_CONFIG_DIR for mcmgr-blank-test, not repo data/config.local.json (Forge / DEFAULT).
-If you need VM1, START it, disable idle, re-enable when finished. Minecraft boot force-enables idle (OS-ISSUE-7) — disable again after a game start.
-UI sections (P3, P4, P5, P7, P8): read the impeccable and web-design-guidelines skills listed in that plan before CSS/Razor.
-When done: update this plan’s statuses and V1 Step 8.8, file Issues.md if on-box/Setup/door, stop, tell me what you did, how to test, what’s next, and ask if I want to continue.
-Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / Plan mode only if the NEXT step is marked PARALLEL-OK. Include this same Agent-vs-Plan instruction in the prompt you give me for the following step.
-```
+New work: read [`NEXT.md`](NEXT.md) and run `/next-step` in a fresh Agent chat. This file is historical.
 
 
 
@@ -116,7 +108,7 @@ These are **plan decisions**, not optional flavor. Implementing agents follow th
 | Door favicons      | Solid color gen_icons.py        | **User icon** + overlays (P8)                                               |
 | Compartment        | Wizard step                     | **Hidden**; auto `mcmgr` (+ numeric suffix)                                 |
 | Default MOTD name  | Operator / Manager              | Type-based defaults; **no Oracle™**                                         |
-| CF client export   | Refuse + Guide                  | Refuse **plus** project links / optional Modrinth search (still no API key) |
+| CF client export   | Refuse + Guide                  | Refuse today; **P11 helper deferred** (PRODUCT-IDEAS maybe later) |
 | Jar-root           | Detect + continue               | Detect + **user correct** + derived archive                                 |
 
 
@@ -159,10 +151,10 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 | **P8**  | Icon state variants from overlays                          | **DONE** | SEQUENTIAL                           | Yes (door push) |
 | **P9**  | Jar-root confirm + derived manifest                        | **DONE** | SEQUENTIAL                           | Optional        |
 | **P10** | Layer 3 crash quarantine                                   | **DONE** | SEQUENTIAL                           | Yes             |
-| **P11** | CurseForge refuse helper (links, optional Modrinth search) | **NEXT** | SEQUENTIAL                           | No              |
+| **P11** | CurseForge refuse helper (links, optional Modrinth search) | **DEFERRED** | SEQUENTIAL                           | No              |
 
 
-When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)`). Do **not** start Pass 3 until the operator says so.
+**Closed 2026-08-23:** P11 deferred to [`PRODUCT-IDEAS.md`](PRODUCT-IDEAS.md). V1 **NEXT** → Step **8.5.2** Pass 3 — see [`NEXT.md`](NEXT.md). Do **not** start Pass 3 until the operator says so.
 
 ---
 
@@ -514,7 +506,7 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 
 ## P11 — CurseForge refuse helper
 
-**Status:** NEXT  
+**Status:** DEFERRED (operator 2026-08-23 — parked in PRODUCT-IDEAS; not scheduled)  
 **Catalog IDs:** S6-02 (P7 jar-less still hard-block)
 
 **Read first**
@@ -534,20 +526,17 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 
 - Fixture CF client export: refuse + at least project links when IDs exist. Guide sentence.
 
-**Done when:** Helper ships; still no CF key; V1 **NEXT** → Step **8.5.2** Pass 3 (blocked until the operator starts it).
+**Done when:** *(not implemented — deferred)*
 
-**Changelog:** *(empty until implemented)*
+**Changelog:** 2026-08-23 — **DEFERRED** by operator. Idea moved to PRODUCT-IDEAS (maybe later). Plan **COMPLETE** without P11; V1 **NEXT** → Pass 3 via `NEXT.md`.
 
 ---
 
 
 
-## After this plan (do not do it here)
+## After this plan
 
-1. V1 dashboard: **8.8 DONE**, **NEXT = Step 8.5.2** Pass 3.
-2. Update `[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)` include-list for 8.7/8.8 behaviors if not already listed.
-3. `AGENTS.md` + product rule NEXT lines.
-4. Do **not** start Pass 3 until the operator says so.
+**Done 2026-08-23:** V1 **8.8 DONE**; P11 deferred; [`NEXT.md`](NEXT.md) points at Step **8.5.2** Pass 3 (`blocked` until operator starts). Agent workflow + skills added.
 
 ---
 
@@ -558,6 +547,7 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 
 | Date       | Note                                                                                                                                                                                                                                                    |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-23 | **Plan COMPLETE.** P11 **DEFERRED** (PRODUCT-IDEAS). P1–P10 DONE. V1 **8.8 DONE**; **NEXT** → Pass 3 via `NEXT.md` (blocked until operator). |
 | 2026-08-23 | **P10 DONE.** Layer 3 crash quarantine (exactly one loader-blamed mod → `mods.quarantined/`, retry once, Keep excluded / Put back). TESTING helper copy (SETUP-ISSUE-13). **NEXT = P11.**                                                                 |
 | 2026-08-22 | **P9 DONE.** Jar-root confirm + derived manifest (editable MC/loader/Java; `mcmgr-pack.json` + index; Manual install path). **NEXT = P10.**                                                                                                             |
 | 2026-08-21 | **P8 DONE.** Admin-PC icon variants (color 64×64 + door greyscale overlays); Object Storage + door pull. **NEXT = P9.**                                                                                                                                 |

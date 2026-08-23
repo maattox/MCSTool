@@ -1,7 +1,7 @@
 # V1 QA Pass 3 — scope (gap-close + follow-on)
 
 **Pass:** 3  
-**Status:** **BLOCKED** — do **not** run until Steps **8.7** and **8.8** are **DONE** ([`V1-Modpack-Test-Follow-On-Plan.md`](V1-Modpack-Test-Follow-On-Plan.md), [`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md)) **and** the operator says Pass 3 may start. (Step **8.4** P1–P13 is already DONE.) Living execution slice of [Step 8.5.2](V1-Implementation-Plan.md#step-852--execute-qa-passes). Docs created 2026-08-20; blocked-on updated 2026-08-21.  
+**Status:** **BLOCKED** — Steps **8.7** and **8.8** are **DONE**. Do **not** run until the operator says Pass 3 may start. (Step **8.4** P1–P13 is already DONE.) Living execution slice of [Step 8.5.2](V1-Implementation-Plan.md#step-852--execute-qa-passes). **Live queue:** [`NEXT.md`](NEXT.md).  
 **Catalog:** [`V1-QA-Catalog.md`](V1-QA-Catalog.md) — IDs and expected steps stay there. Do **not** regenerate the catalog. Implementing follow-on sections may **update expected** for product changes (S4-02 tabs, S3-01 overlay, S6-02 jar-root).  
 **Results:** fill [`V1-QA-Pass-3-Results.md`](V1-QA-Pass-3-Results.md) as you go.  
 **Prior:** [`V1-QA-Pass-2-Results.md`](V1-QA-Pass-2-Results.md) (greenfield Modded; closed early). [`V1-QA-Pass-1-Results.md`](V1-QA-Pass-1-Results.md) (Vanilla; historical).
@@ -32,7 +32,7 @@ This is a **delta + gap-close**, not a second encyclopedia. Pass 1 already Passe
 3. Fill [`V1-QA-Pass-3-Results.md`](V1-QA-Pass-3-Results.md). Out-of-scope rows stay `Skipped` — do **not** re-run Pass 1 chrome that already Passed unless a follow-on section changed those files.  
 4. **One agent chat owns the TESTING stack at a time.**  
 5. Mirror guest/cloud fixes into local SoT. File [`Issues.md`](Issues.md) for Setup/HCL/bootstrap/door bugs.  
-6. Never create git commits.  
+6. Git: commits allowed; never push/PR unless the operator asks.  
 7. Hybrid: agents **cannot** drive the WPF window. Operator clicks; agent stages/verifies OCI/SSH.  
 8. VM1: START if needed, **disable idle** while working, **re-enable** when the phase ends (re-disable after Minecraft start — OS-ISSUE-7).  
 9. SSH with the key in TESTING `config.local.json` (Pass 2 reused `mcmgr_ed25519_20260817_125552`).  

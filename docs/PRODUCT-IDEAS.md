@@ -1072,11 +1072,13 @@ Parked items—not blocking the staged plan, but should be revisited:
 | Modded Setup only “after v1” with no v1 path | Softened — **v1** gains Setup Vanilla/Modded + Optimized Vanilla + pack analyze; deeper day-2 mod UX still later |
 | In-app mod / modpack browser (browse, search, trending, download-a-pack, pick-by-name/URL/ID) | **Rejected — will not be implemented** (not deferred). Users create/download the pack themselves, then select the local file in Setup or Manager. |
 | CurseForge API client-export import (resolve `projectID`/`fileID` with a product API key) | **Deferred** (ToS / key custody). v1 imports CurseForge **Server Files** / filled zips only, or a Modrinth `.mrpack`. Not rejected. |
+| CurseForge **client-export refuse helper** (help panel when analyze refuses jar-less / mixed-ID export: Server Files vs `.mrpack` copy, outbound `curseforge.com/projects/{id}` links from IDs in the zip, optional Modrinth search ≤3 links — **no API key**, not a catalog) | **Maybe later** (operator 2026-08-23). Was Step 8.8 P11; **deferred**, not scheduled. Refuse + Guide copy remains today. |
 
 ---
 
 ## Changelog
 
+| 2026-08-23 | **Step 8.8 closed** without P11. CurseForge refuse **helper panel** (links only, no API) parked as **maybe later** in deferred table. Pass 3 next via `docs/NEXT.md` (blocked until operator). Agent workflow + skills added. |
 | 2026-08-21 | **Pass 3 postponed again:** informal Change pack tests + operator notes. Living **NEXT = Step 8.7 / P1**, then Step **8.8**. Layer 3 quarantine and Setup identity/icon variants pulled into v1 via 8.8 (this file’s parked Layer 3 / after-v1 identity headings may drift). Default MOTD names will **not** use Oracle™. Do not start Pass 3, 8.6.1 CI, or 9.1 until the V1 plan says so. |
 | 2026-08-20 | **Pass-2 follow-on (v1):** operator notes after Pass 2 closed early. Living **NEXT = Step 8.4 / P1**. Pack replace **full re-setup** pulled into v1 (this file’s [Modpack replace (after v1)](#modpack-replace-after-v1) heading may drift). Danger Zone tab merge and “game computer”→“server” are operator will. Do not start Pass 3, 8.6.1 CI, or 9.1 until the V1 plan says so. |
 | 2026-08-20 | **Modpack robustness detour (v1):** itzg exclude lists + mixed archives **before** Pass 2. Living **NEXT = Step 4.13 / R1**. Pass 2 paused. |

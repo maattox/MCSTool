@@ -17,13 +17,14 @@
 
 ## How agents must use this file
 
-1. **Do not read this whole file in one session.** Read [this protocol](#how-agents-must-use-this-file), the [Progress dashboard](#progress-dashboard), and **only the single NEXT step body**.
+1. **Read [`docs/NEXT.md`](NEXT.md) first** — single SoT for current work. Then read [this protocol](#how-agents-must-use-this-file), the [Progress dashboard](#progress-dashboard), and **only the single step body** named in NEXT.
 2. Implement **only** that NEXT step. Do not start “the rest of the phase.”
 3. After finishing:
   - Mark the step **DONE**, set the following step to **NEXT**, add date + short notes on the step changelog line **and** the [Plan changelog](#plan-changelog).
+  - Update **`docs/NEXT.md`**.
   - **Stop.** Do not start the next large step unless the operator says to continue.
-4. In the chat reply: what was done, how to test, what the next step will be, ask whether to continue / pause / adjust.
-5. **Never create git commits** (operator commits in Visual Studio). You may suggest a commit message.
+4. In the chat reply: what was done, how to test, what `docs/NEXT.md` says now, ask whether to continue / pause / adjust.
+5. **Git:** commits allowed when finishing work or when asked; never push/PR unless explicitly asked (see `.cursor/rules/git-policy.mdc`).
 6. Do **not** implement **after v1** / **later** PRODUCT-IDEAS items (Players tab, start checklist, maintenance IP, multi-deploy, Quilt Setup entry, Purpur, PTY console, macOS/Linux Manager, **paid / spend mode**) unless the operator asks. **Pack replace** was after-v1 in PRODUCT-IDEAS; operator 2026-08-20 pulled **full re-setup** into v1 via [Step 8.4](#step-84--pass-2-follow-on-operator-notes) (light swap still parked). Blueprint **§24.3 Layer 3** quarantine is **v1** in [Step 8.8](#step-88--operator-notes-follow-on) (was parked in 4.13). An **in-app mod/modpack browser** is **rejected** (not after-v1) — users import a local pack file only; do not build it. **Public Minecraft / public-private toggle / blacklist** is **rejected** (not after-v1) — private allowlist only; do not rebuild it. If **this plan** disagrees with PRODUCT-IDEAS, follow this plan and note the drift (do not silently rewrite this file to match PRODUCT-IDEAS).
 7. On-box source (`door_vm/`, `vm_agent/`, `functions/shutdown_vm/`) lives **in this repo**. Phase B (Blazor Hybrid) is **DONE**; do not re-open Avalonia.
 8. **Fix the product path, not only the test VM.** If you change a test VM or a **TESTING** cloud resource, make the **same** change in the local deployment SoT in the same session (`onbox/mcmgr/`, `infra/`, `door_vm/`, `vm_agent/`, `functions/shutdown_vm/`, Manager/Setup code here). The next greenfield Setup must pick it up. Patching only the live test instance is not done.
@@ -126,33 +127,20 @@ Agents **may** without asking, on profile `TESTING` **only**:
 
 This blanket is **TESTING / until Step 8.6.1 ships**. The **product** path is a CI-built ARM image copied into the user’s OCIR (no Docker on the admin PC). Do not treat `fn`/`docker buildx` on the operator’s Windows PC as the installer story.
 
-**Not allowed**
+**Not allowed without operator approval in that chat**
 
-- `tofu apply` / `tofu plan` / `tofu destroy` / deleting the compartment unless the operator **explicitly** authorizes that command in the session.
-- Arbitrary `docker push` of non-product images, **or** `fn push` / invoke against `DEFAULT` / the live Forge lab. Product Function build/push/invoke on **TESTING** is allowed — see [Product Functions on TESTING](#product-functions-on-testing-blanket).
-- Using `DEFAULT`, touching the live **Forge lab** tenancy, or SSH with any key other than the one named above.
+- `tofu apply` / `tofu destroy` / deleting the compartment — **ask first**; state cost/risk; stay **$0** unless spend is accepted.
+- Using `DEFAULT`, touching the live **Forge lab** tenancy, or SSH with any key other than TESTING’s (unless this chat explicitly allows `DEFAULT`).
+- `git push`, PRs, force-push, or history rewrite (commits are OK — see `git-policy.mdc`).
 - Opening `0.0.0.0/0` on Minecraft, SSH, or door admin.
 - Committing secrets, filled `oci.env`, or live OCIDs.
 - Wizard Deploy that would `tofu apply` (keep `MCMANAGER_TOFU_DRY_RUN=1` unless the operator authorizes a real apply).
 
 `dotnet build`, `tofu validate` in `infra/`, and dry-run Setup remain always OK.
 
-### Operator prompt (copy-paste for a new agent)
+### Operator entry
 
-```text
-Read docs/V1-Implementation-Plan.md in OCI-mc-server. Implement only the step marked NEXT.
-When NEXT is Step 8.7, also read docs/V1-Modpack-Test-Follow-On-Plan.md and implement only the P-section marked NEXT there (not this whole V1 file).
-When NEXT is Step 8.8, also read docs/V1-Operator-Notes-Follow-On-Plan.md and implement only the P-section marked NEXT there (not this whole V1 file).
-When NEXT is Step 8.4, also read docs/V1-Pass-2-Follow-On-Plan.md (historical — P1–P13 DONE).
-MVP Phases 0–7 are DONE. Paid/spend mode is skipped (far future, not v1). Pre-packaging QA is Phase 8.5 (Pass 3 after 8.7 + 8.8). Phase 8.6 is CI-built ARM Function image (no Docker on the admin PC) — required before any official release. Packaging is V1 Phase 9 — do not start 9.1 until Phase 8.5 exits AND Step 8.6.1 is DONE. Phase B (Blazor Hybrid UI) is DONE — do not re-open Avalonia.
-You MAY use OCI CLI/API with profile TESTING (not DEFAULT) and SSH both test VMs with %USERPROFILE%\.ssh\mcmgr_ed25519_20260817_125552. Stay at $0. If you change a test VM or TESTING cloud resource, make the same change in the local deployment SoT (onbox/, infra/, door_vm/, vm_agent/, functions/shutdown_vm/).
-You MAY fn build, fn push, and invoke product Functions (shutdown_vm, reconcile_usage) on TESTING without asking. Do not fire a real $1 budget alert. Do not SoftStop the door. Never DEFAULT / live Forge lab.
-If you need VM1 and it is STOPPED, START it, then disable the idle agent so it does not SoftStop while you work. If VM1 is already RUNNING, confirm idle is off before other work. When you finish, turn the idle agent back on. Minecraft boot force-enables idle (OS-ISSUE-7) — disable again after a game start.
-When done: update the V1 plan statuses, stop, tell me what you did, how to test, what’s next, and ask if I want to continue or adjust.
-Do not commit. Do not start the following large step unless I say so.
-Do not tofu apply / tofu destroy unless I explicitly authorize it.
-Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / Plan mode only if the NEXT step is marked PARALLEL-OK. Include this same Agent-vs-Plan instruction in the prompt you give the operator for the following step.
-```
+Read [`docs/NEXT.md`](NEXT.md) and run `/next-step` in a fresh Agent chat. Workflow: [`docs/Agent-Workflow.md`](Agent-Workflow.md).
 
 ---
 
@@ -190,13 +178,13 @@ Prompt sequential steps in Agent mode (not Plan mode). Use Build in Parallel / P
 | **8**   | Paid / spend mode                                          | **SKIPPED** (operator 2026-08-18; far future, not v1) |
 | **8.4** | Pass-2 follow-on (operator notes)                          | **DONE** (P1–P13)                                     |
 | **8.7** | Modpack-test follow-on (Change pack failures)              | **DONE** — [`V1-Modpack-Test-Follow-On-Plan.md`](V1-Modpack-Test-Follow-On-Plan.md) P1–P5 |
-| **8.8** | Operator-notes follow-on (Manager / Setup / pack UX)       | **NEXT** = [`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md) **P11** |
-| **8.5** | Pre-packaging QA (catalog + passes + bug-fix plans)        | **PAUSED** Pass 3 until **8.7 + 8.8** exit — then [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md); do not start until the operator says so |
+| **8.8** | Operator-notes follow-on (Manager / Setup / pack UX)       | **DONE** — P1–P10; P11 **DEFERRED** ([`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md)) |
+| **8.5** | Pre-packaging QA (catalog + passes + bug-fix plans)        | **NEXT** = Pass 3 [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) — **blocked** until the operator says so |
 | **8.6** | CI-built ARM spend-brake Function image (no Docker on admin PC) | TODO — after 8.5 exit; **required before 9.1 / official release** |
 | **9**   | Packaging, updates, launch (old MVP Phase 8–9)             | TODO — do not start until Phase 8.5 **and** Step **8.6.1** are DONE |
 
 
-**Current NEXT step:** [Step 8.8](#step-88--operator-notes-follow-on) ([`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md) **P11**). Step **8.7** / modpack-test follow-on **P1–P5** is **DONE**. **Do not start Pass 3** until 8.8 exits **and** the operator says so. **Do not start Step 8.6.1** until Phase 8.5 exits. **Do not start Step 9.1** until Phase 8.5 **and** Step **8.6.1** are DONE.
+**Current NEXT step:** See [`docs/NEXT.md`](NEXT.md) — Step **8.5.2** Pass 3 (**blocked** until the operator says so). Step **8.8** is **DONE** (P11 deferred). **Do not start Step 8.6.1** until Phase 8.5 exits. **Do not start Step 9.1** until Phase 8.5 **and** Step **8.6.1** are DONE.
 
 ---
 
@@ -1286,7 +1274,7 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 
 ### Step 8.8 — Operator-notes follow-on
 
-**Status:** NEXT (living: [`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md) **P11**)  
+**Status:** DONE (P1–P10; P11 **DEFERRED** to PRODUCT-IDEAS)  
 **Depends on:** Step **8.7** DONE
 
 **Read first**
@@ -1305,9 +1293,9 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 
 - Per the current P-section in the operator-notes plan.
 
-**Done when:** P1–P11 **DONE** in that plan. Then point this plan’s **NEXT** at Step **8.5.2** Pass 3 ([`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md)). Do not start Pass 3 until the operator says so.
+**Done when:** P1–P10 **DONE** in the operator-notes plan (P11 deferred). V1 **NEXT** → Step **8.5.2** Pass 3 — see [`docs/NEXT.md`](NEXT.md).
 
-**Changelog:** 2026-08-23 — **P10 DONE** (Layer 3 crash quarantine: exactly one loader-blamed mod, `mods.quarantined/`, retry once, Keep excluded / Put back; TESTING helper copy SETUP-ISSUE-13). Living **NEXT = P11**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-22 — **P9 DONE** (jar-root confirm + derived manifest: editable MC/loader/Java, `mcmgr-pack.json` + index, Manual install path). Living **NEXT = P10**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **P8 DONE** (admin-PC icon variants: color 64×64 + door greyscale overlays; Object Storage + door pull). Living **NEXT = P9**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **P7 DONE** (Setup Name and icon page; type-based defaults, no Oracle™; seeds `messages/chat.json`). Living **NEXT = P8**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **P6 DONE** (auto compartment `mcmgr` / `mcmgr-2`…; Compartment wizard page removed). Living **NEXT = P7**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **P5 DONE** (Setup wizard copy/layout, taller deploy log, humanized dock status). Living **NEXT = P6**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **P4 DONE** (shared bottom progress dock for Setup Deploy + Change pack). Living **NEXT = P5**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **P3 DONE** (compact lower-right toasts; Start/Stop progress dismiss). Living **NEXT = P4**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **P2 DONE** (stop tab-open toasts: backup list, infra meta load). Living **NEXT = P3**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **P1 DONE** (Console Simple filter: RCON/journal/mixin/modloader noise). Living **NEXT = P2**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **Inserted** (docs only). Blocked on 8.7. Then **NEXT = P1**. Do not start Pass 3, 8.6.1, or 9.1.
+**Changelog:** 2026-08-23 — **8.8 DONE** (P11 **DEFERRED**; plan complete). Living **NEXT** → Pass 3 via `NEXT.md` (blocked until operator). 2026-08-23 — **P10 DONE** (Layer 3 crash quarantine: exactly one loader-blamed mod, `mods.quarantined/`, retry once, Keep excluded / Put back; TESTING helper copy SETUP-ISSUE-13). Living **NEXT = P11**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-22 — **P9 DONE** (jar-root confirm + derived manifest: editable MC/loader/Java, `mcmgr-pack.json` + index, Manual install path). Living **NEXT = P10**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **P8 DONE** (admin-PC icon variants: color 64×64 + door greyscale overlays; Object Storage + door pull). Living **NEXT = P9**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **P7 DONE** (Setup Name and icon page; type-based defaults, no Oracle™; seeds `messages/chat.json`). Living **NEXT = P8**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **P6 DONE** (auto compartment `mcmgr` / `mcmgr-2`…; Compartment wizard page removed). Living **NEXT = P7**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **P5 DONE** (Setup wizard copy/layout, taller deploy log, humanized dock status). Living **NEXT = P6**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **P4 DONE** (shared bottom progress dock for Setup Deploy + Change pack). Living **NEXT = P5**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **P3 DONE** (compact lower-right toasts; Start/Stop progress dismiss). Living **NEXT = P4**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **P2 DONE** (stop tab-open toasts: backup list, infra meta load). Living **NEXT = P3**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **P1 DONE** (Console Simple filter: RCON/journal/mixin/modloader noise). Living **NEXT = P2**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **Inserted** (docs only). Blocked on 8.7. Then **NEXT = P1**. Do not start Pass 3, 8.6.1, or 9.1.
 
 ---
 
@@ -1328,7 +1316,7 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 | `[V1-QA-Pass-2-Results.md](V1-QA-Pass-2-Results.md)`         | Pass 2 fill-out (Modded greenfield; no Pass 2 bug-fix plan)                |
 | `[V1-Pass-2-Follow-On-Plan.md](V1-Pass-2-Follow-On-Plan.md)` | **DONE (P1–P13).** Operator notes after Pass 2                            |
 | `[V1-Modpack-Test-Follow-On-Plan.md](V1-Modpack-Test-Follow-On-Plan.md)` | Step **8.7**. Informal Change pack failures. **DONE** (P1–P5) |
-| `[V1-Operator-Notes-Follow-On-Plan.md](V1-Operator-Notes-Follow-On-Plan.md)` | Step **8.8**. Manager / Setup / pack UX notes. **NEXT = P11** |
+| `[V1-Operator-Notes-Follow-On-Plan.md](V1-Operator-Notes-Follow-On-Plan.md)` | Step **8.8**. **DONE** (P1–P10; P11 deferred) |
 | `[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)`             | Pass 3 gap-close + follow-on tests. **Do not start** until **8.7 + 8.8** exit and the operator says so |
 | `[V1-QA-Pass-3-Results.md](V1-QA-Pass-3-Results.md)`         | Pass 3 fill-out (do not start until operator says so)                      |
 | `[V1-Bug-Fix-Plan-Pass-1.md](V1-Bug-Fix-Plan-Pass-1.md)`     | Pass 1 fixes; **P1–P8 DONE**. Do not re-open unless a regression.          |
@@ -1646,6 +1634,7 @@ Former MVP Phase **8–9**. Phases **1–7** are **DONE**. Phase **8** is **SKIP
 
 | Date       | Note                                                                                                                                                                                                                                                                                                                              |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-23 | **Step 8.8 DONE** (P1–P10; P11 **DEFERRED**). Agent workflow: `docs/NEXT.md`, `/phase-planning`, `/next-step`. Living **NEXT** → Pass 3 via `NEXT.md` (**blocked** until operator). Do not start 8.6.1 or 9.1. |
 | 2026-08-23 | **Step 8.8 P10 DONE.** Layer 3 crash quarantine (exactly one loader-blamed mod → `mods.quarantined/`, retry once, Keep excluded / Put back). TESTING helper copy (SETUP-ISSUE-13). Living **NEXT = Step 8.8 P11**. Do not start Pass 3, 8.6.1 CI, or 9.1. |
 | 2026-08-22 | **Step 8.8 P9 DONE.** Jar-root confirm + derived manifest (editable MC/loader/Java; derived zip for install/Download pack). Living **NEXT = Step 8.8 P10**. Do not start Pass 3, 8.6.1 CI, or 9.1. |
 | 2026-08-21 | **Step 8.8 P8 DONE.** Admin-PC icon variants (64×64 color + door greyscale overlays); Object Storage + door pull. Living **NEXT = Step 8.8 P9**. Do not start Pass 3, 8.6.1 CI, or 9.1. |
