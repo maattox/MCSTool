@@ -42,7 +42,7 @@ public static class MrpackAnalyzer
     ];
 
     private static readonly Lazy<ExcludeIncludeMatcher> DefaultMatcher =
-        new(ExcludeIncludeMatcher.ForModrinth);
+        new(() => ExcludeIncludeMatcher.ForModrinth());
 
     public static ServiceResult<MrpackAnalysis> AnalyzeFile(
         string path,

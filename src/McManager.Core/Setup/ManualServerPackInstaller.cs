@@ -58,9 +58,13 @@ public static class ManualServerPackInstaller
     public static ServiceResult<ManualServerPackInstallResult> Install(
         string zipPath,
         string destDirectory,
-        string? retainDataDirectory)
+        string? retainDataDirectory,
+        ExcludeIncludeMatcher? matcher = null)
     {
-        var analysisResult = ManualServerPackAnalyzer.AnalyzeFile(zipPath);
+        matcher ??= ExcludeIncludeMatcher.ForCurseForge(
+            retainDataDirectory,
+            Layer2LocalOverlay.TryHashFile(zipPath));
+        var analysisResult = ManualServerPackAnalyzer.AnalyzeFile(zipPath, matcher);
         if (!analysisResult.Succeeded)
             return ServiceResult<ManualServerPackInstallResult>.Fail(analysisResult.Error!);
 

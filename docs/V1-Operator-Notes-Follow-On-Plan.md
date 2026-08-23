@@ -1,6 +1,6 @@
 # V1 operator-notes follow-on (living)
 
-**Status:** Living. Created 2026-08-21 (docs only). **NEXT = P10** (P1–P9 **DONE**). Step **8.7** P1–P5 are **DONE**.  
+**Status:** Living. Created 2026-08-21 (docs only). **NEXT = P11** (P1–P10 **DONE**). Step **8.7** P1–P5 are **DONE**.  
 **Parent:** `[V1-Implementation-Plan.md](V1-Implementation-Plan.md)` Step **8.8**.  
 **Why now:** operator 2026-08-21 — after modpack-test fixes, implement Manager / Setup / pack-UX notes **before** QA Pass 3. Many notes are vague; agents **decide inside each section’s bounds** and record the choice. Stop and ask for spend, tofu destroy, CurseForge **API keys**, or pulling parked after-v1 items.
 
@@ -158,8 +158,8 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 | **P7**  | Setup identity page (name / description / icon)            | **DONE** | SEQUENTIAL                           | No              |
 | **P8**  | Icon state variants from overlays                          | **DONE** | SEQUENTIAL                           | Yes (door push) |
 | **P9**  | Jar-root confirm + derived manifest                        | **DONE** | SEQUENTIAL                           | Optional        |
-| **P10** | Layer 3 crash quarantine                                   | **NEXT** | SEQUENTIAL                           | Yes             |
-| **P11** | CurseForge refuse helper (links, optional Modrinth search) | TODO     | SEQUENTIAL                           | No              |
+| **P10** | Layer 3 crash quarantine                                   | **DONE** | SEQUENTIAL                           | Yes             |
+| **P11** | CurseForge refuse helper (links, optional Modrinth search) | **NEXT** | SEQUENTIAL                           | No              |
 
 
 When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)`). Do **not** start Pass 3 until the operator says so.
@@ -480,7 +480,7 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 
 ## P10 — Layer 3 crash quarantine
 
-**Status:** TODO  
+**Status:** DONE  
 **Catalog IDs:** new (Pass 3); depends on Step **8.7** P1
 
 **Read first**
@@ -506,7 +506,7 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 
 **Done when:** On-box + Manager ack/restore; manifest field; Guide; Issues.md if TESTING bootstrap needed a repair script.
 
-**Changelog:** *(empty until implemented)*
+**Changelog:** 2026-08-23 — **P10 DONE.** Layer 3: exactly one loader-blamed mod → `mods.quarantined/` (never delete), retry once, `modpack.quarantined_files`; Keep excluded (local Layer 2 keyed by archive SHA-256) / Put back. Ambiguous reports stay 8.7 P1 crash copy. Core tests + on-box `quarantine_mod.py`. Guide + S4-11. TESTING VM1 one-shot copy of the helper (SETUP-ISSUE-13). **NEXT = P11.**
 
 ---
 
@@ -514,7 +514,7 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 
 ## P11 — CurseForge refuse helper
 
-**Status:** TODO  
+**Status:** NEXT  
 **Catalog IDs:** S6-02 (P7 jar-less still hard-block)
 
 **Read first**
@@ -558,12 +558,13 @@ When **P11** is DONE: point V1 **NEXT** at Step **8.5.2** Pass 3 (`[V1-QA-Pass-3
 
 | Date       | Note                                                                                                                                                                                                                                                    |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-08-22 | **P9 DONE.** Jar-root confirm + derived manifest (editable MC/loader/Java; `mcmgr-pack.json` + index; Manual install path). **NEXT = P10.**                                                                                                              |
-| 2026-08-21 | **P8 DONE.** Admin-PC icon variants (color 64×64 + door greyscale overlays); Object Storage + door pull. **NEXT = P9.**                                                                                                                                              |
-| 2026-08-21 | **P7 DONE.** Setup Name and icon page (type-based defaults, no Oracle™); seeds `messages/chat.json`. **NEXT = P8.**                                                                                                                                              |
+| 2026-08-23 | **P10 DONE.** Layer 3 crash quarantine (exactly one loader-blamed mod → `mods.quarantined/`, retry once, Keep excluded / Put back). TESTING helper copy (SETUP-ISSUE-13). **NEXT = P11.**                                                                 |
+| 2026-08-22 | **P9 DONE.** Jar-root confirm + derived manifest (editable MC/loader/Java; `mcmgr-pack.json` + index; Manual install path). **NEXT = P10.**                                                                                                             |
+| 2026-08-21 | **P8 DONE.** Admin-PC icon variants (color 64×64 + door greyscale overlays); Object Storage + door pull. **NEXT = P9.**                                                                                                                                 |
+| 2026-08-21 | **P7 DONE.** Setup Name and icon page (type-based defaults, no Oracle™); seeds `messages/chat.json`. **NEXT = P8.**                                                                                                                                     |
 | 2026-08-21 | **P6 DONE.** Auto compartment name (`mcmgr` / `mcmgr-2`…); Compartment wizard page removed. **NEXT = P7.**                                                                                                                                              |
-| 2026-08-21 | **P5 DONE.** Setup wizard copy/layout/help hovers; taller deploy log; humanized dock status. **NEXT = P6.**                                                                                                                                              |
-| 2026-08-21 | **P4 DONE.** Shared bottom progress dock (Setup Deploy + Change pack). **NEXT = P5.**                                                                                                                                                                    |
+| 2026-08-21 | **P5 DONE.** Setup wizard copy/layout/help hovers; taller deploy log; humanized dock status. **NEXT = P6.**                                                                                                                                             |
+| 2026-08-21 | **P4 DONE.** Shared bottom progress dock (Setup Deploy + Change pack). **NEXT = P5.**                                                                                                                                                                   |
 | 2026-08-21 | **P3 DONE.** Compact lower-right toasts; Start/Stop progress dismiss on completion. **NEXT = P4.**                                                                                                                                                      |
 | 2026-08-21 | **P2 DONE.** Stop tab-open toasts (backup list, infra meta load). **NEXT = P3.**                                                                                                                                                                        |
 | 2026-08-21 | **P1 DONE.** Console Simple filter stricter (RCON, journal, mixin/modloader boot noise). **NEXT = P2.**                                                                                                                                                 |

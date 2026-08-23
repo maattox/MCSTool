@@ -194,6 +194,31 @@
             {
                 <p style="margin:0 0 8px;font-size:13px;color:var(--text-muted);">@Vm.ModdingHint</p>
             }
+            @if (Vm.HasQuarantinedMods)
+            {
+                <div class="mcm-pack-list-warning" role="status">
+                    <p class="mcm-wizard-kicker">Set aside after a crash</p>
+                    @foreach (var entry in Vm.QuarantinedMods)
+                    {
+                        <p>@Vm.FormatQuarantineCopy(entry)</p>
+                        <div class="mcm-quarantine-actions">
+                            <button type="button"
+                                    class="mcm-primary"
+                                    disabled="@(!Vm.CanActOnQuarantine)"
+                                    title="Skip this mod on future installs of this same pack file."
+                                    @onclick="() => Vm.KeepExcludedAsync(entry)">
+                                Keep excluded
+                            </button>
+                            <button type="button"
+                                    disabled="@(!Vm.CanActOnQuarantine)"
+                                    title="Move the jar back into mods/ and restart Minecraft."
+                                    @onclick="() => Vm.PutBackAsync(entry)">
+                                Put back
+                            </button>
+                        </div>
+                    }
+                </div>
+            }
             @if (Vm.ModFiles.Count > 0)
             {
                 <div class="mcm-mod-list">

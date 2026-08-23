@@ -93,6 +93,9 @@ public static class PackReplaceUx
         var warn = string.IsNullOrWhiteSpace(result.SaveCompatibilityWarning)
             ? ""
             : " " + result.SaveCompatibilityWarning.Trim();
-        return $"Installed {identity}, Minecraft {result.MinecraftVersion}.{wipe}{warn} {IdleForceEnableNote}";
+        var q = string.IsNullOrWhiteSpace(result.QuarantineNotice)
+            ? ""
+            : " " + result.QuarantineNotice.Trim();
+        return $"Installed {identity}, Minecraft {result.MinecraftVersion}.{wipe}{warn}{q} {IdleForceEnableNote}";
     }
 }

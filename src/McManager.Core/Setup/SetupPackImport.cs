@@ -111,30 +111,38 @@ public static class SetupPackImport
 
     public static ServiceResult<SetupPackPreview> AnalyzeFile(
         string path,
-        ExcludeIncludeListRefresh? refresh = null)
+        ExcludeIncludeListRefresh? refresh = null,
+        string? dataDirectory = null)
     {
         if (string.IsNullOrWhiteSpace(path))
             return ServiceResult<SetupPackPreview>.Fail("No pack file was provided.");
         if (!File.Exists(path))
             return ServiceResult<SetupPackPreview>.Fail($"File not found: {path}");
 
+        var dataDir = dataDirectory ?? LocalConfigStore.TryFindDataDirectory();
+        var hash = Layer2LocalOverlay.TryHashFile(path);
+        var mrMatcher = refresh?.ModrinthMatcher(dataDir, hash)
+            ?? ExcludeIncludeMatcher.ForModrinth(dataDir, hash);
+        var cfMatcher = refresh?.CurseForgeMatcher(dataDir, hash)
+            ?? ExcludeIncludeMatcher.ForCurseForge(dataDir, hash);
+
         var ext = Path.GetExtension(path);
         if (ext.Equals(".mrpack", StringComparison.OrdinalIgnoreCase))
         {
-            var mr = MrpackAnalyzer.AnalyzeFile(path, refresh?.ModrinthMatcher());
+            var mr = MrpackAnalyzer.AnalyzeFile(path, mrMatcher);
             if (!mr.Succeeded)
                 return ServiceResult<SetupPackPreview>.Fail(mr.Error!);
             return ServiceResult<SetupPackPreview>.Ok(FromMrpack(mr.Value!, path));
         }
 
-        var manual = ManualServerPackAnalyzer.AnalyzeFile(path, refresh?.CurseForgeMatcher());
+        var manual = ManualServerPackAnalyzer.AnalyzeFile(path, cfMatcher);
         if (!manual.Succeeded)
             return ServiceResult<SetupPackPreview>.Fail(manual.Error!);
 
         var analysis = manual.Value!;
         if (analysis.Kind == ManualServerPackKind.Mrpack)
         {
-            var mr = MrpackAnalyzer.AnalyzeFile(path, refresh?.ModrinthMatcher());
+            var mr = MrpackAnalyzer.AnalyzeFile(path, mrMatcher);
             if (!mr.Succeeded)
                 return ServiceResult<SetupPackPreview>.Fail(mr.Error!);
             return ServiceResult<SetupPackPreview>.Ok(FromMrpack(mr.Value!, path));

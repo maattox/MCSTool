@@ -1,4 +1,5 @@
 using System.Text.Json;
+using McManager.Core.Setup;
 
 namespace McManager.Core.Services;
 
@@ -58,6 +59,7 @@ public static class ServerModsInspect
         string? loader = null;
         string? loaderVersion = null;
         string? minecraftVersion = null;
+        IReadOnlyList<QuarantinedFileEntry> quarantined = [];
         if (!string.IsNullOrWhiteSpace(manifestBlob)
             && !manifestBlob.Equals(ManifestMissing, StringComparison.Ordinal))
         {
@@ -67,6 +69,7 @@ public static class ServerModsInspect
                 out loader,
                 out loaderVersion,
                 out minecraftVersion);
+            quarantined = CrashQuarantine.ParseManifestEntries(manifestBlob);
         }
 
         var missingDir = modsBlob.Contains(ModsMissing, StringComparison.Ordinal);
@@ -95,7 +98,8 @@ public static class ServerModsInspect
             minecraftVersion,
             missingDir,
             names,
-            truncated: names.Count >= MaxListedFiles);
+            truncated: names.Count >= MaxListedFiles,
+            quarantined);
         return true;
     }
 
@@ -152,7 +156,7 @@ public static class ServerModsInspect
 public sealed class ServerModsInspectResult
 {
     public static ServerModsInspectResult Empty { get; } =
-        new(null, null, null, null, modsDirectoryMissing: true, [], truncated: false);
+        new(null, null, null, null, modsDirectoryMissing: true, [], truncated: false, []);
 
     public ServerModsInspectResult(
         string? distribution,
@@ -161,7 +165,8 @@ public sealed class ServerModsInspectResult
         string? minecraftVersion,
         bool modsDirectoryMissing,
         IReadOnlyList<string> fileNames,
-        bool truncated)
+        bool truncated,
+        IReadOnlyList<QuarantinedFileEntry>? quarantinedFiles = null)
     {
         Distribution = distribution;
         Loader = loader;
@@ -170,6 +175,7 @@ public sealed class ServerModsInspectResult
         ModsDirectoryMissing = modsDirectoryMissing;
         FileNames = fileNames;
         Truncated = truncated;
+        QuarantinedFiles = quarantinedFiles ?? [];
     }
 
     public string? Distribution { get; }
@@ -179,6 +185,7 @@ public sealed class ServerModsInspectResult
     public bool ModsDirectoryMissing { get; }
     public IReadOnlyList<string> FileNames { get; }
     public bool Truncated { get; }
+    public IReadOnlyList<QuarantinedFileEntry> QuarantinedFiles { get; }
 
     public string SummaryLine()
     {

@@ -15,6 +15,61 @@ public sealed class ExcludeIncludeLists
 
     public static ExcludeIncludeLists Empty { get; } = new();
 
+    /// <summary>
+    /// Overlay terms are concatenated in front of <paramref name="baseLists"/> so they
+    /// match first. Pack keys are unioned; same-key lists concatenate the same way.
+    /// </summary>
+    public static ExcludeIncludeLists Merge(ExcludeIncludeLists baseLists, ExcludeIncludeLists overlay)
+    {
+        ArgumentNullException.ThrowIfNull(baseLists);
+        ArgumentNullException.ThrowIfNull(overlay);
+        if (ReferenceEquals(overlay, Empty)
+            && overlay.GlobalExcludes.Count == 0
+            && overlay.GlobalForceIncludes.Count == 0
+            && overlay.Modpacks.Count == 0)
+        {
+            return baseLists;
+        }
+
+        var packs = new Dictionary<string, PackExcludeIncludes>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (key, pack) in baseLists.Modpacks)
+            packs[key] = pack;
+        foreach (var (key, pack) in overlay.Modpacks)
+        {
+            if (packs.TryGetValue(key, out var existing))
+            {
+                packs[key] = new PackExcludeIncludes
+                {
+                    Excludes = Concat(pack.Excludes, existing.Excludes),
+                    ForceIncludes = Concat(pack.ForceIncludes, existing.ForceIncludes),
+                };
+            }
+            else
+            {
+                packs[key] = pack;
+            }
+        }
+
+        return new ExcludeIncludeLists
+        {
+            GlobalExcludes = Concat(overlay.GlobalExcludes, baseLists.GlobalExcludes),
+            GlobalForceIncludes = Concat(overlay.GlobalForceIncludes, baseLists.GlobalForceIncludes),
+            Modpacks = packs,
+        };
+    }
+
+    private static IReadOnlyList<string> Concat(IReadOnlyList<string> first, IReadOnlyList<string> second)
+    {
+        if (first.Count == 0)
+            return second;
+        if (second.Count == 0)
+            return first;
+        var list = new List<string>(first.Count + second.Count);
+        list.AddRange(first);
+        list.AddRange(second);
+        return list;
+    }
+
     public static ExcludeIncludeLists Parse(string json)
     {
         var dto = JsonSerializer.Deserialize<ExcludeIncludeFileDto>(json, JsonOptions)

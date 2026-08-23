@@ -761,7 +761,7 @@ For each: click the path, then Result Pass or Fail with what you saw.
 
 **Steps:** Vanilla/Paper: empty “not modded” note; **Change pack** is still offered. Modded: inspect `mods/` when VM1 up; **Download pack** is the **original** `data/imported-packs/` archive, not a zip of live `mods/`. Missing local archive disables download with reconstruct warning. **Change pack**: VM1 must be RUNNING; pick/drop `.mrpack` or server-pack zip; Setup analyze + two client-pack checkboxes; world kept unless wipe is checked; confirm reinstalls Minecraft. Not a catalog / per-mod IDE.
 
-**Expected:** Matches Guide. Change pack Start-first when VM1 is down. Wipe optional; friends still need the new client pack. **Install** / **Cancel** and job progress (elapsed; indeterminate bar) live in the window-locked bottom dock, not only in the scrolling panel. Compact toasts stay for success/error, not the running Change pack job.
+**Expected:** Matches Guide. Change pack Start-first when VM1 is down. Wipe optional; friends still need the new client pack. **Install** / **Cancel** and job progress (elapsed; indeterminate bar) live in the window-locked bottom dock, not only in the scrolling panel. Compact toasts stay for success/error, not the running Change pack job. Unacknowledged crash-quarantined mods (exactly one loader-blamed jar, moved to `mods.quarantined`) show **Keep excluded** / **Put back** on this panel.
 
 ### S4-12 — Name / icon / messages
 

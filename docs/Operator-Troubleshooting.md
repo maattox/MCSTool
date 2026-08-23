@@ -347,6 +347,19 @@ sudo bash /opt/mcmgr/bin/repair-permissions.sh
 
 If that dies with `cp: '/opt/mcmgr/lib/env.sh' and '/opt/mcmgr/lib/env.sh' are the same file` (SETUP-ISSUE-8), the installed `layout.sh` is old — re-upload product `onbox/mcmgr/common/layout.sh` to `/opt/mcmgr/lib/layout.sh` (or run repair from `/tmp/mcmgr-onbox/` staging). Wipe world does not need this script.
 
+**Layer 3 quarantine helper missing (SETUP-ISSUE-13):** VMs that predate Step 8.8 P10 have no `/opt/mcmgr/lib/quarantine_mod.py`. Next Change pack / Setup / `repair-permissions.sh` (current product tree) installs it. One-shot without a full repair — SFTP as `ubuntu` into `/tmp` (do not `sudo mkdir` that staging dir), then:
+
+```bash
+sudo bash -c 'set -euo pipefail
+sed -i "s/\r$//" /tmp/mcmgr-p10/quarantine_mod.py /tmp/mcmgr-p10/quarantine_mod.sh
+install -m 0640 -o root -g mcmgr /tmp/mcmgr-p10/quarantine_mod.py /opt/mcmgr/lib/quarantine_mod.py
+install -m 0755 -o root -g mcmgr /tmp/mcmgr-p10/quarantine_mod.sh /opt/mcmgr/bin/quarantine_mod.sh
+stat -c "%U:%G %a %n" /opt/mcmgr/lib/quarantine_mod.py /opt/mcmgr/bin/quarantine_mod.sh'
+sudo python3 /opt/mcmgr/lib/quarantine_mod.py self-test --self-test-root /tmp/mcmgr-p10-selftest
+```
+
+Does **not** start Minecraft. TESTING already has the helper after 2026-08-23.
+
 That script is the same `layout_apply` + `layout_verify` as bootstrap (accounts, per-path owners, `mcmgr` can `cd` + exec Java, unit `ExecStop=+` / `RestartPreventExitStatus=200`). It does **not** start Minecraft. Then:
 
 ```bash
@@ -529,6 +542,7 @@ Do not paste RCON passwords, Auth Tokens, PEM keys, or `/etc/mccontrol/oci.env` 
 
 ## Changelog
 
+| 2026-08-23 | SETUP-ISSUE-13: Layer 3 `quarantine_mod` one-shot copy for VMs that predate P10. |
 | 2026-08-20 | SETUP-ISSUE-10: WAIT with cloud-init already done and no `/etc/mcmgr` — invalid YAML, restart Hybrid, do not destroy. |
 | 2026-08-20 | SETUP-ISSUE-9: retry Deploy on a partial stack (do not destroy); budget description 200-char cap + OCIR 404 on new compartment. |
 | 2026-08-19 | OS-ISSUE-9: firewalld/cloud-init/dbus cycle (mask UFW + full firewalld unit override); do not wake while STOPPING. |

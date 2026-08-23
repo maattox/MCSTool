@@ -61,6 +61,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
     public ObservableCollection<string> ModFiles { get; } = [];
 
+    public ObservableCollection<QuarantinedFileEntry> QuarantinedMods { get; } = [];
+
     public ObservableCollection<ChatTemplateRow> ChatTemplates { get; } = [];
 
     [ObservableProperty]
@@ -124,6 +126,10 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
     public bool CanDownloadPack =>
         ModdingPanelLogic.CanDownloadPack(IsModdedServer, HasLocalPackArchive) && !AnyBusy;
+
+    public bool HasQuarantinedMods => QuarantinedMods.Count > 0;
+
+    public bool CanActOnQuarantine => HasQuarantinedMods && Vm1IsRunning && !AnyBusy;
 
     public bool CanPickPack => PackReplaceUx.CanPick(Vm1IsRunning, AnyBusy);
 
@@ -845,6 +851,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         if (life != "RUNNING")
         {
             ModFiles.Clear();
+            QuarantinedMods.Clear();
             ModdingSummary = "";
             ModdingHint = ModdingPanelLogic.VmStoppedHint;
             return;
@@ -860,6 +867,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
             if (!run.Succeeded)
             {
                 ModFiles.Clear();
+                QuarantinedMods.Clear();
                 ModdingSummary = "";
                 ModdingHint = run.Error ?? "Could not list mods on the game VM.";
                 return;
@@ -868,6 +876,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
             if (!ServerModsInspect.TryParse(run.Output, out var inspect, out var parseError))
             {
                 ModFiles.Clear();
+                QuarantinedMods.Clear();
                 ModdingSummary = "";
                 ModdingHint = parseError ?? "Could not parse the mods listing.";
                 return;
@@ -876,6 +885,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
             ModFiles.Clear();
             foreach (var name in inspect.FileNames)
                 ModFiles.Add(name);
+            BindQuarantined(inspect.QuarantinedFiles);
             ModdingSummary = inspect.SummaryLine();
             ModdingHint = inspect.ModsDirectoryMissing
                 ? "No mods folder on the server yet."
@@ -884,7 +894,101 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         finally
         {
             IsModdingBusy = false;
+            OnPropertyChanged(nameof(HasQuarantinedMods));
+            OnPropertyChanged(nameof(CanActOnQuarantine));
         }
+    }
+
+    public string FormatQuarantineCopy(QuarantinedFileEntry entry)
+    {
+        var likely = CrashQuarantine.GuessClientOnlyFromLists(entry.Path, entry.DisplayName);
+        return CrashQuarantine.EntryCopy(entry, likely);
+    }
+
+    public async Task KeepExcludedAsync(QuarantinedFileEntry entry)
+    {
+        if (!CanActOnQuarantine || _config is null)
+            return;
+
+        var ok = false;
+        IsModdingBusy = true;
+        try
+        {
+            var run = await _ssh.RunCommandAsync(
+                SshTarget.FromVm1(_config.Vm1),
+                CrashQuarantine.RemoteCommand("ack", relativePath: entry.Path));
+            var parsed = CrashQuarantine.ParseRemote(run.Output);
+            if (!run.Succeeded || !parsed.Ok)
+            {
+                var err = parsed.Error ?? run.Error ?? "Could not keep that mod excluded.";
+                _banner.Show(err, ActionBannerSeverity.Error);
+                return;
+            }
+
+            var hash = _localPack?.Sha256Hex ?? Layer2LocalOverlay.TryHashFile(_localPack?.ArchivePath);
+            if (!string.IsNullOrWhiteSpace(hash) && !string.IsNullOrWhiteSpace(_dataDirectory))
+            {
+                Layer2LocalOverlay.PromoteExclude(
+                    _dataDirectory,
+                    hash,
+                    string.IsNullOrWhiteSpace(entry.DisplayName) ? entry.FileName : entry.DisplayName);
+            }
+
+            _banner.Show(CrashQuarantine.KeepExcludedCopy(entry.DisplayName), ActionBannerSeverity.Success);
+            ok = true;
+        }
+        finally
+        {
+            IsModdingBusy = false;
+        }
+
+        if (ok)
+            await RefreshLiveModsAsync();
+    }
+
+    public async Task PutBackAsync(QuarantinedFileEntry entry)
+    {
+        if (!CanActOnQuarantine || _config is null)
+            return;
+
+        var ok = false;
+        IsModdingBusy = true;
+        try
+        {
+            var run = await _ssh.RunCommandAsync(
+                SshTarget.FromVm1(_config.Vm1),
+                CrashQuarantine.RemoteCommand("restore", relativePath: entry.Path));
+            var parsed = CrashQuarantine.ParseRemote(run.Output);
+            if (!run.Succeeded || !parsed.Ok)
+            {
+                var err = parsed.Error ?? run.Error ?? "Could not put that mod back.";
+                _banner.Show(err, ActionBannerSeverity.Error);
+                return;
+            }
+
+            _banner.Show(CrashQuarantine.PutBackCopy(entry.DisplayName), ActionBannerSeverity.Warning);
+            ok = true;
+        }
+        finally
+        {
+            IsModdingBusy = false;
+        }
+
+        if (ok)
+            await RefreshLiveModsAsync();
+    }
+
+    private void BindQuarantined(IReadOnlyList<QuarantinedFileEntry> entries)
+    {
+        QuarantinedMods.Clear();
+        foreach (var entry in entries)
+        {
+            if (entry.NeedsAck)
+                QuarantinedMods.Add(entry);
+        }
+
+        OnPropertyChanged(nameof(HasQuarantinedMods));
+        OnPropertyChanged(nameof(CanActOnQuarantine));
     }
 
     public async Task DownloadPackAsync()
@@ -1146,7 +1250,13 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
                     + (meta.Error ?? "publish failed.");
             }
 
-            _banner.Show(StatusMessage, ActionBannerSeverity.Success);
+            _banner.Show(
+                string.IsNullOrWhiteSpace(result.Value.QuarantineNotice)
+                    ? StatusMessage
+                    : result.Value.QuarantineNotice,
+                string.IsNullOrWhiteSpace(result.Value.QuarantineNotice)
+                    ? ActionBannerSeverity.Success
+                    : ActionBannerSeverity.Warning);
             ClearPackReplaceFields(hidePanel: true);
         }
         finally
@@ -1327,7 +1437,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         if (!IsModdedServer)
         {
             ModFiles.Clear();
-            ModdingSummary = "";
+            QuarantinedMods.Clear();
             ModdingHint = ModdingPanelLogic.VanillaEmptyState;
         }
 
@@ -1346,6 +1456,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         ModdingSummary = "";
         ModdingHint = "";
         ModFiles.Clear();
+        QuarantinedMods.Clear();
         ClearPackReplaceFields(hidePanel: true);
         NotifyModdingCommands();
     }
@@ -1362,6 +1473,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         OnPropertyChanged(nameof(InstallPackTitle));
         OnPropertyChanged(nameof(CanSaveIdentity));
         OnPropertyChanged(nameof(CanClearIcon));
+        OnPropertyChanged(nameof(HasQuarantinedMods));
+        OnPropertyChanged(nameof(CanActOnQuarantine));
         NotifyPackIdentityUi();
         NotifyDock();
     }

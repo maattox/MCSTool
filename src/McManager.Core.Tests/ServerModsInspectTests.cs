@@ -44,6 +44,27 @@ public sealed class ServerModsInspectTests
     }
 
     [Fact]
+    public void Parses_unacknowledged_quarantined_files_from_manifest()
+    {
+        var stdout =
+            """
+            ---MANIFEST---
+            {"distribution":"modded","loader":"forge","modpack":{"quarantined_files":[
+              {"path":"mods/badmod-1.jar","reason":"crash_attributed_by_loader_report",
+               "detected_at":"2026-08-23T12:00:00Z","retry_succeeded":true,"operator_acknowledged":false}
+            ]}}
+            ---MODS---
+            lithium.jar
+            MCMGR_MODS_OK
+            """;
+
+        Assert.True(ServerModsInspect.TryParse(stdout, out var result, out var error), error);
+        Assert.Single(result.QuarantinedFiles);
+        Assert.Equal("mods/badmod-1.jar", result.QuarantinedFiles[0].Path);
+        Assert.True(result.QuarantinedFiles[0].NeedsAck);
+    }
+
+    [Fact]
     public void Missing_mods_dir_is_an_empty_listing()
     {
         var stdout =

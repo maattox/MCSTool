@@ -89,7 +89,8 @@ public static class ImportedPackArchiveStore
                 minecraftVersion,
                 Path.GetFileName(sourceArchivePath),
                 DateTime.UtcNow.ToString("o"),
-                destPath);
+                destPath,
+                Layer2LocalOverlay.TryHashFile(destPath));
             File.WriteAllText(
                 Path.Combine(destDir, SidecarFileName),
                 JsonSerializer.Serialize(sidecar, JsonWriteOptions));
@@ -164,7 +165,8 @@ public static class ImportedPackArchiveStore
                 sidecar?.MinecraftVersion ?? "",
                 sourceName,
                 sidecar?.RetainedAtUtc ?? "",
-                archivePath);
+                archivePath,
+                sidecar?.Sha256Hex ?? Layer2LocalOverlay.TryHashFile(archivePath));
             return true;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
@@ -216,7 +218,8 @@ public sealed record ImportedPackArchiveInfo(
     string MinecraftVersion,
     string SourceFileName,
     string RetainedAtUtc,
-    string ArchivePath)
+    string ArchivePath,
+    string? Sha256Hex = null)
 {
     [JsonIgnore]
     public DateTimeOffset RetainedAt =>

@@ -37,6 +37,14 @@ public sealed class MrpackInstaller
         _matcher = matcher ?? ExcludeIncludeMatcher.ForModrinth();
     }
 
+    public static MrpackInstaller Create(string? packPath, string? dataDirectory, HttpClient? http = null)
+    {
+        var matcher = ExcludeIncludeMatcher.ForModrinth(
+            dataDirectory,
+            Layer2LocalOverlay.TryHashFile(packPath));
+        return new MrpackInstaller(http, matcher);
+    }
+
     public static void EnsureUserAgent(HttpClient http)
     {
         if (!http.DefaultRequestHeaders.UserAgent.Any())

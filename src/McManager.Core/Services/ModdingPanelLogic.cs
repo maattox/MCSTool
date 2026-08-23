@@ -20,8 +20,9 @@ public static class ModdingPanelLogic
         "Lists server-side mods on the game VM. Download pack copies the confirmed pack file "
         + "saved on this PC (with manifest added for jar-root zips when you corrected versions). "
         + "That is not a zip of the server mods folder — Setup strips client-only files, so a "
-        + "server-side zip would not work for friends. Change pack reinstalls Minecraft from a "
-        + "new .mrpack or server-pack zip; the world is kept unless you also wipe.";
+        +         "server-side zip would not work for friends. Change pack reinstalls Minecraft from a "
+        + "new .mrpack or server-pack zip; the world is kept unless you also wipe. If a crash "
+        + "blamed exactly one mod, it is listed here so you can keep it excluded or put it back.";
 
     public static bool IsModdedServerKind(string? serverKind)
     {

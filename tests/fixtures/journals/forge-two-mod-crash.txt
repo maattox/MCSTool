@@ -1,0 +1,4 @@
+The following mods caused the server to crash:
+	alpha-client
+	beta-extra
+Exception in thread "main" net.minecraftforge.fml.ModLoadingException: multiple mods failed

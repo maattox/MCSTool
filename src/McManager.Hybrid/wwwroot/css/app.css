@@ -1927,10 +1927,21 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 }
 
 .mcm-pack-list-warning > p {
-    margin: 0 !important;
+    margin: 0 0 8px !important;
     font-size: 13px;
     color: var(--text-primary);
     line-height: 1.45;
+}
+
+.mcm-quarantine-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 10px;
+}
+
+.mcm-quarantine-actions:last-child {
+    margin-bottom: 0;
 }
 
 .mcm-wizard-complete {

@@ -37,15 +37,21 @@ public sealed class ExcludeIncludeListRefresh
     /// <summary>Process-wide refresh used by Setup analyze. Tests should construct their own.</summary>
     public static ExcludeIncludeListRefresh Shared { get; } = new();
 
-    public ExcludeIncludeMatcher ModrinthMatcher() =>
+    public ExcludeIncludeMatcher ModrinthMatcher(
+        string? dataDirectory = null,
+        string? packIdentitySha256 = null) =>
         new(
             Layer1OrEmbedded(ModrinthRawUrl, ExcludeIncludeMatcher.ModrinthEmbeddedName),
-            ExcludeIncludeMatcher.LoadEmbedded(ExcludeIncludeMatcher.ProductOverlayEmbeddedName));
+            ExcludeIncludeMatcher.MergeProductOverlay(dataDirectory),
+            packIdentitySha256);
 
-    public ExcludeIncludeMatcher CurseForgeMatcher() =>
+    public ExcludeIncludeMatcher CurseForgeMatcher(
+        string? dataDirectory = null,
+        string? packIdentitySha256 = null) =>
         new(
             Layer1OrEmbedded(CurseForgeRawUrl, ExcludeIncludeMatcher.CurseForgeEmbeddedName),
-            ExcludeIncludeMatcher.LoadEmbedded(ExcludeIncludeMatcher.ProductOverlayEmbeddedName));
+            ExcludeIncludeMatcher.MergeProductOverlay(dataDirectory),
+            packIdentitySha256);
 
     /// <summary>True when the last Layer 1 load for <paramref name="url"/> came from GitHub, not the embed.</summary>
     public bool UsedRemote(string url)

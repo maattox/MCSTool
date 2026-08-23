@@ -608,8 +608,11 @@ public sealed class SetupBootstrapService
         if (!health.Succeeded)
             return health;
 
+        if (!string.IsNullOrWhiteSpace(health.Warning))
+            log?.Report(health.Warning);
+
         log?.Report("VM1 bootstrap finished.");
-        return ServiceResult.Ok();
+        return health;
     }
 
     private static ServiceResult<PackReplaceResult> ReplacePack(
@@ -691,6 +694,9 @@ public sealed class SetupBootstrapService
         if (!health.Succeeded)
             return ServiceResult<PackReplaceResult>.Fail(health.Error ?? "RCON health check failed.");
 
+        if (!string.IsNullOrWhiteSpace(health.Warning))
+            log?.Report(health.Warning);
+
         log?.Report("Pack replace finished.");
         return ServiceResult<PackReplaceResult>.Ok(
             new PackReplaceResult(
@@ -698,7 +704,8 @@ public sealed class SetupBootstrapService
                 preview.MinecraftVersion,
                 preview.Loader,
                 request.WipeWorld,
-                warning));
+                warning,
+                health.Warning));
     }
 
     private static void RunOnboxDriver(
@@ -797,7 +804,7 @@ public sealed class SetupBootstrapService
             else if (string.Equals(state.PackKind, SetupPackImport.KindMrpack, StringComparison.OrdinalIgnoreCase)
                 || Path.GetExtension(state.PackPath).Equals(".mrpack", StringComparison.OrdinalIgnoreCase))
             {
-                var installer = new MrpackInstaller();
+                var installer = MrpackInstaller.Create(state.PackPath, dataDir);
                 var result = installer.InstallAsync(state.PackPath, dest, dataDir).GetAwaiter().GetResult();
                 if (!result.Succeeded)
                     return ServiceResult.Fail(result.Error ?? "Modrinth pack install failed.");
@@ -936,6 +943,11 @@ public sealed class SetupBootstrapService
             TimeSpan.FromSeconds(20)).Trim();
         var since = MinecraftReadiness.IsSafeSinceTimestamp(sinceRaw) ? sinceRaw : null;
         MinecraftHealthProbe? last = null;
+        var quarantined = false;
+        string? quarantineNotice = null;
+        string? quarantinePath = null;
+        var likelyClient = false;
+        string? blamedMod = null;
 
         for (var i = 0; i < MinecraftReadiness.MaxRconAttempts; i++)
         {
@@ -949,24 +961,116 @@ public sealed class SetupBootstrapService
             if (report.Kind == MinecraftReadinessKind.Joinable)
             {
                 log?.Report(MinecraftReadiness.JoinableLog);
-                return ServiceResult.Ok();
+                if (quarantined && !string.IsNullOrWhiteSpace(quarantinePath))
+                {
+                    ExecAllowFail(
+                        client,
+                        CrashQuarantine.RemoteCommand("set-retry", relativePath: quarantinePath),
+                        TimeSpan.FromSeconds(30));
+                    quarantineNotice = CrashQuarantine.NotifyMessage(
+                        blamedMod ?? "a mod",
+                        quarantinePath,
+                        likelyClient,
+                        retrySucceeded: true);
+                    log?.Report(quarantineNotice);
+                }
+
+                return ServiceResult.Ok(quarantineNotice);
             }
 
             if (report.Kind == MinecraftReadinessKind.Crash)
             {
-                log?.Report(MinecraftReadiness.CrashDetectedLog);
-                ExecAllowFail(
+                if (quarantined)
+                {
+                    log?.Report(MinecraftReadiness.CrashDetectedLog);
+                    ExecAllowFail(
+                        client,
+                        MinecraftReadiness.StopUnitCommand,
+                        TimeSpan.FromSeconds(45));
+                    var fail = MinecraftReadiness.FormatCrashMessage(report);
+                    if (!string.IsNullOrWhiteSpace(quarantineNotice))
+                        fail = quarantineNotice + "\n\n" + fail;
+                    else if (!string.IsNullOrWhiteSpace(blamedMod))
+                    {
+                        fail = CrashQuarantine.NotifyMessage(
+                            blamedMod,
+                            quarantinePath ?? "",
+                            likelyClient,
+                            retrySucceeded: false)
+                            + "\n\n" + fail;
+                    }
+
+                    return ServiceResult.Fail(fail);
+                }
+
+                var crashReport = ReadCrashReport(client);
+                var blame = CrashModAttributor.TryExactlyOne(last.Journal, crashReport);
+                if (blame is null)
+                {
+                    log?.Report(MinecraftReadiness.CrashDetectedLog);
+                    ExecAllowFail(
+                        client,
+                        MinecraftReadiness.StopUnitCommand,
+                        TimeSpan.FromSeconds(45));
+                    return ServiceResult.Fail(MinecraftReadiness.FormatCrashMessage(report));
+                }
+
+                log?.Report(CrashQuarantine.MovingLog);
+                var moved = CrashQuarantine.ParseRemote(
+                    ExecAllowFail(
+                        client,
+                        CrashQuarantine.RemoteCommand(
+                            "move",
+                            modId: blame.ModId,
+                            jarFileName: blame.JarFileName),
+                        TimeSpan.FromSeconds(60)));
+                if (!moved.Ok)
+                {
+                    log?.Report(MinecraftReadiness.CrashDetectedLog);
+                    ExecAllowFail(
+                        client,
+                        MinecraftReadiness.StopUnitCommand,
+                        TimeSpan.FromSeconds(45));
+                    return ServiceResult.Fail(MinecraftReadiness.FormatCrashMessage(report));
+                }
+
+                quarantined = true;
+                blamedMod = moved.ModId ?? blame.ModId;
+                quarantinePath = moved.Path ?? CrashQuarantine.NormalizeRelative(blame.JarFileName);
+                likelyClient = moved.LikelyClientOnly;
+                quarantineNotice = CrashQuarantine.NotifyMessage(
+                    blamedMod,
+                    quarantinePath ?? "",
+                    likelyClient,
+                    retrySucceeded: false);
+                log?.Report(CrashQuarantine.RetryingLog);
+
+                var sinceAfter = ExecAllowFail(
                     client,
-                    MinecraftReadiness.StopUnitCommand,
-                    TimeSpan.FromSeconds(45));
-                return ServiceResult.Fail(MinecraftReadiness.FormatCrashMessage(report));
+                    MinecraftReadiness.JournalSinceDateCommand,
+                    TimeSpan.FromSeconds(20)).Trim();
+                since = MinecraftReadiness.IsSafeSinceTimestamp(sinceAfter) ? sinceAfter : since;
+                i = -1;
+                continue;
             }
 
             log?.Report(MinecraftReadiness.StillStartingLog(i + 1, last));
             Thread.Sleep(MinecraftReadiness.RetryDelay);
         }
 
+        if (quarantined && !string.IsNullOrWhiteSpace(quarantineNotice))
+            return ServiceResult.Fail(quarantineNotice + "\n\n" + MinecraftReadiness.FormatTimeoutMessage(last));
         return ServiceResult.Fail(MinecraftReadiness.FormatTimeoutMessage(last));
+    }
+
+    private static string? ReadCrashReport(SshClient client)
+    {
+        var parsed = CrashQuarantine.ParseRemote(
+            ExecAllowFail(
+                client,
+                CrashQuarantine.RemoteCommand("read-crash"),
+                TimeSpan.FromSeconds(30)));
+        return parsed.Ok ? parsed.CrashReport : null;
     }
 
     private static void UploadAgentFiles(SshClient client, string agent, string staging, IProgress<string>? log)

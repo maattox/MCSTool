@@ -226,12 +226,14 @@ public sealed class SetupDeployOrchestrator
             ReportProgress(progress, stage, complete: true);
         }
 
+        string? quarantineNotice = null;
         if (!SetupApplyStage.Reached(stage, SetupApplyStage.Vm1))
         {
             ReportProgress(progress, SetupApplyStage.Vm1, "Installing Minecraft…");
             var vm1 = await _bootstrap.DeployVm1Async(outputs, state, log, cancellationToken).ConfigureAwait(false);
             if (!vm1.Succeeded)
                 return SetupDeployResult.Fail(stage, vm1.Error ?? "VM1 bootstrap failed.");
+            quarantineNotice = vm1.Warning;
             stage = SetupApplyStage.Vm1;
             PersistStage(state, stage);
             ReportProgress(progress, stage, complete: true);
@@ -345,7 +347,8 @@ public sealed class SetupDeployOrchestrator
             "Setup finished. Local config written. "
             + (fnSkip is null
                 ? "Function image applied."
-                : "Function image skipped or second apply failed — see the deploy log."),
+                : "Function image skipped or second apply failed — see the deploy log.")
+            + (string.IsNullOrWhiteSpace(quarantineNotice) ? "" : " " + quarantineNotice.Trim()),
             outputs,
             fnSkip);
     }

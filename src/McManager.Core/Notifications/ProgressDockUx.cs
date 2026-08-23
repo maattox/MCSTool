@@ -151,6 +151,12 @@ public static class ProgressDockUx
             return "Waiting for the doorbell to start…";
         if (Contains(body, "RCON list succeeded"))
             return "Minecraft is ready.";
+        if (Contains(body, "blamed one mod") || Contains(body, "moving it aside"))
+            return "Moving the blamed mod aside…";
+        if (Contains(body, "Retrying Minecraft without"))
+            return "Retrying Minecraft without that mod…";
+        if (Contains(body, "Removed '") && Contains(body, "from this boot"))
+            return "A crash blamed one mod; it was set aside.";
         if (Contains(body, "crash detected") || Contains(body, "Minecraft crash"))
             return "Minecraft crashed while starting.";
         if (Contains(body, "RCON not ready") || Contains(body, "still starting"))

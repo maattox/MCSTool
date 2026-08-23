@@ -1,0 +1,122 @@
+using System.Security.Cryptography;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
+namespace McManager.Core.Setup;
+
+/// <summary>
+/// Writable Layer 2 overlay on the admin PC. Keep-excluded Layer 3 mods are
+/// stored per original-archive SHA-256 so future installs of <em>that pack
+/// file</em> skip the jar. Never mutates the embedded product overlay.
+/// </summary>
+public static class Layer2LocalOverlay
+{
+    public const string DirectoryName = "pack-lists";
+    public const string FileName = "mcmgr-layer2-local.json";
+    public const string IdentityPrefix = "sha256:";
+
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        WriteIndented = true,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+    };
+
+    public static string FilePath(string dataDirectory) =>
+        Path.Combine(dataDirectory, DirectoryName, FileName);
+
+    public static string IdentityKey(string? sha256Hex)
+    {
+        var hex = (sha256Hex ?? "").Trim().ToLowerInvariant();
+        if (hex.StartsWith(IdentityPrefix, StringComparison.OrdinalIgnoreCase))
+            hex = hex[IdentityPrefix.Length..];
+        return IdentityPrefix + hex;
+    }
+
+    public static string? TryHashFile(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+            return null;
+        try
+        {
+            using var fs = File.OpenRead(path);
+            var hash = SHA256.HashData(fs);
+            return Convert.ToHexString(hash).ToLowerInvariant();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    public static ExcludeIncludeLists Load(string? dataDirectory)
+    {
+        if (string.IsNullOrWhiteSpace(dataDirectory))
+            return ExcludeIncludeLists.Empty;
+        var path = FilePath(dataDirectory);
+        if (!File.Exists(path))
+            return ExcludeIncludeLists.Empty;
+        try
+        {
+            return ExcludeIncludeLists.Parse(File.ReadAllText(path));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or InvalidOperationException)
+        {
+            return ExcludeIncludeLists.Empty;
+        }
+    }
+
+    /// <summary>Adds <paramref name="term"/> under <c>modpacks[sha256:…].excludes</c>. Not a global exclude.</summary>
+    public static void PromoteExclude(string dataDirectory, string sha256Hex, string term)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(dataDirectory);
+        ArgumentException.ThrowIfNullOrWhiteSpace(sha256Hex);
+        ArgumentException.ThrowIfNullOrWhiteSpace(term);
+
+        var key = IdentityKey(sha256Hex);
+        var needle = term.Trim();
+        var path = FilePath(dataDirectory);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+
+        OverlayFileDto dto;
+        if (File.Exists(path))
+        {
+            dto = JsonSerializer.Deserialize<OverlayFileDto>(File.ReadAllText(path), JsonOptions)
+                ?? new OverlayFileDto();
+        }
+        else
+        {
+            dto = new OverlayFileDto();
+        }
+
+        dto.GlobalExcludes ??= [];
+        dto.GlobalForceIncludes ??= [];
+        dto.Modpacks ??= new Dictionary<string, OverlayPackDto>(StringComparer.OrdinalIgnoreCase);
+
+        if (!dto.Modpacks.TryGetValue(key, out var pack) || pack is null)
+        {
+            pack = new OverlayPackDto();
+            dto.Modpacks[key] = pack;
+        }
+
+        pack.Excludes ??= [];
+        pack.ForceIncludes ??= [];
+        if (!pack.Excludes.Exists(s => string.Equals(s, needle, StringComparison.OrdinalIgnoreCase)))
+            pack.Excludes.Add(needle);
+
+        File.WriteAllText(path, JsonSerializer.Serialize(dto, JsonOptions) + "\n");
+    }
+
+    private sealed class OverlayFileDto
+    {
+        public List<string>? GlobalExcludes { get; set; }
+        public List<string>? GlobalForceIncludes { get; set; }
+        public Dictionary<string, OverlayPackDto>? Modpacks { get; set; }
+    }
+
+    private sealed class OverlayPackDto
+    {
+        public List<string>? Excludes { get; set; }
+        public List<string>? ForceIncludes { get; set; }
+    }
+}

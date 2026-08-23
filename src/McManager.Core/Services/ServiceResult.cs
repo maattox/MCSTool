@@ -18,9 +18,11 @@ public sealed class ServiceResult
     public bool Succeeded { get; private init; }
     public string? Error { get; private init; }
 
-    public static ServiceResult Ok() =>
-        new() { Succeeded = true };
+    public static ServiceResult Ok(string? warning = null) =>
+        new() { Succeeded = true, Warning = warning };
 
     public static ServiceResult Fail(string error) =>
         new() { Succeeded = false, Error = error };
+
+    public string? Warning { get; private init; }
 }

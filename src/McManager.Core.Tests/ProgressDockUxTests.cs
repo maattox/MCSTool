@@ -70,6 +70,8 @@ public sealed class ProgressDockUxTests
     [InlineData("uploaded pack files (12 files, skipped 0 eula/properties/world) → /opt/mcmgr", "Installing pack files…")]
     [InlineData("RCON list succeeded.", "Minecraft is ready.")]
     [InlineData("Minecraft crash detected during health check; stopping the unit.", "Minecraft crashed while starting.")]
+    [InlineData("The loader blamed one mod for the crash; moving it aside and retrying once…", "Moving the blamed mod aside…")]
+    [InlineData("Retrying Minecraft without the blamed mod…", "Retrying Minecraft without that mod…")]
     public void TryHumanizeLogLine_maps_noisy_bootstrap(string raw, string expected) =>
         Assert.Equal(expected, ProgressDockUx.TryHumanizeLogLine(raw));
 

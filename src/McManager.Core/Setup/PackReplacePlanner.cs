@@ -96,13 +96,15 @@ public sealed class PackReplaceResult
         string minecraftVersion,
         string loader,
         bool wipedWorld,
-        string? saveCompatibilityWarning)
+        string? saveCompatibilityWarning,
+        string? quarantineNotice = null)
     {
         PackName = packName;
         MinecraftVersion = minecraftVersion;
         Loader = loader;
         WipedWorld = wipedWorld;
         SaveCompatibilityWarning = saveCompatibilityWarning;
+        QuarantineNotice = quarantineNotice;
     }
 
     public string PackName { get; }
@@ -110,4 +112,5 @@ public sealed class PackReplaceResult
     public string Loader { get; }
     public bool WipedWorld { get; }
     public string? SaveCompatibilityWarning { get; }
+    public string? QuarantineNotice { get; }
 }

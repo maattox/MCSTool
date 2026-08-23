@@ -33,21 +33,52 @@ public sealed class ExcludeIncludeMatcher
 
     private readonly ExcludeIncludeLists _layer1;
     private readonly ExcludeIncludeLists _layer2;
+    private readonly string? _packIdentityKey;
 
-    public ExcludeIncludeMatcher(ExcludeIncludeLists layer1, ExcludeIncludeLists? layer2 = null)
+    public ExcludeIncludeMatcher(
+        ExcludeIncludeLists layer1,
+        ExcludeIncludeLists? layer2 = null,
+        string? packIdentitySha256 = null)
     {
         _layer1 = layer1 ?? throw new ArgumentNullException(nameof(layer1));
         _layer2 = layer2 ?? ExcludeIncludeLists.Empty;
+        _packIdentityKey = NormalizeIdentity(packIdentitySha256);
     }
 
     public ExcludeIncludeLists Layer1 => _layer1;
     public ExcludeIncludeLists Layer2 => _layer2;
+    public string? PackIdentityKey => _packIdentityKey;
 
-    public static ExcludeIncludeMatcher ForModrinth() =>
-        new(LoadEmbedded(ModrinthEmbeddedName), LoadEmbedded(ProductOverlayEmbeddedName));
+    public ExcludeIncludeMatcher WithPackIdentity(string? packIdentitySha256) =>
+        new(_layer1, _layer2, packIdentitySha256);
 
-    public static ExcludeIncludeMatcher ForCurseForge() =>
-        new(LoadEmbedded(CurseForgeEmbeddedName), LoadEmbedded(ProductOverlayEmbeddedName));
+    public static ExcludeIncludeMatcher ForModrinth(
+        string? dataDirectory = null,
+        string? packIdentitySha256 = null) =>
+        new(
+            LoadEmbedded(ModrinthEmbeddedName),
+            MergeProductOverlay(dataDirectory),
+            packIdentitySha256);
+
+    public static ExcludeIncludeMatcher ForCurseForge(
+        string? dataDirectory = null,
+        string? packIdentitySha256 = null) =>
+        new(
+            LoadEmbedded(CurseForgeEmbeddedName),
+            MergeProductOverlay(dataDirectory),
+            packIdentitySha256);
+
+    public static ExcludeIncludeLists MergeProductOverlay(string? dataDirectory) =>
+        ExcludeIncludeLists.Merge(
+            LoadEmbedded(ProductOverlayEmbeddedName),
+            Layer2LocalOverlay.Load(dataDirectory));
+
+    private static string? NormalizeIdentity(string? sha256)
+    {
+        if (string.IsNullOrWhiteSpace(sha256))
+            return null;
+        return Layer2LocalOverlay.IdentityKey(sha256);
+    }
 
     public static ExcludeIncludeLists LoadEmbedded(string resourceName)
     {
@@ -64,20 +95,22 @@ public sealed class ExcludeIncludeMatcher
     public ExcludeIncludeMatch Match(string? packSlug, string? relativePath, string? projectSlug = null)
     {
         var candidate = Candidate.From(relativePath, projectSlug);
-        var overlay = MatchLayer(_layer2, packSlug, candidate);
+        var overlay = MatchLayer(_layer2, packSlug, _packIdentityKey, candidate);
         if (overlay.Decision != ExcludeIncludeDecision.NoMatch)
             return overlay;
-        return MatchLayer(_layer1, packSlug, candidate);
+        return MatchLayer(_layer1, packSlug, _packIdentityKey, candidate);
     }
 
     private static ExcludeIncludeMatch MatchLayer(
         ExcludeIncludeLists lists,
         string? packSlug,
+        string? packIdentityKey,
         Candidate candidate)
     {
         lists.TryGetPack(packSlug, out var pack);
-        var force = Concat(lists.GlobalForceIncludes, pack.ForceIncludes);
-        var excludes = Concat(lists.GlobalExcludes, pack.Excludes);
+        lists.TryGetPack(packIdentityKey, out var identity);
+        var force = Concat(lists.GlobalForceIncludes, identity.ForceIncludes, pack.ForceIncludes);
+        var excludes = Concat(lists.GlobalExcludes, identity.Excludes, pack.Excludes);
 
         if (TryFirstMatch(force, candidate, out var keepTerm))
             return new ExcludeIncludeMatch(ExcludeIncludeDecision.Keep, PackFileSkipReason.OverrideList, keepTerm);
@@ -86,11 +119,18 @@ public sealed class ExcludeIncludeMatcher
         return ExcludeIncludeMatch.NoMatch;
     }
 
-    private static IEnumerable<string> Concat(IReadOnlyList<string> a, IReadOnlyList<string> b)
+    private static IEnumerable<string> Concat(
+        IReadOnlyList<string> a,
+        IReadOnlyList<string> b,
+        IReadOnlyList<string>? c = null)
     {
         foreach (var item in a)
             yield return item;
         foreach (var item in b)
+            yield return item;
+        if (c is null)
+            yield break;
+        foreach (var item in c)
             yield return item;
     }
 

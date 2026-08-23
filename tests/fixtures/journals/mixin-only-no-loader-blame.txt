@@ -1,0 +1,3 @@
+[main/FATAL] [mixin/]: Mixin apply failed lonelyclient.mixins.json:FooMixin -> net.minecraft.client.gui.screens.TitleScreen
+Caused by: org.spongepowered.asm.mixin.throwables.ClassMetadataNotFoundException: net.minecraft.client.gui.screens.TitleScreen
+Exception in thread "main" org.spongepowered.asm.mixin.transformer.throwables.InvalidMixinException: @Mixin target type could not be remapped

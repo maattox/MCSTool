@@ -1,0 +1,4 @@
+-- Affected mods --
+	onlygui: Only GUI 1.0.0
+	fabricloader: Fabric Loader 0.16.9
+	minecraft: Minecraft 1.21.1

@@ -18,6 +18,8 @@ onbox/mcmgr/
   common/fabric_meta.py         Fabric meta v2 resolve (game+loader+installer, none_published)
   common/neoforge_meta.py       NeoForge Maven XML resolve (argfile_tree, none_published)
   common/forge_meta.py          Forge promotions_slim resolve (single_jar / argfile_tree)
+  common/quarantine_mod.py      Layer 3 crash quarantine (move one blamed jar; never delete)
+  common/quarantine_mod.sh      Wrapper installed to `/opt/mcmgr/bin/quarantine_mod.sh`
   modules/bootstrap-vanilla.sh  piston-meta Vanilla installer module
   modules/bootstrap-paper.sh    Fill v3 Paper installer module
   modules/bootstrap-fabric.sh   Fabric launcher-jar installer module

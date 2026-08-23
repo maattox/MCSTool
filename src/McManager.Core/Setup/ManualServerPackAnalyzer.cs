@@ -48,7 +48,7 @@ public static class ManualServerPackAnalyzer
     public const int ListedFileIdCap = 20;
 
     private static readonly Lazy<ExcludeIncludeMatcher> DefaultMatcher =
-        new(ExcludeIncludeMatcher.ForCurseForge);
+        new(() => ExcludeIncludeMatcher.ForCurseForge());
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
