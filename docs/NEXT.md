@@ -11,9 +11,9 @@ Single source of truth for **what to work on next**. Living plan files keep sect
 | **Plan** | [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) |
 | **Step** | **8.10** Operator-notes follow-on 2 |
 | **Sub-plan** | [`V1-Operator-Notes-Follow-On-2-Plan.md`](V1-Operator-Notes-Follow-On-2-Plan.md) |
-| **Sub-step** | **P7** Setup Minecraft step layout |
+| **Sub-step** | **P8** VM1 color server icon |
 | **Status** | `ready` |
-| **Cursor mode** | either |
+| **Cursor mode** | agent |
 
 ## Design lock (implementing)
 
@@ -21,6 +21,7 @@ Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-De
 
 ## Completed recently
 
+- **2026-08-24** — Step **8.10 P7 DONE** (Setup Minecraft step: Vanilla/Modded primary column; flavor/pack drop beside it). Living **NEXT = P8**. Pass 3 **blocked**.
 - **2026-08-24** — Step **8.10 P6 DONE** (Setup Always Free explainer; OCI profile `<pre>` grows; OCI + budget email combined, schema v4). Living **NEXT = P7**. Pass 3 **blocked**.
 - **2026-08-24** — Step **8.10 P5 DONE** (pack identity version dropdowns; detected extra option; catalog-fail text fallback). Living **NEXT = P6**. Pass 3 **blocked**.
 - **2026-08-24** — Step **8.10 P4 DONE** (Server inner tabs; mods collapsed; Usage/Advanced/Troubleshooting density). Living **NEXT = P5**. Pass 3 **blocked**.

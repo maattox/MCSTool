@@ -2068,6 +2068,145 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     min-width: 0;
 }
 
+.mcm-wizard-game {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+}
+
+.mcm-wizard-game-layout {
+    display: grid;
+    grid-template-columns: minmax(12.5rem, 15rem) minmax(0, 1fr);
+    gap: 8px 28px;
+    align-items: start;
+    min-width: 0;
+}
+
+.mcm-wizard-game-kind {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.mcm-wizard-game-kind-hit {
+    margin-bottom: 0;
+    padding: 12px;
+    border: 0.5px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface-1);
+}
+
+.mcm-wizard-game-kind-hit.is-selected {
+    border-color: var(--fill-accent);
+    background: var(--surface-2);
+}
+
+.mcm-wizard-game-kind-hit:hover:not(:has(input:disabled)) {
+    background: var(--surface-2);
+}
+
+.mcm-wizard-game-kind-hit:focus-within {
+    outline: 2px solid var(--fill-accent);
+    outline-offset: 2px;
+}
+
+.mcm-wizard-game-kind-hit input:focus {
+    outline: none;
+}
+
+.mcm-wizard-game-kind-hit .mcm-check-hit span {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.mcm-wizard-game-options {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.mcm-wizard-game-options .mcm-radio-row {
+    margin-bottom: 6px;
+}
+
+.mcm-wizard-game-options .mcm-checkbox-row {
+    margin-bottom: 8px;
+}
+
+.mcm-wizard-game-options .mcm-field {
+    max-width: 18rem;
+    margin-bottom: 0;
+}
+
+.mcm-wizard-game-options .mcm-field select {
+    margin-bottom: 6px;
+    max-width: none;
+}
+
+.mcm-wizard-game-options .mcm-wizard-hint {
+    margin-bottom: 0 !important;
+}
+
+.mcm-wizard-game-note {
+    align-items: baseline;
+    gap: 6px;
+    margin: 0 0 8px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.mcm-wizard-game-note .mcm-wizard-kicker {
+    margin: 0 !important;
+}
+
+.mcm-wizard-game-ingest {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px 12px;
+    align-items: stretch;
+    min-width: 0;
+}
+
+.mcm-wizard-game-ingest .mcm-pack-drop {
+    margin: 0;
+    min-height: 88px;
+}
+
+.mcm-wizard-game-ingest-actions {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;
+    gap: 8px;
+    min-width: 10.5rem;
+}
+
+.mcm-wizard-game-ingest-pick {
+    margin-bottom: 0;
+    flex-wrap: nowrap;
+}
+
+.mcm-wizard-game-ingest-actions > button {
+    width: 100%;
+}
+
+.mcm-wizard-game-file {
+    grid-column: 1 / -1;
+    margin: 0 !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mcm-wizard-game-follow {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
 .mcm-wizard-progress {
     display: flex;
     flex-direction: column;

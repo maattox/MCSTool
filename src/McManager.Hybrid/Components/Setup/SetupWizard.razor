@@ -147,183 +147,201 @@
             }
             else if (Vm.IsStepGame)
             {
-                <div class="mcm-radio-row">
-                    <label class="mcm-check-hit">
-                        <input type="radio"
-                               name="mcm-setup-server-type"
-                               disabled="@(!Vm.CanMutateWizard)"
-                               checked="@Vm.ServerTypeIsVanilla"
-                               @onchange="@(() => Vm.SelectVanillaServer())" />
-                        <span>Vanilla</span>
-                    </label>
-                    <WizardHelp Title="@SetupWizardViewModel.VanillaHelp" AriaLabel="About Vanilla" />
-                </div>
-                <div class="mcm-radio-row">
-                    <label class="mcm-check-hit">
-                        <input type="radio"
-                               name="mcm-setup-server-type"
-                               disabled="@(!Vm.CanMutateWizard)"
-                               checked="@Vm.ServerTypeIsModded"
-                               @onchange="@(() => Vm.SelectModdedServer())" />
-                        <span>Modded</span>
-                    </label>
-                    <WizardHelp Title="@SetupWizardViewModel.ModdedHelp" AriaLabel="About Modded" />
-                </div>
-
-                @if (Vm.ShowVanillaGameOptions)
-                {
-                    <div class="mcm-radio-row">
-                        <label class="mcm-check-hit">
-                            <input type="radio"
-                                   name="mcm-setup-vanilla-flavor"
-                                   disabled="@(!Vm.CanMutateWizard)"
-                                   checked="@Vm.VanillaFlavorIsDefault"
-                                   @onchange="@(() => Vm.SelectDefaultVanilla())" />
-                            <span>Default Vanilla</span>
-                        </label>
-                        <WizardHelp Title="@SetupWizardViewModel.DefaultVanillaHelp" AriaLabel="About Default Vanilla" />
-                    </div>
-                    <div class="mcm-radio-row">
-                        <label class="mcm-check-hit">
-                            <input type="radio"
-                                   name="mcm-setup-vanilla-flavor"
-                                   disabled="@(!Vm.CanMutateWizard)"
-                                   checked="@Vm.VanillaFlavorIsOptimized"
-                                   @onchange="@(() => Vm.SelectOptimizedVanilla())" />
-                            <span>Optimized Vanilla (Paper)</span>
-                        </label>
-                        <WizardHelp Title="@SetupWizardViewModel.OptimizedVanillaHelp" AriaLabel="About Paper" />
-                    </div>
-                    @if (Vm.ShowSnapshotToggle)
-                    {
-                        <label class="mcm-checkbox-row">
-                            <input type="checkbox"
-                                   disabled="@(!Vm.CanMutateWizard)"
-                                   @bind="Vm.IncludeSnapshots" />
-                            <span>Advanced: include snapshots</span>
-                        </label>
-                    }
-                    <div class="mcm-field">
-                        <label for="mcm-setup-mc-version">Minecraft version</label>
-                        <select id="mcm-setup-mc-version"
-                                disabled="@(!Vm.CanMutateWizard || Vm.VersionIds.Count == 0)"
-                                @bind="Vm.MinecraftVersion">
-                            @if (!string.IsNullOrWhiteSpace(Vm.MinecraftVersion)
-                                 && !Vm.VersionIds.Contains(Vm.MinecraftVersion))
-                            {
-                                <option value="@Vm.MinecraftVersion">@Vm.MinecraftVersion</option>
-                            }
-                            @foreach (var id in Vm.VersionIds)
-                            {
-                                <option value="@id">@id</option>
-                            }
-                        </select>
-                    </div>
-                    <p class="mcm-wizard-hint">@Vm.VersionCatalogNotes</p>
-                }
-
-                @if (Vm.ShowModdedGameOptions)
-                {
-                    <aside class="mcm-client-pack-notice" role="note">
-                        <p class="mcm-wizard-inline-help">
-                            <span class="mcm-wizard-kicker">@Vm.ClientPackTitle</span>
-                            <WizardHelp Title="@SetupWizardViewModel.ClientPackHelp" AriaLabel="About the client pack" />
-                        </p>
-                        <p>Friends must install this same pack. Vanilla Minecraft cannot join.</p>
-                    </aside>
-                    <div class="mcm-pack-drop @(Vm.IsAnalyzingPack ? "is-busy" : "")"
-                         aria-label="Drop a modpack file">
-                        <InputFile class="mcm-pack-drop-input"
-                                   OnChange="OnPackInputAsync"
-                                   accept=".mrpack,.zip"
-                                   disabled="@(!Vm.CanMutateWizard || Vm.IsAnalyzingPack)" />
-                        <i class="ti ti-file-zip" aria-hidden="true"></i>
-                        <p class="mcm-pack-drop-title">Drop a .mrpack or Server Files zip</p>
-                    </div>
-                    <div class="mcm-wizard-actions">
-                        <button type="button"
-                                disabled="@(!Vm.CanMutateWizard || Vm.IsAnalyzingPack)"
-                                @onclick="Vm.PickPackAsync">
-                            Choose pack file…
-                        </button>
-                        <WizardHelp Title="@SetupWizardViewModel.PackFileHelp" AriaLabel="About pack files" />
-                        @if (!string.IsNullOrWhiteSpace(Vm.PackPath))
-                        {
-                            <button type="button"
-                                    disabled="@(!Vm.CanMutateWizard || Vm.IsAnalyzingPack)"
-                                    @onclick="Vm.ClearPack">
-                                Clear pack
-                            </button>
-                        }
-                    </div>
-                    @if (!string.IsNullOrWhiteSpace(Vm.PackFileNameDisplay))
-                    {
-                        <p class="mcm-wizard-hint mcm-wizard-mono">@Vm.PackFileNameDisplay</p>
-                    }
-                    @if (Vm.IsAnalyzingPack)
-                    {
-                        <div class="mcm-wizard-progress">
-                            <div class="mcm-wizard-progress-row">
-                                <span>@Vm.PackAnalyzeCaption</span>
+                <div class="mcm-wizard-game">
+                    <div class="mcm-wizard-game-layout">
+                        <fieldset class="mcm-wizard-fieldset mcm-wizard-game-kind">
+                            <legend class="sr-only">Server type</legend>
+                            <div class="mcm-radio-row mcm-wizard-game-kind-hit @(Vm.ServerTypeIsVanilla ? "is-selected" : null)">
+                                <label class="mcm-check-hit">
+                                    <input type="radio"
+                                           name="mcm-setup-server-type"
+                                           disabled="@(!Vm.CanMutateWizard)"
+                                           checked="@Vm.ServerTypeIsVanilla"
+                                           @onchange="@(() => Vm.SelectVanillaServer())" />
+                                    <span>Vanilla</span>
+                                </label>
+                                <WizardHelp Title="@SetupWizardViewModel.VanillaHelp" AriaLabel="About Vanilla" />
                             </div>
-                            <div class="mcm-progress-track" role="progressbar" aria-busy="true" aria-valuemin="0" aria-valuemax="100">
-                                <div class="mcm-progress-fill mcm-progress-indeterminate"></div>
+                            <div class="mcm-radio-row mcm-wizard-game-kind-hit @(Vm.ServerTypeIsModded ? "is-selected" : null)">
+                                <label class="mcm-check-hit">
+                                    <input type="radio"
+                                           name="mcm-setup-server-type"
+                                           disabled="@(!Vm.CanMutateWizard)"
+                                           checked="@Vm.ServerTypeIsModded"
+                                           @onchange="@(() => Vm.SelectModdedServer())" />
+                                    <span>Modded</span>
+                                </label>
+                                <WizardHelp Title="@SetupWizardViewModel.ModdedHelp" AriaLabel="About Modded" />
                             </div>
+                        </fieldset>
+
+                        <div class="mcm-wizard-game-options">
+                            @if (Vm.ShowVanillaGameOptions)
+                            {
+                                <div class="mcm-radio-row">
+                                    <label class="mcm-check-hit">
+                                        <input type="radio"
+                                               name="mcm-setup-vanilla-flavor"
+                                               disabled="@(!Vm.CanMutateWizard)"
+                                               checked="@Vm.VanillaFlavorIsDefault"
+                                               @onchange="@(() => Vm.SelectDefaultVanilla())" />
+                                        <span>Default Vanilla</span>
+                                    </label>
+                                    <WizardHelp Title="@SetupWizardViewModel.DefaultVanillaHelp" AriaLabel="About Default Vanilla" />
+                                </div>
+                                <div class="mcm-radio-row">
+                                    <label class="mcm-check-hit">
+                                        <input type="radio"
+                                               name="mcm-setup-vanilla-flavor"
+                                               disabled="@(!Vm.CanMutateWizard)"
+                                               checked="@Vm.VanillaFlavorIsOptimized"
+                                               @onchange="@(() => Vm.SelectOptimizedVanilla())" />
+                                        <span>Optimized Vanilla (Paper)</span>
+                                    </label>
+                                    <WizardHelp Title="@SetupWizardViewModel.OptimizedVanillaHelp" AriaLabel="About Paper" />
+                                </div>
+                                @if (Vm.ShowSnapshotToggle)
+                                {
+                                    <label class="mcm-checkbox-row">
+                                        <input type="checkbox"
+                                               disabled="@(!Vm.CanMutateWizard)"
+                                               @bind="Vm.IncludeSnapshots" />
+                                        <span>Advanced: include snapshots</span>
+                                    </label>
+                                }
+                                <div class="mcm-field">
+                                    <label for="mcm-setup-mc-version">Minecraft version</label>
+                                    <select id="mcm-setup-mc-version"
+                                            disabled="@(!Vm.CanMutateWizard || Vm.VersionIds.Count == 0)"
+                                            @bind="Vm.MinecraftVersion">
+                                        @if (!string.IsNullOrWhiteSpace(Vm.MinecraftVersion)
+                                             && !Vm.VersionIds.Contains(Vm.MinecraftVersion))
+                                        {
+                                            <option value="@Vm.MinecraftVersion">@Vm.MinecraftVersion</option>
+                                        }
+                                        @foreach (var id in Vm.VersionIds)
+                                        {
+                                            <option value="@id">@id</option>
+                                        }
+                                    </select>
+                                </div>
+                                <p class="mcm-wizard-hint">@Vm.VersionCatalogNotes</p>
+                            }
+
+                            @if (Vm.ShowModdedGameOptions)
+                            {
+                                <p class="mcm-wizard-inline-help mcm-wizard-game-note">
+                                    <span class="mcm-wizard-kicker">@Vm.ClientPackTitle</span>
+                                    <WizardHelp Title="@SetupWizardViewModel.ClientPackHelp" AriaLabel="About the client pack" />
+                                    <span>Friends must install this same pack. Vanilla Minecraft cannot join.</span>
+                                </p>
+                                <div class="mcm-wizard-game-ingest">
+                                    <div class="mcm-pack-drop @(Vm.IsAnalyzingPack ? "is-busy" : "")"
+                                         aria-label="Drop a modpack file">
+                                        <InputFile class="mcm-pack-drop-input"
+                                                   OnChange="OnPackInputAsync"
+                                                   accept=".mrpack,.zip"
+                                                   disabled="@(!Vm.CanMutateWizard || Vm.IsAnalyzingPack)" />
+                                        <i class="ti ti-file-zip" aria-hidden="true"></i>
+                                        <p class="mcm-pack-drop-title">Drop a .mrpack or Server Files zip</p>
+                                    </div>
+                                    <div class="mcm-wizard-game-ingest-actions">
+                                        <div class="mcm-wizard-actions mcm-wizard-game-ingest-pick">
+                                            <button type="button"
+                                                    disabled="@(!Vm.CanMutateWizard || Vm.IsAnalyzingPack)"
+                                                    @onclick="Vm.PickPackAsync">
+                                                Choose pack file…
+                                            </button>
+                                            <WizardHelp Title="@SetupWizardViewModel.PackFileHelp" AriaLabel="About pack files" />
+                                        </div>
+                                        @if (!string.IsNullOrWhiteSpace(Vm.PackPath))
+                                        {
+                                            <button type="button"
+                                                    disabled="@(!Vm.CanMutateWizard || Vm.IsAnalyzingPack)"
+                                                    @onclick="Vm.ClearPack">
+                                                Clear pack
+                                            </button>
+                                        }
+                                    </div>
+                                    @if (!string.IsNullOrWhiteSpace(Vm.PackFileNameDisplay))
+                                    {
+                                        <p class="mcm-wizard-hint mcm-wizard-mono mcm-wizard-game-file"
+                                           title="@Vm.PackFileNameDisplay">@Vm.PackFileNameDisplay</p>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    @if (Vm.ShowModdedGameOptions)
+                    {
+                        <div class="mcm-wizard-game-follow">
+                            @if (Vm.IsAnalyzingPack)
+                            {
+                                <div class="mcm-wizard-progress">
+                                    <div class="mcm-wizard-progress-row">
+                                        <span>@Vm.PackAnalyzeCaption</span>
+                                    </div>
+                                    <div class="mcm-progress-track" role="progressbar" aria-busy="true" aria-valuemin="0" aria-valuemax="100">
+                                        <div class="mcm-progress-fill mcm-progress-indeterminate"></div>
+                                    </div>
+                                </div>
+                            }
+                            @if (Vm.ShowPackSummary)
+                            {
+                                @if (!string.IsNullOrWhiteSpace(Vm.PackBlockReason))
+                                {
+                                    <p class="mcm-wizard-error">@Vm.PackBlockReason</p>
+                                }
+                                @if (Vm.ShowOverrideListWarning)
+                                {
+                                    <aside class="mcm-pack-list-warning" role="status">
+                                        <p class="mcm-wizard-kicker">Some client-only mods will be skipped</p>
+                                        <p>@Vm.PackOverrideListWarning</p>
+                                    </aside>
+                                }
+                                <pre class="mcm-wizard-log mcm-wizard-mono mcm-slim-scroll mcm-pack-summary">@Vm.PackSummary</pre>
+                            }
+                            @if (Vm.ShowPackAssistedReview)
+                            {
+                                <PackAssistedReviewPanel IdPrefix="setup-pack"
+                                                         Disabled="@(!Vm.CanMutateWizard)"
+                                                         Review="@Vm.AssistedReview"
+                                                         FreezeBlockReason="@Vm.PackFreezeBlockReason"
+                                                         LooksLikeLauncherInstance="@Vm.PackLooksLikeLauncherInstance"
+                                                         IsSkipped="@Vm.IsOperatorSkipped"
+                                                         SkipChanged="Vm.OnAssistedSkipChanged" />
+                            }
+                            @if (Vm.ShowPackIdentityFields)
+                            {
+                                <PackIdentityFields IdPrefix="setup-pack"
+                                                    Disabled="@(!Vm.CanMutateWizard)"
+                                                    @bind-MinecraftVersion="Vm.MinecraftVersion"
+                                                    @bind-Loader="Vm.PackLoader"
+                                                    @bind-LoaderVersion="Vm.PackLoaderVersion"
+                                                    @bind-JavaMajorText="Vm.PackJavaMajorText"
+                                                    ShowDetectionMismatch="@Vm.ShowDetectionMismatch"
+                                                    DetectionMismatchWarning="@Vm.DetectionMismatchWarning" />
+                            }
+                            @if (Vm.ShowPackConfirmChecks)
+                            {
+                                <label class="mcm-checkbox-row">
+                                    <input type="checkbox"
+                                           disabled="@(!Vm.CanMutateWizard)"
+                                           @bind="Vm.PackConfirmed" />
+                                    <span>Use this pack on the server (server-side mods only; client-only files are skipped).</span>
+                                </label>
+                                <label class="mcm-checkbox-row">
+                                    <input type="checkbox"
+                                           disabled="@(!Vm.CanMutateWizard)"
+                                           @bind="Vm.ClientPackAcknowledged" />
+                                    <span>@Vm.ClientPackAckLabel</span>
+                                </label>
+                                <p class="mcm-wizard-hint">@Vm.ClientPackFriendsNeed</p>
+                            }
                         </div>
                     }
-                    @if (Vm.ShowPackSummary)
-                    {
-                        @if (!string.IsNullOrWhiteSpace(Vm.PackBlockReason))
-                        {
-                            <p class="mcm-wizard-error">@Vm.PackBlockReason</p>
-                        }
-                        @if (Vm.ShowOverrideListWarning)
-                        {
-                            <aside class="mcm-pack-list-warning" role="status">
-                                <p class="mcm-wizard-kicker">Some client-only mods will be skipped</p>
-                                <p>@Vm.PackOverrideListWarning</p>
-                            </aside>
-                        }
-                        <pre class="mcm-wizard-log mcm-wizard-mono mcm-slim-scroll mcm-pack-summary">@Vm.PackSummary</pre>
-                    }
-                    @if (Vm.ShowPackAssistedReview)
-                    {
-                        <PackAssistedReviewPanel IdPrefix="setup-pack"
-                                                 Disabled="@(!Vm.CanMutateWizard)"
-                                                 Review="@Vm.AssistedReview"
-                                                 FreezeBlockReason="@Vm.PackFreezeBlockReason"
-                                                 LooksLikeLauncherInstance="@Vm.PackLooksLikeLauncherInstance"
-                                                 IsSkipped="@Vm.IsOperatorSkipped"
-                                                 SkipChanged="Vm.OnAssistedSkipChanged" />
-                    }
-                    @if (Vm.ShowPackIdentityFields)
-                    {
-                        <PackIdentityFields IdPrefix="setup-pack"
-                                            Disabled="@(!Vm.CanMutateWizard)"
-                                            @bind-MinecraftVersion="Vm.MinecraftVersion"
-                                            @bind-Loader="Vm.PackLoader"
-                                            @bind-LoaderVersion="Vm.PackLoaderVersion"
-                                            @bind-JavaMajorText="Vm.PackJavaMajorText"
-                                            ShowDetectionMismatch="@Vm.ShowDetectionMismatch"
-                                            DetectionMismatchWarning="@Vm.DetectionMismatchWarning" />
-                    }
-                    @if (Vm.ShowPackConfirmChecks)
-                    {
-                        <label class="mcm-checkbox-row">
-                            <input type="checkbox"
-                                   disabled="@(!Vm.CanMutateWizard)"
-                                   @bind="Vm.PackConfirmed" />
-                            <span>Use this pack on the server (server-side mods only; client-only files are skipped).</span>
-                        </label>
-                        <label class="mcm-checkbox-row">
-                            <input type="checkbox"
-                                   disabled="@(!Vm.CanMutateWizard)"
-                                   @bind="Vm.ClientPackAcknowledged" />
-                            <span>@Vm.ClientPackAckLabel</span>
-                        </label>
-                        <p class="mcm-wizard-hint">@Vm.ClientPackFriendsNeed</p>
-                    }
-                }
+                </div>
             }
             else if (Vm.IsStepIdentity)
             {

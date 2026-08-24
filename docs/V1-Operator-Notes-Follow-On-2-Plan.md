@@ -68,8 +68,8 @@ P8 may run in a **separate operator chat** while Group A is on P1–P7. Default 
 | P4 | Manager tab density (sub-tabs, mods collapsed) | **DONE** | SEQUENTIAL — Server tab markup after P2 height | either |
 | P5 | Pack identity version dropdowns | **DONE** | SEQUENTIAL — `PackIdentityFields` used by Setup P7 | agent |
 | P6 | Setup sparse pages + Always Free copy | **DONE** | SEQUENTIAL — `SetupWizard.razor` | either |
-| P7 | Setup Minecraft step layout | **NEXT** | SEQUENTIAL — same wizard file as P6 | either |
-| P8 | VM1 color server icon | TODO | PARALLEL-OK with P1–P7 | agent |
+| P7 | Setup Minecraft step layout | **DONE** | SEQUENTIAL — same wizard file as P6 | either |
+| P8 | VM1 color server icon | **NEXT** | PARALLEL-OK with P1–P7 | agent |
 | P9 | MOTD formatting editor | TODO | SEQUENTIAL after P4 + P8 | plan-first |
 
 ---
@@ -358,7 +358,7 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 
 ## P7 — Setup Minecraft step layout
 
-**Status:** NEXT  
+**Status:** DONE  
 **Parallel:** SEQUENTIAL — same wizard file as P6  
 **Cursor mode:** either  
 **UI skill:** yes
@@ -387,13 +387,13 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 
 - Minecraft step uses horizontal grouping; Vanilla/Modded reads as the main choice.
 
-**Changelog:** *(date when finished)*
+**Changelog:** 2026-08-24 — **DONE.** Minecraft step is a two-column header: Vanilla/Modded as large primary radios on the left; Vanilla flavor/version or Modded pack drop + Choose/Clear beside them. Assisted review and identity stay full-width below after analyze. Compact client-pack line instead of a stacked notice. Guide. Living **NEXT = P8**.
 
 ---
 
 ## P8 — VM1 color server icon
 
-**Status:** TODO  
+**Status:** NEXT  
 **Parallel:** PARALLEL-OK with P1–P7 (on-box / `vm_agent` only)  
 **Cursor mode:** agent
 
@@ -483,6 +483,7 @@ When P1–P9 are **DONE**:
 
 | Date | Note |
 |------|------|
+| 2026-08-24 | **P7 DONE** (Setup Minecraft two-column layout: Vanilla/Modded primary; flavor/pack drop beside it). Living **NEXT = P8**. Pass 3 stays blocked. |
 | 2026-08-24 | **P6 DONE** (Always Free explainer copy; OCI `<pre>` grows; OCI + budget email combined; wizard schema v4 / 8 steps). Living **NEXT = P7**. Pass 3 stays blocked. |
 | 2026-08-24 | **P5 DONE** (pack identity Minecraft/loader/Java dropdowns; detected extra option; catalog-fail text fallback). Living **NEXT = P6**. Pass 3 stays blocked. |
 | 2026-08-24 | **P4 DONE** (Server inner tabs Identity / World / Modding / Change pack; mods collapsed; Usage Hours/Budget; Advanced Status/Stack/Danger; Troubleshooting two-column). Living **NEXT = P5**. Pass 3 stays blocked. |
