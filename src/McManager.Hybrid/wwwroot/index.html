@@ -52,6 +52,23 @@
                 }
             }
         };
+        window.mcmMotd = {
+            wrap: function (id, prefix, suffix) {
+                var el = document.getElementById(id);
+                if (!el) {
+                    return null;
+                }
+                var start = typeof el.selectionStart === "number" ? el.selectionStart : (el.value || "").length;
+                var end = typeof el.selectionEnd === "number" ? el.selectionEnd : start;
+                var value = el.value || "";
+                var insert = (prefix || "") + value.slice(start, end) + (suffix || "");
+                el.value = value.slice(0, start) + insert + value.slice(end);
+                var pos = start + insert.length;
+                el.selectionStart = el.selectionEnd = pos;
+                el.focus();
+                return el.value;
+            }
+        };
     </script>
     <div id="app">Loading...</div>
 

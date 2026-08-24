@@ -1,6 +1,6 @@
 # V1 operator-notes follow-on 2 (living)
 
-**Status:** Living. Created 2026-08-24. **Live NEXT:** [`NEXT.md`](NEXT.md).  
+**Status:** **COMPLETE** (P1–P9). Created 2026-08-24. **Live NEXT:** [`NEXT.md`](NEXT.md) (Pass 3, blocked until the operator says so).  
 **Parent:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.10**.  
 **Why now:** operator 2026-08-24 — Manager/Setup density, toasts, pack UX, VM1 icon, and MOTD styling **before** QA Pass 3. Vague layout notes: agents **decide inside each section’s bounds** (UI skills) and record the choice. Stop and ask for spend, `tofu destroy`, `DEFAULT`, or pulling other parked after-v1 items.
 
@@ -70,7 +70,7 @@ P8 may run in a **separate operator chat** while Group A is on P1–P7. Default 
 | P6 | Setup sparse pages + Always Free copy | **DONE** | SEQUENTIAL — `SetupWizard.razor` | either |
 | P7 | Setup Minecraft step layout | **DONE** | SEQUENTIAL — same wizard file as P6 | either |
 | P8 | VM1 color server icon | **DONE** | PARALLEL-OK with P1–P7 | agent |
-| P9 | MOTD formatting editor | **NEXT** | SEQUENTIAL after P4 + P8 | plan-first |
+| P9 | MOTD formatting editor | **DONE** | SEQUENTIAL after P4 + P8 | plan-first |
 
 ---
 
@@ -430,7 +430,7 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 
 ## P9 — MOTD formatting editor
 
-**Status:** NEXT  
+**Status:** DONE  
 **Parallel:** SEQUENTIAL after P4 (identity UI) and P8 (`_build_motd` / apply)  
 **Cursor mode:** plan-first  
 **UI skill:** yes
@@ -464,7 +464,7 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 
 - Setup + Manager can produce a formatted list MOTD without a required external tool; paste still works; VM1 apply preserves codes.
 
-**Changelog:** *(date when finished)*
+**Changelog:** 2026-08-24 — **DONE.** In-app editor (toolbar wrap + textarea, not contenteditable). `chat.json` keeps `server_name` / `description` (`§` allowed); additive `motd_omit_name` (default false). Paste normalizes `motd=` / `\u00a7` / `&` codes / `&#RRGGBB`. List preview parses `§` + `§x` hex (Paper 1.16+ note). Collapsed raw `motd=` + copy. VM1 `_build_motd` preserves codes, omit-name, no space-collapse on description. Description max **512**. Door MOTD unchanged. Guide. Plan **COMPLETE**. Pass 3 stays blocked until the operator says so.
 
 ---
 
@@ -483,6 +483,7 @@ When P1–P9 are **DONE**:
 
 | Date | Note |
 |------|------|
+| 2026-08-24 | **P9 DONE** (MOTD editor: `§` toolbar + paste, list preview, omit-name, collapsed raw; VM1 preserves codes). Plan **COMPLETE**. Pass 3 stays blocked until the operator says so. |
 | 2026-08-24 | **P8 DONE** (VM1 color icon: `PrivateTmp` for ImageIO favicon encode; stage PNG then `install` as `mcmgr`). Living **NEXT = P9** (plan-first). Pass 3 stays blocked. |
 | 2026-08-24 | **P7 DONE** (Setup Minecraft two-column layout: Vanilla/Modded primary; flavor/pack drop beside it). Living **NEXT = P8**. Pass 3 stays blocked. |
 | 2026-08-24 | **P6 DONE** (Always Free explainer copy; OCI `<pre>` grows; OCI + budget email combined; wizard schema v4 / 8 steps). Living **NEXT = P7**. Pass 3 stays blocked. |

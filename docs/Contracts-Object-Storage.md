@@ -81,7 +81,7 @@ These are normative rules for new Phase 2+ work. Existing lab/product code does 
 | `budget/config.json` | 1 | Manager; VM1 may patch detected shape / boot safety | Door, VM1, Manager | Live |
 | `ip/allowlist.json` | 1 | Manager | Future product consumers | Seeded/live; Hybrid Save updates when present. `ip` = IPv4 or IPv4 CIDR. **Always applied** (product is private-only). |
 | `ip/mode.json` | 1 | — (withdrawn) | — | **Withdrawn 2026-08-18.** Public/blacklist rejected. Step 3.1 wrote it; Step **3.4** stopped the Manager writer. Leftover objects in buckets may remain unused. |
-| `messages/chat.json` | 1 | Manager | VM1 agent | **V1 Step 7.6 DONE** — identity + templates; Manager If-Match; VM1 boot pull. Rich MOTD editor still out. |
+| `messages/chat.json` | 1 | Manager | VM1 agent | **V1 Step 7.6 + 8.10 P9** — identity + templates + bounded MOTD editor; Manager If-Match; VM1 boot pull. |
 | `backups/.keep` | text | Setup/seed | None | Optional marker |
 | `backups/world-<UTC>.zip` | ZIP | VM1 backup agent; Manager manual upload | Manager | Live |
 | `smoke/*` | text | Test actors | Test actors | Non-contract test artifacts; safe to delete |
@@ -483,6 +483,7 @@ A leftover object may still exist in some buckets from V1 Step 3.1 (`version`, `
   "updated_at": "2026-08-11T00:00:00Z",
   "server_name": "Friends SMP",
   "description": "Weekend world",
+  "motd_omit_name": false,
   "icon_object": "messages/server-icon.png",
   "chat_messages": {
     "budget_warn_leftover": "Daily usage limit exceeded; using leftover hours (~{ocpu:.1f} OCPU-h / ~{gb:.1f} GB-h left).",
@@ -497,12 +498,12 @@ A leftover object may still exist in some buckets from V1 Step 3.1 (`version`, `
 ```
 
 - Manager is the intended writer; VM1 is the consumer (`mc-boot-ledger.service` force-pulls **before** Java starts so this Minecraft process loads the new MOTD/icon).
-- **v1 (Step 7.6):** additive identity fields on the same document version: `server_name`, `description` (plain-text MOTD; name then description as two lines), optional `icon_object` pointing at `messages/server-icon.png` (64×64 PNG). **Step 8.8 P8:** Manager composes that color PNG on the admin PC (contain-fit to 64×64) and also writes `messages/door-idle.png`, `messages/door-starting.png`, and `messages/door-exhausted.png` (greyscale + overlays). The door pulls those three into `/opt/mccontrol/assets/icons/{idle,starting,exhausted}.png`. Unavailable and spend-brake share exhausted art. Absence of a user upload uses `assets/server-icons/default-icon.png`.
+- **v1 (Step 7.6):** additive identity fields on the same document version: `server_name`, `description` (MOTD body; name then description as two list lines unless omitted), optional `icon_object` pointing at `messages/server-icon.png` (64×64 PNG). **Step 8.10 P9:** `description` may include Minecraft `§` color/format codes (and pasted `§x` hex). Optional `motd_omit_name` (default false, omitted when false) writes description only. VM1 `_build_motd` preserves `§` / `\n` into `server.properties`. Hex/gradient is Paper/Spigot 1.16+; Vanilla / Forge / Fabric ignore it. **Step 8.8 P8:** Manager composes that color PNG on the admin PC (contain-fit to 64×64) and also writes `messages/door-idle.png`, `messages/door-starting.png`, and `messages/door-exhausted.png` (greyscale + overlays). The door pulls those three into `/opt/mccontrol/assets/icons/{idle,starting,exhausted}.png`. Unavailable and spend-brake share exhausted art. Absence of a user upload uses `assets/server-icons/default-icon.png`.
 - Unknown/missing template keys fall back to built-in defaults. `idle_stop_inactive` is additive; older seeds without it still work.
 - Invalid format placeholders must not crash the agent; current formatter returns the unformatted template.
 - RCON credentials never belong in this object.
 - Manager writes use ETag `If-Match` when the object exists; first create is unconditional. After a successful PUT, `messages.vm1=true` and `messages.manager=false` (door stays false).
-- Rich MOTD visual editing is outside v1 / MVP.
+- Door idle/starting/exhausted MOTD copy is not edited here.
 
 ### `messages/server-icon.png`
 

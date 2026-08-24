@@ -6,7 +6,7 @@ using McManager.Core.Usage;
 namespace McManager.Core.Services;
 
 /// <summary>
-/// MOTD-scale identity helpers (plain text + 64×64 PNG). Not a rich MOTD editor.
+/// MOTD-scale identity helpers (formatted list MOTD + 64×64 PNG).
 /// </summary>
 public static class ServerIdentityUx
 {
@@ -14,7 +14,7 @@ public static class ServerIdentityUx
     public const int IconHeight = 64;
     public const int MaxIconBytes = 256 * 1024;
     public const int MaxNameLength = 40;
-    public const int MaxDescriptionLength = 80;
+    public const int MaxDescriptionLength = 512;
     public const string DefaultMotd = "A Minecraft Server";
     public const string DefaultDescription = "made with github.com/maattox/oci-mc-server";
     public const string DefaultVanillaName = "Vanilla Server";
@@ -36,12 +36,13 @@ public static class ServerIdentityUx
     ];
 
     /// <summary>
-    /// Minecraft <c>motd</c> value: name, then description on a second line when both are set.
-    /// Empty identity → the default MOTD. Real newlines become <c>\n</c>.
+    /// Minecraft <c>motd</c> value for <c>server.properties</c> (literal <c>\n</c>, <c>§</c> preserved).
+    /// When <paramref name="omitName"/> is true, only the description is used.
+    /// Empty identity → the default MOTD.
     /// </summary>
-    public static string BuildMotd(string? serverName, string? description)
+    public static string BuildMotd(string? serverName, string? description, bool omitName = false)
     {
-        var name = CollapseWhitespace(serverName);
+        var name = omitName ? "" : CollapseWhitespace(serverName);
         var desc = NormalizeDescription(description);
         string text;
         if (name.Length > 0 && desc.Length > 0)
@@ -117,6 +118,7 @@ public static class ServerIdentityUx
         doc.Description = desc.Length > 0 || state.IdentityDescriptionCustomized
             ? desc
             : DefaultDescription;
+        doc.MotdOmitName = state.IdentityMotdOmitName;
         return doc;
     }
 
@@ -167,11 +169,14 @@ public static class ServerIdentityUx
     {
         if (string.IsNullOrWhiteSpace(value))
             return "";
-        var lines = value
+        var unified = value
             .Replace("\r\n", "\n", StringComparison.Ordinal)
             .Replace('\r', '\n')
-            .Split('\n');
-        return string.Join("\\n", lines.Select(CollapseWhitespace).Where(s => s.Length > 0));
+            .Replace("\\n", "\n", StringComparison.Ordinal);
+        var lines = unified.Split('\n');
+        return string.Join(
+            "\\n",
+            lines.Select(static s => s.Trim()).Where(static s => s.Length > 0));
     }
 }
 

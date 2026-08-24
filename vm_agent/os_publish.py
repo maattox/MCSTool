@@ -227,14 +227,15 @@ def _patch_properties_key(path: str, key: str, value: str) -> None:
         pass
 
 
-def _build_motd(server_name: str, description: str) -> str:
-    name = " ".join((server_name or "").split())
-    desc_lines = [
-        " ".join(part.split())
-        for part in (description or "").replace("\r\n", "\n").replace("\r", "\n").split("\n")
-        if part.strip()
-    ]
-    desc = "\\n".join(desc_lines)
+def _normalize_motd_lines(text: str) -> str:
+    raw = (text or "").replace("\r\n", "\n").replace("\r", "\n").replace("\\n", "\n")
+    lines = [part.strip() for part in raw.split("\n") if part.strip()]
+    return "\\n".join(lines)
+
+
+def _build_motd(server_name: str, description: str, omit_name: bool = False) -> str:
+    name = "" if omit_name else " ".join((server_name or "").split())
+    desc = _normalize_motd_lines(description)
     if name and desc:
         return f"{name}\\n{desc}"
     if desc:
@@ -276,7 +277,8 @@ def _apply_identity(cfg: dict[str, Any], doc: dict[str, Any], client, namespace:
 
     name = str(doc.get("server_name") or "").strip()
     description = str(doc.get("description") or "").strip()
-    motd = _build_motd(name, description)
+    omit_name = bool(doc.get("motd_omit_name"))
+    motd = _build_motd(name, description, omit_name=omit_name)
     props = os.path.join(server_dir, "server.properties")
     try:
         _patch_properties_key(props, "motd", motd)

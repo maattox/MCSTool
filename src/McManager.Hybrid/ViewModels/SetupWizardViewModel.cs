@@ -97,7 +97,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         "Smaller Always Free size. Vanilla can often stay on all month; less room if you add mods or more players later.";
 
     public const string IdentityHelp =
-        "Friends see the name, description, and in-game icon in Minecraft’s server list while the game is running. Two plain-text lines — not a formatted MOTD editor. You can change this later on the Server tab.";
+        "Friends see the name, description, and in-game icon in Minecraft’s server list while the game is running. Select text and apply colors, or paste a motd= string from a generator. Check “Don’t put the server name on the MOTD” when the description already has both list lines. Hex colors need Paper/Spigot 1.16+. You can change this later on the Server tab.";
 
     public const string IconStatesHelp =
         "In-game is the color icon while Minecraft is up. Offline, Starting, and Unavailable are greyscale copies with overlays for the doorbell list while the server is off, waking, or cannot start (daily hours or spend-brake).";
@@ -281,6 +281,10 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _identityDescriptionCustomized;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(MotdPreview))]
+    private bool _identityMotdOmitName;
 
     [ObservableProperty]
     private string _identityIconPath = "";
@@ -601,7 +605,8 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     public string ClientPackFriendsNeed =>
         SetupPackImport.FriendsNeedLine(PackName, MinecraftVersion, PackLoader, PackLoaderVersion);
 
-    public string MotdPreview => ServerIdentityUx.BuildMotd(IdentityName, IdentityDescription);
+    public string MotdPreview =>
+        ServerIdentityUx.BuildMotd(IdentityName, IdentityDescription, IdentityMotdOmitName);
 
     public bool CanClearIdentityIcon =>
         !string.IsNullOrWhiteSpace(IdentityIconPath);
@@ -1680,6 +1685,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         IdentityDescription = state.IdentityDescription ?? "";
         IdentityNameCustomized = state.IdentityNameCustomized;
         IdentityDescriptionCustomized = state.IdentityDescriptionCustomized;
+        IdentityMotdOmitName = state.IdentityMotdOmitName;
         IdentityIconPath = state.IdentityIconPath ?? "";
         _applyingIdentityDefault = false;
         ApplyIdentityDefaultsIfUntouched();
@@ -1741,6 +1747,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         IdentityDescription = IdentityDescription?.Trim() ?? "",
         IdentityNameCustomized = IdentityNameCustomized,
         IdentityDescriptionCustomized = IdentityDescriptionCustomized,
+        IdentityMotdOmitName = IdentityMotdOmitName,
         IdentityIconPath = IdentityIconPath ?? "",
         EulaAccepted = EulaAccepted,
         AuthTokenStored = AuthTokenStored,
@@ -1888,6 +1895,9 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             IdentityDescriptionCustomized = true;
         OnPropertyChanged(nameof(MotdPreview));
     }
+
+    partial void OnIdentityMotdOmitNameChanged(bool value) =>
+        OnPropertyChanged(nameof(MotdPreview));
 
     private void ApplyIdentityDefaultsIfUntouched()
     {

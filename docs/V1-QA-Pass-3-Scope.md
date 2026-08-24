@@ -1,7 +1,7 @@
 # V1 QA Pass 3 — scope (gap-close + follow-on)
 
 **Pass:** 3  
-**Status:** **BLOCKED** — Steps **8.7**, **8.8**, and **8.9** are **DONE**. Step **8.10** (density / MOTD / VM1 icon) is **in front**. Do **not** run until **8.10** completes **and** the operator says Pass 3 may start. (Step **8.4** P1–P13 is already DONE.) Living execution slice of [Step 8.5.2](V1-Implementation-Plan.md#step-852--execute-qa-passes). **Live queue:** [`NEXT.md`](NEXT.md).  
+**Status:** **BLOCKED** — Steps **8.7**, **8.8**, **8.9**, and **8.10** are **DONE**. Do **not** run until the operator says Pass 3 may start. (Step **8.4** P1–P13 is already DONE.) Living execution slice of [Step 8.5.2](V1-Implementation-Plan.md#step-852--execute-qa-passes). **Live queue:** [`NEXT.md`](NEXT.md).  
 **Catalog:** [`V1-QA-Catalog.md`](V1-QA-Catalog.md) — IDs and expected steps stay there. Do **not** regenerate the catalog. Implementing follow-on sections may **update expected** for product changes (S4-02 tabs, S3-01 overlay, S6-02 jar-root).  
 **Results:** fill [`V1-QA-Pass-3-Results.md`](V1-QA-Pass-3-Results.md) as you go.  
 **Prior:** [`V1-QA-Pass-2-Results.md`](V1-QA-Pass-2-Results.md) (greenfield Modded; closed early). [`V1-QA-Pass-1-Results.md`](V1-QA-Pass-1-Results.md) (Vanilla; historical).

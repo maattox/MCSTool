@@ -9,18 +9,19 @@ Single source of truth for **what to work on next**. Living plan files keep sect
 | Field | Value |
 |-------|-------|
 | **Plan** | [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) |
-| **Step** | **8.10** Operator-notes follow-on 2 |
-| **Sub-plan** | [`V1-Operator-Notes-Follow-On-2-Plan.md`](V1-Operator-Notes-Follow-On-2-Plan.md) |
-| **Sub-step** | **P9** MOTD formatting editor |
-| **Status** | `ready` |
-| **Cursor mode** | plan-first |
+| **Step** | **8.5.2** QA Pass 3 |
+| **Sub-plan** | [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) |
+| **Sub-step** | — |
+| **Status** | `blocked` |
+| **Cursor mode** | — |
 
 ## Design lock (implementing)
 
-Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) — **implemented** (Step **8.9** P1–P2). Pass 3 stays **blocked** until Step **8.10** exits **and** the operator starts it.
+Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) — **implemented** (Step **8.9** P1–P2). Pass 3 stays **blocked** until the operator starts it.
 
 ## Completed recently
 
+- **2026-08-24** — Step **8.10 P9 DONE** (MOTD formatting editor: `§` toolbar + paste, list preview, omit-name, collapsed raw; VM1 preserves codes). Follow-on 2 **COMPLETE**. Pass 3 **blocked** until the operator says so.
 - **2026-08-24** — Step **8.10 P8 DONE** (VM1 color icon: `PrivateTmp` so ImageIO can encode the favicon; stage PNG then `install` as `mcmgr`). Living **NEXT = P9** (plan-first). Pass 3 **blocked**.
 - **2026-08-24** — Step **8.10 P7 DONE** (Setup Minecraft step: Vanilla/Modded primary column; flavor/pack drop beside it). Living **NEXT = P8**. Pass 3 **blocked**.
 - **2026-08-24** — Step **8.10 P6 DONE** (Setup Always Free explainer; OCI profile `<pre>` grows; OCI + budget email combined, schema v4). Living **NEXT = P7**. Pass 3 **blocked**.

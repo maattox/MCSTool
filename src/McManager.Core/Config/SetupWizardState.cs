@@ -142,6 +142,10 @@ public sealed class SetupWizardState
     [JsonPropertyName("identity_description_customized")]
     public bool IdentityDescriptionCustomized { get; set; }
 
+    /// <summary>When true, list MOTD is description only (no name line).</summary>
+    [JsonPropertyName("identity_motd_omit_name")]
+    public bool IdentityMotdOmitName { get; set; }
+
     /// <summary>Local 64×64 PNG path for Setup seed. Not a secret. Empty = no custom icon (P8 default later).</summary>
     [JsonPropertyName("identity_icon_path")]
     public string IdentityIconPath { get; set; } = "";

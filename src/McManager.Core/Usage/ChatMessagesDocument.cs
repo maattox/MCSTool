@@ -4,7 +4,7 @@ namespace McManager.Core.Usage;
 
 /// <summary>
 /// Object Storage <c>messages/chat.json</c> — MOTD-scale identity + VM1 chat templates (v1).
-/// Manager is the writer; VM1 idle/boot is the consumer. No rich MOTD editor.
+/// Manager is the writer; VM1 idle/boot is the consumer. Description may include <c>§</c> codes.
 /// </summary>
 public sealed class ChatMessagesDocument
 {
@@ -35,13 +35,24 @@ public sealed class ChatMessagesDocument
     [JsonPropertyName("updated_at")]
     public string UpdatedAt { get; set; } = "";
 
-    /// <summary>Player-facing server name (Manager display + MOTD first line).</summary>
+    /// <summary>Player-facing server name (Manager display + optional MOTD first line).</summary>
     [JsonPropertyName("server_name")]
     public string ServerName { get; set; } = "";
 
-    /// <summary>Plain-text description used as the Minecraft MOTD (second line when name is set).</summary>
+    /// <summary>
+    /// MOTD body. May include Minecraft <c>§</c> codes and newlines for extra list lines.
+    /// Second list line when <see cref="MotdOmitName"/> is false and <see cref="ServerName"/> is set.
+    /// </summary>
     [JsonPropertyName("description")]
     public string Description { get; set; } = "";
+
+    /// <summary>
+    /// When true, the list MOTD is <see cref="Description"/> only (no server-name line).
+    /// Name still exists for Manager display. Default false (omitted in JSON).
+    /// </summary>
+    [JsonPropertyName("motd_omit_name")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool MotdOmitName { get; set; }
 
     /// <summary>Optional Object Storage key for the 64×64 PNG, typically <c>messages/server-icon.png</c>.</summary>
     [JsonPropertyName("icon_object")]

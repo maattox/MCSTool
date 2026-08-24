@@ -180,13 +180,13 @@ Read [`docs/NEXT.md`](NEXT.md) and run `/next-step` in a fresh Agent chat. Workf
 | **8.7** | Modpack-test follow-on (Change pack failures)              | **DONE** — [`V1-Modpack-Test-Follow-On-Plan.md`](V1-Modpack-Test-Follow-On-Plan.md) P1–P5 |
 | **8.8** | Operator-notes follow-on (Manager / Setup / pack UX)       | **DONE** — P1–P10; P11 **DEFERRED** ([`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md)) |
 | **8.9** | Pack-import assisted review (dep freeze + review UI)       | **DONE** — [`V1-Pack-Import-Assisted-Review-Plan.md`](V1-Pack-Import-Assisted-Review-Plan.md) P1–P2 |
-| **8.10** | Operator-notes follow-on 2 (density, MOTD, VM1 icon)     | **NEXT** — [`V1-Operator-Notes-Follow-On-2-Plan.md`](V1-Operator-Notes-Follow-On-2-Plan.md) **P9** (plan-first) |
-| **8.5** | Pre-packaging QA (catalog + passes + bug-fix plans)        | Pass 3 [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) — **blocked** until **8.10** exits and the operator says so. |
+| **8.10** | Operator-notes follow-on 2 (density, MOTD, VM1 icon)     | **DONE** — [`V1-Operator-Notes-Follow-On-2-Plan.md`](V1-Operator-Notes-Follow-On-2-Plan.md) P1–P9 |
+| **8.5** | Pre-packaging QA (catalog + passes + bug-fix plans)        | Pass 3 [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) — **blocked** until the operator says so. |
 | **8.6** | CI-built ARM spend-brake Function image (no Docker on admin PC) | TODO — after 8.5 exit; **required before 9.1 / official release** |
 | **9**   | Packaging, updates, launch (old MVP Phase 8–9)             | TODO — do not start until Phase 8.5 **and** Step **8.6.1** are DONE |
 
 
-**Current NEXT step:** See [`docs/NEXT.md`](NEXT.md) — Step **8.10** P9 (plan-first). **Do not start Step 8.5.2** (Pass 3) until **8.10** exits and the operator says so. **Do not start Step 8.6.1** until Phase 8.5 exits. **Do not start Step 9.1** until Phase 8.5 **and** Step **8.6.1** are DONE.
+**Current NEXT step:** See [`docs/NEXT.md`](NEXT.md) — Step **8.5.2** Pass 3 (**blocked** until the operator says so). **Do not start Step 8.6.1** until Phase 8.5 exits. **Do not start Step 9.1** until Phase 8.5 **and** Step **8.6.1** are DONE.
 
 ---
 
@@ -1343,7 +1343,7 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 
 ### Step 8.10 — Operator-notes follow-on 2
 
-**Status:** NEXT  
+**Status:** DONE  
 **Depends on:** Step **8.9** DONE
 
 **Read first**
@@ -1365,7 +1365,7 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 
 **Done when:** P1–P9 **DONE** in [`V1-Operator-Notes-Follow-On-2-Plan.md`](V1-Operator-Notes-Follow-On-2-Plan.md). Then [`NEXT.md`](NEXT.md) → Step **8.5.2** Pass 3 (**blocked** until the operator says so).
 
-**Changelog:** 2026-08-24 — **P8 DONE** (VM1 color icon: `PrivateTmp` for ImageIO favicon encode; stage PNG then `install` as `mcmgr`). Living **NEXT = P9** (plan-first). Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-24 — **P7 DONE** (Setup Minecraft two-column layout: Vanilla/Modded primary; flavor/pack drop beside it). Living **NEXT = P8**. Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-24 — **P6 DONE** (Always Free explainer; OCI `<pre>` grows; OCI + budget email combined; schema v4 / 8 steps). Living **NEXT = P7**. Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-24 — **P5 DONE** (pack identity Minecraft/loader/Java dropdowns; detected extra option; catalog-fail text fallback). Living **NEXT = P6**. Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-24 — **P4 DONE** (Server inner tabs Identity / World / Modding / Change pack; mods collapsed; Usage Hours/Budget; Advanced Status/Stack/Danger; Troubleshooting two-column). Living **NEXT = P5**. Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-24 — **P3 DONE** (tab **Server**; order Whitelist → Server → Console → Usage; keep-alive + deferred catalog; confirm-then-build derived zip). Living **NEXT = P4**. Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-24 — **P2 DONE** (custom WindowChrome caption, 1040 CSS px, wordmark gone). Living **NEXT = P3**. Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-24 — **P1 DONE** (toasts bottom-left, 4s fade, start-success AutoHide). Living **NEXT = P2** (plan-first). Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-24 — **Inserted** (docs only). Living **NEXT = P1** (toasts). Pass 3 stays blocked. Do not start 8.6.1 or 9.1.
+**Changelog:** 2026-08-24 — **DONE** (P1–P9). **P9** MOTD editor (`§` toolbar + paste, list preview, omit-name, collapsed raw; VM1 preserves codes). Pass 3 stays blocked until the operator says so. Do not start 8.6.1 or 9.1. 2026-08-24 — **P8 DONE** (VM1 color icon: `PrivateTmp` for ImageIO favicon encode; stage PNG then `install` as `mcmgr`). Living **NEXT = P9** (plan-first). Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-24 — **P7 DONE** (Setup Minecraft two-column layout: Vanilla/Modded primary; flavor/pack drop beside it). Living **NEXT = P8**. Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-24 — **P6 DONE** (Always Free explainer; OCI `<pre>` grows; OCI + budget email combined; schema v4 / 8 steps). Living **NEXT = P7**. Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-24 — **P5 DONE** (pack identity Minecraft/loader/Java dropdowns; detected extra option; catalog-fail text fallback). Living **NEXT = P6**. Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-24 — **P4 DONE** (Server inner tabs Identity / World / Modding / Change pack; mods collapsed; Usage Hours/Budget; Advanced Status/Stack/Danger; Troubleshooting two-column). Living **NEXT = P5**. Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-24 — **P3 DONE** (tab **Server**; order Whitelist → Server → Console → Usage; keep-alive + deferred catalog; confirm-then-build derived zip). Living **NEXT = P4**. Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-24 — **P2 DONE** (custom WindowChrome caption, 1040 CSS px, wordmark gone). Living **NEXT = P3**. Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-24 — **P1 DONE** (toasts bottom-left, 4s fade, start-success AutoHide). Living **NEXT = P2** (plan-first). Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-24 — **Inserted** (docs only). Living **NEXT = P1** (toasts). Pass 3 stays blocked. Do not start 8.6.1 or 9.1.
 
 ---
 
@@ -1388,7 +1388,7 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 | `[V1-Modpack-Test-Follow-On-Plan.md](V1-Modpack-Test-Follow-On-Plan.md)` | Step **8.7**. Informal Change pack failures. **DONE** (P1–P5) |
 | `[V1-Operator-Notes-Follow-On-Plan.md](V1-Operator-Notes-Follow-On-Plan.md)` | Step **8.8**. **DONE** (P1–P10; P11 deferred) |
 | `[V1-Pack-Import-Assisted-Review-Plan.md](V1-Pack-Import-Assisted-Review-Plan.md)` | Step **8.9**. **COMPLETE** (P1–P2 DONE) |
-| `[V1-Operator-Notes-Follow-On-2-Plan.md](V1-Operator-Notes-Follow-On-2-Plan.md)` | Step **8.10**. Density / MOTD / VM1 icon. **Do not start Pass 3** until this exits |
+| `[V1-Operator-Notes-Follow-On-2-Plan.md](V1-Operator-Notes-Follow-On-2-Plan.md)` | Step **8.10**. **COMPLETE** (P1–P9). Pass 3 still needs the operator to start it |
 | `[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)`             | Pass 3 gap-close + follow-on tests. **Do not start** until **8.10** exits and the operator says so |
 | `[V1-QA-Pass-3-Results.md](V1-QA-Pass-3-Results.md)`         | Pass 3 fill-out (do not start until operator says so)                      |
 | `[V1-Bug-Fix-Plan-Pass-1.md](V1-Bug-Fix-Plan-Pass-1.md)`     | Pass 1 fixes; **P1–P8 DONE**. Do not re-open unless a regression.          |
@@ -1396,7 +1396,7 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 | `[V1-Bug-Fix-Plan-TEMPLATE.md](V1-Bug-Fix-Plan-TEMPLATE.md)` | Copy to `V1-Bug-Fix-Plan-Pass-N.md` after triage                           |
 
 
-Pass 2 is **closed early** (no triage). Do **not** regenerate the whole catalog each pass. Do **not** create `V1-Bug-Fix-Plan-Pass-2.md`. Pass 3 waits for Step **8.10**, then the operator to start Step **8.5.2**.
+Pass 2 is **closed early** (no triage). Do **not** regenerate the whole catalog each pass. Do **not** create `V1-Bug-Fix-Plan-Pass-2.md`. Pass 3 waits for the operator to start Step **8.5.2** (Step **8.10** is **DONE**).
 
 **Not this phase:** installer, GitHub Releases, CI Function-image publisher (that is **8.6.1**), real **$1 budget fire** (clean-room / accepted spend), live Forge lab, after-v1 PRODUCT-IDEAS.
 
@@ -1430,7 +1430,7 @@ Pass 2 is **closed early** (no triage). Do **not** regenerate the whole catalog 
 
 ### Step 8.5.2 — Execute QA passes
 
-**Status:** TODO (Pass 3) — do not start until Step **8.10** exits **and** the operator says so  
+**Status:** TODO (Pass 3) — **blocked** until the operator says so (Step **8.10** is **DONE**)  
 **Depends on:** 8.5.1 + Step **4.13** DONE + Step **8.4** DONE + Steps **8.7**, **8.8**, **8.9**, and **8.10** (before Pass 3)
 
 **Read first**
@@ -1462,7 +1462,7 @@ Do **not** start Step **8.6.1** or Step **9.1** from this step. Do not rewrite t
 
 **Done when:** Operator agrees a pass is ready for triage **or** QA exit is met (then 8.5.3). This step stays the QA executor across chats; living **NEXT** is Step **8.8** until 8.8 exits.
 
-**Changelog:** 2026-08-24 — Pass 3 still **blocked** until Step **8.10** (density / MOTD / icon notes) completes and the operator says so. 2026-08-23 — Pass 3 still **blocked** until Step **8.9** (pack-import assisted review) completes and the operator says so. 2026-08-23 — Pack-import **design lock** ([`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md)); implementing as Step **8.9**, not this step. 2026-08-21 — **PAUSED** again for Steps **8.7** (modpack tests) and **8.8** (operator notes). Do not start Pass 3, 8.6.1, or 9.1. 2026-08-20 — **PAUSED** for Step **8.4** follow-on. Pass 2 **closed early** (Modded greenfield + join; no triage). Next QA = Pass 3 after 8.4. Do not start 8.6.1 or 9.1. 2026-08-20 — **NEXT** (4.13 / R4 DONE). Do not start Pass 2 Phase A or `tofu destroy` until the operator says so. 2026-08-20 — **PAUSED** until Step **4.13** / robustness R1–R4 (itzg exclude lists). Do not start Pass 2 Phase A or `tofu destroy`. 2026-08-19 — **Pass 2 docs.** Scope + results files. Pass 1 complete (P1–P8 DONE). Do not start 8.6.1 or 9.1.
+**Changelog:** 2026-08-24 — Step **8.10 DONE**. Pass 3 still **blocked** until the operator says so. 2026-08-24 — Pass 3 still **blocked** until Step **8.10** (density / MOTD / icon notes) completes and the operator says so. 2026-08-23 — Pass 3 still **blocked** until Step **8.9** (pack-import assisted review) completes and the operator says so. 2026-08-23 — Pack-import **design lock** ([`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md)); implementing as Step **8.9**, not this step. 2026-08-21 — **PAUSED** again for Steps **8.7** (modpack tests) and **8.8** (operator notes). Do not start Pass 3, 8.6.1, or 9.1. 2026-08-20 — **PAUSED** for Step **8.4** follow-on. Pass 2 **closed early** (Modded greenfield + join; no triage). Next QA = Pass 3 after 8.4. Do not start 8.6.1 or 9.1. 2026-08-20 — **NEXT** (4.13 / R4 DONE). Do not start Pass 2 Phase A or `tofu destroy` until the operator says so. 2026-08-20 — **PAUSED** until Step **4.13** / robustness R1–R4 (itzg exclude lists). Do not start Pass 2 Phase A or `tofu destroy`. 2026-08-19 — **Pass 2 docs.** Scope + results files. Pass 1 complete (P1–P8 DONE). Do not start 8.6.1 or 9.1.
 
 ---
 
@@ -1708,6 +1708,7 @@ Former MVP Phase **8–9**. Phases **1–7** are **DONE**. Phase **8** is **SKIP
 
 | Date       | Note                                                                                                                                                                                                                                                                                                                              |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-24 | **Step 8.10 DONE** (P1–P9). **P9** MOTD editor (`§` toolbar + paste, list preview, omit-name, collapsed raw; VM1 preserves codes). Plan **COMPLETE**. Pass 3 **blocked** until the operator says so. Do not start 8.6.1 or 9.1. |
 | 2026-08-24 | **Step 8.10 P8 DONE** (VM1 color icon: `PrivateTmp` for ImageIO favicon encode; stage PNG then `install` as `mcmgr`). Living **NEXT = P9** (plan-first). Pass 3 **blocked**. Do not start 8.6.1 or 9.1. |
 | 2026-08-24 | **Step 8.10 P7 DONE** (Setup Minecraft two-column layout: Vanilla/Modded primary; flavor/pack drop beside it). Living **NEXT = P8**. Pass 3 **blocked**. Do not start 8.6.1 or 9.1. |
 | 2026-08-24 | **Step 8.10 P6 DONE** (Always Free explainer; OCI `<pre>` grows; OCI + budget email combined; schema v4 / 8 steps). Living **NEXT = P7**. Pass 3 **blocked**. Do not start 8.6.1 or 9.1. |

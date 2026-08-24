@@ -53,6 +53,7 @@ public sealed class ChatMessagesStoreTests
         Assert.True(got.Value!.Present);
         Assert.Equal("Friends SMP", got.Value.Document.ServerName);
         Assert.Equal("Weekend world", got.Value.Document.Description);
+        Assert.False(got.Value.Document.MotdOmitName);
         Assert.Equal("messages/server-icon.png", got.Value.Document.IconObject);
         Assert.Equal("Empty for {minutes} minutes. Saving.", got.Value.Document.ChatMessages["idle_stop"]);
         Assert.Equal("Usage limits reached. Server shutting down.", got.Value.Document.ChatMessages["budget_stop"]);
@@ -67,6 +68,29 @@ public sealed class ChatMessagesStoreTests
         Assert.True(flags.RootElement.GetProperty("categories").GetProperty("messages").GetProperty("vm1").GetBoolean());
         Assert.True(flags.RootElement.GetProperty("categories").GetProperty("messages").GetProperty("door").GetBoolean());
         Assert.False(flags.RootElement.GetProperty("categories").GetProperty("messages").GetProperty("manager").GetBoolean());
+    }
+
+    [Fact]
+    public async Task Publish_round_trips_formatted_motd_and_omit_name()
+    {
+        var storage = new EtagMemoryStorage();
+        var store = new ChatMessagesStore(storage, Prefixes);
+        var doc = ChatMessagesDocument.Defaults();
+        doc.ServerName = "Friends SMP";
+        doc.Description = "§cHello  §aWorld";
+        doc.MotdOmitName = true;
+
+        var put = await store.PublishAsync(doc);
+        Assert.True(put.Succeeded, put.Error);
+
+        var got = await store.GetAsync();
+        Assert.True(got.Succeeded, got.Error);
+        Assert.Equal("§cHello  §aWorld", got.Value!.Document.Description);
+        Assert.True(got.Value.Document.MotdOmitName);
+        Assert.Equal("§cHello  §aWorld", ServerIdentityUx.BuildMotd(
+            got.Value.Document.ServerName,
+            got.Value.Document.Description,
+            got.Value.Document.MotdOmitName));
     }
 
     [Fact]
@@ -301,9 +325,28 @@ public sealed class ServerIdentityUxTests
     }
 
     [Fact]
+    public void Motd_omit_name_uses_description_only()
+    {
+        Assert.Equal("Weekend world", ServerIdentityUx.BuildMotd("Friends SMP", "Weekend world", omitName: true));
+        Assert.Equal(ServerIdentityUx.DefaultMotd, ServerIdentityUx.BuildMotd("Friends SMP", "  ", omitName: true));
+        Assert.Equal("§cHello\\n§aWorld", ServerIdentityUx.BuildMotd("Friends SMP", "§cHello\n§aWorld", omitName: true));
+    }
+
+    [Fact]
+    public void Motd_preserves_section_codes_and_internal_spaces()
+    {
+        var motd = ServerIdentityUx.BuildMotd("Friends SMP", "§cHello  §aWorld");
+        Assert.Equal("Friends SMP\\n§cHello  §aWorld", motd);
+        Assert.True(MotdFormatting.IsSafePropertiesValue(motd));
+        Assert.DoesNotContain('\n', motd);
+        Assert.DoesNotContain('\r', motd);
+    }
+
+    [Fact]
     public void Motd_collapses_real_newlines_to_minecraft_escape()
     {
         Assert.Equal("Line one\\nLine two", ServerIdentityUx.BuildMotd("", "Line one\r\nLine two"));
+        Assert.Equal("§cA\\n§aB", ServerIdentityUx.BuildMotd("", "§cA\\n§aB"));
     }
 
     [Fact]
@@ -354,6 +397,18 @@ public sealed class ServerIdentityUxTests
         });
         Assert.Equal("Friends SMP", custom.ServerName);
         Assert.Equal("", custom.Description);
+        Assert.False(custom.MotdOmitName);
+
+        var omit = ServerIdentityUx.CreateSetupSeed(new SetupWizardState
+        {
+            ServerType = SetupServerType.Vanilla,
+            IdentityName = "Friends SMP",
+            IdentityDescription = "§cLine",
+            IdentityDescriptionCustomized = true,
+            IdentityMotdOmitName = true,
+        });
+        Assert.True(omit.MotdOmitName);
+        Assert.Equal("§cLine", omit.Description);
     }
 
     [Fact]

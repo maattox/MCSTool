@@ -365,22 +365,12 @@
                             </div>
                             <div class="mcm-field">
                                 <label for="mcm-setup-server-desc" class="mcm-field-head">Description</label>
-                                <textarea id="mcm-setup-server-desc"
-                                          name="server-description"
-                                          autocomplete="off"
-                                          maxlength="@Vm.IdentityDescriptionMaxLength"
-                                          rows="2"
-                                          disabled="@(!Vm.CanMutateWizard)"
-                                          @bind="Vm.IdentityDescription"
-                                          @bind:event="oninput"></textarea>
+                                <MotdEditor IdPrefix="mcm-setup-server"
+                                            Disabled="@(!Vm.CanMutateWizard)"
+                                            ServerName="@Vm.IdentityName"
+                                            @bind-Description="Vm.IdentityDescription"
+                                            @bind-OmitName="Vm.IdentityMotdOmitName" />
                             </div>
-                            <p class="mcm-motd-preview">
-                                <span>Server list preview</span>
-                                @foreach (var line in Vm.MotdPreview.Split("\\n", StringSplitOptions.None))
-                                {
-                                    <span class="mcm-motd-line">@line</span>
-                                }
-                            </p>
                         </div>
                         <div>
                             <div>

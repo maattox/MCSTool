@@ -1,0 +1,136 @@
+@using McManager.Core.Services
+@inject IJSRuntime JS
+@inject IClipboard Clipboard
+
+<div class="mcm-motd-editor">
+    <div class="mcm-motd-toolbar" role="toolbar" aria-label="MOTD formatting">
+        <div class="mcm-motd-swatches" role="group" aria-label="Colors">
+            @foreach (var color in MotdFormatting.VanillaColors)
+            {
+                <button type="button"
+                        class="mcm-motd-swatch"
+                        style="background:@color.Hex"
+                        disabled="@Disabled"
+                        title="@($"{color.Name} (§{color.Code})")"
+                        aria-label="@($"{color.Name} (§{color.Code})")"
+                        @onclick="@(() => WrapAsync(MotdFormatting.CodePrefix(color.Code)))">
+                </button>
+            }
+        </div>
+        <div class="mcm-motd-formats" role="group" aria-label="Formats">
+            @foreach (var fmt in MotdFormatting.Formats)
+            {
+                <button type="button"
+                        class="mcm-motd-fmt"
+                        disabled="@Disabled"
+                        title="@($"{fmt.Name} (§{fmt.Code})")"
+                        aria-label="@($"{fmt.Name} (§{fmt.Code})")"
+                        @onclick="@(() => WrapAsync(MotdFormatting.CodePrefix(fmt.Code)))">
+                    <i class="ti @fmt.IconClass" aria-hidden="true"></i>
+                </button>
+            }
+        </div>
+    </div>
+    <textarea id="@TextAreaId"
+              class="mcm-motd-input"
+              rows="3"
+              maxlength="@ServerIdentityUx.MaxDescriptionLength"
+              spellcheck="false"
+              autocomplete="off"
+              disabled="@Disabled"
+              value="@Description"
+              @oninput="OnInput"></textarea>
+    <p class="mcm-motd-preview" aria-live="polite">
+        <span class="mcm-motd-preview-label">Server list preview</span>
+        @((MarkupString)PreviewHtml)
+    </p>
+    <p class="mcm-motd-hex-note">Hex and gradient colors need Paper or Spigot 1.16+. Vanilla, Forge, and Fabric ignore them.</p>
+    <label class="mcm-checkbox-row mcm-motd-omit">
+        <input type="checkbox"
+               disabled="@Disabled"
+               checked="@OmitName"
+               @onchange="OnOmitChanged" />
+        <span>Don’t put the server name on the MOTD</span>
+    </label>
+    <details class="mcm-motd-raw">
+        <summary>Raw motd= string</summary>
+        <div class="mcm-motd-raw-row">
+            <code class="mcm-motd-raw-code">@RawMotd</code>
+            <button type="button"
+                    class="mcm-motd-copy"
+                    disabled="@Disabled"
+                    @onclick="CopyRawAsync">
+                @(_copied ? "Copied" : "Copy")
+            </button>
+        </div>
+    </details>
+</div>
+
+@code {
+    [Parameter] public string Description { get; set; } = "";
+    [Parameter] public EventCallback<string> DescriptionChanged { get; set; }
+    [Parameter] public string ServerName { get; set; } = "";
+    [Parameter] public bool OmitName { get; set; }
+    [Parameter] public EventCallback<bool> OmitNameChanged { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string IdPrefix { get; set; } = "mcm-motd";
+
+    private bool _copied;
+    private string TextAreaId => IdPrefix + "-desc";
+
+    private string RawMotd =>
+        ServerIdentityUx.BuildMotd(ServerName, Description, OmitName);
+
+    private string PreviewHtml => MotdFormatting.ToPreviewHtml(RawMotd);
+
+    private async Task OnInput(ChangeEventArgs e)
+    {
+        var next = MotdFormatting.NormalizePaste(e.Value?.ToString() ?? "");
+        if (next.Length > ServerIdentityUx.MaxDescriptionLength)
+            next = next[..ServerIdentityUx.MaxDescriptionLength];
+        Description = next;
+        await DescriptionChanged.InvokeAsync(next);
+    }
+
+    private async Task WrapAsync(string prefix)
+    {
+        if (Disabled)
+            return;
+        try
+        {
+            var next = await JS.InvokeAsync<string?>("mcmMotd.wrap", TextAreaId, prefix, "");
+            if (next is null)
+                return;
+            if (next.Length > ServerIdentityUx.MaxDescriptionLength)
+                next = next[..ServerIdentityUx.MaxDescriptionLength];
+            Description = next;
+            await DescriptionChanged.InvokeAsync(next);
+        }
+        catch (Exception)
+        {
+            Description = prefix + Description;
+            await DescriptionChanged.InvokeAsync(Description);
+        }
+    }
+
+    private async Task OnOmitChanged(ChangeEventArgs e)
+    {
+        var value = e.Value is bool b && b
+                    || string.Equals(e.Value?.ToString(), "true", StringComparison.OrdinalIgnoreCase);
+        OmitName = value;
+        await OmitNameChanged.InvokeAsync(value);
+    }
+
+    private async Task CopyRawAsync()
+    {
+        try
+        {
+            await Clipboard.SetTextAsync(RawMotd);
+            _copied = true;
+        }
+        catch (Exception)
+        {
+            _copied = false;
+        }
+    }
+}

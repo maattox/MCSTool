@@ -1,0 +1,328 @@
+using System.Net;
+using System.Text;
+using System.Text.RegularExpressions;
+
+namespace McManager.Core.Services;
+
+/// <summary>
+/// Minecraft list MOTD helpers: paste normalize, <c>§</c> preview, vanilla color table.
+/// Hex / <c>§x</c> is best-effort (Paper/Spigot 1.16+); Vanilla/Forge/Fabric ignore it.
+/// </summary>
+public static class MotdFormatting
+{
+    public const char Section = '\u00A7';
+
+    public readonly record struct MotdColor(char Code, string Name, string Hex);
+
+    public readonly record struct MotdFormat(char Code, string Name, string IconClass);
+
+    public readonly record struct MotdRun(
+        string Text,
+        string ColorHex,
+        bool Bold,
+        bool Italic,
+        bool Underline,
+        bool Strikethrough,
+        bool Obfuscated);
+
+    public static readonly IReadOnlyList<MotdColor> VanillaColors =
+    [
+        new('0', "Black", "#000000"),
+        new('1', "Dark Blue", "#0000AA"),
+        new('2', "Dark Green", "#00AA00"),
+        new('3', "Dark Aqua", "#00AAAA"),
+        new('4', "Dark Red", "#AA0000"),
+        new('5', "Dark Purple", "#AA00AA"),
+        new('6', "Gold", "#FFAA00"),
+        new('7', "Gray", "#AAAAAA"),
+        new('8', "Dark Gray", "#555555"),
+        new('9', "Blue", "#5555FF"),
+        new('a', "Green", "#55FF55"),
+        new('b', "Aqua", "#55FFFF"),
+        new('c', "Red", "#FF5555"),
+        new('d', "Light Purple", "#FF55FF"),
+        new('e', "Yellow", "#FFFF55"),
+        new('f', "White", "#FFFFFF"),
+    ];
+
+    public static readonly IReadOnlyList<MotdFormat> Formats =
+    [
+        new('l', "Bold", "ti-bold"),
+        new('o', "Italic", "ti-italic"),
+        new('n', "Underline", "ti-underline"),
+        new('m', "Strikethrough", "ti-strikethrough"),
+        new('k', "Obfuscated", "ti-shuffle"),
+        new('r', "Reset", "ti-clear-all"),
+    ];
+
+    private static readonly Dictionary<char, string> ColorByCode = VanillaColors
+        .ToDictionary(c => c.Code, c => c.Hex);
+
+    private static readonly Regex UnicodeSection = new(
+        @"\\u00a7",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
+    private static readonly Regex HexHash = new(
+        @"&#([0-9A-Fa-f]{6})",
+        RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
+    private static readonly Regex AmpCode = new(
+        @"(?<!&)[&]([0-9a-fk-orxA-FK-ORX])",
+        RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
+    /// <summary>
+    /// Accept a fadehost / <c>server.properties</c> dump: strip <c>motd=</c>, decode
+    /// <c>\u00a7</c> and <c>\n</c>, map <c>&amp;</c> codes and <c>&amp;#RRGGBB</c> to <c>§</c>.
+    /// </summary>
+    public static string NormalizePaste(string? raw)
+    {
+        if (string.IsNullOrEmpty(raw))
+            return "";
+
+        var s = raw.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
+        var look = s.TrimStart();
+        var hadMotdPrefix = look.StartsWith("motd=", StringComparison.OrdinalIgnoreCase);
+        if (hadMotdPrefix)
+        {
+            var idx = s.IndexOf("motd=", StringComparison.OrdinalIgnoreCase);
+            s = idx >= 0 ? s[(idx + 5)..] : s;
+        }
+
+        var hadUnicode = UnicodeSection.IsMatch(s);
+        var hadSection = s.Contains(Section);
+        s = UnicodeSection.Replace(s, Section.ToString());
+        s = HexHash.Replace(s, m => ToSectionHex(m.Groups[1].Value));
+        if (hadMotdPrefix || hadUnicode || hadSection || LooksLikeAmpMotd(s.TrimStart()))
+            s = AmpCode.Replace(s, m => Section + m.Groups[1].Value.ToLowerInvariant());
+        s = s.Replace("\\n", "\n", StringComparison.Ordinal);
+        return s;
+    }
+
+    private static bool LooksLikeAmpMotd(string s) =>
+        s.Length >= 2 && s[0] == '&' && "0123456789abcdefklmnorx".Contains(char.ToLowerInvariant(s[1]));
+
+    public static string CodePrefix(char code) => Section + char.ToLowerInvariant(code).ToString();
+
+    public static string HexPrefix(string hex6)
+    {
+        var h = (hex6 ?? "").Trim().TrimStart('#');
+        if (h.Length != 6 || !h.All(IsHexDigit))
+            return "";
+        return ToSectionHex(h);
+    }
+
+    /// <summary>True when the MOTD can be written as a single <c>server.properties</c> line.</summary>
+    public static bool IsSafePropertiesValue(string motd) =>
+        motd.IndexOf('\n') < 0 && motd.IndexOf('\r') < 0;
+
+    public static IReadOnlyList<IReadOnlyList<MotdRun>> ToPreviewLines(string? motdPropertiesValue)
+    {
+        var text = motdPropertiesValue ?? "";
+        var lines = text
+            .Replace("\r\n", "\n", StringComparison.Ordinal)
+            .Replace('\r', '\n')
+            .Replace("\\n", "\n", StringComparison.Ordinal)
+            .Split('\n');
+        var result = new IReadOnlyList<MotdRun>[lines.Length];
+        for (var i = 0; i < lines.Length; i++)
+            result[i] = ParseLine(lines[i]);
+        return result;
+    }
+
+    public static string ToPreviewHtml(string? motdPropertiesValue)
+    {
+        var sb = new StringBuilder();
+        foreach (var line in ToPreviewLines(motdPropertiesValue))
+        {
+            sb.Append("<span class=\"mcm-motd-line\">");
+            if (line.Count == 0)
+            {
+                sb.Append("&nbsp;");
+            }
+            else
+            {
+                foreach (var run in line)
+                    AppendRun(sb, run);
+            }
+
+            sb.Append("</span>");
+        }
+
+        return sb.ToString();
+    }
+
+    public static IReadOnlyList<MotdRun> ParseLine(string line)
+    {
+        var runs = new List<MotdRun>();
+        var buf = new StringBuilder();
+        var color = "#FFFFFF";
+        var bold = false;
+        var italic = false;
+        var underline = false;
+        var strike = false;
+        var obf = false;
+
+        void Flush()
+        {
+            if (buf.Length == 0)
+                return;
+            runs.Add(new MotdRun(buf.ToString(), color, bold, italic, underline, strike, obf));
+            buf.Clear();
+        }
+
+        for (var i = 0; i < line.Length; i++)
+        {
+            var ch = line[i];
+            if ((ch == Section || ch == '&') && i + 1 < line.Length)
+            {
+                var code = char.ToLowerInvariant(line[i + 1]);
+                if (code == 'x')
+                {
+                    if (TryReadHexColor(line, i, out var hex, out var consumed))
+                    {
+                        Flush();
+                        color = hex;
+                        ResetFormats(ref bold, ref italic, ref underline, ref strike, ref obf);
+                        i += consumed - 1;
+                        continue;
+                    }
+                }
+
+                if (ColorByCode.TryGetValue(code, out var nextColor))
+                {
+                    Flush();
+                    color = nextColor;
+                    ResetFormats(ref bold, ref italic, ref underline, ref strike, ref obf);
+                    i++;
+                    continue;
+                }
+
+                if (code is 'l' or 'o' or 'n' or 'm' or 'k' or 'r')
+                {
+                    Flush();
+                    switch (code)
+                    {
+                        case 'l': bold = true; break;
+                        case 'o': italic = true; break;
+                        case 'n': underline = true; break;
+                        case 'm': strike = true; break;
+                        case 'k': obf = true; break;
+                        case 'r':
+                            color = "#FFFFFF";
+                            ResetFormats(ref bold, ref italic, ref underline, ref strike, ref obf);
+                            break;
+                    }
+
+                    i++;
+                    continue;
+                }
+            }
+
+            buf.Append(ch);
+        }
+
+        Flush();
+        return runs;
+    }
+
+    private static void ResetFormats(
+        ref bool bold,
+        ref bool italic,
+        ref bool underline,
+        ref bool strike,
+        ref bool obf)
+    {
+        bold = false;
+        italic = false;
+        underline = false;
+        strike = false;
+        obf = false;
+    }
+
+    private static bool TryReadHexColor(string line, int at, out string hex, out int consumed)
+    {
+        hex = "#FFFFFF";
+        consumed = 0;
+        // §x§R§R§G§G§B§B  (14 chars) or §xRRGGBB (8 chars)
+        if (at + 13 < line.Length && IsSection(line[at + 2]))
+        {
+            var nibbles = new char[6];
+            var p = at + 2;
+            for (var n = 0; n < 6; n++)
+            {
+                if (p + 1 >= line.Length || !IsSection(line[p]) || !IsHexDigit(line[p + 1]))
+                    return false;
+                nibbles[n] = line[p + 1];
+                p += 2;
+            }
+
+            hex = "#" + new string(nibbles);
+            consumed = p - at;
+            return true;
+        }
+
+        if (at + 7 < line.Length)
+        {
+            var compact = line.Substring(at + 2, 6);
+            if (compact.All(IsHexDigit))
+            {
+                hex = "#" + compact;
+                consumed = 8;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsSection(char ch) => ch == Section || ch == '&';
+
+    private static bool IsHexDigit(char ch) =>
+        (uint)ch <= 127 && char.IsAsciiHexDigit(ch);
+
+    private static string ToSectionHex(string hex6)
+    {
+        var h = hex6.ToLowerInvariant();
+        var sb = new StringBuilder(14);
+        sb.Append(Section).Append('x');
+        foreach (var nibble in h)
+            sb.Append(Section).Append(nibble);
+        return sb.ToString();
+    }
+
+    private static void AppendRun(StringBuilder sb, MotdRun run)
+    {
+        sb.Append("<span class=\"mcm-motd-run");
+        if (run.Obfuscated)
+            sb.Append(" mcm-motd-obf");
+        sb.Append("\" style=\"color:");
+        sb.Append(WebUtility.HtmlEncode(run.ColorHex));
+        sb.Append(';');
+        if (run.Bold)
+            sb.Append("font-weight:700;");
+        if (run.Italic)
+            sb.Append("font-style:italic;");
+        var deco = Decorations(run);
+        if (deco.Length > 0)
+        {
+            sb.Append("text-decoration:");
+            sb.Append(deco);
+            sb.Append(';');
+        }
+
+        sb.Append("\">");
+        sb.Append(WebUtility.HtmlEncode(run.Text));
+        sb.Append("</span>");
+    }
+
+    private static string Decorations(MotdRun run)
+    {
+        if (run.Underline && run.Strikethrough)
+            return "underline line-through";
+        if (run.Underline)
+            return "underline";
+        if (run.Strikethrough)
+            return "line-through";
+        return "";
+    }
+}
