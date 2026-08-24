@@ -211,7 +211,7 @@ When everyone is done, click **Stop** (doorbell-aware). If you forget, idle time
 
 Each Manager tab **remembers its own scroll position** when you switch away and back. A tab you have not opened yet starts at the top.
 
-**Wipe world** on **Server Management** deletes only the live save on the game VM. Cloud backups, mods, and `server.properties` are not deleted. Download a world save first if you might want the current world back. The game VM must be running; Minecraft is stopped for the wipe and **started again** so a new world generates. If the server is off, that warning (and other button results) shows in a compact toast at the **lower-right** of the Manager window — read it, then **X** to dismiss. Short successes such as copying the play IP still fade on their own. Setup keeps its footer status.
+**Wipe world** on **Server Management** deletes only the live save on the game VM. Cloud backups, mods, and `server.properties` are not deleted. Download a world save first if you might want the current world back. The game VM must be running; Minecraft is stopped for the wipe and **started again** so a new world generates. If the server is off, that warning (and other button results) shows in a compact toast at the **lower-left** of the Manager window, above the bottom bar — read it, then **X** to dismiss. Short successes (including Start) fade after a few seconds; errors and in-progress toasts stay until **X**. Setup keeps its footer status.
 
 *(Pass 1 catalog recorded leave-stopped; operator 2026-08-19 overrode — bug-fix **P8**. [`PRODUCT-IDEAS.md`](PRODUCT-IDEAS.md) Wipe world step 4 may still say the next Start creates a world.)*
 

@@ -154,7 +154,8 @@ button.mcm-btn-disabled:hover {
  */
 .mcm-app-manage {
     position: relative;
-    --mcm-toast-bottom: 16px;
+    --mcm-toast-bottom: 20px;
+    --mcm-toast-fade: 320ms;
     display: grid;
     grid-template-columns: var(--app-pad-x) minmax(0, var(--app-chrome-width)) var(--app-pad-x);
     grid-template-rows: auto auto auto minmax(0, 1fr) auto;
@@ -762,7 +763,7 @@ button.mcm-btn-disabled:hover {
 .mcm-app-manage > .mcm-action-banner {
     grid-column: 2;
     grid-row: 4;
-    justify-self: end;
+    justify-self: start;
     align-self: end;
     position: relative;
     z-index: 30;
@@ -873,8 +874,18 @@ button.mcm-btn-disabled:hover {
         animation: mcm-banner-in 180ms ease-out;
     }
 
+    .mcm-app-manage > .mcm-action-banner.is-leaving {
+        animation: mcm-banner-out var(--mcm-toast-fade) ease-in forwards;
+    }
+
     .mcm-action-banner.is-progress .mcm-action-banner-icon {
         animation: mcm-toast-spin 800ms linear infinite;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mcm-app-manage > .mcm-action-banner.is-leaving {
+        opacity: 0;
     }
 }
 
@@ -887,6 +898,18 @@ button.mcm-btn-disabled:hover {
     to {
         transform: none;
         opacity: 1;
+    }
+}
+
+@keyframes mcm-banner-out {
+    from {
+        transform: none;
+        opacity: 1;
+    }
+
+    to {
+        transform: translateY(6px);
+        opacity: 0;
     }
 }
 

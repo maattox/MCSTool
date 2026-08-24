@@ -1019,7 +1019,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         PinRolloverHelp = snap.RolloverHelp;
     }
 
-    private void ShowToast(string message, bool isError)
+    private void ShowToast(string message, bool isError, bool? autoHide = null)
     {
         if (string.IsNullOrWhiteSpace(message))
         {
@@ -1030,7 +1030,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         var severity = isError
             ? ActionBannerSeverity.Error
             : ActionBanner.InferSeverity(message);
-        _banner.Show(message.Trim(), severity);
+        _banner.Show(message.Trim(), severity, isError ? false : autoHide);
     }
 
     private async Task RestoreCopyLabelAsync(CancellationToken cancellationToken)
@@ -1072,7 +1072,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                                 : "Server is stopped.";
                     ShowToast(
                         ActionFeedback,
-                        isError: result.Value.IsDegraded || result.Value.IsSpendBrake);
+                        isError: result.Value.IsDegraded || result.Value.IsSpendBrake,
+                        autoHide: result.Value.IsPlayable ? true : null);
                     return;
                 }
             }

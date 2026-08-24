@@ -5,12 +5,16 @@ using McManager.Hybrid.Ui;
 namespace McManager.Hybrid.ViewModels;
 
 /// <summary>
-/// Compact window-locked toast (lower-right). Posts go through <see cref="ActionBanner"/>.
-/// Short success auto-hides; long copy, progress, warning, and error wait for X.
+/// Compact window-locked toast (lower-left, above the progress dock). Posts go through
+/// <see cref="ActionBanner"/>. Short success auto-hides with a fade; long copy, progress,
+/// warning, and error wait for X.
 /// </summary>
 public sealed partial class ActionBannerViewModel : ObservableObject, IDisposable
 {
-    private static readonly TimeSpan ShortSuccessHide = TimeSpan.FromSeconds(3.5);
+    private static readonly TimeSpan ShortSuccessHide = TimeSpan.FromSeconds(4);
+
+    /// <summary>Must match <c>--mcm-toast-fade</c> in app.css.</summary>
+    private static readonly TimeSpan FadeOut = TimeSpan.FromMilliseconds(320);
 
     private readonly ActionBanner _banner;
     private readonly IUiClock _clock;
@@ -32,6 +36,12 @@ public sealed partial class ActionBannerViewModel : ObservableObject, IDisposabl
 
     [ObservableProperty]
     private ActionBannerSeverity _severity;
+
+    [ObservableProperty]
+    private bool _autoHide;
+
+    [ObservableProperty]
+    private bool _isLeaving;
 
     public string SeverityClass =>
         Severity switch
@@ -77,6 +87,7 @@ public sealed partial class ActionBannerViewModel : ObservableObject, IDisposabl
 
     private void OnBannerChanged(object? sender, EventArgs e)
     {
+        IsLeaving = false;
         CopyFromBanner();
         OnPropertyChanged(nameof(SeverityClass));
         OnPropertyChanged(nameof(SeverityIcon));
@@ -87,7 +98,7 @@ public sealed partial class ActionBannerViewModel : ObservableObject, IDisposabl
         _hideCts?.Cancel();
         _hideCts?.Dispose();
         _hideCts = null;
-        if (!IsVisible || ActionBanner.ShouldPersist(Message, Severity))
+        if (!IsVisible || !AutoHide)
             return;
 
         var cts = new CancellationTokenSource();
@@ -100,13 +111,18 @@ public sealed partial class ActionBannerViewModel : ObservableObject, IDisposabl
         Message = _banner.Message;
         Severity = _banner.Severity;
         IsVisible = _banner.IsVisible;
+        AutoHide = _banner.AutoHide;
     }
 
     private async Task HideAfterAsync(CancellationToken cancellationToken)
     {
         try
         {
-            await _clock.Delay(ShortSuccessHide, cancellationToken).ConfigureAwait(false);
+            await _clock.Delay(ShortSuccessHide, cancellationToken);
+            if (cancellationToken.IsCancellationRequested)
+                return;
+            IsLeaving = true;
+            await _clock.Delay(FadeOut, cancellationToken);
             if (!cancellationToken.IsCancellationRequested)
                 _banner.Dismiss();
         }

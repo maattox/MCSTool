@@ -4,10 +4,10 @@
 **Parent:** `[V1-Implementation-Plan.md](V1-Implementation-Plan.md)`.  
 **Results:** fill `[V1-QA-Pass-N-Results.md](V1-QA-Pass-3-Results.md)` for the current pass. Pass 1 and Pass 2 are historical. Do **not** edit expected steps in this catalog just to record an outcome. Product changes (Steps 8.4, **8.7**, **8.8**) **may** update expected (S4-02, S3-01, S6-01, S6-02, S4-01, S3-07, plus 8.7/8.8 chrome).  
 **Pass 2 execution:** [`archive/V1-QA-Pass-2-Scope.md`](archive/V1-QA-Pass-2-Scope.md) (**closed early**).  
-**Pass 3 execution:** [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) (**blocked** until Step **8.9** completes and the operator starts Pass 3). Do not re-run the full catalog.  
+**Pass 3 execution:** [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) (**blocked** until Step **8.10** completes and the operator starts Pass 3). Do not re-run the full catalog.  
 **Fix work:** after triage, an agent writes `[V1-Bug-Fix-Plan-Pass-N.md](V1-Bug-Fix-Plan-TEMPLATE.md)` from the filled results. Agents implement **that** plan, not this catalog.
 
-This catalog is `dotnet run` **+ TESTING**. Pass 1 used the existing Vanilla stack. Pass 2 is Delete + greenfield **Modded** (**closed early**). Pass 3 is gap-close + Steps **8.4 / 8.7 / 8.8 / 8.9** tests on that stack. It is not the PRODUCT-IDEAS clean-room (new account + installer + real $1 budget fire). Do not start [Step 8.6.1](V1-Implementation-Plan.md#step-861--ci-built-arm-image--setup-copy-into-ocir) or [Step 9.1](V1-Implementation-Plan.md#step-91--windows-installer) from this file.
+This catalog is `dotnet run` **+ TESTING**. Pass 1 used the existing Vanilla stack. Pass 2 is Delete + greenfield **Modded** (**closed early**). Pass 3 is gap-close + Steps **8.4 / 8.7 / 8.8 / 8.9 / 8.10** tests on that stack. It is not the PRODUCT-IDEAS clean-room (new account + installer + real $1 budget fire). Do not start [Step 8.6.1](V1-Implementation-Plan.md#step-861--ci-built-arm-image--setup-copy-into-ocir) or [Step 9.1](V1-Implementation-Plan.md#step-91--windows-installer) from this file.
 
 **Cost:** $0 (Always Free–eligible). Never open `0.0.0.0/0` on Minecraft, SSH, or door admin.
 

@@ -362,7 +362,7 @@
 
     @if (Banner.IsVisible)
     {
-        <div class="mcm-action-banner @Banner.SeverityClass"
+        <div class="mcm-action-banner @Banner.SeverityClass @(Banner.IsLeaving ? "is-leaving" : null)"
              role="@Banner.LiveRole"
              aria-live="@Banner.AriaLive">
             <div class="mcm-action-banner-inner">

@@ -488,7 +488,7 @@ After Default vs Optimized, show the **Minecraft version** picker (manifest for 
 4. Show detected summary for confirmation before continuing Setup: pack name, Minecraft version, mod loader (+ version if known), required Java, file counts / warnings.  
 5. On confirm, continue wizard; bootstrap installs loader + **server-side** mods only.
 
-**Pack import intended design (operator 2026-08-23):** [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) is the living contract for formats, automatic vs **assisted** homemade zips, skip order, dependency freeze, review UI, and crash follow-up. Homemade client-jar zips **stay supported**; unattended “just works” is **not** the promise. **Implemented** as Step **8.9** ([`V1-Pack-Import-Assisted-Review-Plan.md`](V1-Pack-Import-Assisted-Review-Plan.md)). Live pointer [`NEXT.md`](NEXT.md). Pass 3 stays blocked until the operator starts it.
+**Pack import intended design (operator 2026-08-23):** [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) is the living contract for formats, automatic vs **assisted** homemade zips, skip order, dependency freeze, review UI, and crash follow-up. Homemade client-jar zips **stay supported**; unattended “just works” is **not** the promise. **Implemented** as Step **8.9** ([`V1-Pack-Import-Assisted-Review-Plan.md`](V1-Pack-Import-Assisted-Review-Plan.md)). Live pointer [`NEXT.md`](NEXT.md). Pass 3 stays blocked until Step **8.10** exits and the operator starts it.
 
 **Format hints (more research at implementation time):**
 
@@ -1081,7 +1081,8 @@ Parked items—not blocking the staged plan, but should be revisited:
 
 ## Changelog
 
-| 2026-08-24 | **Step 8.9 done** (assisted review UI + dep freeze). Living NEXT = Pass 3 via `docs/NEXT.md` (**blocked** until operator). |
+| 2026-08-24 | **Step 8.10 scheduled** (density / MOTD / VM1 icon notes): [`V1-Operator-Notes-Follow-On-2-Plan.md`](V1-Operator-Notes-Follow-On-2-Plan.md). Living NEXT = P1. Rich MOTD editor pulled into v1 via that plan (this file’s after-v1 MOTD row may drift). Pass 3 still blocked. |
+| 2026-08-24 | **Step 8.9 done** (assisted review UI + dep freeze). Living NEXT then moved to Step **8.10**. Pass 3 **blocked**. |
 | 2026-08-23 | **Step 8.9 scheduled** (assisted review + dep freeze): [`V1-Pack-Import-Assisted-Review-Plan.md`](V1-Pack-Import-Assisted-Review-Plan.md). Living NEXT = P1. Pass 3 still blocked. |
 | 2026-08-23 | **Pack import design lock** (no code): [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md). Homemade zip kept; unattended success dropped; assisted review + dep freeze. Later scheduled as Step **8.9**. Pass 3 still blocked. |
 | 2026-08-23 | **Step 8.8 closed** without P11. CurseForge refuse **helper panel** (links only, no API) parked as **maybe later** in deferred table. Pass 3 next via `docs/NEXT.md` (blocked until operator). Agent workflow + skills added. |

@@ -1,6 +1,6 @@
 # V1 pack-import assisted review (living)
 
-**Status:** **COMPLETE** — P1–P2 **DONE**. Created 2026-08-23. **Live NEXT:** [`NEXT.md`](NEXT.md) (Pass 3 **blocked**).  
+**Status:** **COMPLETE** — P1–P2 **DONE**. Created 2026-08-23. **Live NEXT:** [`NEXT.md`](NEXT.md) (Step **8.10**; Pass 3 **blocked**).  
 **Parent:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.9**.  
 **Spec:** [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) (operator 2026-08-23 design lock). This file is the **implementation queue**; the spec wins on product rules.  
 **Why now:** operator asked to implement the locked design (homemade zip stays; unattended boot dropped; assisted review + dependency freeze) **before** QA Pass 3.

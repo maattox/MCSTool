@@ -57,6 +57,35 @@ public sealed class ActionBannerTests
     }
 
     [Fact]
+    public void Show_start_success_autoHide_even_when_slightly_long()
+    {
+        var banner = new ActionBanner();
+        var slightlyLong = new string('a', ActionBanner.LongCopyChars + 5);
+        banner.Show(slightlyLong, ActionBannerSeverity.Success, autoHide: true);
+
+        Assert.True(banner.IsVisible);
+        Assert.True(banner.AutoHide);
+        Assert.True(ActionBanner.ShouldPersist(slightlyLong, ActionBannerSeverity.Success));
+    }
+
+    [Fact]
+    public void Show_error_never_autoHides()
+    {
+        var banner = new ActionBanner();
+        banner.Show("Start failed.", ActionBannerSeverity.Error, autoHide: true);
+        Assert.False(banner.AutoHide);
+        Assert.True(banner.IsVisible);
+    }
+
+    [Fact]
+    public void Show_short_success_autoHides_by_default()
+    {
+        var banner = new ActionBanner();
+        banner.Show("Server is running.", ActionBannerSeverity.Success);
+        Assert.True(banner.AutoHide);
+    }
+
+    [Fact]
     public void InferSeverity_wipe_while_stopped_is_warning()
     {
         var msg =
