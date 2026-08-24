@@ -27,6 +27,10 @@ NoNewPrivileges=true
 ProtectSystem=strict
 ReadWritePaths={{WORKING_DIRECTORY}}
 ProtectHome=true
+# ImageIO writes /tmp/imageio*.tmp when encoding the 64x64 list favicon.
+# Without a private tmp, ProtectSystem=strict makes that a read-only filesystem
+# ("Couldn't load server icon" / "Can't create cache file!").
+PrivateTmp=true
 
 [Install]
 WantedBy=multi-user.target

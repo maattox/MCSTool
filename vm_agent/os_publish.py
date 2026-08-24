@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 import sys
+import tempfile
 from datetime import datetime, timezone
 from typing import Any
 
@@ -161,6 +163,39 @@ def _chown_mcmgr(path: str) -> None:
         pass
 
 
+def _staging_dir() -> str:
+    """Directory the apply process can write (not 0750 ``mcmgr`` server dir)."""
+    for candidate in ("/var/lib/mc-manager", "/tmp"):
+        if os.path.isdir(candidate) and os.access(candidate, os.W_OK):
+            return candidate
+    return tempfile.gettempdir()
+
+
+def _install_server_icon(raw: bytes, dest: str) -> None:
+    """Stage the PNG where ubuntu/root can write, then install as ``mcmgr``.
+
+    ``/opt/mcmgr/server`` is ``0750 mcmgr:mcmgr``. ``ubuntu`` cannot create
+    ``server-icon.png.tmp`` there (EACCES). Boot ledger is root and *can*
+    write in-place; SSH/manual apply as ubuntu cannot. Stage under
+    ``/var/lib/mc-manager`` or ``/tmp``, then ``install -o mcmgr -g mcmgr -m 644``
+    (with ``sudo -n`` when not root) so ownership matches the on-box contract.
+    """
+    fd, tmp = tempfile.mkstemp(prefix="server-icon.", suffix=".png", dir=_staging_dir())
+    try:
+        with os.fdopen(fd, "wb") as f:
+            f.write(raw)
+        os.chmod(tmp, 0o644)
+        cmd = ["install", "-o", "mcmgr", "-g", "mcmgr", "-m", "644", tmp, dest]
+        if os.geteuid() != 0:
+            cmd = ["sudo", "-n", *cmd]
+        subprocess.run(cmd, check=True, capture_output=True, text=True)
+    finally:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+
+
 def _patch_properties_key(path: str, key: str, value: str) -> None:
     lines: list[str] = []
     try:
@@ -253,18 +288,18 @@ def _apply_identity(cfg: dict[str, Any], doc: dict[str, Any], client, namespace:
     icon_dest = os.path.join(server_dir, "server-icon.png")
     raw = _get_bytes(client, namespace, bucket, icon_name)
     if raw:
-        tmp = icon_dest + ".tmp"
-        with open(tmp, "wb") as f:
-            f.write(raw)
-        os.replace(tmp, icon_dest)
-        _chown_mcmgr(icon_dest)
         try:
-            os.chmod(icon_dest, 0o644)
-        except OSError:
-            pass
-        notes.append(f"wrote {icon_dest}")
+            _install_server_icon(raw, icon_dest)
+            notes.append(f"wrote {icon_dest}")
+        except OSError as exc:
+            notes.append(f"icon write failed: {exc}")
+        except subprocess.CalledProcessError as exc:
+            err = (exc.stderr or exc.stdout or str(exc)).strip()
+            notes.append(f"icon write failed: {err}")
     elif os.path.isfile(icon_dest) and not icon_name:
         notes.append("no icon object; left existing server-icon.png")
+    else:
+        notes.append(f"no icon bytes from {icon_name}; skipped icon apply")
     return notes
 
 

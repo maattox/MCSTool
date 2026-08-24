@@ -69,6 +69,16 @@ Product roadmap stays in `PRODUCT-IDEAS.md`. Architecture stays in `Infrastructu
 **Verify:** Save identity → Restart Minecraft → `motd=` and `server-icon.png` under `/opt/mcmgr/server/` match Object Storage; Java list ping on the play IP while VM1 holds it. Door MOTD unchanged.  
 **Refs:** `vm_agent/os_publish.py` `pull_messages_if_dirty`, `vm_agent/systemd/mc-boot-ledger.service`, `onbox/mcmgr/templates/minecraft.service.in`, `archive/V1-Bug-Fix-Plan-Pass-1.md` P5
 
+### OS-ISSUE-11 — VM1 color list icon: ImageIO `/tmp` + ubuntu `.tmp` (P8)
+**Status:** Fixed (2026-08-24) — product `vm_agent` + `minecraft.service` PrivateTmp  
+**Summary:** Object Storage and `/opt/mcmgr/server/server-icon.png` already held a 64×64 color PNG (`mcmgr:mcmgr` `0644`), but the Java multiplayer list still showed the door greyscale. Journal: **Couldn't load server icon**. This is **not** a regression of OS-ISSUE-10 (boot ordering).  
+**Cause (stacked):**  
+1. **User-visible:** `minecraft.service` `ProtectSystem=strict` leaves host `/tmp` read-only. Vanilla/Fabric `ImageIO.write` encodes the favicon via `/tmp/imageio*.tmp` → `IIOException: Can't create cache file!` / `FileSystemException: Read-only file system`.  
+2. Product `_apply_identity` also wrote `server-icon.png.tmp` **in** the `0750 mcmgr:mcmgr` server dir. `ubuntu` is not in `mcmgr` → **EACCES** (SSH/SFTP or non-root apply). Root boot-ledger could still land the file.  
+**Fix:** `PrivateTmp=true` on the game unit (template + idle-agent drop-in `mcmgr-private-tmp.conf`). Stage the PNG under `/var/lib/mc-manager` or `/tmp`, then `install -o mcmgr -g mcmgr -m 644`. Do not chmod the live server tree. Redeploy idle agent from `vm_agent/`.  
+**Verify:** After Minecraft restart, no “Couldn't load server icon”; status ping includes a color favicon; `ls -l` `server-icon.png` is `mcmgr:mcmgr` `0644`.  
+**Refs:** `onbox/mcmgr/templates/minecraft.service.in`, `vm_agent/install.sh`, `vm_agent/os_publish.py` `_install_server_icon`, Step **8.10** P8
+
 ### OS-ISSUE-6 — Heal during STOPPING could race SoftStop publish
 **Status:** Fixed (Phase 5)  
 **Summary:** Door heal previously accepted `STOPPED|STOPPING`, so a slow SoftStop publish could race concurrent ledger puts.  

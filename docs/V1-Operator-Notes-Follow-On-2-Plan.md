@@ -69,8 +69,8 @@ P8 may run in a **separate operator chat** while Group A is on P1–P7. Default 
 | P5 | Pack identity version dropdowns | **DONE** | SEQUENTIAL — `PackIdentityFields` used by Setup P7 | agent |
 | P6 | Setup sparse pages + Always Free copy | **DONE** | SEQUENTIAL — `SetupWizard.razor` | either |
 | P7 | Setup Minecraft step layout | **DONE** | SEQUENTIAL — same wizard file as P6 | either |
-| P8 | VM1 color server icon | **NEXT** | PARALLEL-OK with P1–P7 | agent |
-| P9 | MOTD formatting editor | TODO | SEQUENTIAL after P4 + P8 | plan-first |
+| P8 | VM1 color server icon | **DONE** | PARALLEL-OK with P1–P7 | agent |
+| P9 | MOTD formatting editor | **NEXT** | SEQUENTIAL after P4 + P8 | plan-first |
 
 ---
 
@@ -393,7 +393,7 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 
 ## P8 — VM1 color server icon
 
-**Status:** NEXT  
+**Status:** DONE  
 **Parallel:** PARALLEL-OK with P1–P7 (on-box / `vm_agent` only)  
 **Cursor mode:** agent
 
@@ -424,13 +424,13 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 
 - Color icon lands on VM1 from the product path; TESTING matches repo SoT.
 
-**Changelog:** *(date when finished)*
+**Changelog:** 2026-08-24 — **DONE.** TESTING: `Couldn't load server icon` because ImageIO wrote `/tmp/imageio*.tmp` under `ProtectSystem=strict` (read-only `/tmp`). Also ubuntu EACCES on `server-icon.png.tmp` in `0750` `/opt/mcmgr/server`. Product: `PrivateTmp=true` (template + drop-in); stage PNG then `install` as `mcmgr:mcmgr` `0644`. Idle agent redeployed. Filed OS-ISSUE-11. Guide. Living **NEXT = P9** (plan-first).
 
 ---
 
 ## P9 — MOTD formatting editor
 
-**Status:** TODO  
+**Status:** NEXT  
 **Parallel:** SEQUENTIAL after P4 (identity UI) and P8 (`_build_motd` / apply)  
 **Cursor mode:** plan-first  
 **UI skill:** yes
@@ -483,6 +483,7 @@ When P1–P9 are **DONE**:
 
 | Date | Note |
 |------|------|
+| 2026-08-24 | **P8 DONE** (VM1 color icon: `PrivateTmp` for ImageIO favicon encode; stage PNG then `install` as `mcmgr`). Living **NEXT = P9** (plan-first). Pass 3 stays blocked. |
 | 2026-08-24 | **P7 DONE** (Setup Minecraft two-column layout: Vanilla/Modded primary; flavor/pack drop beside it). Living **NEXT = P8**. Pass 3 stays blocked. |
 | 2026-08-24 | **P6 DONE** (Always Free explainer copy; OCI `<pre>` grows; OCI + budget email combined; wizard schema v4 / 8 steps). Living **NEXT = P7**. Pass 3 stays blocked. |
 | 2026-08-24 | **P5 DONE** (pack identity Minecraft/loader/Java dropdowns; detected extra option; catalog-fail text fallback). Living **NEXT = P6**. Pass 3 stays blocked. |

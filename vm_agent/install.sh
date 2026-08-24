@@ -79,6 +79,12 @@ cat > /etc/systemd/system/minecraft.service.d/mcmgr-identity.conf <<'EOF'
 After=mc-boot-ledger.service
 Wants=mc-boot-ledger.service
 EOF
+# Existing VMs keep ProtectSystem=strict from the generated unit; ImageIO needs a
+# writable /tmp to encode server-icon.png into the status ping favicon.
+cat > /etc/systemd/system/minecraft.service.d/mcmgr-private-tmp.conf <<'EOF'
+[Service]
+PrivateTmp=true
+EOF
 
 # Ensure config exists
 if [[ ! -f "${ETC}/config.json" ]]; then

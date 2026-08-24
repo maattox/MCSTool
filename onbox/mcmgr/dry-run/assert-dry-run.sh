@@ -198,6 +198,7 @@ assert "rcon-graceful-stop.sh" in unit
 assert "ExecStop=+" in unit
 assert "RestartPreventExitStatus=200" in unit
 assert "ProtectSystem=strict" in unit
+assert "PrivateTmp=true" in unit
 assert "WorkingDirectory=" in unit
 # Generic generator: no hard-coded vanilla-only comment required, but must not shell-wrap.
 assert "bash -c" not in unit
