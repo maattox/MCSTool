@@ -179,12 +179,13 @@ Read [`docs/NEXT.md`](NEXT.md) and run `/next-step` in a fresh Agent chat. Workf
 | **8.4** | Pass-2 follow-on (operator notes)                          | **DONE** (P1–P13)                                     |
 | **8.7** | Modpack-test follow-on (Change pack failures)              | **DONE** — [`V1-Modpack-Test-Follow-On-Plan.md`](V1-Modpack-Test-Follow-On-Plan.md) P1–P5 |
 | **8.8** | Operator-notes follow-on (Manager / Setup / pack UX)       | **DONE** — P1–P10; P11 **DEFERRED** ([`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md)) |
-| **8.5** | Pre-packaging QA (catalog + passes + bug-fix plans)        | **NEXT** = Pass 3 [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) — **blocked** until the operator says so |
+| **8.9** | Pack-import assisted review (dep freeze + review UI)       | **NEXT** = P1 ([`V1-Pack-Import-Assisted-Review-Plan.md`](V1-Pack-Import-Assisted-Review-Plan.md)) |
+| **8.5** | Pre-packaging QA (catalog + passes + bug-fix plans)        | Pass 3 [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) — **blocked** until Step **8.9** completes **and** the operator says so. |
 | **8.6** | CI-built ARM spend-brake Function image (no Docker on admin PC) | TODO — after 8.5 exit; **required before 9.1 / official release** |
 | **9**   | Packaging, updates, launch (old MVP Phase 8–9)             | TODO — do not start until Phase 8.5 **and** Step **8.6.1** are DONE |
 
 
-**Current NEXT step:** See [`docs/NEXT.md`](NEXT.md) — Step **8.5.2** Pass 3 (**blocked** until the operator says so). Step **8.8** is **DONE** (P11 deferred). **Do not start Step 8.6.1** until Phase 8.5 exits. **Do not start Step 9.1** until Phase 8.5 **and** Step **8.6.1** are DONE.
+**Current NEXT step:** See [`docs/NEXT.md`](NEXT.md) — Step **8.9** P1. Pass 3 stays **blocked** until **8.9** completes and the operator says so. **Do not start Step 8.6.1** until Phase 8.5 exits. **Do not start Step 9.1** until Phase 8.5 **and** Step **8.6.1** are DONE.
 
 ---
 
@@ -1295,7 +1296,41 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 
 **Done when:** P1–P10 **DONE** in the operator-notes plan (P11 deferred). V1 **NEXT** → Step **8.5.2** Pass 3 — see [`docs/NEXT.md`](NEXT.md).
 
-**Changelog:** 2026-08-23 — **8.8 DONE** (P11 **DEFERRED**; plan complete). Living **NEXT** → Pass 3 via `NEXT.md` (blocked until operator). 2026-08-23 — **P10 DONE** (Layer 3 crash quarantine: exactly one loader-blamed mod, `mods.quarantined/`, retry once, Keep excluded / Put back; TESTING helper copy SETUP-ISSUE-13). Living **NEXT = P11**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-22 — **P9 DONE** (jar-root confirm + derived manifest: editable MC/loader/Java, `mcmgr-pack.json` + index, Manual install path). Living **NEXT = P10**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **P8 DONE** (admin-PC icon variants: color 64×64 + door greyscale overlays; Object Storage + door pull). Living **NEXT = P9**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **P7 DONE** (Setup Name and icon page; type-based defaults, no Oracle™; seeds `messages/chat.json`). Living **NEXT = P8**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **P6 DONE** (auto compartment `mcmgr` / `mcmgr-2`…; Compartment wizard page removed). Living **NEXT = P7**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **P5 DONE** (Setup wizard copy/layout, taller deploy log, humanized dock status). Living **NEXT = P6**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **P4 DONE** (shared bottom progress dock for Setup Deploy + Change pack). Living **NEXT = P5**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **P3 DONE** (compact lower-right toasts; Start/Stop progress dismiss). Living **NEXT = P4**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **P2 DONE** (stop tab-open toasts: backup list, infra meta load). Living **NEXT = P3**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **P1 DONE** (Console Simple filter: RCON/journal/mixin/modloader noise). Living **NEXT = P2**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **Inserted** (docs only). Blocked on 8.7. Then **NEXT = P1**. Do not start Pass 3, 8.6.1, or 9.1.
+**Changelog:** 2026-08-23 — **8.8 DONE** (P11 **DEFERRED**; plan complete). Living **NEXT** later moved to Step **8.9** (see that step). 2026-08-23 — **P10 DONE** (Layer 3 crash quarantine: exactly one loader-blamed mod, `mods.quarantined/`, retry once, Keep excluded / Put back; TESTING helper copy SETUP-ISSUE-13). Living **NEXT = P11**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-22 — **P9 DONE** (jar-root confirm + derived manifest: editable MC/loader/Java, `mcmgr-pack.json` + index, Manual install path). Living **NEXT = P10**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **P8 DONE** (admin-PC icon variants: color 64×64 + door greyscale overlays; Object Storage + door pull). Living **NEXT = P9**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **P7 DONE** (Setup Name and icon page; type-based defaults, no Oracle™; seeds `messages/chat.json`). Living **NEXT = P8**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **P6 DONE** (auto compartment `mcmgr` / `mcmgr-2`…; Compartment wizard page removed). Living **NEXT = P7**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **P5 DONE** (Setup wizard copy/layout, taller deploy log, humanized dock status). Living **NEXT = P6**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **P4 DONE** (shared bottom progress dock for Setup Deploy + Change pack). Living **NEXT = P5**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **P3 DONE** (compact lower-right toasts; Start/Stop progress dismiss). Living **NEXT = P4**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **P2 DONE** (stop tab-open toasts: backup list, infra meta load). Living **NEXT = P3**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **P1 DONE** (Console Simple filter: RCON/journal/mixin/modloader noise). Living **NEXT = P2**. Do not start Pass 3, 8.6.1, or 9.1. 2026-08-21 — **Inserted** (docs only). Blocked on 8.7. Then **NEXT = P1**. Do not start Pass 3, 8.6.1, or 9.1.
+
+---
+
+
+
+## Phase 8.9 — Pack-import assisted review
+
+**Why this sits here:** Homemade zip import is supported but still auto-keeps unknown-side jars after a warning. The locked spec ([`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md)) drops the unattended-boot promise and requires dependency freeze + assisted review **before** Pass 3 exercises that path again.
+
+### Step 8.9 — Pack-import assisted review
+
+**Status:** NEXT (P1)  
+**Depends on:** Step **8.8** DONE
+
+**Read first**
+
+- [`V1-Pack-Import-Assisted-Review-Plan.md`](V1-Pack-Import-Assisted-Review-Plan.md) protocol + **only the NEXT P-section**
+- Spec headings named in that section — [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md)
+- Do **not** load Pass 3, the full blueprint, or this whole V1 file
+
+**Do**
+
+- Implement **only** the follow-on section marked NEXT (P1 → P2). Stop after each P-section.
+- P2 (UI) must read the skills named in that plan.
+- Same TESTING permissions as this file. No `tofu apply`/`destroy`.
+- Do **not** start Pass 3, **8.6.1**, or **9.1**.
+
+**Test**
+
+- Per the current P-section in the assisted-review plan.
+
+**Done when:** P1–P2 **DONE**. Then [`NEXT.md`](NEXT.md) → Step **8.5.2** Pass 3 (**blocked** until the operator says so).
+
+**Changelog:** 2026-08-23 — **Inserted** (docs only). Living **NEXT = P1**. Pass 3 stays blocked. Do not start 8.6.1 or 9.1.
 
 ---
 
@@ -1317,14 +1352,15 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 | `[V1-Pass-2-Follow-On-Plan.md](V1-Pass-2-Follow-On-Plan.md)` | **DONE (P1–P13).** Operator notes after Pass 2                            |
 | `[V1-Modpack-Test-Follow-On-Plan.md](V1-Modpack-Test-Follow-On-Plan.md)` | Step **8.7**. Informal Change pack failures. **DONE** (P1–P5) |
 | `[V1-Operator-Notes-Follow-On-Plan.md](V1-Operator-Notes-Follow-On-Plan.md)` | Step **8.8**. **DONE** (P1–P10; P11 deferred) |
-| `[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)`             | Pass 3 gap-close + follow-on tests. **Do not start** until **8.7 + 8.8** exit and the operator says so |
+| `[V1-Pack-Import-Assisted-Review-Plan.md](V1-Pack-Import-Assisted-Review-Plan.md)` | Step **8.9**. **ACTIVE** (P1 NEXT) |
+| `[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)`             | Pass 3 gap-close + follow-on tests. **Do not start** until **8.9** exits and the operator says so |
 | `[V1-QA-Pass-3-Results.md](V1-QA-Pass-3-Results.md)`         | Pass 3 fill-out (do not start until operator says so)                      |
 | `[V1-Bug-Fix-Plan-Pass-1.md](V1-Bug-Fix-Plan-Pass-1.md)`     | Pass 1 fixes; **P1–P8 DONE**. Do not re-open unless a regression.          |
 | `[V1-Modpack-Robustness-Plan.md](V1-Modpack-Robustness-Plan.md)` | **DONE (R1–R4).** Exclude lists + mixed archives.                          |
 | `[V1-Bug-Fix-Plan-TEMPLATE.md](V1-Bug-Fix-Plan-TEMPLATE.md)` | Copy to `V1-Bug-Fix-Plan-Pass-N.md` after triage                           |
 
 
-Pass 2 is **closed early** (no triage). Do **not** regenerate the whole catalog each pass. Do **not** create `V1-Bug-Fix-Plan-Pass-2.md`. Pass 3 waits for Steps **8.7** and **8.8**, then the operator to start Step **8.5.2**.
+Pass 2 is **closed early** (no triage). Do **not** regenerate the whole catalog each pass. Do **not** create `V1-Bug-Fix-Plan-Pass-2.md`. Pass 3 waits for Step **8.9**, then the operator to start Step **8.5.2**.
 
 **Not this phase:** installer, GitHub Releases, CI Function-image publisher (that is **8.6.1**), real **$1 budget fire** (clean-room / accepted spend), live Forge lab, after-v1 PRODUCT-IDEAS.
 
@@ -1358,8 +1394,8 @@ Pass 2 is **closed early** (no triage). Do **not** regenerate the whole catalog 
 
 ### Step 8.5.2 — Execute QA passes
 
-**Status:** TODO (Pass 3) — do not start until Steps **8.7** and **8.8** exit **and** the operator says so  
-**Depends on:** 8.5.1 + Step **4.13** DONE + Step **8.4** DONE + Steps **8.7** and **8.8** (before Pass 3)
+**Status:** TODO (Pass 3) — do not start until Step **8.9** exits **and** the operator says so  
+**Depends on:** 8.5.1 + Step **4.13** DONE + Step **8.4** DONE + Steps **8.7**, **8.8**, and **8.9** (before Pass 3)
 
 **Read first**
 
@@ -1374,7 +1410,7 @@ Pass 2 is **closed early** (no triage). Do **not** regenerate the whole catalog 
 
 **Pass 2 (DONE, closed early):** Delete + greenfield **Modded** (FO; S6-01/S6-02/S7-04/S3-05/S4-11 Pass). Phase B–D not run. No Pass 2 bug-fix plan (in-pass SETUP-ISSUE-9/10). Do not `tofu destroy` again from this step.
 
-**Pass 3 (blocked):** Follow `[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)` when the operator starts Pass 3 **after** Steps **8.7** and **8.8**. Gap-close + follow-on tests (including 8.4 / 8.7 / 8.8) on the **existing** TESTING stack. **Do not** `tofu destroy` unless that prompt says so. **One** agent chat on the test stack at a time.
+**Pass 3 (blocked):** Follow `[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)` when the operator starts Pass 3 **after** Step **8.9**. Gap-close + follow-on tests (including 8.4 / 8.7 / 8.8 / 8.9) on the **existing** TESTING stack. **Do not** `tofu destroy` unless that prompt says so. **One** agent chat on the test stack at a time.
 
 1. **Phase A:** S0-01, S0-04, S1, leftover S2 (including S2-16/S2-17 if the Function exists after 8.4 P12).  
 2. **Phase B:** Hybrid leftovers + follow-on UI (S3-01 does not Start; S4-02 merged Danger Zone; Players pin; console simple/full; usage-by-day).  
@@ -1390,7 +1426,7 @@ Do **not** start Step **8.6.1** or Step **9.1** from this step. Do not rewrite t
 
 **Done when:** Operator agrees a pass is ready for triage **or** QA exit is met (then 8.5.3). This step stays the QA executor across chats; living **NEXT** is Step **8.8** until 8.8 exits.
 
-**Changelog:** 2026-08-21 — **PAUSED** again for Steps **8.7** (modpack tests) and **8.8** (operator notes). Do not start Pass 3, 8.6.1, or 9.1. 2026-08-20 — **PAUSED** for Step **8.4** follow-on. Pass 2 **closed early** (Modded greenfield + join; no triage). Next QA = Pass 3 after 8.4. Do not start 8.6.1 or 9.1. 2026-08-20 — **NEXT** (4.13 / R4 DONE). Do not start Pass 2 Phase A or `tofu destroy` until the operator says so. 2026-08-20 — **PAUSED** until Step **4.13** / robustness R1–R4 (itzg exclude lists). Do not start Pass 2 Phase A or `tofu destroy`. 2026-08-19 — **Pass 2 docs.** Scope + results files. Pass 1 complete (P1–P8 DONE). Do not start 8.6.1 or 9.1.
+**Changelog:** 2026-08-23 — Pass 3 still **blocked** until Step **8.9** (pack-import assisted review) completes and the operator says so. 2026-08-23 — Pack-import **design lock** ([`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md)); implementing as Step **8.9**, not this step. 2026-08-21 — **PAUSED** again for Steps **8.7** (modpack tests) and **8.8** (operator notes). Do not start Pass 3, 8.6.1, or 9.1. 2026-08-20 — **PAUSED** for Step **8.4** follow-on. Pass 2 **closed early** (Modded greenfield + join; no triage). Next QA = Pass 3 after 8.4. Do not start 8.6.1 or 9.1. 2026-08-20 — **NEXT** (4.13 / R4 DONE). Do not start Pass 2 Phase A or `tofu destroy` until the operator says so. 2026-08-20 — **PAUSED** until Step **4.13** / robustness R1–R4 (itzg exclude lists). Do not start Pass 2 Phase A or `tofu destroy`. 2026-08-19 — **Pass 2 docs.** Scope + results files. Pass 1 complete (P1–P8 DONE). Do not start 8.6.1 or 9.1.
 
 ---
 
@@ -1595,6 +1631,7 @@ Former MVP Phase **8–9**. Phases **1–7** are **DONE**. Phase **8** is **SKIP
 | Pass-2 follow-on (8.4)    | [`V1-Pass-2-Follow-On-Plan.md`](V1-Pass-2-Follow-On-Plan.md) (**DONE**)                                    |
 | Modpack-test follow-on    | [`V1-Modpack-Test-Follow-On-Plan.md`](V1-Modpack-Test-Follow-On-Plan.md) (Step **8.7**)                     |
 | Operator-notes follow-on  | [`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md) (Step **8.8**)                 |
+| Pack-import assisted review | [`V1-Pack-Import-Assisted-Review-Plan.md`](V1-Pack-Import-Assisted-Review-Plan.md) (Step **8.9**)           |
 | Informal pack tests       | [`Mod-Pack-Tests.md`](Mod-Pack-Tests.md) (input to 8.7; not a living NEXT)                                 |
 | Modpack robustness (4.13) | [`archive/V1-Modpack-Robustness-Plan.md`](archive/V1-Modpack-Robustness-Plan.md)                           |
 | Bug-fix plan template     | `[V1-Bug-Fix-Plan-TEMPLATE.md](V1-Bug-Fix-Plan-TEMPLATE.md)`                                               |
@@ -1634,6 +1671,8 @@ Former MVP Phase **8–9**. Phases **1–7** are **DONE**. Phase **8** is **SKIP
 
 | Date       | Note                                                                                                                                                                                                                                                                                                                              |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-23 | **Step 8.9 inserted** (pack-import assisted review). Living **NEXT = P1** ([`V1-Pack-Import-Assisted-Review-Plan.md`](V1-Pack-Import-Assisted-Review-Plan.md)). Pass 3 **blocked** until 8.9 completes and the operator says so. Do not start 8.6.1 or 9.1. |
+| 2026-08-23 | **Pack-import design lock** (docs only): [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md). Homemade zip kept; unattended success dropped. Later scheduled as Step **8.9**. |
 | 2026-08-23 | **Step 8.8 DONE** (P1–P10; P11 **DEFERRED**). Agent workflow: `docs/NEXT.md`, `/phase-planning`, `/next-step`. Living **NEXT** → Pass 3 via `NEXT.md` (**blocked** until operator). Do not start 8.6.1 or 9.1. |
 | 2026-08-23 | **Step 8.8 P10 DONE.** Layer 3 crash quarantine (exactly one loader-blamed mod → `mods.quarantined/`, retry once, Keep excluded / Put back). TESTING helper copy (SETUP-ISSUE-13). Living **NEXT = Step 8.8 P11**. Do not start Pass 3, 8.6.1 CI, or 9.1. |
 | 2026-08-22 | **Step 8.8 P9 DONE.** Jar-root confirm + derived manifest (editable MC/loader/Java; derived zip for install/Download pack). Living **NEXT = Step 8.8 P10**. Do not start Pass 3, 8.6.1 CI, or 9.1. |

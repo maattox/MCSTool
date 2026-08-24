@@ -7,12 +7,14 @@ Read **only** what the current V1 / QA step names. Do not load this whole folder
 | Doc | Use |
 |-----|-----|
 | [`NEXT.md`](NEXT.md) | **Single SoT** — what to implement now. Read first. |
+| [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) | Pack import **target** spec (formats, assisted homemade zip, dep freeze). Implemented via Step **8.9**. |
 | [`Agent-Workflow.md`](Agent-Workflow.md) | `/phase-planning`, `/next-step`, subagents, fresh chat per step. |
 | [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) | V1 execution checklist (section detail; see NEXT). |
 | [`V1-Modpack-Test-Follow-On-Plan.md`](V1-Modpack-Test-Follow-On-Plan.md) | Step **8.7**. **DONE** (P1–P5). |
 | [`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md) | Step **8.8**. **DONE** (P1–P10; P11 deferred). |
+| [`V1-Pack-Import-Assisted-Review-Plan.md`](V1-Pack-Import-Assisted-Review-Plan.md) | Step **8.9**. **ACTIVE** (P1 NEXT). |
 | [`Mod-Pack-Tests.md`](Mod-Pack-Tests.md) | Operator informal pack tests (input to 8.7; not a living NEXT). |
-| [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) | Pass 3 (blocked until **8.7 + 8.8** exit and the operator starts it). |
+| [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) | Pass 3 (blocked until **8.9** exits and the operator starts it). |
 | [`V1-QA-Pass-3-Results.md`](V1-QA-Pass-3-Results.md) | Fill during Pass 3. |
 | [`V1-QA-Catalog.md`](V1-QA-Catalog.md) | Test IDs / expected — named IDs only. |
 | [`V1-Pass-2-Follow-On-Plan.md`](V1-Pass-2-Follow-On-Plan.md) | Step 8.4 notes. **P1–P13 DONE.** |

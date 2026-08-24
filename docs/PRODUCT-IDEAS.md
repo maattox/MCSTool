@@ -1,7 +1,7 @@
 # Product vision & staged roadmap (ideas / planning)
 
 **Status:** Living product vision and staged feature plan (MVP → v1 → later).  
-**Execution:** implement **v1 features** before Windows installer / GitHub Releases / public launch. **Paid / spend mode is not v1** (later / far future). Living checklist: [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) (**NEXT = Step 8.7** pack-test follow-on, then Step **8.8** operator notes; do not start Pass 3 until both exit **and** the operator says so; Step **8.4** P1–P13 DONE). Do not start Step 9.1 until QA exits **and** Step **8.6.1** is DONE.  
+**Execution:** implement **v1 features** before Windows installer / GitHub Releases / public launch. **Paid / spend mode is not v1** (later / far future). Living checklist: [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) (**NEXT = Step 8.9** pack-import assisted review). Pack-import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md). Pass 3 stays **blocked** until 8.9 completes **and** the operator says so. Do not start Step 9.1 until QA exits **and** Step **8.6.1** is DONE.  
 **Not** an implementation checklist by itself — agents follow the V1 plan’s NEXT step (and must not implement **after v1** / later items from this file).  
 **Not** a substitute for architecture docs. Doc map: [`README.md`](README.md).
 
@@ -488,6 +488,8 @@ After Default vs Optimized, show the **Minecraft version** picker (manifest for 
 4. Show detected summary for confirmation before continuing Setup: pack name, Minecraft version, mod loader (+ version if known), required Java, file counts / warnings.  
 5. On confirm, continue wizard; bootstrap installs loader + **server-side** mods only.
 
+**Pack import intended design (operator 2026-08-23):** [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) is the living contract for formats, automatic vs **assisted** homemade zips, skip order, dependency freeze, review UI, and crash follow-up. Homemade client-jar zips **stay supported**; unattended “just works” is **not** the promise. Implementation: Step **8.9** ([`V1-Pack-Import-Assisted-Review-Plan.md`](V1-Pack-Import-Assisted-Review-Plan.md)); live pointer [`NEXT.md`](NEXT.md). Pass 3 stays blocked until 8.9 completes.
+
 **Format hints (more research at implementation time):**
 
 | Source | Typical marker | Notes |
@@ -499,7 +501,7 @@ After Default vs Optimized, show the **Minecraft version** picker (manifest for 
 **Hard requirements:**
 
 - **No in-app catalog/browse/search/download UI for mods or modpacks** — **rejected**, will not be implemented. Users supply a file they already have. Do not “just add a convenience picker.”  
-- **Exclude client-only mods** (e.g. Sodium, Iris, many UI/minimaps) from what is installed on VM1 — use pack metadata `side` / environment fields and known client-only lists; fail or warn loudly when unclear.  
+- **Exclude client-only mods** (e.g. Sodium, Iris, many UI/minimaps) from what is installed on VM1 — use pack metadata `side` / environment fields and known client-only lists. **`.mrpack`:** still fail when `env.server` is unclear after filters. **Homemade / unstructured zip:** assisted review (default-keep unknowns; operator may skip) plus **never skip a required dependency of a kept jar** — see [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md). Do not treat “warn and install anyway” as the long-term contract.  
 - Download **mod loaders** (Forge / NeoForge / Fabric / Quilt / …) via their official APIs/metadata, not scraped launcher pages.  
 - Design **adapter interfaces** per pack platform + per loader so CurseForge/Modrinth/loader URL churn does not require rewriting the whole Setup pipeline (version-pin HTTP clients; integration tests against sample packs). Operator-local archives: [`Sample-Packs.md`](Sample-Packs.md) (gitignored `data/sample-packs/`; CI stays on `tests/fixtures/`). Agents must **not** download kitchen-sink packs on their own — if a format is missing, pause and ask the operator.  
 - Legal: do not redistribute paid modpack contents; user supplies the pack; EULA / third-party ToS copy in wizard.  
@@ -1073,11 +1075,14 @@ Parked items—not blocking the staged plan, but should be revisited:
 | In-app mod / modpack browser (browse, search, trending, download-a-pack, pick-by-name/URL/ID) | **Rejected — will not be implemented** (not deferred). Users create/download the pack themselves, then select the local file in Setup or Manager. |
 | CurseForge API client-export import (resolve `projectID`/`fileID` with a product API key) | **Deferred** (ToS / key custody). v1 imports CurseForge **Server Files** / filled zips only, or a Modrinth `.mrpack`. Not rejected. |
 | CurseForge **client-export refuse helper** (help panel when analyze refuses jar-less / mixed-ID export: Server Files vs `.mrpack` copy, outbound `curseforge.com/projects/{id}` links from IDs in the zip, optional Modrinth search ≤3 links — **no API key**, not a catalog) | **Maybe later** (operator 2026-08-23). Was Step 8.8 P11; **deferred**, not scheduled. Refuse + Guide copy remains today. |
+| Assisted homemade-zip review UI + dependency freeze (unknown-side Keep/Skip, never skip a required dep of a kept jar) | **Scheduled** 2026-08-23 as Step **8.9** ([`V1-Pack-Import-Assisted-Review-Plan.md`](V1-Pack-Import-Assisted-Review-Plan.md)). Spec: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md). Not Pass 3. |
 
 ---
 
 ## Changelog
 
+| 2026-08-23 | **Step 8.9 scheduled** (assisted review + dep freeze): [`V1-Pack-Import-Assisted-Review-Plan.md`](V1-Pack-Import-Assisted-Review-Plan.md). Living NEXT = P1. Pass 3 still blocked. |
+| 2026-08-23 | **Pack import design lock** (no code): [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md). Homemade zip kept; unattended success dropped; assisted review + dep freeze. Later scheduled as Step **8.9**. Pass 3 still blocked. |
 | 2026-08-23 | **Step 8.8 closed** without P11. CurseForge refuse **helper panel** (links only, no API) parked as **maybe later** in deferred table. Pass 3 next via `docs/NEXT.md` (blocked until operator). Agent workflow + skills added. |
 | 2026-08-21 | **Pass 3 postponed again:** informal Change pack tests + operator notes. Living **NEXT = Step 8.7 / P1**, then Step **8.8**. Layer 3 quarantine and Setup identity/icon variants pulled into v1 via 8.8 (this file’s parked Layer 3 / after-v1 identity headings may drift). Default MOTD names will **not** use Oracle™. Do not start Pass 3, 8.6.1 CI, or 9.1 until the V1 plan says so. |
 | 2026-08-20 | **Pass-2 follow-on (v1):** operator notes after Pass 2 closed early. Living **NEXT = Step 8.4 / P1**. Pack replace **full re-setup** pulled into v1 (this file’s [Modpack replace (after v1)](#modpack-replace-after-v1) heading may drift). Danger Zone tab merge and “game computer”→“server” are operator will. Do not start Pass 3, 8.6.1 CI, or 9.1 until the V1 plan says so. |

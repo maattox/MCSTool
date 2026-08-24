@@ -9,14 +9,19 @@ Single source of truth for **what to work on next**. Living plan files keep sect
 | Field | Value |
 |-------|-------|
 | **Plan** | [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) |
-| **Step** | **8.5.2** Pass 3 |
-| **Sub-plan** | [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) |
-| **Sub-step** | *(unset — operator must authorize Pass 3)* |
-| **Status** | `blocked` — Steps **8.7** and **8.8** are **DONE**; do **not** start Pass 3 until the operator says so in chat |
+| **Step** | **8.9** Pack-import assisted review |
+| **Sub-plan** | [`V1-Pack-Import-Assisted-Review-Plan.md`](V1-Pack-Import-Assisted-Review-Plan.md) |
+| **Sub-step** | **P1** — Core skip order + dependency freeze + review grouping |
+| **Status** | `ready` |
 | **Cursor mode** | `agent` |
+
+## Design lock (implementing)
+
+Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md). Implementation queue is Step **8.9** (this file). Pass 3 stays **blocked** until 8.9 completes **and** the operator starts it.
 
 ## Completed recently
 
+- **2026-08-23** — Pack-import **intended design** locked; Step **8.9** plan created (P1 NEXT).
 - **Step 8.8** — Operator-notes follow-on **P1–P10 DONE** ([`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md) **COMPLETE**)
 - **P11** (CurseForge refuse helper) — **DEFERRED** → [`PRODUCT-IDEAS.md`](PRODUCT-IDEAS.md) (maybe later; not scheduled)
 - **Step 8.7** — Modpack-test follow-on **DONE**
