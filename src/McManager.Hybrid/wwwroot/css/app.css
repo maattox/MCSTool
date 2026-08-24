@@ -3362,8 +3362,12 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 }
 
 .mcm-wizard-identity .mcm-field input[type="text"],
-.mcm-wizard-identity .mcm-field textarea {
+.mcm-wizard-identity .mcm-field textarea,
+.mcm-wizard-identity .mcm-field select,
+.mcm-pack-identity .mcm-field input[type="text"],
+.mcm-pack-identity .mcm-field select {
     margin-bottom: 8px;
+    max-width: none;
 }
 
 .mcm-wizard-identity .mcm-wizard-actions {

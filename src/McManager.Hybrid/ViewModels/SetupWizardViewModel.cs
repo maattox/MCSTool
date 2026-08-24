@@ -8,6 +8,7 @@ using McManager.Core.Notifications;
 using McManager.Core.Services;
 using McManager.Core.Setup;
 using McManager.Hybrid.Ui;
+using McManager.Hybrid;
 
 namespace McManager.Hybrid.ViewModels;
 
@@ -106,7 +107,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     private readonly IClipboard _clipboard;
     private readonly IUiClock _clock;
     private readonly IUiDispatcher _dispatcher;
-    private readonly MojangVersionCatalog _catalog = new();
+    private readonly PackIdentityCatalogCache _catalogs;
     private readonly PaperFillV3Client _paperCatalog = new();
     private readonly List<OciConfigProfile> _profiles = [];
     private readonly List<string> _versionIds = [];
@@ -246,6 +247,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     private string _detectedLoader = "";
 
     private bool _javaMajorCustomized;
+    private bool _applyingJavaFloor;
 
     [ObservableProperty]
     private string _packSummary = "";
@@ -359,12 +361,14 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         IFilePicker picker,
         IClipboard clipboard,
         IUiClock clock,
-        IUiDispatcher dispatcher)
+        IUiDispatcher dispatcher,
+        PackIdentityCatalogCache catalogs)
     {
         _picker = picker;
         _clipboard = clipboard;
         _clock = clock;
         _dispatcher = dispatcher;
+        _catalogs = catalogs;
         LoadFrom(SetupWizardStore.LoadOrNew());
         LoadProfiles();
         AuthTokenStored = AuthTokenStored || WindowsCredentialStore.Exists();
@@ -1518,7 +1522,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     {
         try
         {
-            var mojang = await _catalog.LoadAsync().ConfigureAwait(true);
+            var mojang = await _catalogs.GetMojangAsync().ConfigureAwait(true);
             _manifest = mojang.Manifest;
             _mojangCatalogNotes = mojang.Notes;
         }
@@ -1788,7 +1792,11 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             return;
         _resumeMinecraftVersion = value;
         if (PackNeedsIdentityConfirm && !_javaMajorCustomized)
+        {
+            _applyingJavaFloor = true;
             PackJavaMajorText = DerivedPackIdentity.JavaMajorForMinecraftOrNull(value)?.ToString() ?? "";
+            _applyingJavaFloor = false;
+        }
         NotifyPackIdentityUi();
     }
 
@@ -1798,7 +1806,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     partial void OnPackJavaMajorTextChanged(string value)
     {
-        if (_navReady)
+        if (_navReady && !_applyingJavaFloor)
             _javaMajorCustomized = true;
         NotifyPackIdentityUi();
     }

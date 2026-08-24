@@ -1,12 +1,14 @@
 @using McManager.Core.Setup
 @using McManager.Hybrid.Components.Setup
+@inject PackIdentityCatalogCache Catalogs
+@implements IDisposable
 
 <div class="mcm-pack-identity">
     <p class="mcm-wizard-inline-help">
         Confirm pack versions before install.
         <WizardHelp Title="@DerivedPackIdentity.IdentityHelp" AriaLabel="About pack versions" />
     </p>
-  @if (ShowDetectionMismatch && !string.IsNullOrWhiteSpace(DetectionMismatchWarning))
+    @if (ShowDetectionMismatch && !string.IsNullOrWhiteSpace(DetectionMismatchWarning))
     {
         <aside class="mcm-pack-list-warning" role="status">
             <p>@DetectionMismatchWarning</p>
@@ -15,12 +17,31 @@
     <div class="mcm-identity-grid">
         <div class="mcm-field">
             <label for="@McInputId">@DerivedPackIdentity.MinecraftVersionLabel</label>
-            <input id="@McInputId"
-                   type="text"
-                   autocomplete="off"
-                   disabled="@Disabled"
-                   value="@MinecraftVersion"
-                   @oninput="OnMinecraftInput" />
+            @if (UseMinecraftSelect)
+            {
+                <select id="@McInputId"
+                        disabled="@Disabled"
+                        value="@MinecraftVersion"
+                        @onchange="OnMinecraftChange">
+                    @if (string.IsNullOrWhiteSpace(MinecraftVersion))
+                    {
+                        <option value="">Select…</option>
+                    }
+                    @foreach (var id in _minecraftIds)
+                    {
+                        <option value="@id">@id</option>
+                    }
+                </select>
+            }
+            else
+            {
+                <input id="@McInputId"
+                       type="text"
+                       autocomplete="off"
+                       disabled="@Disabled"
+                       value="@MinecraftVersion"
+                       @oninput="OnMinecraftInput" />
+            }
         </div>
         <div class="mcm-field">
             <label for="@LoaderInputId">@DerivedPackIdentity.LoaderLabel</label>
@@ -35,22 +56,60 @@
         </div>
         <div class="mcm-field">
             <label for="@LoaderVerInputId">@DerivedPackIdentity.LoaderVersionLabel</label>
-            <input id="@LoaderVerInputId"
-                   type="text"
-                   autocomplete="off"
-                   disabled="@Disabled"
-                   value="@LoaderVersion"
-                   @oninput="OnLoaderVersionInput" />
+            @if (UseLoaderVersionSelect)
+            {
+                <select id="@LoaderVerInputId"
+                        disabled="@Disabled"
+                        value="@LoaderVersion"
+                        @onchange="OnLoaderVersionChange">
+                    @if (string.IsNullOrWhiteSpace(LoaderVersion))
+                    {
+                        <option value="">Select…</option>
+                    }
+                    @foreach (var id in _loaderVersions)
+                    {
+                        <option value="@id">@id</option>
+                    }
+                </select>
+            }
+            else
+            {
+                <input id="@LoaderVerInputId"
+                       type="text"
+                       autocomplete="off"
+                       disabled="@Disabled"
+                       value="@LoaderVersion"
+                       @oninput="OnLoaderVersionInput" />
+            }
         </div>
         <div class="mcm-field">
             <label for="@JavaInputId">@DerivedPackIdentity.JavaMajorLabel</label>
-            <input id="@JavaInputId"
-                   type="text"
-                   inputmode="numeric"
-                   autocomplete="off"
-                   disabled="@Disabled"
-                   value="@JavaMajorText"
-                   @oninput="OnJavaInput" />
+            @if (UseJavaSelect)
+            {
+                <select id="@JavaInputId"
+                        disabled="@Disabled"
+                        value="@JavaMajorText"
+                        @onchange="OnJavaChange">
+                    @if (string.IsNullOrWhiteSpace(JavaMajorText))
+                    {
+                        <option value="">Select…</option>
+                    }
+                    @foreach (var id in _javaMajors)
+                    {
+                        <option value="@id">@id</option>
+                    }
+                </select>
+            }
+            else
+            {
+                <input id="@JavaInputId"
+                       type="text"
+                       inputmode="numeric"
+                       autocomplete="off"
+                       disabled="@Disabled"
+                       value="@JavaMajorText"
+                       @oninput="OnJavaInput" />
+            }
         </div>
     </div>
 </div>
@@ -69,20 +128,149 @@
     [Parameter] public bool ShowDetectionMismatch { get; set; }
     [Parameter] public string? DetectionMismatchWarning { get; set; }
 
+    private readonly CancellationTokenSource _cts = new();
+    private MojangVersionManifest? _manifest;
+    private IReadOnlyList<string> _minecraftIds = [];
+    private IReadOnlyList<string> _loaderVersions = [];
+    private IReadOnlyList<string> _javaMajors = [];
+    private bool _minecraftCatalogOk;
+    private bool _loaderCatalogOk;
+    private string _boundMinecraft = "\u0000";
+    private string _boundLoader = "\u0000";
+
     private string McInputId => $"{IdPrefix}-mc-version";
     private string LoaderInputId => $"{IdPrefix}-loader";
     private string LoaderVerInputId => $"{IdPrefix}-loader-version";
     private string JavaInputId => $"{IdPrefix}-java-major";
 
-    private async Task OnMinecraftInput(ChangeEventArgs e) =>
+    private bool UseMinecraftSelect => _minecraftCatalogOk && _minecraftIds.Count > 0;
+    private bool UseLoaderVersionSelect => _loaderCatalogOk && _loaderVersions.Count > 0;
+    private bool UseJavaSelect => _javaMajors.Count > 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var mojang = await Catalogs.GetMojangAsync(_cts.Token);
+            _manifest = mojang.Manifest;
+            _minecraftCatalogOk = _manifest.Versions.Count > 0;
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+        catch
+        {
+            _minecraftCatalogOk = false;
+            _manifest = null;
+        }
+
+        RebuildMinecraftOptions();
+        RebuildJavaOptions();
+        await RefreshLoaderVersionsAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        RebuildJavaOptions();
+        RebuildMinecraftOptions();
+        if (_boundMinecraft == MinecraftVersion && _boundLoader == Loader)
+            return;
+        _boundMinecraft = MinecraftVersion;
+        _boundLoader = Loader;
+        await RefreshLoaderVersionsAsync();
+    }
+
+    public void Dispose()
+    {
+        _cts.Cancel();
+        _cts.Dispose();
+    }
+
+    private void RebuildMinecraftOptions()
+    {
+        _minecraftIds = PackIdentityVersionOptions.MinecraftIds(_manifest, MinecraftVersion);
+    }
+
+    private void RebuildJavaOptions()
+    {
+        _javaMajors = PackIdentityVersionOptions.JavaMajors(MinecraftVersion, JavaMajorText);
+    }
+
+    private async Task RefreshLoaderVersionsAsync()
+    {
+        IReadOnlyList<FabricGameLoaderEntry>? fabric = null;
+        IReadOnlyDictionary<string, string>? forge = null;
+        IReadOnlyList<string>? neo = null;
+        var loaderOk = true;
+        try
+        {
+            var kind = (Loader ?? "").Trim().ToLowerInvariant();
+            if (kind == MrpackAnalyzer.LoaderFabric)
+            {
+                fabric = await Catalogs.GetFabricLoadersAsync(MinecraftVersion, _cts.Token);
+                loaderOk = fabric is not null;
+            }
+            else if (kind == MrpackAnalyzer.LoaderForge)
+            {
+                forge = await Catalogs.GetForgePromosAsync(_cts.Token);
+                loaderOk = forge is not null;
+            }
+            else if (kind == MrpackAnalyzer.LoaderNeoForge)
+            {
+                neo = await Catalogs.GetNeoForgeVersionsAsync(_cts.Token);
+                loaderOk = neo is not null;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+        catch
+        {
+            loaderOk = false;
+        }
+
+        _loaderVersions = PackIdentityVersionOptions.LoaderVersions(
+            Loader ?? "",
+            MinecraftVersion,
+            LoaderVersion,
+            fabric,
+            forge,
+            neo);
+        _loaderCatalogOk = loaderOk && _loaderVersions.Count > 0;
+    }
+
+    private async Task OnMinecraftChange(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString() ?? "";
+        await MinecraftVersionChanged.InvokeAsync(value);
+        RebuildJavaOptions();
+        await RefreshLoaderVersionsAsync();
+    }
+
+    private async Task OnMinecraftInput(ChangeEventArgs e)
+    {
         await MinecraftVersionChanged.InvokeAsync(e.Value?.ToString() ?? "");
+        RebuildJavaOptions();
+        await RefreshLoaderVersionsAsync();
+    }
 
-    private async Task OnLoaderChange(ChangeEventArgs e) =>
+    private async Task OnLoaderChange(ChangeEventArgs e)
+    {
         await LoaderChanged.InvokeAsync(e.Value?.ToString() ?? "");
+        await RefreshLoaderVersionsAsync();
+    }
 
-    private async Task OnLoaderVersionInput(ChangeEventArgs e) =>
-        await LoaderVersionChanged.InvokeAsync(e.Value?.ToString() ?? "");
+    private Task OnLoaderVersionChange(ChangeEventArgs e) =>
+        LoaderVersionChanged.InvokeAsync(e.Value?.ToString() ?? "");
 
-    private async Task OnJavaInput(ChangeEventArgs e) =>
-        await JavaMajorTextChanged.InvokeAsync(e.Value?.ToString() ?? "");
+    private Task OnLoaderVersionInput(ChangeEventArgs e) =>
+        LoaderVersionChanged.InvokeAsync(e.Value?.ToString() ?? "");
+
+    private Task OnJavaChange(ChangeEventArgs e) =>
+        JavaMajorTextChanged.InvokeAsync(e.Value?.ToString() ?? "");
+
+    private Task OnJavaInput(ChangeEventArgs e) =>
+        JavaMajorTextChanged.InvokeAsync(e.Value?.ToString() ?? "");
 }

@@ -83,6 +83,7 @@ public partial class App : Application
         services.AddSingleton<ChromeViewModel>();
         services.AddSingleton<WhitelistViewModel>();
         services.AddSingleton<UsageViewModel>();
+        services.AddSingleton<PackIdentityCatalogCache>();
         services.AddSingleton<SetupBootstrapService>();
         services.AddSingleton<ServerManagementViewModel>();
         services.AddSingleton<ConsoleViewModel>();

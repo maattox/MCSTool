@@ -388,6 +388,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     private string _detectedLoader = "";
 
     private bool _javaMajorCustomized;
+    private bool _applyingJavaFloor;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowPackSummary))]
@@ -1618,7 +1619,11 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     partial void OnPackMinecraftVersionChanged(string value)
     {
         if (PackNeedsIdentityConfirm && !_javaMajorCustomized)
+        {
+            _applyingJavaFloor = true;
             PackJavaMajorText = DerivedPackIdentity.JavaMajorForMinecraftOrNull(value)?.ToString() ?? "";
+            _applyingJavaFloor = false;
+        }
         RefreshSaveCompatibilityWarning();
         NotifyPackIdentityUi();
     }
@@ -1633,7 +1638,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
     partial void OnPackJavaMajorTextChanged(string value)
     {
-        _javaMajorCustomized = true;
+        if (!_applyingJavaFloor)
+            _javaMajorCustomized = true;
         NotifyPackIdentityUi();
     }
 

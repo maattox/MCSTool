@@ -66,8 +66,8 @@ P8 may run in a **separate operator chat** while Group A is on P1–P7. Default 
 | P2 | Custom title bar (preferred) or compact header | **DONE** | SEQUENTIAL — owns `MainWindow` + title row | plan-first |
 | P3 | Tab rename/order + Server tab snappiness | **DONE** | SEQUENTIAL — `MainLayout` + Server VM | agent |
 | P4 | Manager tab density (sub-tabs, mods collapsed) | **DONE** | SEQUENTIAL — Server tab markup after P2 height | either |
-| P5 | Pack identity version dropdowns | **NEXT** | SEQUENTIAL — `PackIdentityFields` used by Setup P7 | agent |
-| P6 | Setup sparse pages + Always Free copy | TODO | SEQUENTIAL — `SetupWizard.razor` | either |
+| P5 | Pack identity version dropdowns | **DONE** | SEQUENTIAL — `PackIdentityFields` used by Setup P7 | agent |
+| P6 | Setup sparse pages + Always Free copy | **NEXT** | SEQUENTIAL — `SetupWizard.razor` | either |
 | P7 | Setup Minecraft step layout | TODO | SEQUENTIAL — same wizard file as P6 | either |
 | P8 | VM1 color server icon | TODO | PARALLEL-OK with P1–P7 | agent |
 | P9 | MOTD formatting editor | TODO | SEQUENTIAL after P4 + P8 | plan-first |
@@ -285,7 +285,7 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 
 ## P5 — Pack identity version dropdowns
 
-**Status:** NEXT  
+**Status:** DONE  
 **Parallel:** SEQUENTIAL — shared `PackIdentityFields` with P7  
 **Cursor mode:** agent
 
@@ -315,13 +315,13 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 
 - Users pick versions from lists on Setup and Change pack; typing is only the fallback.
 
-**Changelog:** *(date when finished)*
+**Changelog:** 2026-08-24 — **DONE.** Minecraft / loader version / Java are catalog `<select>`s on Setup and Change pack (`PackIdentityFields`). Detected values missing from a catalog stay as extra options. MC change refreshes loader versions; Java majors follow the MC floor. Catalog fail keeps a text field. Shared `PackIdentityCatalogCache` so Setup vanilla does not duplicate Mojang HTTP. Living **NEXT = P6**.
 
 ---
 
 ## P6 — Setup sparse pages + Always Free copy
 
-**Status:** TODO  
+**Status:** NEXT  
 **Parallel:** SEQUENTIAL — `SetupWizard.razor`  
 **Cursor mode:** either  
 **UI skill:** yes
@@ -483,6 +483,7 @@ When P1–P9 are **DONE**:
 
 | Date | Note |
 |------|------|
+| 2026-08-24 | **P5 DONE** (pack identity Minecraft/loader/Java dropdowns; detected extra option; catalog-fail text fallback). Living **NEXT = P6**. Pass 3 stays blocked. |
 | 2026-08-24 | **P4 DONE** (Server inner tabs Identity / World / Modding / Change pack; mods collapsed; Usage Hours/Budget; Advanced Status/Stack/Danger; Troubleshooting two-column). Living **NEXT = P5**. Pass 3 stays blocked. |
 | 2026-08-24 | **P3 DONE** (tab **Server**; order Whitelist → Server → Console → Usage → Advanced → Troubleshooting; keep-alive + deferred catalog; confirm-then-build derived zip). Living **NEXT = P4**. Pass 3 stays blocked. |
 | 2026-08-24 | **P2 DONE** (custom WindowChrome caption; 1040 CSS px default/min; wordmark/Always Free gone). Living **NEXT = P3**. Pass 3 stays blocked. |
