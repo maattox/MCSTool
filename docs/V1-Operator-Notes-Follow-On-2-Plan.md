@@ -67,8 +67,8 @@ P8 may run in a **separate operator chat** while Group A is on P1–P7. Default 
 | P3 | Tab rename/order + Server tab snappiness | **DONE** | SEQUENTIAL — `MainLayout` + Server VM | agent |
 | P4 | Manager tab density (sub-tabs, mods collapsed) | **DONE** | SEQUENTIAL — Server tab markup after P2 height | either |
 | P5 | Pack identity version dropdowns | **DONE** | SEQUENTIAL — `PackIdentityFields` used by Setup P7 | agent |
-| P6 | Setup sparse pages + Always Free copy | **NEXT** | SEQUENTIAL — `SetupWizard.razor` | either |
-| P7 | Setup Minecraft step layout | TODO | SEQUENTIAL — same wizard file as P6 | either |
+| P6 | Setup sparse pages + Always Free copy | **DONE** | SEQUENTIAL — `SetupWizard.razor` | either |
+| P7 | Setup Minecraft step layout | **NEXT** | SEQUENTIAL — same wizard file as P6 | either |
 | P8 | VM1 color server icon | TODO | PARALLEL-OK with P1–P7 | agent |
 | P9 | MOTD formatting editor | TODO | SEQUENTIAL after P4 + P8 | plan-first |
 
@@ -321,7 +321,7 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 
 ## P6 — Setup sparse pages + Always Free copy
 
-**Status:** NEXT  
+**Status:** DONE  
 **Parallel:** SEQUENTIAL — `SetupWizard.razor`  
 **Cursor mode:** either  
 **UI skill:** yes
@@ -352,13 +352,13 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 
 - Always Free is explained; profile box is usable; sparse-page treatment is applied or pages are combined.
 
-**Changelog:** *(date when finished)*
+**Changelog:** 2026-08-24 — **DONE.** Always Free stays its own step with short body copy (eligible shapes, $0 target, $1 brake, ~$1–$2 residual); checkboxes + `WizardHelp` unchanged. Combined OCI profile + budget email onto one page (fits without an inner profile scroll at 1040 CSS px). Profile `<pre>` grows with the text (page scroll if the window is short). Resume schema **v4** (8 steps); saved email page lands on the combined OCI step. Guide. Living **NEXT = P7**.
 
 ---
 
 ## P7 — Setup Minecraft step layout
 
-**Status:** TODO  
+**Status:** NEXT  
 **Parallel:** SEQUENTIAL — same wizard file as P6  
 **Cursor mode:** either  
 **UI skill:** yes
@@ -483,6 +483,7 @@ When P1–P9 are **DONE**:
 
 | Date | Note |
 |------|------|
+| 2026-08-24 | **P6 DONE** (Always Free explainer copy; OCI `<pre>` grows; OCI + budget email combined; wizard schema v4 / 8 steps). Living **NEXT = P7**. Pass 3 stays blocked. |
 | 2026-08-24 | **P5 DONE** (pack identity Minecraft/loader/Java dropdowns; detected extra option; catalog-fail text fallback). Living **NEXT = P6**. Pass 3 stays blocked. |
 | 2026-08-24 | **P4 DONE** (Server inner tabs Identity / World / Modding / Change pack; mods collapsed; Usage Hours/Budget; Advanced Status/Stack/Danger; Troubleshooting two-column). Living **NEXT = P5**. Pass 3 stays blocked. |
 | 2026-08-24 | **P3 DONE** (tab **Server**; order Whitelist → Server → Console → Usage → Advanced → Troubleshooting; keep-alive + deferred catalog; confirm-then-build derived zip). Living **NEXT = P4**. Pass 3 stays blocked. |

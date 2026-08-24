@@ -1780,7 +1780,8 @@ button.mcm-btn-disabled:hover {
 }
 
 .mcm-field input[type="text"],
-.mcm-field input[type="search"] {
+.mcm-field input[type="search"],
+.mcm-field input[type="email"] {
     width: 100%;
     background: var(--surface-1);
     border: 0.5px solid var(--border);
@@ -1983,15 +1984,38 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 }
 
 .mcm-wizard-profile-pre {
-    max-height: 5.4em;
-    overflow: auto;
-    margin: 0 0 12px;
+    overflow: visible;
+    margin: 0;
     padding: 8px 10px;
     background: var(--surface-2);
     border: 0.5px solid var(--border);
     border-radius: 8px;
     white-space: pre-wrap;
     word-break: break-word;
+}
+
+.mcm-wizard-explainer {
+    max-width: 42rem;
+    line-height: 1.45;
+    margin: 0 0 16px;
+}
+
+.mcm-wizard-oci {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 42rem;
+}
+
+.mcm-wizard-oci .mcm-field {
+    margin-bottom: 0;
+}
+
+.mcm-wizard-oci .mcm-field input,
+.mcm-wizard-oci .mcm-field select,
+.mcm-wizard-oci .mcm-wizard-profile-pre {
+    margin-bottom: 0;
+    max-width: none;
 }
 
 .mcm-wizard-body > p {

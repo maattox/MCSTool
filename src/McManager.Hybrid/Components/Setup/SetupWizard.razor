@@ -16,7 +16,7 @@
         <div class="mcm-wizard-body mcm-slim-scroll @(Vm.IsStepSummary && Vm.ShowDeployProgress ? "is-deploying" : null)">
             @if (Vm.IsStepAlwaysFree)
             {
-                <p>Check the boxes, then Next.</p>
+                <p class="mcm-wizard-explainer">@SetupWizardViewModel.AlwaysFreeBodyCopy</p>
                 <div class="mcm-wizard-actions">
                     <button type="button" @onclick="Vm.OpenAlwaysFreeDocs">Open Always Free compute docs</button>
                 </div>
@@ -54,41 +54,40 @@
             }
             else if (Vm.IsStepOci)
             {
-                <div class="mcm-field">
-                    <label for="mcm-setup-profile" class="mcm-field-head">
-                        OCI profile
-                        <WizardHelp Title="@SetupWizardViewModel.OciProfileHelp" AriaLabel="About the OCI profile" />
-                    </label>
-                    <select id="mcm-setup-profile"
-                            disabled="@(!Vm.CanMutateWizard)"
-                            @bind="Vm.OciProfile">
-                        @foreach (var profile in Vm.Profiles)
-                        {
-                            <option value="@profile.Name">@profile</option>
-                        }
-                    </select>
-                </div>
-                <div class="mcm-field">
-                    <label for="mcm-setup-profile-details">From ~/.oci/config</label>
-                    <pre id="mcm-setup-profile-details"
-                         class="mcm-wizard-mono mcm-wizard-profile-pre mcm-slim-scroll">@Vm.ProfileDetailsText</pre>
-                </div>
-            }
-            else if (Vm.IsStepAlertEmail)
-            {
-                <div class="mcm-field">
-                    <label for="mcm-setup-email" class="mcm-field-head">
-                        Budget alert email
-                        <WizardHelp Title="@SetupWizardViewModel.AlertEmailHelp" AriaLabel="About the budget alert email" />
-                    </label>
-                    <input id="mcm-setup-email"
-                           type="email"
-                           name="alert-email"
-                           autocomplete="email"
-                           placeholder="you@example.com"
-                           disabled="@(!Vm.CanMutateWizard)"
-                           @bind="Vm.AlertEmail"
-                           @bind:event="oninput" />
+                <div class="mcm-wizard-oci">
+                    <div class="mcm-field">
+                        <label for="mcm-setup-profile" class="mcm-field-head">
+                            OCI profile
+                            <WizardHelp Title="@SetupWizardViewModel.OciProfileHelp" AriaLabel="About the OCI profile" />
+                        </label>
+                        <select id="mcm-setup-profile"
+                                disabled="@(!Vm.CanMutateWizard)"
+                                @bind="Vm.OciProfile">
+                            @foreach (var profile in Vm.Profiles)
+                            {
+                                <option value="@profile.Name">@profile</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mcm-field">
+                        <label for="mcm-setup-profile-details">From ~/.oci/config</label>
+                        <pre id="mcm-setup-profile-details"
+                             class="mcm-wizard-mono mcm-wizard-profile-pre">@Vm.ProfileDetailsText</pre>
+                    </div>
+                    <div class="mcm-field">
+                        <label for="mcm-setup-email" class="mcm-field-head">
+                            Budget alert email
+                            <WizardHelp Title="@SetupWizardViewModel.AlertEmailHelp" AriaLabel="About the budget alert email" />
+                        </label>
+                        <input id="mcm-setup-email"
+                               type="email"
+                               name="alert-email"
+                               autocomplete="email"
+                               placeholder="you@example.com"
+                               disabled="@(!Vm.CanMutateWizard)"
+                               @bind="Vm.AlertEmail"
+                               @bind:event="oninput" />
+                    </div>
                 </div>
             }
             else if (Vm.IsStepSsh)

@@ -50,9 +50,9 @@ public static class SetupWizardStore
     }
 
     /// <summary>
-    /// Bump schema, remap step indexes after the Compartment page was removed
-    /// and Name and icon was inserted, and force create-compartment
-    /// (paste-OCID is Advanced Auto-detect only).
+    /// Bump schema, remap step indexes after the Compartment page was removed,
+    /// Name and icon was inserted, and budget email merged into OCI, and force
+    /// create-compartment (paste-OCID is Advanced Auto-detect only).
     /// </summary>
     public static SetupWizardState Normalize(SetupWizardState state)
     {
@@ -64,6 +64,8 @@ public static class SetupWizardStore
                 state.CurrentStep = MigrateStepIndexFromV1(state.CurrentStep);
             if (state.SchemaVersion <= 2)
                 state.CurrentStep = MigrateStepIndexFromV2(state.CurrentStep);
+            if (state.SchemaVersion <= 3)
+                state.CurrentStep = MigrateStepIndexFromV3(state.CurrentStep);
             state.SchemaVersion = SetupWizardState.CurrentSchemaVersion;
         }
 
@@ -87,7 +89,7 @@ public static class SetupWizardStore
     /// <summary>
     /// v1: 0 Always Free, 1 OCI, 2 Compartment, 3 email … 8 Review.
     /// v2: 0 Always Free, 1 OCI, 2 email … 7 Review.
-    /// On the deleted Compartment page, land on email (now index 2).
+    /// On the deleted Compartment page, land on email (v2/v3 index 2; v4 OCI page).
     /// </summary>
     public static int MigrateStepIndexFromV1(int oldStep) =>
         oldStep > 2 ? oldStep - 1 : oldStep;
@@ -98,6 +100,14 @@ public static class SetupWizardStore
     /// </summary>
     public static int MigrateStepIndexFromV2(int oldStep) =>
         oldStep >= 5 ? oldStep + 1 : oldStep;
+
+    /// <summary>
+    /// v3: 0 Always Free, 1 OCI, 2 email, 3 SSH … 8 Review.
+    /// v4: email merges into OCI; SSH and later shift −1.
+    /// A saved email page (index 2) lands on the combined OCI page (index 1).
+    /// </summary>
+    public static int MigrateStepIndexFromV3(int oldStep) =>
+        oldStep >= 2 ? oldStep - 1 : oldStep;
 
     public static ServiceResult Save(SetupWizardState state)
     {

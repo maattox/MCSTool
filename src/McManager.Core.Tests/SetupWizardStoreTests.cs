@@ -38,19 +38,19 @@ public sealed class SetupWizardStoreTests
         Assert.True(state.CreateCompartment);
         Assert.Equal("", state.ExistingCompartmentId);
         Assert.Equal(CompartmentNamer.BaseName, state.CompartmentName);
-        Assert.Equal(9, SetupWizardState.StepCount);
-        Assert.Equal(SetupWizardState.StepIdentity, 5);
+        Assert.Equal(8, SetupWizardState.StepCount);
+        Assert.Equal(SetupWizardState.StepIdentity, 4);
     }
 
     [Fact]
-    public void Normalize_v1_on_compartment_page_lands_on_email()
+    public void Normalize_v1_on_compartment_page_lands_on_oci()
     {
         var state = SetupWizardStore.Normalize(new SetupWizardState
         {
             SchemaVersion = 1,
             CurrentStep = 2,
         });
-        Assert.Equal(SetupWizardState.StepAlertEmail, state.CurrentStep);
+        Assert.Equal(SetupWizardState.StepOci, state.CurrentStep);
     }
 
     [Theory]
@@ -87,8 +87,30 @@ public sealed class SetupWizardStoreTests
         Assert.Equal(SetupWizardState.StepEula, state.CurrentStep);
     }
 
+    [Theory]
+    [InlineData(0, 0)]
+    [InlineData(1, 1)]
+    [InlineData(2, 1)]
+    [InlineData(3, 2)]
+    [InlineData(8, 7)]
+    public void V3_step_index_merges_email_into_oci(int oldStep, int expected)
+    {
+        Assert.Equal(expected, SetupWizardStore.MigrateStepIndexFromV3(oldStep));
+    }
+
     [Fact]
-    public void Normalize_v3_does_not_shift_again()
+    public void Normalize_v3_email_lands_on_oci()
+    {
+        var state = SetupWizardStore.Normalize(new SetupWizardState
+        {
+            SchemaVersion = 3,
+            CurrentStep = 2,
+        });
+        Assert.Equal(SetupWizardState.StepOci, state.CurrentStep);
+    }
+
+    [Fact]
+    public void Normalize_v3_eula_lands_on_eula()
     {
         var state = SetupWizardStore.Normalize(new SetupWizardState
         {
@@ -101,11 +123,35 @@ public sealed class SetupWizardStoreTests
     }
 
     [Fact]
-    public void Normalize_clamps_out_of_range_step()
+    public void Normalize_v3_review_lands_on_review()
     {
         var state = SetupWizardStore.Normalize(new SetupWizardState
         {
             SchemaVersion = 3,
+            CurrentStep = 8,
+        });
+        Assert.Equal(SetupWizardState.StepSummary, state.CurrentStep);
+    }
+
+    [Fact]
+    public void Normalize_v4_does_not_shift_again()
+    {
+        var state = SetupWizardStore.Normalize(new SetupWizardState
+        {
+            SchemaVersion = 4,
+            CurrentStep = 5,
+            CompartmentName = "mcmgr-2",
+        });
+        Assert.Equal(SetupWizardState.StepEula, state.CurrentStep);
+        Assert.Equal("mcmgr-2", state.CompartmentName);
+    }
+
+    [Fact]
+    public void Normalize_clamps_out_of_range_step()
+    {
+        var state = SetupWizardStore.Normalize(new SetupWizardState
+        {
+            SchemaVersion = 4,
             CurrentStep = 99,
         });
         Assert.Equal(0, state.CurrentStep);

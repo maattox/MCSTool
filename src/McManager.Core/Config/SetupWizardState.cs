@@ -11,21 +11,20 @@ namespace McManager.Core.Config;
 /// </summary>
 public sealed class SetupWizardState
 {
-    /// <summary>Always Free → OCI → email → SSH → game → name/icon → EULA → Auth Token → Review. Compartment is auto-named (no page).</summary>
-    public const int StepCount = 9;
+    /// <summary>Always Free → OCI+email → SSH → game → name/icon → EULA → Auth Token → Review. Compartment is auto-named (no page).</summary>
+    public const int StepCount = 8;
 
     public const int StepAlwaysFree = 0;
     public const int StepOci = 1;
-    public const int StepAlertEmail = 2;
-    public const int StepSsh = 3;
-    public const int StepGame = 4;
-    public const int StepIdentity = 5;
-    public const int StepEula = 6;
-    public const int StepAuthToken = 7;
-    public const int StepSummary = 8;
+    public const int StepSsh = 2;
+    public const int StepGame = 3;
+    public const int StepIdentity = 4;
+    public const int StepEula = 5;
+    public const int StepAuthToken = 6;
+    public const int StepSummary = 7;
 
-    /// <summary>v1 had a Compartment page at index 2 (9 steps). v2 dropped that page. v3 inserts Name and icon after Minecraft.</summary>
-    public const int CurrentSchemaVersion = 3;
+    /// <summary>v1 had a Compartment page at index 2. v2 dropped it. v3 inserts Name and icon after Minecraft. v4 merges budget email into the OCI page.</summary>
+    public const int CurrentSchemaVersion = 4;
 
     [JsonPropertyName("schema_version")]
     public int SchemaVersion { get; set; } = 1;
