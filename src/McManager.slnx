@@ -5,4 +5,5 @@
     <Project Path="McManager.Core/McManager.Core.csproj" Id="eca09ac2-103b-47bb-a953-82ca94be7fa6" />
     <Project Path="McManager.Core.Tests/McManager.Core.Tests.csproj" Id="b7e2c1a4-8f31-4d6e-9c20-wipe13test0001" />
     <Project Path="McManager.Hybrid/McManager.Hybrid.csproj" Id="8c3aaa4e-ffaf-4305-a24d-5f8066bb1b7f" />
+    <Project Path="McManager.PackTestHarness/McManager.PackTestHarness.csproj" Id="a9c3d5e7-2f14-4b80-9e61-7c8d9e0f1a2b" />
 </Solution>

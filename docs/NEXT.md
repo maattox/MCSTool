@@ -11,7 +11,7 @@ Single source of truth for **what to work on next**. Living plan files keep sect
 | **Plan** | [`Pack-Corpus-Test-Plan.md`](Pack-Corpus-Test-Plan.md) |
 | **Step** | Pack-corpus Change-pack test system |
 | **Sub-plan** | [`Pack-Corpus-Test-Plan.md`](Pack-Corpus-Test-Plan.md) |
-| **Sub-step** | **P2** |
+| **Sub-step** | **P3** |
 | **Status** | `ready` |
 | **Cursor mode** | agent |
 
@@ -21,6 +21,7 @@ Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-De
 
 ## Completed recently
 
+- **2026-08-24** — Pack-corpus **P2 DONE** (`McManager.PackTestHarness`: same Core Change-pack path, `--analyze-only`, result YAML). Living **NEXT = P3**. Pass 3 stays **blocked**.
 - **2026-08-24** — Pack-corpus **P1 DONE** (layout, schemas, gitignore, `PROTOCOL.md`). Living **NEXT = P2**. Pass 3 stays **blocked**.
 - **2026-08-24** — Live **NEXT** → pack-corpus test system **P1** ([`Pack-Corpus-Test-Plan.md`](Pack-Corpus-Test-Plan.md)). Pass 3 stays **blocked**.
 - **2026-08-24** — Step **8.10 P9 DONE** (MOTD formatting editor: `§` toolbar + paste, list preview, omit-name, collapsed raw; VM1 preserves codes). Follow-on 2 **COMPLETE**. Pass 3 **blocked** until the operator says so.
