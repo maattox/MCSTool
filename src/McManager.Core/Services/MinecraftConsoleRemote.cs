@@ -23,7 +23,7 @@ public static class MinecraftConsoleRemote
         "Send commands as if you typed them in the Minecraft server console. "
         + "Recent logs show player-facing activity by default (chat, joins, commands, errors); "
         +         "switch to Full for the raw service log including RCON and modloader startup noise. "
-        + "If a crash set a mod aside, use Server Management → Modding to keep it excluded or put it back. "
+        + "If a crash set a mod aside, use Server → Modding to keep it excluded or put it back. "
         + "This is not a live terminal.";
 
     public const string SimpleLogEmptyHint =

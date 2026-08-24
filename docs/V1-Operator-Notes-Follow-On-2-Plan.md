@@ -64,8 +64,8 @@ P8 may run in a **separate operator chat** while Group A is on P1–P7. Default 
 |----|-------|--------|----------|--------|
 | P1 | Toasts: bottom-left + start success fade | **DONE** | SEQUENTIAL — toast CSS sits on the same manage chrome as P2 | agent |
 | P2 | Custom title bar (preferred) or compact header | **DONE** | SEQUENTIAL — owns `MainWindow` + title row | plan-first |
-| P3 | Tab rename/order + Server tab snappiness | **NEXT** | SEQUENTIAL — `MainLayout` + Server VM | agent |
-| P4 | Manager tab density (sub-tabs, mods collapsed) | TODO | SEQUENTIAL — Server tab markup after P2 height | either |
+| P3 | Tab rename/order + Server tab snappiness | **DONE** | SEQUENTIAL — `MainLayout` + Server VM | agent |
+| P4 | Manager tab density (sub-tabs, mods collapsed) | **NEXT** | SEQUENTIAL — Server tab markup after P2 height | either |
 | P5 | Pack identity version dropdowns | TODO | SEQUENTIAL — `PackIdentityFields` used by Setup P7 | agent |
 | P6 | Setup sparse pages + Always Free copy | TODO | SEQUENTIAL — `SetupWizard.razor` | either |
 | P7 | Setup Minecraft step layout | TODO | SEQUENTIAL — same wizard file as P6 | either |
@@ -213,7 +213,7 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 
 ## P3 — Tab rename/order + Server tab snappiness
 
-**Status:** NEXT  
+**Status:** DONE  
 **Parallel:** SEQUENTIAL — `MainLayout` tab strip + `ServerManagementViewModel`  
 **Cursor mode:** agent
 
@@ -244,13 +244,13 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 
 - Label, order, tab-open lag, and pre-confirm freeze are fixed.
 
-**Changelog:** *(date when finished)*
+**Changelog:** 2026-08-24 — **DONE.** Tab label **Server**; order Whitelist → Server → Console → Usage → Advanced → Troubleshooting. Server tab stays mounted after first open. First paint is not gated on backup/identity list or SSH mod scan; those fill in after. Install this pack confirms first, then builds the derived zip off the UI thread with dock progress. Guide.
 
 ---
 
 ## P4 — Manager tab density (sub-tabs, mods collapsed)
 
-**Status:** TODO  
+**Status:** NEXT  
 **Parallel:** SEQUENTIAL — Server markup after P2 height and P3 snappiness  
 **Cursor mode:** either  
 **UI skill:** yes
@@ -483,6 +483,7 @@ When P1–P9 are **DONE**:
 
 | Date | Note |
 |------|------|
+| 2026-08-24 | **P3 DONE** (tab **Server**; order Whitelist → Server → Console → Usage → Advanced → Troubleshooting; keep-alive + deferred catalog; confirm-then-build derived zip). Living **NEXT = P4**. Pass 3 stays blocked. |
 | 2026-08-24 | **P2 DONE** (custom WindowChrome caption; 1040 CSS px default/min; wordmark/Always Free gone). Living **NEXT = P3**. Pass 3 stays blocked. |
 | 2026-08-24 | **P1 DONE** (toasts bottom-left, 4s fade, start-success AutoHide). Living **NEXT = P2** (plan-first). Pass 3 stays blocked. |
 | 2026-08-24 | Created. Living **NEXT = P1**. Pass 3 stays blocked. |

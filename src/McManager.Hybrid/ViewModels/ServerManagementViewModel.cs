@@ -12,7 +12,7 @@ using McManager.Hybrid.Ui;
 namespace McManager.Hybrid.ViewModels;
 
 /// <summary>
-/// Server Management tab: Object Storage world backups + SSH replace/wipe when VM1 is RUNNING.
+/// Server tab: Object Storage world backups + SSH replace/wipe when VM1 is RUNNING.
 /// Own <see cref="IsBusy"/> only — does not grey Start/Stop/Restart or dispose <c>OciSession</c>.
 /// </summary>
 public sealed partial class ServerManagementViewModel : ObservableObject, IDisposable
@@ -57,6 +57,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     private TimeSpan _packElapsedAccumulated;
     private bool _packElapsedStarted;
     private bool _packReplaceRunning;
+    private bool _opened;
+    private bool _openInFlight;
 
     public ObservableCollection<WorldBackupInfo> Backups { get; } = [];
 
@@ -483,8 +485,10 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
     private void OnSessionReloaded(object? sender, EventArgs e)
     {
+        var wasOpened = _opened;
         BindFromHost();
-        _ = RefreshMinecraftVersionAsync();
+        if (wasOpened)
+            _ = EnsureOpenedAsync();
     }
 
     private void OnMainPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -536,6 +540,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         Backups.Clear();
         SelectedBackup = null;
         _currentBackupBytes = 0;
+        _opened = false;
         ResetModdingState();
 
         if (_config is not null)
@@ -568,7 +573,27 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         FillDefaultChatRows();
     }
 
-    public async Task RefreshAsync()
+    public Task RefreshAsync() => RefreshCatalogAsync(setBusy: true);
+
+    public async Task EnsureOpenedAsync()
+    {
+        if (_opened || _openInFlight)
+            return;
+
+        _openInFlight = true;
+        try
+        {
+            await RefreshCatalogAsync(setBusy: false);
+            await RefreshMinecraftVersionAsync(includeLiveMods: false);
+            _opened = true;
+        }
+        finally
+        {
+            _openInFlight = false;
+        }
+    }
+
+    private async Task RefreshCatalogAsync(bool setBusy)
     {
         if (_backups is null)
         {
@@ -581,10 +606,12 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         if (IsBusy)
             return;
 
-        IsBusy = true;
+        if (setBusy)
+            IsBusy = true;
         var wasForward = _forwardBanner;
         _forwardBanner = false;
-        StatusMessage = "Listing backups…";
+        if (setBusy)
+            StatusMessage = "Listing backups…";
         ProgressDisplay = "";
 
         try
@@ -610,7 +637,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         finally
         {
             _forwardBanner = wasForward;
-            IsBusy = false;
+            if (setBusy)
+                IsBusy = false;
         }
     }
 
@@ -828,7 +856,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         }
     }
 
-    public async Task RefreshMinecraftVersionAsync()
+    public async Task RefreshMinecraftVersionAsync(bool includeLiveMods = true)
     {
         BindLocalPack();
         if (_infra is null)
@@ -853,7 +881,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         MinecraftVersionDisplay = _currentMinecraftVersion ?? "—";
         ApplyServerKind(doc.Game.ServerKind);
         RefreshSaveCompatibilityWarning();
-        await RefreshLiveModsAsync();
+        if (includeLiveMods)
+            await RefreshLiveModsAsync();
     }
 
     public async Task RefreshLiveModsAsync()
@@ -1204,26 +1233,6 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
                 _banner.Show(StatusMessage, ActionBannerSeverity.Error);
                 return;
             }
-
-            var build = DerivedPackWorkflow.BuildAndRetain(
-                source,
-                PackName,
-                null,
-                PackMinecraftVersion,
-                PackLoader,
-                PackLoaderVersion,
-                PackJavaMajorText,
-                dataDir,
-                Path.GetFileName(source));
-            if (!build.Succeeded || string.IsNullOrWhiteSpace(build.Value))
-            {
-                StatusMessage = build.Error ?? "Could not build the derived pack.";
-                _banner.Show(StatusMessage, ActionBannerSeverity.Error);
-                return;
-            }
-
-            installPath = build.Value;
-            PackPath = installPath;
         }
 
         var confirmed = await _dialogs.ConfirmAsync(
@@ -1240,11 +1249,47 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         _packReplaceRunning = true;
         var wasForward = _forwardBanner;
         _forwardBanner = false;
-        StatusMessage = ProgressDockUx.ChangePackInstallFallback;
         BeginPackElapsed();
         NotifyDock();
         try
         {
+            if (PackNeedsIdentityConfirm)
+            {
+                StatusMessage = ProgressDockUx.ChangePackBuildFallback;
+                NotifyDock();
+                var source = string.IsNullOrWhiteSpace(PackSourcePath) ? PackPath : PackSourcePath;
+                var dataDir = _dataDirectory ?? LocalConfigStore.TryFindDataDirectory();
+                var packName = PackName;
+                var mc = PackMinecraftVersion;
+                var loader = PackLoader;
+                var loaderVersion = PackLoaderVersion;
+                var javaMajor = PackJavaMajorText;
+                var originalName = Path.GetFileName(source);
+                var build = await Task.Run(() =>
+                    DerivedPackWorkflow.BuildAndRetain(
+                        source,
+                        packName,
+                        null,
+                        mc,
+                        loader,
+                        loaderVersion,
+                        javaMajor,
+                        dataDir!,
+                        originalName));
+                if (!build.Succeeded || string.IsNullOrWhiteSpace(build.Value))
+                {
+                    StatusMessage = build.Error ?? "Could not build the derived pack.";
+                    _banner.Show(StatusMessage, ActionBannerSeverity.Error);
+                    return;
+                }
+
+                installPath = build.Value;
+                PackPath = installPath;
+            }
+
+            StatusMessage = ProgressDockUx.ChangePackInstallFallback;
+            NotifyDock();
+
             var progress = new Progress<string>(line =>
             {
                 if (string.IsNullOrWhiteSpace(line))

@@ -11,9 +11,9 @@ Single source of truth for **what to work on next**. Living plan files keep sect
 | **Plan** | [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) |
 | **Step** | **8.10** Operator-notes follow-on 2 |
 | **Sub-plan** | [`V1-Operator-Notes-Follow-On-2-Plan.md`](V1-Operator-Notes-Follow-On-2-Plan.md) |
-| **Sub-step** | **P3** Tab rename/order + Server tab snappiness |
+| **Sub-step** | **P4** Manager tab density (sub-tabs, mods collapsed) |
 | **Status** | `ready` |
-| **Cursor mode** | agent |
+| **Cursor mode** | either |
 
 ## Design lock (implementing)
 
@@ -21,6 +21,7 @@ Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-De
 
 ## Completed recently
 
+- **2026-08-24** — Step **8.10 P3 DONE** (tab **Server**, new order, keep-alive + deferred load, confirm-then-build derived zip). Living **NEXT = P4**. Pass 3 **blocked**.
 - **2026-08-24** — Step **8.10 P2 DONE** (custom WindowChrome caption, 1040 CSS px, wordmark gone). Living **NEXT = P3**. Pass 3 **blocked**.
 - **2026-08-24** — Step **8.10 P1 DONE** (toasts bottom-left, 4s fade, start-success AutoHide). Living **NEXT = P2** (plan-first). Pass 3 **blocked**.
 - **2026-08-24** — Step **8.10** inserted (density / MOTD / VM1 icon operator notes). Living **NEXT = P1**. Pass 3 **blocked**.

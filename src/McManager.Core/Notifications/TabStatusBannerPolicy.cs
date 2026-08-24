@@ -31,6 +31,9 @@ public static class TabStatusBannerPolicy
         if (text.Equals(ProgressDockUx.ChangePackAnalyzeFallback, StringComparison.Ordinal))
             return false;
 
+        if (text.Equals(ProgressDockUx.ChangePackBuildFallback, StringComparison.Ordinal))
+            return false;
+
         if (text.Equals(ProgressDockUx.ChangePackInstallFallback, StringComparison.Ordinal))
             return false;
 

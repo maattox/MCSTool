@@ -44,7 +44,7 @@ public static class CrashQuarantine
             sb.Append("This mod may be required for the pack. You can put it back.");
         }
 
-        sb.Append(" On Server Management → Modding, choose Keep excluded or Put back.");
+        sb.Append(" On Server → Modding, choose Keep excluded or Put back.");
         return sb.ToString();
     }
 

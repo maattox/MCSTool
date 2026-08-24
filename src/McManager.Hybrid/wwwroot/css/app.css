@@ -1017,6 +1017,10 @@ button.mcm-btn-disabled:hover {
     width: min(var(--app-chrome-width), calc(100% - var(--app-pad-x) + var(--tab-scrollbar-size)));
 }
 
+.mcm-tab-keep[hidden] {
+    display: none !important;
+}
+
 /*
  * Thin overlay-style thumb. Manage tab body, Setup wizard body, and log panes
  * share this so Setup does not show the thick OS default bar.

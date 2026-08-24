@@ -12,6 +12,8 @@ public static class ProgressDockUx
 
     public const string ChangePackAnalyzeFallback = "Analyzing modpack…";
 
+    public const string ChangePackBuildFallback = "Building the derived pack…";
+
     public const string ChangePackInstallFallback = "Reinstalling Minecraft from this pack…";
 
     public static string FormatElapsed(TimeSpan elapsed)

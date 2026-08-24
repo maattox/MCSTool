@@ -421,8 +421,13 @@
         Vm.Backups.CollectionChanged += OnBackupsChanged;
         Vm.ModFiles.CollectionChanged += OnModsChanged;
         Vm.ChatTemplates.CollectionChanged += OnChatChanged;
-        _ = Vm.RefreshAsync();
-        _ = Vm.RefreshMinecraftVersionAsync();
+    }
+
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            _ = Vm.EnsureOpenedAsync();
+        return Task.CompletedTask;
     }
 
     public void Dispose()

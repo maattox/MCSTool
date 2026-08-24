@@ -15,7 +15,7 @@ public static class OversizedWorldBackupUx
 
     public const string NotificationBody =
         "Automatic cloud backups have stopped because this world is too large for the free "
-        + "cloud storage cap. Use Server Management → Download latest world save while the "
+        + "cloud storage cap. Use Server → Download latest world save while the "
         + "game VM is running — that copies the live world to this PC over SSH and does not "
         + "upload it to cloud storage.";
 

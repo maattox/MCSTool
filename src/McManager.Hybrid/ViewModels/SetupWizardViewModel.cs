@@ -93,7 +93,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         "Smaller Always Free size. Vanilla can often stay on all month; less room if you add mods or more players later.";
 
     public const string IdentityHelp =
-        "Friends see the name, description, and in-game icon in Minecraft’s server list while the game is running. Two plain-text lines — not a formatted MOTD editor. You can change this later in Server Management.";
+        "Friends see the name, description, and in-game icon in Minecraft’s server list while the game is running. Two plain-text lines — not a formatted MOTD editor. You can change this later on the Server tab.";
 
     public const string IconStatesHelp =
         "In-game is the color icon while Minecraft is up. Offline, Starting, and Unavailable are greyscale copies with overlays for the doorbell list while the server is off, waking, or cannot start (daily hours or spend-brake).";

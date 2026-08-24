@@ -17,6 +17,7 @@ public sealed class TabStatusBannerPolicyTests
     [InlineData("Upload failed.", true)]
     [InlineData("Wiping live world via SSH…", true)]
     [InlineData("Analyzing modpack…", false)]
+    [InlineData("Building the derived pack…", false)]
     [InlineData("Reinstalling Minecraft from this pack…", false)]
     [InlineData("Choose a pack file, then install.", false)]
     [InlineData("Review the pack, then install.", false)]
