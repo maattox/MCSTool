@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using McManager.Hybrid.Ui;
+using McManager.Hybrid.Ui.Wpf;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace McManager.Hybrid;
@@ -7,9 +8,10 @@ namespace McManager.Hybrid;
 public partial class MainWindow : Window
 {
     /// <summary>
-    /// CSS <c>--app-shell-width</c>: chrome row (754) + 16px padding each side.
+    /// CSS <c>--app-shell-width</c>: chrome row (1008) + 16px padding each side.
+    /// WindowStyle=None: this is the client width (no native caption frame).
     /// </summary>
-    public const double AppShellWidthDip = 786;
+    public const double AppShellWidthDip = 1040;
 
     public MainWindow()
     {
@@ -17,6 +19,8 @@ public partial class MainWindow : Window
         FitWidthToShell();
         Loaded += (_, _) => FitWidthToWebView();
         Resources.Add("services", App.Services);
+
+        App.Services.GetRequiredService<WpfWindowChromeService>().Attach(this);
 
         var focus = App.Services.GetRequiredService<WindowFocusBroker>();
         Activated += (_, _) => focus.SetFocused(WindowState != WindowState.Minimized);
@@ -32,10 +36,8 @@ public partial class MainWindow : Window
 
     private void FitWidthToShell()
     {
-        var frame = SystemParameters.WindowNonClientFrameThickness;
-        var outer = AppShellWidthDip + frame.Left + frame.Right;
-        MinWidth = outer;
-        Width = outer;
+        MinWidth = AppShellWidthDip;
+        Width = AppShellWidthDip;
     }
 
     /// <summary>
@@ -48,7 +50,7 @@ public partial class MainWindow : Window
             return;
 
         var nonClient = ActualWidth - HostView.ActualWidth;
-        var outer = AppShellWidthDip + nonClient;
+        var outer = AppShellWidthDip + Math.Max(0, nonClient);
         if (outer > MinWidth)
             MinWidth = outer;
         if (Width + 0.5 < outer)

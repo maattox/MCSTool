@@ -52,6 +52,8 @@ public partial class App : Application
         services.AddSingleton<UiDialogs>();
         services.AddSingleton<IUiDialogs>(sp => sp.GetRequiredService<UiDialogs>());
         services.AddSingleton<WindowFocusBroker>();
+        services.AddSingleton<WpfWindowChromeService>();
+        services.AddSingleton<IWindowChromeService>(sp => sp.GetRequiredService<WpfWindowChromeService>());
     }
 
     /// <summary>

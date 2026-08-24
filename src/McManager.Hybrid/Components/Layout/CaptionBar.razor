@@ -1,0 +1,64 @@
+@inject IWindowChromeService WindowChrome
+@implements IDisposable
+
+<header class="mcm-caption">
+    <div class="mcm-caption-drag"
+         title="Drag to move"
+         @onpointerdown="OnDragPointerDown"></div>
+    <div class="mcm-caption-actions">
+        @AppActions
+        <div class="mcm-caption-win">
+            <button type="button"
+                    class="mcm-caption-winbtn"
+                    title="Minimize"
+                    aria-label="Minimize"
+                    @onclick="WindowChrome.Minimize"
+                    @onclick:stopPropagation="true">
+                <i class="ti ti-minus" aria-hidden="true"></i>
+            </button>
+            <button type="button"
+                    class="mcm-caption-winbtn"
+                    title="@MaximizeTitle"
+                    aria-label="@MaximizeTitle"
+                    @onclick="WindowChrome.ToggleMaximize"
+                    @onclick:stopPropagation="true">
+                <i class="ti @(WindowChrome.IsMaximized ? "ti-box-multiple" : "ti-square")" aria-hidden="true"></i>
+            </button>
+            <button type="button"
+                    class="mcm-caption-winbtn is-close"
+                    title="Close"
+                    aria-label="Close"
+                    @onclick="WindowChrome.Close"
+                    @onclick:stopPropagation="true">
+                <i class="ti ti-x" aria-hidden="true"></i>
+            </button>
+        </div>
+    </div>
+</header>
+
+@code {
+    [Parameter]
+    public RenderFragment? AppActions { get; set; }
+
+    private string MaximizeTitle => WindowChrome.IsMaximized ? "Restore" : "Maximize";
+
+    protected override void OnInitialized()
+    {
+        WindowChrome.Changed += OnChromeChanged;
+    }
+
+    public void Dispose()
+    {
+        WindowChrome.Changed -= OnChromeChanged;
+    }
+
+    private void OnChromeChanged(object? sender, EventArgs e) =>
+        _ = InvokeAsync(StateHasChanged);
+
+    private void OnDragPointerDown(PointerEventArgs e)
+    {
+        if (e.Button != 0)
+            return;
+        WindowChrome.DragMove();
+    }
+}

@@ -63,8 +63,8 @@ P8 may run in a **separate operator chat** while Group A is on P1–P7. Default 
 | ID | Title | Status | Parallel | Cursor |
 |----|-------|--------|----------|--------|
 | P1 | Toasts: bottom-left + start success fade | **DONE** | SEQUENTIAL — toast CSS sits on the same manage chrome as P2 | agent |
-| P2 | Custom title bar (preferred) or compact header | **NEXT** | SEQUENTIAL — owns `MainWindow` + title row | plan-first |
-| P3 | Tab rename/order + Server tab snappiness | TODO | SEQUENTIAL — `MainLayout` + Server VM | agent |
+| P2 | Custom title bar (preferred) or compact header | **DONE** | SEQUENTIAL — owns `MainWindow` + title row | plan-first |
+| P3 | Tab rename/order + Server tab snappiness | **NEXT** | SEQUENTIAL — `MainLayout` + Server VM | agent |
 | P4 | Manager tab density (sub-tabs, mods collapsed) | TODO | SEQUENTIAL — Server tab markup after P2 height | either |
 | P5 | Pack identity version dropdowns | TODO | SEQUENTIAL — `PackIdentityFields` used by Setup P7 | agent |
 | P6 | Setup sparse pages + Always Free copy | TODO | SEQUENTIAL — `SetupWizard.razor` | either |
@@ -176,7 +176,7 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 
 ## P2 — Custom title bar (preferred) or compact header
 
-**Status:** NEXT  
+**Status:** DONE  
 **Parallel:** SEQUENTIAL — owns `MainWindow` + inner title row; P4 needs the reclaimed height  
 **Cursor mode:** plan-first  
 **UI skill:** yes
@@ -207,13 +207,13 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 
 - Native white caption is gone **or** the documented fallback is in place; wordmark + Always Free text are gone; tab body is taller; width decision is recorded in the changelog.
 
-**Changelog:** *(date when finished)*
+**Changelog:** 2026-08-24 — **DONE.** Custom WPF `WindowChrome` (`WindowStyle=None`). One Blazor caption on First-run, Setup, and Manage: drag + Aero snap (`WM_NCLBUTTONDOWN` / `HTCAPTION`), double-click maximize, min/max/close. Manage also puts bell / settings / more in that row. Wordmark and Always Free text removed (no second title row). Default and min client width **1040** CSS px (`--app-shell-width` / `AppShellWidthDip`; chrome 1008). 6px WPF edge strips for resize around WebView2. No compact-header fallback. Guide. **NEXT = P3.**
 
 ---
 
 ## P3 — Tab rename/order + Server tab snappiness
 
-**Status:** TODO  
+**Status:** NEXT  
 **Parallel:** SEQUENTIAL — `MainLayout` tab strip + `ServerManagementViewModel`  
 **Cursor mode:** agent
 
@@ -483,5 +483,6 @@ When P1–P9 are **DONE**:
 
 | Date | Note |
 |------|------|
+| 2026-08-24 | **P2 DONE** (custom WindowChrome caption; 1040 CSS px default/min; wordmark/Always Free gone). Living **NEXT = P3**. Pass 3 stays blocked. |
 | 2026-08-24 | **P1 DONE** (toasts bottom-left, 4s fade, start-success AutoHide). Living **NEXT = P2** (plan-first). Pass 3 stays blocked. |
 | 2026-08-24 | Created. Living **NEXT = P1**. Pass 3 stays blocked. |

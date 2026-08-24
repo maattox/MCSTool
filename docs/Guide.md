@@ -207,7 +207,7 @@ When everyone is done, click **Stop** (doorbell-aware). If you forget, idle time
 | Stuck play IP / doorbell | **Troubleshooting** (confirm-gated one-shots) |
 | Technical VM / doorbell state | **Advanced** |
 | Turn idle timer off / idle timeout / change server size / delete the stack | **Advanced → Danger Zone** |
-| Program settings / About / notifications | Top-right **bell**, **gear**, and **menu** (native Windows title bar stays) |
+| Program settings / About / notifications | Top-right **bell**, **gear**, and **menu** (same bar as min / max / close) |
 
 Each Manager tab **remembers its own scroll position** when you switch away and back. A tab you have not opened yet starts at the top.
 
@@ -231,7 +231,7 @@ Do not disable the idle timer except for a short test. Booting the game VM turns
 
 **Smaller size (2 OCPU / 12 GB):** hours are still counted, but Manager and the doorbell MOTD use calmer copy because this size can usually stay on all month inside Always Free. The 4 OCPU / 24 GB size still shows remaining-hours and “cap” language — those hours run out faster. Daily-budget-exhausted and spend-brake messages are the same on both sizes.
 
-The top-right **bell** opens a notification list (empty until something posts; each item can be dismissed). The **gear** opens program settings for this PC: where stack config and OpenTofu files live, plus a **Check for updates** toggle (saved now; GitHub Releases checks start in a later release). The **menu** has **About** and a GitHub link. Tabs and Start / Stop are unchanged.
+The top-right **bell** opens a notification list (empty until something posts; each item can be dismissed). The **gear** opens program settings for this PC: where stack config and OpenTofu files live, plus a **Check for updates** toggle (saved now; GitHub Releases checks start in a later release). The **menu** has **About** and a GitHub link. Those icons share the dark caption with min / max / close — drag the empty left side of that bar to move the window. Tabs and Start / Stop are unchanged.
 
 ---
 

@@ -13,13 +13,8 @@
 @implements IDisposable
 
 <div class="mcm-app mcm-app-manage">
-    <header class="mcm-title-row">
-        <div class="mcm-wordmark">
-            <i class="ti ti-server-2" aria-hidden="true"></i>
-            <span>mc manager</span>
-        </div>
-        <div class="mcm-title-actions">
-            <span class="mcm-always-free">Always Free</span>
+    <CaptionBar>
+        <AppActions>
             <div class="mcm-bell">
                 <button type="button"
                         class="mcm-chrome-btn @(Notices.PanelOpen ? "is-open" : null)"
@@ -124,8 +119,8 @@
                     </div>
                 }
             </div>
-        </div>
-    </header>
+        </AppActions>
+    </CaptionBar>
 
     <section class="mcm-chrome" aria-label="Server status">
         <div class="mcm-left">
@@ -399,7 +394,7 @@
              @onkeydown="OnChromeKeyDown">
             <div class="mcm-modal-card is-wide mcm-settings-card" @onclick:stopPropagation="true">
                 <h2 id="mcm-settings-title" class="mcm-modal-title">Program settings</h2>
-                <p class="mcm-modal-body">These are settings for this PC, not the Minecraft server. Window chrome stays the Windows title bar.</p>
+                <p class="mcm-modal-body">These are settings for this PC, not the Minecraft server.</p>
 
                 <div class="mcm-settings-section">
                     <h3 class="mcm-settings-heading">Paths</h3>

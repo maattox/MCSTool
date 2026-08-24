@@ -26,10 +26,11 @@
     --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
     --font-mono: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
     --radius: 10px;
-    /* Status 330 + gap 14 + pins 410. Keep in sync with MainWindow.AppShellWidthDip. */
-    --app-chrome-width: 754px;
+    /* Status 330 + gap 14 + pins 410; leftover width is for the tab body. Keep in sync with MainWindow.AppShellWidthDip. */
+    --app-chrome-width: 1008px;
     --app-pad-x: 16px;
     --app-shell-width: calc(var(--app-chrome-width) + 2 * var(--app-pad-x));
+    --app-caption-height: 36px;
     /* Thin overlay-style thumb; lives in the right window gutter, not the tab cards. */
     --tab-scrollbar-size: 8px;
 }
@@ -143,7 +144,7 @@ button.mcm-btn-disabled:hover {
     margin-inline: auto;
     display: flex;
     flex-direction: column;
-    padding: 12px var(--app-pad-x) 16px;
+    padding: 0 var(--app-pad-x) 16px;
     background: var(--bg);
     overflow: hidden;
 }
@@ -175,41 +176,75 @@ button.mcm-btn-disabled:hover {
     max-width: var(--app-chrome-width);
 }
 
-.mcm-title-row {
+.mcm-app-manage > .mcm-caption {
+    grid-column: 1 / -1;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.mcm-caption {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 12px;
+    align-items: stretch;
+    height: var(--app-caption-height);
+    margin: 0 calc(-1 * var(--app-pad-x)) 8px;
     flex-shrink: 0;
-    /* In-content wordmark only. Window min/max/close stay native WPF chrome. */
+    user-select: none;
+    -webkit-user-select: none;
 }
 
-.mcm-wordmark {
+.mcm-caption-drag {
+    flex: 1 1 auto;
+    min-width: 24px;
+    cursor: default;
+    touch-action: none;
+}
+
+.mcm-caption-actions {
     display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 15px;
-    font-weight: 500;
+    align-items: stretch;
+    flex-shrink: 0;
+    gap: 2px;
 }
 
-.mcm-wordmark .ti {
-    font-size: 18px;
+.mcm-caption-actions > .mcm-chrome-btn,
+.mcm-caption-actions > .mcm-bell,
+.mcm-caption-actions > .mcm-overflow {
+    align-self: center;
+}
+
+.mcm-caption-win {
+    display: flex;
+    align-items: stretch;
+    margin-left: 6px;
+}
+
+.mcm-caption-winbtn {
+    width: 46px;
+    height: var(--app-caption-height);
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
     color: var(--text-secondary);
+    cursor: default;
 }
 
-.mcm-title-actions {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-shrink: 0;
+.mcm-caption-winbtn .ti {
+    font-size: 14px;
 }
 
-.mcm-always-free {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-accent);
-    margin-right: 4px;
+.mcm-caption-winbtn:hover:not(:disabled) {
+    background: var(--surface-2);
+    color: var(--text-primary);
+}
+
+.mcm-caption-winbtn.is-close:hover:not(:disabled) {
+    background: var(--fill-danger);
+    color: #fff;
+}
+
+.mcm-caption-winbtn:focus-visible {
+    outline-offset: -2px;
 }
 
 .mcm-chrome-btn {

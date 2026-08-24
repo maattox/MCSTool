@@ -7,16 +7,31 @@
         xmlns:components="clr-namespace:McManager.Hybrid.Components"
         mc:Ignorable="d"
         Title="MC Server Manager"
+        WindowStyle="None"
+        ResizeMode="CanResize"
         Height="720"
-        Width="802"
+        Width="1040"
         MinHeight="560"
-        MinWidth="802"
+        MinWidth="1040"
         Background="#161A21">
-    <Grid>
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="0"
+                      ResizeBorderThickness="6"
+                      GlassFrameThickness="0"
+                      CornerRadius="0"
+                      UseAeroCaptionButtons="False" />
+    </WindowChrome.WindowChrome>
+    <DockPanel LastChildFill="True">
+        <Border DockPanel.Dock="Bottom" Height="6" Background="#161A21"
+                WindowChrome.IsHitTestVisibleInChrome="False" />
+        <Border DockPanel.Dock="Left" Width="6" Background="#161A21"
+                WindowChrome.IsHitTestVisibleInChrome="False" />
+        <Border DockPanel.Dock="Right" Width="6" Background="#161A21"
+                WindowChrome.IsHitTestVisibleInChrome="False" />
         <blazor:BlazorWebView x:Name="HostView" HostPage="wwwroot\index.html" Services="{DynamicResource services}">
             <blazor:BlazorWebView.RootComponents>
                 <blazor:RootComponent Selector="#app" ComponentType="{x:Type components:App}" />
             </blazor:BlazorWebView.RootComponents>
         </blazor:BlazorWebView>
-    </Grid>
+    </DockPanel>
 </Window>
