@@ -158,7 +158,7 @@ The Function image is copied into your OCIR from a **pre-built ARM** tarball whe
 
 A **Modded** server is **not playable** until friends install the **same exported pack file** you chose in Setup. Vanilla Minecraft (and a different pack, or a different version of the same pack) cannot join.
 
-- Keep that file. Manager also saves a copy on this PC; **Server → Download pack** copies that original archive (not a zip of server mods).
+- Keep that file. Manager also saves a copy on this PC; **Server → Modding → Download pack** copies that original archive (not a zip of server mods).
 - Tell friends the pack **name**, **Minecraft version**, and **loader** (Fabric / Forge / NeoForge) shown in Setup, and give them the original export.
 - This app **cannot** rebuild a client pack from the `mods/` folder on the server. Setup installs **server-side** mods only and skips client-only files, so a zip of the live server mods is **not** a playable pack for friends.
 
@@ -199,35 +199,36 @@ When everyone is done, click **Stop** (doorbell-aware). If you forget, idle time
 | Copy the address | Top bar **Play IP** |
 | Wake / park the server | **Start** / **Stop** (not raw Compute on Advanced) |
 | Restart Minecraft only | **Restart** (game VM must already be up) |
-| Hours vs budget | Pinned usage cards + **Usage** tab (expand **Detailed usage** for hours by UTC day this month; closed by default) |
-| World zip download / replace / wipe | **Server** (Object Storage; ~9.5 GB backup soft cap; SSH live copy if the world is too large) |
-| Inspect mods / re-download imported pack / **Change pack** | **Server** → **Modding** (original Setup file on this PC; not a zip of server mods) |
-| Name, icon, description, idle chat lines | **Server** → **Name, icon, and messages** (plain text; Restart Minecraft to apply) |
+| Hours vs budget | Pinned usage cards + **Usage** (**Hours**; expand **Detailed usage** for hours by UTC day; **Budget** to edit allowances) |
+| World zip download / replace / wipe | **Server → World** (Object Storage; ~9.5 GB backup soft cap; SSH live copy if the world is too large) |
+| Inspect mods / re-download imported pack | **Server → Modding** (mod list starts collapsed; original Setup file on this PC; not a zip of server mods) |
+| Reinstall from a new pack | **Server → Change pack** |
+| Name, icon, description, idle chat lines | **Server → Identity** (plain text; Restart Minecraft to apply) |
 | Send Minecraft commands / view logs | **Console** (not a live terminal) |
 | Stuck play IP / doorbell | **Troubleshooting** (confirm-gated one-shots) |
 | Technical VM / doorbell state | **Advanced** |
-| Turn idle timer off / idle timeout / change server size / delete the stack | **Advanced → Danger Zone** |
+| Turn idle timer off / idle timeout / change server size / delete the stack | **Advanced → Danger** |
 | Program settings / About / notifications | Top-right **bell**, **gear**, and **menu** (same bar as min / max / close) |
 
-Each Manager tab **remembers its own scroll position** when you switch away and back. A tab you have not opened yet starts at the top. Left to right the tabs are **Whitelist**, **Server**, **Console**, **Usage**, **Advanced**, **Troubleshooting**.
+Each Manager tab **remembers its own scroll position** when you switch away and back. A tab you have not opened yet starts at the top. Left to right the tabs are **Whitelist**, **Server**, **Console**, **Usage**, **Advanced**, **Troubleshooting**. **Server** uses inner tabs (**Identity**, **World**, **Modding**, **Change pack**) so the active pane fits the window; the server-side mod list starts collapsed.
 
-**Wipe world** on **Server** deletes only the live save on the game VM. Cloud backups, mods, and `server.properties` are not deleted. Download a world save first if you might want the current world back. The game VM must be running; Minecraft is stopped for the wipe and **started again** so a new world generates. If the server is off, that warning (and other button results) shows in a compact toast at the **lower-left** of the Manager window, above the bottom bar — read it, then **X** to dismiss. Short successes (including Start) fade after a few seconds; errors and in-progress toasts stay until **X**. Setup keeps its footer status.
+**Wipe world** on **Server → World** deletes only the live save on the game VM. Cloud backups, mods, and `server.properties` are not deleted. Download a world save first if you might want the current world back. The game VM must be running; Minecraft is stopped for the wipe and **started again** so a new world generates. If the server is off, that warning (and other button results) shows in a compact toast at the **lower-left** of the Manager window, above the bottom bar — read it, then **X** to dismiss. Short successes (including Start) fade after a few seconds; errors and in-progress toasts stay until **X**. Setup keeps its footer status.
 
 *(Pass 1 catalog recorded leave-stopped; operator 2026-08-19 overrode — bug-fix **P8**. [`PRODUCT-IDEAS.md`](PRODUCT-IDEAS.md) Wipe world step 4 may still say the next Start creates a world.)*
 
 **World too large for cloud backup:** If a single world zip is bigger than the ~9.5 GB free cloud cap, automatic cloud backups stop. The top-right **bell** warns you. **Download latest world save** then copies the **live** world from the game VM over SSH (the VM must be Running). That file stays on this PC and is **not** uploaded to cloud storage. Older cloud backups in the list can still be downloaded.
 
-**Modding** on the same tab: Vanilla and Paper show a short “not a modded server” note. **Change pack** is still available (it reinstalls Minecraft from a new `.mrpack` or server-pack zip). The game VM must be **Running**. Confirm the same two Setup checkboxes (use this pack; friends get the same file). Homemade zips with unknown-side jars show the same three-group review as Setup. **Install this pack** and **Cancel** stay in the **bottom bar** (with elapsed time while it runs) so they stay reachable if you scroll the summary. The world is **kept** unless you also check wipe. Friends need the new exported pack on their PCs — Manager cannot rebuild a client pack from server `mods/`. On a Modded stack you can inspect the server-side files in `mods/` and **Download pack** — that copies the **original imported archive** saved on this PC, not a zip of the live server mods. If the original file is missing from this PC, download is disabled. A crash while starting shows a short log in the error, not only an RCON timeout. If the loader blamed exactly one mod, that jar is set aside and listed here so you can **Keep excluded** or **Put back**.
+**Modding** on **Server**: Vanilla and Paper show a short “not a modded server” note. **Change pack** is its own inner tab (it reinstalls Minecraft from a new `.mrpack` or server-pack zip). The game VM must be **Running**. Confirm the same two Setup checkboxes (use this pack; friends get the same file). Homemade zips with unknown-side jars show the same three-group review as Setup. **Install this pack** and **Cancel** stay in the **bottom bar** (with elapsed time while it runs) so they stay reachable if you scroll the summary. The world is **kept** unless you also check wipe. Friends need the new exported pack on their PCs — Manager cannot rebuild a client pack from server `mods/`. On a Modded stack you can inspect the server-side files in `mods/` (the list starts **collapsed**) and **Download pack** — that copies the **original imported archive** saved on this PC, not a zip of the live server mods. If the original file is missing from this PC, download is disabled. A crash while starting shows a short log in the error, not only an RCON timeout. If the loader blamed exactly one mod, that jar is set aside and listed here so you can **Keep excluded** or **Put back**.
 
-**Name, icon, and messages** on the **Server** tab: set the name and description friends see in their Minecraft server list (plain text, two lines), pick a **PNG** icon (fitted to 64×64; default if you skip), and optionally edit the automated chat lines used before an idle or budget stop. Save writes the shared copy and updates the doorbell list icons (offline / starting / unavailable). **Restart** Minecraft (or **Start**) applies the in-game name and color icon.
+**Identity** on the **Server** tab: set the name and description friends see in their Minecraft server list (plain text, two lines), pick a **PNG** icon (fitted to 64×64; default if you skip), and optionally edit the automated chat lines used before an idle or budget stop. Save writes the shared copy and updates the doorbell list icons (offline / starting / unavailable). **Restart** Minecraft (or **Start**) applies the in-game name and color icon.
 
 **Console** sends Minecraft commands (the same ones you would type in the server console) and shows recent logs from the server. **Simple** (default) hides RCON plumbing, modloader startup, and mixin debug noise so chat, joins, world-prep progress, and errors stay readable; **Full** shows the unfiltered service log. Start the server first. A leading `/` is optional. This is not a live terminal, and the RCON port stays local on the server — it is not opened on the cloud firewall. If a crash set a mod aside, use **Server → Modding** to keep it excluded or put it back.
 
-**Advanced → Danger Zone:** Advanced is power-user tools (technical status, Deploy/repair, break-glass VM power, stack identity). Scroll to the **Danger Zone** heading on the same tab for idle **timeout**, turning the idle timer **off** (testing only — boot / Minecraft start turns it back on), **changing the server size** (2 OCPU / 12 GB or 4 OCPU / 24 GB), and **Delete infrastructure**. There is no separate Danger Zone tab. Troubleshooting stays its own tab.
+**Advanced** uses inner tabs: **Status** (VM/door lifecycle and break-glass Compute), **Stack** (deploy/repair and stack identity), and **Danger** (idle timeout, turning the idle timer **off**, **changing the server size**, and **Delete infrastructure**). Troubleshooting stays its own tab.
 
 Do not disable the idle timer except for a short test. Booting the game VM turns it back on.
 
-**Change server size** on **Advanced → Danger Zone** is disabled until the server is **Stopped** (use top-bar **Stop** so Minecraft is down too). It updates Oracle A1 Flex OCPU/memory, then local config and shared budget/meta so usage math matches. Past usage rows keep the size they were recorded at. A larger size uses Always Free hours faster (less wall-clock left this month); a smaller size does the reverse. Sizes above 4 OCPU / 24 GB are not offered.
+**Change server size** on **Advanced → Danger** is disabled until the server is **Stopped** (use top-bar **Stop** so Minecraft is down too). It updates Oracle A1 Flex OCPU/memory, then local config and shared budget/meta so usage math matches. Past usage rows keep the size they were recorded at. A larger size uses Always Free hours faster (less wall-clock left this month); a smaller size does the reverse. Sizes above 4 OCPU / 24 GB are not offered.
 
 **Smaller size (2 OCPU / 12 GB):** hours are still counted, but Manager and the doorbell MOTD use calmer copy because this size can usually stay on all month inside Always Free. The 4 OCPU / 24 GB size still shows remaining-hours and “cap” language — those hours run out faster. Daily-budget-exhausted and spend-brake messages are the same on both sizes.
 
@@ -314,7 +315,7 @@ Guest ACPI SoftStop hang is **not** a silent button — use Oracle Console reset
 
 To wipe the **product stack** on a test tenancy and run Setup again:
 
-1. In Manager, open **Advanced** and scroll to **Danger Zone**.
+1. In Manager, open **Advanced → Danger**.
 2. Click **Delete infrastructure**.
 3. Read the warning. Type **`confirm`** (lowercase) to enable Delete. This does **not** close your Oracle account.
 4. Keep the window open. The log and percent stay until Oracle finishes deleting (often several minutes). Close is disabled until it succeeds or fails.

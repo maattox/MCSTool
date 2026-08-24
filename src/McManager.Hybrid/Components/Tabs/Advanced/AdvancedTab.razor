@@ -1,14 +1,34 @@
 @inject AdvancedViewModel Vm
 @implements IDisposable
 
-<div style="display:flex;flex-direction:column;gap:16px;max-width:100%;">
-    <div>
-        <div style="font-size:16px;font-weight:600;">Advanced</div>
-        <p style="margin:4px 0 0;font-size:13px;color:var(--text-secondary);">
-            Technical VM and doorbell status, break-glass Compute, and stack identity. Idle shutdown, server size, and deleting the stack are in Danger Zone below. Everyday Start / Stop stay on the top bar.
-        </p>
-    </div>
+<div class="mcm-pane-stack">
+    <nav class="mcm-subtabs" role="tablist" aria-label="Advanced sections">
+        <button type="button"
+                role="tab"
+                class="mcm-subtab @PaneClass("status")"
+                aria-selected="@(IsPane("status") ? "true" : "false")"
+                @onclick="@(() => SelectPane("status"))">
+            Status
+        </button>
+        <button type="button"
+                role="tab"
+                class="mcm-subtab @PaneClass("stack")"
+                aria-selected="@(IsPane("stack") ? "true" : "false")"
+                @onclick="@(() => SelectPane("stack"))">
+            Stack
+        </button>
+        <button type="button"
+                role="tab"
+                class="mcm-subtab @PaneClass("danger")"
+                aria-selected="@(IsPane("danger") ? "true" : "false")"
+                @onclick="@(() => SelectPane("danger"))">
+            Danger
+        </button>
+    </nav>
 
+    @if (IsPane("status"))
+    {
+    <div class="mcm-pane-stack" role="tabpanel">
     <div class="mcm-section-card">
         <div style="display:flex;align-items:center;gap:4px;margin-bottom:10px;">
             <span style="font-size:14px;font-weight:600;">Technical status</span>
@@ -30,26 +50,6 @@
     </div>
 
     <div class="mcm-section-card">
-        <div style="font-size:14px;font-weight:600;margin-bottom:6px;">Infrastructure setup</div>
-        <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);">
-            Deploy a new Always Free stack, repair an existing one, or attach this PC to a stack that is already in your tenancy. Auto-detect never runs by itself — only when you click the button.
-        </p>
-        <div style="display:flex;flex-wrap:wrap;gap:8px;">
-            <button type="button"
-                    title="Opens Setup. Resume or re-run from here after a finished Deploy page (do not click Deploy twice on the same finished page). Does not run OpenTofu from this button."
-                    @onclick="Vm.OpenSetup">
-                Deploy / repair infrastructure
-            </button>
-            <button type="button"
-                    disabled="@Vm.IsBusy"
-                    title="Looks for a product compartment and shared storage, then asks before writing local config."
-                    @onclick="Vm.AutoDetectAsync">
-                Auto-detect infrastructure
-            </button>
-        </div>
-    </div>
-
-    <div class="mcm-section-card">
         <div style="font-size:14px;font-weight:600;margin-bottom:6px;">Break-glass VM power</div>
         <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);">
             These start or stop the game VM in Oracle Cloud and do not move the play IP. Everyday Start / Stop on the top bar are the doorbell-aware path friends should use.
@@ -66,6 +66,30 @@
                     title="OCI Compute stop only. Does not move the reserved play IP."
                     @onclick="Vm.BreakGlassSoftStopAsync">
                 Raw VM SoftStop
+            </button>
+        </div>
+    </div>
+    </div>
+    }
+    else if (IsPane("stack"))
+    {
+    <div class="mcm-pane-stack" role="tabpanel">
+    <div class="mcm-section-card">
+        <div style="font-size:14px;font-weight:600;margin-bottom:6px;">Infrastructure setup</div>
+        <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);">
+            Deploy a new Always Free stack, repair an existing one, or attach this PC to a stack that is already in your tenancy. Auto-detect never runs by itself — only when you click the button.
+        </p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+            <button type="button"
+                    title="Opens Setup. Resume or re-run from here after a finished Deploy page (do not click Deploy twice on the same finished page). Does not run OpenTofu from this button."
+                    @onclick="Vm.OpenSetup">
+                Deploy / repair infrastructure
+            </button>
+            <button type="button"
+                    disabled="@Vm.IsBusy"
+                    title="Looks for a product compartment and shared storage, then asks before writing local config."
+                    @onclick="Vm.AutoDetectAsync">
+                Auto-detect infrastructure
             </button>
         </div>
     </div>
@@ -128,11 +152,25 @@
             <HostServiceProbes />
         </div>
     }
-
-    <DangerZoneTab />
+    </div>
+    }
+    else
+    {
+    <div class="mcm-pane-stack" role="tabpanel">
+        <DangerZoneTab />
+    </div>
+    }
 </div>
 
 @code {
+    private string _pane = "status";
+
+    private bool IsPane(string id) => string.Equals(_pane, id, StringComparison.Ordinal);
+
+    private string PaneClass(string id) => IsPane(id) ? "is-active" : "";
+
+    private void SelectPane(string pane) => _pane = pane;
+
     protected override void OnInitialized()
     {
         Vm.PropertyChanged += OnVmChanged;

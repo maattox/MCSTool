@@ -2,237 +2,369 @@
 @implements IDisposable
 
 <div>
-    <div style="display:grid;grid-template-columns:repeat(4, minmax(0,1fr));gap:12px;margin-bottom:1.25rem;">
-        <div class="mcm-info-card">
-            <div style="font-size:13px;color:var(--text-muted);">Server name</div>
-            <div style="font-size:16px;font-weight:500;margin-top:4px;">@Vm.ServerNameDisplay</div>
-        </div>
-        <div class="mcm-info-card">
-            <div style="font-size:13px;color:var(--text-muted);">Minecraft version</div>
-            <div style="font-size:16px;font-weight:500;margin-top:4px;">@Vm.MinecraftVersionDisplay</div>
-        </div>
-        <div class="mcm-info-card">
-            <div style="font-size:13px;color:var(--text-muted);">Last backup</div>
-            <div style="font-size:16px;font-weight:500;margin-top:4px;">@Vm.LastBackupDisplay</div>
-        </div>
-        <div class="mcm-info-card">
-            <div style="font-size:13px;color:var(--text-muted);">Backup storage</div>
-            <div style="font-size:16px;font-weight:500;margin-top:4px;">@Vm.BackupStorageDisplay</div>
-        </div>
-    </div>
+    <nav class="mcm-subtabs" role="tablist" aria-label="Server sections">
+        <button type="button"
+                role="tab"
+                class="mcm-subtab @PaneClass("identity")"
+                aria-selected="@(IsPane("identity") ? "true" : "false")"
+                aria-controls="mcm-server-pane-identity"
+                id="mcm-server-tab-identity"
+                @onclick="@(() => SelectPane("identity"))">
+            Identity
+        </button>
+        <button type="button"
+                role="tab"
+                class="mcm-subtab @PaneClass("world")"
+                aria-selected="@(IsPane("world") ? "true" : "false")"
+                aria-controls="mcm-server-pane-world"
+                id="mcm-server-tab-world"
+                @onclick="@(() => SelectPane("world"))">
+            World
+        </button>
+        <button type="button"
+                role="tab"
+                class="mcm-subtab @PaneClass("modding")"
+                aria-selected="@(IsPane("modding") ? "true" : "false")"
+                aria-controls="mcm-server-pane-modding"
+                id="mcm-server-tab-modding"
+                @onclick="@(() => SelectPane("modding"))">
+            Modding
+        </button>
+        <button type="button"
+                role="tab"
+                class="mcm-subtab @PaneClass("pack")"
+                aria-selected="@(IsPane("pack") ? "true" : "false")"
+                aria-controls="mcm-server-pane-pack"
+                id="mcm-server-tab-pack"
+                @onclick="@(() => SelectPane("pack"))">
+            Change pack
+        </button>
+    </nav>
 
-    <div class="mcm-section-card" style="margin-bottom:1.25rem;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
-            <div style="display:flex;align-items:center;gap:4px;">
-                <span style="font-size:14px;font-weight:500;">Name, icon, and messages</span>
-                <button type="button"
-                        class="mcm-help"
-                        title="@Vm.IdentityHelpTitle">
-                    <i class="ti ti-help" aria-hidden="true"></i>
-                    <span class="sr-only">About name, icon, and messages</span>
-                </button>
-            </div>
-            <button type="button"
-                    class="mcm-primary"
-                    disabled="@(!Vm.CanSaveIdentity)"
-                    title="Writes the shared copy. Restart Minecraft (or Start) to apply name, icon, and chat lines."
-                    @onclick="Vm.SaveIdentityAsync">
-                Save
-            </button>
-        </div>
-        <p style="margin:0 0 12px;font-size:13px;color:var(--text-muted);">
-            Friends see the name, description, and in-game icon in their Minecraft server list while the game is running. This is plain text — not a formatted MOTD editor. Offline / starting / unavailable icons show on the doorbell while the server is off.
-        </p>
-        <div class="mcm-identity-grid">
-            <div>
-                <div class="mcm-field">
-                    <label for="mcm-server-name">Server name</label>
-                    <input id="mcm-server-name"
-                           type="text"
-                           maxlength="40"
-                           disabled="@Vm.AnyBusy"
-                           @bind="Vm.IdentityName"
-                           @bind:event="oninput" />
-                </div>
-                <div class="mcm-field">
-                    <label for="mcm-server-desc">Description</label>
-                    <textarea id="mcm-server-desc"
-                              maxlength="80"
-                              rows="2"
-                              disabled="@Vm.AnyBusy"
-                              @bind="Vm.IdentityDescription"
-                              @bind:event="oninput"></textarea>
-                </div>
-                <p class="mcm-motd-preview">
-                    <span>Server list preview</span>
-                    @foreach (var line in Vm.MotdPreview.Split("\\n", StringSplitOptions.None))
-                    {
-                        <span class="mcm-motd-line">@line</span>
-                    }
-                </p>
-            </div>
-            <div>
-                <ServerIconPreviewStrip ColorUrl="@Vm.IconPreviewDataUrl"
-                                        IdleUrl="@Vm.IdleIconPreviewDataUrl"
-                                        StartingUrl="@Vm.StartingIconPreviewDataUrl"
-                                        ExhaustedUrl="@Vm.ExhaustedIconPreviewDataUrl" />
-                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                    <button type="button"
-                            disabled="@Vm.AnyBusy"
-                            title="Any PNG. Manager fits it to 64×64."
-                            @onclick="Vm.PickIconAsync">
-                        Choose icon
-                    </button>
-                    <button type="button"
-                            disabled="@(!Vm.CanClearIcon)"
-                            @onclick="Vm.ClearIcon">
-                        Use default
-                    </button>
+    @if (IsPane("identity"))
+    {
+        <div class="mcm-section-card"
+             id="mcm-server-pane-identity"
+             role="tabpanel"
+             aria-labelledby="mcm-server-tab-identity">
+            <div class="mcm-server-pane-head">
+                <div class="mcm-server-pane-title">
+                    <span>Name, icon, and messages</span>
                     <button type="button"
                             class="mcm-help"
-                            title="@Vm.IconStatesHelp">
+                            title="@Vm.IdentityHelpTitle">
                         <i class="ti ti-help" aria-hidden="true"></i>
-                        <span class="sr-only">About doorbell list icons</span>
+                        <span class="sr-only">About name, icon, and messages</span>
                     </button>
                 </div>
-                <p style="margin:6px 0 0;font-size:12px;color:var(--text-muted);">PNG — fitted to 64×64</p>
+                <button type="button"
+                        class="mcm-primary"
+                        disabled="@(!Vm.CanSaveIdentity)"
+                        title="Writes the shared copy. Restart Minecraft (or Start) to apply name, icon, and chat lines."
+                        @onclick="Vm.SaveIdentityAsync">
+                    Save
+                </button>
             </div>
-        </div>
-        @if (!string.IsNullOrWhiteSpace(Vm.IdentityStatus))
-        {
-            <p style="margin:0 0 8px;font-size:13px;color:var(--text-secondary);white-space:pre-wrap;">@Vm.IdentityStatus</p>
-        }
-        <button type="button"
-                class="mcm-advanced-toggle"
-                @onclick="() => Vm.ShowChatTemplates = !Vm.ShowChatTemplates">
-            @(Vm.ShowChatTemplates ? "Hide automated chat" : "Automated chat")
-        </button>
-        @if (Vm.ShowChatTemplates)
-        {
-            <p style="margin:0 0 10px;font-size:12px;color:var(--text-muted);">
-                These lines are sent in-game before an idle or budget stop. Keep the placeholders such as <code>{minutes}</code> if the line uses them.
+            <p class="mcm-server-facts">
+                Minecraft @Vm.MinecraftVersionDisplay. Friends see the name, description, and in-game icon in their server list while the game is running. This is plain text — not a formatted MOTD editor. Offline / starting / unavailable icons show on the doorbell while the server is off.
             </p>
-            <div class="mcm-chat-templates">
-                @foreach (var row in Vm.ChatTemplates)
-                {
+            <div class="mcm-identity-grid">
+                <div>
                     <div class="mcm-field">
-                        <label>
-                            @row.Label
-                            @if (!string.IsNullOrWhiteSpace(row.Placeholders))
-                            {
-                                <span style="font-weight:400;color:var(--text-muted);"> @row.Placeholders</span>
-                            }
-                        </label>
-                        <textarea rows="2"
+                        <label for="mcm-server-name">Server name</label>
+                        <input id="mcm-server-name"
+                               type="text"
+                               maxlength="40"
+                               disabled="@Vm.AnyBusy"
+                               @bind="Vm.IdentityName"
+                               @bind:event="oninput" />
+                    </div>
+                    <div class="mcm-field">
+                        <label for="mcm-server-desc">Description</label>
+                        <textarea id="mcm-server-desc"
+                                  maxlength="80"
+                                  rows="2"
                                   disabled="@Vm.AnyBusy"
-                                  @bind="row.Text"
+                                  @bind="Vm.IdentityDescription"
                                   @bind:event="oninput"></textarea>
                     </div>
-                }
+                    <p class="mcm-motd-preview">
+                        <span>Server list preview</span>
+                        @foreach (var line in Vm.MotdPreview.Split("\\n", StringSplitOptions.None))
+                        {
+                            <span class="mcm-motd-line">@line</span>
+                        }
+                    </p>
+                </div>
+                <div>
+                    <ServerIconPreviewStrip ColorUrl="@Vm.IconPreviewDataUrl"
+                                            IdleUrl="@Vm.IdleIconPreviewDataUrl"
+                                            StartingUrl="@Vm.StartingIconPreviewDataUrl"
+                                            ExhaustedUrl="@Vm.ExhaustedIconPreviewDataUrl" />
+                    <div class="mcm-server-actions" style="align-items:center;">
+                        <button type="button"
+                                disabled="@Vm.AnyBusy"
+                                title="Any PNG. Manager fits it to 64×64."
+                                @onclick="Vm.PickIconAsync">
+                            Choose icon
+                        </button>
+                        <button type="button"
+                                disabled="@(!Vm.CanClearIcon)"
+                                @onclick="Vm.ClearIcon">
+                            Use default
+                        </button>
+                        <button type="button"
+                                class="mcm-help"
+                                title="@Vm.IconStatesHelp">
+                            <i class="ti ti-help" aria-hidden="true"></i>
+                            <span class="sr-only">About doorbell list icons</span>
+                        </button>
+                    </div>
+                    <p style="margin:6px 0 0;font-size:12px;color:var(--text-muted);">PNG — fitted to 64×64</p>
+                </div>
             </div>
-        }
-    </div>
-
-    <div class="mcm-section-card" style="margin-bottom:1.25rem;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
-            <div style="display:flex;align-items:center;gap:4px;">
-                <span style="font-size:14px;font-weight:500;">Modding</span>
-                <button type="button"
-                        class="mcm-help"
-                        title="@Vm.ModdingHelpTitle">
-                    <i class="ti ti-help" aria-hidden="true"></i>
-                    <span class="sr-only">About Modding</span>
-                </button>
-            </div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                <button type="button"
-                        disabled="@(!Vm.CanPickPack)"
-                        title="@Vm.ChangePackTitle"
-                        @onclick="Vm.BeginChangePack">
-                    <i class="ti ti-package" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
-                    Change pack
-                </button>
-                @if (Vm.IsModdedServer)
-                {
-                    <button type="button"
-                            disabled="@(!Vm.CanDownloadPack)"
-                            title="@Vm.DownloadPackTitle"
-                            @onclick="Vm.DownloadPackAsync">
-                        <i class="ti ti-download" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
-                        Download pack
-                    </button>
-                    <button type="button"
-                            disabled="@Vm.AnyBusy"
-                            title="List server-side mods on the game VM. Requires the VM running."
-                            @onclick="Vm.RefreshLiveModsAsync">
-                        <i class="ti ti-refresh" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
-                        Refresh list
-                    </button>
-                }
-            </div>
-        </div>
-
-        @if (!Vm.IsModdedServer)
-        {
-            <p style="margin:0 0 12px;font-size:13px;color:var(--text-muted);">@Vm.VanillaEmptyState</p>
-        }
-        else
-        {
-            @if (!string.IsNullOrWhiteSpace(Vm.PackIdentityDisplay))
+            @if (!string.IsNullOrWhiteSpace(Vm.IdentityStatus))
             {
-                <p style="margin:0 0 8px;font-size:13px;">@Vm.PackIdentityDisplay</p>
+                <p style="margin:0 0 8px;font-size:13px;color:var(--text-secondary);white-space:pre-wrap;">@Vm.IdentityStatus</p>
             }
-            @if (!Vm.HasLocalPackArchive)
+            <button type="button"
+                    class="mcm-advanced-toggle"
+                    @onclick="() => Vm.ShowChatTemplates = !Vm.ShowChatTemplates">
+                @(Vm.ShowChatTemplates ? "Hide automated chat" : "Automated chat")
+            </button>
+            @if (Vm.ShowChatTemplates)
             {
-                <p style="margin:0 0 8px;font-size:13px;color:var(--text-muted);">@Vm.MissingArchiveMessage</p>
-            }
-            @if (!string.IsNullOrWhiteSpace(Vm.ModdingSummary))
-            {
-                <p style="margin:0 0 8px;font-size:13px;color:var(--text-secondary);">@Vm.ModdingSummary</p>
-            }
-            @if (!string.IsNullOrWhiteSpace(Vm.ModdingHint))
-            {
-                <p style="margin:0 0 8px;font-size:13px;color:var(--text-muted);">@Vm.ModdingHint</p>
-            }
-            @if (Vm.HasQuarantinedMods)
-            {
-                <div class="mcm-pack-list-warning" role="status">
-                    <p class="mcm-wizard-kicker">Set aside after a crash</p>
-                    @foreach (var entry in Vm.QuarantinedMods)
+                <p style="margin:0 0 10px;font-size:12px;color:var(--text-muted);">
+                    These lines are sent in-game before an idle or budget stop. Keep the placeholders such as <code>{minutes}</code> if the line uses them.
+                </p>
+                <div class="mcm-chat-templates">
+                    @foreach (var row in Vm.ChatTemplates)
                     {
-                        <p>@Vm.FormatQuarantineCopy(entry)</p>
-                        <div class="mcm-quarantine-actions">
-                            <button type="button"
-                                    class="mcm-primary"
-                                    disabled="@(!Vm.CanActOnQuarantine)"
-                                    title="Skip this mod on future installs of this same pack file."
-                                    @onclick="() => Vm.KeepExcludedAsync(entry)">
-                                Keep excluded
-                            </button>
-                            <button type="button"
-                                    disabled="@(!Vm.CanActOnQuarantine)"
-                                    title="Move the jar back into mods/ and restart Minecraft."
-                                    @onclick="() => Vm.PutBackAsync(entry)">
-                                Put back
-                            </button>
+                        <div class="mcm-field">
+                            <label>
+                                @row.Label
+                                @if (!string.IsNullOrWhiteSpace(row.Placeholders))
+                                {
+                                    <span style="font-weight:400;color:var(--text-muted);"> @row.Placeholders</span>
+                                }
+                            </label>
+                            <textarea rows="2"
+                                      disabled="@Vm.AnyBusy"
+                                      @bind="row.Text"
+                                      @bind:event="oninput"></textarea>
                         </div>
                     }
                 </div>
             }
-            @if (Vm.ModFiles.Count > 0)
+        </div>
+    }
+    else if (IsPane("world"))
+    {
+        <div class="mcm-section-card"
+             id="mcm-server-pane-world"
+             role="tabpanel"
+             aria-labelledby="mcm-server-tab-world">
+            <div class="mcm-server-pane-head">
+                <div class="mcm-server-pane-title">
+                    <span>World backups</span>
+                    <button type="button"
+                            class="mcm-help"
+                            title="@Vm.WorldBackupsHelpTitle">
+                        <i class="ti ti-help" aria-hidden="true"></i>
+                        <span class="sr-only">About World backups</span>
+                    </button>
+                </div>
+                <div class="mcm-server-actions">
+                    <button type="button"
+                            disabled="@Vm.AnyBusy"
+                            title="Store a zip in cloud storage. This does not replace the live world until you use Replace."
+                            @onclick="Vm.UploadAsync">
+                        <i class="ti ti-upload" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
+                        Upload backup
+                    </button>
+                    <button type="button"
+                            disabled="@Vm.AnyBusy"
+                            title="@Vm.DownloadLatestTitle"
+                            @onclick="Vm.DownloadLatestAsync">
+                        <i class="ti ti-download" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
+                        @Vm.DownloadLatestButtonLabel
+                    </button>
+                    <button type="button"
+                            class="mcm-danger-btn"
+                            disabled="@Vm.AnyBusy"
+                            title="Stops Minecraft, deletes the live world on the game VM, then starts it again. Cloud backups, mods, and server.properties stay. Requires the server running. Download a world save first if you might want this world back."
+                            @onclick="Vm.WipeWorldAsync">
+                        Wipe world
+                    </button>
+                    <button type="button"
+                            disabled="@Vm.AnyBusy"
+                            title="Requires the server to be running. Stops Minecraft, replaces the world, then starts it again."
+                            @onclick="Vm.ReplaceWorldAsync">
+                        Replace world
+                    </button>
+                </div>
+            </div>
+            <p class="mcm-server-facts">
+                Last backup @Vm.LastBackupDisplay · Backup storage @Vm.BackupStorageDisplay
+            </p>
+
+            @if (!string.IsNullOrWhiteSpace(Vm.OversizedBanner))
             {
-                <div class="mcm-mod-list">
-                    @foreach (var name in Vm.ModFiles)
-                    {
-                        <div class="mcm-mod-row">@name</div>
-                    }
+                <div class="mcm-oversized-banner" role="status">
+                    <i class="ti ti-alert-triangle" aria-hidden="true"></i>
+                    <p>@Vm.OversizedBanner</p>
                 </div>
             }
-        }
 
-        @if (Vm.ShowChangePackUi)
-        {
-            <div style="margin-top:12px;">
+            <div class="mcm-bk-list mcm-slim-scroll">
+                @foreach (var backup in Vm.Backups)
+                {
+                    <div class="mcm-bk-row">
+                        <div>
+                            <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@backup.FileName</div>
+                            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">@backup.TimeDisplayLocal</div>
+                        </div>
+                        <div style="color:var(--text-muted);">@backup.SizeDisplay</div>
+                        <div class="mcm-bk-actions">
+                            <button type="button"
+                                    style="font-size:12px;padding:3px 8px;"
+                                    disabled="@Vm.AnyBusy"
+                                    @onclick="@(() => Vm.DownloadBackupAsync(backup))">
+                                Download
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            @if (Vm.HasObjectStorage && !string.IsNullOrWhiteSpace(Vm.SoftCapDisplay) && Vm.SoftCapDisplay != "—")
+            {
+                <p style="margin:10px 0 0;font-size:12px;color:var(--text-muted);">@Vm.SoftCapDisplay</p>
+            }
+            <p style="margin:12px 0 0;font-size:12px;color:var(--text-muted);">
+                Replace and Wipe world need the server running. Wipe deletes only the live save — cloud backups stay. Download a world save first if you might want this world back. Upload while stopped only stores a zip — Start, then Replace to apply it. If a world is too large for cloud backup, Download latest copies the live world over SSH instead.
+            </p>
+        </div>
+    }
+    else if (IsPane("modding"))
+    {
+        <div class="mcm-section-card"
+             id="mcm-server-pane-modding"
+             role="tabpanel"
+             aria-labelledby="mcm-server-tab-modding">
+            <div class="mcm-server-pane-head">
+                <div class="mcm-server-pane-title">
+                    <span>Modding</span>
+                    <button type="button"
+                            class="mcm-help"
+                            title="@Vm.ModdingHelpTitle">
+                        <i class="ti ti-help" aria-hidden="true"></i>
+                        <span class="sr-only">About Modding</span>
+                    </button>
+                </div>
+                <div class="mcm-server-actions">
+                    <button type="button"
+                            disabled="@(!Vm.CanPickPack)"
+                            title="@Vm.ChangePackTitle"
+                            @onclick="OpenChangePack">
+                        <i class="ti ti-package" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
+                        Change pack
+                    </button>
+                    @if (Vm.IsModdedServer)
+                    {
+                        <button type="button"
+                                disabled="@(!Vm.CanDownloadPack)"
+                                title="@Vm.DownloadPackTitle"
+                                @onclick="Vm.DownloadPackAsync">
+                            <i class="ti ti-download" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
+                            Download pack
+                        </button>
+                        <button type="button"
+                                disabled="@Vm.AnyBusy"
+                                title="List server-side mods on the game VM. Requires the VM running."
+                                @onclick="Vm.RefreshLiveModsAsync">
+                            <i class="ti ti-refresh" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
+                            Refresh list
+                        </button>
+                    }
+                </div>
+            </div>
+
+            @if (!Vm.IsModdedServer)
+            {
+                <p style="margin:0;font-size:13px;color:var(--text-muted);">@Vm.VanillaEmptyState</p>
+            }
+            else
+            {
+                @if (!string.IsNullOrWhiteSpace(Vm.PackIdentityDisplay))
+                {
+                    <p style="margin:0 0 8px;font-size:13px;">@Vm.PackIdentityDisplay</p>
+                }
+                @if (!Vm.HasLocalPackArchive)
+                {
+                    <p style="margin:0 0 8px;font-size:13px;color:var(--text-muted);">@Vm.MissingArchiveMessage</p>
+                }
+                @if (!string.IsNullOrWhiteSpace(Vm.ModdingHint))
+                {
+                    <p style="margin:0 0 8px;font-size:13px;color:var(--text-muted);">@Vm.ModdingHint</p>
+                }
+                @if (Vm.HasQuarantinedMods)
+                {
+                    <div class="mcm-pack-list-warning" role="status">
+                        <p class="mcm-wizard-kicker">Set aside after a crash</p>
+                        @foreach (var entry in Vm.QuarantinedMods)
+                        {
+                            <p>@Vm.FormatQuarantineCopy(entry)</p>
+                            <div class="mcm-quarantine-actions">
+                                <button type="button"
+                                        class="mcm-primary"
+                                        disabled="@(!Vm.CanActOnQuarantine)"
+                                        title="Skip this mod on future installs of this same pack file."
+                                        @onclick="() => Vm.KeepExcludedAsync(entry)">
+                                    Keep excluded
+                                </button>
+                                <button type="button"
+                                        disabled="@(!Vm.CanActOnQuarantine)"
+                                        title="Move the jar back into mods/ and restart Minecraft."
+                                        @onclick="() => Vm.PutBackAsync(entry)">
+                                    Put back
+                                </button>
+                            </div>
+                        }
+                    </div>
+                }
+                <details class="mcm-expander">
+                    <summary>
+                        <span class="mcm-expander-title">@ModListSummary</span>
+                    </summary>
+                    @if (Vm.ModFiles.Count > 0)
+                    {
+                        <div class="mcm-mod-list mcm-slim-scroll">
+                            @foreach (var name in Vm.ModFiles)
+                            {
+                                <div class="mcm-mod-row">@name</div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="mcm-expander-empty">Refresh list to load server-side mods. Requires the VM running.</p>
+                    }
+                </details>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="mcm-section-card"
+             id="mcm-server-pane-pack"
+             role="tabpanel"
+             aria-labelledby="mcm-server-tab-pack">
+            <div class="mcm-server-pane-head">
+                <div class="mcm-server-pane-title">
+                    <span>Change pack</span>
+                </div>
+            </div>
             <aside class="mcm-client-pack-notice" role="note">
                 <p class="mcm-wizard-kicker">@Vm.ClientPackTitle</p>
                 <p>@Vm.ClientPackCopy</p>
@@ -330,91 +462,33 @@
                     <span>@Vm.WipeWorldLabel</span>
                 </label>
             }
-            </div>
-        }
-    </div>
-
-    <div class="mcm-section-card">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
-            <div style="display:flex;align-items:center;gap:4px;">
-                <span style="font-size:14px;font-weight:500;">World backups</span>
-                <button type="button"
-                        class="mcm-help"
-                        title="@Vm.WorldBackupsHelpTitle">
-                    <i class="ti ti-help" aria-hidden="true"></i>
-                    <span class="sr-only">About World backups</span>
-                </button>
-            </div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                <button type="button"
-                        disabled="@Vm.AnyBusy"
-                        title="Store a zip in cloud storage. This does not replace the live world until you use Replace."
-                        @onclick="Vm.UploadAsync">
-                    <i class="ti ti-upload" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
-                    Upload backup
-                </button>
-                <button type="button"
-                        disabled="@Vm.AnyBusy"
-                        title="@Vm.DownloadLatestTitle"
-                        @onclick="Vm.DownloadLatestAsync">
-                    <i class="ti ti-download" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
-                    @Vm.DownloadLatestButtonLabel
-                </button>
-                <button type="button"
-                        class="mcm-danger-btn"
-                        disabled="@Vm.AnyBusy"
-                        title="Stops Minecraft, deletes the live world on the game VM, then starts it again. Cloud backups, mods, and server.properties stay. Requires the server running. Download a world save first if you might want this world back."
-                        @onclick="Vm.WipeWorldAsync">
-                    Wipe world
-                </button>
-                <button type="button"
-                        disabled="@Vm.AnyBusy"
-                        title="Requires the server to be running. Stops Minecraft, replaces the world, then starts it again."
-                        @onclick="Vm.ReplaceWorldAsync">
-                    Replace world
-                </button>
-            </div>
         </div>
-
-        @if (!string.IsNullOrWhiteSpace(Vm.OversizedBanner))
-        {
-            <div class="mcm-oversized-banner" role="status">
-                <i class="ti ti-alert-triangle" aria-hidden="true"></i>
-                <p>@Vm.OversizedBanner</p>
-            </div>
-        }
-
-        @foreach (var backup in Vm.Backups)
-        {
-            <div class="mcm-bk-row">
-                <div>
-                    <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@backup.FileName</div>
-                    <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">@backup.TimeDisplayLocal</div>
-                </div>
-                <div style="color:var(--text-muted);">@backup.SizeDisplay</div>
-                <div class="mcm-bk-actions">
-                    <button type="button"
-                            style="font-size:12px;padding:3px 8px;"
-                            disabled="@Vm.AnyBusy"
-                            @onclick="@(() => Vm.DownloadBackupAsync(backup))">
-                        Download
-                    </button>
-                </div>
-            </div>
-        }
-
-        @if (Vm.HasObjectStorage && !string.IsNullOrWhiteSpace(Vm.SoftCapDisplay) && Vm.SoftCapDisplay != "—")
-        {
-            <p style="margin:10px 0 0;font-size:12px;color:var(--text-muted);">@Vm.SoftCapDisplay</p>
-        }
-    </div>
-
-    <p style="margin:12px 0 0;font-size:12px;color:var(--text-muted);">
-        Replace and Wipe world need the server running. Wipe deletes only the live save — cloud backups stay. Download a world save first if you might want this world back. Upload while stopped only stores a zip — Start, then Replace to apply it. If a world is too large for cloud backup, Download latest copies the live world over SSH instead.
-    </p>
+    }
 </div>
 
 @code {
+    private string _pane = "identity";
+
+    private bool IsPane(string id) => string.Equals(_pane, id, StringComparison.Ordinal);
+
+    private string PaneClass(string id) => IsPane(id) ? "is-active" : "";
+
+    private void SelectPane(string pane) => _pane = pane;
+
+    private void OpenChangePack() => SelectPane("pack");
+
+    private string ModListSummary
+    {
+        get
+        {
+            if (!string.IsNullOrWhiteSpace(Vm.ModdingSummary))
+                return Vm.ModdingSummary;
+            if (Vm.ModFiles.Count > 0)
+                return $"{Vm.ModFiles.Count} server mods";
+            return "Server mods";
+        }
+    }
+
     protected override void OnInitialized()
     {
         Vm.PropertyChanged += OnVmChanged;
@@ -434,7 +508,6 @@
     {
         Vm.PropertyChanged -= OnVmChanged;
         Vm.Backups.CollectionChanged -= OnBackupsChanged;
-        Vm.ChatTemplates.CollectionChanged -= OnChatChanged;
         Vm.ChatTemplates.CollectionChanged -= OnChatChanged;
         Vm.ModFiles.CollectionChanged -= OnModsChanged;
     }

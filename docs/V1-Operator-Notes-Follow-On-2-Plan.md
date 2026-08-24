@@ -65,8 +65,8 @@ P8 may run in a **separate operator chat** while Group A is on P1–P7. Default 
 | P1 | Toasts: bottom-left + start success fade | **DONE** | SEQUENTIAL — toast CSS sits on the same manage chrome as P2 | agent |
 | P2 | Custom title bar (preferred) or compact header | **DONE** | SEQUENTIAL — owns `MainWindow` + title row | plan-first |
 | P3 | Tab rename/order + Server tab snappiness | **DONE** | SEQUENTIAL — `MainLayout` + Server VM | agent |
-| P4 | Manager tab density (sub-tabs, mods collapsed) | **NEXT** | SEQUENTIAL — Server tab markup after P2 height | either |
-| P5 | Pack identity version dropdowns | TODO | SEQUENTIAL — `PackIdentityFields` used by Setup P7 | agent |
+| P4 | Manager tab density (sub-tabs, mods collapsed) | **DONE** | SEQUENTIAL — Server tab markup after P2 height | either |
+| P5 | Pack identity version dropdowns | **NEXT** | SEQUENTIAL — `PackIdentityFields` used by Setup P7 | agent |
 | P6 | Setup sparse pages + Always Free copy | TODO | SEQUENTIAL — `SetupWizard.razor` | either |
 | P7 | Setup Minecraft step layout | TODO | SEQUENTIAL — same wizard file as P6 | either |
 | P8 | VM1 color server icon | TODO | PARALLEL-OK with P1–P7 | agent |
@@ -250,7 +250,7 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 
 ## P4 — Manager tab density (sub-tabs, mods collapsed)
 
-**Status:** NEXT  
+**Status:** DONE  
 **Parallel:** SEQUENTIAL — Server markup after P2 height and P3 snappiness  
 **Cursor mode:** either  
 **UI skill:** yes
@@ -279,13 +279,13 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 
 - Server content is grouped so the operator rarely scrolls inside a control; mods start collapsed.
 
-**Changelog:** *(date when finished)*
+**Changelog:** 2026-08-24 — Inner tabs Identity / World / Modding / Change pack; mods expander collapsed by default; Usage Hours/Budget, Advanced Status/Stack/Danger, Troubleshooting two-column cards. Living **NEXT = P5**.
 
 ---
 
 ## P5 — Pack identity version dropdowns
 
-**Status:** TODO  
+**Status:** NEXT  
 **Parallel:** SEQUENTIAL — shared `PackIdentityFields` with P7  
 **Cursor mode:** agent
 
@@ -483,6 +483,7 @@ When P1–P9 are **DONE**:
 
 | Date | Note |
 |------|------|
+| 2026-08-24 | **P4 DONE** (Server inner tabs Identity / World / Modding / Change pack; mods collapsed; Usage Hours/Budget; Advanced Status/Stack/Danger; Troubleshooting two-column). Living **NEXT = P5**. Pass 3 stays blocked. |
 | 2026-08-24 | **P3 DONE** (tab **Server**; order Whitelist → Server → Console → Usage → Advanced → Troubleshooting; keep-alive + deferred catalog; confirm-then-build derived zip). Living **NEXT = P4**. Pass 3 stays blocked. |
 | 2026-08-24 | **P2 DONE** (custom WindowChrome caption; 1040 CSS px default/min; wordmark/Always Free gone). Living **NEXT = P3**. Pass 3 stays blocked. |
 | 2026-08-24 | **P1 DONE** (toasts bottom-left, 4s fade, start-success AutoHide). Living **NEXT = P2** (plan-first). Pass 3 stays blocked. |

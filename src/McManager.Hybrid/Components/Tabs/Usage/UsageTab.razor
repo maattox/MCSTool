@@ -19,6 +19,26 @@
         @Vm.LeadCopy
     </p>
 
+    <nav class="mcm-subtabs" role="tablist" aria-label="Usage sections">
+        <button type="button"
+                role="tab"
+                class="mcm-subtab @PaneClass("hours")"
+                aria-selected="@(IsPane("hours") ? "true" : "false")"
+                @onclick="@(() => SelectPane("hours"))">
+            Hours
+        </button>
+        <button type="button"
+                role="tab"
+                class="mcm-subtab @PaneClass("budget")"
+                aria-selected="@(IsPane("budget") ? "true" : "false")"
+                @onclick="@(() => SelectPane("budget"))">
+            Budget
+        </button>
+    </nav>
+
+    @if (IsPane("hours"))
+    {
+    <div class="mcm-pane-stack" role="tabpanel">
     <div class="mcm-usage-hero">
         <div class="mcm-usage-metric">
             <div class="mcm-usage-metric-label">@Vm.RemainingHoursLabel</div>
@@ -87,12 +107,15 @@
         }
     </details>
 
-    <div class="mcm-section-card">
-        <div class="mcm-usage-fieldset-title">Cloud details</div>
-        <p class="mcm-usage-fieldset-hint">
+    <details class="mcm-usage-day-details">
+        <summary>
+            <span class="mcm-usage-day-details-title">Cloud details</span>
+            <span class="mcm-usage-day-details-hint">CPU-hours and memory-hours behind the wall-clock figures</span>
+        </summary>
+        <p class="mcm-usage-fieldset-hint" style="margin-top:10px;">
             Always Free is counted in CPU-hours and memory-hours. Wall-clock hours above are those figures divided by the server’s CPUs.
         </p>
-        <div class="mcm-usage-details">
+        <div class="mcm-usage-details" style="margin-top:10px;">
             <div class="mcm-usage-detail">
                 <div class="mcm-usage-detail-label">Month (UTC)</div>
                 <div class="mcm-usage-detail-value">@Vm.MonthLabel</div>
@@ -135,12 +158,15 @@
             </div>
         </div>
         <p class="mcm-usage-meta" style="margin-top:12px;">Last refresh: @Vm.LastRefreshDisplay</p>
+    </details>
     </div>
-
-    <div class="mcm-section-card">
+    }
+    else
+    {
+    <div class="mcm-section-card" role="tabpanel">
         <div style="font-size:14px;font-weight:600;margin-bottom:2px;">Usage budget</div>
         <p class="mcm-usage-fieldset-hint">
-            These numbers stay inside Always Free. To turn the idle timer on or off, use Danger Zone.
+            These numbers stay inside Always Free. To turn the idle timer on or off, use Advanced → Danger.
         </p>
 
         <fieldset class="mcm-usage-fieldset">
@@ -252,10 +278,18 @@
             </button>
         </div>
     </div>
+    }
 </div>
 
 @code {
     private bool _detailedUsageOpen;
+    private string _pane = "hours";
+
+    private bool IsPane(string id) => string.Equals(_pane, id, StringComparison.Ordinal);
+
+    private string PaneClass(string id) => IsPane(id) ? "is-active" : "";
+
+    private void SelectPane(string pane) => _pane = pane;
 
     protected override void OnInitialized()
     {

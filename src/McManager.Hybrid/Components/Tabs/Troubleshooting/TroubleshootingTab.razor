@@ -1,14 +1,12 @@
 @inject TroubleshootingViewModel Vm
 @implements IDisposable
 
-<div style="display:flex;flex-direction:column;gap:16px;max-width:100%;">
-    <div>
-        <div style="font-size:16px;font-weight:600;">Troubleshooting</div>
-        <p style="margin:4px 0 0;font-size:13px;color:var(--text-secondary);">
-            One-click repairs for a stuck doorbell. Confirm before anything that moves the play IP. Idle disable is on Danger Zone; raw VM stop is on Advanced.
-        </p>
-    </div>
+<div class="mcm-pane-stack">
+    <p style="margin:0;font-size:13px;color:var(--text-secondary);">
+        One-click repairs for a stuck doorbell. Confirm before anything that moves the play IP. Idle disable is on Advanced → Danger; raw VM stop is on Advanced → Status.
+    </p>
 
+    <div class="mcm-card-grid">
     <div class="mcm-section-card">
         <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
             <span style="font-size:14px;font-weight:600;">Play address</span>
@@ -100,21 +98,10 @@
                 Repair game permissions
             </button>
         </div>
-    </div>
-
-    <div class="mcm-section-card">
-        <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
-            <span style="font-size:14px;font-weight:600;">If the game VM hangs while stopping</span>
-            <button type="button"
-                    class="mcm-help"
-                    title="OS-ISSUE-5: guest ACPI SoftStop hang. In the Oracle Console, open the game VM and use Stop → Reset (or Force stop) if it stays Stopping.">
-                <i class="ti ti-help" aria-hidden="true"></i>
-                <span class="sr-only">About VM hang while stopping</span>
-            </button>
-        </div>
-        <p style="margin:0;font-size:13px;color:var(--text-secondary);">
-            That hang is not a Manager button. In the Oracle Console, open the game VM and use Stop → Reset (or Force stop) if it stays Stopping. Then Park play IP so the address returns to the doorbell. Heal the hours ledger only after the VM is Stopped.
+        <p style="margin:10px 0 0;font-size:12px;color:var(--text-muted);">
+            If the game VM hangs while Stopping, that is not a Manager button. In the Oracle Console use Stop → Reset (or Force stop), then Park play IP. Heal the hours ledger only after the VM is Stopped.
         </p>
+    </div>
     </div>
 
     <div>

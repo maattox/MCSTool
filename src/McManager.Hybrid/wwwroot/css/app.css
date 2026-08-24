@@ -999,6 +999,158 @@ button.mcm-btn-disabled:hover {
     border-color: var(--fill-accent);
 }
 
+/* Compact inner tabs — same surfaces as .mcm-tabs, secondary scale. */
+.mcm-subtabs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+    gap: 4px;
+    width: 100%;
+    margin: 0 0 12px;
+    padding: 3px;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.mcm-subtab {
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: transparent;
+    padding: 6px 8px;
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.25;
+    color: var(--text-secondary);
+    font-weight: 500;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+}
+
+.mcm-subtab:hover:not(:disabled) {
+    background: var(--surface-2);
+    color: var(--text-primary);
+}
+
+.mcm-subtab.is-active {
+    color: var(--text-primary);
+    font-weight: 600;
+    background: var(--surface-2);
+    border-color: var(--fill-accent);
+}
+
+.mcm-server-pane-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.mcm-server-pane-title {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+}
+
+.mcm-server-pane-title > span {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.mcm-server-facts {
+    margin: 0 0 10px;
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+.mcm-server-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.mcm-bk-list {
+    max-height: 220px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    margin: 0 -4px;
+    padding: 0 4px;
+}
+
+.mcm-expander {
+    margin-top: 8px;
+    border-top: 0.5px solid var(--border);
+    padding-top: 8px;
+}
+
+.mcm-expander > summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px 10px;
+    user-select: none;
+}
+
+.mcm-expander > summary::-webkit-details-marker {
+    display: none;
+}
+
+.mcm-expander > summary::before {
+    content: "▸";
+    display: inline-block;
+    margin-right: 2px;
+    color: var(--text-muted);
+    transition: transform 0.15s ease;
+}
+
+.mcm-expander[open] > summary::before {
+    transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mcm-expander > summary::before {
+        transition: none;
+    }
+}
+
+.mcm-expander-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.mcm-expander-empty {
+    margin: 8px 0 0;
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.mcm-card-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.mcm-card-grid > * {
+    min-width: 0;
+}
+
+.mcm-pane-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 100%;
+}
+
 .mcm-tab-body {
     flex: 1 1 auto;
     padding-top: 1.25rem;
@@ -1216,6 +1368,11 @@ button.mcm-btn-disabled:hover {
     padding-top: 8px;
 }
 
+.mcm-pane-stack > .mcm-danger-zone {
+    margin-top: 0;
+    padding-top: 0;
+}
+
 .mcm-danger-zone-title {
     margin: 0;
     font: inherit;
@@ -1374,6 +1531,7 @@ button.mcm-btn-disabled:hover {
 .mcm-mod-list {
     max-height: 240px;
     overflow-y: auto;
+    overscroll-behavior: contain;
     margin-top: 2px;
 }
 
@@ -2587,7 +2745,7 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 .mcm-usage {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
 }
 
 .mcm-usage-head {
