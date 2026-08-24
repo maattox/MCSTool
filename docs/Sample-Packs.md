@@ -3,7 +3,7 @@
 **Audience:** agents implementing pack import (V1 Phase 4, Step **4.13** robustness, later pack-related tests).  
 **On disk:** gitignored [`data/sample-packs/`](../data/sample-packs/) in this repo (covered by the existing `data/` gitignore). Exact filenames on this machine are listed in `data/sample-packs/README.txt`.
 
-This product **must not redistribute** pack contents (`PRODUCT-IDEAS.md`). Real `.mrpack` / CurseForge zips / jars stay on the operator PC only. Do not copy them into `tests/`, git, Object Storage, or the Manager installer.
+This product **must not redistribute** pack contents (`PRODUCT-IDEAS.md`). Real `.mrpack` / CurseForge zips / jars stay on the operator PC only. Do not copy them into `tests/`, git, Object Storage, or the Manager installer. Expected-to-work Change-pack corpus for the headless harness is [`pack-tests/`](../pack-tests/), not this folder.
 
 ## Two layers
 

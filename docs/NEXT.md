@@ -8,19 +8,21 @@ Single source of truth for **what to work on next**. Living plan files keep sect
 
 | Field | Value |
 |-------|-------|
-| **Plan** | [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) |
-| **Step** | **8.5.2** QA Pass 3 |
-| **Sub-plan** | [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) |
-| **Sub-step** | — |
-| **Status** | `blocked` |
-| **Cursor mode** | — |
+| **Plan** | [`Pack-Corpus-Test-Plan.md`](Pack-Corpus-Test-Plan.md) |
+| **Step** | Pack-corpus Change-pack test system |
+| **Sub-plan** | [`Pack-Corpus-Test-Plan.md`](Pack-Corpus-Test-Plan.md) |
+| **Sub-step** | **P2** |
+| **Status** | `ready` |
+| **Cursor mode** | agent |
 
 ## Design lock (implementing)
 
-Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) — **implemented** (Step **8.9** P1–P2). Pass 3 stays **blocked** until the operator starts it.
+Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) — **implemented** (Step **8.9** P1–P2). Step **8.5.2** QA Pass 3 stays **blocked** until this pack-corpus plan exits **and** the operator starts it.
 
 ## Completed recently
 
+- **2026-08-24** — Pack-corpus **P1 DONE** (layout, schemas, gitignore, `PROTOCOL.md`). Living **NEXT = P2**. Pass 3 stays **blocked**.
+- **2026-08-24** — Live **NEXT** → pack-corpus test system **P1** ([`Pack-Corpus-Test-Plan.md`](Pack-Corpus-Test-Plan.md)). Pass 3 stays **blocked**.
 - **2026-08-24** — Step **8.10 P9 DONE** (MOTD formatting editor: `§` toolbar + paste, list preview, omit-name, collapsed raw; VM1 preserves codes). Follow-on 2 **COMPLETE**. Pass 3 **blocked** until the operator says so.
 - **2026-08-24** — Step **8.10 P8 DONE** (VM1 color icon: `PrivateTmp` so ImageIO can encode the favicon; stage PNG then `install` as `mcmgr`). Living **NEXT = P9** (plan-first). Pass 3 **blocked**.
 - **2026-08-24** — Step **8.10 P7 DONE** (Setup Minecraft step: Vanilla/Modded primary column; flavor/pack drop beside it). Living **NEXT = P8**. Pass 3 **blocked**.

@@ -15,6 +15,7 @@ Read **only** what the current V1 / QA step names. Do not load this whole folder
 | [`V1-Pack-Import-Assisted-Review-Plan.md`](V1-Pack-Import-Assisted-Review-Plan.md) | Step **8.9**. **DONE** (P1–P2). |
 | [`V1-Operator-Notes-Follow-On-2-Plan.md`](V1-Operator-Notes-Follow-On-2-Plan.md) | Step **8.10**. Density / MOTD / VM1 icon. **P1 NEXT.** |
 | [`Mod-Pack-Tests.md`](Mod-Pack-Tests.md) | Operator informal pack tests (input to 8.7; not a living NEXT). |
+| [`Pack-Corpus-Test-Plan.md`](Pack-Corpus-Test-Plan.md) | Headless Change-pack corpus harness. **Live NEXT = P2.** Pass 3 stays blocked. |
 | [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) | Pass 3 (blocked until **8.10** exits and the operator starts it). |
 | [`V1-QA-Pass-3-Results.md`](V1-QA-Pass-3-Results.md) | Fill during Pass 3. |
 | [`V1-QA-Catalog.md`](V1-QA-Catalog.md) | Test IDs / expected — named IDs only. |

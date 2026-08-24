@@ -367,6 +367,13 @@ data/
 **/appsettings.*.local.json
 *.local.json
 
+# Pack-corpus Change-pack test archives, journals, and phase lock
+# (PROTOCOL.md, catalog.yaml, result YAML, and packs/.gitkeep stay tracked)
+pack-tests/packs/*
+!pack-tests/packs/.gitkeep
+pack-tests/**/logs/
+pack-tests/.lock
+
 # Secrets and credentials
 .env
 .env.*

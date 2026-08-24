@@ -1,0 +1,11 @@
+# Example sidecar only. Copy to <id>.yaml after the operator verifies
+# client-only jars. Filenames as installed on disk / in the archive.
+# The harness must not apply this list as Skip during install.
+# Analysis skill may diff these vs kept jars / crash blame.
+
+pack_id: example-fabric-small
+verified_utc: "2026-08-24T00:00:00Z"
+jars: []
+# jars:
+#   - sodium.jar
+#   - iris.jar

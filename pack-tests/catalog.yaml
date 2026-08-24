@@ -1,0 +1,33 @@
+# Pack-corpus catalog (schema_version 1).
+# Operator fills packs[] before a live phase. No client-jar lists here —
+# those live in client-only/<id>.yaml.
+#
+# Row fields:
+#   id                  stable slug (result filename)
+#   filename            exact file under pack-tests/packs/
+#   sha256              required before a live test; leave empty until the file is copied
+#   platform            modrinth | curseforge | homemade
+#   format              mrpack | cf-server | unstructured | jar-root
+#   loader              fabric | forge | neoforge
+#   loader_version      used when Hybrid would ask identity
+#   minecraft           expected MC version
+#   java_major          expected Java major
+#   size_class          small | medium | large
+#   client_only_sidecar path under pack-tests/client-only/ (optional)
+#
+# Commented example (not a live row):
+# packs:
+#   - id: example-fabric-small
+#     filename: example.mrpack
+#     sha256: ""  # fill before a live test
+#     platform: modrinth
+#     format: mrpack
+#     loader: fabric
+#     loader_version: "0.16.14"
+#     minecraft: "1.21.1"
+#     java_major: 21
+#     size_class: small
+#     client_only_sidecar: client-only/example-fabric-small.yaml
+
+schema_version: 1
+packs: []

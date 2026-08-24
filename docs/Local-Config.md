@@ -11,7 +11,8 @@ The Manager WinExe (`McManager.Hybrid`, WPF + BlazorWebView) seeds connectivity 
 | `data/config.local.json` | **Ignored** | Live OCIDs / SSH / Object Storage / budgets |
 | `data/friends.local.json` | **Ignored** | Live Desired List seed |
 | `data/setup-wizard.local.json` | **Ignored** | Setup wizard resume (step index + fields; **no** Auth Token, **no** SSH private key) |
-| `data/sample-packs/` | **Ignored** | Operator-local sample `.mrpack` / CurseForge zips for Phase 4 pack-import work — see [`Sample-Packs.md`](Sample-Packs.md). **Not** CI fixtures. |
+| `data/sample-packs/` | **Ignored** | Operator-local sample `.mrpack` / CurseForge zips for Phase 4 pack-import work — see [`Sample-Packs.md`](Sample-Packs.md). **Not** CI fixtures. **Not** the Change-pack corpus. |
+| `pack-tests/packs/` | **Ignored** (except `.gitkeep`) | Expected-to-work Change-pack corpus archives — [`pack-tests/README.md`](../pack-tests/README.md). Sidecar/result YAML and [`PROTOCOL.md`](../pack-tests/PROTOCOL.md) stay tracked. |
 | `%LOCALAPPDATA%\McManager\app-settings.json` | **Ignored** (outside the repo) | Program settings for this PC: update-check toggle (Phase 9 honors it). Not stack OCIDs. |
 
 Copy examples into `data/` and fill values, or keep the operator-seeded files already present on this machine.
@@ -85,6 +86,8 @@ MCMANAGER_CONFIG_DIR=C:\path\to\OCI-mc-server
 ```
 
 (Expected layout: `{dir}/data/config.local.json`.)
+
+Pack-corpus harness: `MCMANAGER_CONFIG_DIR` = **`mcmgr-pack-test`** (TESTING `config.local.json` copied from `mcmgr-blank-test`). Do **not** use repo `data/config.local.json` (Forge / `DEFAULT`) or `mcmgr-blank-test` (keeps interactive Manager Layer 2 overlays clean). Pack bytes live under gitignored [`pack-tests/packs/`](../pack-tests/packs/), not `data/sample-packs/`.
 
 ## OCI API credentials & clock
 
