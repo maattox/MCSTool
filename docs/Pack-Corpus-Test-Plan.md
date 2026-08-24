@@ -1,6 +1,6 @@
 # Pack-corpus Change-pack test system (living)
 
-**Status:** Living. Created 2026-08-24 (docs only). **Live NEXT:** [`NEXT.md`](NEXT.md) (P3).  
+**Status:** COMPLETE (P1–P3). Created 2026-08-24 (docs only). **Live NEXT:** [`NEXT.md`](NEXT.md) — Step **8.5.2** Pass 3 (**blocked** until the operator says so). Operator may seed `pack-tests/` and run `/pack-test-phase` separately.
 **Parent:** tooling / agent QA harness (not a V1 product step). Informal ancestor: [`Mod-Pack-Tests.md`](Mod-Pack-Tests.md).  
 **Why now:** operator 2026-08-24 — automate expected-to-work pack boots on TESTING VM1 via a **headless** Change-pack path so agents can run a sequential corpus without clicking Hybrid.
 
@@ -128,9 +128,9 @@ Implementing agents follow these unless the operator overrides in chat.
 |----|-------|--------|----------|--------|
 | **P1** | Layout, schemas, gitignore, `PROTOCOL.md` | **DONE** | SEQUENTIAL | agent |
 | **P2** | Headless `PackTestHarness` (same Core Change-pack path) | **DONE** | SEQUENTIAL — consumes P1 paths | agent |
-| **P3** | Skills wrapping protocol + harness | **NEXT** | SEQUENTIAL — consumes P1+P2 CLI | agent |
+| **P3** | Skills wrapping protocol + harness | **DONE** | SEQUENTIAL — consumes P1+P2 CLI | agent |
 
-**After this plan:** operator may seed `pack-tests/packs/` + sidecars and run `pack-test-phase`. Do **not** start that from a P3 changelog. Then [`NEXT.md`](NEXT.md) → Step **8.5.2** Pass 3 (**blocked** until the operator says so).
+**After this plan:** operator may seed `pack-tests/packs/` + sidecars and run `/pack-test-phase`. Do **not** auto-start that from this changelog. [`NEXT.md`](NEXT.md) → Step **8.5.2** Pass 3 (**blocked** until the operator says so).
 
 ---
 
@@ -276,7 +276,7 @@ None.
 
 ## P3 — Skills
 
-**Status:** NEXT  
+**Status:** DONE  
 **Parallel:** SEQUENTIAL — wraps P1 PROTOCOL + P2 CLI  
 **Cursor mode:** agent
 
@@ -309,7 +309,7 @@ None.
 
 - Three skills + Agent-Workflow pointer. Protocol remains SoT.
 
-**Changelog:** *(date when finished)*
+**Changelog:** 2026-08-24 — `pack-test-one` / `pack-test-phase` / `pack-test-analyze`; Agent-Workflow pointer; `.cursor/skills/` tracked. Protocol remains SoT. Pass 3 blocked.
 
 ---
 
@@ -317,6 +317,7 @@ None.
 
 | Date | Note |
 |------|------|
+| 2026-08-24 | **P3 DONE** — skills `pack-test-one` / `pack-test-phase` / `pack-test-analyze` wrap PROTOCOL + harness CLI; Agent-Workflow pointer; `.cursor/skills/` tracked. Plan **COMPLETE**. Pass 3 **blocked** until the operator says so. |
 | 2026-08-24 | **P2 DONE** — `McManager.PackTestHarness` (Core-only console): analyze → identity/derived zip → default-Keep → `ReplacePackAsync`; `--analyze-only`; result YAML + ready-gate. Living **NEXT = P3**. Pass 3 still blocked. |
 | 2026-08-24 | **P1 DONE** — `pack-tests/` layout, catalog/sidecar/manifest schemas, gitignore, `PROTOCOL.md`. Living **NEXT = P2**. Pass 3 still blocked. |
 | 2026-08-24 | Operator pointed live [`NEXT.md`](NEXT.md) here (P1 `ready`). Pass 3 still blocked. |

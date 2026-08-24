@@ -1,6 +1,6 @@
 # Pack-corpus (Change-pack regression)
 
-Expected-to-work packs that should **boot on TESTING VM1 after Change pack**. Headless harness (P2) + agent skills (P3). Not Hybrid UI QA. Not QA Pass 3 catalog IDs.
+Expected-to-work packs that should **boot on TESTING VM1 after Change pack**. Headless harness + skills `/pack-test-one`, `/pack-test-phase`, `/pack-test-analyze`. Not Hybrid UI QA. Not QA Pass 3 catalog IDs.
 
 **Not** [`docs/Sample-Packs.md`](../docs/Sample-Packs.md) / `data/sample-packs/` (those are parser/UI refuse samples). Do not point this harness at that folder.
 

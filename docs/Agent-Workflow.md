@@ -18,6 +18,9 @@ Use a **fresh chat** per step to stay under the context window. Do not rely on o
 |-------|------|
 | `/phase-planning` | Turn operator notes into a living plan; group related items; mark SEQUENTIAL / PARALLEL-OK; set `docs/NEXT.md`. **No code.** |
 | `/next-step` | Read `docs/NEXT.md`; implement only the active section; update docs; stop. |
+| `/pack-test-one` | One catalog id via PackTestHarness; `pack-tests/PROTOCOL.md` + ready-gate; stop. Composer 2.5 OK. |
+| `/pack-test-phase` | Lock, sequential `/pack-test-one`, abort ≥2 `infra_fail`; no full logs; no executive summary. |
+| `/pack-test-analyze` | After phase complete/abort: results + sidecars → `EXECUTIVE-SUMMARY.md`. Grok, not Composer. |
 
 Skills live in `.cursor/skills/`. Rules in `.cursor/rules/` hold short invariants (cost, git, models, deploy pitfalls).
 

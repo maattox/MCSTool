@@ -388,8 +388,10 @@ oci.env
 .vscode/*
 !.vscode/extensions.json
 
-# Cursor local
-.cursor/
+# Cursor local (rules, plans, MCP). Project skills are shared.
+.cursor/*
+!.cursor/skills/
+!.cursor/skills/**
 AGENTS.md
 
 # Operator-copied Setup Deploy logs (may contain OCIDs, IPs, keys)

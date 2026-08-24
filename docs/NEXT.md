@@ -8,19 +8,22 @@ Single source of truth for **what to work on next**. Living plan files keep sect
 
 | Field | Value |
 |-------|-------|
-| **Plan** | [`Pack-Corpus-Test-Plan.md`](Pack-Corpus-Test-Plan.md) |
-| **Step** | Pack-corpus Change-pack test system |
-| **Sub-plan** | [`Pack-Corpus-Test-Plan.md`](Pack-Corpus-Test-Plan.md) |
-| **Sub-step** | **P3** |
-| **Status** | `ready` |
+| **Plan** | [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) |
+| **Step** | **8.5.2** QA Pass 3 |
+| **Sub-plan** | [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) |
+| **Sub-step** | Phase A |
+| **Status** | `blocked` |
 | **Cursor mode** | agent |
+
+Pack-corpus P1–P3 is **DONE**. Operator may seed `pack-tests/packs/` + sidecars and invoke `/pack-test-phase` in a **separate** chat. Do **not** start Pass 3, Step **8.6.1**, or **9.1** until the operator says so.
 
 ## Design lock (implementing)
 
-Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) — **implemented** (Step **8.9** P1–P2). Step **8.5.2** QA Pass 3 stays **blocked** until this pack-corpus plan exits **and** the operator starts it.
+Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) — **implemented** (Step **8.9** P1–P2). Step **8.5.2** QA Pass 3 stays **blocked** until the operator starts it.
 
 ## Completed recently
 
+- **2026-08-24** — Pack-corpus **P3 DONE** (skills `pack-test-one` / `pack-test-phase` / `pack-test-analyze`; Agent-Workflow pointer). Plan **COMPLETE**. Pass 3 **blocked**.
 - **2026-08-24** — Pack-corpus **P2 DONE** (`McManager.PackTestHarness`: same Core Change-pack path, `--analyze-only`, result YAML). Living **NEXT = P3**. Pass 3 stays **blocked**.
 - **2026-08-24** — Pack-corpus **P1 DONE** (layout, schemas, gitignore, `PROTOCOL.md`). Living **NEXT = P2**. Pass 3 stays **blocked**.
 - **2026-08-24** — Live **NEXT** → pack-corpus test system **P1** ([`Pack-Corpus-Test-Plan.md`](Pack-Corpus-Test-Plan.md)). Pass 3 stays **blocked**.
