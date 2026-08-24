@@ -59,6 +59,25 @@ public sealed class PackReplaceUxTests
     }
 
     [Fact]
+    public void Install_blocks_when_freeze_is_violated()
+    {
+        const string reason = "Cannot skip cofh_core.jar: required by thermal.jar.";
+        Assert.False(PackReplaceUx.CanInstall(
+            vm1Running: true,
+            busy: false,
+            canContinue: true,
+            packConfirmed: true,
+            clientPackAcknowledged: true,
+            freezeBlockReason: reason));
+        Assert.Equal(
+            reason,
+            PackReplaceUx.InstallDisabledReason(
+                true, false, true, true, true, freezeBlockReason: reason));
+        Assert.True(PackReplaceUx.FreezeAllowsContinue(null));
+        Assert.False(PackReplaceUx.FreezeAllowsContinue(reason));
+    }
+
+    [Fact]
     public void Confirm_copy_differs_for_wipe_vs_keep()
     {
         Assert.Contains("world is kept", PackReplaceUx.ConfirmBody(wipeWorld: false), StringComparison.OrdinalIgnoreCase);

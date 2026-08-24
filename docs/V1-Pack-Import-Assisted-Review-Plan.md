@@ -1,6 +1,6 @@
 # V1 pack-import assisted review (living)
 
-**Status:** **ACTIVE** — P1 **NEXT**. Created 2026-08-23. **Live NEXT:** [`NEXT.md`](NEXT.md).  
+**Status:** **COMPLETE** — P1–P2 **DONE**. Created 2026-08-23. **Live NEXT:** [`NEXT.md`](NEXT.md) (Pass 3 **blocked**).  
 **Parent:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.9**.  
 **Spec:** [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) (operator 2026-08-23 design lock). This file is the **implementation queue**; the spec wins on product rules.  
 **Why now:** operator asked to implement the locked design (homemade zip stays; unattended boot dropped; assisted review + dependency freeze) **before** QA Pass 3.
@@ -120,8 +120,8 @@ Do **not** rewrite PRODUCT-IDEAS sketches. The deferred-table row for this work 
 
 | ID | Section | Status | Parallel? | Live SSH/OCI? |
 | -- | ------- | ------ | --------- | ------------- |
-| **P1** | Core skip order + dependency freeze + review grouping | **NEXT** | SEQUENTIAL | No |
-| **P2** | Assisted review UI (Setup + Change pack) + persist Skip + Guide | TODO | SEQUENTIAL | Optional |
+| **P1** | Core skip order + dependency freeze + review grouping | **DONE** | SEQUENTIAL | No |
+| **P2** | Assisted review UI (Setup + Change pack) + persist Skip + Guide | **DONE** | SEQUENTIAL | Optional |
 
 **After this plan:** [`NEXT.md`](NEXT.md) → Step **8.5.2** Pass 3 (**blocked** until the operator says so). Do not start Pass 3 from a P2 changelog.
 
@@ -135,7 +135,7 @@ None. Run P1 then P2 in separate chats.
 
 ## P1 — Core skip order, dependency freeze, review grouping
 
-**Status:** NEXT  
+**Status:** DONE  
 **Parallel:** SEQUENTIAL — P2 Hybrid needs these types  
 **Cursor mode:** agent  
 
@@ -183,13 +183,13 @@ None. Run P1 then P2 in separate chats.
 
 **Done when:** freeze + grouping are covered by tests; `NeedsAssistedReview` is true iff Needs your call is non-empty; Hybrid still compiles and existing continue-with-warning tests pass.
 
-**Changelog:** *(date when finished)*
+**Changelog:** 2026-08-24 — **DONE.** Manual skip order matches mrpack (exclude then in-jar). Freeze groups Will skip / Needs your call / Must keep; `NeedsAssistedReview` iff Needs your call is non-empty. Overlay `RemoveExclude` for Unskip. `ApplyOperatorSkips` reclassifies in memory. Installers honor Must keep without suppressing leftover downloaded-client strip. `CanContinue` still true for manual unknowns (P2 gates). `.mrpack` unclear `env.server` still fails.
 
 ---
 
 ## P2 — Assisted review UI, persist Skip, Guide
 
-**Status:** TODO  
+**Status:** DONE  
 **Parallel:** SEQUENTIAL — same wizard Razor as identity/checkboxes  
 **Cursor mode:** agent  
 **UI skill:** yes (impeccable + web-design-guidelines)
@@ -233,7 +233,7 @@ None. Run P1 then P2 in separate chats.
 
 **Done when:** both flows show the spec review; assisted cannot skip the unknown list; Guide matches shipped UX; automatic packs are not forced through classification.
 
-**Changelog:** *(date when finished)*
+**Changelog:** 2026-08-24 — **DONE.** Shared `PackAssistedReviewPanel` on Setup and Change pack. Skip persists per archive SHA; Unskip removes the term. Next/Install blocked on freeze violation. Auto-keep summary copy replaced. Guide matches automatic vs assisted.
 
 ---
 
@@ -250,4 +250,6 @@ None. Run P1 then P2 in separate chats.
 
 | Date | Note |
 | ---- | ---- |
+| 2026-08-24 | **P2 DONE** (assisted review UI + persist Skip + Guide). Plan **COMPLETE**. Pass 3 stays blocked until the operator starts it. |
+| 2026-08-24 | **P1 DONE** (Core skip order + freeze + review DTO). Living **NEXT = P2**. Pass 3 stays blocked. |
 | 2026-08-23 | Created. P1 NEXT (Core freeze). P2 Hybrid review + Guide. Pass 3 stays blocked. |

@@ -1,7 +1,7 @@
 # Product vision & staged roadmap (ideas / planning)
 
 **Status:** Living product vision and staged feature plan (MVP → v1 → later).  
-**Execution:** implement **v1 features** before Windows installer / GitHub Releases / public launch. **Paid / spend mode is not v1** (later / far future). Living checklist: [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) (**NEXT = Step 8.9** pack-import assisted review). Pack-import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md). Pass 3 stays **blocked** until 8.9 completes **and** the operator says so. Do not start Step 9.1 until QA exits **and** Step **8.6.1** is DONE.  
+**Execution:** implement **v1 features** before Windows installer / GitHub Releases / public launch. **Paid / spend mode is not v1** (later / far future). Living checklist: [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) (**NEXT = Step 8.5.2** Pass 3, **blocked** until the operator says so). Pack-import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) (**implemented**, Step **8.9**). Do not start Step 9.1 until QA exits **and** Step **8.6.1** is DONE.  
 **Not** an implementation checklist by itself — agents follow the V1 plan’s NEXT step (and must not implement **after v1** / later items from this file).  
 **Not** a substitute for architecture docs. Doc map: [`README.md`](README.md).
 
@@ -488,7 +488,7 @@ After Default vs Optimized, show the **Minecraft version** picker (manifest for 
 4. Show detected summary for confirmation before continuing Setup: pack name, Minecraft version, mod loader (+ version if known), required Java, file counts / warnings.  
 5. On confirm, continue wizard; bootstrap installs loader + **server-side** mods only.
 
-**Pack import intended design (operator 2026-08-23):** [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) is the living contract for formats, automatic vs **assisted** homemade zips, skip order, dependency freeze, review UI, and crash follow-up. Homemade client-jar zips **stay supported**; unattended “just works” is **not** the promise. Implementation: Step **8.9** ([`V1-Pack-Import-Assisted-Review-Plan.md`](V1-Pack-Import-Assisted-Review-Plan.md)); live pointer [`NEXT.md`](NEXT.md). Pass 3 stays blocked until 8.9 completes.
+**Pack import intended design (operator 2026-08-23):** [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) is the living contract for formats, automatic vs **assisted** homemade zips, skip order, dependency freeze, review UI, and crash follow-up. Homemade client-jar zips **stay supported**; unattended “just works” is **not** the promise. **Implemented** as Step **8.9** ([`V1-Pack-Import-Assisted-Review-Plan.md`](V1-Pack-Import-Assisted-Review-Plan.md)). Live pointer [`NEXT.md`](NEXT.md). Pass 3 stays blocked until the operator starts it.
 
 **Format hints (more research at implementation time):**
 
@@ -1075,12 +1075,13 @@ Parked items—not blocking the staged plan, but should be revisited:
 | In-app mod / modpack browser (browse, search, trending, download-a-pack, pick-by-name/URL/ID) | **Rejected — will not be implemented** (not deferred). Users create/download the pack themselves, then select the local file in Setup or Manager. |
 | CurseForge API client-export import (resolve `projectID`/`fileID` with a product API key) | **Deferred** (ToS / key custody). v1 imports CurseForge **Server Files** / filled zips only, or a Modrinth `.mrpack`. Not rejected. |
 | CurseForge **client-export refuse helper** (help panel when analyze refuses jar-less / mixed-ID export: Server Files vs `.mrpack` copy, outbound `curseforge.com/projects/{id}` links from IDs in the zip, optional Modrinth search ≤3 links — **no API key**, not a catalog) | **Maybe later** (operator 2026-08-23). Was Step 8.8 P11; **deferred**, not scheduled. Refuse + Guide copy remains today. |
-| Assisted homemade-zip review UI + dependency freeze (unknown-side Keep/Skip, never skip a required dep of a kept jar) | **Scheduled** 2026-08-23 as Step **8.9** ([`V1-Pack-Import-Assisted-Review-Plan.md`](V1-Pack-Import-Assisted-Review-Plan.md)). Spec: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md). Not Pass 3. |
+| Assisted homemade-zip review UI + dependency freeze (unknown-side Keep/Skip, never skip a required dep of a kept jar) | **Done** 2026-08-24 as Step **8.9** ([`V1-Pack-Import-Assisted-Review-Plan.md`](V1-Pack-Import-Assisted-Review-Plan.md)). Spec: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md). |
 
 ---
 
 ## Changelog
 
+| 2026-08-24 | **Step 8.9 done** (assisted review UI + dep freeze). Living NEXT = Pass 3 via `docs/NEXT.md` (**blocked** until operator). |
 | 2026-08-23 | **Step 8.9 scheduled** (assisted review + dep freeze): [`V1-Pack-Import-Assisted-Review-Plan.md`](V1-Pack-Import-Assisted-Review-Plan.md). Living NEXT = P1. Pass 3 still blocked. |
 | 2026-08-23 | **Pack import design lock** (no code): [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md). Homemade zip kept; unattended success dropped; assisted review + dep freeze. Later scheduled as Step **8.9**. Pass 3 still blocked. |
 | 2026-08-23 | **Step 8.8 closed** without P11. CurseForge refuse **helper panel** (links only, no API) parked as **maybe later** in deferred table. Pass 3 next via `docs/NEXT.md` (blocked until operator). Agent workflow + skills added. |

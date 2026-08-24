@@ -242,7 +242,7 @@
                 }
             </aside>
             <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);">
-                This reinstalls Minecraft on the server. The world is kept unless you also wipe. There is no pack search box.
+                This reinstalls Minecraft on the server. The world is kept unless you also wipe. Prefer a Modrinth .mrpack or CurseForge Server Files; a homemade zip is the fallback. There is no pack search box.
             </p>
             <div class="mcm-pack-drop @(Vm.IsAnalyzingPack ? "is-busy" : "")"
                  aria-label="Drop a modpack file">
@@ -251,7 +251,7 @@
                            accept=".mrpack,.zip"
                            disabled="@(!Vm.CanPickPack || Vm.IsAnalyzingPack)" />
                 <i class="ti ti-file-zip" aria-hidden="true"></i>
-                <p class="mcm-pack-drop-title">Drop a .mrpack or server-pack zip here</p>
+                <p class="mcm-pack-drop-title">Drop a .mrpack or Server Files zip here</p>
                 <p class="mcm-wizard-hint">Very large packs: use Choose pack file so Windows can pass the path.</p>
             </div>
             <div class="mcm-wizard-actions">
@@ -287,6 +287,16 @@
                     </aside>
                 }
                 <pre class="mcm-wizard-log mcm-wizard-mono mcm-slim-scroll mcm-pack-summary">@Vm.PackSummary</pre>
+            }
+            @if (Vm.ShowPackAssistedReview)
+            {
+                <PackAssistedReviewPanel IdPrefix="change-pack"
+                                         Disabled="@Vm.AnyBusy"
+                                         Review="@Vm.AssistedReview"
+                                         FreezeBlockReason="@Vm.PackFreezeBlockReason"
+                                         LooksLikeLauncherInstance="@Vm.PackLooksLikeLauncherInstance"
+                                         IsSkipped="@Vm.IsOperatorSkipped"
+                                         SkipChanged="Vm.OnAssistedSkipChanged" />
             }
             @if (Vm.ShowPackIdentityFields)
             {

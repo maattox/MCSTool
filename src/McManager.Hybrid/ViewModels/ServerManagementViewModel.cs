@@ -47,6 +47,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     private string? _currentMinecraftVersion;
     private string? _currentLoaderOrDistribution;
     private SetupPackPreview? _packPreview;
+    private HashSet<string> _operatorSkipTerms = new(StringComparer.OrdinalIgnoreCase);
     private string? _sessionError;
     private long _currentBackupBytes;
     private string _dataDirectory = "";
@@ -140,7 +141,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
             PackCanContinue,
             PackConfirmed,
             ClientPackAcknowledged,
-            PackIdentityComplete);
+            PackIdentityComplete,
+            PackFreezeBlockReason);
 
     public string ChangePackTitle =>
         CanPickPack
@@ -156,7 +158,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
                 PackCanContinue,
                 PackConfirmed,
                 ClientPackAcknowledged,
-                PackIdentityComplete);
+                PackIdentityComplete,
+                PackFreezeBlockReason);
 
     public string PackFileNameDisplay =>
         string.IsNullOrWhiteSpace(PackPath) ? "" : Path.GetFileName(PackPath);
@@ -196,6 +199,25 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
     public bool ShowOverrideListWarning =>
         ShowPackConfirmChecks && !string.IsNullOrWhiteSpace(PackOverrideListWarning);
+
+    public bool ShowPackAssistedReview =>
+        ShowPackSummary
+        && PackCanContinue
+        && _packPreview is not null
+        && (_packPreview.NeedsAssistedReview
+            || !PackReplaceUx.FreezeAllowsContinue(_packPreview.FreezeBlockReason)
+            || _packPreview.AssistedReview.WillSkip.Any(i => i.SkipReason == PackFileSkipReason.OperatorSkip)
+            || (_operatorSkipTerms.Count > 0 && _packPreview.Kind == SetupPackImport.KindManualZip));
+
+    public PackAssistedReview AssistedReview =>
+        _packPreview?.AssistedReview ?? PackAssistedReview.Empty;
+
+    public string PackFreezeBlockReason => _packPreview?.FreezeBlockReason ?? "";
+
+    public bool PackLooksLikeLauncherInstance { get; private set; }
+
+    public bool IsOperatorSkipped(string path) =>
+        PackAssistedReviewActions.IsSkipped(_operatorSkipTerms, path);
 
     public bool ShowSaveCompatibilityWarning =>
         ShowPackConfirmChecks && !string.IsNullOrWhiteSpace(SaveCompatibilityWarning);
@@ -1141,7 +1163,9 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
                 AnyBusy,
                 PackCanContinue,
                 PackConfirmed,
-                ClientPackAcknowledged);
+                ClientPackAcknowledged,
+                PackIdentityComplete,
+                PackFreezeBlockReason);
             return;
         }
 
@@ -1269,7 +1293,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         }
     }
 
-    private async Task AnalyzePackPathAsync(string path)
+    private async Task AnalyzePackPathAsync(string path, bool keepConfirm = false)
     {
         IsAnalyzingPack = true;
         PackAnalyzeCaption = ProgressDockUx.ChangePackAnalyzeFallback;
@@ -1278,8 +1302,11 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         PackOverrideListWarning = "";
         SaveCompatibilityWarning = "";
         PackCanContinue = false;
-        PackConfirmed = false;
-        ClientPackAcknowledged = false;
+        if (!keepConfirm)
+        {
+            PackConfirmed = false;
+            ClientPackAcknowledged = false;
+        }
         StatusMessage = ProgressDockUx.ChangePackAnalyzeFallback;
         var wasForward = _forwardBanner;
         _forwardBanner = false;
@@ -1300,10 +1327,12 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
                 return;
             }
 
-            ApplyPackPreview(result.Value);
+            ApplyPackPreview(result.Value, keepConfirm);
             if (result.Value.CanContinue)
             {
-                StatusMessage = ProgressDockUx.ChangePackReviewStatus;
+                StatusMessage = result.Value.NeedsAssistedReview
+                    ? "Review unknown jars, then confirm the pack."
+                    : ProgressDockUx.ChangePackReviewStatus;
             }
             else
             {
@@ -1330,9 +1359,44 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         }
     }
 
-    private void ApplyPackPreview(SetupPackPreview preview)
+    public Task OnAssistedSkipChanged(PackAssistedReviewActions.OperatorSkipChange change) =>
+        SetOperatorSkipAsync(change.Path, change.Skip);
+
+    public async Task SetOperatorSkipAsync(string path, bool skip)
+    {
+        if (_packPreview is null || AnyBusy)
+            return;
+
+        var result = PackAssistedReviewActions.ApplySkip(_packPreview, _operatorSkipTerms, path, skip);
+        if (result.NeedsReanalyze)
+        {
+            await AnalyzePackPathAsync(_packPreview.SourcePath, keepConfirm: true).ConfigureAwait(true);
+            return;
+        }
+
+        ApplyReviewPreview(result.Preview);
+        if (!PackReplaceUx.FreezeAllowsContinue(result.Preview.FreezeBlockReason))
+            StatusMessage = result.Preview.FreezeBlockReason ?? "";
+    }
+
+    private void ApplyReviewPreview(SetupPackPreview preview)
     {
         _packPreview = preview;
+        PackSummary = preview.ConfirmableSummary;
+        PackOverrideListWarning = preview.OverrideListWarning ?? "";
+        NotifyAssistedReviewUi();
+        NotifyModdingCommands();
+    }
+
+    private void ApplyPackPreview(SetupPackPreview preview, bool keepConfirm = false)
+    {
+        _operatorSkipTerms = PackAssistedReviewActions.LoadPersistedSkipTerms(preview.SourcePath);
+        PackLooksLikeLauncherInstance = SetupPackImport.LooksLikeLauncherInstance(preview.SourcePath);
+        var bound = _operatorSkipTerms.Count > 0
+            ? preview.ApplyOperatorSkips(_operatorSkipTerms)
+            : preview;
+        _packPreview = bound;
+        preview = bound;
         PackPath = preview.SourcePath;
         PackName = preview.PackName;
         PackMinecraftVersion = string.Equals(preview.MinecraftVersion, "(unknown)", StringComparison.OrdinalIgnoreCase)
@@ -1351,11 +1415,15 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         PackOverrideListWarning = preview.OverrideListWarning ?? "";
         PackBlockReason = preview.BlockReason ?? "";
         PackCanContinue = preview.CanContinue;
-        PackConfirmed = false;
-        ClientPackAcknowledged = false;
+        if (!keepConfirm)
+        {
+            PackConfirmed = false;
+            ClientPackAcknowledged = false;
+        }
         RefreshSaveCompatibilityWarning();
         NotifyModdingCommands();
         NotifyPackIdentityUi();
+        NotifyAssistedReviewUi();
     }
 
     private void RefreshSaveCompatibilityWarning()
@@ -1379,6 +1447,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     private void ClearPackReplaceFields(bool hidePanel)
     {
         _packPreview = null;
+        _operatorSkipTerms = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        PackLooksLikeLauncherInstance = false;
         PackPath = "";
         PackName = "";
         PackMinecraftVersion = "";
@@ -1487,6 +1557,17 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         OnPropertyChanged(nameof(DetectionMismatchWarning));
         OnPropertyChanged(nameof(ClientPackFriendsNeed));
         OnPropertyChanged(nameof(ShowPackConfirmChecks));
+        OnPropertyChanged(nameof(ShowPackAssistedReview));
+    }
+
+    private void NotifyAssistedReviewUi()
+    {
+        OnPropertyChanged(nameof(ShowPackAssistedReview));
+        OnPropertyChanged(nameof(AssistedReview));
+        OnPropertyChanged(nameof(PackFreezeBlockReason));
+        OnPropertyChanged(nameof(PackLooksLikeLauncherInstance));
+        OnPropertyChanged(nameof(CanInstallPack));
+        OnPropertyChanged(nameof(InstallPackTitle));
     }
 
     partial void OnPackMinecraftVersionChanged(string value)

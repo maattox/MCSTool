@@ -196,13 +196,10 @@ public static class MrpackAnalyzer
         var packSlug = MrpackFileFilter.ResolvePackSlug(lists, packName, versionId, sourceName);
 
         var files = index.Files ?? [];
-        var serverRequired = new List<string>();
-        var serverOptional = new List<string>();
-        var packDeclared = new List<string>();
-        var overrideList = new List<string>();
-        var inJarSkip = new List<string>();
+        var originalRequired = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var originalOptional = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var forceIncluded = new List<string>();
-        var unclear = new List<string>();
+        var jarRecords = new List<PackJarRecord>();
 
         for (var i = 0; i < files.Count; i++)
         {
@@ -221,36 +218,56 @@ public static class MrpackAnalyzer
                     $"File '{path}' has no download URL in the index (install will copy from the zip if present).");
             }
 
-            switch (action)
+            var autoSkip = action switch
             {
-                case MrpackFileFilter.Action.SkipPackDeclared:
-                    packDeclared.Add(path);
-                    continue;
-                case MrpackFileFilter.Action.SkipOverrideList:
-                    overrideList.Add(path);
-                    continue;
-                case MrpackFileFilter.Action.SkipInJarMetadata:
-                    inJarSkip.Add(path);
-                    continue;
-                case MrpackFileFilter.Action.Unclear:
-                    unclear.Add(path);
-                    if (serverEnv.Length > 0)
-                    {
-                        warnings.Add(
-                            $"File '{path}' has unknown env.server '{file.Env!.Server}' (expected required, optional, or unsupported).");
-                    }
-
-                    continue;
-                default:
-                    if (match.Keep && serverEnv.Equals(EnvUnsupported, StringComparison.OrdinalIgnoreCase))
-                        forceIncluded.Add(path);
-                    if (serverEnv.Equals(EnvOptional, StringComparison.OrdinalIgnoreCase))
-                        serverOptional.Add(path);
-                    else
-                        serverRequired.Add(path);
-                    continue;
+                MrpackFileFilter.Action.SkipPackDeclared => PackFileSkipReason.PackDeclared,
+                MrpackFileFilter.Action.SkipOverrideList => PackFileSkipReason.OverrideList,
+                MrpackFileFilter.Action.SkipInJarMetadata => PackFileSkipReason.InJarMetadata,
+                _ => PackFileSkipReason.None,
+            };
+            var unclearBlocks = action == MrpackFileFilter.Action.Unclear;
+            if (match.Keep && serverEnv.Equals(EnvUnsupported, StringComparison.OrdinalIgnoreCase))
+                forceIncluded.Add(path);
+            if (action == MrpackFileFilter.Action.Install)
+            {
+                if (serverEnv.Equals(EnvOptional, StringComparison.OrdinalIgnoreCase))
+                    originalOptional.Add(path);
+                else
+                    originalRequired.Add(path);
             }
+
+            if (unclearBlocks && serverEnv.Length > 0)
+            {
+                warnings.Add(
+                    $"File '{path}' has unknown env.server '{file.Env!.Server}' (expected required, optional, or unsupported).");
+            }
+
+            jarRecords.Add(new PackJarRecord(
+                path,
+                inJar.AllProvidedModIds,
+                inJar.AllRequiredModIds,
+                unclearSide: unclearBlocks,
+                forceIncluded: match.Keep && serverEnv.Equals(EnvUnsupported, StringComparison.OrdinalIgnoreCase),
+                automaticSkipReason: autoSkip,
+                unclearBlocksInstall: unclearBlocks,
+                skipDetail: autoSkip == PackFileSkipReason.PackDeclared
+                    ? "env.server"
+                    : autoSkip == PackFileSkipReason.OverrideList
+                        ? "exclude list"
+                        : autoSkip == PackFileSkipReason.InJarMetadata
+                            ? "in-jar client"
+                            : null));
         }
+
+        var classified = PackDependencyFreeze.Classify(jarRecords);
+        var packDeclared = classified.PackDeclaredSkipPaths.ToList();
+        var overrideList = classified.OverrideListSkipPaths.ToList();
+        var inJarSkip = classified.InJarMetadataSkipPaths.ToList();
+        var unclear = classified.UnclearSidePaths.ToList();
+        var clientOnly = classified.ClientOnlyPaths.ToList();
+        var serverSide = classified.ServerSidePaths.ToList();
+        var serverOptional = serverSide.Where(originalOptional.Contains).ToList();
+        var serverRequired = serverSide.Where(p => !originalOptional.Contains(p)).ToList();
 
         if (inJarSkip.Count > 0)
         {
@@ -271,8 +288,6 @@ public static class MrpackAnalyzer
         var hasClientOverrides = names.Any(n => n.Equals("client-overrides", StringComparison.OrdinalIgnoreCase)
             || n.StartsWith("client-overrides/", StringComparison.OrdinalIgnoreCase));
 
-        var clientOnly = packDeclared.Concat(overrideList).Concat(inJarSkip).ToList();
-        var serverSide = serverRequired.Concat(serverOptional).ToList();
         var confirmable = BuildConfirmableSummary(
             packName,
             versionId,
@@ -322,7 +337,10 @@ public static class MrpackAnalyzer
             overrideList,
             forceIncluded,
             inJarSkip.Count,
-            inJarSkip));
+            inJarSkip,
+            classified.Review,
+            jarRecords,
+            classified.FreezeBlockReason));
     }
 
     public static bool TrySelectLoader(

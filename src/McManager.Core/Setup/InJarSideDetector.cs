@@ -58,13 +58,34 @@ internal static class InJarSideDetector
         @"\d+\.\d+(?:\.\d+)?",
         RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
+    private static readonly HashSet<string> PlatformModIds = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "minecraft", "java",
+        "fabricloader", "fabric-loader",
+        "quilt_loader", "quilt-loader",
+        "forge", "neoforge",
+    };
+
+    internal static bool IsPlatformModId(string? id) =>
+        !string.IsNullOrWhiteSpace(id) && PlatformModIds.Contains(id.Trim());
+
     internal readonly record struct PeekResult(
         bool HadMetadata,
         string Environment,
         string? Loader = null,
-        string? MinecraftVersion = null)
+        string? MinecraftVersion = null,
+        string? ModId = null,
+        IReadOnlyList<string>? ProvidedModIds = null,
+        IReadOnlyList<string>? RequiredModIds = null)
     {
         public static PeekResult None => new(false, "*");
+
+        public IReadOnlyList<string> AllProvidedModIds =>
+            ProvidedModIds is { Count: > 0 }
+                ? ProvidedModIds
+                : string.IsNullOrWhiteSpace(ModId) ? [] : [ModId];
+
+        public IReadOnlyList<string> AllRequiredModIds => RequiredModIds ?? [];
     }
 
     internal static PeekResult PeekFile(string path)
@@ -111,15 +132,34 @@ internal static class InJarSideDetector
             var fabric = FindEntry(jar, "fabric.mod.json");
             if (fabric is not null)
             {
-                TryReadFabricMetadata(fabric, out var fabricEnv, out var fabricMc);
-                return new PeekResult(true, fabricEnv, MrpackAnalyzer.LoaderFabric, fabricMc);
+                TryReadFabricMetadata(fabric, out var fabricEnv, out var fabricMc, out var fabricId, out var fabricDeps);
+                return new PeekResult(
+                    true,
+                    fabricEnv,
+                    MrpackAnalyzer.LoaderFabric,
+                    fabricMc,
+                    fabricId,
+                    ProvidedList(fabricId),
+                    fabricDeps);
             }
 
             var quilt = FindEntry(jar, "quilt.mod.json");
             if (quilt is not null)
             {
-                var hadQuilt = TryReadQuiltMetadata(quilt, out var quiltEnv, out var quiltMc);
-                return new PeekResult(hadQuilt, quiltEnv, MrpackAnalyzer.LoaderQuilt, quiltMc);
+                var hadQuilt = TryReadQuiltMetadata(
+                    quilt,
+                    out var quiltEnv,
+                    out var quiltMc,
+                    out var quiltId,
+                    out var quiltDeps);
+                return new PeekResult(
+                    hadQuilt,
+                    quiltEnv,
+                    MrpackAnalyzer.LoaderQuilt,
+                    quiltMc,
+                    quiltId,
+                    ProvidedList(quiltId),
+                    quiltDeps);
             }
 
             var neoToml = FindEntry(jar, "META-INF/neoforge.mods.toml");
@@ -129,22 +169,30 @@ internal static class InJarSideDetector
             string? tomlMc = null;
             var tomlEnv = "*";
             var hadSide = false;
+            IReadOnlyList<string> tomlProvided = [];
+            IReadOnlyList<string> tomlRequired = [];
             if (toml is not null)
             {
                 loader = neoToml is not null ? MrpackAnalyzer.LoaderNeoForge : MrpackAnalyzer.LoaderForge;
-                TryReadTomlMetadata(toml, out tomlEnv, out tomlMc, out hadSide);
+                TryReadTomlMetadata(
+                    toml,
+                    out tomlEnv,
+                    out tomlMc,
+                    out hadSide,
+                    out tomlProvided,
+                    out tomlRequired);
                 if (hadSide && tomlEnv.Equals("client", StringComparison.OrdinalIgnoreCase))
-                    return new PeekResult(true, tomlEnv, loader, tomlMc);
+                    return new PeekResult(true, tomlEnv, loader, tomlMc, FirstId(tomlProvided), tomlProvided, tomlRequired);
             }
 
             // Common-list mixin *classes* annotated @OnlyIn(CLIENT) crash FML
             // DistCleaner on dedicated server even when the mixin target is a
             // world class and mods.toml omits clientSideOnly (Hold My Items).
             if (HasClientDistAnnotatedCommonMixin(jar))
-                return new PeekResult(true, "client", loader, tomlMc);
+                return new PeekResult(true, "client", loader, tomlMc, FirstId(tomlProvided), tomlProvided, tomlRequired);
 
             if (hadSide)
-                return new PeekResult(true, tomlEnv, loader, tomlMc);
+                return new PeekResult(true, tomlEnv, loader, tomlMc, FirstId(tomlProvided), tomlProvided, tomlRequired);
 
             // Target-class heuristic only when there is no loader toml: a dual-side
             // library may list one client class in the common mixins array (CoFH).
@@ -152,7 +200,7 @@ internal static class InJarSideDetector
                 return new PeekResult(true, "client", loader, tomlMc);
 
             if (loader is not null || tomlMc is not null)
-                return new PeekResult(false, "*", loader, tomlMc);
+                return new PeekResult(false, "*", loader, tomlMc, FirstId(tomlProvided), tomlProvided, tomlRequired);
         }
 
         return PeekResult.None;
@@ -213,10 +261,17 @@ internal static class InJarSideDetector
                 StringComparison.OrdinalIgnoreCase));
     }
 
-    private static bool TryReadFabricMetadata(ZipArchiveEntry entry, out string environment, out string? minecraft)
+    private static bool TryReadFabricMetadata(
+        ZipArchiveEntry entry,
+        out string environment,
+        out string? minecraft,
+        out string? modId,
+        out IReadOnlyList<string> requiredModIds)
     {
         environment = "*";
         minecraft = null;
+        modId = null;
+        requiredModIds = [];
         try
         {
             using var reader = new StreamReader(entry.Open(), Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
@@ -225,23 +280,31 @@ internal static class InJarSideDetector
             {
                 var allClient = true;
                 var any = false;
+                var required = new List<string>();
                 foreach (var item in doc.RootElement.EnumerateArray())
                 {
                     any = true;
                     if (!IsFabricClientDeclaration(item, out var itemMc))
                         allClient = false;
                     minecraft ??= itemMc;
+                    modId ??= ReadModId(item);
+                    AddRequiredModIds(item, required);
                 }
 
                 if (!any)
                     return false;
                 environment = allClient ? "client" : "*";
+                requiredModIds = DistinctIds(required);
                 return true;
             }
 
             if (doc.RootElement.ValueKind != JsonValueKind.Object)
                 return false;
             environment = IsFabricClientDeclaration(doc.RootElement, out minecraft) ? "client" : "*";
+            modId = ReadModId(doc.RootElement);
+            var req = new List<string>();
+            AddRequiredModIds(doc.RootElement, req);
+            requiredModIds = DistinctIds(req);
             return true;
         }
         catch (JsonException)
@@ -265,10 +328,17 @@ internal static class InJarSideDetector
         return HasOnlyClientEntrypoints(root);
     }
 
-    private static bool TryReadQuiltMetadata(ZipArchiveEntry entry, out string environment, out string? minecraft)
+    private static bool TryReadQuiltMetadata(
+        ZipArchiveEntry entry,
+        out string environment,
+        out string? minecraft,
+        out string? modId,
+        out IReadOnlyList<string> requiredModIds)
     {
         environment = "*";
         minecraft = null;
+        modId = null;
+        requiredModIds = [];
         try
         {
             using var reader = new StreamReader(entry.Open(), Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
@@ -288,6 +358,13 @@ internal static class InJarSideDetector
             var sideRoot = hasLoader ? loaderRoot : doc.RootElement;
             var env = ReadStringProperty(sideRoot, "environment");
             minecraft = ReadMinecraftFromDepends(sideRoot) ?? ReadMinecraftFromDepends(doc.RootElement);
+            modId = ReadModId(sideRoot);
+            if (string.IsNullOrWhiteSpace(modId))
+                modId = ReadModId(doc.RootElement);
+            var req = new List<string>();
+            AddRequiredModIds(sideRoot, req);
+            AddRequiredModIds(doc.RootElement, req);
+            requiredModIds = DistinctIds(req);
             if (env.Equals("client", StringComparison.OrdinalIgnoreCase))
             {
                 environment = "client";
@@ -355,14 +432,20 @@ internal static class InJarSideDetector
         ZipArchiveEntry entry,
         out string environment,
         out string? minecraft,
-        out bool hadSide)
+        out bool hadSide,
+        out IReadOnlyList<string> providedModIds,
+        out IReadOnlyList<string> requiredModIds)
     {
         environment = "*";
         minecraft = null;
         hadSide = false;
+        providedModIds = [];
+        requiredModIds = [];
         var env = "*";
         string? mc = null;
         var sideFound = false;
+        var provided = new List<string>();
+        var required = new List<string>();
         try
         {
             using var reader = new StreamReader(entry.Open(), Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
@@ -372,6 +455,8 @@ internal static class InJarSideDetector
             string? pendingVersion = null;
             string? pendingSide = null;
             string? pendingClientSideOnly = null;
+            string? pendingMandatory = null;
+            string? pendingType = null;
 
             void FlushTable()
             {
@@ -400,14 +485,22 @@ internal static class InJarSideDetector
                     }
                 }
 
-                if (mc is null
-                    && table.Contains("dependencies", StringComparison.OrdinalIgnoreCase)
-                    && pendingModId is not null
-                    && pendingModId.Equals("minecraft", StringComparison.OrdinalIgnoreCase)
-                    && pendingVersion is not null
-                    && TryExtractMinecraftVersion(pendingVersion, out var extracted))
+                if (isModsTable && !string.IsNullOrWhiteSpace(pendingModId))
+                    provided.Add(pendingModId.Trim());
+
+                if (table.Contains("dependencies", StringComparison.OrdinalIgnoreCase)
+                    && pendingModId is not null)
                 {
-                    mc = extracted;
+                    if (pendingModId.Equals("minecraft", StringComparison.OrdinalIgnoreCase)
+                        && pendingVersion is not null
+                        && mc is null
+                        && TryExtractMinecraftVersion(pendingVersion, out var extracted))
+                    {
+                        mc = extracted;
+                    }
+
+                    if (!IsPlatformModId(pendingModId) && IsTomlRequiredDependency(pendingMandatory, pendingType))
+                        required.Add(pendingModId.Trim());
                 }
             }
 
@@ -424,6 +517,8 @@ internal static class InJarSideDetector
                     pendingVersion = null;
                     pendingSide = null;
                     pendingClientSideOnly = null;
+                    pendingMandatory = null;
+                    pendingType = null;
                     continue;
                 }
 
@@ -435,6 +530,10 @@ internal static class InJarSideDetector
                     pendingClientSideOnly = clientSideOnly;
                 if (TryParseTomlAssignment(line, "modId", out var modId))
                     pendingModId = modId;
+                if (TryParseTomlAssignment(line, "mandatory", out var mandatory))
+                    pendingMandatory = mandatory;
+                if (TryParseTomlAssignment(line, "type", out var type))
+                    pendingType = type;
                 if (TryParseTomlAssignment(line, "versionRange", out var range)
                     || TryParseTomlAssignment(line, "version", out range))
                     pendingVersion = range;
@@ -444,12 +543,30 @@ internal static class InJarSideDetector
             environment = env;
             minecraft = mc;
             hadSide = sideFound;
-            return sideFound || mc is not null;
+            providedModIds = DistinctIds(provided);
+            requiredModIds = DistinctIds(required);
+            return sideFound || mc is not null || providedModIds.Count > 0;
         }
         catch (IOException)
         {
             return false;
         }
+    }
+
+    private static bool IsTomlRequiredDependency(string? mandatory, string? type)
+    {
+        if (string.Equals(mandatory, "false", StringComparison.OrdinalIgnoreCase))
+            return false;
+        if (type is not null
+            && (type.Equals("optional", StringComparison.OrdinalIgnoreCase)
+                || type.Equals("embedded", StringComparison.OrdinalIgnoreCase)
+                || type.Equals("incompatible", StringComparison.OrdinalIgnoreCase)
+                || type.Equals("discouraged", StringComparison.OrdinalIgnoreCase)))
+        {
+            return false;
+        }
+
+        return true;
     }
 
     private static string StripTomlComment(string line)
@@ -1038,6 +1155,71 @@ internal static class InJarSideDetector
 
         return null;
     }
+
+    private static string? ReadModId(JsonElement root)
+    {
+        var id = ReadStringProperty(root, "id");
+        if (id.Length == 0)
+            id = ReadStringProperty(root, "modId");
+        return string.IsNullOrWhiteSpace(id) ? null : id.Trim();
+    }
+
+    private static void AddRequiredModIds(JsonElement root, List<string> into)
+    {
+        if (root.ValueKind != JsonValueKind.Object)
+            return;
+        if (!TryGetPropertyIgnoreCase(root, "depends", out var depends)
+            && !TryGetPropertyIgnoreCase(root, "dependencies", out depends))
+        {
+            return;
+        }
+
+        if (depends.ValueKind == JsonValueKind.Object)
+        {
+            foreach (var prop in depends.EnumerateObject())
+            {
+                if (IsPlatformModId(prop.Name))
+                    continue;
+                into.Add(prop.Name.Trim());
+            }
+
+            return;
+        }
+
+        if (depends.ValueKind != JsonValueKind.Array)
+            return;
+        foreach (var item in depends.EnumerateArray())
+        {
+            if (item.ValueKind != JsonValueKind.Object)
+                continue;
+            var id = ReadModId(item);
+            if (id is null || IsPlatformModId(id))
+                continue;
+            into.Add(id);
+        }
+    }
+
+    private static IReadOnlyList<string> DistinctIds(List<string> ids)
+    {
+        if (ids.Count == 0)
+            return [];
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var list = new List<string>();
+        foreach (var id in ids)
+        {
+            if (string.IsNullOrWhiteSpace(id) || !seen.Add(id.Trim()))
+                continue;
+            list.Add(id.Trim());
+        }
+
+        return list;
+    }
+
+    private static IReadOnlyList<string>? ProvidedList(string? modId) =>
+        string.IsNullOrWhiteSpace(modId) ? null : [modId.Trim()];
+
+    private static string? FirstId(IReadOnlyList<string> ids) =>
+        ids.Count > 0 ? ids[0] : null;
 
     private static bool TryGetPropertyIgnoreCase(JsonElement obj, string name, out JsonElement value)
     {

@@ -33,7 +33,10 @@ public sealed class MrpackAnalysis
         IReadOnlyList<string> overrideListSkipPaths,
         IReadOnlyList<string> forceIncludedPaths,
         int inJarMetadataSkipCount = 0,
-        IReadOnlyList<string>? inJarMetadataSkipPaths = null)
+        IReadOnlyList<string>? inJarMetadataSkipPaths = null,
+        PackAssistedReview? assistedReview = null,
+        IReadOnlyList<PackJarRecord>? jarRecords = null,
+        string? freezeBlockReason = null)
     {
         PackName = packName;
         VersionId = versionId;
@@ -62,6 +65,9 @@ public sealed class MrpackAnalysis
         ForceIncludedPaths = forceIncludedPaths;
         InJarMetadataSkipCount = inJarMetadataSkipCount;
         InJarMetadataSkipPaths = inJarMetadataSkipPaths ?? [];
+        AssistedReview = assistedReview ?? PackAssistedReview.Empty;
+        JarRecords = jarRecords ?? [];
+        FreezeBlockReason = freezeBlockReason ?? AssistedReview.FreezeBlockReason;
     }
 
     public string PackName { get; }
@@ -105,5 +111,50 @@ public sealed class MrpackAnalysis
     /// <summary>Kept despite pack <c>unsupported</c> because a force-include matched.</summary>
     public IReadOnlyList<string> ForceIncludedPaths { get; }
 
+    public PackAssistedReview AssistedReview { get; }
+
+    public IReadOnlyList<PackJarRecord> JarRecords { get; }
+
+    public string? FreezeBlockReason { get; }
+
+    public bool NeedsAssistedReview => AssistedReview.NeedsAssistedReview;
+
     public int ServerSideCount => ServerRequiredCount + ServerOptionalCount;
+
+    /// <summary>Re-run freeze after in-session Skip ticks without re-reading the archive.</summary>
+    public MrpackAnalysis ApplyOperatorSkips(IReadOnlyCollection<string> skipTerms)
+    {
+        var classified = PackDependencyFreeze.Classify(JarRecords, skipTerms);
+        return new MrpackAnalysis(
+            PackName,
+            VersionId,
+            Summary,
+            MinecraftVersion,
+            Loader,
+            LoaderVersion,
+            JavaMajor,
+            FileCount,
+            classified.ServerSidePaths.Count,
+            0,
+            classified.ClientOnlyPaths.Count,
+            classified.UnclearSidePaths.Count,
+            classified.ServerSidePaths,
+            classified.ClientOnlyPaths,
+            classified.UnclearSidePaths,
+            HasOverrides,
+            HasServerOverrides,
+            HasClientOverrides,
+            Warnings,
+            ConfirmableSummary,
+            classified.PackDeclaredSkipPaths.Count,
+            classified.OverrideListSkipPaths.Count,
+            classified.PackDeclaredSkipPaths,
+            classified.OverrideListSkipPaths,
+            ForceIncludedPaths,
+            classified.InJarMetadataSkipPaths.Count,
+            classified.InJarMetadataSkipPaths,
+            classified.Review,
+            JarRecords,
+            classified.FreezeBlockReason);
+    }
 }

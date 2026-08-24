@@ -240,12 +240,8 @@ public static class ManualServerPackAnalyzer
         var versionId = string.IsNullOrWhiteSpace(cfManifest?.Version) ? null : cfManifest!.Version!.Trim();
         var packSlug = MrpackFileFilter.ResolvePackSlug(lists, packName, versionId, sourceName);
 
-        var serverSide = new List<string>();
-        var clientOnly = new List<string>();
-        var inJarSkip = new List<string>();
-        var overrideListSkip = new List<string>();
         var forceIncluded = new List<string>();
-        var unclear = new List<string>();
+        var jarRecords = new List<PackJarRecord>();
         string? peekedLoader = null;
         string? peekedMinecraft = null;
 
@@ -272,32 +268,35 @@ public static class ManualServerPackAnalyzer
 
             var match = lists.Match(packSlug, matchPath);
             var action = ManualPackFileFilter.Decide(peek.Environment, match);
-            if (action == ManualPackFileFilter.Action.SkipInJarMetadata)
+            var autoSkip = action switch
             {
-                inJarSkip.Add(relative);
-                clientOnly.Add(relative);
-                continue;
-            }
-
-            if (action == ManualPackFileFilter.Action.SkipOverrideList)
-            {
-                overrideListSkip.Add(relative);
-                clientOnly.Add(relative);
-                continue;
-            }
-
+                ManualPackFileFilter.Action.SkipInJarMetadata => PackFileSkipReason.InJarMetadata,
+                ManualPackFileFilter.Action.SkipOverrideList => PackFileSkipReason.OverrideList,
+                _ => PackFileSkipReason.None,
+            };
             if (match.Keep && peek.Environment.Equals("client", StringComparison.OrdinalIgnoreCase))
                 forceIncluded.Add(relative);
 
-            if (peek.HadMetadata)
-            {
-                serverSide.Add(relative);
-                continue;
-            }
-
-            unclear.Add(relative);
-            serverSide.Add(relative);
+            jarRecords.Add(new PackJarRecord(
+                relative,
+                peek.AllProvidedModIds,
+                peek.AllRequiredModIds,
+                unclearSide: autoSkip == PackFileSkipReason.None && !peek.HadMetadata,
+                forceIncluded: match.Keep && peek.Environment.Equals("client", StringComparison.OrdinalIgnoreCase),
+                automaticSkipReason: autoSkip,
+                skipDetail: autoSkip == PackFileSkipReason.OverrideList
+                    ? "exclude list"
+                    : autoSkip == PackFileSkipReason.InJarMetadata
+                        ? "in-jar client"
+                        : null));
         }
+
+        var classified = PackDependencyFreeze.Classify(jarRecords);
+        var serverSide = classified.ServerSidePaths.ToList();
+        var clientOnly = classified.ClientOnlyPaths.ToList();
+        var inJarSkip = classified.InJarMetadataSkipPaths.ToList();
+        var overrideListSkip = classified.OverrideListSkipPaths.ToList();
+        var unclear = classified.UnclearSidePaths.ToList();
 
         if (inJarSkip.Count > 0)
         {
@@ -314,8 +313,7 @@ public static class ManualServerPackAnalyzer
         if (unclear.Count > 0)
         {
             warnings.Add(
-                $"{unclear.Count} jar(s) have no in-jar side metadata; kept (server pack assumed). "
-                + "This is not a Modrinth env.server strip.");
+                $"{unclear.Count} jar(s) have no in-jar side metadata. Review them below (default Keep).");
         }
 
         if (mapRootJarsToMods)
@@ -409,7 +407,10 @@ public static class ManualServerPackAnalyzer
             forceIncluded,
             detectedMinecraft,
             detectedLoader,
-            hasSidecar));
+            hasSidecar,
+            classified.Review,
+            jarRecords,
+            classified.FreezeBlockReason));
     }
 
     internal static bool IsDerivedModJarPath(string relative)

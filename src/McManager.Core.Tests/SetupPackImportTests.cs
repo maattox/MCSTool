@@ -24,7 +24,8 @@ public sealed class SetupPackImportTests
         Assert.NotEqual(SetupPackImport.UnclearSideRefusal, preview.BlockReason);
         if (preview.UnclearSideCount > 0)
         {
-            Assert.Contains(SetupPackImport.UnclearSideKeepCopy, preview.ConfirmableSummary, StringComparison.Ordinal);
+            Assert.True(preview.NeedsAssistedReview);
+            Assert.DoesNotContain("Setup will keep them", preview.ConfirmableSummary, StringComparison.Ordinal);
         }
     }
 
@@ -49,9 +50,13 @@ public sealed class SetupPackImportTests
             Assert.True(preview.CanContinue);
             Assert.Null(preview.BlockReason);
             Assert.Equal(1, preview.UnclearSideCount);
-            Assert.Contains(SetupPackImport.UnclearSideKeepCopy, preview.ConfirmableSummary, StringComparison.Ordinal);
+            Assert.True(preview.NeedsAssistedReview);
+            Assert.Contains(
+                preview.AssistedReview.NeedsYourCall,
+                i => i.FileName.Contains("mystery-side.jar", StringComparison.OrdinalIgnoreCase));
+            Assert.DoesNotContain(SetupPackImport.UnclearSideKeepCopy, preview.ConfirmableSummary, StringComparison.Ordinal);
             Assert.DoesNotContain(SetupPackImport.UnclearSideHighRiskCopy, preview.ConfirmableSummary, StringComparison.Ordinal);
-            Assert.Contains("mystery-side.jar", preview.ConfirmableSummary, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("Setup will keep them", preview.ConfirmableSummary, StringComparison.Ordinal);
             Assert.DoesNotContain(SetupPackImport.UnclearSideRefusal, preview.ConfirmableSummary, StringComparison.Ordinal);
         }
         finally
@@ -119,12 +124,79 @@ public sealed class SetupPackImportTests
             var preview = result.Value!;
             Assert.True(preview.CanContinue, preview.BlockReason);
             Assert.Equal(12, preview.UnclearSideCount);
-            Assert.Contains(SetupPackImport.UnclearSideHighRiskCopy, preview.ConfirmableSummary, StringComparison.Ordinal);
+            Assert.True(preview.NeedsAssistedReview);
+            Assert.True(preview.AssistedReview.NeedsYourCall.Count >= SetupPackImport.UnclearSideHighCountThreshold);
+            Assert.DoesNotContain(SetupPackImport.UnclearSideHighRiskCopy, preview.ConfirmableSummary, StringComparison.Ordinal);
             Assert.DoesNotContain(SetupPackImport.UnclearSideKeepCopy, preview.ConfirmableSummary, StringComparison.Ordinal);
+            Assert.DoesNotContain("Setup will keep them", preview.ConfirmableSummary, StringComparison.Ordinal);
         }
         finally
         {
             TryDelete(path);
+        }
+    }
+
+    [Fact]
+    public void Prism_instance_cfg_is_detected_for_optional_hint()
+    {
+        using var zip = MakeZipBytes(
+            ("instance.cfg", Encoding.UTF8.GetBytes("name=demo")),
+            ("mods/ok.jar", Encoding.UTF8.GetBytes("not-a-jar")));
+        var path = WriteTemp("prism-instance.zip", zip);
+        try
+        {
+            Assert.True(SetupPackImport.LooksLikeLauncherInstance(path));
+        }
+        finally
+        {
+            TryDelete(path);
+        }
+    }
+
+    [Fact]
+    public void Operator_skip_persists_for_same_archive_sha()
+    {
+        var ok = MakeJar(("fabric.mod.json", """{"schemaVersion":1,"id":"ok","version":"0","environment":"*"}"""));
+        using var zip = MakeZipBytes(
+            ("mods/ok.jar", ok),
+            ("mods/mystery.jar", Encoding.UTF8.GetBytes("not-a-jar")));
+        var path = WriteTemp("skip-persist.zip", zip);
+        var data = Path.Combine(Path.GetTempPath(), "mcmgr-skip-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(data);
+        try
+        {
+            var first = SetupPackImport.AnalyzeFile(path, dataDirectory: data);
+            Assert.True(first.Succeeded, first.Error);
+            var preview = first.Value!;
+            Assert.True(preview.NeedsAssistedReview);
+            var terms = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var applied = PackAssistedReviewActions.ApplySkip(
+                preview, terms, "mods/mystery.jar", skip: true, dataDirectory: data);
+            Assert.False(applied.NeedsReanalyze);
+            Assert.Contains(
+                applied.Preview.AssistedReview.WillSkip,
+                i => i.FileName.Contains("mystery.jar", StringComparison.OrdinalIgnoreCase)
+                     && i.SkipReason == PackFileSkipReason.OperatorSkip);
+            Assert.False(applied.Preview.NeedsAssistedReview);
+
+            var again = SetupPackImport.AnalyzeFile(path, dataDirectory: data);
+            Assert.True(again.Succeeded, again.Error);
+            Assert.Contains(
+                again.Value!.AssistedReview.WillSkip,
+                i => i.FileName.Contains("mystery.jar", StringComparison.OrdinalIgnoreCase));
+            Assert.False(again.Value.NeedsAssistedReview);
+
+            var unskip = PackAssistedReviewActions.ApplySkip(
+                again.Value, terms, "mods/mystery.jar", skip: false, dataDirectory: data);
+            Assert.True(unskip.NeedsReanalyze);
+            var restored = SetupPackImport.AnalyzeFile(path, dataDirectory: data);
+            Assert.True(restored.Succeeded, restored.Error);
+            Assert.True(restored.Value!.NeedsAssistedReview);
+        }
+        finally
+        {
+            TryDelete(path);
+            try { Directory.Delete(data, recursive: true); } catch (IOException) { }
         }
     }
 

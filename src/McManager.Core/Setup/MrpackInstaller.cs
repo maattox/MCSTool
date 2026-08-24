@@ -116,6 +116,11 @@ public sealed class MrpackInstaller
             var packSlug = MrpackFileFilter.ResolvePackSlug(
                 _matcher, analysis.PackName, analysis.VersionId, Path.GetFileName(mrpackPath));
 
+            var keepSet = new HashSet<string>(
+                analysis.AssistedReview.MustKeep.Select(i => i.Path),
+                StringComparer.OrdinalIgnoreCase);
+            var skipSet = new HashSet<string>(analysis.ClientOnlyPaths, StringComparer.OrdinalIgnoreCase);
+
             foreach (var file in files)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -127,6 +132,17 @@ public sealed class MrpackInstaller
                 var match = _matcher.Match(packSlug, label);
                 var inJar = MrpackAnalyzer.PeekEmbeddedJar(zip, label);
                 var action = MrpackFileFilter.Decide(serverEnv, match, inJar.Environment);
+                if (keepSet.Contains(label)
+                    && action is MrpackFileFilter.Action.SkipPackDeclared
+                        or MrpackFileFilter.Action.SkipOverrideList
+                        or MrpackFileFilter.Action.SkipInJarMetadata)
+                {
+                    action = MrpackFileFilter.Action.Install;
+                }
+                else if (skipSet.Contains(label) && action == MrpackFileFilter.Action.Install)
+                {
+                    action = MrpackFileFilter.Action.SkipOverrideList;
+                }
 
                 if (action == MrpackFileFilter.Action.SkipPackDeclared)
                 {
@@ -171,7 +187,7 @@ public sealed class MrpackInstaller
                 if (!placed.Succeeded)
                     return ServiceResult<MrpackInstallResult>.Fail(placed.Error!);
 
-                if (MrpackFileFilter.IsJarPath(label) && !match.Keep)
+                if (MrpackFileFilter.IsJarPath(label) && !match.Keep && !keepSet.Contains(label))
                 {
                     var placedPeek = InJarSideDetector.PeekFile(destPath.Value!);
                     if (placedPeek.Environment.Equals("client", StringComparison.OrdinalIgnoreCase))

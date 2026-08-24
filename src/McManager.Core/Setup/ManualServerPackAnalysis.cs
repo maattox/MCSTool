@@ -59,7 +59,10 @@ public sealed class ManualServerPackAnalysis
         IReadOnlyList<string>? forceIncludedPaths = null,
         string? detectedMinecraftVersion = null,
         string? detectedLoader = null,
-        bool isDerived = false)
+        bool isDerived = false,
+        PackAssistedReview? assistedReview = null,
+        IReadOnlyList<PackJarRecord>? jarRecords = null,
+        string? freezeBlockReason = null)
     {
         Kind = kind;
         CanInstall = canInstall;
@@ -89,6 +92,9 @@ public sealed class ManualServerPackAnalysis
         OverrideListSkipPaths = overrideListSkipPaths ?? [];
         InJarMetadataSkipPaths = inJarMetadataSkipPaths ?? [];
         ForceIncludedPaths = forceIncludedPaths ?? [];
+        AssistedReview = assistedReview ?? PackAssistedReview.Empty;
+        JarRecords = jarRecords ?? [];
+        FreezeBlockReason = freezeBlockReason ?? AssistedReview.FreezeBlockReason;
     }
 
     public ManualServerPackKind Kind { get; }
@@ -140,4 +146,51 @@ public sealed class ManualServerPackAnalysis
 
     /// <summary>Zip contains product <see cref="DerivedPackIdentity.SidecarEntryName"/>.</summary>
     public bool IsDerived { get; }
+
+    public PackAssistedReview AssistedReview { get; }
+
+    public IReadOnlyList<PackJarRecord> JarRecords { get; }
+
+    /// <summary>Set when an operator Skip would drop a required dep. P1 does not flip CanContinue.</summary>
+    public string? FreezeBlockReason { get; }
+
+    public bool NeedsAssistedReview => AssistedReview.NeedsAssistedReview;
+
+    /// <summary>Re-run freeze after in-session Skip ticks without re-reading the zip.</summary>
+    public ManualServerPackAnalysis ApplyOperatorSkips(IReadOnlyCollection<string> skipTerms)
+    {
+        var classified = PackDependencyFreeze.Classify(JarRecords, skipTerms);
+        return new ManualServerPackAnalysis(
+            Kind,
+            CanInstall,
+            RefusalReason,
+            PackName,
+            VersionId,
+            MinecraftVersion,
+            Loader,
+            LoaderVersion,
+            JavaMajor,
+            WrapperPrefix,
+            FileCount,
+            classified.ServerSidePaths.Count,
+            classified.ClientOnlyPaths.Count,
+            classified.UnclearSidePaths.Count,
+            classified.ServerSidePaths,
+            classified.ClientOnlyPaths,
+            classified.UnclearSidePaths,
+            Warnings,
+            ConfirmableSummary,
+            MapRootJarsToMods,
+            classified.OverrideListSkipPaths.Count,
+            classified.InJarMetadataSkipPaths.Count,
+            classified.OverrideListSkipPaths,
+            classified.InJarMetadataSkipPaths,
+            ForceIncludedPaths,
+            DetectedMinecraftVersion,
+            DetectedLoader,
+            IsDerived,
+            classified.Review,
+            JarRecords,
+            classified.FreezeBlockReason);
+    }
 }

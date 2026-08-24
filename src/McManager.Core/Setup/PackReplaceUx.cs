@@ -35,14 +35,24 @@ public static class PackReplaceUx
     public static bool CanPick(bool vm1Running, bool busy) =>
         vm1Running && !busy;
 
+    public static bool FreezeAllowsContinue(string? freezeBlockReason) =>
+        string.IsNullOrWhiteSpace(freezeBlockReason);
+
     public static bool CanInstall(
         bool vm1Running,
         bool busy,
         bool canContinue,
         bool packConfirmed,
         bool clientPackAcknowledged,
-        bool identityComplete = true) =>
-        vm1Running && !busy && canContinue && packConfirmed && clientPackAcknowledged && identityComplete;
+        bool identityComplete = true,
+        string? freezeBlockReason = null) =>
+        vm1Running
+        && !busy
+        && canContinue
+        && packConfirmed
+        && clientPackAcknowledged
+        && identityComplete
+        && FreezeAllowsContinue(freezeBlockReason);
 
     public static string PickDisabledReason(bool vm1Running, bool busy)
     {
@@ -59,7 +69,8 @@ public static class PackReplaceUx
         bool canContinue,
         bool packConfirmed,
         bool clientPackAcknowledged,
-        bool identityComplete = true)
+        bool identityComplete = true,
+        string? freezeBlockReason = null)
     {
         if (busy)
             return "Wait until the current action finishes.";
@@ -67,6 +78,8 @@ public static class PackReplaceUx
             return StartFirstMessage;
         if (!canContinue)
             return "Choose a pack that can be installed first.";
+        if (!FreezeAllowsContinue(freezeBlockReason))
+            return freezeBlockReason!.Trim();
         if (!identityComplete)
             return DerivedPackIdentity.IdentityIncompleteReason;
         if (!packConfirmed || !clientPackAcknowledged)

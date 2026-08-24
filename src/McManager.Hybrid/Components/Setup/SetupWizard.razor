@@ -245,7 +245,7 @@
                                    accept=".mrpack,.zip"
                                    disabled="@(!Vm.CanMutateWizard || Vm.IsAnalyzingPack)" />
                         <i class="ti ti-file-zip" aria-hidden="true"></i>
-                        <p class="mcm-pack-drop-title">Drop a .mrpack or server-pack zip</p>
+                        <p class="mcm-pack-drop-title">Drop a .mrpack or Server Files zip</p>
                     </div>
                     <div class="mcm-wizard-actions">
                         <button type="button"
@@ -292,6 +292,16 @@
                             </aside>
                         }
                         <pre class="mcm-wizard-log mcm-wizard-mono mcm-slim-scroll mcm-pack-summary">@Vm.PackSummary</pre>
+                    }
+                    @if (Vm.ShowPackAssistedReview)
+                    {
+                        <PackAssistedReviewPanel IdPrefix="setup-pack"
+                                                 Disabled="@(!Vm.CanMutateWizard)"
+                                                 Review="@Vm.AssistedReview"
+                                                 FreezeBlockReason="@Vm.PackFreezeBlockReason"
+                                                 LooksLikeLauncherInstance="@Vm.PackLooksLikeLauncherInstance"
+                                                 IsSkipped="@Vm.IsOperatorSkipped"
+                                                 SkipChanged="Vm.OnAssistedSkipChanged" />
                     }
                     @if (Vm.ShowPackIdentityFields)
                     {
@@ -580,6 +590,7 @@
                 <button type="button"
                         class="mcm-primary"
                         disabled="@(!Vm.CanGoNext)"
+                        title="@Vm.GameStepNextTitle"
                         @onclick="Vm.NextAsync">
                     Next
                 </button>

@@ -3,8 +3,8 @@ namespace McManager.Core.Setup;
 /// <summary>
 /// Combine in-jar side with the itzg/product CurseForge exclude lists (blueprint §24.3).
 /// Matcher runs after reading in-jar metadata (robustness R3 / Step 8.7 P2). Same keep/exclude
-/// order as <see cref="MrpackFileFilter"/>: force-include, pack/in-jar client, list exclude.
-/// Unclear jars stay kept (server pack assumed).
+/// order as <see cref="MrpackFileFilter"/>: force-include, list exclude, then high-confidence
+/// in-jar client. Unclear jars stay kept (server pack assumed).
 /// </summary>
 internal static class ManualPackFileFilter
 {
@@ -20,11 +20,11 @@ internal static class ManualPackFileFilter
         if (match.Keep)
             return Action.Install;
 
-        if ((inJarEnvironment ?? "").Equals("client", StringComparison.OrdinalIgnoreCase))
-            return Action.SkipInJarMetadata;
-
         if (match.Exclude)
             return Action.SkipOverrideList;
+
+        if ((inJarEnvironment ?? "").Equals("client", StringComparison.OrdinalIgnoreCase))
+            return Action.SkipInJarMetadata;
 
         return Action.Install;
     }

@@ -107,6 +107,57 @@ public static class Layer2LocalOverlay
         File.WriteAllText(path, JsonSerializer.Serialize(dto, JsonOptions) + "\n");
     }
 
+    /// <summary>
+    /// Filename (or other overlay term) used when persisting an operator Skip.
+    /// Same shape as crash Keep-excluded terms.
+    /// </summary>
+    public static string TermForRelativePath(string relativePath)
+    {
+        var n = (relativePath ?? "").Replace('\\', '/').Trim();
+        if (n.Length == 0)
+            return "";
+        var slash = n.LastIndexOf('/');
+        return slash < 0 ? n : n[(slash + 1)..];
+    }
+
+    /// <summary>
+    /// Removes <paramref name="term"/> from <c>modpacks[sha256:…].excludes</c> (Unskip).
+    /// No-op when the file, pack, or term is missing.
+    /// </summary>
+    public static void RemoveExclude(string dataDirectory, string sha256Hex, string term)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(dataDirectory);
+        ArgumentException.ThrowIfNullOrWhiteSpace(sha256Hex);
+        ArgumentException.ThrowIfNullOrWhiteSpace(term);
+
+        var key = IdentityKey(sha256Hex);
+        var needle = term.Trim();
+        var path = FilePath(dataDirectory);
+        if (!File.Exists(path))
+            return;
+
+        OverlayFileDto dto;
+        try
+        {
+            dto = JsonSerializer.Deserialize<OverlayFileDto>(File.ReadAllText(path), JsonOptions)
+                ?? new OverlayFileDto();
+        }
+        catch (JsonException)
+        {
+            return;
+        }
+
+        if (dto.Modpacks is null
+            || !dto.Modpacks.TryGetValue(key, out var pack)
+            || pack?.Excludes is null)
+        {
+            return;
+        }
+
+        pack.Excludes.RemoveAll(s => string.Equals(s, needle, StringComparison.OrdinalIgnoreCase));
+        File.WriteAllText(path, JsonSerializer.Serialize(dto, JsonOptions) + "\n");
+    }
+
     private sealed class OverlayFileDto
     {
         public List<string>? GlobalExcludes { get; set; }

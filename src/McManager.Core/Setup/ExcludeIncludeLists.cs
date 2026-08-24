@@ -157,6 +157,7 @@ public enum PackFileSkipReason
     OverrideList,
     PackDeclared,
     InJarMetadata,
+    OperatorSkip,
 }
 
 public readonly record struct ExcludeIncludeMatch(

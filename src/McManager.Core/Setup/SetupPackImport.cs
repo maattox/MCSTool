@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using McManager.Core.Config;
 using McManager.Core.Services;
 
@@ -44,22 +45,42 @@ public static class SetupPackImport
         + "Setup will skip those on the server. If the server fails to start, check this skipped list first.";
 
     /// <summary>
-    /// Confirmable-summary warning when manual / jar-root zips still have jars with no in-jar side
-    /// metadata after exclude lists (R3 keep). Not a third required checkbox.
+    /// Assisted-review lead. Default Keep; optional Skip. Continue is Next / Install this pack.
+    /// </summary>
+    public const string AssistedReviewLead =
+        "We skip obvious client mods. Everything else stays unless you mark it. "
+        + "If the server crashes and the game names one mod, you can exclude it here.";
+
+    /// <summary>
+    /// Drop-zone / help: novices should prefer a tagged export; homemade zip is the fallback.
+    /// </summary>
+    public const string PackFileNoviceHelp =
+        "Prefer a Modrinth .mrpack or a CurseForge Server Files zip (the jars are already inside). "
+        + "A homemade zip works as a fallback — you may need to review unknown jars. "
+        + "Very large packs: use Choose pack file so Windows can pass the path.";
+
+    /// <summary>
+    /// Optional hint when the zip looks like a MultiMC/Prism client instance. Do not require export.
+    /// </summary>
+    public const string PrismExportHint =
+        "This looks like a MultiMC or Prism instance. Exporting a Modrinth .mrpack from Prism "
+        + "is easier than reviewing dozens of unknown jars.";
+
+    /// <summary>
+    /// Review copy when leftover jars have no in-jar side metadata (default Keep).
     /// </summary>
     public const string UnclearSideKeepCopy =
         "Some jar files in this zip do not declare whether they are client-only or server-side. "
-        + "Setup will keep them on the server after the exclude list and in-jar client strips. "
-        + "If the server fails to start, check those jars first.";
+        + "They stay on the server unless you mark Skip on server.";
 
     /// <summary>
-    /// Stronger confirmable-summary warning when many mod jars still lack side metadata (Step 8.7 P5).
+    /// Stronger review copy when many mod jars still lack side metadata.
     /// Manual / jar-root only — <c>.mrpack</c> unclear rules are unchanged.
     /// </summary>
     public const string UnclearSideHighRiskCopy =
         "Many jar files in this zip do not declare whether they are client-only or server-side. "
-        + "Setup will keep them, but the server may fail to start. "
-        + "If it does, check Console for a short crash log before retrying or changing the pack.";
+        + "They stay unless you mark Skip on server. Use search to find a jar. "
+        + "If the server fails to start, check Console for a short crash log.";
 
     /// <summary>Escalate unclear-side copy when at least this many mod jars lack side metadata.</summary>
     public const int UnclearSideHighCountThreshold = 10;
@@ -188,7 +209,10 @@ public static class SetupPackImport
             needsIdentityConfirm: false,
             detectedMinecraftVersion: analysis.MinecraftVersion,
             detectedLoader: analysis.Loader,
-            isDerived: false);
+            isDerived: false,
+            analysis.AssistedReview,
+            analysis.JarRecords,
+            analysis.FreezeBlockReason);
     }
 
     public static SetupPackPreview FromManual(ManualServerPackAnalysis analysis, string path)
@@ -210,13 +234,8 @@ public static class SetupPackImport
         }
 
         var overrideWarning = FormatOverrideListWarning(analysis.OverrideListSkipCount, analysis.OverrideListSkipPaths);
-        var totalModJars = analysis.ServerSideCount + analysis.ClientOnlyCount;
-        var unclearWarning = FormatUnclearSideWarning(
-            analysis.UnclearSideCount,
-            analysis.UnclearSidePaths,
-            totalModJars);
-        var summary = PrependWarning(analysis.ConfirmableSummary, unclearWarning);
-        summary = PrependWarning(summary, overrideWarning);
+        // Assisted review owns unknown-side copy; do not auto-keep-warn in the summary <pre>.
+        var summary = PrependWarning(analysis.ConfirmableSummary, overrideWarning);
         return new SetupPackPreview(
             KindManualZip,
             path,
@@ -240,7 +259,43 @@ public static class SetupPackImport
             needsIdentity,
             analysis.DetectedMinecraftVersion,
             analysis.DetectedLoader,
-            analysis.IsDerived);
+            analysis.IsDerived,
+            analysis.AssistedReview,
+            analysis.JarRecords,
+            analysis.FreezeBlockReason);
+    }
+
+    /// <summary>
+    /// Cheap name check for MultiMC/Prism instance zips (optional review hint; not a refuse).
+    /// </summary>
+    public static bool LooksLikeLauncherInstance(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+            return false;
+        if (Path.GetExtension(path).Equals(".mrpack", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        try
+        {
+            using var zip = ZipFile.OpenRead(path);
+            foreach (var entry in zip.Entries)
+            {
+                var n = (entry.FullName ?? "").Replace('\\', '/');
+                var slash = n.LastIndexOf('/');
+                var file = slash < 0 ? n : n[(slash + 1)..];
+                if (file.Equals("instance.cfg", StringComparison.OrdinalIgnoreCase)
+                    || file.Equals("mmc-pack.json", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -425,7 +480,10 @@ public sealed class SetupPackPreview
         bool needsIdentityConfirm = false,
         string? detectedMinecraftVersion = null,
         string? detectedLoader = null,
-        bool isDerived = false)
+        bool isDerived = false,
+        PackAssistedReview? assistedReview = null,
+        IReadOnlyList<PackJarRecord>? jarRecords = null,
+        string? freezeBlockReason = null)
     {
         Kind = kind;
         SourcePath = sourcePath;
@@ -450,6 +508,9 @@ public sealed class SetupPackPreview
         DetectedMinecraftVersion = detectedMinecraftVersion ?? minecraftVersion;
         DetectedLoader = detectedLoader ?? loader;
         IsDerived = isDerived;
+        AssistedReview = assistedReview ?? PackAssistedReview.Empty;
+        JarRecords = jarRecords ?? [];
+        FreezeBlockReason = freezeBlockReason ?? AssistedReview.FreezeBlockReason;
     }
 
     public string Kind { get; }
@@ -485,4 +546,46 @@ public sealed class SetupPackPreview
     public string DetectedLoader { get; }
 
     public bool IsDerived { get; }
+
+    public PackAssistedReview AssistedReview { get; }
+
+    public IReadOnlyList<PackJarRecord> JarRecords { get; }
+
+    /// <summary>Set when an operator Skip would drop a required dep. P1 does not flip CanContinue.</summary>
+    public string? FreezeBlockReason { get; }
+
+    public bool NeedsAssistedReview => AssistedReview.NeedsAssistedReview;
+
+    /// <summary>Re-run freeze after in-session Skip ticks without re-hashing the zip.</summary>
+    public SetupPackPreview ApplyOperatorSkips(IReadOnlyCollection<string> skipTerms)
+    {
+        var classified = PackDependencyFreeze.Classify(JarRecords, skipTerms);
+        return new SetupPackPreview(
+            Kind,
+            SourcePath,
+            PackName,
+            VersionId,
+            MinecraftVersion,
+            Loader,
+            LoaderVersion,
+            JavaMajor,
+            FileCount,
+            classified.ServerSidePaths.Count,
+            classified.ClientOnlyPaths.Count,
+            classified.UnclearSidePaths.Count,
+            ConfirmableSummary,
+            Warnings,
+            CanContinue,
+            BlockReason,
+            classified.OverrideListSkipPaths.Count,
+            classified.OverrideListSkipPaths,
+            OverrideListWarning,
+            NeedsIdentityConfirm,
+            DetectedMinecraftVersion,
+            DetectedLoader,
+            IsDerived,
+            classified.Review,
+            JarRecords,
+            classified.FreezeBlockReason);
+    }
 }

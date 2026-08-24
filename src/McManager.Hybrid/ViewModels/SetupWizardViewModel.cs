@@ -73,8 +73,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     public const string OptimizedVanillaHelp =
         "Better multiplayer performance. Not Forge or Fabric mods. Paper is a faster vanilla-compatible server.";
 
-    public const string PackFileHelp =
-        "Export the pack on Modrinth, CurseForge (Server Files), or another tool first. Very large packs: use Choose pack file so Windows can pass the path.";
+    public const string PackFileHelp = SetupPackImport.PackFileNoviceHelp;
 
     public const string ClientPackHelp = SetupPackImport.ClientPackCopy;
 
@@ -208,6 +207,10 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     [ObservableProperty]
     private string _packAnalyzeCaption = "";
+
+    private SetupPackPreview? _packPreview;
+    private HashSet<string> _operatorSkipTerms = new(StringComparer.OrdinalIgnoreCase);
+    private bool _packLooksLikeLauncherInstance;
 
     [ObservableProperty]
     private string _packPath = "";
@@ -559,6 +562,30 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     public bool ShowOverrideListWarning =>
         ShowPackSummary && PackCanContinue && !string.IsNullOrWhiteSpace(PackOverrideListWarning);
 
+    public bool ShowPackAssistedReview =>
+        ShowPackSummary
+        && PackCanContinue
+        && _packPreview is not null
+        && (_packPreview.NeedsAssistedReview
+            || !PackReplaceUx.FreezeAllowsContinue(_packPreview.FreezeBlockReason)
+            || _packPreview.AssistedReview.WillSkip.Any(i => i.SkipReason == PackFileSkipReason.OperatorSkip)
+            || (_operatorSkipTerms.Count > 0 && _packPreview.Kind == SetupPackImport.KindManualZip));
+
+    public PackAssistedReview AssistedReview =>
+        _packPreview?.AssistedReview ?? PackAssistedReview.Empty;
+
+    public string PackFreezeBlockReason => _packPreview?.FreezeBlockReason ?? "";
+
+    public bool PackLooksLikeLauncherInstance => _packLooksLikeLauncherInstance;
+
+    public string GameStepNextTitle =>
+        PackReplaceUx.FreezeAllowsContinue(PackFreezeBlockReason)
+            ? ""
+            : PackFreezeBlockReason;
+
+    public bool IsOperatorSkipped(string path) =>
+        PackAssistedReviewActions.IsSkipped(_operatorSkipTerms, path);
+
     public string ClientPackTitle => SetupPackImport.ClientPackTitle;
 
     public string ClientPackCopy => SetupPackImport.ClientPackCopy;
@@ -796,6 +823,9 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         PackConfirmed = false;
         ClientPackAcknowledged = false;
         PackAnalyzeCaption = "";
+        _packPreview = null;
+        _operatorSkipTerms = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        _packLooksLikeLauncherInstance = false;
         StatusMessage = "Pack cleared. Choose a .mrpack or server-pack zip.";
         Persist();
     }
@@ -837,7 +867,9 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
             ApplyPackPreview(result.Value, keepConfirm);
             StatusMessage = result.Value.CanContinue
-                ? "Review the pack summary, then confirm before continuing."
+                ? (result.Value.NeedsAssistedReview
+                    ? "Review unknown jars, then confirm before continuing."
+                    : "Review the pack summary, then confirm before continuing.")
                 : (result.Value.BlockReason ?? "This pack cannot be installed.");
             Persist();
         }
@@ -887,8 +919,44 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         Persist();
     }
 
+    public Task OnAssistedSkipChanged(PackAssistedReviewActions.OperatorSkipChange change) =>
+        SetOperatorSkipAsync(change.Path, change.Skip);
+
+    public async Task SetOperatorSkipAsync(string path, bool skip)
+    {
+        if (_packPreview is null || IsDeployLocked)
+            return;
+
+        var result = PackAssistedReviewActions.ApplySkip(_packPreview, _operatorSkipTerms, path, skip);
+        if (result.NeedsReanalyze)
+        {
+            await AnalyzePackPathAsync(_packPreview.SourcePath, keepConfirm: true).ConfigureAwait(true);
+            return;
+        }
+
+        ApplyReviewPreview(result.Preview);
+        if (!PackReplaceUx.FreezeAllowsContinue(result.Preview.FreezeBlockReason))
+            StatusMessage = result.Preview.FreezeBlockReason ?? "";
+    }
+
+    private void ApplyReviewPreview(SetupPackPreview preview)
+    {
+        _packPreview = preview;
+        PackSummary = preview.ConfirmableSummary;
+        PackOverrideListWarning = preview.OverrideListWarning ?? "";
+        NotifyAssistedReviewUi();
+    }
+
     private void ApplyPackPreview(SetupPackPreview preview, bool keepConfirm)
     {
+        _operatorSkipTerms = PackAssistedReviewActions.LoadPersistedSkipTerms(preview.SourcePath);
+        _packLooksLikeLauncherInstance = SetupPackImport.LooksLikeLauncherInstance(preview.SourcePath);
+        var bound = _operatorSkipTerms.Count > 0
+            ? preview.ApplyOperatorSkips(_operatorSkipTerms)
+            : preview;
+        _packPreview = bound;
+        preview = bound;
+
         PackPath = preview.SourcePath;
         PackKind = preview.Kind;
         PackName = preview.PackName;
@@ -908,6 +976,8 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         {
             PackConfirmed = false;
             ClientPackAcknowledged = false;
+            NotifyPackIdentityUi();
+            NotifyAssistedReviewUi();
             return;
         }
 
@@ -926,6 +996,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             ClientPackAcknowledged = false;
         }
         NotifyPackIdentityUi();
+        NotifyAssistedReviewUi();
     }
 
     private void RetainCurrentPack()
@@ -1686,6 +1757,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
                 && ClientPackAcknowledged
                 && PackCanContinue
                 && PackIdentityComplete
+                && PackReplaceUx.FreezeAllowsContinue(PackFreezeBlockReason)
                 && !string.IsNullOrWhiteSpace(
                     string.IsNullOrWhiteSpace(MinecraftVersion) ? _resumeMinecraftVersion : MinecraftVersion)
             : !string.IsNullOrWhiteSpace(
@@ -1780,6 +1852,17 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         OnPropertyChanged(nameof(DetectionMismatchWarning));
         OnPropertyChanged(nameof(ClientPackFriendsNeed));
         OnPropertyChanged(nameof(ShowPackConfirmChecks));
+        OnPropertyChanged(nameof(ShowPackAssistedReview));
+    }
+
+    private void NotifyAssistedReviewUi()
+    {
+        OnPropertyChanged(nameof(ShowPackAssistedReview));
+        OnPropertyChanged(nameof(AssistedReview));
+        OnPropertyChanged(nameof(PackFreezeBlockReason));
+        OnPropertyChanged(nameof(PackLooksLikeLauncherInstance));
+        OnPropertyChanged(nameof(GameStepNextTitle));
+        OnPropertyChanged(nameof(CanGoNext));
     }
 
     partial void OnIdentityNameChanged(string value)

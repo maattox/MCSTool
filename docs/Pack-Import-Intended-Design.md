@@ -159,5 +159,6 @@ Until P2 ships: do not treat informal homemade-zip failures as proof the **loade
 
 | Date | Note |
 |------|------|
+| 2026-08-24 | **Implemented** (Step **8.9** P1–P2): skip order, dependency freeze, assisted review UI, persist Skip, Guide. Keep this file as the contract. |
 | 2026-08-23 | **Scheduled** as Step **8.9** ([`V1-Pack-Import-Assisted-Review-Plan.md`](V1-Pack-Import-Assisted-Review-Plan.md)). P1 NEXT. |
 | 2026-08-23 | **Design lock.** Homemade zip kept; unattended success dropped. Automatic vs assisted tiers, skip order, dep freeze, review UI, crash bounds, non-goals. No code. Pass 3 unchanged. |
