@@ -1,0 +1,37 @@
+# Analysis-only. Harness must not apply as Skip during install.
+# Modrinth server_side=unsupported for most of these; litematica/malilib also env.server=unsupported in the mrpack.
+# Xaero minimap/worldmap added from itzg exclude list (client map HUD).
+# Axiom is a client world editor.
+pack_id: mr-fabric-stam1o-create-s2
+verified_utc: "2026-08-24T00:00:00Z"
+jars:
+  - "animatica-0.6.1+1.20.4.jar"
+  - "athena-fabric-1.20.1-3.1.2.jar"
+  - "Axiom-3.2.1-for-MC1.20.1.jar"
+  - "better-clouds-1.3.18+1.20.1.jar"
+  - "block-entity-extended-rendering-3.0.0.jar"
+  - "chat_heads-0.12.6-fabric-1.20.jar"
+  - "emi_enchanting-0.1.0+1.20.1.jar"
+  - "emiffect-fabric-1.1.2+mc1.20.1.jar"
+  - "emitrades-fabric-1.2.1+mc1.20.1.jar"
+  - "enhancedblockentities-0.9+1.20.jar"
+  - "entity_model_features_fabric_1.20.1-2.1.3.jar"
+  - "entity_texture_features_fabric_1.20.1-6.1.3.jar"
+  - "entityculling-fabric-1.6.6-mc1.20.1.jar"
+  - "extra-mod-integrations-0.4.6+1.20.1.jar"
+  - "Gamma-Utils-1.7.16-mc1.20.1.jar"
+  - "indium-1.0.32+mc1.20.1.jar"
+  - "inmisaddon-1.0.4.jar"
+  - "iris-1.7.2+mc1.20.1.jar"
+  - "litematica-fabric-1.20.1-0.15.4.jar"
+  - "malilib-fabric-1.20.1-0.16.3.jar"
+  - "minihud-fabric-1.20.1-0.27.0.jar"
+  - "modmenu-7.2.2.jar"
+  - "OrthoCamera-0.1.7+1.20.1.jar"
+  - "particular-1.1.1.jar"
+  - "reeses_sodium_options-1.7.2+mc1.20.1-build.101.jar"
+  - "skinlayers3d-fabric-1.6.6-mc1.20.1.jar"
+  - "sodium-extra-0.5.4+mc1.20.1-build.115.jar"
+  - "sodium-fabric-0.5.10+mc1.20.1.jar"
+  - "Xaeros_Minimap_24.2.0_Fabric_1.20.jar"
+  - "XaerosWorldMap_1.38.8_Fabric_1.20.jar"

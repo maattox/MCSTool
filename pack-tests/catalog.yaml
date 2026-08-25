@@ -14,20 +14,141 @@
 #   java_major          expected Java major
 #   size_class          small | medium | large
 #   client_only_sidecar path under pack-tests/client-only/ (optional)
-#
-# Commented example (not a live row):
-# packs:
-#   - id: example-fabric-small
-#     filename: example.mrpack
-#     sha256: ""  # fill before a live test
-#     platform: modrinth
-#     format: mrpack
-#     loader: fabric
-#     loader_version: "0.16.14"
-#     minecraft: "1.21.1"
-#     java_major: 21
-#     size_class: small
-#     client_only_sidecar: client-only/example-fabric-small.yaml
 
 schema_version: 1
-packs: []
+packs:
+  # Tiny homemade .mrpack with correct env.server (Sodium unsupported). Prefer first in a phase.
+  - id: homemade-fabric-strip
+    filename: fabric-strip.mrpack
+    sha256: be7609e7e94ed4be8ac6e90064bf7a59d75ef4686a18ab0d43e8f5784535021b
+    platform: homemade
+    format: mrpack
+    loader: fabric
+    loader_version: "0.16.9"
+    minecraft: "1.21.1"
+    java_major: 21
+    size_class: small
+    client_only_sidecar: client-only/homemade-fabric-strip.yaml
+
+  - id: mr-neoforge-blockfront-0.9.0.27b
+    filename: "modrinth-neoforge-BlockFront - Official Mod Pack 0.9.0.27b.mrpack"
+    sha256: ccf31d57e3815a7221c52fc667a0052bd3ec03ab7b160c230c30c53556c91df1
+    platform: modrinth
+    format: mrpack
+    loader: neoforge
+    loader_version: "21.1.248"
+    minecraft: "1.21.1"
+    java_major: 21
+    size_class: small
+    client_only_sidecar: client-only/mr-neoforge-blockfront-0.9.0.27b.yaml
+
+  - id: mr-fabric-fabulously-optimized-6.5.0
+    filename: modrinth-fabric-Fabulously.Optimized-v6.5.0.mrpack
+    sha256: d38de68f71d6b7a475e2fcc3d346371dd386415583f56ee0cb6e4d9ac14dcc57
+    platform: modrinth
+    format: mrpack
+    loader: fabric
+    loader_version: "0.19.3"
+    minecraft: "1.21.1"
+    java_major: 21
+    size_class: small
+    client_only_sidecar: client-only/mr-fabric-fabulously-optimized-6.5.0.yaml
+
+  # Same FO jar set as unstructured mods/+config/ (identity confirm + default-Keep).
+  - id: homemade-mods-fabric-1.21.1
+    filename: homemade-mods-fabric-1.21.1.zip
+    sha256: 7d234d496e0a2d4f6281bca122ca9bf6e0ccf0f88a45f14af61133715077414e
+    platform: homemade
+    format: unstructured
+    loader: fabric
+    loader_version: "0.19.3"
+    minecraft: "1.21.1"
+    java_major: 21
+    size_class: small
+    client_only_sidecar: client-only/homemade-mods-fabric-1.21.1.yaml
+
+  # Same FO jars at zip root (no mods/ folder). Derived-zip path.
+  - id: homemade-jar-root-fabric-1.21.1
+    filename: homemade-jar-root-fabric-1.21.1.zip
+    sha256: d4c2c346a0884924ae50b46fb1b620f3bab47b30e0287ed34ff7d05eb4c92d0d
+    platform: homemade
+    format: jar-root
+    loader: fabric
+    loader_version: "0.19.3"
+    minecraft: "1.21.1"
+    java_major: 21
+    size_class: small
+    client_only_sidecar: client-only/homemade-jar-root-fabric-1.21.1.yaml
+
+  # Java 25 / Minecraft 26.2. Mistags client mods like other opt packs; may product_fail.
+  - id: mr-fabric-simply-optimized-continued-2.1-26.2
+    filename: Modrinth-fabric-Simply-Optimized-Continued-v2.1+26.2.mrpack
+    sha256: 77ea04c0421669c23ec6728d5173dc72b0120ff2f10400cd3265e32d0b747bce
+    platform: modrinth
+    format: mrpack
+    loader: fabric
+    loader_version: "0.19.3"
+    minecraft: "26.2"
+    java_major: 25
+    size_class: small
+    client_only_sidecar: client-only/mr-fabric-simply-optimized-continued-2.1-26.2.yaml
+
+  - id: mr-fabric-stam1o-create-s2
+    filename: Modrinth-fabric-Stam1o-Create-S2.mrpack
+    sha256: 23346ac0bf2fcefba85367f4df7897d5de6815d576864da2701f12ba0929a9ee
+    platform: modrinth
+    format: mrpack
+    loader: fabric
+    loader_version: "0.15.11"
+    minecraft: "1.20.1"
+    java_major: 17
+    size_class: medium
+    client_only_sidecar: client-only/mr-fabric-stam1o-create-s2.yaml
+
+  - id: mr-fabric-cobblemon-1.7.3
+    filename: "Modrinth-fabric-Cobblemon Modpack 1.7.3.mrpack"
+    sha256: 2cd8da213369a38c3479c0b5a27bc32cebabb40cbe082134b86f78431d0bc070
+    platform: modrinth
+    format: mrpack
+    loader: fabric
+    loader_version: "0.18.4"
+    minecraft: "1.21.1"
+    java_major: 21
+    size_class: medium
+    client_only_sidecar: client-only/mr-fabric-cobblemon-1.7.3.yaml
+
+  - id: cf-fabric-cobblemon-1.7.3
+    filename: "CurseForge-fabric-Server Files-Cobblemon Modpack 1.7.3.zip"
+    sha256: 7e2e6edfbbfbcaf716b8b251a6cb1ababbd148e01791ee14998d7792ff1a90cb
+    platform: curseforge
+    format: cf-server
+    loader: fabric
+    loader_version: "0.18.4"
+    minecraft: "1.21.1"
+    java_major: 21
+    size_class: medium
+    client_only_sidecar: client-only/cf-fabric-cobblemon-1.7.3.yaml
+
+  - id: cf-neoforge-cobblemon-1.7.3
+    filename: "CurseForge-neoforge-Server Files-Cobblemon Modpack 1.7.3.zip"
+    sha256: 2554cd528450a7ad617128154cee32e38b4f07177eee7b3f5f53e9ec744ab330
+    platform: curseforge
+    format: cf-server
+    loader: neoforge
+    loader_version: "21.1.218"
+    minecraft: "1.21.1"
+    java_major: 21
+    size_class: medium
+    client_only_sidecar: client-only/cf-neoforge-cobblemon-1.7.3.yaml
+
+  - id: cf-forge-cobblemon-1.5.2
+    filename: "CurseForge-forge-Server Files-Cobblemon Modpack 1.5.2.zip"
+    sha256: 769fe36adab9e61cfd3d08ffdf80fa6e3bc4de30d4985fa8fdf1197cdc07353b
+    platform: curseforge
+    format: cf-server
+    loader: forge
+    loader_version: "47.2.17"
+    minecraft: "1.20.1"
+    java_major: 17
+    size_class: medium
+    client_only_sidecar: client-only/cf-forge-cobblemon-1.5.2.yaml

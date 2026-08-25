@@ -70,7 +70,7 @@ P3 may run in a **separate operator chat** while Group A is on P1–P2. Default 
 
 ## What already exists (do not rediscover)
 
-- Custom caption (8.10 P2 + 8.11 P1): `CaptionBar.razor` + WPF `WindowChrome`. `.mcm-caption` uses `--caption-bg` (`#10141a`, darker than `--bg`) and a 1px `--border` bottom edge. Shared by Manage, Setup, and FirstRun. Min/max hover `--surface-2`; close hover danger.
+- Custom caption (8.10 P2 + 8.11 P1): `CaptionBar.razor` + WPF `WindowChrome`. `.mcm-caption` uses `--caption-bg` (`#10141a`, darker than `--bg`) and a 1px `--border` bottom edge. Shared by Manage, Setup, and FirstRun. Min/max hover `--surface-2`; close hover danger. `.mcm-app` is full window width; Manage uses outer `1fr` grid tracks so the caption full-bleeds when the window is wider than 1040 CSS px. Chrome / tabs stay `--app-chrome-width`. Left/right 6px WPF resize strips keep a caption-colored top (`MainWindow.xaml`) so the title bar is flush with the window edge.
 - Default window ~1040 CSS px / `--app-chrome-width: 1008px`. Status column is **330px**. Pins are a **2×2** of **200px** cards (`410px` + 10px gap). Leftover chrome to the right of the pins is unused (~250px). Pins: Today's uptime, This month, Daily average, Rollover bank (`MainLayout` + `PinnedUsageSnapshot`). Usage tab already computes **month hours remaining** and **idle timeout** from the same budget refresh that fills those four pins.
 - MOTD editor (8.10 P9): `MotdEditor.razor` + `window.mcmMotd.wrap` in `index.html`. Wrap inserts a **prefix only** (empty suffix) — that is why `test MOTD message` + bold on `MOTD` becomes `test §lMOTD message` and “message” stays bold. Typing surface is a **textarea that shows `§` codes**. Preview is HTML from `MotdFormatting.ToPreviewHtml` (not Minecraft font). Name is a **plain** `<input maxlength="40">`; only description uses `MotdEditor`. Omit-name checkbox + collapsed raw `motd=` + paste normalize already exist. `MaxNameLength = 40`, `MaxDescriptionLength = 512`. VM1 `_build_motd` already keeps `§`.
 - Operator reference (gitignored `development/`): `development/motd-generator-files/MotdGeneratorTool.BCUg2Acy.js` and `Minecraft-Regular.otf`. Read for wrap/WYSIWYG behavior; **do not** copy Sunset/Ocean presets or a gradient designer.
@@ -156,7 +156,7 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 
 - The top bar no longer blends into `--bg`.
 
-**Changelog:** 2026-08-24 — **DONE.** `--caption-bg: #10141a` (one step darker than `--bg`) on `.mcm-caption` plus 1px `--border` bottom. Same strip on Manage, Setup, and FirstRun. Win-button hover unchanged (`--surface-2` / close danger). Bell badge ring matches the caption. Guide. **NEXT = P2.**
+**Changelog:** 2026-08-24 — **DONE.** `--caption-bg: #10141a` (one step darker than `--bg`) on `.mcm-caption` plus 1px `--border` bottom. Same strip on Manage, Setup, and FirstRun. Win-button hover unchanged (`--surface-2` / close danger). Bell badge ring matches the caption. Caption full-bleeds on window resize (outer `1fr` tracks); chrome stays 1040. WPF 6px side strips paint `--caption-bg` for the caption height so the title bar is flush. Guide. **NEXT = P2.**
 
 ---
 
@@ -279,5 +279,7 @@ When P1–P4 are **DONE**:
 
 | Date | Note |
 |------|------|
+| 2026-08-24 | P1 follow-up: 6px WPF side strips match caption at the top so the title bar is flush. Living **NEXT = P2**. |
+| 2026-08-24 | P1 follow-up: caption full-bleeds on resize (outer `1fr` tracks). Living **NEXT = P2**. |
 | 2026-08-24 | **P1 DONE** (caption `--caption-bg` + bottom border). Living **NEXT = P2**. Pass 3 stays blocked. |
 | 2026-08-24 | Created. Living **NEXT = P1**. Pass 3 stays blocked. |

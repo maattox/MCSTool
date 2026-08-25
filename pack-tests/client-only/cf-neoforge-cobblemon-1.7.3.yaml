@@ -1,0 +1,6 @@
+# Analysis-only. Harness must not apply as Skip during install.
+# Official Server Files zip; client HUD/render mods already omitted. server.jar is the NeoForge installer, not a client mod.
+pack_id: cf-neoforge-cobblemon-1.7.3
+verified_utc: "2026-08-24T00:00:00Z"
+jars:
+  []

@@ -1,0 +1,7 @@
+# Analysis-only. Harness must not apply as Skip during install.
+# Official Server Files zip; client HUD/render mods already omitted.
+# appleskin is present here (HUD) but the pack author shipped it in Server Files, so it is not listed.
+pack_id: cf-forge-cobblemon-1.5.2
+verified_utc: "2026-08-24T00:00:00Z"
+jars:
+  []

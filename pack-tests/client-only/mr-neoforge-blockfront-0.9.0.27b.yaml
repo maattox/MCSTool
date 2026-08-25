@@ -1,0 +1,6 @@
+# Analysis-only. Harness must not apply as Skip during install.
+# Pack env.server=unsupported. BlockFront jar stays on server. Crosshair resource pack is not a jar.
+pack_id: mr-neoforge-blockfront-0.9.0.27b
+verified_utc: "2026-08-24T00:00:00Z"
+jars:
+  - "sodium-neoforge-0.8.13-beta.2+mc1.21.1.jar"
