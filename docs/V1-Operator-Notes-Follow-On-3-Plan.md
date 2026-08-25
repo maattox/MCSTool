@@ -63,8 +63,8 @@ P3 may run in a **separate operator chat** while Group A is on P1–P2. Default 
 |----|-------|--------|----------|--------|
 | P1 | Caption bar contrast | **DONE** | SEQUENTIAL — same `app.css` as P2 | agent |
 | P2 | Fill pin-row empty space | **DONE** | SEQUENTIAL — manage chrome after P1 | either |
-| P3 | MOTD wrap-with-reset + line metrics | **NEXT** | PARALLEL-OK with P1–P2 | agent |
-| P4 | MOTD WYSIWYG editor (name + description) | TODO | SEQUENTIAL after P3 and P1–P2 | plan-first |
+| P3 | MOTD wrap-with-reset + line metrics | **DONE** | PARALLEL-OK with P1–P2 | agent |
+| P4 | MOTD WYSIWYG editor (name + description) | **NEXT** | SEQUENTIAL after P3 and P1–P2 | plan-first |
 
 ---
 
@@ -72,7 +72,7 @@ P3 may run in a **separate operator chat** while Group A is on P1–P2. Default 
 
 - Custom caption (8.10 P2 + 8.11 P1): `CaptionBar.razor` + WPF `WindowChrome`. `.mcm-caption` uses `--caption-bg` (`#10141a`, darker than `--bg`) and a 1px `--border` bottom edge. Shared by Manage, Setup, and FirstRun. Min/max hover `--surface-2`; close hover danger. `.mcm-app` is full window width; Manage uses outer `1fr` grid tracks so the caption full-bleeds when the window is wider than 1040 CSS px. Chrome / tabs stay `--app-chrome-width`. Left/right 6px WPF resize strips keep a caption-colored top (`MainWindow.xaml`) so the title bar is flush with the window edge.
 - Default window ~1040 CSS px / `--app-chrome-width: 1008px`. Status column is **330px**. Pins are a **3×2** that **fills remaining chrome** after the status column (`MainLayout` + `PinnedUsageSnapshot`): Today's uptime, This month, Daily average, Rollover bank, Hours left this month, Idle timeout. Remaining hours and idle minutes come from the same usage/budget refresh as the Usage tab (no extra Object Storage list / SSH).
-- MOTD editor (8.10 P9): `MotdEditor.razor` + `window.mcmMotd.wrap` in `index.html`. Wrap inserts a **prefix only** (empty suffix) — that is why `test MOTD message` + bold on `MOTD` becomes `test §lMOTD message` and “message” stays bold. Typing surface is a **textarea that shows `§` codes**. Preview is HTML from `MotdFormatting.ToPreviewHtml` (not Minecraft font). Name is a **plain** `<input maxlength="40">`; only description uses `MotdEditor`. Omit-name checkbox + collapsed raw `motd=` + paste normalize already exist. `MaxNameLength = 40`, `MaxDescriptionLength = 512`. VM1 `_build_motd` already keeps `§`.
+- MOTD (8.10 P9 + **8.11 P3**): Core `MotdFormatting.WrapSpan` wraps `[start, end)` with `§code`…`§r` and restores the outer color/format (empty range: caret between code and `§r`). `VisibleLength` ignores codes / `§x` hex; `MeasureListLines` / `MeasureIdentityLines` use the **59** Java list cap (`line N: used/59` / `— too long`). Hybrid `MotdEditor` + `window.mcmMotd.wrap` is still **prefix-only** until P4. Typing surface is a **textarea that shows `§` codes**. Preview is HTML from `MotdFormatting.ToPreviewHtml` (not Minecraft font). Name is a **plain** `<input maxlength="40">`; only description uses `MotdEditor`. Omit-name checkbox + collapsed raw `motd=` + paste normalize already exist. `MaxNameLength = 40`, `MaxDescriptionLength = 512`. VM1 `_build_motd` already keeps `§`.
 - Operator reference (gitignored `development/`): `development/motd-generator-files/MotdGeneratorTool.BCUg2Acy.js` and `Minecraft-Regular.otf`. Read for wrap/WYSIWYG behavior; **do not** copy Sunset/Ocean presets or a gradient designer.
 
 ---
@@ -196,7 +196,7 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 
 ## P3 — MOTD wrap-with-reset + line metrics
 
-**Status:** NEXT  
+**Status:** DONE  
 **Parallel:** PARALLEL-OK with P1–P2 — Core + tests only  
 **Cursor mode:** agent  
 **UI skill:** no
@@ -222,13 +222,13 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 
 - Core wrap/reset and counters are tested; P4 can call them without re-deriving MOTD rules.
 
-**Changelog:** *(date when finished)*
+**Changelog:** 2026-08-24 — **DONE.** `MotdFormatting.WrapSpan` wraps `[start, end)` with `§code`…`§r` and restores the outer color/format (empty range: caret between code and `§r`). `VisibleLength` ignores `§` / `§x` hex. `MeasureListLines` / `MeasureIdentityLines` (via `BuildMotd`) emit `line N: used/59` and `— too long` over the 59-char Java list cap. Unit tests cover the operator bold example, empty selection, wrap inside color, visible length, and over-limit copy. **NEXT = P4** (plan-first).
 
 ---
 
 ## P4 — MOTD WYSIWYG editor (name + description)
 
-**Status:** TODO  
+**Status:** NEXT  
 **Parallel:** SEQUENTIAL after P3 (API) and P1–P2 (`app.css`)  
 **Cursor mode:** plan-first  
 **UI skill:** yes
@@ -279,6 +279,7 @@ When P1–P4 are **DONE**:
 
 | Date | Note |
 |------|------|
+| 2026-08-24 | **P3 DONE** (MOTD wrap-with-reset + 59-char line counters in Core). Living **NEXT = P4** (plan-first). Pass 3 stays blocked. |
 | 2026-08-24 | **P2 DONE** (3×2 pin row fills chrome; Hours left + Idle timeout from existing budget refresh). Living **NEXT = P3**. Pass 3 stays blocked. |
 | 2026-08-24 | P1 follow-up: 6px WPF side strips match caption at the top so the title bar is flush. Living **NEXT = P2**. |
 | 2026-08-24 | P1 follow-up: caption full-bleeds on resize (outer `1fr` tracks). Living **NEXT = P2**. |

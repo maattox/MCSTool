@@ -57,4 +57,92 @@ public sealed class MotdFormattingTests
         Assert.True(MotdFormatting.IsSafePropertiesValue("§cHi\\n§aThere"));
         Assert.False(MotdFormatting.IsSafePropertiesValue("Hi\nThere"));
     }
+
+    [Fact]
+    public void Wrap_bold_closes_selection_with_reset()
+    {
+        const string text = "test MOTD message";
+        var start = text.IndexOf("MOTD", StringComparison.Ordinal);
+        var result = MotdFormatting.WrapSpan(text, start, start + 4, 'l');
+        Assert.Equal("test §lMOTD§r message", result.Text);
+        Assert.Equal("MOTD", result.Text[result.InnerStart..result.InnerEnd]);
+    }
+
+    [Fact]
+    public void Wrap_empty_selection_puts_caret_between_code_and_reset()
+    {
+        const string text = "test MOTD message";
+        var at = text.IndexOf("MOTD", StringComparison.Ordinal);
+        var result = MotdFormatting.WrapSpan(text, at, at, 'l');
+        Assert.Equal("test §l§rMOTD message", result.Text);
+        Assert.Equal(at + 2, result.InnerStart);
+        Assert.Equal(at + 2, result.InnerEnd);
+    }
+
+    [Fact]
+    public void Wrap_inside_color_restores_outer_run()
+    {
+        const string text = "§ctest MOTD message";
+        var start = text.IndexOf("MOTD", StringComparison.Ordinal);
+        var result = MotdFormatting.WrapSpan(text, start, start + 4, 'l');
+        Assert.Equal("§ctest §lMOTD§r§c message", result.Text);
+
+        var empty = MotdFormatting.WrapSpan(text, start, start, 'l');
+        Assert.Equal("§ctest §l§r§cMOTD message", empty.Text);
+    }
+
+    [Fact]
+    public void Wrap_inside_color_and_bold_restores_both()
+    {
+        const string text = "§c§ltest MOTD message";
+        var start = text.IndexOf("MOTD", StringComparison.Ordinal);
+        var result = MotdFormatting.WrapSpan(text, start, start + 4, 'o');
+        Assert.Equal("§c§ltest §oMOTD§r§c§l message", result.Text);
+    }
+
+    [Fact]
+    public void Wrap_inside_hex_color_restores_hex()
+    {
+        var prefix = MotdFormatting.HexPrefix("123456");
+        var text = prefix + "test MOTD message";
+        var start = text.IndexOf("MOTD", StringComparison.Ordinal);
+        var result = MotdFormatting.WrapSpan(text, start, start + 4, 'l');
+        Assert.Equal(prefix + "test §lMOTD§r" + prefix + " message", result.Text);
+    }
+
+    [Fact]
+    public void Visible_length_ignores_section_and_hex_runs()
+    {
+        Assert.Equal(0, MotdFormatting.VisibleLength(""));
+        Assert.Equal(5, MotdFormatting.VisibleLength("§cHello"));
+        Assert.Equal(2, MotdFormatting.VisibleLength("§l§oHi"));
+        Assert.Equal(4, MotdFormatting.VisibleLength(MotdFormatting.HexPrefix("ffaa00") + "Gold"));
+    }
+
+    [Fact]
+    public void Line_counters_use_59_limit_and_too_long_suffix()
+    {
+        var motd = new string('a', 41) + "\\n" + new string('b', 60);
+        var metrics = MotdFormatting.MeasureListLines(motd);
+        Assert.Equal(2, metrics.Count);
+        Assert.Equal("line 1: 41/59", metrics[0].Label);
+        Assert.False(metrics[0].TooLong);
+        Assert.Equal("line 2: 60/59 — too long", metrics[1].Label);
+        Assert.True(metrics[1].TooLong);
+        Assert.Equal(MotdFormatting.ListLineVisibleLimit, metrics[0].Limit);
+    }
+
+    [Fact]
+    public void Line_counters_follow_BuildMotd_and_omit_name_split()
+    {
+        var named = MotdFormatting.MeasureIdentityLines("Friends SMP", "Weekend world");
+        Assert.Equal(2, named.Count);
+        Assert.Equal(11, named[0].Used);
+        Assert.Equal(13, named[1].Used);
+
+        var omitted = MotdFormatting.MeasureIdentityLines("Ignored", "§cHello\n§aWorld", omitName: true);
+        Assert.Equal(2, omitted.Count);
+        Assert.Equal("line 1: 5/59", omitted[0].Label);
+        Assert.Equal("line 2: 5/59", omitted[1].Label);
+    }
 }

@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 namespace McManager.Core.Services;
 
 /// <summary>
-/// Minecraft list MOTD helpers: paste normalize, <c>§</c> preview, vanilla color table.
+/// Minecraft list MOTD helpers: paste normalize, selection wrap, line metrics, <c>§</c> preview.
 /// Hex / <c>§x</c> is best-effort (Paper/Spigot 1.16+); Vanilla/Forge/Fabric ignore it.
 /// </summary>
 public static class MotdFormatting
@@ -24,6 +24,20 @@ public static class MotdFormatting
         bool Underline,
         bool Strikethrough,
         bool Obfuscated);
+
+    /// <summary>Result of wrapping a <c>[start, end)</c> span with a code and <c>§r</c>.</summary>
+    public readonly record struct MotdWrapResult(string Text, int InnerStart, int InnerEnd);
+
+    /// <summary>Per-line visible length vs the Java server-list cap (59).</summary>
+    public readonly record struct MotdLineMetric(
+        int LineNumber,
+        int Used,
+        int Limit,
+        bool TooLong,
+        string Label);
+
+    /// <summary>Java Edition server-list visible characters per MOTD line.</summary>
+    public const int ListLineVisibleLimit = 59;
 
     public static readonly IReadOnlyList<MotdColor> VanillaColors =
     [
@@ -57,6 +71,9 @@ public static class MotdFormatting
 
     private static readonly Dictionary<char, string> ColorByCode = VanillaColors
         .ToDictionary(c => c.Code, c => c.Hex);
+
+    private static readonly Dictionary<string, char> CodeByHex = VanillaColors
+        .ToDictionary(c => c.Hex, c => c.Code, StringComparer.OrdinalIgnoreCase);
 
     private static readonly Regex UnicodeSection = new(
         @"\\u00a7",
@@ -111,6 +128,89 @@ public static class MotdFormatting
         return ToSectionHex(h);
     }
 
+    /// <summary>
+    /// Wrap <c>[start, end)</c> with a vanilla color/format code and close with <c>§r</c>,
+    /// restoring the outer color/format so following text is unchanged. Empty range:
+    /// insert <c>§code</c> + <c>§r</c> (plus restore) with the caret between them
+    /// (<see cref="MotdWrapResult.InnerStart"/>).
+    /// </summary>
+    public static MotdWrapResult WrapSpan(string? text, int start, int end, char code)
+    {
+        var s = text ?? "";
+        var lo = Math.Clamp(Math.Min(start, end), 0, s.Length);
+        var hi = Math.Clamp(Math.Max(start, end), 0, s.Length);
+        var c = char.ToLowerInvariant(code);
+        if (!IsWrapCode(c))
+            return new MotdWrapResult(s, lo, hi);
+
+        var prefix = CodePrefix(c);
+        var suffix = Section + "r" + RestoreCodes(StyleAt(s, lo));
+        var inner = s[lo..hi];
+        var result = s[..lo] + prefix + inner + suffix + s[hi..];
+        var innerStart = lo + prefix.Length;
+        return new MotdWrapResult(result, innerStart, innerStart + inner.Length);
+    }
+
+    /// <summary>
+    /// Visible characters on one MOTD line. Ignores <c>§</c> / <c>&amp;</c> codes and
+    /// <c>§x</c> hex runs.
+    /// </summary>
+    public static int VisibleLength(string? line)
+    {
+        if (string.IsNullOrEmpty(line))
+            return 0;
+        var n = 0;
+        foreach (var run in ParseLine(line))
+            n += run.Text.Length;
+        return n;
+    }
+
+    public static string FormatLineCounter(int lineNumber, int used)
+    {
+        var label = $"line {lineNumber}: {used}/{ListLineVisibleLimit}";
+        if (used > ListLineVisibleLimit)
+            label += " — too long";
+        return label;
+    }
+
+    public static IReadOnlyList<string> SplitListLines(string? motdPropertiesValue)
+    {
+        var text = motdPropertiesValue ?? "";
+        return text
+            .Replace("\r\n", "\n", StringComparison.Ordinal)
+            .Replace('\r', '\n')
+            .Replace("\\n", "\n", StringComparison.Ordinal)
+            .Split('\n');
+    }
+
+    public static IReadOnlyList<MotdLineMetric> MeasureListLines(string? motdPropertiesValue)
+    {
+        var lines = SplitListLines(motdPropertiesValue);
+        var metrics = new MotdLineMetric[lines.Count];
+        for (var i = 0; i < lines.Count; i++)
+        {
+            var used = VisibleLength(lines[i]);
+            metrics[i] = new MotdLineMetric(
+                i + 1,
+                used,
+                ListLineVisibleLimit,
+                used > ListLineVisibleLimit,
+                FormatLineCounter(i + 1, used));
+        }
+
+        return metrics;
+    }
+
+    /// <summary>
+    /// Per-line counters for the combined list MOTD from
+    /// <see cref="ServerIdentityUx.BuildMotd"/>.
+    /// </summary>
+    public static IReadOnlyList<MotdLineMetric> MeasureIdentityLines(
+        string? serverName,
+        string? description,
+        bool omitName = false) =>
+        MeasureListLines(ServerIdentityUx.BuildMotd(serverName, description, omitName));
+
     /// <summary>True when the MOTD can be written as a single <c>server.properties</c> line.</summary>
     public static bool IsSafePropertiesValue(string motd) =>
         motd.IndexOf('\n') < 0 && motd.IndexOf('\r') < 0;
@@ -155,88 +255,157 @@ public static class MotdFormatting
     {
         var runs = new List<MotdRun>();
         var buf = new StringBuilder();
-        var color = "#FFFFFF";
-        var bold = false;
-        var italic = false;
-        var underline = false;
-        var strike = false;
-        var obf = false;
+        var style = MotdStyle.Default;
 
         void Flush()
         {
             if (buf.Length == 0)
                 return;
-            runs.Add(new MotdRun(buf.ToString(), color, bold, italic, underline, strike, obf));
+            runs.Add(new MotdRun(
+                buf.ToString(),
+                style.ColorHex,
+                style.Bold,
+                style.Italic,
+                style.Underline,
+                style.Strike,
+                style.Obf));
             buf.Clear();
         }
 
         for (var i = 0; i < line.Length; i++)
         {
-            var ch = line[i];
-            if ((ch == Section || ch == '&') && i + 1 < line.Length)
+            if (TryApplyCode(line, i, ref style, out var consumed))
             {
-                var code = char.ToLowerInvariant(line[i + 1]);
-                if (code == 'x')
-                {
-                    if (TryReadHexColor(line, i, out var hex, out var consumed))
-                    {
-                        Flush();
-                        color = hex;
-                        ResetFormats(ref bold, ref italic, ref underline, ref strike, ref obf);
-                        i += consumed - 1;
-                        continue;
-                    }
-                }
-
-                if (ColorByCode.TryGetValue(code, out var nextColor))
-                {
-                    Flush();
-                    color = nextColor;
-                    ResetFormats(ref bold, ref italic, ref underline, ref strike, ref obf);
-                    i++;
-                    continue;
-                }
-
-                if (code is 'l' or 'o' or 'n' or 'm' or 'k' or 'r')
-                {
-                    Flush();
-                    switch (code)
-                    {
-                        case 'l': bold = true; break;
-                        case 'o': italic = true; break;
-                        case 'n': underline = true; break;
-                        case 'm': strike = true; break;
-                        case 'k': obf = true; break;
-                        case 'r':
-                            color = "#FFFFFF";
-                            ResetFormats(ref bold, ref italic, ref underline, ref strike, ref obf);
-                            break;
-                    }
-
-                    i++;
-                    continue;
-                }
+                Flush();
+                i += consumed - 1;
+                continue;
             }
 
-            buf.Append(ch);
+            buf.Append(line[i]);
         }
 
         Flush();
         return runs;
     }
 
-    private static void ResetFormats(
-        ref bool bold,
-        ref bool italic,
-        ref bool underline,
-        ref bool strike,
-        ref bool obf)
+    private static bool IsWrapCode(char code) =>
+        ColorByCode.ContainsKey(code) || code is 'l' or 'o' or 'n' or 'm' or 'k' or 'r';
+
+    private static MotdStyle StyleAt(string text, int index)
     {
-        bold = false;
-        italic = false;
-        underline = false;
-        strike = false;
-        obf = false;
+        var style = MotdStyle.Default;
+        var limit = Math.Clamp(index, 0, text.Length);
+        for (var i = 0; i < limit; i++)
+        {
+            if (text[i] == '\n')
+            {
+                style = MotdStyle.Default;
+                continue;
+            }
+
+            if (TryApplyCode(text, i, ref style, out var consumed))
+                i += consumed - 1;
+        }
+
+        return style;
+    }
+
+    private static string RestoreCodes(MotdStyle style)
+    {
+        if (style.IsDefault)
+            return "";
+
+        var sb = new StringBuilder();
+        if (!style.ColorHex.Equals("#FFFFFF", StringComparison.OrdinalIgnoreCase))
+        {
+            if (CodeByHex.TryGetValue(style.ColorHex, out var code))
+                sb.Append(Section).Append(code);
+            else
+                sb.Append(HexPrefix(style.ColorHex.TrimStart('#')));
+        }
+
+        if (style.Bold)
+            sb.Append(Section).Append('l');
+        if (style.Italic)
+            sb.Append(Section).Append('o');
+        if (style.Underline)
+            sb.Append(Section).Append('n');
+        if (style.Strike)
+            sb.Append(Section).Append('m');
+        if (style.Obf)
+            sb.Append(Section).Append('k');
+        return sb.ToString();
+    }
+
+    private static bool TryApplyCode(string line, int i, ref MotdStyle style, out int consumed)
+    {
+        consumed = 0;
+        if (i + 1 >= line.Length)
+            return false;
+        var ch = line[i];
+        if (ch != Section && ch != '&')
+            return false;
+
+        var code = char.ToLowerInvariant(line[i + 1]);
+        if (code == 'x' && TryReadHexColor(line, i, out var hex, out consumed))
+        {
+            style.ColorHex = hex;
+            style.ResetFormats();
+            return true;
+        }
+
+        if (ColorByCode.TryGetValue(code, out var nextColor))
+        {
+            style.ColorHex = nextColor;
+            style.ResetFormats();
+            consumed = 2;
+            return true;
+        }
+
+        if (code is 'l' or 'o' or 'n' or 'm' or 'k' or 'r')
+        {
+            switch (code)
+            {
+                case 'l': style.Bold = true; break;
+                case 'o': style.Italic = true; break;
+                case 'n': style.Underline = true; break;
+                case 'm': style.Strike = true; break;
+                case 'k': style.Obf = true; break;
+                case 'r':
+                    style = MotdStyle.Default;
+                    break;
+            }
+
+            consumed = 2;
+            return true;
+        }
+
+        return false;
+    }
+
+    private struct MotdStyle
+    {
+        public string ColorHex;
+        public bool Bold;
+        public bool Italic;
+        public bool Underline;
+        public bool Strike;
+        public bool Obf;
+
+        public static MotdStyle Default => new() { ColorHex = "#FFFFFF" };
+
+        public readonly bool IsDefault =>
+            ColorHex.Equals("#FFFFFF", StringComparison.OrdinalIgnoreCase)
+            && !Bold && !Italic && !Underline && !Strike && !Obf;
+
+        public void ResetFormats()
+        {
+            Bold = false;
+            Italic = false;
+            Underline = false;
+            Strike = false;
+            Obf = false;
+        }
     }
 
     private static bool TryReadHexColor(string line, int at, out string hex, out int consumed)

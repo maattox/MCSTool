@@ -11,11 +11,11 @@ Single source of truth for **what to work on next**. Living plan files keep sect
 | **Plan** | [`V1-Operator-Notes-Follow-On-3-Plan.md`](V1-Operator-Notes-Follow-On-3-Plan.md) |
 | **Step** | **8.11** Operator-notes follow-on 3 |
 | **Sub-plan** | [`V1-Operator-Notes-Follow-On-3-Plan.md`](V1-Operator-Notes-Follow-On-3-Plan.md) |
-| **Sub-step** | P3 |
+| **Sub-step** | P4 |
 | **Status** | `ready` |
-| **Cursor mode** | agent |
+| **Cursor mode** | plan-first |
 
-Pin-row fill is **DONE**. Pass 3 stays **blocked** until this plan exits **and** the operator says so. Do **not** start Pass 3, Step **8.6.1**, or **9.1**. Pack-corpus P1–P3 is **DONE**; operator may seed `pack-tests/packs/` + sidecars and invoke `/pack-test-phase` in a **separate** chat.
+Pin-row fill and MOTD wrap/reset (Core) are **DONE**. Pass 3 stays **blocked** until this plan exits **and** the operator says so. Do **not** start Pass 3, Step **8.6.1**, or **9.1**. Pack-corpus P1–P3 is **DONE**; operator may seed `pack-tests/packs/` + sidecars and invoke `/pack-test-phase` in a **separate** chat.
 
 ## Design lock (implementing)
 
@@ -23,6 +23,7 @@ Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-De
 
 ## Completed recently
 
+- **2026-08-24** — Step **8.11 P3 DONE** (MOTD wrap-with-reset + 59-char line counters in Core). Living **NEXT = P4** (plan-first). Pass 3 **blocked**.
 - **2026-08-24** — Step **8.11 P2 DONE** (pin row 3×2 fills chrome; Hours left + Idle timeout from existing budget refresh). Living **NEXT = P3**. Pass 3 **blocked**.
 - **2026-08-24** — Step **8.11 P1 DONE** (caption `--caption-bg` + 1px `--border`; Manage / Setup / FirstRun). Living **NEXT = P2**. Pass 3 **blocked**.
 - **2026-08-24** — Step **8.11** inserted (caption contrast, pin-row fill, MOTD WYSIWYG). Living **NEXT = P1**. Pass 3 **blocked**.
