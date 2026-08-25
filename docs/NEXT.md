@@ -11,7 +11,7 @@ Single source of truth for **what to work on next**. Living plan files keep sect
 | **Plan** | [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.12** |
 | **Step** | **8.12** Manage sidebar redesign |
 | **Sub-plan** | [`V1-Manage-Sidebar-Redesign-Plan.md`](V1-Manage-Sidebar-Redesign-Plan.md) |
-| **Sub-step** | P2 |
+| **Sub-step** | P3 |
 | **Status** | `ready` |
 | **Cursor mode** | `agent` |
 
@@ -23,6 +23,7 @@ Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-De
 
 ## Completed recently
 
+- **2026-08-25** — Step **8.12 P2 DONE** (combined Start/Stop primary + Restart; four sidebar pins). Living **NEXT = P3**. Pass 3 **blocked**.
 - **2026-08-25** — Step **8.12 P1 DONE** (two-column Manage shell: sidebar | content, 1280 default / 920 min, icon-only Copy play IP, Overview/About placeholders). Living **NEXT = P2**. Pass 3 **blocked**.
 - **2026-08-25** — Step **8.12** inserted (Manage sidebar redesign). Living **NEXT = P1**. Pass 3 **blocked**.
 - **2026-08-24** — Step **8.11 P4 DONE** (MOTD WYSIWYG name + description; Minecraft-font preview; 59-char counters). Follow-on 3 **COMPLETE**. Pass 3 **blocked** until the operator says so.

@@ -199,6 +199,29 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public string RestartButtonLabel =>
         _powerAction == PowerActionKind.Restart ? "Restarting…" : "Restart";
 
+    public bool CanPrimaryPower =>
+        ManagePrimaryPowerChrome.IsEnabled(CanStart, CanStop);
+
+    public bool PrimaryPowerShowsStop =>
+        ManagePrimaryPowerChrome.ShowsStop(
+            CanStart,
+            CanStop,
+            _powerAction == PowerActionKind.Stop);
+
+    public string PrimaryPowerLabel =>
+        PrimaryPowerShowsStop ? StopButtonLabel : StartButtonLabel;
+
+    public string PrimaryPowerToolTip =>
+        PrimaryPowerShowsStop ? StopToolTip : StartToolTip;
+
+    public string PrimaryPowerIconClass =>
+        PrimaryPowerShowsStop ? "ti ti-player-stop" : "ti ti-player-play";
+
+    public string PrimaryPowerButtonClass =>
+        PrimaryPowerShowsStop
+            ? "mcm-action-btn mcm-action-btn-stop"
+            : "mcm-action-btn mcm-action-btn-start";
+
     public bool StatusIsBusy =>
         Status is "Starting…" or "Stopping…" or "Restarting…";
 
@@ -436,6 +459,15 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             return;
 
         await WakeGameServerAsync();
+    }
+
+    public Task PrimaryPowerAsync()
+    {
+        if (CanStart)
+            return StartAsync();
+        if (CanStop)
+            return StopAsync();
+        return Task.CompletedTask;
     }
 
     /// <summary>
@@ -933,6 +965,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(StartToolTip));
         OnPropertyChanged(nameof(StopToolTip));
         OnPropertyChanged(nameof(RestartToolTip));
+        OnPropertyChanged(nameof(CanPrimaryPower));
+        OnPropertyChanged(nameof(PrimaryPowerShowsStop));
+        OnPropertyChanged(nameof(PrimaryPowerToolTip));
+        OnPropertyChanged(nameof(PrimaryPowerButtonClass));
+        OnPropertyChanged(nameof(PrimaryPowerIconClass));
+        OnPropertyChanged(nameof(PrimaryPowerLabel));
     }
 
     private void NotifyPowerButtonCaptions()
@@ -941,6 +979,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(StopButtonLabel));
         OnPropertyChanged(nameof(RestartButtonLabel));
         OnPropertyChanged(nameof(StatusIsBusy));
+        OnPropertyChanged(nameof(PrimaryPowerShowsStop));
+        OnPropertyChanged(nameof(PrimaryPowerLabel));
+        OnPropertyChanged(nameof(PrimaryPowerIconClass));
+        OnPropertyChanged(nameof(PrimaryPowerButtonClass));
     }
 
     private enum SpendBrakeUiState

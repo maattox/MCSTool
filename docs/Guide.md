@@ -196,9 +196,9 @@ When everyone is done, click **Stop** (doorbell-aware). If you forget, idle time
 | See if friends can join | Left sidebar **Status** (`Running` / `Stopped`) |
 | How many are online | Left sidebar **Players** (`0` when Stopped; `X / Y` while Running) |
 | Copy the address | Left sidebar **Play IP** (copy icon) |
-| Wake / park the server | **Start** / **Stop** in the left sidebar (not raw Compute on Advanced) |
-| Restart Minecraft only | **Restart** beside Start/Stop (game VM must already be up) |
-| Hours vs budget | Six pinned cards in the left sidebar (today, this month, daily average, rollover, hours left, idle timeout) + **Usage** (**Hours**; expand **Detailed usage** for hours by UTC day; **Budget** to edit allowances) |
+| Wake / park the server | One **Start** / **Stop** button in the left sidebar (Start when the server is off, Stop when it is on; not raw Compute on Advanced) |
+| Restart Minecraft only | **Restart** beside that button (game VM must already be up) |
+| Hours vs budget | Four pinned cards in the left sidebar (today, rollover, this month %, idle timeout) + **Usage** (**Hours** still has daily average and hours left; expand **Detailed usage** for hours by UTC day; **Budget** to edit allowances) |
 | World zip download / replace / wipe | **Server → World** (Object Storage; ~9.5 GB backup soft cap; SSH live copy if the world is too large) |
 | Inspect mods / re-download imported pack | **Server → Modding** (mod list starts collapsed; original Setup file on this PC; not a zip of server mods) |
 | Reinstall from a new pack | **Server → Change pack** |
@@ -209,7 +209,7 @@ When everyone is done, click **Stop** (doorbell-aware). If you forget, idle time
 | Turn idle timer off / idle timeout / change server size / delete the stack | **Advanced → Danger** |
 | Program settings / About / notifications | Top-right **bell**, **gear**, and **menu** (same bar as min / max / close) |
 
-The left sidebar holds **Status**, **Play IP**, **Players**, Start / Stop / Restart, and **six** pin cards: today’s uptime, this month, daily average, rollover bank, hours left this month, and idle timeout. They refresh from the same hours budget as the **Usage** tab (no extra fetch). Hours left is the month’s remaining cap — not the rollover bank. Idle timeout is the configured empty-server stop (edit it on **Usage → Budget** or **Advanced → Danger**). The large pane on the right is the current tab. Overview and About are placeholders until later steps.
+The left sidebar holds **Status**, **Play IP**, **Players**, one **Start** / **Stop** button plus **Restart**, and **four** pin cards: today’s uptime, rollover bank, this month (percent of the monthly cap), and idle timeout. They refresh from the same hours budget as the **Usage** tab (no extra fetch). Daily average and hours left stay on **Usage** — hours left is the month’s remaining cap, not the rollover bank. Idle timeout is the configured empty-server stop (edit it on **Usage → Budget** or **Advanced → Danger**). The large pane on the right is the current tab. Overview and About are placeholders until later steps.
 
 Each Manager tab **remembers its own scroll position** when you switch away and back. A tab you have not opened yet starts at the top. The sidebar list is **Overview**, **Whitelist**, **Server**, **Console**, **Usage**, **Advanced**, **Troubleshooting**, **About**. Manager opens on **Whitelist**. **Server** uses inner tabs (**Identity**, **World**, **Modding**, **Change pack**) so the active pane fits the window; the server-side mod list starts collapsed.
 

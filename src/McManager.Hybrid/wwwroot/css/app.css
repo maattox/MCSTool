@@ -668,6 +668,7 @@ button.mcm-btn-disabled:hover {
     font-size: 12px;
     min-height: 40px;
     gap: 4px;
+    white-space: nowrap;
 }
 
 .mcm-power-wrap {
@@ -675,8 +676,23 @@ button.mcm-btn-disabled:hover {
     display: flex;
 }
 
+.mcm-power-wrap-primary {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.mcm-power-wrap-restart {
+    flex: 0 0 auto;
+}
+
 .mcm-power-wrap .mcm-action-btn {
     width: 100%;
+}
+
+.mcm-power-wrap-restart .mcm-action-btn {
+    width: auto;
+    padding-left: 10px;
+    padding-right: 10px;
 }
 
 .mcm-action-btn {

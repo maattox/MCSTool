@@ -152,25 +152,16 @@
         </section>
 
         <div class="mcm-power-row">
-            <span class="mcm-power-wrap" title="@Vm.StartToolTip">
+            <span class="mcm-power-wrap mcm-power-wrap-primary" title="@Vm.PrimaryPowerToolTip">
                 <button type="button"
-                        class="mcm-action-btn mcm-action-btn-start"
-                        disabled="@(!Vm.CanStart)"
-                        @onclick="Vm.StartAsync">
-                    <i class="ti ti-player-play" aria-hidden="true"></i>
-                    @Vm.StartButtonLabel
+                        class="@Vm.PrimaryPowerButtonClass"
+                        disabled="@(!Vm.CanPrimaryPower)"
+                        @onclick="Vm.PrimaryPowerAsync">
+                    <i class="@Vm.PrimaryPowerIconClass" aria-hidden="true"></i>
+                    @Vm.PrimaryPowerLabel
                 </button>
             </span>
-            <span class="mcm-power-wrap" title="@Vm.StopToolTip">
-                <button type="button"
-                        class="mcm-action-btn mcm-action-btn-stop"
-                        disabled="@(!Vm.CanStop)"
-                        @onclick="Vm.StopAsync">
-                    <i class="ti ti-player-stop" aria-hidden="true"></i>
-                    @Vm.StopButtonLabel
-                </button>
-            </span>
-            <span class="mcm-power-wrap" title="@Vm.RestartToolTip">
+            <span class="mcm-power-wrap mcm-power-wrap-restart" title="@Vm.RestartToolTip">
                 <button type="button"
                         class="mcm-action-btn mcm-action-btn-restart"
                         disabled="@(!Vm.CanRestart)"
@@ -203,42 +194,6 @@
             </div>
             <div class="mcm-statcard">
                 <div class="mcm-stat-label">
-                    This month
-                    <button type="button" class="mcm-help" title="@Vm.PinMonthHelp">
-                        <i class="ti ti-help" aria-hidden="true"></i>
-                        <span class="sr-only">About this month</span>
-                    </button>
-                </div>
-                <div class="mcm-stat-metrics">
-                    <div class="mcm-stat-line">
-                        <span class="mcm-stat-value @(IsPlaceholder(Vm.PinMonthValue) ? "is-placeholder" : null)">@Vm.PinMonthValue</span>
-                        <span class="mcm-stat-hint">@(string.IsNullOrWhiteSpace(Vm.PinMonthHint) ? "—" : Vm.PinMonthHint)</span>
-                    </div>
-                    <div class="mcm-mini-bar" aria-hidden="true">
-                        <div class="mcm-mini-bar-fill" style="width: @ToPercent(Vm.PinMonthFraction)"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="mcm-statcard">
-                <div class="mcm-stat-label">
-                    Daily average
-                    <button type="button" class="mcm-help" title="@Vm.PinAvgHelp">
-                        <i class="ti ti-help" aria-hidden="true"></i>
-                        <span class="sr-only">About daily average</span>
-                    </button>
-                </div>
-                <div class="mcm-stat-metrics">
-                    <div class="mcm-stat-line">
-                        <span class="mcm-stat-value @(IsPlaceholder(Vm.PinAvgValue) ? "is-placeholder" : null)">@Vm.PinAvgValue</span>
-                        <span class="mcm-stat-hint">@(string.IsNullOrWhiteSpace(Vm.PinAvgHint) ? "—" : Vm.PinAvgHint)</span>
-                    </div>
-                    <div class="mcm-mini-bar" aria-hidden="true">
-                        <div class="mcm-mini-bar-fill" style="width: @ToPercent(Vm.PinAvgFraction)"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="mcm-statcard">
-                <div class="mcm-stat-label">
                     Rollover bank
                     <button type="button" class="mcm-help" title="@Vm.PinRolloverHelp">
                         <i class="ti ti-help" aria-hidden="true"></i>
@@ -253,19 +208,19 @@
             </div>
             <div class="mcm-statcard">
                 <div class="mcm-stat-label">
-                    @Vm.PinRemainingLabel
-                    <button type="button" class="mcm-help" title="@Vm.PinRemainingHelp">
+                    This month
+                    <button type="button" class="mcm-help" title="@Vm.PinMonthHelp">
                         <i class="ti ti-help" aria-hidden="true"></i>
-                        <span class="sr-only">About hours left this month</span>
+                        <span class="sr-only">About this month</span>
                     </button>
                 </div>
                 <div class="mcm-stat-metrics">
                     <div class="mcm-stat-line">
-                        <span class="mcm-stat-value @(IsPlaceholder(Vm.PinRemainingValue) ? "is-placeholder" : null)">@Vm.PinRemainingValue</span>
-                        <span class="mcm-stat-hint">@(string.IsNullOrWhiteSpace(Vm.PinRemainingHint) ? "—" : Vm.PinRemainingHint)</span>
+                        <span class="mcm-stat-value @(IsPlaceholder(Vm.PinMonthValue) ? "is-placeholder" : null)">@Vm.PinMonthValue</span>
+                        <span class="mcm-stat-hint">@(string.IsNullOrWhiteSpace(Vm.PinMonthHint) ? "—" : Vm.PinMonthHint)</span>
                     </div>
                     <div class="mcm-mini-bar" aria-hidden="true">
-                        <div class="mcm-mini-bar-fill" style="width: @ToPercent(Vm.PinRemainingFraction)"></div>
+                        <div class="mcm-mini-bar-fill" style="width: @ToPercent(Vm.PinMonthFraction)"></div>
                     </div>
                 </div>
             </div>
