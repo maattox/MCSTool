@@ -253,6 +253,39 @@
                     </div>
                 </div>
             </div>
+            <div class="mcm-statcard">
+                <div class="mcm-stat-label">
+                    @Vm.PinRemainingLabel
+                    <button type="button" class="mcm-help" title="@Vm.PinRemainingHelp">
+                        <i class="ti ti-help" aria-hidden="true"></i>
+                        <span class="sr-only">About hours left this month</span>
+                    </button>
+                </div>
+                <div class="mcm-stat-metrics">
+                    <div class="mcm-stat-line">
+                        <span class="mcm-stat-value @(IsPlaceholder(Vm.PinRemainingValue) ? "is-placeholder" : null)">@Vm.PinRemainingValue</span>
+                        <span class="mcm-stat-hint">@(string.IsNullOrWhiteSpace(Vm.PinRemainingHint) ? "—" : Vm.PinRemainingHint)</span>
+                    </div>
+                    <div class="mcm-mini-bar" aria-hidden="true">
+                        <div class="mcm-mini-bar-fill" style="width: @ToPercent(Vm.PinRemainingFraction)"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="mcm-statcard">
+                <div class="mcm-stat-label">
+                    Idle timeout
+                    <button type="button" class="mcm-help" title="@Vm.PinIdleHelp">
+                        <i class="ti ti-help" aria-hidden="true"></i>
+                        <span class="sr-only">About idle timeout</span>
+                    </button>
+                </div>
+                <div class="mcm-stat-metrics">
+                    <div class="mcm-stat-line">
+                        <span class="mcm-stat-value @(IsPlaceholder(Vm.PinIdleValue) ? "is-placeholder" : null)">@Vm.PinIdleValue</span>
+                        <span class="mcm-stat-hint">@(string.IsNullOrWhiteSpace(Vm.PinIdleHint) ? "—" : Vm.PinIdleHint)</span>
+                    </div>
+                </div>
+            </div>
             </div>
         </div>
     </section>

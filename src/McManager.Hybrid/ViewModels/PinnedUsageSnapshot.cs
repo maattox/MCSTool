@@ -25,12 +25,25 @@ public sealed class PinnedUsageSnapshot
     public string RolloverHint { get; init; } = "";
     public bool RolloverPositive { get; init; }
 
+    public string RemainingLabel { get; init; } = AlwaysOnCapableCopy.RemainingHoursLabel(false);
+    public string RemainingValue { get; init; } = "—";
+    public string RemainingHint { get; init; } = "";
+    public double RemainingFraction { get; init; }
+
+    public string IdleValue { get; init; } = "—";
+    public string IdleHint { get; init; } = "";
+
     public string TodayHelp { get; init; } = AlwaysOnCapableCopy.PinTodayHelp(false);
     public string MonthHelp { get; init; } = AlwaysOnCapableCopy.PinMonthHelp(false);
     public string AvgHelp { get; init; } = AlwaysOnCapableCopy.PinAvgHelp(false);
     public string RolloverHelp { get; init; } = AlwaysOnCapableCopy.PinRolloverHelp(false);
+    public string RemainingHelp { get; init; } = AlwaysOnCapableCopy.PinRemainingHelp(false);
+    public string IdleHelp { get; init; } = AlwaysOnCapableCopy.PinIdleHelp(false);
 
-    public static PinnedUsageSnapshot FromReport(BudgetReport report, double shapeOcpus)
+    public static PinnedUsageSnapshot FromReport(
+        BudgetReport report,
+        double shapeOcpus,
+        int idleTimeoutMinutes)
     {
         var shape = shapeOcpus > 0 ? shapeOcpus : 4;
         var alwaysOn = AlwaysOnCapableCopy.ForShape(shape);
@@ -42,6 +55,8 @@ public sealed class PinnedUsageSnapshot
             : 0;
         // Closed-day unused allowance only — not (monthly target − used).
         var rolloverHours = report.LeftoverOcpu / shape;
+        var remainingHours = Math.Max(0, report.MonthlyOcpuTarget - report.MonthOcpu) / shape;
+        var idleMinutes = idleTimeoutMinutes > 0 ? idleTimeoutMinutes : 15;
 
         return new PinnedUsageSnapshot
         {
@@ -57,10 +72,18 @@ public sealed class PinnedUsageSnapshot
             RolloverValue = $"{(rolloverHours >= 0 ? "+" : "")}{rolloverHours:F1}h",
             RolloverHint = "unused hours from earlier days",
             RolloverPositive = rolloverHours > 0.05,
+            RemainingLabel = AlwaysOnCapableCopy.RemainingHoursLabel(alwaysOn),
+            RemainingValue = $"{remainingHours:F1}h",
+            RemainingHint = AlwaysOnCapableCopy.PinRemainingHint(alwaysOn),
+            RemainingFraction = 1 - monthPct,
+            IdleValue = $"{idleMinutes} min",
+            IdleHint = AlwaysOnCapableCopy.PinIdleHint(alwaysOn),
             TodayHelp = AlwaysOnCapableCopy.PinTodayHelp(alwaysOn),
             MonthHelp = AlwaysOnCapableCopy.PinMonthHelp(alwaysOn),
             AvgHelp = AlwaysOnCapableCopy.PinAvgHelp(alwaysOn),
             RolloverHelp = AlwaysOnCapableCopy.PinRolloverHelp(alwaysOn),
+            RemainingHelp = AlwaysOnCapableCopy.PinRemainingHelp(alwaysOn),
+            IdleHelp = AlwaysOnCapableCopy.PinIdleHelp(alwaysOn),
         };
     }
 }

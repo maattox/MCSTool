@@ -70,5 +70,21 @@ public static class AlwaysOnCapableCopy
     public static string PinRolloverHelp(bool alwaysOnCapable) =>
         alwaysOnCapable
             ? "Unused daily hours saved from earlier days this month."
-            : "Unused daily hours saved from earlier days this month. This is not the hours still left in the month — that remaining figure is on the Usage tab.";
+            : "Unused daily hours saved from earlier days this month. This is not the hours still left in the month — that remaining figure is the Hours left pin.";
+
+    public static string PinRemainingHint(bool alwaysOnCapable) =>
+        alwaysOnCapable ? "still counted" : "not rollover";
+
+    public static string PinRemainingHelp(bool alwaysOnCapable) =>
+        alwaysOnCapable
+            ? "Wall-clock hours still available this month. This smaller size can usually stay on all month; hours are still counted. This is not the rollover bank."
+            : "Wall-clock hours still in this month’s cap — not the rollover bank. Details and edits are on the Usage tab.";
+
+    public static string PinIdleHint(bool alwaysOnCapable) =>
+        alwaysOnCapable ? "empty server" : "empty / not running";
+
+    public static string PinIdleHelp(bool alwaysOnCapable) =>
+        alwaysOnCapable
+            ? "How long the server can sit empty before it stops. Daily-cap warnings are uncommon on this size. Change this on Usage → Budget or Advanced → Danger."
+            : "How long the server can sit empty (or with Minecraft not running) before it stops. Change this on Usage → Budget or Advanced → Danger.";
 }

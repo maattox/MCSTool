@@ -9,8 +9,8 @@ namespace McManager.Hybrid.ViewModels;
 
 /// <summary>
 /// Usage tab: dashboard, budget edit/publish, ~2 min poll while the tab is alive.
-/// Does not touch manage-chrome power-in-flight. Remaining-in-month stays here,
-/// not on the rollover pin.
+/// Does not touch manage-chrome power-in-flight. Remaining-in-month is also on the
+/// Hours left pin — not the rollover pin.
 /// </summary>
 public sealed partial class UsageViewModel : ObservableObject, IDisposable
 {
@@ -335,7 +335,7 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
                 budget.SoftOcpuCap,
                 budget.SoftGbCap);
 
-            ApplyReport(report, budget.ShapeOcpus);
+            ApplyReport(report, budget.ShapeOcpus, budget.IdleTimeoutMinutes);
             LastRefreshDisplay = _clock.UtcNow.ToLocalTime().ToString("HH:mm:ss");
             var refreshNote = string.IsNullOrWhiteSpace(snap.Notes)
                 ? $"Refreshed at {LastRefreshDisplay}."
@@ -352,7 +352,7 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
         }
     }
 
-    private void ApplyReport(BudgetReport report, double shapeOcpus)
+    private void ApplyReport(BudgetReport report, double shapeOcpus, int idleTimeoutMinutes)
     {
         MonthLabel = $"{report.Year}-{report.Month:D2} UTC ({report.DaysInMonth} days)";
         MonthlyTargetsDisplay =
@@ -391,7 +391,7 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
         RolloverHoursPositive = rolloverHours > 0.05;
         RolloverHelp = AlwaysOnCapableCopy.PinRolloverHelp(alwaysOn);
         DayRows = BuildDayRows(report);
-        CopyPins(PinnedUsageSnapshot.FromReport(report, shape));
+        CopyPins(PinnedUsageSnapshot.FromReport(report, shape, idleTimeoutMinutes));
     }
 
     private static IReadOnlyList<UsageDayDisplayRow> BuildDayRows(BudgetReport report)
@@ -435,10 +435,18 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
         _main.PinRolloverValue = snap.RolloverValue;
         _main.PinRolloverHint = snap.RolloverHint;
         _main.PinRolloverPositive = snap.RolloverPositive;
+        _main.PinRemainingLabel = snap.RemainingLabel;
+        _main.PinRemainingValue = snap.RemainingValue;
+        _main.PinRemainingHint = snap.RemainingHint;
+        _main.PinRemainingFraction = snap.RemainingFraction;
+        _main.PinIdleValue = snap.IdleValue;
+        _main.PinIdleHint = snap.IdleHint;
         _main.PinTodayHelp = snap.TodayHelp;
         _main.PinMonthHelp = snap.MonthHelp;
         _main.PinAvgHelp = snap.AvgHelp;
         _main.PinRolloverHelp = snap.RolloverHelp;
+        _main.PinRemainingHelp = snap.RemainingHelp;
+        _main.PinIdleHelp = snap.IdleHelp;
     }
 
     private double ResolveShapeOcpus(double shapeOcpus)
@@ -465,7 +473,7 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
             budget.MonthlyGbTarget,
             budget.SoftOcpuCap,
             budget.SoftGbCap);
-        ApplyReport(report, budget.ShapeOcpus);
+        ApplyReport(report, budget.ShapeOcpus, budget.IdleTimeoutMinutes);
     }
 
     private void SeedEditFromLocal() => ApplyBudgetToEdit(LocalBudget());

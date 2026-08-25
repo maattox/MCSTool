@@ -198,7 +198,7 @@ When everyone is done, click **Stop** (doorbell-aware). If you forget, idle time
 | Copy the address | Top bar **Play IP** |
 | Wake / park the server | **Start** / **Stop** (not raw Compute on Advanced) |
 | Restart Minecraft only | **Restart** (game VM must already be up) |
-| Hours vs budget | Pinned usage cards + **Usage** (**Hours**; expand **Detailed usage** for hours by UTC day; **Budget** to edit allowances) |
+| Hours vs budget | Six pinned cards (today, this month, daily average, rollover, hours left, idle timeout) + **Usage** (**Hours**; expand **Detailed usage** for hours by UTC day; **Budget** to edit allowances) |
 | World zip download / replace / wipe | **Server → World** (Object Storage; ~9.5 GB backup soft cap; SSH live copy if the world is too large) |
 | Inspect mods / re-download imported pack | **Server → Modding** (mod list starts collapsed; original Setup file on this PC; not a zip of server mods) |
 | Reinstall from a new pack | **Server → Change pack** |
@@ -208,6 +208,8 @@ When everyone is done, click **Stop** (doorbell-aware). If you forget, idle time
 | Technical VM / doorbell state | **Advanced** |
 | Turn idle timer off / idle timeout / change server size / delete the stack | **Advanced → Danger** |
 | Program settings / About / notifications | Top-right **bell**, **gear**, and **menu** (same bar as min / max / close) |
+
+The pin row next to **Status** fills the rest of the top bar with **six** cards: today’s uptime, this month, daily average, rollover bank, hours left this month, and idle timeout. They refresh from the same hours budget as the **Usage** tab (no extra fetch). Hours left is the month’s remaining cap — not the rollover bank. Idle timeout is the configured empty-server stop (edit it on **Usage → Budget** or **Advanced → Danger**).
 
 Each Manager tab **remembers its own scroll position** when you switch away and back. A tab you have not opened yet starts at the top. Left to right the tabs are **Whitelist**, **Server**, **Console**, **Usage**, **Advanced**, **Troubleshooting**. **Server** uses inner tabs (**Identity**, **World**, **Modding**, **Change pack**) so the active pane fits the window; the server-side mod list starts collapsed.
 

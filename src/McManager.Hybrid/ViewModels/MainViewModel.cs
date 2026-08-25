@@ -140,6 +140,30 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private string _pinRolloverHelp = AlwaysOnCapableCopy.PinRolloverHelp(false);
 
     [ObservableProperty]
+    private string _pinRemainingLabel = AlwaysOnCapableCopy.RemainingHoursLabel(false);
+
+    [ObservableProperty]
+    private string _pinRemainingValue = Placeholder;
+
+    [ObservableProperty]
+    private string _pinRemainingHint = "";
+
+    [ObservableProperty]
+    private double _pinRemainingFraction;
+
+    [ObservableProperty]
+    private string _pinRemainingHelp = AlwaysOnCapableCopy.PinRemainingHelp(false);
+
+    [ObservableProperty]
+    private string _pinIdleValue = Placeholder;
+
+    [ObservableProperty]
+    private string _pinIdleHint = "";
+
+    [ObservableProperty]
+    private string _pinIdleHelp = AlwaysOnCapableCopy.PinIdleHelp(false);
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanConfirmSpendBrakeUnlock))]
     private string _spendBrakeTypedConfirm = "";
 
@@ -975,7 +999,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             budget.MonthlyGbTarget,
             budget.SoftOcpuCap,
             budget.SoftGbCap);
-        ApplyPinnedUsage(PinnedUsageSnapshot.FromReport(report, ResolveShapeOcpus(budget.ShapeOcpus)));
+        ApplyPinnedUsage(PinnedUsageSnapshot.FromReport(
+            report,
+            ResolveShapeOcpus(budget.ShapeOcpus),
+            budget.IdleTimeoutMinutes));
     }
 
     private PinnedUsageSnapshot BuildLocalFallbackPins()
@@ -987,7 +1014,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             budget.MonthlyGbTarget,
             budget.SoftOcpuCap,
             budget.SoftGbCap);
-        return PinnedUsageSnapshot.FromReport(report, ResolveShapeOcpus(budget.ShapeOcpus));
+        return PinnedUsageSnapshot.FromReport(
+            report,
+            ResolveShapeOcpus(budget.ShapeOcpus),
+            budget.IdleTimeoutMinutes);
     }
 
     private double ResolveShapeOcpus(double shapeOcpus)
@@ -1013,10 +1043,18 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         PinRolloverValue = snap.RolloverValue;
         PinRolloverHint = snap.RolloverHint;
         PinRolloverPositive = snap.RolloverPositive;
+        PinRemainingLabel = snap.RemainingLabel;
+        PinRemainingValue = snap.RemainingValue;
+        PinRemainingHint = snap.RemainingHint;
+        PinRemainingFraction = snap.RemainingFraction;
+        PinIdleValue = snap.IdleValue;
+        PinIdleHint = snap.IdleHint;
         PinTodayHelp = snap.TodayHelp;
         PinMonthHelp = snap.MonthHelp;
         PinAvgHelp = snap.AvgHelp;
         PinRolloverHelp = snap.RolloverHelp;
+        PinRemainingHelp = snap.RemainingHelp;
+        PinIdleHelp = snap.IdleHelp;
     }
 
     private void ShowToast(string message, bool isError, bool? autoHide = null)
