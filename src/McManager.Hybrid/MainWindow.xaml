@@ -10,9 +10,9 @@
         WindowStyle="None"
         ResizeMode="CanResize"
         Height="720"
-        Width="1040"
+        Width="1280"
         MinHeight="560"
-        MinWidth="1040"
+        MinWidth="920"
         Background="#161A21">
     <WindowChrome.WindowChrome>
         <WindowChrome CaptionHeight="0"

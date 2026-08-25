@@ -1,6 +1,6 @@
 # Workflow state
 
-**Updated:** 2026-08-24
+**Updated:** 2026-08-25
 
 Single source of truth for **what to work on next**. Living plan files keep section history; agents update **this file** when advancing work.
 
@@ -8,21 +8,23 @@ Single source of truth for **what to work on next**. Living plan files keep sect
 
 | Field | Value |
 |-------|-------|
-| **Plan** | [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.5.2** |
-| **Step** | **8.5.2** Execute QA passes |
-| **Sub-plan** | [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) |
-| **Sub-step** | Pass 3 |
-| **Status** | `blocked` |
-| **Cursor mode** | — |
+| **Plan** | [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.12** |
+| **Step** | **8.12** Manage sidebar redesign |
+| **Sub-plan** | [`V1-Manage-Sidebar-Redesign-Plan.md`](V1-Manage-Sidebar-Redesign-Plan.md) |
+| **Sub-step** | P2 |
+| **Status** | `ready` |
+| **Cursor mode** | `agent` |
 
-Step **8.11** (operator-notes follow-on 3) is **DONE**. Pass 3 stays **blocked** until the operator says so. Do **not** start Pass 3, Step **8.6.1**, or **9.1**. Pack-corpus P1–P3 is **DONE**; operator may seed `pack-tests/packs/` + sidecars and invoke `/pack-test-phase` in a **separate** chat.
+Step **8.12** lives on branch **`UI-redesign`**. Pass 3 stays **blocked** until **8.12** exits **and** the operator says so. Do **not** start Pass 3, Step **8.6.1**, or **9.1**. Pack-corpus P1–P3 is **DONE**; operator may seed `pack-tests/packs/` + sidecars and invoke `/pack-test-phase` in a **separate** chat.
 
 ## Design lock (implementing)
 
-Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) — **implemented** (Step **8.9** P1–P2). Step **8.5.2** QA Pass 3 stays **blocked** until the operator starts it.
+Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) — **implemented** (Step **8.9** P1–P2). Manage sidebar topology: [`assets/UI-design-mockup.png`](../assets/UI-design-mockup.png) + Scrutiny in the 8.12 plan. Step **8.5.2** QA Pass 3 stays **blocked** until **8.12** exits and the operator starts it.
 
 ## Completed recently
 
+- **2026-08-25** — Step **8.12 P1 DONE** (two-column Manage shell: sidebar | content, 1280 default / 920 min, icon-only Copy play IP, Overview/About placeholders). Living **NEXT = P2**. Pass 3 **blocked**.
+- **2026-08-25** — Step **8.12** inserted (Manage sidebar redesign). Living **NEXT = P1**. Pass 3 **blocked**.
 - **2026-08-24** — Step **8.11 P4 DONE** (MOTD WYSIWYG name + description; Minecraft-font preview; 59-char counters). Follow-on 3 **COMPLETE**. Pass 3 **blocked** until the operator says so.
 - **2026-08-24** — Step **8.11 P3 DONE** (MOTD wrap-with-reset + 59-char line counters in Core). Living **NEXT = P4** (plan-first). Pass 3 **blocked**.
 - **2026-08-24** — Step **8.11 P2 DONE** (pin row 3×2 fills chrome; Hours left + Idle timeout from existing budget refresh). Living **NEXT = P3**. Pass 3 **blocked**.

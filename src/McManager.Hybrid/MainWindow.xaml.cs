@@ -8,10 +8,16 @@ namespace McManager.Hybrid;
 public partial class MainWindow : Window
 {
     /// <summary>
-    /// CSS <c>--app-shell-width</c>: chrome row (1008) + 16px padding each side.
-    /// WindowStyle=None: this is the client width (no native caption frame).
+    /// Default WebView client width (~1280 CSS px). WindowStyle=None: XAML Width is
+    /// the outer window; 6px WPF strips sit outside the WebView.
     /// </summary>
-    public const double AppShellWidthDip = 1040;
+    public const double AppShellWidthDip = 1280;
+
+    /// <summary>
+    /// Smallest WebView client that still fits the Manage sidebar plus a usable
+    /// content pane. Must stay below <see cref="AppShellWidthDip"/> so resize is real.
+    /// </summary>
+    public const double AppShellMinWidthDip = 920;
 
     public MainWindow()
     {
@@ -36,7 +42,7 @@ public partial class MainWindow : Window
 
     private void FitWidthToShell()
     {
-        MinWidth = AppShellWidthDip;
+        MinWidth = AppShellMinWidthDip;
         Width = AppShellWidthDip;
     }
 
@@ -49,11 +55,11 @@ public partial class MainWindow : Window
         if (HostView.ActualWidth <= 0)
             return;
 
-        var nonClient = ActualWidth - HostView.ActualWidth;
-        var outer = AppShellWidthDip + Math.Max(0, nonClient);
-        if (outer > MinWidth)
-            MinWidth = outer;
-        if (Width + 0.5 < outer)
-            Width = outer;
+        var nonClient = Math.Max(0, ActualWidth - HostView.ActualWidth);
+        var minOuter = AppShellMinWidthDip + nonClient;
+        var defaultOuter = AppShellWidthDip + nonClient;
+        MinWidth = minOuter;
+        if (Width + 0.5 < defaultOuter)
+            Width = defaultOuter;
     }
 }
