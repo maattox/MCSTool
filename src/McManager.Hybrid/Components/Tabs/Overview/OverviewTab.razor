@@ -1,0 +1,184 @@
+@inject MainViewModel Vm
+@inject WhitelistViewModel Whitelist
+@inject ServerManagementViewModel Server
+@implements IDisposable
+
+<h1 class="sr-only">Overview</h1>
+<div class="mcm-overview">
+    <section class="mcm-section-card mcm-overview-status" aria-label="Live status">
+        <h2 class="mcm-overview-title">Live status</h2>
+        <div class="mcm-overview-status-grid">
+            <div class="mcm-srow">
+                <span class="mcm-slabel">Status</span>
+                <span class="mcm-sval @(StatusClass)" aria-live="polite">
+                    <span class="mcm-dot @(StatusDotClass)" aria-hidden="true"></span>
+                    @Vm.Status
+                </span>
+            </div>
+            <div class="mcm-srow">
+                <span class="mcm-slabel">Play IP</span>
+                <span class="mcm-sval @(Vm.HasPlayIp ? null : "is-placeholder")">
+                    <span class="mcm-play-ip">@Vm.PlayIp</span>
+                    <button type="button"
+                            class="mcm-copy-inline"
+                            disabled="@(!Vm.HasPlayIp)"
+                            title="@CopyPlayIpTitle"
+                            aria-label="@CopyPlayIpTitle"
+                            @onclick="Vm.CopyPlayIpAsync">
+                        <i class="ti ti-copy" aria-hidden="true"></i>
+                    </button>
+                </span>
+            </div>
+            <div class="mcm-srow">
+                <span class="mcm-slabel">Players</span>
+                <span class="mcm-sval @(IsPlaceholder(Vm.PlayersDisplay) ? "is-placeholder" : null)">@Vm.PlayersDisplay</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="mcm-section-card" aria-label="Whitelist">
+        <div class="mcm-overview-head">
+            <h2 class="mcm-overview-title">Whitelist</h2>
+            <span class="mcm-overview-count">@WhitelistCountLabel</span>
+        </div>
+        @if (Whitelist.Friends.Count == 0)
+        {
+            <p class="mcm-overview-empty">No IPs on the list yet.</p>
+        }
+        else
+        {
+            <ul class="mcm-overview-names">
+                @foreach (var friend in Whitelist.Friends)
+                {
+                    <li class="mcm-overview-name" title="@FriendLabel(friend)">@FriendLabel(friend)</li>
+                }
+            </ul>
+        }
+        <div class="mcm-overview-actions">
+            <button type="button" @onclick="OpenWhitelist">Manage IPs</button>
+        </div>
+    </section>
+
+    <section class="mcm-section-card" aria-label="Usage">
+        <h2 class="mcm-overview-title">Usage</h2>
+        <div class="mcm-overview-metrics">
+            <div class="mcm-overview-metric">
+                <span class="mcm-overview-metric-label">Today's uptime</span>
+                <span class="mcm-overview-metric-value @(IsPlaceholder(Vm.PinTodayValue) ? "is-placeholder" : null)">
+                    @Vm.PinTodayValue
+                    @if (!string.IsNullOrWhiteSpace(Vm.PinTodayHint))
+                    {
+                        <span class="mcm-overview-metric-hint">@Vm.PinTodayHint</span>
+                    }
+                </span>
+            </div>
+            <div class="mcm-overview-metric">
+                <span class="mcm-overview-metric-label">This month</span>
+                <span class="mcm-overview-metric-value @(IsPlaceholder(Vm.PinMonthValue) ? "is-placeholder" : null)">
+                    @Vm.PinMonthValue
+                    @if (!string.IsNullOrWhiteSpace(Vm.PinMonthHint))
+                    {
+                        <span class="mcm-overview-metric-hint">@Vm.PinMonthHint</span>
+                    }
+                </span>
+            </div>
+            <div class="mcm-overview-metric">
+                <span class="mcm-overview-metric-label">@Vm.PinRemainingLabel</span>
+                <span class="mcm-overview-metric-value @(IsPlaceholder(Vm.PinRemainingValue) ? "is-placeholder" : null)">
+                    @Vm.PinRemainingValue
+                    @if (!string.IsNullOrWhiteSpace(Vm.PinRemainingHint))
+                    {
+                        <span class="mcm-overview-metric-hint">@Vm.PinRemainingHint</span>
+                    }
+                </span>
+            </div>
+        </div>
+        <div class="mcm-overview-actions">
+            <button type="button" @onclick="OpenUsage">Open Usage</button>
+        </div>
+    </section>
+
+    <section class="mcm-section-card mcm-overview-identity" aria-label="Server identity">
+        <h2 class="mcm-overview-title">Server</h2>
+        <p class="mcm-overview-identity-name @(IsPlaceholder(Server.ServerNameDisplay) ? "is-placeholder" : null)">
+            @Server.ServerNameDisplay
+        </p>
+        <div class="mcm-overview-actions">
+            <button type="button" @onclick="OpenServer">Open Server</button>
+        </div>
+    </section>
+</div>
+
+@code {
+    [Parameter]
+    public EventCallback<string> OnOpenTab { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Vm.PropertyChanged += OnVmChanged;
+        Server.PropertyChanged += OnVmChanged;
+        Whitelist.PropertyChanged += OnVmChanged;
+        Whitelist.Friends.CollectionChanged += OnFriendsChanged;
+        await Server.EnsureIdentityLoadedAsync();
+    }
+
+    public void Dispose()
+    {
+        Vm.PropertyChanged -= OnVmChanged;
+        Server.PropertyChanged -= OnVmChanged;
+        Whitelist.PropertyChanged -= OnVmChanged;
+        Whitelist.Friends.CollectionChanged -= OnFriendsChanged;
+    }
+
+    private void OnVmChanged(object? sender, PropertyChangedEventArgs e) =>
+        _ = InvokeAsync(StateHasChanged);
+
+    private void OnFriendsChanged(object? sender, NotifyCollectionChangedEventArgs e) =>
+        _ = InvokeAsync(StateHasChanged);
+
+    private Task OpenWhitelist() => OnOpenTab.InvokeAsync("whitelist");
+
+    private Task OpenUsage() => OnOpenTab.InvokeAsync("usage");
+
+    private Task OpenServer() => OnOpenTab.InvokeAsync("server");
+
+    private string WhitelistCountLabel =>
+        Whitelist.Friends.Count == 1 ? "1 IP" : $"{Whitelist.Friends.Count} IPs";
+
+    private static string FriendLabel(FriendRowViewModel friend) =>
+        string.IsNullOrWhiteSpace(friend.Name) ? friend.Ip : friend.Name.Trim();
+
+    private string CopyPlayIpTitle =>
+        !Vm.HasPlayIp
+            ? "No play IP to copy."
+            : string.Equals(Vm.CopyPlayIpLabel, "copied", StringComparison.Ordinal)
+                ? "Play IP copied"
+                : "Copy play IP";
+
+    private static bool IsPlaceholder(string value) =>
+        string.IsNullOrWhiteSpace(value) || value == MainViewModel.Placeholder;
+
+    private string StatusClass
+    {
+        get
+        {
+            if (IsPlaceholder(Vm.Status))
+                return "is-placeholder";
+            if (Vm.StatusIsBusy)
+                return "is-busy";
+            return Vm.StatusIsRunning ? "is-running" : "is-stopped";
+        }
+    }
+
+    private string StatusDotClass
+    {
+        get
+        {
+            if (IsPlaceholder(Vm.Status))
+                return string.Empty;
+            if (Vm.StatusIsBusy)
+                return "is-busy";
+            return Vm.StatusIsRunning ? "is-running" : "is-stopped";
+        }
+    }
+}

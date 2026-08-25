@@ -1714,6 +1714,144 @@ button.mcm-btn-disabled:hover {
     gap: 8px;
 }
 
+.mcm-overview {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    align-items: stretch;
+}
+
+.mcm-overview-status,
+.mcm-overview-identity {
+    grid-column: 1 / -1;
+}
+
+.mcm-overview-title {
+    margin: 0 0 10px;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+}
+
+.mcm-overview-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0 0 10px;
+}
+
+.mcm-overview-head .mcm-overview-title {
+    margin: 0;
+}
+
+.mcm-overview-count {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+}
+
+.mcm-overview-status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 4px 20px;
+}
+
+.mcm-overview-status-grid .mcm-srow {
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 10px;
+    min-width: 0;
+}
+
+.mcm-overview-status-grid .mcm-play-ip {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mcm-overview-empty {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.mcm-overview-names {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 8px;
+    max-height: 4.6em;
+    overflow: hidden;
+}
+
+.mcm-overview-name {
+    max-width: 100%;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: var(--surface-1);
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mcm-overview-metrics {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.mcm-overview-metric {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    min-width: 0;
+}
+
+.mcm-overview-metric-label {
+    color: var(--text-muted);
+    font-size: 13px;
+    min-width: 0;
+}
+
+.mcm-overview-metric-value {
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mcm-overview-metric-value.is-placeholder,
+.mcm-overview-identity-name.is-placeholder {
+    color: var(--text-muted);
+}
+
+.mcm-overview-metric-hint {
+    margin-left: 6px;
+    color: var(--text-muted);
+}
+
+.mcm-overview-identity-name {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    overflow-wrap: anywhere;
+}
+
+.mcm-overview-actions {
+    margin-top: 14px;
+}
+
 .mcm-modal-title {
     font-size: 15px;
     font-weight: 500;

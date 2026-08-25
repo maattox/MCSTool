@@ -1,3 +1,4 @@
+@using McManager.Hybrid.Components.Tabs.Overview
 @using McManager.Hybrid.Components.Tabs.Whitelist
 @using McManager.Hybrid.Components.Tabs.Usage
 @using McManager.Hybrid.Components.Tabs.ServerManagement
@@ -296,9 +297,7 @@
                 @switch (_tab)
                 {
                     case "overview":
-                        <div class="mcm-placeholder">
-                            <p class="mcm-placeholder-copy">A read-only snapshot of this server will live here.</p>
-                        </div>
+                        <OverviewTab OnOpenTab="SelectTabAsync" />
                         break;
                     case "about":
                         <div class="mcm-about">
@@ -473,7 +472,7 @@
 </div>
 
 @code {
-    private string _tab = "whitelist";
+    private string _tab = "overview";
     private bool _serverTabCreated;
     private ElementReference _chromeOverlay;
     private ElementReference _noticePanel;

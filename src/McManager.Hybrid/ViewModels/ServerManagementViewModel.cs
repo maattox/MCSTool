@@ -59,6 +59,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     private bool _packReplaceRunning;
     private bool _opened;
     private bool _openInFlight;
+    private bool _identityLoaded;
 
     public ObservableCollection<WorldBackupInfo> Backups { get; } = [];
 
@@ -495,6 +496,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         BindFromHost();
         if (wasOpened)
             _ = EnsureOpenedAsync();
+        else
+            _ = EnsureIdentityLoadedAsync();
     }
 
     private void OnMainPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -548,6 +551,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         SelectedBackup = null;
         _currentBackupBytes = 0;
         _opened = false;
+        _identityLoaded = false;
         ResetModdingState();
 
         if (_config is not null)
@@ -598,6 +602,16 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         {
             _openInFlight = false;
         }
+    }
+
+    /// <summary>
+    /// Load MOTD / list name for Overview without opening the Server tab (no backup listing).
+    /// </summary>
+    public Task EnsureIdentityLoadedAsync()
+    {
+        if (_identityLoaded)
+            return Task.CompletedTask;
+        return LoadIdentityAsync();
     }
 
     private async Task RefreshCatalogAsync(bool setBusy)
@@ -1994,35 +2008,42 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
     private async Task LoadIdentityAsync()
     {
-        if (_chat is null)
+        try
         {
-            FillDefaultChatRows();
-            ApplyDefaultIconSet();
-            return;
-        }
+            if (_chat is null)
+            {
+                FillDefaultChatRows();
+                ApplyDefaultIconSet();
+                return;
+            }
 
-        var got = await _chat.GetAsync();
-        if (!got.Succeeded || got.Value is null)
+            var got = await _chat.GetAsync();
+            if (!got.Succeeded || got.Value is null)
+            {
+                IdentityStatus = got.Error ?? "Could not load server identity.";
+                FillDefaultChatRows();
+                ApplyDefaultIconSet();
+                return;
+            }
+
+            var doc = got.Value.Document;
+            IdentityName = doc.ServerName ?? "";
+            IdentityDescription = doc.Description ?? "";
+            IdentityMotdOmitName = doc.MotdOmitName;
+            ServerNameDisplay = ServerIdentityUx.DisplayName(IdentityName, _config?.Vm1.DisplayName);
+            ApplyChatRows(doc.ChatMessages);
+            _pendingIconPng = null;
+            _clearIcon = false;
+            ApplyIconSetFromPng(got.Value.IconPng);
+
+            IdentityStatus = got.Value.Present
+                ? ""
+                : "No saved identity yet — defaults are shown. Save to create the shared file.";
+        }
+        finally
         {
-            IdentityStatus = got.Error ?? "Could not load server identity.";
-            FillDefaultChatRows();
-            ApplyDefaultIconSet();
-            return;
+            _identityLoaded = true;
         }
-
-        var doc = got.Value.Document;
-        IdentityName = doc.ServerName ?? "";
-        IdentityDescription = doc.Description ?? "";
-        IdentityMotdOmitName = doc.MotdOmitName;
-        ServerNameDisplay = ServerIdentityUx.DisplayName(IdentityName, _config?.Vm1.DisplayName);
-        ApplyChatRows(doc.ChatMessages);
-        _pendingIconPng = null;
-        _clearIcon = false;
-        ApplyIconSetFromPng(got.Value.IconPng);
-
-        IdentityStatus = got.Value.Present
-            ? ""
-            : "No saved identity yet — defaults are shown. Save to create the shared file.";
     }
 
     private async Task<string> TryRefreshDoorIconsAsync()
