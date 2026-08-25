@@ -35,6 +35,36 @@ public sealed class MotdFormattingTests
     }
 
     [Fact]
+    public void Preview_applies_color_to_wrapped_span_not_text_before()
+    {
+        var lines = MotdFormatting.ToPreviewLines("test §4MOTD§r message");
+        Assert.Equal(3, lines[0].Count);
+        Assert.Equal("test ", lines[0][0].Text);
+        Assert.Equal("#FFFFFF", lines[0][0].ColorHex);
+        Assert.False(lines[0][0].Bold);
+        Assert.Equal("MOTD", lines[0][1].Text);
+        Assert.Equal("#AA0000", lines[0][1].ColorHex);
+        Assert.Equal(" message", lines[0][2].Text);
+        Assert.Equal("#FFFFFF", lines[0][2].ColorHex);
+
+        var html = MotdFormatting.ToPreviewHtml("test §4MOTD§r message");
+        Assert.Contains("style=\"color:#AA0000;", html, StringComparison.Ordinal);
+        var motdAt = html.IndexOf("MOTD", StringComparison.Ordinal);
+        var redAt = html.LastIndexOf("#AA0000", motdAt, StringComparison.Ordinal);
+        var testAt = html.IndexOf("test ", StringComparison.Ordinal);
+        Assert.True(redAt > testAt);
+        Assert.True(redAt < motdAt);
+    }
+
+    [Fact]
+    public void Preview_html_marks_bold_runs()
+    {
+        var html = MotdFormatting.ToPreviewHtml("test §lMOTD§r message");
+        Assert.Contains("mcm-motd-bold", html, StringComparison.Ordinal);
+        Assert.Contains("MOTD", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Preview_parses_section_x_hex()
     {
         var hex = MotdFormatting.HexPrefix("ffaa00");
@@ -108,6 +138,55 @@ public sealed class MotdFormattingTests
         var start = text.IndexOf("MOTD", StringComparison.Ordinal);
         var result = MotdFormatting.WrapSpan(text, start, start + 4, 'l');
         Assert.Equal(prefix + "test §lMOTD§r" + prefix + " message", result.Text);
+    }
+
+    [Fact]
+    public void Toggle_bold_second_click_unwraps_instead_of_stacking()
+    {
+        const string text = "test MOTD message";
+        var start = text.IndexOf("MOTD", StringComparison.Ordinal);
+        var wrapped = MotdFormatting.ToggleSpan(text, start, start + 4, 'l');
+        Assert.Equal("test §lMOTD§r message", wrapped.Text);
+
+        var again = MotdFormatting.ToggleSpan(wrapped.Text, wrapped.InnerStart, wrapped.InnerEnd, 'l');
+        Assert.Equal(text, again.Text);
+        Assert.Equal("MOTD", again.Text[again.InnerStart..again.InnerEnd]);
+    }
+
+    [Fact]
+    public void Toggle_empty_wrap_second_click_removes_hole()
+    {
+        const string text = "test MOTD message";
+        var at = text.IndexOf("MOTD", StringComparison.Ordinal);
+        var hole = MotdFormatting.ToggleSpan(text, at, at, 'l');
+        Assert.Equal("test §l§rMOTD message", hole.Text);
+
+        var again = MotdFormatting.ToggleSpan(hole.Text, hole.InnerStart, hole.InnerEnd, 'l');
+        Assert.Equal(text, again.Text);
+    }
+
+    [Fact]
+    public void Toggle_bold_inside_color_unwraps_cleanly()
+    {
+        const string text = "§ctest MOTD message";
+        var start = text.IndexOf("MOTD", StringComparison.Ordinal);
+        var wrapped = MotdFormatting.ToggleSpan(text, start, start + 4, 'l');
+        Assert.Equal("§ctest §lMOTD§r§c message", wrapped.Text);
+
+        var again = MotdFormatting.ToggleSpan(wrapped.Text, wrapped.InnerStart, wrapped.InnerEnd, 'l');
+        Assert.Equal(text, again.Text);
+    }
+
+    [Fact]
+    public void Toggle_same_color_unwraps()
+    {
+        const string text = "test MOTD message";
+        var start = text.IndexOf("MOTD", StringComparison.Ordinal);
+        var wrapped = MotdFormatting.ToggleSpan(text, start, start + 4, '4');
+        Assert.Equal("test §4MOTD§r message", wrapped.Text);
+
+        var again = MotdFormatting.ToggleSpan(wrapped.Text, wrapped.InnerStart, wrapped.InnerEnd, '4');
+        Assert.Equal(text, again.Text);
     }
 
     [Fact]

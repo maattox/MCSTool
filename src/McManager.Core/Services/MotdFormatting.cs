@@ -68,7 +68,7 @@ public static class MotdFormatting
         new('o', "Italic", "ti-italic"),
         new('n', "Underline", "ti-underline"),
         new('m', "Strikethrough", "ti-strikethrough"),
-        new('k', "Obfuscated", "ti-shuffle"),
+        new('k', "obfuscate", ""),
         new('r', "Reset", "ti-clear-all"),
     ];
 
@@ -152,6 +152,116 @@ public static class MotdFormatting
         var result = s[..lo] + prefix + inner + suffix + s[hi..];
         var innerStart = lo + prefix.Length;
         return new MotdWrapResult(result, innerStart, innerStart + inner.Length);
+    }
+
+    /// <summary>
+    /// Apply a color/format to <c>[start, end)</c>, or remove it when that span
+    /// is already wrapped with the same code (so a second Bold click does not
+    /// stack <c>§l§l…§r§l§r</c>). Reset always wraps.
+    /// </summary>
+    public static MotdWrapResult ToggleSpan(string? text, int start, int end, char code)
+    {
+        var s = text ?? "";
+        var lo = Math.Clamp(Math.Min(start, end), 0, s.Length);
+        var hi = Math.Clamp(Math.Max(start, end), 0, s.Length);
+        var c = char.ToLowerInvariant(code);
+        if (!IsWrapCode(c))
+            return new MotdWrapResult(s, lo, hi);
+        if (c == 'r')
+            return WrapSpan(s, lo, hi, c);
+
+        if (TryExactWrap(s, lo, hi, c, out var prefixLen, out var suffixLen))
+        {
+            var inner = s[lo..hi];
+            var result = s[..(lo - prefixLen)] + inner + s[(hi + suffixLen)..];
+            var innerStart = lo - prefixLen;
+            return new MotdWrapResult(result, innerStart, innerStart + inner.Length);
+        }
+
+        if (hi > lo && RangeFullyHas(s, lo, hi, c))
+            return RemoveCode(s, lo, hi, c);
+
+        return WrapSpan(s, lo, hi, c);
+    }
+
+    private static bool TryExactWrap(string s, int lo, int hi, char code, out int prefixLen, out int suffixLen)
+    {
+        prefixLen = 0;
+        suffixLen = 0;
+        var prefix = CodePrefix(code);
+        if (lo < prefix.Length)
+            return false;
+        if (!s.AsSpan(lo - prefix.Length, prefix.Length).SequenceEqual(prefix.AsSpan()))
+            return false;
+        var suffix = Section + "r" + RestoreCodes(StyleAt(s, lo - prefix.Length));
+        if (hi + suffix.Length > s.Length)
+            return false;
+        if (!s.AsSpan(hi, suffix.Length).SequenceEqual(suffix.AsSpan()))
+            return false;
+        prefixLen = prefix.Length;
+        suffixLen = suffix.Length;
+        return true;
+    }
+
+    private static bool RangeFullyHas(string s, int lo, int hi, char code)
+    {
+        var any = false;
+        for (var i = lo; i < hi;)
+        {
+            var probe = MotdStyle.Default;
+            if (TryApplyCode(s, i, ref probe, out var consumed))
+            {
+                i += consumed;
+                continue;
+            }
+
+            any = true;
+            if (!StyleHasCode(StyleAt(s, i), code))
+                return false;
+            i++;
+        }
+
+        return any;
+    }
+
+    private static MotdWrapResult RemoveCode(string s, int lo, int hi, char code)
+    {
+        var inner = s[lo..hi];
+        var open = Section + "r" + RestoreCodes(WithoutCode(StyleAt(s, lo), code));
+        var close = Section + "r" + RestoreCodes(StyleAt(s, hi));
+        var result = s[..lo] + open + inner + close + s[hi..];
+        var innerStart = lo + open.Length;
+        return new MotdWrapResult(result, innerStart, innerStart + inner.Length);
+    }
+
+    private static bool StyleHasCode(MotdStyle style, char code) =>
+        code switch
+        {
+            'l' => style.Bold,
+            'o' => style.Italic,
+            'n' => style.Underline,
+            'm' => style.Strike,
+            'k' => style.Obf,
+            _ => ColorByCode.TryGetValue(code, out var hex)
+                 && style.ColorHex.Equals(hex, StringComparison.OrdinalIgnoreCase),
+        };
+
+    private static MotdStyle WithoutCode(MotdStyle style, char code)
+    {
+        switch (code)
+        {
+            case 'l': style.Bold = false; break;
+            case 'o': style.Italic = false; break;
+            case 'n': style.Underline = false; break;
+            case 'm': style.Strike = false; break;
+            case 'k': style.Obf = false; break;
+            default:
+                if (ColorByCode.ContainsKey(code))
+                    style.ColorHex = "#FFFFFF";
+                break;
+        }
+
+        return style;
     }
 
     /// <summary>
@@ -416,9 +526,11 @@ public static class MotdFormatting
 
         for (var i = 0; i < line.Length; i++)
         {
-            if (TryApplyCode(line, i, ref style, out var consumed))
+            var nextStyle = style;
+            if (TryApplyCode(line, i, ref nextStyle, out var consumed))
             {
                 Flush();
+                style = nextStyle;
                 i += consumed - 1;
                 continue;
             }
@@ -446,9 +558,11 @@ public static class MotdFormatting
 
         for (var i = 0; i < line.Length; i++)
         {
-            if (TryApplyCode(line, i, ref style, out var consumed))
+            var nextStyle = style;
+            if (TryApplyCode(line, i, ref nextStyle, out var consumed))
             {
                 Flush();
+                style = nextStyle;
                 var next = i + consumed;
                 if (!IsResetCodeAt(line, i) && IsResetCodeAt(line, next))
                     runs.Add(ToRun(EditorHole.ToString(), style));
@@ -651,6 +765,8 @@ public static class MotdFormatting
         sb.Append("<span class=\"mcm-motd-run");
         if (run.Obfuscated)
             sb.Append(" mcm-motd-obf");
+        if (run.Bold)
+            sb.Append(" mcm-motd-bold");
         sb.Append("\" style=\"color:");
         sb.Append(WebUtility.HtmlEncode(run.ColorHex));
         sb.Append(';');

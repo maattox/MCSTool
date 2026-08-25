@@ -25,12 +25,19 @@
             @foreach (var fmt in MotdFormatting.Formats)
             {
                 <button type="button"
-                        class="mcm-motd-fmt"
+                        class="mcm-motd-fmt @(string.IsNullOrEmpty(fmt.IconClass) ? "mcm-motd-fmt-label" : null)"
                         disabled="@Disabled"
                         title="@($"{fmt.Name} (§{fmt.Code})")"
                         aria-label="@($"{fmt.Name} (§{fmt.Code})")"
                         @onclick="@(() => WrapAsync(fmt.Code))">
-                    <i class="ti @fmt.IconClass" aria-hidden="true"></i>
+                    @if (string.IsNullOrEmpty(fmt.IconClass))
+                    {
+                        <span>@fmt.Name</span>
+                    }
+                    else
+                    {
+                        <i class="ti @fmt.IconClass" aria-hidden="true"></i>
+                    }
                 </button>
             }
         </div>
@@ -76,10 +83,19 @@
                @onchange="OnOmitChanged" />
         <span>Don’t put the server name on the MOTD</span>
     </label>
-    <details class="mcm-motd-raw">
-        <summary>Raw motd= string</summary>
+    <div class="mcm-field mcm-motd-field mcm-motd-raw">
+        <label class="mcm-field-head" for="@RawId">Raw motd= string</label>
         <div class="mcm-motd-raw-row">
-            <code class="mcm-motd-raw-code">@RawMotd</code>
+            <textarea id="@RawId"
+                      class="mcm-motd-raw-input"
+                      rows="3"
+                      spellcheck="false"
+                      autocomplete="off"
+                      disabled="@Disabled"
+                      value="@RawBoxValue"
+                      @onfocus="OnRawFocus"
+                      @onblur="OnRawBlur"
+                      @oninput="OnRawInput"></textarea>
             <button type="button"
                     class="mcm-motd-copy"
                     disabled="@Disabled"
@@ -87,7 +103,7 @@
                 @(_copied ? "Copied" : "Copy")
             </button>
         </div>
-    </details>
+    </div>
     <p class="mcm-motd-hex-note">Hex and gradient colors need Paper or Spigot 1.16+. Vanilla, Forge, and Fabric ignore them.</p>
 </div>
 
@@ -114,9 +130,17 @@
     private string _nameRaw = "";
     private string _descRaw = "";
     private string _focused = "desc";
+    private bool _rawFocused;
+    private string? _rawOverride;
 
     private string NameId => IdPrefix + "-name";
     private string DescId => IdPrefix + "-desc";
+    private string RawId => IdPrefix + "-raw";
+
+    private string RawEditText =>
+        string.Join('\n', MotdFormatting.SplitListLines(RawMotd));
+
+    private string RawBoxValue => _rawFocused && _rawOverride is not null ? _rawOverride : RawEditText;
 
     private string RawMotd =>
         ServerIdentityUx.BuildMotd(ServerName, Description, OmitName);
@@ -261,7 +285,7 @@
 
         var lo = MotdFormatting.VisibleToRaw(text, visStart);
         var hi = MotdFormatting.VisibleToRaw(text, visEnd);
-        var result = MotdFormatting.WrapSpan(text, lo, hi, code);
+        var result = MotdFormatting.ToggleSpan(text, lo, hi, code);
         var next = result.Text;
         if (field == "desc" && next.Length > ServerIdentityUx.MaxDescriptionLength)
             next = next[..ServerIdentityUx.MaxDescriptionLength];
@@ -311,6 +335,61 @@
         _descCaretStart = caretStart;
         _descCaretEnd = caretEnd;
         await DescriptionChanged.InvokeAsync(next);
+        StateHasChanged();
+    }
+
+    private void OnRawFocus()
+    {
+        _rawFocused = true;
+        _rawOverride ??= RawEditText;
+    }
+
+    private void OnRawBlur()
+    {
+        _rawFocused = false;
+        _rawOverride = null;
+    }
+
+    private async Task OnRawInput(ChangeEventArgs e)
+    {
+        if (Disabled)
+            return;
+        var typed = e.Value?.ToString() ?? "";
+        _rawOverride = typed;
+        _rawFocused = true;
+        await ApplyRawAsync(typed);
+    }
+
+    private async Task ApplyRawAsync(string raw)
+    {
+        var parsed = MotdFormatting.NormalizePaste(raw);
+        var lines = MotdFormatting.SplitListLines(parsed);
+        if (OmitName)
+        {
+            var desc = string.Join('\n', lines);
+            if (desc.Length > ServerIdentityUx.MaxDescriptionLength)
+                desc = desc[..ServerIdentityUx.MaxDescriptionLength];
+            _descRaw = desc;
+            Description = desc;
+            _descSync = true;
+            await DescriptionChanged.InvokeAsync(desc);
+        }
+        else
+        {
+            var name = lines.Count > 0 ? lines[0] : "";
+            var desc = lines.Count > 1 ? string.Join('\n', lines.Skip(1)) : "";
+            if (desc.Length > ServerIdentityUx.MaxDescriptionLength)
+                desc = desc[..ServerIdentityUx.MaxDescriptionLength];
+            _nameRaw = name;
+            ServerName = name;
+            _nameSync = true;
+            _descRaw = desc;
+            Description = desc;
+            _descSync = true;
+            await ServerNameChanged.InvokeAsync(name);
+            await DescriptionChanged.InvokeAsync(desc);
+        }
+
         StateHasChanged();
     }
 
