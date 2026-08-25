@@ -1,6 +1,6 @@
 # V1 Manage sidebar redesign (living)
 
-**Status:** NEXT = P3. Created 2026-08-25 (docs only). **Live NEXT:** [`NEXT.md`](NEXT.md).  
+**Status:** NEXT = P4. Created 2026-08-25 (docs only). **Live NEXT:** [`NEXT.md`](NEXT.md).  
 **Parent:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.12**.  
 **Branch:** `UI-redesign` — keep this work here until the operator likes it. Do not merge to `main` from an agent chat.  
 **Why now:** operator 2026-08-25 — rearrange Manage chrome into a left sidebar (status, power, pins, vertical tabs) and a large content pane. Topology from [`assets/UI-design-mockup.png`](../assets/UI-design-mockup.png). **Not** a new color/type world. Vague spacing: agents **decide inside each section’s bounds** (and [Scrutiny](#scrutiny-plan-decisions)). Stop and ask for spend, `tofu destroy`, `DEFAULT`, a donation URL, or parked after-v1 items.
@@ -58,8 +58,8 @@ None. Every section edits `MainLayout.razor` and/or `app.css` manage chrome.
 |----|-------|--------|----------|--------|
 | P1 | Two-column Manage shell | **DONE** | SEQUENTIAL — shell grid | agent |
 | P2 | Combined Start/Stop + condensed pins | **DONE** | SEQUENTIAL — same sidebar chrome | agent |
-| P3 | About tab; remove caption overflow | **NEXT** | SEQUENTIAL — nav + caption | agent |
-| P4 | Overview tab | TODO | SEQUENTIAL — after shell exists | plan-first |
+| P3 | About tab; remove caption overflow | **DONE** | SEQUENTIAL — nav + caption | agent |
+| P4 | Overview tab | **NEXT** | SEQUENTIAL — after shell exists | plan-first |
 | P5 | Resize polish + Guide | TODO | SEQUENTIAL — after P4 landing default | agent |
 
 ---
@@ -68,8 +68,8 @@ None. Every section edits `MainLayout.razor` and/or `app.css` manage chrome.
 
 - Manage (P1–P2): full-bleed caption, then `.mcm-sidebar` (status, combined Start/Stop + Restart, four pins in 2×2, vertical `.mcm-tabs`) | `.mcm-tab-body`. CSS `.mcm-app-manage` is pad | `--manage-sidebar-width` (296px) | pad | fluid content | pad. Content pane grows on resize; sidebar scrolls if the window is short.
 - Window: default **1280** CSS px (`MainWindow.AppShellWidthDip`), min **920** (`AppShellMinWidthDip`), Height 720, MinHeight 560, `ResizeMode=CanResize`. `FitWidthToWebView` adds non-client thickness to both. Setup wizard fills the padded width; FirstRun stays a centered 560px column.
-- Tabs: Overview, Whitelist, Server, Console, Usage, Advanced, Troubleshooting, About. Default `_tab = "whitelist"`. Overview/About are one-line placeholders until P4/P3. Server is keep-alive (`_serverTabCreated`). Inner `.mcm-subtabs` stay horizontal at the top of the content pane.
-- Caption: bell, gear, **overflow ☰** (About modal + GitHub). `ChromeViewModel.GitHubUrl` / `OpenGitHub`. About copy lives in the modal in `MainLayout.razor`.
+- Tabs: Overview, Whitelist, Server, Console, Usage, Advanced, Troubleshooting, About. Default `_tab = "whitelist"`. Overview is a one-line placeholder until P4. About is a real tab (name, version, private-server sentence, GitHub). Server is keep-alive (`_serverTabCreated`). Inner `.mcm-subtabs` stay horizontal at the top of the content pane.
+- Caption: bell, gear, min/max/close. No overflow ☰. `ChromeViewModel.GitHubUrl` / `OpenGitHub`. About copy lives on the About tab in `MainLayout.razor`.
 - Power (P2): one primary Start/Stop control (`ManagePrimaryPowerChrome`) + Restart beside it. Rules still in `ManagePowerUx` (`CanStart` only when VM1 is fully STOPPED, etc.). Primary is Start when `CanStart`, Stop when `CanStop`, disabled when neither. Labels `Starting…` / `Stopping…` / `Restarting…`.
 - Pins (P2): four sidebar cards from `PinnedUsageSnapshot` — Today's uptime, Rollover bank, This month (% of monthly cap), Idle timeout. Daily average and Hours left remain on the Usage tab.
 - Icons: Tabler (`.ti`) already in Hybrid. Copy play IP is a labeled button today (`Vm.CopyPlayIpLabel`).
@@ -209,7 +209,7 @@ When P1–P5 are **DONE**: [`NEXT.md`](NEXT.md) → Step **8.5.2** Pass 3 (**blo
 
 ## P3 — About tab; remove caption overflow
 
-**Status:** NEXT  
+**Status:** DONE  
 **Parallel:** SEQUENTIAL — caption + About placeholder from P1  
 **Cursor mode:** agent  
 **UI skill:** yes
@@ -235,13 +235,13 @@ When P1–P5 are **DONE**: [`NEXT.md`](NEXT.md) → Step **8.5.2** Pass 3 (**blo
 
 - About is a tab; overflow menu is gone.
 
-**Changelog:** *(date when finished)*
+**Changelog:** 2026-08-25 — About tab (name, version, private-server sentence, Source on GitHub). Caption ☰ and About modal removed. Bell and gear stay.
 
 ---
 
 ## P4 — Overview tab
 
-**Status:** TODO  
+**Status:** NEXT  
 **Parallel:** SEQUENTIAL — after P1 placeholders  
 **Cursor mode:** plan-first  
 **UI skill:** yes

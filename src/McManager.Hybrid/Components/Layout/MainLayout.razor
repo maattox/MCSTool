@@ -96,29 +96,6 @@
                     @onclick="OpenSettings">
                 <i class="ti ti-settings" aria-hidden="true"></i>
             </button>
-            <div class="mcm-overflow">
-                <button type="button"
-                        class="mcm-chrome-btn @(Chrome.OverflowOpen ? "is-open" : null)"
-                        title="More"
-                        aria-label="More"
-                        aria-haspopup="menu"
-                        aria-expanded="@(Chrome.OverflowOpen ? "true" : "false")"
-                        aria-controls="mcm-overflow-menu"
-                        @onclick="ToggleOverflow"
-                        @onclick:stopPropagation="true">
-                    <i class="ti ti-menu-2" aria-hidden="true"></i>
-                </button>
-                @if (Chrome.OverflowOpen)
-                {
-                    <div class="mcm-overflow-menu"
-                         id="mcm-overflow-menu"
-                         role="menu"
-                         @onclick:stopPropagation="true">
-                        <button type="button" role="menuitem" @onclick="Chrome.OpenAbout">About</button>
-                        <button type="button" role="menuitem" @onclick="Chrome.OpenGitHub">Source on GitHub</button>
-                    </div>
-                }
-            </div>
         </AppActions>
     </CaptionBar>
 
@@ -324,8 +301,19 @@
                         </div>
                         break;
                     case "about":
-                        <div class="mcm-placeholder">
-                            <p class="mcm-placeholder-copy">App name, version, and GitHub will live here.</p>
+                        <div class="mcm-about">
+                            <h2 class="mcm-about-name">@Chrome.AppName</h2>
+                            <p class="mcm-about-version">Version @Chrome.AppVersion</p>
+                            <p class="mcm-about-lede">A Windows app for a private Minecraft server on Oracle Always Free. Friends connect to one play IP. Access is an IP allowlist — this is not a public server.</p>
+                            <div class="mcm-about-actions">
+                                <button type="button"
+                                        class="mcm-primary"
+                                        title="Open the MC Manager source repository"
+                                        @onclick="Chrome.OpenGitHub">
+                                    <i class="ti ti-brand-github" aria-hidden="true"></i>
+                                    Source on GitHub
+                                </button>
+                            </div>
                         </div>
                         break;
                     case "usage":
@@ -399,7 +387,7 @@
         </div>
     }
 
-    @if (Chrome.OverflowOpen || Notices.PanelOpen)
+    @if (Notices.PanelOpen)
     {
         <div class="mcm-overflow-catch"
              @onclick="CloseFlyouts"
@@ -482,28 +470,6 @@
         </div>
     }
 
-    @if (Chrome.AboutOpen)
-    {
-        <div class="mcm-modal-overlay open"
-             role="dialog"
-             aria-modal="true"
-             aria-labelledby="mcm-about-title"
-             tabindex="-1"
-             @ref="_chromeOverlay"
-             @onclick="Chrome.CloseAbout"
-             @onkeydown="OnChromeKeyDown">
-            <div class="mcm-modal-card" @onclick:stopPropagation="true">
-                <h2 id="mcm-about-title" class="mcm-modal-title">About</h2>
-                <p class="mcm-about-name">@Chrome.AppName</p>
-                <p class="mcm-about-version">Version @Chrome.AppVersion</p>
-                <p class="mcm-modal-body">A Windows app for a private Minecraft server on Oracle Always Free. Friends connect to one play IP. Access is an IP allowlist — this is not a public server.</p>
-                <div class="mcm-modal-actions">
-                    <button type="button" @onclick="Chrome.OpenGitHub">GitHub</button>
-                    <button type="button" class="mcm-primary" @onclick="Chrome.CloseAbout">Close</button>
-                </div>
-            </div>
-        </div>
-    }
 </div>
 
 @code {
@@ -537,7 +503,7 @@
                 await JS.InvokeVoidAsync("mcmTabScroll.set", _tabBody, top);
             }
 
-            if (Chrome.SettingsOpen || Chrome.AboutOpen)
+            if (Chrome.SettingsOpen)
             {
                 await _chromeOverlay.FocusAsync();
             }
@@ -575,12 +541,6 @@
             _noticeFocusPending = true;
     }
 
-    private void ToggleOverflow()
-    {
-        Notices.Close();
-        Chrome.ToggleOverflow();
-    }
-
     private void OpenSettings()
     {
         Notices.Close();
@@ -589,11 +549,7 @@
 
     private void CloseSettings() => Chrome.CloseSettings();
 
-    private void CloseFlyouts()
-    {
-        Chrome.CloseOverflow();
-        Notices.Close();
-    }
+    private void CloseFlyouts() => Notices.Close();
 
     private void OnChromeKeyDown(KeyboardEventArgs e)
     {

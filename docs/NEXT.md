@@ -11,9 +11,9 @@ Single source of truth for **what to work on next**. Living plan files keep sect
 | **Plan** | [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.12** |
 | **Step** | **8.12** Manage sidebar redesign |
 | **Sub-plan** | [`V1-Manage-Sidebar-Redesign-Plan.md`](V1-Manage-Sidebar-Redesign-Plan.md) |
-| **Sub-step** | P3 |
+| **Sub-step** | P4 |
 | **Status** | `ready` |
-| **Cursor mode** | `agent` |
+| **Cursor mode** | `plan-first` |
 
 Step **8.12** lives on branch **`UI-redesign`**. Pass 3 stays **blocked** until **8.12** exits **and** the operator says so. Do **not** start Pass 3, Step **8.6.1**, or **9.1**. Pack-corpus P1–P3 is **DONE**; operator may seed `pack-tests/packs/` + sidecars and invoke `/pack-test-phase` in a **separate** chat.
 
@@ -23,6 +23,7 @@ Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-De
 
 ## Completed recently
 
+- **2026-08-25** — Step **8.12 P3 DONE** (About tab; caption ☰ and About modal removed). Living **NEXT = P4** (plan-first). Pass 3 **blocked**.
 - **2026-08-25** — Step **8.12 P2 DONE** (combined Start/Stop primary + Restart; four sidebar pins). Living **NEXT = P3**. Pass 3 **blocked**.
 - **2026-08-25** — Step **8.12 P1 DONE** (two-column Manage shell: sidebar | content, 1280 default / 920 min, icon-only Copy play IP, Overview/About placeholders). Living **NEXT = P2**. Pass 3 **blocked**.
 - **2026-08-25** — Step **8.12** inserted (Manage sidebar redesign). Living **NEXT = P1**. Pass 3 **blocked**.

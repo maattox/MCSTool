@@ -182,13 +182,13 @@ Read [`docs/NEXT.md`](NEXT.md) and run `/next-step` in a fresh Agent chat. Workf
 | **8.9** | Pack-import assisted review (dep freeze + review UI)       | **DONE** — [`V1-Pack-Import-Assisted-Review-Plan.md`](V1-Pack-Import-Assisted-Review-Plan.md) P1–P2 |
 | **8.10** | Operator-notes follow-on 2 (density, MOTD, VM1 icon)     | **DONE** — [`V1-Operator-Notes-Follow-On-2-Plan.md`](V1-Operator-Notes-Follow-On-2-Plan.md) P1–P9 |
 | **8.11** | Operator-notes follow-on 3 (caption, pins, MOTD WYSIWYG) | **DONE** — [`V1-Operator-Notes-Follow-On-3-Plan.md`](V1-Operator-Notes-Follow-On-3-Plan.md) P1–P4 |
-| **8.12** | Manage sidebar redesign (layout rearrange) | **NEXT = P3** — [`V1-Manage-Sidebar-Redesign-Plan.md`](V1-Manage-Sidebar-Redesign-Plan.md) |
+| **8.12** | Manage sidebar redesign (layout rearrange) | **NEXT = P4** — [`V1-Manage-Sidebar-Redesign-Plan.md`](V1-Manage-Sidebar-Redesign-Plan.md) |
 | **8.5** | Pre-packaging QA (catalog + passes + bug-fix plans)        | Pass 3 [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) — **blocked** until **8.12** exits and the operator says so. |
 | **8.6** | CI-built ARM spend-brake Function image (no Docker on admin PC) | TODO — after 8.5 exit; **required before 9.1 / official release** |
 | **9**   | Packaging, updates, launch (old MVP Phase 8–9)             | TODO — do not start until Phase 8.5 **and** Step **8.6.1** are DONE |
 
 
-**Current NEXT step:** See [`docs/NEXT.md`](NEXT.md) — Step **8.12** P3 (About tab; remove caption overflow). Pass 3 stays **blocked** until **8.12** exits and the operator says so. **Do not start** Pass 3, **8.6.1**, or **9.1**.
+**Current NEXT step:** See [`docs/NEXT.md`](NEXT.md) — Step **8.12** P4 (Overview tab; plan-first). Pass 3 stays **blocked** until **8.12** exits and the operator says so. **Do not start** Pass 3, **8.6.1**, or **9.1**.
 
 ---
 
@@ -1413,7 +1413,7 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 
 ### Step 8.12 — Manage sidebar redesign
 
-**Status:** TODO (P3 NEXT)  
+**Status:** TODO (P4 NEXT)  
 **Depends on:** Step **8.11** DONE
 
 **Read first**
@@ -1435,7 +1435,7 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 
 **Done when:** P1–P5 **DONE** in [`V1-Manage-Sidebar-Redesign-Plan.md`](V1-Manage-Sidebar-Redesign-Plan.md). Then [`NEXT.md`](NEXT.md) → Step **8.5.2** Pass 3 (**blocked** until the operator says so).
 
-**Changelog:** 2026-08-25 — **P2 DONE** (combined Start/Stop + four sidebar pins). Living **NEXT = P3**. Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-25 — **P1 DONE** (two-column Manage shell, 1280 default / 920 min). Living **NEXT = P2**. Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-25 — **Inserted** (docs only). Living **NEXT = P1** (two-column Manage shell). Pass 3 stays blocked. Do not start 8.6.1 or 9.1.
+**Changelog:** 2026-08-25 — **P3 DONE** (About tab; caption overflow gone). Living **NEXT = P4** (plan-first). Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-25 — **P2 DONE** (combined Start/Stop + four sidebar pins). Living **NEXT = P3**. Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-25 — **P1 DONE** (two-column Manage shell, 1280 default / 920 min). Living **NEXT = P2**. Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-25 — **Inserted** (docs only). Living **NEXT = P1** (two-column Manage shell). Pass 3 stays blocked. Do not start 8.6.1 or 9.1.
 
 ---
 
@@ -1460,7 +1460,7 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 | `[V1-Pack-Import-Assisted-Review-Plan.md](V1-Pack-Import-Assisted-Review-Plan.md)` | Step **8.9**. **COMPLETE** (P1–P2 DONE) |
 | `[V1-Operator-Notes-Follow-On-2-Plan.md](V1-Operator-Notes-Follow-On-2-Plan.md)` | Step **8.10**. **COMPLETE** (P1–P9) |
 | `[V1-Operator-Notes-Follow-On-3-Plan.md](V1-Operator-Notes-Follow-On-3-Plan.md)` | Step **8.11**. Caption / pins / MOTD WYSIWYG. **COMPLETE** (P1–P4) |
-| `[V1-Manage-Sidebar-Redesign-Plan.md](V1-Manage-Sidebar-Redesign-Plan.md)` | Step **8.12**. Manage sidebar layout. **P1–P2 DONE.** **P3 NEXT.** Pass 3 still needs **8.12** to exit and the operator to start it |
+| `[V1-Manage-Sidebar-Redesign-Plan.md](V1-Manage-Sidebar-Redesign-Plan.md)` | Step **8.12**. Manage sidebar layout. **P1–P3 DONE.** **P4 NEXT** (plan-first). Pass 3 still needs **8.12** to exit and the operator to start it |
 | `[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)`             | Pass 3 gap-close + follow-on tests. **Do not start** until **8.12** exits and the operator says so |
 | `[V1-QA-Pass-3-Results.md](V1-QA-Pass-3-Results.md)`         | Pass 3 fill-out (do not start until operator says so)                      |
 | `[V1-Bug-Fix-Plan-Pass-1.md](V1-Bug-Fix-Plan-Pass-1.md)`     | Pass 1 fixes; **P1–P8 DONE**. Do not re-open unless a regression.          |
@@ -1782,6 +1782,7 @@ Former MVP Phase **8–9**. Phases **1–7** are **DONE**. Phase **8** is **SKIP
 
 | Date       | Note                                                                                                                                                                                                                                                                                                                              |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-25 | **Step 8.12 P3 DONE** (About tab; caption overflow gone). Living **NEXT = P4** (plan-first). Pass 3 **blocked**. Do not start 8.6.1 or 9.1. |
 | 2026-08-25 | **Step 8.12 P2 DONE** (combined Start/Stop + four sidebar pins). Living **NEXT = P3**. Pass 3 **blocked**. Do not start 8.6.1 or 9.1. |
 | 2026-08-25 | **Step 8.12 P1 DONE** (two-column Manage shell, 1280 default / 920 min). Living **NEXT = P2**. Pass 3 **blocked**. Do not start 8.6.1 or 9.1. |
 | 2026-08-25 | **Step 8.12 inserted** (Manage sidebar redesign). Living **NEXT = P1** ([`V1-Manage-Sidebar-Redesign-Plan.md`](V1-Manage-Sidebar-Redesign-Plan.md)). Pass 3 **blocked**. Do not start 8.6.1 or 9.1. |
