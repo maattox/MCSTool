@@ -39,6 +39,9 @@ public static class MotdFormatting
     /// <summary>Java Edition server-list visible characters per MOTD line.</summary>
     public const int ListLineVisibleLimit = 59;
 
+    /// <summary>Zero-width caret target for an empty wrap hole (<c>§code§r</c>).</summary>
+    public const char EditorHole = '\u200B';
+
     public static readonly IReadOnlyList<MotdColor> VanillaColors =
     [
         new('0', "Black", "#000000"),
@@ -165,6 +168,107 @@ public static class MotdFormatting
         return n;
     }
 
+    /// <summary>
+    /// Visible characters only (codes and hex runs stripped). Newlines are kept.
+    /// Empty wrap holes are not included.
+    /// </summary>
+    public static string VisibleText(string? text)
+    {
+        if (string.IsNullOrEmpty(text))
+            return "";
+        var sb = new StringBuilder();
+        foreach (var line in SplitFieldLines(text))
+        {
+            if (sb.Length > 0)
+                sb.Append('\n');
+            foreach (var run in ParseLine(line))
+                sb.Append(run.Text);
+        }
+
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// Map a visible caret/selection index (codes skipped; empty <c>§code§r</c>
+    /// holes count as one slot) onto a raw <c>§</c> string index.
+    /// </summary>
+    public static int VisibleToRaw(string? text, int visibleIndex)
+    {
+        var s = text ?? "";
+        var vis = 0;
+        var i = 0;
+        var target = Math.Max(0, visibleIndex);
+        var style = MotdStyle.Default;
+        while (i < s.Length)
+        {
+            var isCode = TryApplyCode(s, i, ref style, out var consumed);
+            var next = i + consumed;
+            var isHole = isCode && !IsResetCodeAt(s, i) && IsResetCodeAt(s, next);
+
+            if (vis == target)
+            {
+                if (isHole)
+                    return next;
+                if (isCode && !IsResetCodeAt(s, i))
+                {
+                    i = next;
+                    continue;
+                }
+
+                return i;
+            }
+
+            if (isHole)
+            {
+                vis++;
+                i = next;
+                if (IsResetCodeAt(s, i))
+                    i += 2;
+                continue;
+            }
+
+            if (isCode)
+            {
+                i = next;
+                continue;
+            }
+
+            vis++;
+            i++;
+        }
+
+        return s.Length;
+    }
+
+    /// <summary>
+    /// Map a raw <c>§</c> index onto a visible caret index (codes skipped;
+    /// empty wrap holes count as one slot).
+    /// </summary>
+    public static int RawToVisible(string? text, int rawIndex)
+    {
+        var s = text ?? "";
+        var vis = 0;
+        var i = 0;
+        var limit = Math.Clamp(rawIndex, 0, s.Length);
+        var style = MotdStyle.Default;
+        while (i < s.Length && i < limit)
+        {
+            if (TryApplyCode(s, i, ref style, out var consumed))
+            {
+                var next = i + consumed;
+                if (!IsResetCodeAt(s, i) && IsResetCodeAt(s, next) && next < limit)
+                    vis++;
+                i = next;
+                continue;
+            }
+
+            vis++;
+            i++;
+        }
+
+        return vis;
+    }
+
     public static string FormatLineCounter(int lineNumber, int used)
     {
         var label = $"line {lineNumber}: {used}/{ListLineVisibleLimit}";
@@ -251,6 +355,44 @@ public static class MotdFormatting
         return sb.ToString();
     }
 
+    /// <summary>
+    /// Contenteditable HTML for a stored MOTD field. Codes are not shown; runs
+    /// carry <c>data-motd-*</c> so the browser can serialize back to <c>§</c>.
+    /// Empty wrap holes emit a zero-width caret target.
+    /// </summary>
+    public static string ToEditorHtml(string? fieldText)
+    {
+        var sb = new StringBuilder();
+        var lines = SplitFieldLines(fieldText);
+        foreach (var line in lines)
+        {
+            sb.Append("<span class=\"mcm-motd-line\">");
+            var runs = ParseEditorLine(line);
+            if (runs.Count == 0)
+            {
+                sb.Append("<br>");
+            }
+            else
+            {
+                foreach (var run in runs)
+                    AppendEditorRun(sb, run);
+            }
+
+            sb.Append("</span>");
+        }
+
+        return sb.ToString();
+    }
+
+    private static IReadOnlyList<string> SplitFieldLines(string? text)
+    {
+        var s = text ?? "";
+        return s
+            .Replace("\r\n", "\n", StringComparison.Ordinal)
+            .Replace('\r', '\n')
+            .Split('\n');
+    }
+
     public static IReadOnlyList<MotdRun> ParseLine(string line)
     {
         var runs = new List<MotdRun>();
@@ -287,6 +429,45 @@ public static class MotdFormatting
         Flush();
         return runs;
     }
+
+    private static IReadOnlyList<MotdRun> ParseEditorLine(string line)
+    {
+        var runs = new List<MotdRun>();
+        var buf = new StringBuilder();
+        var style = MotdStyle.Default;
+
+        void Flush()
+        {
+            if (buf.Length == 0)
+                return;
+            runs.Add(ToRun(buf.ToString(), style));
+            buf.Clear();
+        }
+
+        for (var i = 0; i < line.Length; i++)
+        {
+            if (TryApplyCode(line, i, ref style, out var consumed))
+            {
+                Flush();
+                var next = i + consumed;
+                if (!IsResetCodeAt(line, i) && IsResetCodeAt(line, next))
+                    runs.Add(ToRun(EditorHole.ToString(), style));
+                i += consumed - 1;
+                continue;
+            }
+
+            buf.Append(line[i]);
+        }
+
+        Flush();
+        return runs;
+    }
+
+    private static MotdRun ToRun(string text, MotdStyle style) =>
+        new(text, style.ColorHex, style.Bold, style.Italic, style.Underline, style.Strike, style.Obf);
+
+    private static bool IsResetCodeAt(string text, int i) =>
+        i + 1 < text.Length && IsSection(text[i]) && char.ToLowerInvariant(text[i + 1]) == 'r';
 
     private static bool IsWrapCode(char code) =>
         ColorByCode.ContainsKey(code) || code is 'l' or 'o' or 'n' or 'm' or 'k' or 'r';
@@ -459,7 +640,13 @@ public static class MotdFormatting
         return sb.ToString();
     }
 
-    private static void AppendRun(StringBuilder sb, MotdRun run)
+    private static void AppendRun(StringBuilder sb, MotdRun run) =>
+        AppendRun(sb, run, editor: false);
+
+    private static void AppendEditorRun(StringBuilder sb, MotdRun run) =>
+        AppendRun(sb, run, editor: true);
+
+    private static void AppendRun(StringBuilder sb, MotdRun run, bool editor)
     {
         sb.Append("<span class=\"mcm-motd-run");
         if (run.Obfuscated)
@@ -479,7 +666,28 @@ public static class MotdFormatting
             sb.Append(';');
         }
 
-        sb.Append("\">");
+        if (editor)
+        {
+            sb.Append("\" data-motd-color=\"");
+            sb.Append(WebUtility.HtmlEncode(run.ColorHex));
+            sb.Append('"');
+            if (run.Bold)
+                sb.Append(" data-motd-b=\"1\"");
+            if (run.Italic)
+                sb.Append(" data-motd-i=\"1\"");
+            if (run.Underline)
+                sb.Append(" data-motd-u=\"1\"");
+            if (run.Strikethrough)
+                sb.Append(" data-motd-s=\"1\"");
+            if (run.Obfuscated)
+                sb.Append(" data-motd-k=\"1\"");
+            sb.Append('>');
+        }
+        else
+        {
+            sb.Append("\">");
+        }
+
         sb.Append(WebUtility.HtmlEncode(run.Text));
         sb.Append("</span>");
     }

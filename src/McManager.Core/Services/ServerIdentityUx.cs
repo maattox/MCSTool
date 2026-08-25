@@ -86,7 +86,7 @@ public static class ServerIdentityUx
 
     public static string DisplayName(string? customName, string? fallbackVmDisplayName)
     {
-        var custom = CollapseWhitespace(customName);
+        var custom = CollapseWhitespace(MotdFormatting.VisibleText(customName));
         if (custom.Length > 0)
             return custom;
         var fallback = CollapseWhitespace(fallbackVmDisplayName);

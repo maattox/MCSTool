@@ -53,20 +53,268 @@
             }
         };
         window.mcmMotd = {
-            wrap: function (id, prefix, suffix) {
-                var el = document.getElementById(id);
-                if (!el) {
-                    return null;
+            _section: "\u00A7",
+            _vanilla: {
+                "#000000": "0", "#0000AA": "1", "#00AA00": "2", "#00AAAA": "3",
+                "#AA0000": "4", "#AA00AA": "5", "#FFAA00": "6", "#AAAAAA": "7",
+                "#555555": "8", "#5555FF": "9", "#55FF55": "a", "#55FFFF": "b",
+                "#FF5555": "c", "#FF55FF": "d", "#FFFF55": "e", "#FFFFFF": "f"
+            },
+            bind: function (el, net, field, singleLine) {
+                if (!el || !net || el.dataset.mcmMotdBound === "1") {
+                    return;
                 }
-                var start = typeof el.selectionStart === "number" ? el.selectionStart : (el.value || "").length;
-                var end = typeof el.selectionEnd === "number" ? el.selectionEnd : start;
-                var value = el.value || "";
-                var insert = (prefix || "") + value.slice(start, end) + (suffix || "");
-                el.value = value.slice(0, start) + insert + value.slice(end);
-                var pos = start + insert.length;
-                el.selectionStart = el.selectionEnd = pos;
-                el.focus();
-                return el.value;
+                el.dataset.mcmMotdBound = "1";
+                el.addEventListener("focus", function () {
+                    net.invokeMethodAsync("MotdFocus", field);
+                });
+                el.addEventListener("keydown", function (e) {
+                    if (e.key !== "Enter") {
+                        return;
+                    }
+                    e.preventDefault();
+                    if (singleLine) {
+                        return;
+                    }
+                    var r = window.mcmMotd.getRange(el);
+                    net.invokeMethodAsync("MotdEnter", field, r.start, r.end);
+                });
+                el.addEventListener("paste", function (e) {
+                    e.preventDefault();
+                    var t = (e.clipboardData && e.clipboardData.getData("text")) || "";
+                    var r = window.mcmMotd.getRange(el);
+                    net.invokeMethodAsync("MotdPaste", field, t, r.start, r.end);
+                });
+                el.addEventListener("input", function () {
+                    net.invokeMethodAsync("MotdTyped", field, window.mcmMotd.serialize(el));
+                });
+            },
+            lineBlocks: function (el) {
+                var lines = el.querySelectorAll(":scope > .mcm-motd-line");
+                return lines.length ? Array.prototype.slice.call(lines) : [el];
+            },
+            visibleLength: function (el) {
+                if (!el) {
+                    return 0;
+                }
+                var blocks = window.mcmMotd.lineBlocks(el);
+                var n = 0;
+                for (var i = 0; i < blocks.length; i++) {
+                    if (i > 0) {
+                        n += 1;
+                    }
+                    n += (blocks[i].textContent || "").length;
+                }
+                return n;
+            },
+            visibleIndex: function (el, node, offset) {
+                var blocks = window.mcmMotd.lineBlocks(el);
+                var pos = 0;
+                for (var i = 0; i < blocks.length; i++) {
+                    if (i > 0) {
+                        pos += 1;
+                    }
+                    var block = blocks[i];
+                    if (node === block) {
+                        var acc = 0;
+                        for (var c = 0; c < offset && c < block.childNodes.length; c++) {
+                            acc += (block.childNodes[c].textContent || "").length;
+                        }
+                        return pos + acc;
+                    }
+                    if (block.contains(node)) {
+                        var walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT, null);
+                        var n;
+                        while ((n = walker.nextNode())) {
+                            if (n === node) {
+                                return pos + Math.min(offset, n.nodeValue.length);
+                            }
+                            pos += n.nodeValue.length;
+                        }
+                        return pos;
+                    }
+                    pos += (block.textContent || "").length;
+                }
+                return pos;
+            },
+            getRange: function (el) {
+                var len = window.mcmMotd.visibleLength(el);
+                if (!el) {
+                    return { start: 0, end: 0 };
+                }
+                var sel = window.getSelection();
+                if (!sel || sel.rangeCount === 0) {
+                    return { start: len, end: len };
+                }
+                var r = sel.getRangeAt(0);
+                if (!el.contains(r.commonAncestorContainer) && r.commonAncestorContainer !== el) {
+                    return { start: len, end: len };
+                }
+                var a = window.mcmMotd.visibleIndex(el, r.startContainer, r.startOffset);
+                var b = window.mcmMotd.visibleIndex(el, r.endContainer, r.endOffset);
+                return { start: Math.min(a, b), end: Math.max(a, b) };
+            },
+            setRange: function (el, start, end) {
+                start = Math.max(0, start | 0);
+                end = Math.max(start, end | 0);
+                function find(target) {
+                    var blocks = window.mcmMotd.lineBlocks(el);
+                    var pos = 0;
+                    for (var i = 0; i < blocks.length; i++) {
+                        if (i > 0) {
+                            if (pos === target) {
+                                var first = blocks[i].querySelector(".mcm-motd-run") || blocks[i].firstChild || blocks[i];
+                                if (first && first.nodeType === 3) {
+                                    return { node: first, offset: 0 };
+                                }
+                                if (first && first.firstChild && first.firstChild.nodeType === 3) {
+                                    return { node: first.firstChild, offset: 0 };
+                                }
+                                return { node: blocks[i], offset: 0 };
+                            }
+                            pos += 1;
+                        }
+                        var walker = document.createTreeWalker(blocks[i], NodeFilter.SHOW_TEXT, null);
+                        var n;
+                        while ((n = walker.nextNode())) {
+                            var nlen = n.nodeValue.length;
+                            if (pos + nlen >= target) {
+                                return { node: n, offset: target - pos };
+                            }
+                            pos += nlen;
+                        }
+                    }
+                    var lastBlock = blocks[blocks.length - 1];
+                    var tw = document.createTreeWalker(lastBlock, NodeFilter.SHOW_TEXT, null);
+                    var last = null;
+                    while (tw.nextNode()) {
+                        last = tw.currentNode;
+                    }
+                    if (last) {
+                        return { node: last, offset: last.nodeValue.length };
+                    }
+                    return { node: lastBlock, offset: lastBlock.childNodes.length };
+                }
+                try {
+                    var a = find(start);
+                    var b = find(end);
+                    var clamp = function (pt) {
+                        if (pt.node.nodeType === 3) {
+                            return Math.min(pt.offset, pt.node.nodeValue.length);
+                        }
+                        return pt.offset;
+                    };
+                    var range = document.createRange();
+                    range.setStart(a.node, clamp(a));
+                    range.setEnd(b.node, clamp(b));
+                    var sel = window.getSelection();
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                } catch (e) { /* ignore */ }
+            },
+            setHtml: function (el, html, start, end) {
+                if (!el) {
+                    return;
+                }
+                el.innerHTML = html || '<span class="mcm-motd-line"><br></span>';
+                if (typeof start === "number") {
+                    var e = typeof end === "number" ? end : start;
+                    window.mcmMotd.setRange(el, start, e);
+                    el.focus();
+                }
+            },
+            defaultStyle: function () {
+                return { color: "#FFFFFF", b: 0, i: 0, u: 0, s: 0, k: 0 };
+            },
+            styleFromRun: function (run) {
+                if (!run) {
+                    return window.mcmMotd.defaultStyle();
+                }
+                return {
+                    color: run.getAttribute("data-motd-color") || "#FFFFFF",
+                    b: run.getAttribute("data-motd-b") === "1" ? 1 : 0,
+                    i: run.getAttribute("data-motd-i") === "1" ? 1 : 0,
+                    u: run.getAttribute("data-motd-u") === "1" ? 1 : 0,
+                    s: run.getAttribute("data-motd-s") === "1" ? 1 : 0,
+                    k: run.getAttribute("data-motd-k") === "1" ? 1 : 0
+                };
+            },
+            sameStyle: function (a, b) {
+                return a.color.toUpperCase() === b.color.toUpperCase()
+                    && a.b === b.b && a.i === b.i && a.u === b.u && a.s === b.s && a.k === b.k;
+            },
+            isDefault: function (st) {
+                return st.color.toUpperCase() === "#FFFFFF" && !st.b && !st.i && !st.u && !st.s && !st.k;
+            },
+            codesFor: function (st) {
+                var color = (st.color || "#FFFFFF").toUpperCase();
+                var out = "";
+                var code = window.mcmMotd._vanilla[color];
+                if (code && code !== "f") {
+                    out += window.mcmMotd._section + code;
+                } else if (color !== "#FFFFFF" && /^#[0-9A-F]{6}$/.test(color)) {
+                    var h = color.slice(1).toLowerCase();
+                    out += window.mcmMotd._section + "x";
+                    for (var i = 0; i < 6; i++) {
+                        out += window.mcmMotd._section + h[i];
+                    }
+                }
+                if (st.b) { out += window.mcmMotd._section + "l"; }
+                if (st.i) { out += window.mcmMotd._section + "o"; }
+                if (st.u) { out += window.mcmMotd._section + "n"; }
+                if (st.s) { out += window.mcmMotd._section + "m"; }
+                if (st.k) { out += window.mcmMotd._section + "k"; }
+                return out;
+            },
+            serializeLine: function (lineEl) {
+                var out = "";
+                var prev = window.mcmMotd.defaultStyle();
+                function emit(style, text) {
+                    text = (text || "").replace(/\u200B/g, "");
+                    if (!text) {
+                        return;
+                    }
+                    if (!window.mcmMotd.sameStyle(style, prev)) {
+                        if (!window.mcmMotd.isDefault(prev)) {
+                            out += window.mcmMotd._section + "r";
+                        }
+                        out += window.mcmMotd.codesFor(style);
+                        prev = style;
+                    }
+                    out += text;
+                }
+                function walk(node) {
+                    if (node.nodeType === 3) {
+                        var run = node.parentElement && node.parentElement.closest
+                            ? node.parentElement.closest(".mcm-motd-run")
+                            : null;
+                        emit(window.mcmMotd.styleFromRun(run), node.nodeValue);
+                        return;
+                    }
+                    if (node.nodeType !== 1 || node.tagName === "BR") {
+                        return;
+                    }
+                    var kids = node.childNodes;
+                    for (var i = 0; i < kids.length; i++) {
+                        walk(kids[i]);
+                    }
+                }
+                walk(lineEl);
+                return out;
+            },
+            serialize: function (el) {
+                if (!el) {
+                    return "";
+                }
+                var lines = el.querySelectorAll(":scope > .mcm-motd-line");
+                if (!lines.length) {
+                    return window.mcmMotd.serializeLine(el);
+                }
+                var parts = [];
+                for (var i = 0; i < lines.length; i++) {
+                    parts.push(window.mcmMotd.serializeLine(lines[i]));
+                }
+                return parts.join("\n");
             }
         };
     </script>

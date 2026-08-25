@@ -353,6 +353,7 @@ public sealed class ServerIdentityUxTests
     public void Display_name_prefers_custom_over_oci_name()
     {
         Assert.Equal("Friends SMP", ServerIdentityUx.DisplayName("Friends SMP", "mcmgr-vm1"));
+        Assert.Equal("Friends SMP", ServerIdentityUx.DisplayName("§cFriends SMP", "mcmgr-vm1"));
         Assert.Equal("mcmgr-vm1", ServerIdentityUx.DisplayName("  ", "mcmgr-vm1"));
         Assert.Equal("—", ServerIdentityUx.DisplayName(null, null));
     }

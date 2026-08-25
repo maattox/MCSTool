@@ -1,9 +1,13 @@
 @using McManager.Core.Services
+@implements IDisposable
 @inject IJSRuntime JS
 @inject IClipboard Clipboard
 
 <div class="mcm-motd-editor">
-    <div class="mcm-motd-toolbar" role="toolbar" aria-label="MOTD formatting">
+    <div class="mcm-motd-toolbar"
+         role="toolbar"
+         aria-label="MOTD formatting"
+         @onmousedown:preventDefault="true">
         <div class="mcm-motd-swatches" role="group" aria-label="Colors">
             @foreach (var color in MotdFormatting.VanillaColors)
             {
@@ -13,7 +17,7 @@
                         disabled="@Disabled"
                         title="@($"{color.Name} (§{color.Code})")"
                         aria-label="@($"{color.Name} (§{color.Code})")"
-                        @onclick="@(() => WrapAsync(MotdFormatting.CodePrefix(color.Code)))">
+                        @onclick="@(() => WrapAsync(color.Code))">
                 </button>
             }
         </div>
@@ -25,26 +29,46 @@
                         disabled="@Disabled"
                         title="@($"{fmt.Name} (§{fmt.Code})")"
                         aria-label="@($"{fmt.Name} (§{fmt.Code})")"
-                        @onclick="@(() => WrapAsync(MotdFormatting.CodePrefix(fmt.Code)))">
+                        @onclick="@(() => WrapAsync(fmt.Code))">
                     <i class="ti @fmt.IconClass" aria-hidden="true"></i>
                 </button>
             }
         </div>
     </div>
-    <textarea id="@TextAreaId"
-              class="mcm-motd-input"
-              rows="3"
-              maxlength="@ServerIdentityUx.MaxDescriptionLength"
-              spellcheck="false"
-              autocomplete="off"
-              disabled="@Disabled"
-              value="@Description"
-              @oninput="OnInput"></textarea>
+    <div class="mcm-field mcm-motd-field">
+        <label class="mcm-field-head" for="@NameId">Server name</label>
+        <div @ref="_nameEl"
+             id="@NameId"
+             class="mcm-motd-surface mcm-motd-surface-name"
+             role="textbox"
+             aria-multiline="false"
+             aria-label="Server name"
+             contenteditable="@(Disabled ? "false" : "true")"
+             spellcheck="false"
+             @onfocus="@(() => _focused = "name")"></div>
+    </div>
+    <div class="mcm-field mcm-motd-field">
+        <label class="mcm-field-head" for="@DescId">Description</label>
+        <div @ref="_descEl"
+             id="@DescId"
+             class="mcm-motd-surface mcm-motd-surface-desc"
+             role="textbox"
+             aria-multiline="true"
+             aria-label="Description"
+             contenteditable="@(Disabled ? "false" : "true")"
+             spellcheck="false"
+             @onfocus="@(() => _focused = "desc")"></div>
+    </div>
     <p class="mcm-motd-preview" aria-live="polite">
         <span class="mcm-motd-preview-label">Server list preview</span>
         @((MarkupString)PreviewHtml)
     </p>
-    <p class="mcm-motd-hex-note">Hex and gradient colors need Paper or Spigot 1.16+. Vanilla, Forge, and Fabric ignore them.</p>
+    <p class="mcm-motd-counters" aria-live="polite">
+        @foreach (var metric in LineMetrics)
+        {
+            <span class="@(metric.TooLong ? "mcm-motd-counter-over" : null)">@metric.Label</span>
+        }
+    </p>
     <label class="mcm-checkbox-row mcm-motd-omit">
         <input type="checkbox"
                disabled="@Disabled"
@@ -64,53 +88,230 @@
             </button>
         </div>
     </details>
+    <p class="mcm-motd-hex-note">Hex and gradient colors need Paper or Spigot 1.16+. Vanilla, Forge, and Fabric ignore them.</p>
 </div>
 
 @code {
+    [Parameter] public string ServerName { get; set; } = "";
+    [Parameter] public EventCallback<string> ServerNameChanged { get; set; }
     [Parameter] public string Description { get; set; } = "";
     [Parameter] public EventCallback<string> DescriptionChanged { get; set; }
-    [Parameter] public string ServerName { get; set; } = "";
     [Parameter] public bool OmitName { get; set; }
     [Parameter] public EventCallback<bool> OmitNameChanged { get; set; }
     [Parameter] public bool Disabled { get; set; }
     [Parameter] public string IdPrefix { get; set; } = "mcm-motd";
 
+    private ElementReference _nameEl;
+    private ElementReference _descEl;
+    private DotNetObjectReference<MotdEditor>? _net;
     private bool _copied;
-    private string TextAreaId => IdPrefix + "-desc";
+    private bool _nameSync = true;
+    private bool _descSync = true;
+    private int? _nameCaretStart;
+    private int? _nameCaretEnd;
+    private int? _descCaretStart;
+    private int? _descCaretEnd;
+    private string _nameRaw = "";
+    private string _descRaw = "";
+    private string _focused = "desc";
+
+    private string NameId => IdPrefix + "-name";
+    private string DescId => IdPrefix + "-desc";
 
     private string RawMotd =>
         ServerIdentityUx.BuildMotd(ServerName, Description, OmitName);
 
     private string PreviewHtml => MotdFormatting.ToPreviewHtml(RawMotd);
 
-    private async Task OnInput(ChangeEventArgs e)
+    private IReadOnlyList<MotdFormatting.MotdLineMetric> LineMetrics =>
+        MotdFormatting.MeasureIdentityLines(ServerName, Description, OmitName);
+
+    protected override void OnParametersSet()
     {
-        var next = MotdFormatting.NormalizePaste(e.Value?.ToString() ?? "");
-        if (next.Length > ServerIdentityUx.MaxDescriptionLength)
-            next = next[..ServerIdentityUx.MaxDescriptionLength];
-        Description = next;
-        await DescriptionChanged.InvokeAsync(next);
+        if (ServerName != _nameRaw)
+        {
+            _nameRaw = ServerName ?? "";
+            _nameSync = true;
+        }
+
+        if (Description != _descRaw)
+        {
+            _descRaw = Description ?? "";
+            _descSync = true;
+        }
     }
 
-    private async Task WrapAsync(string prefix)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (Disabled)
-            return;
+        _net ??= DotNetObjectReference.Create(this);
         try
         {
-            var next = await JS.InvokeAsync<string?>("mcmMotd.wrap", TextAreaId, prefix, "");
-            if (next is null)
-                return;
-            if (next.Length > ServerIdentityUx.MaxDescriptionLength)
-                next = next[..ServerIdentityUx.MaxDescriptionLength];
-            Description = next;
-            await DescriptionChanged.InvokeAsync(next);
+            await JS.InvokeVoidAsync("mcmMotd.bind", _nameEl, _net, "name", true);
+            await JS.InvokeVoidAsync("mcmMotd.bind", _descEl, _net, "desc", false);
+            if (_nameSync)
+            {
+                await JS.InvokeVoidAsync(
+                    "mcmMotd.setHtml",
+                    _nameEl,
+                    MotdFormatting.ToEditorHtml(_nameRaw),
+                    _nameCaretStart,
+                    _nameCaretEnd);
+                _nameSync = false;
+                _nameCaretStart = null;
+                _nameCaretEnd = null;
+            }
+
+            if (_descSync)
+            {
+                await JS.InvokeVoidAsync(
+                    "mcmMotd.setHtml",
+                    _descEl,
+                    MotdFormatting.ToEditorHtml(_descRaw),
+                    _descCaretStart,
+                    _descCaretEnd);
+                _descSync = false;
+                _descCaretStart = null;
+                _descCaretEnd = null;
+            }
         }
         catch (Exception)
         {
-            Description = prefix + Description;
-            await DescriptionChanged.InvokeAsync(Description);
+            // WebView JS may not be ready on the first frame.
         }
+    }
+
+    [JSInvokable]
+    public Task MotdFocus(string field)
+    {
+        if (field is "name" or "desc")
+            _focused = field;
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public async Task MotdTyped(string field, string text)
+    {
+        if (Disabled)
+            return;
+        text ??= "";
+        if (field == "name")
+        {
+            _nameRaw = text;
+            ServerName = text;
+            await ServerNameChanged.InvokeAsync(text);
+            StateHasChanged();
+            return;
+        }
+
+        if (text.Length > ServerIdentityUx.MaxDescriptionLength)
+        {
+            text = text[..ServerIdentityUx.MaxDescriptionLength];
+            _descRaw = text;
+            _descSync = true;
+            var vis = MotdFormatting.RawToVisible(text, text.Length);
+            _descCaretStart = vis;
+            _descCaretEnd = vis;
+        }
+        else
+        {
+            _descRaw = text;
+        }
+
+        Description = text;
+        await DescriptionChanged.InvokeAsync(text);
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public async Task MotdPaste(string field, string raw, int start, int end)
+    {
+        if (Disabled)
+            return;
+        var insert = MotdFormatting.NormalizePaste(raw);
+        await InsertAsync(field, insert, start, end);
+    }
+
+    [JSInvokable]
+    public async Task MotdEnter(string field, int start, int end)
+    {
+        if (Disabled || field != "desc")
+            return;
+        await InsertAsync("desc", "\n", start, end);
+    }
+
+    private async Task WrapAsync(char code)
+    {
+        if (Disabled)
+            return;
+        var field = _focused is "name" or "desc" ? _focused : "desc";
+        var el = field == "name" ? _nameEl : _descEl;
+        var text = field == "name" ? _nameRaw : _descRaw;
+        var visStart = MotdFormatting.RawToVisible(text, text.Length);
+        var visEnd = visStart;
+        try
+        {
+            var range = await JS.InvokeAsync<MotdRange>("mcmMotd.getRange", el);
+            visStart = range.Start;
+            visEnd = range.End;
+        }
+        catch (Exception)
+        {
+            // Keep caret-at-end fallback.
+        }
+
+        var lo = MotdFormatting.VisibleToRaw(text, visStart);
+        var hi = MotdFormatting.VisibleToRaw(text, visEnd);
+        var result = MotdFormatting.WrapSpan(text, lo, hi, code);
+        var next = result.Text;
+        if (field == "desc" && next.Length > ServerIdentityUx.MaxDescriptionLength)
+            next = next[..ServerIdentityUx.MaxDescriptionLength];
+        var c0 = MotdFormatting.RawToVisible(next, result.InnerStart);
+        var c1 = MotdFormatting.RawToVisible(next, result.InnerEnd);
+        await SetFieldAsync(field, next, c0, c1);
+    }
+
+    private async Task InsertAsync(string field, string insert, int visStart, int visEnd)
+    {
+        var text = field == "name" ? _nameRaw : _descRaw;
+        insert ??= "";
+        if (field == "name")
+        {
+            insert = insert.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
+            var nl = insert.IndexOf('\n');
+            if (nl >= 0)
+                insert = insert[..nl];
+        }
+
+        var lo = MotdFormatting.VisibleToRaw(text, visStart);
+        var hi = MotdFormatting.VisibleToRaw(text, visEnd);
+        var next = text[..lo] + insert + text[hi..];
+        if (field == "desc" && next.Length > ServerIdentityUx.MaxDescriptionLength)
+            next = next[..ServerIdentityUx.MaxDescriptionLength];
+        var caret = MotdFormatting.RawToVisible(next, Math.Min(lo + insert.Length, next.Length));
+        await SetFieldAsync(field, next, caret, caret);
+    }
+
+    private async Task SetFieldAsync(string field, string next, int caretStart, int caretEnd)
+    {
+        if (field == "name")
+        {
+            _nameRaw = next;
+            ServerName = next;
+            _nameSync = true;
+            _nameCaretStart = caretStart;
+            _nameCaretEnd = caretEnd;
+            await ServerNameChanged.InvokeAsync(next);
+            StateHasChanged();
+            return;
+        }
+
+        _descRaw = next;
+        Description = next;
+        _descSync = true;
+        _descCaretStart = caretStart;
+        _descCaretEnd = caretEnd;
+        await DescriptionChanged.InvokeAsync(next);
+        StateHasChanged();
     }
 
     private async Task OnOmitChanged(ChangeEventArgs e)
@@ -119,6 +320,7 @@
                     || string.Equals(e.Value?.ToString(), "true", StringComparison.OrdinalIgnoreCase);
         OmitName = value;
         await OmitNameChanged.InvokeAsync(value);
+        StateHasChanged();
     }
 
     private async Task CopyRawAsync()
@@ -132,5 +334,13 @@
         {
             _copied = false;
         }
+    }
+
+    public void Dispose() => _net?.Dispose();
+
+    private sealed class MotdRange
+    {
+        public int Start { get; set; }
+        public int End { get; set; }
     }
 }

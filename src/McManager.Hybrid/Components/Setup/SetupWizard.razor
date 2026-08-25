@@ -352,25 +352,11 @@
                     </p>
                     <div class="mcm-identity-grid">
                         <div>
-                            <div class="mcm-field">
-                                <label for="mcm-setup-server-name" class="mcm-field-head">Server name</label>
-                                <input id="mcm-setup-server-name"
-                                       type="text"
-                                       name="server-name"
-                                       autocomplete="off"
-                                       maxlength="@Vm.IdentityNameMaxLength"
-                                       disabled="@(!Vm.CanMutateWizard)"
-                                       @bind="Vm.IdentityName"
-                                       @bind:event="oninput" />
-                            </div>
-                            <div class="mcm-field">
-                                <label for="mcm-setup-server-desc" class="mcm-field-head">Description</label>
-                                <MotdEditor IdPrefix="mcm-setup-server"
-                                            Disabled="@(!Vm.CanMutateWizard)"
-                                            ServerName="@Vm.IdentityName"
-                                            @bind-Description="Vm.IdentityDescription"
-                                            @bind-OmitName="Vm.IdentityMotdOmitName" />
-                            </div>
+                            <MotdEditor IdPrefix="mcm-setup-server"
+                                        Disabled="@(!Vm.CanMutateWizard)"
+                                        @bind-ServerName="Vm.IdentityName"
+                                        @bind-Description="Vm.IdentityDescription"
+                                        @bind-OmitName="Vm.IdentityMotdOmitName" />
                         </div>
                         <div>
                             <div>

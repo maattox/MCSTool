@@ -133,6 +133,54 @@ public sealed class MotdFormattingTests
     }
 
     [Fact]
+    public void Visible_text_strips_codes_and_keeps_newlines()
+    {
+        Assert.Equal("", MotdFormatting.VisibleText(""));
+        Assert.Equal("Hello", MotdFormatting.VisibleText("§cHello"));
+        Assert.Equal("Hi", MotdFormatting.VisibleText("§l§oHi"));
+        Assert.Equal("Gold", MotdFormatting.VisibleText(MotdFormatting.HexPrefix("ffaa00") + "Gold"));
+        Assert.Equal("Hello\nWorld", MotdFormatting.VisibleText("§cHello\n§aWorld"));
+    }
+
+    [Fact]
+    public void Visible_raw_mapping_round_trips_bold_selection()
+    {
+        const string text = "test MOTD message";
+        var start = text.IndexOf("MOTD", StringComparison.Ordinal);
+        var wrapped = MotdFormatting.WrapSpan(text, start, start + 4, 'l');
+        Assert.Equal("test §lMOTD§r message", wrapped.Text);
+        Assert.Equal(start, MotdFormatting.RawToVisible(wrapped.Text, wrapped.InnerStart));
+        Assert.Equal(start + 4, MotdFormatting.RawToVisible(wrapped.Text, wrapped.InnerEnd));
+        Assert.Equal(wrapped.InnerStart, MotdFormatting.VisibleToRaw(wrapped.Text, start));
+        Assert.Equal(wrapped.InnerEnd, MotdFormatting.VisibleToRaw(wrapped.Text, start + 4));
+    }
+
+    [Fact]
+    public void Visible_raw_mapping_empty_wrap_lands_in_hole()
+    {
+        const string text = "test MOTD message";
+        var at = text.IndexOf("MOTD", StringComparison.Ordinal);
+        var empty = MotdFormatting.WrapSpan(text, at, at, 'l');
+        var vis = MotdFormatting.RawToVisible(empty.Text, empty.InnerStart);
+        Assert.Equal(at, vis);
+        Assert.Equal(empty.InnerStart, MotdFormatting.VisibleToRaw(empty.Text, vis));
+        Assert.Equal(empty.InnerEnd, MotdFormatting.VisibleToRaw(empty.Text, vis));
+    }
+
+    [Fact]
+    public void Editor_html_hides_codes_and_emits_hole_and_data_attrs()
+    {
+        var html = MotdFormatting.ToEditorHtml("test §lMOTD§r message");
+        Assert.DoesNotContain("§", html, StringComparison.Ordinal);
+        Assert.Contains("MOTD", html, StringComparison.Ordinal);
+        Assert.Contains("data-motd-b=\"1\"", html, StringComparison.Ordinal);
+
+        var hole = MotdFormatting.ToEditorHtml("test §l§rMOTD message");
+        Assert.Contains(MotdFormatting.EditorHole, hole);
+        Assert.Contains("data-motd-b=\"1\"", hole, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Line_counters_follow_BuildMotd_and_omit_name_split()
     {
         var named = MotdFormatting.MeasureIdentityLines("Friends SMP", "Weekend world");

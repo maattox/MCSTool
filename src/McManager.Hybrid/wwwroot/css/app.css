@@ -26,6 +26,7 @@
     --power-disabled-bg: #2a303a;
     --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
     --font-mono: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
+    --font-minecraft: "Minecraft", var(--font-sans);
     --radius: 10px;
     /* Status 330 + gap 14 + pins fill remaining chrome (3×2). Keep in sync with MainWindow.AppShellWidthDip. */
     --app-chrome-width: 1008px;
@@ -3508,9 +3509,19 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 
 .mcm-motd-preview > span:first-child,
 .mcm-motd-preview-label {
+    font-family: var(--font-sans);
     font-size: 11px;
     color: #9aa48a;
     margin-bottom: 4px;
+}
+
+.mcm-motd-preview .mcm-motd-line {
+    font-family: var(--font-minecraft);
+    font-size: 16px;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+    min-height: 1.25em;
+    color: #ffffff;
 }
 
 .mcm-motd-line {
@@ -3606,13 +3617,76 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     background: var(--surface-1);
 }
 
-.mcm-motd-input {
+.mcm-motd-field {
+    margin: 0;
+}
+
+.mcm-motd-field .mcm-field-head {
+    margin-bottom: 4px;
+}
+
+.mcm-motd-surface {
     width: 100%;
-    min-height: 4.5em;
-    resize: vertical;
-    font-family: var(--font-mono);
-    font-size: 12px;
+    background: var(--surface-1);
+    border: 0.5px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 8px;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-family: var(--font-sans);
     line-height: 1.4;
+    caret-color: var(--fill-accent);
+    outline: none;
+    min-width: 0;
+}
+
+.mcm-motd-surface:focus {
+    border-color: var(--border-strong);
+    outline: 2px solid var(--fill-accent);
+    outline-offset: 2px;
+}
+
+.mcm-motd-surface[contenteditable="false"] {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.mcm-motd-surface .mcm-motd-line {
+    display: block;
+    min-height: 1.2em;
+    font-family: var(--font-sans);
+    color: inherit;
+}
+
+.mcm-motd-surface-name {
+    min-height: calc(1.4em + 12px);
+    white-space: nowrap;
+    overflow-x: auto;
+}
+
+.mcm-motd-surface-desc {
+    min-height: 4.5em;
+    white-space: pre-wrap;
+}
+
+.mcm-motd-surface::selection,
+.mcm-motd-surface *::selection {
+    background: var(--fill-accent);
+    color: #ffffff;
+}
+
+.mcm-motd-counters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    margin: 0;
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.35;
+}
+
+.mcm-motd-counter-over {
+    color: var(--text-danger);
 }
 
 .mcm-motd-hex-note {

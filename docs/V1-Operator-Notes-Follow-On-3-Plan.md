@@ -1,6 +1,6 @@
 # V1 operator-notes follow-on 3 (living)
 
-**Status:** Living. Created 2026-08-24 (docs only). **Live NEXT:** [`NEXT.md`](NEXT.md).  
+**Status:** COMPLETE (P1–P4 DONE). Created 2026-08-24 (docs only). **Live NEXT:** [`NEXT.md`](NEXT.md) Step **8.5.2** Pass 3 (**blocked**).  
 **Parent:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.11**.  
 **Why now:** operator 2026-08-24 — caption contrast, pin-row empty space after the wider window, and MOTD editor (selection wrap, WYSIWYG, Minecraft-font preview, per-line counters, format **name and description**) **before** QA Pass 3. Vague layout notes: agents **decide inside each section’s bounds** (and [Scrutiny](#scrutiny-plan-decisions)). Stop and ask for spend, `tofu destroy`, `DEFAULT`, or pulling other parked after-v1 items.
 
@@ -64,7 +64,7 @@ P3 may run in a **separate operator chat** while Group A is on P1–P2. Default 
 | P1 | Caption bar contrast | **DONE** | SEQUENTIAL — same `app.css` as P2 | agent |
 | P2 | Fill pin-row empty space | **DONE** | SEQUENTIAL — manage chrome after P1 | either |
 | P3 | MOTD wrap-with-reset + line metrics | **DONE** | PARALLEL-OK with P1–P2 | agent |
-| P4 | MOTD WYSIWYG editor (name + description) | **NEXT** | SEQUENTIAL after P3 and P1–P2 | plan-first |
+| P4 | MOTD WYSIWYG editor (name + description) | **DONE** | SEQUENTIAL after P3 and P1–P2 | plan-first |
 
 ---
 
@@ -228,7 +228,7 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 
 ## P4 — MOTD WYSIWYG editor (name + description)
 
-**Status:** NEXT  
+**Status:** DONE  
 **Parallel:** SEQUENTIAL after P3 (API) and P1–P2 (`app.css`)  
 **Cursor mode:** plan-first  
 **UI skill:** yes
@@ -260,7 +260,7 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 
 - Setup and Manager identity can format **both** list lines in-app without seeing codes while typing; wrap closes; preview uses the Minecraft font; counters warn when a line is too long.
 
-**Changelog:** *(date when finished)*
+**Changelog:** 2026-08-24 — **DONE.** Shared `MotdEditor` is a WYSIWYG for **name and description** (contenteditable runs; stored `§` in `chat.json`). One toolbar wraps the focused field via `WrapSpan`. Combined preview uses `Minecraft-Regular.otf`. Per-line `used/59` counters. Name 40-char cap dropped (list counter is the limit). `DisplayName` strips codes. Guide. Plan **COMPLETE**. Pass 3 stays blocked until the operator says so.
 
 ---
 
@@ -279,6 +279,7 @@ When P1–P4 are **DONE**:
 
 | Date | Note |
 |------|------|
+| 2026-08-24 | **P4 DONE** (MOTD WYSIWYG name + description; Minecraft-font preview; 59-char counters). Plan **COMPLETE**. Pass 3 stays blocked until the operator says so. |
 | 2026-08-24 | **P3 DONE** (MOTD wrap-with-reset + 59-char line counters in Core). Living **NEXT = P4** (plan-first). Pass 3 stays blocked. |
 | 2026-08-24 | **P2 DONE** (3×2 pin row fills chrome; Hours left + Idle timeout from existing budget refresh). Living **NEXT = P3**. Pass 3 stays blocked. |
 | 2026-08-24 | P1 follow-up: 6px WPF side strips match caption at the top so the title bar is flush. Living **NEXT = P2**. |

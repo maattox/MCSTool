@@ -66,27 +66,15 @@
                 </button>
             </div>
             <p class="mcm-server-facts">
-                Minecraft @Vm.MinecraftVersionDisplay. Friends see the name, description, and in-game icon in their server list while the game is running. Select text and use the colors to format the list MOTD, or paste a generator <code>motd=</code> string. Offline / starting / unavailable icons show on the doorbell while the server is off.
+                        Minecraft @Vm.MinecraftVersionDisplay. Friends see the name, description, and in-game icon in their server list while the game is running. Highlight text in the name or description and use the toolbar to format the list MOTD, or paste a generator <code>motd=</code> string. Offline / starting / unavailable icons show on the doorbell while the server is off.
             </p>
             <div class="mcm-identity-grid">
                 <div>
-                    <div class="mcm-field">
-                        <label for="mcm-server-name">Server name</label>
-                        <input id="mcm-server-name"
-                               type="text"
-                               maxlength="40"
-                               disabled="@Vm.AnyBusy"
-                               @bind="Vm.IdentityName"
-                               @bind:event="oninput" />
-                    </div>
-                    <div class="mcm-field">
-                        <label for="mcm-server-desc">Description</label>
-                        <MotdEditor IdPrefix="mcm-server"
-                                    Disabled="@Vm.AnyBusy"
-                                    ServerName="@Vm.IdentityName"
-                                    @bind-Description="Vm.IdentityDescription"
-                                    @bind-OmitName="Vm.IdentityMotdOmitName" />
-                    </div>
+                    <MotdEditor IdPrefix="mcm-server"
+                                Disabled="@Vm.AnyBusy"
+                                @bind-ServerName="Vm.IdentityName"
+                                @bind-Description="Vm.IdentityDescription"
+                                @bind-OmitName="Vm.IdentityMotdOmitName" />
                 </div>
                 <div>
                     <ServerIconPreviewStrip ColorUrl="@Vm.IconPreviewDataUrl"
