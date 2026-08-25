@@ -4,6 +4,7 @@
 
 :root {
     --bg: #161a21;
+    --caption-bg: #10141a;
     --surface-1: #1e242e;
     --surface-2: #262d38;
     --border: #323a48;
@@ -190,6 +191,8 @@ button.mcm-btn-disabled:hover {
     flex-shrink: 0;
     user-select: none;
     -webkit-user-select: none;
+    background: var(--caption-bg);
+    border-bottom: 1px solid var(--border);
 }
 
 .mcm-caption-drag {
@@ -220,7 +223,7 @@ button.mcm-btn-disabled:hover {
 
 .mcm-caption-winbtn {
     width: 46px;
-    height: var(--app-caption-height);
+    height: 100%;
     padding: 0;
     border: 0;
     border-radius: 0;
@@ -288,7 +291,7 @@ button.mcm-btn-disabled:hover {
     height: 8px;
     border-radius: 50%;
     background: var(--fill-danger);
-    border: 1.5px solid var(--bg);
+    border: 1.5px solid var(--caption-bg);
     pointer-events: none;
 }
 

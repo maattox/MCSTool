@@ -1,6 +1,6 @@
 # V1 operator-notes follow-on 2 (living)
 
-**Status:** **COMPLETE** (P1–P9). Created 2026-08-24. **Live NEXT:** [`NEXT.md`](NEXT.md) (Pass 3, blocked until the operator says so).  
+**Status:** **COMPLETE** (P1–P9). Created 2026-08-24. **Live NEXT:** [`NEXT.md`](NEXT.md) (Step **8.11**).  
 **Parent:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.10**.  
 **Why now:** operator 2026-08-24 — Manager/Setup density, toasts, pack UX, VM1 icon, and MOTD styling **before** QA Pass 3. Vague layout notes: agents **decide inside each section’s bounds** (UI skills) and record the choice. Stop and ask for spend, `tofu destroy`, `DEFAULT`, or pulling other parked after-v1 items.
 
