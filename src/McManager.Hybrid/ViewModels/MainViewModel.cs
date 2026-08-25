@@ -521,11 +521,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                     "Lock cleared, but the doorbell cache refresh failed. Try Troubleshooting → Refresh OS budget, then Start.",
                     isError: true);
                 SpendBrakeUnlockStatus =
-                    "Lock cleared. Use Start on the top bar when you are ready (doorbell cache refresh failed).";
+                    "Lock cleared. Use Start in the sidebar when you are ready (doorbell cache refresh failed).";
                 return;
             }
 
-            SpendBrakeUnlockStatus = "Lock cleared. Use Start on the top bar when you are ready.";
+            SpendBrakeUnlockStatus = "Lock cleared. Use Start in the sidebar when you are ready.";
             ShowToast(SpendBrakeUnlockStatus, isError: false);
         }
         finally

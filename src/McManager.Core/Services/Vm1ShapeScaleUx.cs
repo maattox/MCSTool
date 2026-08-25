@@ -93,7 +93,7 @@ public static class Vm1ShapeScaleUx
         if (!IsVm1Stopped(vm1Lifecycle))
         {
             var state = string.IsNullOrWhiteSpace(vm1Lifecycle) ? "unknown" : vm1Lifecycle.Trim();
-            return "Stop the server from the top bar first (it must be fully Stopped). "
+            return "Stop the server from the sidebar first (it must be fully Stopped). "
                 + "Minecraft stops with it. Current VM1 state: " + state + ".";
         }
 

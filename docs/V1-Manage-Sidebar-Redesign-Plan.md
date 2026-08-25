@@ -1,6 +1,6 @@
 # V1 Manage sidebar redesign (living)
 
-**Status:** NEXT = P5. Created 2026-08-25 (docs only). **Live NEXT:** [`NEXT.md`](NEXT.md).  
+**Status:** COMPLETE (P1–P5). Created 2026-08-25 (docs only). **Live NEXT:** [`NEXT.md`](NEXT.md) → Step **8.5.2** Pass 3 (**blocked** until the operator says so).  
 **Parent:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.12**.  
 **Branch:** `UI-redesign` — keep this work here until the operator likes it. Do not merge to `main` from an agent chat.  
 **Why now:** operator 2026-08-25 — rearrange Manage chrome into a left sidebar (status, power, pins, vertical tabs) and a large content pane. Topology from [`assets/UI-design-mockup.png`](../assets/UI-design-mockup.png). **Not** a new color/type world. Vague spacing: agents **decide inside each section’s bounds** (and [Scrutiny](#scrutiny-plan-decisions)). Stop and ask for spend, `tofu destroy`, `DEFAULT`, a donation URL, or parked after-v1 items.
@@ -60,7 +60,7 @@ None. Every section edits `MainLayout.razor` and/or `app.css` manage chrome.
 | P2 | Combined Start/Stop + condensed pins | **DONE** | SEQUENTIAL — same sidebar chrome | agent |
 | P3 | About tab; remove caption overflow | **DONE** | SEQUENTIAL — nav + caption | agent |
 | P4 | Overview tab | **DONE** | SEQUENTIAL — after shell exists | plan-first |
-| P5 | Resize polish + Guide | **NEXT** | SEQUENTIAL — after P4 landing default | agent |
+| P5 | Resize polish + Guide | **DONE** | SEQUENTIAL — after P4 landing default | agent |
 
 ---
 
@@ -273,7 +273,7 @@ When P1–P5 are **DONE**: [`NEXT.md`](NEXT.md) → Step **8.5.2** Pass 3 (**blo
 
 ## P5 — Resize polish + Guide
 
-**Status:** NEXT  
+**Status:** DONE  
 **Parallel:** SEQUENTIAL — after Overview is home  
 **Cursor mode:** agent  
 **UI skill:** yes
@@ -300,4 +300,4 @@ When P1–P5 are **DONE**: [`NEXT.md`](NEXT.md) → Step **8.5.2** Pass 3 (**blo
 
 - Resize holds up; Guide is current. Then this plan is **COMPLETE** and NEXT returns to Pass 3 **blocked**.
 
-**Changelog:** *(date when finished)*
+**Changelog:** 2026-08-25 — Console log well shrinks instead of clipping the command row; toasts sit in-flow above the Change-pack dock; identity / Overview / Troubleshooting stack in the content pane at min width. Guide: sidebar, combined Start/Stop, four pins, Overview/About, no ☰, resize.

@@ -30,9 +30,7 @@
     --radius: 10px;
     /* Manage sidebar; keep default window in sync with MainWindow.AppShellWidthDip (1280). */
     --manage-sidebar-width: 296px;
-    --app-chrome-width: 1008px;
     --app-pad-x: 16px;
-    --app-shell-width: calc(var(--app-chrome-width) + 2 * var(--app-pad-x));
     --app-caption-height: 36px;
     /* Thin overlay-style thumb; lives in the right window gutter, not the tab cards. */
     --tab-scrollbar-size: 8px;
@@ -166,7 +164,7 @@ button.mcm-btn-disabled:hover {
         var(--app-pad-x)
         minmax(0, 1fr)
         var(--app-pad-x);
-    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
     padding-left: 0;
     padding-right: 0;
 }
@@ -804,14 +802,14 @@ button.mcm-btn-disabled:hover {
 
 .mcm-app-manage > .mcm-action-banner {
     grid-column: 4;
-    grid-row: 2;
+    grid-row: 3;
     justify-self: start;
     align-self: end;
     position: relative;
     z-index: 30;
     width: max-content;
     max-width: min(420px, 100%);
-    margin: 0 0 var(--mcm-toast-bottom) 0;
+    margin: 8px 0 var(--mcm-toast-bottom) 0;
     padding: 0;
     background: transparent;
     border: none;
@@ -1172,6 +1170,8 @@ button.mcm-btn-disabled:hover {
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
+    container-type: inline-size;
+    container-name: mcm-tab-pane;
 }
 
 .mcm-tab-body-inner {
@@ -1515,7 +1515,14 @@ button.mcm-btn-disabled:hover {
 }
 
 .mcm-wl-row {
-    grid-template-columns: 1fr 1fr 56px 128px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 56px 128px;
+}
+
+.mcm-wl-row > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .mcm-bk-row {
@@ -2900,6 +2907,7 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 
 .mcm-progress-dock-row {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
@@ -2927,7 +2935,7 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 
 .mcm-app-manage > .mcm-progress-dock {
     grid-column: 4;
-    grid-row: 3;
+    grid-row: 4;
     z-index: 20;
     margin: 0 0 4px;
     border: 0.5px solid var(--border);
@@ -3473,7 +3481,7 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 .mcm-console-log-wrap {
     position: relative;
     flex: 1 1 auto;
-    min-height: 12rem;
+    min-height: 4.5rem;
     min-width: 0;
     display: flex;
     flex-direction: column;
@@ -3961,8 +3969,17 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     margin: 6px 0 0 !important;
 }
 
-@media (max-width: 720px) {
+/* Content pane is ~576px at the 920 min window; viewport queries never fire. */
+@container mcm-tab-pane (max-width: 40rem) {
     .mcm-identity-grid {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    .mcm-card-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .mcm-overview {
+        grid-template-columns: 1fr;
     }
 }
