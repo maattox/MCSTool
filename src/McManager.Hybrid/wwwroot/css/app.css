@@ -29,7 +29,7 @@
     --font-minecraft: "Minecraft", var(--font-sans);
     --radius: 10px;
     /* Manage sidebar; keep default window in sync with MainWindow.AppShellWidthDip (1280). */
-    --manage-sidebar-width: 296px;
+    --manage-sidebar-width: 244px;
     --app-pad-x: 16px;
     --app-caption-height: 36px;
     /* Thin overlay-style thumb; lives in the right window gutter, not the tab cards. */
@@ -150,23 +150,22 @@ button.mcm-btn-disabled:hover {
 }
 
 /*
- * Manage shell: full-bleed caption, then sidebar | fluid content.
- * Extra window width goes to the content pane. Right pad is the scrollbar gutter.
+ * Manage shell: full-bleed caption, then flush sidebar | fluid content.
+ * Three panel fills: chrome (--bg), nav (--surface-1), content (--manage-content-bg).
+ * Extra window width goes to the content pane.
  */
 .mcm-app-manage {
     position: relative;
     --mcm-toast-bottom: 20px;
     --mcm-toast-fade: 320ms;
+    --manage-content-bg: #3c434c;
     display: grid;
     grid-template-columns:
-        var(--app-pad-x)
         var(--manage-sidebar-width)
-        var(--app-pad-x)
-        minmax(0, 1fr)
-        var(--app-pad-x);
+        minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr) auto auto;
-    padding-left: 0;
-    padding-right: 0;
+    padding: 0;
+    background: var(--manage-content-bg);
 }
 
 .mcm-app-manage > * {
@@ -176,19 +175,20 @@ button.mcm-btn-disabled:hover {
 .mcm-app-manage > .mcm-caption {
     grid-column: 1 / -1;
     grid-row: 1;
-    margin-left: 0;
-    margin-right: 0;
+    margin: 0;
 }
 
 .mcm-app-manage > .mcm-sidebar {
-    grid-column: 2;
-    grid-row: 2;
+    grid-column: 1;
+    grid-row: 2 / -1;
+    border-right: 1px solid var(--border);
 }
 
 .mcm-app-manage > .mcm-tab-body {
-    grid-column: 4;
+    grid-column: 2;
     grid-row: 2;
-    padding-top: 0;
+    padding: 14px 16px 16px;
+    background: var(--manage-content-bg);
 }
 
 .mcm-caption {
@@ -493,26 +493,36 @@ button.mcm-btn-disabled:hover {
 .mcm-sidebar {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 0;
     min-height: 0;
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
-    padding-bottom: 4px;
+    background: var(--bg);
+}
+
+.mcm-sidebar-chrome {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 0 0 auto;
+    padding: 10px 10px 12px;
+    background: var(--bg);
 }
 
 .mcm-status-card {
     background: var(--surface-1);
     border: 1px solid var(--border);
     border-radius: 12px;
-    padding: 0.75rem 0.85rem;
+    padding: 0.5rem 0.6rem;
     font-family: var(--font-mono);
     flex: 0 0 auto;
 }
 
 .mcm-srow {
     display: grid;
-    grid-template-columns: 64px minmax(0, 1fr);
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 8px;
     align-items: center;
     padding: 3px 0;
 }
@@ -801,7 +811,7 @@ button.mcm-btn-disabled:hover {
 }
 
 .mcm-app-manage > .mcm-action-banner {
-    grid-column: 4;
+    grid-column: 2;
     grid-row: 3;
     justify-self: start;
     align-self: end;
@@ -809,7 +819,7 @@ button.mcm-btn-disabled:hover {
     z-index: 30;
     width: max-content;
     max-width: min(420px, 100%);
-    margin: 8px 0 var(--mcm-toast-bottom) 0;
+    margin: 8px 16px var(--mcm-toast-bottom) 16px;
     padding: 0;
     background: transparent;
     border: none;
@@ -968,11 +978,13 @@ button.mcm-btn-disabled:hover {
     flex-direction: column;
     gap: 2px;
     width: 100%;
-    margin-top: 2px;
-    padding: 0;
-    background: transparent;
+    margin: 0;
+    padding: 8px 8px 10px;
+    background: var(--surface-1);
     border: none;
+    border-top: 1px solid var(--border);
     flex: 1 1 auto;
+    min-height: 0;
 }
 
 .mcm-tab {
@@ -2934,10 +2946,10 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 }
 
 .mcm-app-manage > .mcm-progress-dock {
-    grid-column: 4;
+    grid-column: 2;
     grid-row: 4;
     z-index: 20;
-    margin: 0 0 4px;
+    margin: 0 16px 16px;
     border: 0.5px solid var(--border);
     border-radius: 12px;
 }
@@ -3426,7 +3438,6 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    padding-top: 0;
 }
 
 .mcm-tab-body.is-console .mcm-tab-body-inner {

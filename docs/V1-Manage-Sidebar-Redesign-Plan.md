@@ -1,6 +1,6 @@
 # V1 Manage sidebar redesign (living)
 
-**Status:** COMPLETE (P1–P5). Created 2026-08-25 (docs only). **Live NEXT:** [`NEXT.md`](NEXT.md) → Step **8.5.2** Pass 3 (**blocked** until the operator says so).  
+**Status:** COMPLETE (P1–P5). Created 2026-08-25 (docs only). **Live NEXT:** [`NEXT.md`](NEXT.md) → Step **8.13** ([`V1-Manage-Sidebar-Polish-Plan.md`](V1-Manage-Sidebar-Polish-Plan.md)). Pass 3 stays **blocked**.  
 **Parent:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.12**.  
 **Branch:** `UI-redesign` — keep this work here until the operator likes it. Do not merge to `main` from an agent chat.  
 **Why now:** operator 2026-08-25 — rearrange Manage chrome into a left sidebar (status, power, pins, vertical tabs) and a large content pane. Topology from [`assets/UI-design-mockup.png`](../assets/UI-design-mockup.png). **Not** a new color/type world. Vague spacing: agents **decide inside each section’s bounds** (and [Scrutiny](#scrutiny-plan-decisions)). Stop and ask for spend, `tofu destroy`, `DEFAULT`, a donation URL, or parked after-v1 items.
@@ -131,7 +131,7 @@ Do **not** rewrite PRODUCT-IDEAS to match.
 
 ## After this plan
 
-When P1–P5 are **DONE**: [`NEXT.md`](NEXT.md) → Step **8.5.2** Pass 3 (**blocked** until the operator says so). Do **not** start Pass 3, **8.6.1**, or **9.1** from this plan.
+P1–P5 are **DONE**. Follow-on polish is Step **8.13** ([`V1-Manage-Sidebar-Polish-Plan.md`](V1-Manage-Sidebar-Polish-Plan.md)). Do **not** start Pass 3, **8.6.1**, or **9.1** from this plan.
 
 ---
 

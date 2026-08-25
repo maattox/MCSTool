@@ -183,12 +183,13 @@ Read [`docs/NEXT.md`](NEXT.md) and run `/next-step` in a fresh Agent chat. Workf
 | **8.10** | Operator-notes follow-on 2 (density, MOTD, VM1 icon)     | **DONE** — [`V1-Operator-Notes-Follow-On-2-Plan.md`](V1-Operator-Notes-Follow-On-2-Plan.md) P1–P9 |
 | **8.11** | Operator-notes follow-on 3 (caption, pins, MOTD WYSIWYG) | **DONE** — [`V1-Operator-Notes-Follow-On-3-Plan.md`](V1-Operator-Notes-Follow-On-3-Plan.md) P1–P4 |
 | **8.12** | Manage sidebar redesign (layout rearrange) | **DONE** — [`V1-Manage-Sidebar-Redesign-Plan.md`](V1-Manage-Sidebar-Redesign-Plan.md) P1–P5 |
-| **8.5** | Pre-packaging QA (catalog + passes + bug-fix plans)        | Pass 3 [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) — **blocked** until the operator says so. Step **8.12** is **DONE**. |
+| **8.13** | Manage sidebar polish (panel contrast, width, pins, tabs) | **NEXT** — [`V1-Manage-Sidebar-Polish-Plan.md`](V1-Manage-Sidebar-Polish-Plan.md) P2 |
+| **8.5** | Pre-packaging QA (catalog + passes + bug-fix plans)        | Pass 3 [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) — **blocked** until the operator says so. Step **8.13** is in progress. |
 | **8.6** | CI-built ARM spend-brake Function image (no Docker on admin PC) | TODO — after 8.5 exit; **required before 9.1 / official release** |
 | **9**   | Packaging, updates, launch (old MVP Phase 8–9)             | TODO — do not start until Phase 8.5 **and** Step **8.6.1** are DONE |
 
 
-**Current NEXT step:** See [`docs/NEXT.md`](NEXT.md) — Step **8.5.2** QA Pass 3 (**blocked** until the operator says so). Step **8.12** is **DONE**. **Do not start** Pass 3, **8.6.1**, or **9.1**.
+**Current NEXT step:** See [`docs/NEXT.md`](NEXT.md) — Step **8.13** P2 (compact equal pins + larger tabs + Guide). **Do not start** Pass 3, **8.6.1**, or **9.1**.
 
 ---
 
@@ -1433,9 +1434,43 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 
 - Per the current P-section in the redesign plan.
 
-**Done when:** P1–P5 **DONE** in [`V1-Manage-Sidebar-Redesign-Plan.md`](V1-Manage-Sidebar-Redesign-Plan.md). Then [`NEXT.md`](NEXT.md) → Step **8.5.2** Pass 3 (**blocked** until the operator says so).
+**Done when:** P1–P5 **DONE** in [`V1-Manage-Sidebar-Redesign-Plan.md`](V1-Manage-Sidebar-Redesign-Plan.md). Follow-on polish is Step **8.13**.
 
-**Changelog:** 2026-08-25 — **DONE** (P1–P5). **P5** resize polish + Guide (Console/dock/toasts in the two-column pane; no extra inner subtabs). Living **NEXT = Step 8.5.2** Pass 3 (**blocked** until the operator says so). Do not start 8.6.1 or 9.1. 2026-08-25 — **P4 DONE** (Overview home tab: read-only snapshot + tab jumps). Living **NEXT = P5**. Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-25 — **P3 DONE** (About tab; caption overflow gone). Living **NEXT = P4** (plan-first). Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-25 — **P2 DONE** (combined Start/Stop + four sidebar pins). Living **NEXT = P3**. Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-25 — **P1 DONE** (two-column Manage shell, 1280 default / 920 min). Living **NEXT = P2**. Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-25 — **Inserted** (docs only). Living **NEXT = P1** (two-column Manage shell). Pass 3 stays blocked. Do not start 8.6.1 or 9.1.
+**Changelog:** 2026-08-25 — Step **8.13** inserted (sidebar polish). This step stays **DONE**. 2026-08-25 — **DONE** (P1–P5). **P5** resize polish + Guide (Console/dock/toasts in the two-column pane; no extra inner subtabs). Living **NEXT = Step 8.13** P1. Do not start 8.6.1 or 9.1. 2026-08-25 — **P4 DONE** (Overview home tab: read-only snapshot + tab jumps). Living **NEXT = P5**. Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-25 — **P3 DONE** (About tab; caption overflow gone). Living **NEXT = P4** (plan-first). Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-25 — **P2 DONE** (combined Start/Stop + four sidebar pins). Living **NEXT = P3**. Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-25 — **P1 DONE** (two-column Manage shell, 1280 default / 920 min). Living **NEXT = P2**. Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-25 — **Inserted** (docs only). Living **NEXT = P1** (two-column Manage shell). Pass 3 stays blocked. Do not start 8.6.1 or 9.1.
+
+---
+
+
+
+## Phase 8.13 — Manage sidebar polish
+
+**Why this sits here:** Operator 2026-08-25 — after the 8.12 rearrange, Manage still sits on one background. Split chrome / tabs / content into distinct panels, narrow the sidebar, equalize and compact pins, enlarge the tab list. Pause Pass 3 so the polished chrome is not tested twice. Lives on branch `UI-redesign`.
+
+### Step 8.13 — Manage sidebar polish
+
+**Status:** NEXT (P2)  
+**Depends on:** Step **8.12** DONE
+
+**Read first**
+
+- [`V1-Manage-Sidebar-Polish-Plan.md`](V1-Manage-Sidebar-Polish-Plan.md) protocol + **only the NEXT P-section**
+- Do **not** load Pass 3, the full blueprint, or this whole V1 file
+
+**Do**
+
+- Implement **only** the follow-on section marked NEXT (P1 → P2). Stop after each P-section.
+- UI-heavy sections must read the skills named in that plan.
+- All sections are SEQUENTIAL (shared `MainLayout` / `app.css`). Both are **agent**.
+- Same TESTING permissions as this file. No `tofu apply`/`destroy`.
+- Do **not** start Pass 3, **8.6.1**, or **9.1**.
+
+**Test**
+
+- Per the current P-section in the polish plan.
+
+**Done when:** P1–P2 **DONE** in [`V1-Manage-Sidebar-Polish-Plan.md`](V1-Manage-Sidebar-Polish-Plan.md). Then [`NEXT.md`](NEXT.md) → Step **8.5.2** Pass 3 (**blocked** until the operator says so).
+
+**Changelog:** 2026-08-25 — **P1 DONE** (three-zone chrome + 244px flush sidebar). Living **NEXT = P2**. Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-25 — **Inserted** (docs only). Living **NEXT = P1** (three-zone chrome + narrower sidebar). Pass 3 stays blocked. Do not start 8.6.1 or 9.1.
 
 ---
 
@@ -1460,15 +1495,16 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 | `[V1-Pack-Import-Assisted-Review-Plan.md](V1-Pack-Import-Assisted-Review-Plan.md)` | Step **8.9**. **COMPLETE** (P1–P2 DONE) |
 | `[V1-Operator-Notes-Follow-On-2-Plan.md](V1-Operator-Notes-Follow-On-2-Plan.md)` | Step **8.10**. **COMPLETE** (P1–P9) |
 | `[V1-Operator-Notes-Follow-On-3-Plan.md](V1-Operator-Notes-Follow-On-3-Plan.md)` | Step **8.11**. Caption / pins / MOTD WYSIWYG. **COMPLETE** (P1–P4) |
-| `[V1-Manage-Sidebar-Redesign-Plan.md](V1-Manage-Sidebar-Redesign-Plan.md)` | Step **8.12**. Manage sidebar layout. **COMPLETE** (P1–P5). Pass 3 still needs the operator to start it |
-| `[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)`             | Pass 3 gap-close + follow-on tests. **Do not start** until **8.12** exits and the operator says so |
+| `[V1-Manage-Sidebar-Redesign-Plan.md](V1-Manage-Sidebar-Redesign-Plan.md)` | Step **8.12**. Manage sidebar layout. **COMPLETE** (P1–P5). |
+| `[V1-Manage-Sidebar-Polish-Plan.md](V1-Manage-Sidebar-Polish-Plan.md)` | Step **8.13**. Panel contrast, narrower sidebar, equal compact pins, larger tabs. **NEXT = P2**. Pass 3 still needs the operator to start it |
+| `[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)`             | Pass 3 gap-close + follow-on tests. **Do not start** until **8.13** exits and the operator says so |
 | `[V1-QA-Pass-3-Results.md](V1-QA-Pass-3-Results.md)`         | Pass 3 fill-out (do not start until operator says so)                      |
 | `[V1-Bug-Fix-Plan-Pass-1.md](V1-Bug-Fix-Plan-Pass-1.md)`     | Pass 1 fixes; **P1–P8 DONE**. Do not re-open unless a regression.          |
 | `[V1-Modpack-Robustness-Plan.md](V1-Modpack-Robustness-Plan.md)` | **DONE (R1–R4).** Exclude lists + mixed archives.                          |
 | `[V1-Bug-Fix-Plan-TEMPLATE.md](V1-Bug-Fix-Plan-TEMPLATE.md)` | Copy to `V1-Bug-Fix-Plan-Pass-N.md` after triage                           |
 
 
-Pass 2 is **closed early** (no triage). Do **not** regenerate the whole catalog each pass. Do **not** create `V1-Bug-Fix-Plan-Pass-2.md`. Pass 3 waits for the operator to start Step **8.5.2** (Step **8.12** is **DONE**).
+Pass 2 is **closed early** (no triage). Do **not** regenerate the whole catalog each pass. Do **not** create `V1-Bug-Fix-Plan-Pass-2.md`. Pass 3 waits for the operator to start Step **8.5.2** (Step **8.13** is in progress).
 
 **Not this phase:** installer, GitHub Releases, CI Function-image publisher (that is **8.6.1**), real **$1 budget fire** (clean-room / accepted spend), live Forge lab, after-v1 PRODUCT-IDEAS.
 
@@ -1502,8 +1538,8 @@ Pass 2 is **closed early** (no triage). Do **not** regenerate the whole catalog 
 
 ### Step 8.5.2 — Execute QA passes
 
-**Status:** TODO (Pass 3) — **blocked** until the operator says so (Step **8.12** DONE)  
-**Depends on:** 8.5.1 + Step **4.13** DONE + Step **8.4** DONE + Steps **8.7**, **8.8**, **8.9**, **8.10**, **8.11**, and **8.12** (before Pass 3)
+**Status:** TODO (Pass 3) — **blocked** until the operator says so (Step **8.13** in progress)  
+**Depends on:** 8.5.1 + Step **4.13** DONE + Step **8.4** DONE + Steps **8.7**, **8.8**, **8.9**, **8.10**, **8.11**, **8.12**, and **8.13** (before Pass 3)
 
 **Read first**
 
@@ -1518,7 +1554,7 @@ Pass 2 is **closed early** (no triage). Do **not** regenerate the whole catalog 
 
 **Pass 2 (DONE, closed early):** Delete + greenfield **Modded** (FO; S6-01/S6-02/S7-04/S3-05/S4-11 Pass). Phase B–D not run. No Pass 2 bug-fix plan (in-pass SETUP-ISSUE-9/10). Do not `tofu destroy` again from this step.
 
-**Pass 3 (blocked):** Follow `[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)` when the operator starts Pass 3 **after** Step **8.12**. Gap-close + follow-on tests (including 8.4 / 8.7 / 8.8 / 8.9 / 8.10 / 8.11 / 8.12) on the **existing** TESTING stack. **Do not** `tofu destroy` unless that prompt says so. **One** agent chat on the test stack at a time.
+**Pass 3 (blocked):** Follow `[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)` when the operator starts Pass 3 **after** Step **8.13**. Gap-close + follow-on tests (including 8.4 / 8.7 / 8.8 / 8.9 / 8.10 / 8.11 / 8.12 / 8.13) on the **existing** TESTING stack. **Do not** `tofu destroy` unless that prompt says so. **One** agent chat on the test stack at a time.
 
 1. **Phase A:** S0-01, S0-04, S1, leftover S2 (including S2-16/S2-17 if the Function exists after 8.4 P12).  
 2. **Phase B:** Hybrid leftovers + follow-on UI (S3-01 does not Start; S4-02 merged Danger Zone; Players pin; console simple/full; usage-by-day).  
@@ -1534,7 +1570,7 @@ Do **not** start Step **8.6.1** or Step **9.1** from this step. Do not rewrite t
 
 **Done when:** Operator agrees a pass is ready for triage **or** QA exit is met (then 8.5.3). This step stays the QA executor across chats; living **NEXT** is Step **8.8** until 8.8 exits.
 
-**Changelog:** 2026-08-25 — Step **8.12 DONE**. Pass 3 still **blocked** until the operator says so. 2026-08-25 — Pass 3 still **blocked** until Step **8.12** (Manage sidebar) completes and the operator says so. 2026-08-24 — Pass 3 still **blocked** until the operator says so (Step **8.11** DONE). 2026-08-24 — Pass 3 still **blocked** until Step **8.11** (caption / pins / MOTD WYSIWYG) completes and the operator says so. 2026-08-24 — Step **8.10 DONE**. Pass 3 still **blocked** until the operator says so. 2026-08-24 — Pass 3 still **blocked** until Step **8.10** (density / MOTD / icon notes) completes and the operator says so. 2026-08-23 — Pass 3 still **blocked** until Step **8.9** (pack-import assisted review) completes and the operator says so. 2026-08-23 — Pack-import **design lock** ([`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md)); implementing as Step **8.9**, not this step. 2026-08-21 — **PAUSED** again for Steps **8.7** (modpack tests) and **8.8** (operator notes). Do not start Pass 3, 8.6.1, or 9.1. 2026-08-20 — **PAUSED** for Step **8.4** follow-on. Pass 2 **closed early** (Modded greenfield + join; no triage). Next QA = Pass 3 after 8.4. Do not start 8.6.1 or 9.1. 2026-08-20 — **NEXT** (4.13 / R4 DONE). Do not start Pass 2 Phase A or `tofu destroy` until the operator says so. 2026-08-20 — **PAUSED** until Step **4.13** / robustness R1–R4 (itzg exclude lists). Do not start Pass 2 Phase A or `tofu destroy`. 2026-08-19 — **Pass 2 docs.** Scope + results files. Pass 1 complete (P1–P8 DONE). Do not start 8.6.1 or 9.1.
+**Changelog:** 2026-08-25 — Pass 3 still **blocked** until Step **8.13** (sidebar polish) completes and the operator says so. 2026-08-25 — Step **8.12 DONE**. Pass 3 still **blocked** until the operator says so. 2026-08-25 — Pass 3 still **blocked** until Step **8.12** (Manage sidebar) completes and the operator says so. 2026-08-24 — Pass 3 still **blocked** until the operator says so (Step **8.11** DONE). 2026-08-24 — Pass 3 still **blocked** until Step **8.11** (caption / pins / MOTD WYSIWYG) completes and the operator says so. 2026-08-24 — Step **8.10 DONE**. Pass 3 still **blocked** until the operator says so. 2026-08-24 — Pass 3 still **blocked** until Step **8.10** (density / MOTD / icon notes) completes and the operator says so. 2026-08-23 — Pass 3 still **blocked** until Step **8.9** (pack-import assisted review) completes and the operator says so. 2026-08-23 — Pack-import **design lock** ([`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md)); implementing as Step **8.9**, not this step. 2026-08-21 — **PAUSED** again for Steps **8.7** (modpack tests) and **8.8** (operator notes). Do not start Pass 3, 8.6.1, or 9.1. 2026-08-20 — **PAUSED** for Step **8.4** follow-on. Pass 2 **closed early** (Modded greenfield + join; no triage). Next QA = Pass 3 after 8.4. Do not start 8.6.1 or 9.1. 2026-08-20 — **NEXT** (4.13 / R4 DONE). Do not start Pass 2 Phase A or `tofu destroy` until the operator says so. 2026-08-20 — **PAUSED** until Step **4.13** / robustness R1–R4 (itzg exclude lists). Do not start Pass 2 Phase A or `tofu destroy`. 2026-08-19 — **Pass 2 docs.** Scope + results files. Pass 1 complete (P1–P8 DONE). Do not start 8.6.1 or 9.1.
 
 ---
 
@@ -1743,6 +1779,7 @@ Former MVP Phase **8–9**. Phases **1–7** are **DONE**. Phase **8** is **SKIP
 | Operator-notes follow-on 2 | [`V1-Operator-Notes-Follow-On-2-Plan.md`](V1-Operator-Notes-Follow-On-2-Plan.md) (Step **8.10**)           |
 | Operator-notes follow-on 3 | [`V1-Operator-Notes-Follow-On-3-Plan.md`](V1-Operator-Notes-Follow-On-3-Plan.md) (Step **8.11**)           |
 | Manage sidebar redesign   | [`V1-Manage-Sidebar-Redesign-Plan.md`](V1-Manage-Sidebar-Redesign-Plan.md) (Step **8.12**)                 |
+| Manage sidebar polish     | [`V1-Manage-Sidebar-Polish-Plan.md`](V1-Manage-Sidebar-Polish-Plan.md) (Step **8.13**)                     |
 | Informal pack tests       | [`Mod-Pack-Tests.md`](Mod-Pack-Tests.md) (input to 8.7; not a living NEXT)                                 |
 | Modpack robustness (4.13) | [`archive/V1-Modpack-Robustness-Plan.md`](archive/V1-Modpack-Robustness-Plan.md)                           |
 | Bug-fix plan template     | `[V1-Bug-Fix-Plan-TEMPLATE.md](V1-Bug-Fix-Plan-TEMPLATE.md)`                                               |
@@ -1782,7 +1819,9 @@ Former MVP Phase **8–9**. Phases **1–7** are **DONE**. Phase **8** is **SKIP
 
 | Date       | Note                                                                                                                                                                                                                                                                                                                              |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-08-25 | **Step 8.12 DONE** (P1–P5). **P5** resize polish + Guide. Living **NEXT = Step 8.5.2** Pass 3 (**blocked** until the operator says so). Do not start 8.6.1 or 9.1. |
+| 2026-08-25 | **Step 8.13 P1 DONE** (three-zone chrome + 244px flush sidebar). Living **NEXT = P2**. Pass 3 **blocked**. Do not start 8.6.1 or 9.1. |
+| 2026-08-25 | **Step 8.13 inserted** (Manage sidebar polish). Living **NEXT = P1** ([`V1-Manage-Sidebar-Polish-Plan.md`](V1-Manage-Sidebar-Polish-Plan.md)). Pass 3 **blocked**. Do not start 8.6.1 or 9.1. |
+| 2026-08-25 | **Step 8.12 DONE** (P1–P5). **P5** resize polish + Guide. Living **NEXT = Step 8.13** P1. Pass 3 **blocked**. Do not start 8.6.1 or 9.1. |
 | 2026-08-25 | **Step 8.12 P3 DONE** (About tab; caption overflow gone). Living **NEXT = P4** (plan-first). Pass 3 **blocked**. Do not start 8.6.1 or 9.1. |
 | 2026-08-25 | **Step 8.12 P2 DONE** (combined Start/Stop + four sidebar pins). Living **NEXT = P3**. Pass 3 **blocked**. Do not start 8.6.1 or 9.1. |
 | 2026-08-25 | **Step 8.12 P1 DONE** (two-column Manage shell, 1280 default / 920 min). Living **NEXT = P2**. Pass 3 **blocked**. Do not start 8.6.1 or 9.1. |
