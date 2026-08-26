@@ -17,6 +17,7 @@ Read **only** what the current V1 / QA step names. Do not load this whole folder
 | [`V1-Operator-Notes-Follow-On-3-Plan.md`](V1-Operator-Notes-Follow-On-3-Plan.md) | Step **8.11**. Caption / pins / MOTD WYSIWYG. **COMPLETE.** |
 | [`V1-Manage-Sidebar-Redesign-Plan.md`](V1-Manage-Sidebar-Redesign-Plan.md) | Step **8.12**. Manage sidebar layout. **COMPLETE.** |
 | [`V1-Manage-Sidebar-Polish-Plan.md`](V1-Manage-Sidebar-Polish-Plan.md) | Step **8.13**. Panel contrast, narrower sidebar, equal compact pins, larger tabs. **COMPLETE** (P1–P2). |
+| [`V1-Manage-UI-Pass-3-Plan.md`](V1-Manage-UI-Pass-3-Plan.md) | Step **8.14**. Window edge, sidebar density, pin redesign, Overview. **NEXT = P2**. |
 | [`Mod-Pack-Tests.md`](Mod-Pack-Tests.md) | Operator informal pack tests (input to 8.7; not a living NEXT). |
 | [`Pack-Corpus-Test-Plan.md`](Pack-Corpus-Test-Plan.md) | Headless Change-pack corpus harness. **COMPLETE** (P1–P3). Pass 3 stays blocked. |
 | [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) | Pass 3 (**blocked** until the operator starts it). |

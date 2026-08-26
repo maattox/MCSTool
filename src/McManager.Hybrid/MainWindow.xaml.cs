@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using McManager.Hybrid.Ui;
 using McManager.Hybrid.Ui.Wpf;
+using Microsoft.AspNetCore.Components.WebView;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace McManager.Hybrid;
@@ -9,7 +10,7 @@ public partial class MainWindow : Window
 {
     /// <summary>
     /// Default WebView client width (~1280 CSS px). WindowStyle=None: XAML Width is
-    /// the outer window; 6px WPF strips sit outside the WebView.
+    /// the outer window; <see cref="FitWidthToWebView"/> adds remaining non-client thickness.
     /// </summary>
     public const double AppShellWidthDip = 1280;
 
@@ -61,5 +62,16 @@ public partial class MainWindow : Window
         MinWidth = minOuter;
         if (Width + 0.5 < defaultOuter)
             Width = defaultOuter;
+    }
+
+    private static void OnBlazorWebViewInitialized(object? sender, BlazorWebViewInitializedEventArgs e)
+    {
+        var webView = e.WebView;
+        webView.ZoomFactor = 1;
+        var core = webView.CoreWebView2;
+        if (core is null)
+            return;
+
+        core.Settings.IsZoomControlEnabled = false;
     }
 }

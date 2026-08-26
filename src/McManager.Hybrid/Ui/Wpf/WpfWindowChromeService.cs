@@ -1,15 +1,33 @@
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Media;
 
 namespace McManager.Hybrid.Ui.Wpf;
 
 public sealed class WpfWindowChromeService : IWindowChromeService
 {
     private const int WmGetMinMaxInfo = 0x0024;
+    private const int WmNcHitTest = 0x0084;
     private const int WmNcLButtonDown = 0x00A1;
+    private const int HtClient = 1;
     private const int HtCaption = 2;
+    private const int HtLeft = 10;
+    private const int HtRight = 11;
+    private const int HtTop = 12;
+    private const int HtTopLeft = 13;
+    private const int HtTopRight = 14;
+    private const int HtBottom = 15;
+    private const int HtBottomLeft = 16;
+    private const int HtBottomRight = 17;
     private const int MonitorDefaultToNearest = 2;
+
+    /// <summary>
+    /// Inner resize grip in DIP. Matches <c>WindowChrome.ResizeBorderThickness</c> (10)
+    /// so the cursor can start a resize ~10px in from the painted edge. WebView2's HWND
+    /// swallows the default chrome hit-test when the view fills the client.
+    /// </summary>
+    internal const double ResizeGripDip = 10;
 
     private MainWindow? _window;
     private bool _hooked;
@@ -75,13 +93,67 @@ public sealed class WpfWindowChromeService : IWindowChromeService
         _hooked = source is not null;
     }
 
-    private static IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
-        if (msg != WmGetMinMaxInfo)
+        if (msg == WmGetMinMaxInfo)
+        {
+            ApplyWorkAreaMaximize(hwnd, lParam);
             return IntPtr.Zero;
+        }
 
-        ApplyWorkAreaMaximize(hwnd, lParam);
+        if (msg == WmNcHitTest &&
+            _window is { WindowState: not WindowState.Maximized })
+        {
+            var hit = HitTestResizeBorder(hwnd, lParam);
+            if (hit != HtClient)
+            {
+                handled = true;
+                return (IntPtr)hit;
+            }
+        }
+
         return IntPtr.Zero;
+    }
+
+    private int HitTestResizeBorder(IntPtr hwnd, IntPtr lParam)
+    {
+        if (!GetWindowRect(hwnd, out var rect))
+            return HtClient;
+
+        var screenX = unchecked((short)(lParam.ToInt64() & 0xFFFF));
+        var screenY = unchecked((short)((lParam.ToInt64() >> 16) & 0xFFFF));
+        var grip = GetResizeGripPx();
+
+        var onLeft = screenX - rect.Left < grip;
+        var onRight = rect.Right - screenX <= grip;
+        var onTop = screenY - rect.Top < grip;
+        var onBottom = rect.Bottom - screenY <= grip;
+
+        if (onTop && onLeft)
+            return HtTopLeft;
+        if (onTop && onRight)
+            return HtTopRight;
+        if (onBottom && onLeft)
+            return HtBottomLeft;
+        if (onBottom && onRight)
+            return HtBottomRight;
+        if (onLeft)
+            return HtLeft;
+        if (onRight)
+            return HtRight;
+        if (onTop)
+            return HtTop;
+        if (onBottom)
+            return HtBottom;
+        return HtClient;
+    }
+
+    private int GetResizeGripPx()
+    {
+        var dip = ResizeGripDip;
+        if (_window is not null)
+            dip *= VisualTreeHelper.GetDpi(_window).PixelsPerDip;
+        return Math.Max(1, (int)Math.Ceiling(dip));
     }
 
     private static void ApplyWorkAreaMaximize(IntPtr hwnd, IntPtr lParam)
@@ -130,6 +202,9 @@ public sealed class WpfWindowChromeService : IWindowChromeService
 
     [DllImport("user32.dll", CharSet = CharSet.Auto)]
     private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MonitorInfo lpmi);
+
+    [DllImport("user32.dll")]
+    private static extern bool GetWindowRect(IntPtr hWnd, out NativeRect lpRect);
 
     [StructLayout(LayoutKind.Sequential)]
     private struct MinMaxInfo

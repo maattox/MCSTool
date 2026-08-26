@@ -8,21 +8,23 @@ Single source of truth for **what to work on next**. Living plan files keep sect
 
 | Field | Value |
 |-------|-------|
-| **Plan** | [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.5.2** |
-| **Step** | **8.5.2** Execute QA Pass 3 |
-| **Sub-plan** | [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) |
-| **Sub-step** | *(operator starts Pass 3)* |
-| **Status** | `blocked` |
-| **Cursor mode** | *(per Pass 3 scope)* |
+| **Plan** | [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.14** |
+| **Step** | **8.14** Manage UI pass 3 |
+| **Sub-plan** | [`V1-Manage-UI-Pass-3-Plan.md`](V1-Manage-UI-Pass-3-Plan.md) |
+| **Sub-step** | **P2** Sidebar density: gutter, padding, equal power |
+| **Status** | `ready` |
+| **Cursor mode** | **agent** |
 
-Step **8.13** (Manage sidebar polish P1–P2) is **DONE**. Pass 3 is **blocked** until the operator says so. Do **not** start Pass 3, Step **8.6.1**, or **9.1**. Pack-corpus P1–P3 is **DONE**; operator may seed `pack-tests/packs/` + sidecars and invoke `/pack-test-phase` in a **separate** chat.
+Step **8.14 P1** (window edge + zoom lock) is **DONE**. Live **NEXT = 8.14 P2**. Pass 3 is **blocked** until this pass exits and the operator says so. Do **not** start Pass 3, Step **8.6.1**, or **9.1**. Pack-corpus P1–P3 is **DONE**; operator may seed `pack-tests/packs/` + sidecars and invoke `/pack-test-phase` in a **separate** chat.
 
 ## Design lock (implementing)
 
-Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) — **implemented** (Step **8.9** P1–P2). Manage sidebar topology: [`assets/UI-design-mockup.png`](../assets/UI-design-mockup.png) + 8.12 Scrutiny (**COMPLETE**). Step **8.13** polish (**COMPLETE**): three-zone panels, 244px sidebar, equal compact pins, larger tabs. Step **8.5.2** QA Pass 3 stays **blocked** until the operator starts it.
+Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) — **implemented** (Step **8.9** P1–P2). Manage sidebar topology: [`assets/UI-design-mockup.png`](../assets/UI-design-mockup.png) + 8.12 Scrutiny (**COMPLETE**). Step **8.13** polish (**COMPLETE**): three-zone panels, 244px sidebar, equal compact pins, larger tabs. Step **8.14** (third UI pass) **NEXT = P2** (sidebar density). Step **8.5.2** QA Pass 3 stays **blocked** until **8.14** exits and the operator starts it.
 
 ## Completed recently
 
+- **2026-08-25** — Step **8.14 P1 DONE** (flush WebView + 10 DIP resize hit-test + Ctrl+scroll zoom lock). Living **NEXT = P2**. Pass 3 **blocked**.
+- **2026-08-25** — Step **8.14** inserted (third UI pass: window edge, sidebar density, pin redesign, Overview). Living **NEXT = P1** (plan-first). Pass 3 **blocked**.
 - **2026-08-25** — Step **8.13 P2 DONE** (equal compact pins + larger tabs + Guide). Plan **COMPLETE**. Pass 3 **blocked** until the operator says so.
 - **2026-08-25** — Step **8.13 P1 DONE** (three-zone Manage chrome + 244px flush sidebar). Living **NEXT = P2**. Pass 3 **blocked**.
 - **2026-08-25** — Step **8.13** inserted (Manage sidebar polish: three-zone panels, narrower rail, equal compact pins, larger tabs). Living **NEXT = P1**. Pass 3 **blocked**.
