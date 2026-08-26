@@ -29,7 +29,7 @@
     --font-minecraft: "Minecraft", var(--font-sans);
     --radius: 10px;
     /* Manage sidebar; keep default window in sync with MainWindow.AppShellWidthDip (1280). */
-    --manage-sidebar-width: 244px;
+    --manage-sidebar-width: 250px;
     --app-pad-x: 16px;
     --app-caption-height: 36px;
     --mcm-tab-count: 8;
@@ -509,12 +509,12 @@ button.mcm-btn-disabled:hover {
     flex-direction: column;
     gap: 10px;
     flex: 0 0 auto;
-    padding: 0 6px 10px;
+    padding: 0 12px 10px 6px;
     background: var(--caption-bg);
 }
 
 .mcm-sidebar-gap {
-    height: 6px;
+    height: 12px;
     background: var(--caption-bg);
     pointer-events: none;
 }
@@ -749,12 +749,12 @@ button.mcm-btn-disabled:hover {
     position: relative;
     /* Shrink 1000 vs tabs so pins clip after tab-rest is gone and before
        tab gaps compress. min-height 0px is the floor; extra height must
-       not land here (grow is 0). Horizontal 6px matches chrome padding. */
+       not land here (grow is 0). 6px left / 12px right match chrome. */
     flex: 0 1000 auto;
     min-width: 0;
     min-height: 0px;
     overflow: hidden;
-    margin: 0px 6px 0px;
+    margin: 0 12px 0 6px;
 }
 
 .mcm-pins {
