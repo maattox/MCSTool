@@ -1,6 +1,6 @@
 # V1 Manage sidebar polish (living)
 
-**Status:** COMPLETE (P1–P2 DONE). Created 2026-08-25. **Live NEXT:** [`NEXT.md`](NEXT.md) → Step **8.14** ([`V1-Manage-UI-Pass-3-Plan.md`](V1-Manage-UI-Pass-3-Plan.md)). Pass 3 stays **blocked**.  
+**Status:** COMPLETE (P1–P2 DONE). Created 2026-08-25. **Live NEXT:** [`NEXT.md`](NEXT.md) → Step **8.5.2** Pass 3 (**blocked**). Step **8.14** is **COMPLETE**. Pass 3 stays **blocked**.  
 **Parent:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.13**.  
 **Branch:** `UI-redesign` — keep this work here until the operator likes it. Do not merge to `main` from an agent chat.  
 **Why now:** operator 2026-08-25 — after Step **8.12**, Manage still reads as one flat `--bg` field. Make the status/power/pins band, the vertical tab list, and the content pane look like three distinct panels; equalize and compact the pin cards; make the tab list taller with larger buttons; narrow the whole sidebar. Topology still [`assets/UI-design-mockup.png`](../assets/UI-design-mockup.png). Vague spacing and exact hex: agents **decide inside each section’s bounds** (and [Scrutiny](#scrutiny-plan-decisions)). Stop and ask for spend, `tofu destroy`, `DEFAULT`, or parked after-v1 items.

@@ -187,7 +187,7 @@ button.mcm-btn-disabled:hover {
 .mcm-app-manage > .mcm-tab-body {
     grid-column: 2;
     grid-row: 2;
-    padding: 14px 16px 16px 0;
+    padding: 14px 16px 16px;
     background: var(--manage-content-bg);
 }
 
@@ -506,7 +506,7 @@ button.mcm-btn-disabled:hover {
     flex-direction: column;
     gap: 10px;
     flex: 0 0 auto;
-    padding: 6px;
+    padding: 10px 10px 12px;
     background: var(--bg);
 }
 

@@ -1,9 +1,10 @@
 # V1 Manage UI pass 3 (living)
 
-**Status:** COMPLETE (P1–P4). Created 2026-08-25 (docs only). **Live NEXT:** [`NEXT.md`](NEXT.md) → Step **8.5.2** Pass 3 (**blocked** until the operator says so).  
+**Status:** COMPLETE (P1–P4; operator 2026-08-26 kept only part of the pass). Created 2026-08-25 (docs only). **Live NEXT:** [`NEXT.md`](NEXT.md) → Step **8.5.2** Pass 3 (**blocked** until the operator says so).  
 **Parent:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.14**.  
 **Branch:** `UI-redesign` — keep this work here until the operator likes it. Do not merge to `main` from an agent chat.  
-**Why now:** operator 2026-08-25 — third UI redesign pass after [`V1-Manage-Sidebar-Polish-Plan.md`](V1-Manage-Sidebar-Polish-Plan.md) (Step **8.13**). Window-edge chrome still reads as a 6px frame; sidebar density (gutter, padding, equal power buttons, pin text cutoff); Ctrl+scroll still zooms the WebView; Overview is spare and whitelist names hide IPs. Vague spacing and exact layout: agents **decide inside each section’s bounds** (and [Scrutiny](#scrutiny-plan-decisions)). Stop and ask for spend, `tofu destroy`, `DEFAULT`, or parked after-v1 items.
+**Why now:** operator 2026-08-25 — third UI redesign pass after [`V1-Manage-Sidebar-Polish-Plan.md`](V1-Manage-Sidebar-Polish-Plan.md) (Step **8.13**). Window-edge chrome still reads as a 6px frame; sidebar density (gutter, padding, equal power buttons, pin text cutoff); Ctrl+scroll still zooms the WebView; Overview is spare and whitelist names hide IPs. Vague spacing and exact layout: agents **decide inside each section’s bounds** (and [Scrutiny](#scrutiny-plan-decisions)). Stop and ask for spend, `tofu destroy`, `DEFAULT`, or parked after-v1 items.  
+**Operator review 2026-08-26:** keep P3 pins, P2 equal-width power (`flex: 1 1 0`), P4 Overview, P1 Ctrl+scroll zoom lock. Revert P1 flush WebView / 10 DIP resize (restore painted 6px strips + old resize). Revert P2 content gutter flush and chrome padding 6px (restore pre-P2 16px tab-body left and `10px 10px 12px` chrome). Do not `git reset --hard` or revert the P3 commit as a whole.
 
 **Cost:** $0. TESTING profile only. Never `DEFAULT` / live Forge lab. Never Minecraft `0.0.0.0/0`.  
 **Functions / tofu:** do **not** `tofu apply` / `destroy`. Do not SoftStop the door.  
@@ -11,7 +12,7 @@
 **SSH / VM1:** not required.  
 **Hosts / OCIDs:** do **not** paste live OCIDs, IPs, Auth Tokens, or key material into tracked docs.
 
-Applies to **Manage** plus the **shared WPF window** (Setup/FirstRun inherit edge strips and zoom lock). Do **not** restyle the Setup/FirstRun wizard to match Manage panel fills.
+Applies to **Manage** plus the **shared WPF window** (Setup/FirstRun inherit painted 6px strips and the zoom lock). Do **not** restyle the Setup/FirstRun wizard to match Manage panel fills.
 
 ---
 
@@ -69,18 +70,20 @@ P3 waits on P2 (pin width depends on chrome padding). P4 waits on P2 (shared `ap
 
 ## What already exists (do not rediscover)
 
-- **WPF edge (P1):** `WindowStyle=None` + `WindowChrome` `ResizeBorderThickness="10"`. BlazorWebView **fills** the client (painted 6px strips removed). Inner resize is a DPI-scaled ~10 DIP `WM_NCHITTEST` hook in `WpfWindowChromeService` (skipped when maximized) because the WebView2 HWND swallows chrome hit-tests. Transparency / DWM glass next to WebView2 is not viable. Default window **1280** / min **920** CSS px (`AppShellWidthDip` / `AppShellMinWidthDip`); `FitWidthToWebView` adds remaining non-client thickness. Do not change those sizes unless a named section says so.
-- **Manage shell (8.13 + P2):** flush 244px sidebar (`--manage-sidebar-width`). Chrome band `--bg`, nav `--surface-1`, content `--manage-content-bg`. Sidebar `border-right: 1px`. `.mcm-tab-body` padding `14px 16px 16px 0` (flush to the 1px edge). `.mcm-sidebar-chrome` padding **6px**. Power wraps share the row (`flex: 1 1 0`).
+- **WPF edge (P1, after 2026-08-26 review):** `WindowStyle=None` + `WindowChrome` `ResizeBorderThickness="6"`. Painted 6px `DockPanel` strips around the WebView (pre-P1 layout). No inner `WM_NCHITTEST` resize hook. Default window **1280** / min **920** CSS px (`AppShellWidthDip` / `AppShellMinWidthDip`); `FitWidthToWebView` adds remaining non-client thickness. Do not change those sizes unless a named section says so.
+- **Manage shell (8.13 + P2 keep):** flush 244px sidebar (`--manage-sidebar-width`). Chrome band `--bg`, nav `--surface-1`, content `--manage-content-bg`. Sidebar `border-right: 1px`. `.mcm-tab-body` padding `14px 16px 16px` (16px left gutter restored). `.mcm-sidebar-chrome` padding **`10px 10px 12px`**. Power wraps share the row (`flex: 1 1 0`).
 - **Pins (P3):** equal 2×2 `.mcm-statcard` with `grid-auto-rows: 1fr`. Labels wrap (no ellipsis); value stacked above hint; compact 10px label/hint; 16px pin help. Mini-bars kept (hidden spacer on cards without one). Pin set stays: today, rollover, this month %, idle timeout.
 - **Overview (P4):** `OverviewTab.razor` — Live status strip; Server (icon + MOTD + pack) beside Usage (today / month / remaining / rollover / idle); whitelist table with name + IP + Admin; tab-jump buttons.
 - **Zoom (P1):** `CoreWebView2Settings.IsZoomControlEnabled = false` on `BlazorWebViewInitialized` (Ctrl+wheel, Ctrl++, Ctrl+−, Ctrl+0). `ZoomFactor` reset to 1 at init.
-- Setup/FirstRun share this WPF window. They stay on global `--bg`. Flush edges and zoom lock apply to them too.
+- Setup/FirstRun share this WPF window. They stay on global `--bg`. Painted 6px strips and the zoom lock apply to them too.
 
 ---
 
 ## Scrutiny (plan decisions)
 
 Implementing agents follow these unless the operator overrides in chat.
+
+**Operator 2026-08-26 override (shipped):** do **not** re-apply flush WebView, 10 DIP `WM_NCHITTEST`, tab-body left padding 0, or chrome padding 6px. Keep painted 6px strips, pre-P2 gutters, equal power `flex: 1 1 0`, P3 pin CSS, P4 Overview, and the zoom lock.
 
 **Visual world.** Not a new palette, typeface, or card language. Keep twilight granite + cobalt. Setup/FirstRun stay on global `--bg`. Do not pixel-match the Photoshop file.
 
@@ -169,7 +172,7 @@ When P1–P4 are **DONE**: [`NEXT.md`](NEXT.md) → Step **8.5.2** Pass 3 (**blo
 
 - Window edge is flush or color-matched per the approved design on Manage and Setup; Ctrl+scroll no longer zooms.
 
-**Changelog:** 2026-08-25 — **DONE.** Transparency / DWM glass next to WebView2 is not viable (opaque HWND). Color-match per edge would still leave a 6px dead strip and needs page-aware paints for Setup. **Chosen:** flush WebView + `ResizeBorderThickness=10` + DPI-scaled inner `WM_NCHITTEST` (~10 DIP; skip maximized). Setup/FirstRun inherit flush edges (they already paint `--bg`). Zoom lock via `IsZoomControlEnabled=false`. 1280 / 920 unchanged.
+**Changelog:** 2026-08-26 — operator review: **keep zoom lock**; restore pre-P1 painted 6px strips and `ResizeBorderThickness=6`; drop inner `WM_NCHITTEST`. 2026-08-25 — **DONE** (then partially reverted). Transparency / DWM glass next to WebView2 is not viable (opaque HWND). Color-match per edge would still leave a 6px dead strip and needs page-aware paints for Setup. First ship: flush WebView + `ResizeBorderThickness=10` + DPI-scaled inner `WM_NCHITTEST` (~10 DIP; skip maximized). Operator did not keep that chrome. Zoom lock via `IsZoomControlEnabled=false` **stayed**. 1280 / 920 unchanged.
 
 ---
 
@@ -201,7 +204,7 @@ When P1–P4 are **DONE**: [`NEXT.md`](NEXT.md) → Step **8.5.2** Pass 3 (**blo
 
 - Gutter gone; chrome padding ~6px; power buttons equal width.
 
-**Changelog:** 2026-08-25 — **DONE.** Tab-body left padding 0 (1px sidebar border is the edge). Chrome padding 6px. Start/Stop and Restart equal `flex: 1 1 0` shares. Sidebar width 244px unchanged.
+**Changelog:** 2026-08-26 — operator review: **keep** equal `flex: 1 1 0` power buttons; restore tab-body padding `14px 16px 16px` and chrome padding `10px 10px 12px`. 2026-08-25 — **DONE** (then padding/gutter reverted). First ship: tab-body left padding 0; chrome padding 6px; Start/Stop and Restart equal `flex: 1 1 0`. Sidebar width 244px unchanged.
 
 ---
 
@@ -264,4 +267,4 @@ When P1–P4 are **DONE**: [`NEXT.md`](NEXT.md) → Step **8.5.2** Pass 3 (**blo
 
 - Overview is a useful home snapshot with name+IP whitelist; Guide has one short paragraph.
 
-**Changelog:** 2026-08-25 — **DONE.** Status strip (status / play IP / players). Server card: icon + name + pack line + list MOTD preview. Usage: today, month, remaining, rollover, idle. Whitelist table: name + IP + Admin. Guide covers flush window, denser sidebar, readable pins, Overview. No Players tab; no new OCI.
+**Changelog:** 2026-08-26 — Guide no longer describes flush window edges (chrome restored to painted strips). Overview markup/CSS unchanged. 2026-08-25 — **DONE.** Status strip (status / play IP / players). Server card: icon + name + pack line + list MOTD preview. Usage: today, month, remaining, rollover, idle. Whitelist table: name + IP + Admin. Guide covers readable pins, Overview, Ctrl+scroll zoom lock. No Players tab; no new OCI.

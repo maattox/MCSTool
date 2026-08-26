@@ -1,6 +1,6 @@
 # Workflow state
 
-**Updated:** 2026-08-25
+**Updated:** 2026-08-26
 
 Single source of truth for **what to work on next**. Living plan files keep section history; agents update **this file** when advancing work.
 
@@ -15,14 +15,15 @@ Single source of truth for **what to work on next**. Living plan files keep sect
 | **Status** | `blocked` |
 | **Cursor mode** | — |
 
-Step **8.14** (Manage UI pass 3) is **COMPLETE** (P1–P4). Live **NEXT = 8.5.2** Pass 3, **blocked** until the operator says so. Do **not** start Pass 3, Step **8.6.1**, or **9.1**. Pack-corpus P1–P3 is **DONE**; operator may seed `pack-tests/packs/` + sidecars and invoke `/pack-test-phase` in a **separate** chat.
+Step **8.14** (Manage UI pass 3) is **COMPLETE** (P1–P4; operator 2026-08-26 kept zoom lock, equal power buttons, P3 pins, P4 Overview; restored painted 6px window strips and pre-P2 sidebar gutters). Live **NEXT = 8.5.2** Pass 3, **blocked** until the operator says so. Do **not** start Pass 3, Step **8.6.1**, or **9.1**. Pack-corpus P1–P3 is **DONE**; operator may seed `pack-tests/packs/` + sidecars and invoke `/pack-test-phase` in a **separate** chat.
 
 ## Design lock (implementing)
 
-Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) — **implemented** (Step **8.9** P1–P2). Manage sidebar topology: [`assets/UI-design-mockup.png`](../assets/UI-design-mockup.png) + 8.12 Scrutiny (**COMPLETE**). Step **8.13** polish (**COMPLETE**): three-zone panels, 244px sidebar, equal compact pins, larger tabs. Step **8.14** (third UI pass) **COMPLETE**: flush window edge, denser sidebar, readable pins, Overview name+IP. Step **8.5.2** QA Pass 3 stays **blocked** until the operator starts it.
+Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) — **implemented** (Step **8.9** P1–P2). Manage sidebar topology: [`assets/UI-design-mockup.png`](../assets/UI-design-mockup.png) + 8.12 Scrutiny (**COMPLETE**). Step **8.13** polish (**COMPLETE**): three-zone panels, 244px sidebar, equal compact pins, larger tabs. Step **8.14** (third UI pass) **COMPLETE**: Ctrl+scroll zoom lock, equal-width power buttons, readable pins, Overview name+IP. Painted 6px window strips and pre-P2 sidebar gutters **restored** (operator 2026-08-26). Step **8.5.2** QA Pass 3 stays **blocked** until the operator starts it.
 
 ## Completed recently
 
+- **2026-08-26** — Step **8.14** operator review: kept zoom lock, equal power `flex: 1 1 0`, P3 pins, P4 Overview; restored painted 6px strips and pre-P2 gutter/chrome padding. Guide no longer describes flush edges. Pass 3 **blocked**.
 - **2026-08-25** — Step **8.14 P4 DONE** (Overview name+IP whitelist, MOTD/pack snapshot, five usage metrics + Guide). Plan **COMPLETE**. Pass 3 **blocked** until the operator says so.
 - **2026-08-25** — Step **8.14 P3 DONE** (pin labels/values fully visible; stacked hint; no ellipsis). Living **NEXT = P4** (plan-first). Pass 3 **blocked**.
 - **2026-08-25** — Step **8.14 P2 DONE** (flush tab-body to sidebar; chrome padding 6px; equal-width power buttons). Living **NEXT = P3**. Pass 3 **blocked**.
