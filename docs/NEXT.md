@@ -19,10 +19,11 @@ Step **8.14** (Manage UI pass 3) is **COMPLETE** (P1–P4; operator 2026-08-26 k
 
 ## Design lock (implementing)
 
-Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) — **implemented** (Step **8.9** P1–P2). Manage sidebar topology: [`assets/UI-design-mockup.png`](../assets/UI-design-mockup.png) + 8.12 Scrutiny (**COMPLETE**). Step **8.13** polish (**COMPLETE**): three-zone panels, 244px sidebar, equal compact pins, larger tabs. Step **8.14** (third UI pass) **COMPLETE**: Ctrl+scroll zoom lock, equal-width power buttons, readable pins, Overview name+IP. Painted 6px window strips and pre-P2 sidebar gutters **restored** (operator 2026-08-26). Step **8.5.2** QA Pass 3 stays **blocked** until the operator starts it.
+Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) — **implemented** (Step **8.9** P1–P2). Manage sidebar topology: [`assets/UI-design-mockup.png`](../assets/UI-design-mockup.png) + 8.12 Scrutiny (**COMPLETE**). Step **8.13** polish (**COMPLETE**): three-zone panels, 244px sidebar, equal compact pins, larger tabs. Step **8.14** (third UI pass) **COMPLETE**: Ctrl+scroll zoom lock, equal-width power buttons, Overview name+IP. Painted 6px window strips and pre-P2 sidebar gutters **restored** (operator 2026-08-26). Operator pin pass: **three** stacked sidebar strips (today / this month / rollover). Step **8.5.2** QA Pass 3 stays **blocked** until the operator starts it.
 
 ## Completed recently
 
+- **2026-08-26** — Operator pin pass (no new plan): three stacked full-width sidebar strips (Today's uptime, This month, Rollover bank). Idle timeout left on Usage / Overview / Advanced. Pass 3 **blocked**.
 - **2026-08-26** — Step **8.14** operator review: kept zoom lock, equal power `flex: 1 1 0`, P3 pins, P4 Overview; restored painted 6px strips and pre-P2 gutter/chrome padding. Guide no longer describes flush edges. Pass 3 **blocked**.
 - **2026-08-25** — Step **8.14 P4 DONE** (Overview name+IP whitelist, MOTD/pack snapshot, five usage metrics + Guide). Plan **COMPLETE**. Pass 3 **blocked** until the operator says so.
 - **2026-08-25** — Step **8.14 P3 DONE** (pin labels/values fully visible; stacked hint; no ellipsis). Living **NEXT = P4** (plan-first). Pass 3 **blocked**.

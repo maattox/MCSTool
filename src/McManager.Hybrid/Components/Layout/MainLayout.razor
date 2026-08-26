@@ -161,28 +161,15 @@
                         <span class="sr-only">About today's uptime</span>
                     </button>
                 </div>
-                <div class="mcm-stat-metrics">
-                    <div class="mcm-stat-line">
-                        <span class="mcm-stat-value @(IsPlaceholder(Vm.PinTodayValue) ? "is-placeholder" : null)">@Vm.PinTodayValue</span>
-                        <span class="mcm-stat-hint">@(string.IsNullOrWhiteSpace(Vm.PinTodayHint) ? "—" : Vm.PinTodayHint)</span>
-                    </div>
-                    <div class="mcm-mini-bar" aria-hidden="true">
-                        <div class="mcm-mini-bar-fill" style="width: @ToPercent(Vm.PinTodayFraction)"></div>
-                    </div>
+                <div class="mcm-stat-line">
+                    <span class="mcm-stat-value @(IsPlaceholder(Vm.PinTodayValue) ? "is-placeholder" : null)">@Vm.PinTodayValue</span>
+                    @if (!string.IsNullOrWhiteSpace(Vm.PinTodayHint))
+                    {
+                        <span class="mcm-stat-hint">@Vm.PinTodayHint</span>
+                    }
                 </div>
-            </div>
-            <div class="mcm-statcard">
-                <div class="mcm-stat-label">
-                    <span class="mcm-stat-label-text">Rollover bank</span>
-                    <button type="button" class="mcm-help" title="@Vm.PinRolloverHelp">
-                        <i class="ti ti-help" aria-hidden="true"></i>
-                        <span class="sr-only">About rollover bank</span>
-                    </button>
-                </div>
-                <div class="mcm-stat-metrics">
-                    <div class="mcm-stat-line">
-                        <span class="mcm-stat-value @(RolloverValueClass)">@Vm.PinRolloverValue</span>
-                    </div>
+                <div class="mcm-mini-bar" aria-hidden="true">
+                    <div class="mcm-mini-bar-fill" style="width: @ToPercent(Vm.PinTodayFraction)"></div>
                 </div>
             </div>
             <div class="mcm-statcard">
@@ -193,29 +180,23 @@
                         <span class="sr-only">About this month</span>
                     </button>
                 </div>
-                <div class="mcm-stat-metrics">
-                    <div class="mcm-stat-line">
-                        <span class="mcm-stat-value @(IsPlaceholder(Vm.PinMonthValue) ? "is-placeholder" : null)">@Vm.PinMonthValue</span>
-                        <span class="mcm-stat-hint">@(string.IsNullOrWhiteSpace(Vm.PinMonthHint) ? "—" : Vm.PinMonthHint)</span>
-                    </div>
-                    <div class="mcm-mini-bar" aria-hidden="true">
-                        <div class="mcm-mini-bar-fill" style="width: @ToPercent(Vm.PinMonthFraction)"></div>
-                    </div>
+                <div class="mcm-stat-line">
+                    <span class="mcm-stat-value @(IsPlaceholder(Vm.PinMonthValue) ? "is-placeholder" : null)">@Vm.PinMonthValue</span>
+                </div>
+                <div class="mcm-mini-bar" aria-hidden="true">
+                    <div class="mcm-mini-bar-fill" style="width: @ToPercent(Vm.PinMonthFraction)"></div>
                 </div>
             </div>
             <div class="mcm-statcard">
                 <div class="mcm-stat-label">
-                    <span class="mcm-stat-label-text">Idle timeout</span>
-                    <button type="button" class="mcm-help" title="@Vm.PinIdleHelp">
+                    <span class="mcm-stat-label-text">Rollover bank</span>
+                    <button type="button" class="mcm-help" title="@Vm.PinRolloverHelp">
                         <i class="ti ti-help" aria-hidden="true"></i>
-                        <span class="sr-only">About idle timeout</span>
+                        <span class="sr-only">About rollover bank</span>
                     </button>
                 </div>
-                <div class="mcm-stat-metrics">
-                    <div class="mcm-stat-line">
-                        <span class="mcm-stat-value @(IsPlaceholder(Vm.PinIdleValue) ? "is-placeholder" : null)">@Vm.PinIdleValue</span>
-                        <span class="mcm-stat-hint">@(string.IsNullOrWhiteSpace(Vm.PinIdleHint) ? "—" : Vm.PinIdleHint)</span>
-                    </div>
+                <div class="mcm-stat-line">
+                    <span class="mcm-stat-value @(RolloverValueClass)">@Vm.PinRolloverValue</span>
                 </div>
             </div>
             </div>
