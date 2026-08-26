@@ -1,3 +1,4 @@
+@using McManager.Core.Services
 @inject MainViewModel Vm
 @inject WhitelistViewModel Whitelist
 @inject ServerManagementViewModel Server
@@ -36,30 +37,37 @@
         </div>
     </section>
 
-    <section class="mcm-section-card" aria-label="Whitelist">
-        <div class="mcm-overview-head">
-            <h2 class="mcm-overview-title">Whitelist</h2>
-            <span class="mcm-overview-count">@WhitelistCountLabel</span>
-        </div>
-        @if (Whitelist.Friends.Count == 0)
-        {
-            <p class="mcm-overview-empty">No IPs on the list yet.</p>
-        }
-        else
-        {
-            <ul class="mcm-overview-names">
-                @foreach (var friend in Whitelist.Friends)
+    <section class="mcm-section-card mcm-overview-identity" aria-label="Server identity">
+        <h2 class="mcm-overview-title">Server</h2>
+        <div class="mcm-overview-identity-hero">
+            @if (!string.IsNullOrWhiteSpace(Server.IconPreviewDataUrl))
+            {
+                <img class="mcm-overview-icon"
+                     src="@Server.IconPreviewDataUrl"
+                     width="48"
+                     height="48"
+                     alt="" />
+            }
+            <div class="mcm-overview-identity-copy">
+                <p class="mcm-overview-identity-name @(IsPlaceholder(Server.ServerNameDisplay) ? "is-placeholder" : null)">
+                    @Server.ServerNameDisplay
+                </p>
+                @if (!string.IsNullOrWhiteSpace(Server.PackIdentityDisplay))
                 {
-                    <li class="mcm-overview-name" title="@FriendLabel(friend)">@FriendLabel(friend)</li>
+                    <p class="mcm-overview-meta">@Server.PackIdentityDisplay</p>
                 }
-            </ul>
-        }
+            </div>
+        </div>
+        <div class="mcm-motd-preview mcm-overview-motd" aria-label="Server list MOTD">
+            <span class="mcm-motd-preview-label">List MOTD</span>
+            @((MarkupString)MotdFormatting.ToPreviewHtml(Server.MotdPreview))
+        </div>
         <div class="mcm-overview-actions">
-            <button type="button" @onclick="OpenWhitelist">Manage IPs</button>
+            <button type="button" @onclick="OpenServer">Open Server</button>
         </div>
     </section>
 
-    <section class="mcm-section-card" aria-label="Usage">
+    <section class="mcm-section-card mcm-overview-usage" aria-label="Usage">
         <h2 class="mcm-overview-title">Usage</h2>
         <div class="mcm-overview-metrics">
             <div class="mcm-overview-metric">
@@ -92,19 +100,74 @@
                     }
                 </span>
             </div>
+            <div class="mcm-overview-metric">
+                <span class="mcm-overview-metric-label">Rollover</span>
+                <span class="mcm-overview-metric-value @(RolloverValueClass)">
+                    @Vm.PinRolloverValue
+                    @if (!string.IsNullOrWhiteSpace(Vm.PinRolloverHint))
+                    {
+                        <span class="mcm-overview-metric-hint">@Vm.PinRolloverHint</span>
+                    }
+                </span>
+            </div>
+            <div class="mcm-overview-metric">
+                <span class="mcm-overview-metric-label">Idle timeout</span>
+                <span class="mcm-overview-metric-value @(IsPlaceholder(Vm.PinIdleValue) ? "is-placeholder" : null)">
+                    @Vm.PinIdleValue
+                    @if (!string.IsNullOrWhiteSpace(Vm.PinIdleHint))
+                    {
+                        <span class="mcm-overview-metric-hint">@Vm.PinIdleHint</span>
+                    }
+                </span>
+            </div>
         </div>
         <div class="mcm-overview-actions">
             <button type="button" @onclick="OpenUsage">Open Usage</button>
         </div>
     </section>
 
-    <section class="mcm-section-card mcm-overview-identity" aria-label="Server identity">
-        <h2 class="mcm-overview-title">Server</h2>
-        <p class="mcm-overview-identity-name @(IsPlaceholder(Server.ServerNameDisplay) ? "is-placeholder" : null)">
-            @Server.ServerNameDisplay
-        </p>
+    <section class="mcm-section-card mcm-overview-whitelist" aria-label="Whitelist">
+        <div class="mcm-overview-head">
+            <h2 class="mcm-overview-title">Whitelist</h2>
+            <span class="mcm-overview-count">@WhitelistCountLabel</span>
+        </div>
+        @if (Whitelist.Friends.Count == 0)
+        {
+            <p class="mcm-overview-empty">No IPs on the list yet.</p>
+        }
+        else
+        {
+            <div class="mcm-overview-friends-wrap">
+                <table class="mcm-overview-friends">
+                    <thead>
+                        <tr>
+                            <th scope="col">Name</th>
+                            <th scope="col">IP / CIDR</th>
+                            <th scope="col">Role</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var friend in Whitelist.Friends)
+                        {
+                            <tr>
+                                <td class="@(string.IsNullOrWhiteSpace(friend.Name) ? "is-placeholder" : null)">
+                                    @FriendName(friend)
+                                </td>
+                                <td class="mcm-overview-friend-ip">@friend.Ip</td>
+                                <td class="mcm-overview-friend-role">
+                                    @if (friend.IsAdmin)
+                                    {
+                                        <span class="mcm-overview-admin">Admin</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
         <div class="mcm-overview-actions">
-            <button type="button" @onclick="OpenServer">Open Server</button>
+            <button type="button" @onclick="OpenWhitelist">Manage IPs</button>
         </div>
     </section>
 </div>
@@ -145,8 +208,8 @@
     private string WhitelistCountLabel =>
         Whitelist.Friends.Count == 1 ? "1 IP" : $"{Whitelist.Friends.Count} IPs";
 
-    private static string FriendLabel(FriendRowViewModel friend) =>
-        string.IsNullOrWhiteSpace(friend.Name) ? friend.Ip : friend.Name.Trim();
+    private static string FriendName(FriendRowViewModel friend) =>
+        string.IsNullOrWhiteSpace(friend.Name) ? "Unnamed" : friend.Name.Trim();
 
     private string CopyPlayIpTitle =>
         !Vm.HasPlayIp
@@ -157,6 +220,16 @@
 
     private static bool IsPlaceholder(string value) =>
         string.IsNullOrWhiteSpace(value) || value == MainViewModel.Placeholder;
+
+    private string RolloverValueClass
+    {
+        get
+        {
+            if (IsPlaceholder(Vm.PinRolloverValue))
+                return "is-placeholder";
+            return Vm.PinRolloverPositive ? "is-positive" : string.Empty;
+        }
+    }
 
     private string StatusClass
     {

@@ -184,13 +184,13 @@ Read [`docs/NEXT.md`](NEXT.md) and run `/next-step` in a fresh Agent chat. Workf
 | **8.11** | Operator-notes follow-on 3 (caption, pins, MOTD WYSIWYG) | **DONE** — [`V1-Operator-Notes-Follow-On-3-Plan.md`](V1-Operator-Notes-Follow-On-3-Plan.md) P1–P4 |
 | **8.12** | Manage sidebar redesign (layout rearrange) | **DONE** — [`V1-Manage-Sidebar-Redesign-Plan.md`](V1-Manage-Sidebar-Redesign-Plan.md) P1–P5 |
 | **8.13** | Manage sidebar polish (panel contrast, width, pins, tabs) | **DONE** — [`V1-Manage-Sidebar-Polish-Plan.md`](V1-Manage-Sidebar-Polish-Plan.md) P1–P2 |
-| **8.14** | Manage UI pass 3 (window edge, density, pins, Overview) | **NEXT** — [`V1-Manage-UI-Pass-3-Plan.md`](V1-Manage-UI-Pass-3-Plan.md) P4 |
-| **8.5** | Pre-packaging QA (catalog + passes + bug-fix plans)        | Pass 3 [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) — **blocked** until **8.14** exits and the operator says so. |
+| **8.14** | Manage UI pass 3 (window edge, density, pins, Overview) | **DONE** — [`V1-Manage-UI-Pass-3-Plan.md`](V1-Manage-UI-Pass-3-Plan.md) P1–P4 |
+| **8.5** | Pre-packaging QA (catalog + passes + bug-fix plans)        | Pass 3 [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) — **blocked** until the operator says so |
 | **8.6** | CI-built ARM spend-brake Function image (no Docker on admin PC) | TODO — after 8.5 exit; **required before 9.1 / official release** |
 | **9**   | Packaging, updates, launch (old MVP Phase 8–9)             | TODO — do not start until Phase 8.5 **and** Step **8.6.1** are DONE |
 
 
-**Current NEXT step:** See [`docs/NEXT.md`](NEXT.md) — Step **8.14** P4 (Overview enrich + Guide; plan-first). **Do not start** Pass 3, **8.6.1**, or **9.1**.
+**Current NEXT step:** See [`docs/NEXT.md`](NEXT.md) — Step **8.5.2** Pass 3 (**blocked** until the operator says so). **Do not start** Pass 3, **8.6.1**, or **9.1**.
 
 ---
 
@@ -1483,7 +1483,7 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 
 ### Step 8.14 — Manage UI pass 3
 
-**Status:** NEXT  
+**Status:** DONE  
 **Depends on:** Step **8.13** DONE
 
 **Read first**
@@ -1505,7 +1505,7 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 
 **Done when:** P1–P4 **DONE** in [`V1-Manage-UI-Pass-3-Plan.md`](V1-Manage-UI-Pass-3-Plan.md). Then [`NEXT.md`](NEXT.md) → Step **8.5.2** Pass 3 (**blocked** until the operator says so).
 
-**Changelog:** 2026-08-25 — **P3 DONE** (pin labels/values fully visible; stacked hint; no ellipsis). Living **NEXT = P4** (plan-first). Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-25 — **P2 DONE** (tab-body flush to sidebar; chrome padding 6px; equal-width Start/Stop and Restart). Living **NEXT = P3**. Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-25 — **P1 DONE** (flush WebView + 10 DIP `WM_NCHITTEST` resize + `IsZoomControlEnabled=false`). Living **NEXT = P2**. Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-25 — **Inserted** (docs only). Living **NEXT = P1** (window edge chrome + Ctrl+scroll zoom lock; plan-first). Pass 3 stays blocked. Do not start 8.6.1 or 9.1.
+**Changelog:** 2026-08-25 — **P4 DONE** (Overview name+IP whitelist, MOTD/pack snapshot, five usage metrics + Guide). **8.14 complete.** Living **NEXT = Step 8.5.2** Pass 3 (**blocked**). Do not start 8.6.1 or 9.1. 2026-08-25 — **P3 DONE** (pin labels/values fully visible; stacked hint; no ellipsis). Living **NEXT = P4** (plan-first). Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-25 — **P2 DONE** (tab-body flush to sidebar; chrome padding 6px; equal-width Start/Stop and Restart). Living **NEXT = P3**. Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-25 — **P1 DONE** (flush WebView + 10 DIP `WM_NCHITTEST` resize + `IsZoomControlEnabled=false`). Living **NEXT = P2**. Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-25 — **Inserted** (docs only). Living **NEXT = P1** (window edge chrome + Ctrl+scroll zoom lock; plan-first). Pass 3 stays blocked. Do not start 8.6.1 or 9.1.
 
 ---
 
@@ -1532,15 +1532,15 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 | `[V1-Operator-Notes-Follow-On-3-Plan.md](V1-Operator-Notes-Follow-On-3-Plan.md)` | Step **8.11**. Caption / pins / MOTD WYSIWYG. **COMPLETE** (P1–P4) |
 | `[V1-Manage-Sidebar-Redesign-Plan.md](V1-Manage-Sidebar-Redesign-Plan.md)` | Step **8.12**. Manage sidebar layout. **COMPLETE** (P1–P5). |
 | `[V1-Manage-Sidebar-Polish-Plan.md](V1-Manage-Sidebar-Polish-Plan.md)` | Step **8.13**. Panel contrast, narrower sidebar, equal compact pins, larger tabs. **COMPLETE** (P1–P2). |
-| `[V1-Manage-UI-Pass-3-Plan.md](V1-Manage-UI-Pass-3-Plan.md)` | Step **8.14**. Window edge, sidebar density, pin redesign, Overview. **NEXT = P4**. Pass 3 still needs the operator to start it |
-| `[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)`             | Pass 3 gap-close + follow-on tests. **Do not start** until **8.14** exits and the operator says so |
+| `[V1-Manage-UI-Pass-3-Plan.md](V1-Manage-UI-Pass-3-Plan.md)` | Step **8.14**. Window edge, sidebar density, pin redesign, Overview. **COMPLETE** (P1–P4). Pass 3 still needs the operator to start it |
+| `[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)`             | Pass 3 gap-close + follow-on tests. **Do not start** until the operator says so |
 | `[V1-QA-Pass-3-Results.md](V1-QA-Pass-3-Results.md)`         | Pass 3 fill-out (do not start until operator says so)                      |
 | `[V1-Bug-Fix-Plan-Pass-1.md](V1-Bug-Fix-Plan-Pass-1.md)`     | Pass 1 fixes; **P1–P8 DONE**. Do not re-open unless a regression.          |
 | `[V1-Modpack-Robustness-Plan.md](V1-Modpack-Robustness-Plan.md)` | **DONE (R1–R4).** Exclude lists + mixed archives.                          |
 | `[V1-Bug-Fix-Plan-TEMPLATE.md](V1-Bug-Fix-Plan-TEMPLATE.md)` | Copy to `V1-Bug-Fix-Plan-Pass-N.md` after triage                           |
 
 
-Pass 2 is **closed early** (no triage). Do **not** regenerate the whole catalog each pass. Do **not** create `V1-Bug-Fix-Plan-Pass-2.md`. Pass 3 waits for the operator to start Step **8.5.2** (Step **8.14** is in progress).
+Pass 2 is **closed early** (no triage). Do **not** regenerate the whole catalog each pass. Do **not** create `V1-Bug-Fix-Plan-Pass-2.md`. Pass 3 waits for the operator to start Step **8.5.2** (Step **8.14** is **DONE**).
 
 **Not this phase:** installer, GitHub Releases, CI Function-image publisher (that is **8.6.1**), real **$1 budget fire** (clean-room / accepted spend), live Forge lab, after-v1 PRODUCT-IDEAS.
 
@@ -1606,7 +1606,7 @@ Do **not** start Step **8.6.1** or Step **9.1** from this step. Do not rewrite t
 
 **Done when:** Operator agrees a pass is ready for triage **or** QA exit is met (then 8.5.3). This step stays the QA executor across chats; living **NEXT** is Step **8.8** until 8.8 exits.
 
-**Changelog:** 2026-08-25 — Step **8.14** inserted (third UI pass). Pass 3 still **blocked** until **8.14** exits and the operator says so. 2026-08-25 — Step **8.13 DONE**. Pass 3 still **blocked** until the operator says so. 2026-08-25 — Pass 3 still **blocked** until Step **8.13** (sidebar polish) completes and the operator says so. 2026-08-25 — Step **8.12 DONE**. Pass 3 still **blocked** until the operator says so. 2026-08-25 — Pass 3 still **blocked** until Step **8.12** (Manage sidebar) completes and the operator says so. 2026-08-24 — Pass 3 still **blocked** until the operator says so (Step **8.11** DONE). 2026-08-24 — Pass 3 still **blocked** until Step **8.11** (caption / pins / MOTD WYSIWYG) completes and the operator says so. 2026-08-24 — Step **8.10 DONE**. Pass 3 still **blocked** until the operator says so. 2026-08-24 — Pass 3 still **blocked** until Step **8.10** (density / MOTD / icon notes) completes and the operator says so. 2026-08-23 — Pass 3 still **blocked** until Step **8.9** (pack-import assisted review) completes and the operator says so. 2026-08-23 — Pack-import **design lock** ([`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md)); implementing as Step **8.9**, not this step. 2026-08-21 — **PAUSED** again for Steps **8.7** (modpack tests) and **8.8** (operator notes). Do not start Pass 3, 8.6.1, or 9.1. 2026-08-20 — **PAUSED** for Step **8.4** follow-on. Pass 2 **closed early** (Modded greenfield + join; no triage). Next QA = Pass 3 after 8.4. Do not start 8.6.1 or 9.1. 2026-08-20 — **NEXT** (4.13 / R4 DONE). Do not start Pass 2 Phase A or `tofu destroy` until the operator says so. 2026-08-20 — **PAUSED** until Step **4.13** / robustness R1–R4 (itzg exclude lists). Do not start Pass 2 Phase A or `tofu destroy`. 2026-08-19 — **Pass 2 docs.** Scope + results files. Pass 1 complete (P1–P8 DONE). Do not start 8.6.1 or 9.1.
+**Changelog:** 2026-08-25 — Step **8.14 DONE** (P1–P4). Pass 3 still **blocked** until the operator says so. 2026-08-25 — Step **8.14** inserted (third UI pass). Pass 3 still **blocked** until **8.14** exits and the operator says so. 2026-08-25 — Step **8.13 DONE**. Pass 3 still **blocked** until the operator says so. 2026-08-25 — Pass 3 still **blocked** until Step **8.13** (sidebar polish) completes and the operator says so. 2026-08-25 — Step **8.12 DONE**. Pass 3 still **blocked** until the operator says so. 2026-08-25 — Pass 3 still **blocked** until Step **8.12** (Manage sidebar) completes and the operator says so. 2026-08-24 — Pass 3 still **blocked** until the operator says so (Step **8.11** DONE). 2026-08-24 — Pass 3 still **blocked** until Step **8.11** (caption / pins / MOTD WYSIWYG) completes and the operator says so. 2026-08-24 — Step **8.10 DONE**. Pass 3 still **blocked** until the operator says so. 2026-08-24 — Pass 3 still **blocked** until Step **8.10** (density / MOTD / icon notes) completes and the operator says so. 2026-08-23 — Pass 3 still **blocked** until Step **8.9** (pack-import assisted review) completes and the operator says so. 2026-08-23 — Pack-import **design lock** ([`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md)); implementing as Step **8.9**, not this step. 2026-08-21 — **PAUSED** again for Steps **8.7** (modpack tests) and **8.8** (operator notes). Do not start Pass 3, 8.6.1, or 9.1. 2026-08-20 — **PAUSED** for Step **8.4** follow-on. Pass 2 **closed early** (Modded greenfield + join; no triage). Next QA = Pass 3 after 8.4. Do not start 8.6.1 or 9.1. 2026-08-20 — **NEXT** (4.13 / R4 DONE). Do not start Pass 2 Phase A or `tofu destroy` until the operator says so. 2026-08-20 — **PAUSED** until Step **4.13** / robustness R1–R4 (itzg exclude lists). Do not start Pass 2 Phase A or `tofu destroy`. 2026-08-19 — **Pass 2 docs.** Scope + results files. Pass 1 complete (P1–P8 DONE). Do not start 8.6.1 or 9.1.
 
 ---
 
@@ -1856,7 +1856,7 @@ Former MVP Phase **8–9**. Phases **1–7** are **DONE**. Phase **8** is **SKIP
 
 | Date       | Note                                                                                                                                                                                                                                                                                                                              |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-08-25 | **Step 8.14 P3 DONE** (pin labels/values fully visible; stacked hint; no ellipsis). Living **NEXT = P4** (plan-first). Pass 3 **blocked**. Do not start 8.6.1 or 9.1. |
+| 2026-08-25 | **Step 8.14 DONE** (P1–P4). **P4** Overview name+IP whitelist, MOTD/pack snapshot, five usage metrics + Guide. Living **NEXT = Step 8.5.2** Pass 3 (**blocked**). Do not start 8.6.1 or 9.1. |
 | 2026-08-25 | **Step 8.14 P1 DONE** (flush WebView + 10 DIP resize hit-test + zoom lock). Living **NEXT = P2**. Pass 3 **blocked**. Do not start 8.6.1 or 9.1. |
 | 2026-08-25 | **Step 8.14 inserted** (Manage UI pass 3). Living **NEXT = P1** ([`V1-Manage-UI-Pass-3-Plan.md`](V1-Manage-UI-Pass-3-Plan.md), plan-first). Pass 3 **blocked**. Do not start 8.6.1 or 9.1. |
 | 2026-08-25 | **Step 8.13 DONE** (P1–P2). **P2** equal compact pins + larger tabs + Guide. Living **NEXT = Step 8.5.2** Pass 3 (**blocked**). Do not start 8.6.1 or 9.1. |
