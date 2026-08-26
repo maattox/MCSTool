@@ -9,9 +9,9 @@
         Title="MC Server Manager"
         WindowStyle="None"
         ResizeMode="CanResize"
-        Height="720"
+        Height="752"
         Width="1280"
-        MinHeight="560"
+        MinHeight="631"
         MinWidth="920"
         Background="#161A21">
     <WindowChrome.WindowChrome>

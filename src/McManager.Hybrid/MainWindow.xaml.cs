@@ -20,6 +20,17 @@ public partial class MainWindow : Window
     /// </summary>
     public const double AppShellMinWidthDip = 920;
 
+    /// <summary>
+    /// Default WebView client height. Must stay above <see cref="AppShellMinHeightDip"/>.
+    /// </summary>
+    public const double AppShellHeightDip = 752;
+
+    /// <summary>
+    /// Smallest WebView client that still fits status, power, and the eight
+    /// sidebar tabs at their 2px minimum gap (pins keep a 23px floor).
+    /// </summary>
+    public const double AppShellMinHeightDip = 623;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -45,6 +56,8 @@ public partial class MainWindow : Window
     {
         MinWidth = AppShellMinWidthDip;
         Width = AppShellWidthDip;
+        MinHeight = AppShellMinHeightDip;
+        Height = AppShellHeightDip;
     }
 
     /// <summary>
@@ -56,12 +69,20 @@ public partial class MainWindow : Window
         if (HostView.ActualWidth <= 0)
             return;
 
-        var nonClient = Math.Max(0, ActualWidth - HostView.ActualWidth);
-        var minOuter = AppShellMinWidthDip + nonClient;
-        var defaultOuter = AppShellWidthDip + nonClient;
-        MinWidth = minOuter;
-        if (Width + 0.5 < defaultOuter)
-            Width = defaultOuter;
+        var nonClientW = Math.Max(0, ActualWidth - HostView.ActualWidth);
+        MinWidth = AppShellMinWidthDip + nonClientW;
+        var defaultOuterW = AppShellWidthDip + nonClientW;
+        if (Width + 0.5 < defaultOuterW)
+            Width = defaultOuterW;
+
+        if (HostView.ActualHeight <= 0)
+            return;
+
+        var nonClientH = Math.Max(0, ActualHeight - HostView.ActualHeight);
+        MinHeight = AppShellMinHeightDip + nonClientH;
+        var defaultOuterH = AppShellHeightDip + nonClientH;
+        if (Height + 0.5 < defaultOuterH)
+            Height = defaultOuterH;
     }
 
     private void OnBlazorWebViewInitialized(object sender, BlazorWebViewInitializedEventArgs e)

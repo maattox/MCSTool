@@ -32,6 +32,10 @@
     --manage-sidebar-width: 244px;
     --app-pad-x: 16px;
     --app-caption-height: 36px;
+    --mcm-tab-count: 8;
+    --mcm-tab-gap: 12px;
+    --mcm-tab-gap-min: 2px;
+    --mcm-tab-min-height: 2.5rem;
     /* Thin overlay-style thumb; lives in the right window gutter, not the tab cards. */
     --tab-scrollbar-size: 8px;
 }
@@ -495,8 +499,7 @@ button.mcm-btn-disabled:hover {
     flex-direction: column;
     gap: 0;
     min-height: 0;
-    overflow-x: hidden;
-    overflow-y: auto;
+    overflow: hidden;
     overscroll-behavior: contain;
     background: var(--bg);
 }
@@ -505,8 +508,10 @@ button.mcm-btn-disabled:hover {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    flex: 0 0 auto;
-    padding: 10px 10px 12px;
+    flex: 0 1000 auto;
+    min-height: 0;
+    overflow: hidden;
+    padding: 6px;
     background: var(--bg);
 }
 
@@ -517,6 +522,7 @@ button.mcm-btn-disabled:hover {
     padding: 0.5rem 0.6rem;
     font-family: var(--font-mono);
     flex: 0 0 auto;
+    flex-shrink: 0;
 }
 
 .mcm-srow {
@@ -633,6 +639,7 @@ button.mcm-btn-disabled:hover {
     display: flex;
     gap: 6px;
     flex: 0 0 auto;
+    flex-shrink: 0;
 }
 
 .mcm-sidebar .mcm-action-btn {
@@ -718,14 +725,17 @@ button.mcm-btn-disabled:hover {
 
 .mcm-pins-slot {
     position: relative;
-    flex: 0 0 auto;
+    flex: 0 1 auto;
     min-width: 0;
+    min-height: 23px;
+    overflow: hidden;
 }
 
 .mcm-pins {
     display: flex;
     flex-direction: column;
     gap: 5px;
+    flex-shrink: 0;
 }
 
 .mcm-statcard {
@@ -992,13 +1002,40 @@ button.mcm-btn-disabled:hover {
 .mcm-tabs {
     display: flex;
     flex-direction: column;
-    gap: 3px;
     width: 100%;
     margin: 0;
     padding: 8px 6px 10px;
     background: var(--surface-1);
     border: none;
     border-top: 1px solid var(--border);
+    flex: 1 1 auto;
+    min-height: calc(
+        (var(--mcm-tab-count) * var(--mcm-tab-min-height))
+        + ((var(--mcm-tab-count) - 1) * var(--mcm-tab-gap-min))
+        + 18px
+    );
+}
+
+.mcm-tab-stack {
+    display: flex;
+    flex-direction: column;
+    flex: 0 1 auto;
+    min-width: 0;
+    min-height: calc(
+        (var(--mcm-tab-count) * var(--mcm-tab-min-height))
+        + ((var(--mcm-tab-count) - 1) * var(--mcm-tab-gap-min))
+    );
+}
+
+.mcm-tab-gap {
+    flex: 0 1 var(--mcm-tab-gap);
+    min-height: var(--mcm-tab-gap-min);
+    max-height: var(--mcm-tab-gap);
+    width: 100%;
+    pointer-events: none;
+}
+
+.mcm-tab-rest {
     flex: 1 1 auto;
     min-height: 0;
 }
@@ -1017,8 +1054,9 @@ button.mcm-btn-disabled:hover {
     color: var(--text-secondary);
     font-weight: 500;
     min-width: 0;
-    min-height: 2.5rem;
-    flex: 1 1 0;
+    min-height: var(--mcm-tab-min-height);
+    max-height: var(--mcm-tab-min-height);
+    flex: 0 0 auto;
     white-space: nowrap;
     text-align: left;
 }

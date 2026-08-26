@@ -100,7 +100,7 @@
         </AppActions>
     </CaptionBar>
 
-    <aside class="mcm-sidebar mcm-slim-scroll" aria-label="Server controls">
+    <aside class="mcm-sidebar" aria-label="Server controls">
         <div class="mcm-sidebar-chrome">
         <section class="mcm-status-card" aria-label="Server status">
             <div class="mcm-srow">
@@ -204,6 +204,7 @@
         </div>
 
         <nav class="mcm-tabs" role="tablist" aria-label="Manager sections" aria-orientation="vertical">
+            <div class="mcm-tab-stack">
             <button type="button"
                     role="tab"
                     class="mcm-tab @TabClass("overview")"
@@ -212,6 +213,7 @@
                 <i class="ti ti-layout-dashboard" aria-hidden="true"></i>
                 Overview
             </button>
+            <div class="mcm-tab-gap" aria-hidden="true"></div>
             <button type="button"
                     role="tab"
                     class="mcm-tab @TabClass("whitelist")"
@@ -220,6 +222,7 @@
                 <i class="ti ti-list-check" aria-hidden="true"></i>
                 Whitelist
             </button>
+            <div class="mcm-tab-gap" aria-hidden="true"></div>
             <button type="button"
                     role="tab"
                     class="mcm-tab @TabClass("server")"
@@ -228,6 +231,7 @@
                 <i class="ti ti-server" aria-hidden="true"></i>
                 Server
             </button>
+            <div class="mcm-tab-gap" aria-hidden="true"></div>
             <button type="button"
                     role="tab"
                     class="mcm-tab @TabClass("console")"
@@ -236,6 +240,7 @@
                 <i class="ti ti-terminal-2" aria-hidden="true"></i>
                 Console
             </button>
+            <div class="mcm-tab-gap" aria-hidden="true"></div>
             <button type="button"
                     role="tab"
                     class="mcm-tab @TabClass("usage")"
@@ -244,6 +249,7 @@
                 <i class="ti ti-chart-bar" aria-hidden="true"></i>
                 Usage
             </button>
+            <div class="mcm-tab-gap" aria-hidden="true"></div>
             <button type="button"
                     role="tab"
                     class="mcm-tab @TabClass("advanced")"
@@ -252,6 +258,7 @@
                 <i class="ti ti-adjustments-horizontal" aria-hidden="true"></i>
                 Advanced
             </button>
+            <div class="mcm-tab-gap" aria-hidden="true"></div>
             <button type="button"
                     role="tab"
                     class="mcm-tab @TabClass("troubleshooting")"
@@ -260,6 +267,7 @@
                 <i class="ti ti-tool" aria-hidden="true"></i>
                 Troubleshooting
             </button>
+            <div class="mcm-tab-gap" aria-hidden="true"></div>
             <button type="button"
                     role="tab"
                     class="mcm-tab @TabClass("about")"
@@ -268,6 +276,8 @@
                 <i class="ti ti-info-circle" aria-hidden="true"></i>
                 About
             </button>
+            </div>
+            <div class="mcm-tab-rest" aria-hidden="true"></div>
         </nav>
     </aside>
 
