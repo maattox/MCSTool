@@ -11,18 +11,19 @@ Single source of truth for **what to work on next**. Living plan files keep sect
 | **Plan** | [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.14** |
 | **Step** | **8.14** Manage UI pass 3 |
 | **Sub-plan** | [`V1-Manage-UI-Pass-3-Plan.md`](V1-Manage-UI-Pass-3-Plan.md) |
-| **Sub-step** | **P3** Compact pin redesign |
+| **Sub-step** | **P4** Overview enrich + Guide |
 | **Status** | `ready` |
-| **Cursor mode** | **agent** |
+| **Cursor mode** | **plan-first** |
 
-Step **8.14 P2** (sidebar density) is **DONE**. Live **NEXT = 8.14 P3**. Pass 3 is **blocked** until this pass exits and the operator says so. Do **not** start Pass 3, Step **8.6.1**, or **9.1**. Pack-corpus P1–P3 is **DONE**; operator may seed `pack-tests/packs/` + sidecars and invoke `/pack-test-phase` in a **separate** chat.
+Step **8.14 P3** (compact pin redesign) is **DONE**. Live **NEXT = 8.14 P4**. Pass 3 is **blocked** until this pass exits and the operator says so. Do **not** start Pass 3, Step **8.6.1**, or **9.1**. Pack-corpus P1–P3 is **DONE**; operator may seed `pack-tests/packs/` + sidecars and invoke `/pack-test-phase` in a **separate** chat.
 
 ## Design lock (implementing)
 
-Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) — **implemented** (Step **8.9** P1–P2). Manage sidebar topology: [`assets/UI-design-mockup.png`](../assets/UI-design-mockup.png) + 8.12 Scrutiny (**COMPLETE**). Step **8.13** polish (**COMPLETE**): three-zone panels, 244px sidebar, equal compact pins, larger tabs. Step **8.14** (third UI pass) **NEXT = P3** (compact pin redesign). Step **8.5.2** QA Pass 3 stays **blocked** until **8.14** exits and the operator starts it.
+Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) — **implemented** (Step **8.9** P1–P2). Manage sidebar topology: [`assets/UI-design-mockup.png`](../assets/UI-design-mockup.png) + 8.12 Scrutiny (**COMPLETE**). Step **8.13** polish (**COMPLETE**): three-zone panels, 244px sidebar, equal compact pins, larger tabs. Step **8.14** (third UI pass) **NEXT = P4** (Overview enrich + Guide; plan-first). Step **8.5.2** QA Pass 3 stays **blocked** until **8.14** exits and the operator starts it.
 
 ## Completed recently
 
+- **2026-08-25** — Step **8.14 P3 DONE** (pin labels/values fully visible; stacked hint; no ellipsis). Living **NEXT = P4** (plan-first). Pass 3 **blocked**.
 - **2026-08-25** — Step **8.14 P2 DONE** (flush tab-body to sidebar; chrome padding 6px; equal-width power buttons). Living **NEXT = P3**. Pass 3 **blocked**.
 - **2026-08-25** — Step **8.14 P1 DONE** (flush WebView + 10 DIP resize hit-test + Ctrl+scroll zoom lock). Living **NEXT = P2**. Pass 3 **blocked**.
 - **2026-08-25** — Step **8.14** inserted (third UI pass: window edge, sidebar density, pin redesign, Overview). Living **NEXT = P1** (plan-first). Pass 3 **blocked**.

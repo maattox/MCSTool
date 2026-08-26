@@ -184,13 +184,13 @@ Read [`docs/NEXT.md`](NEXT.md) and run `/next-step` in a fresh Agent chat. Workf
 | **8.11** | Operator-notes follow-on 3 (caption, pins, MOTD WYSIWYG) | **DONE** — [`V1-Operator-Notes-Follow-On-3-Plan.md`](V1-Operator-Notes-Follow-On-3-Plan.md) P1–P4 |
 | **8.12** | Manage sidebar redesign (layout rearrange) | **DONE** — [`V1-Manage-Sidebar-Redesign-Plan.md`](V1-Manage-Sidebar-Redesign-Plan.md) P1–P5 |
 | **8.13** | Manage sidebar polish (panel contrast, width, pins, tabs) | **DONE** — [`V1-Manage-Sidebar-Polish-Plan.md`](V1-Manage-Sidebar-Polish-Plan.md) P1–P2 |
-| **8.14** | Manage UI pass 3 (window edge, density, pins, Overview) | **NEXT** — [`V1-Manage-UI-Pass-3-Plan.md`](V1-Manage-UI-Pass-3-Plan.md) P3 |
+| **8.14** | Manage UI pass 3 (window edge, density, pins, Overview) | **NEXT** — [`V1-Manage-UI-Pass-3-Plan.md`](V1-Manage-UI-Pass-3-Plan.md) P4 |
 | **8.5** | Pre-packaging QA (catalog + passes + bug-fix plans)        | Pass 3 [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) — **blocked** until **8.14** exits and the operator says so. |
 | **8.6** | CI-built ARM spend-brake Function image (no Docker on admin PC) | TODO — after 8.5 exit; **required before 9.1 / official release** |
 | **9**   | Packaging, updates, launch (old MVP Phase 8–9)             | TODO — do not start until Phase 8.5 **and** Step **8.6.1** are DONE |
 
 
-**Current NEXT step:** See [`docs/NEXT.md`](NEXT.md) — Step **8.14** P3 (compact pin redesign). **Do not start** Pass 3, **8.6.1**, or **9.1**.
+**Current NEXT step:** See [`docs/NEXT.md`](NEXT.md) — Step **8.14** P4 (Overview enrich + Guide; plan-first). **Do not start** Pass 3, **8.6.1**, or **9.1**.
 
 ---
 
@@ -1505,7 +1505,7 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 
 **Done when:** P1–P4 **DONE** in [`V1-Manage-UI-Pass-3-Plan.md`](V1-Manage-UI-Pass-3-Plan.md). Then [`NEXT.md`](NEXT.md) → Step **8.5.2** Pass 3 (**blocked** until the operator says so).
 
-**Changelog:** 2026-08-25 — **P2 DONE** (tab-body flush to sidebar; chrome padding 6px; equal-width Start/Stop and Restart). Living **NEXT = P3**. Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-25 — **P1 DONE** (flush WebView + 10 DIP `WM_NCHITTEST` resize + `IsZoomControlEnabled=false`). Living **NEXT = P2**. Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-25 — **Inserted** (docs only). Living **NEXT = P1** (window edge chrome + Ctrl+scroll zoom lock; plan-first). Pass 3 stays blocked. Do not start 8.6.1 or 9.1.
+**Changelog:** 2026-08-25 — **P3 DONE** (pin labels/values fully visible; stacked hint; no ellipsis). Living **NEXT = P4** (plan-first). Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-25 — **P2 DONE** (tab-body flush to sidebar; chrome padding 6px; equal-width Start/Stop and Restart). Living **NEXT = P3**. Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-25 — **P1 DONE** (flush WebView + 10 DIP `WM_NCHITTEST` resize + `IsZoomControlEnabled=false`). Living **NEXT = P2**. Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-25 — **Inserted** (docs only). Living **NEXT = P1** (window edge chrome + Ctrl+scroll zoom lock; plan-first). Pass 3 stays blocked. Do not start 8.6.1 or 9.1.
 
 ---
 
@@ -1532,7 +1532,7 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 | `[V1-Operator-Notes-Follow-On-3-Plan.md](V1-Operator-Notes-Follow-On-3-Plan.md)` | Step **8.11**. Caption / pins / MOTD WYSIWYG. **COMPLETE** (P1–P4) |
 | `[V1-Manage-Sidebar-Redesign-Plan.md](V1-Manage-Sidebar-Redesign-Plan.md)` | Step **8.12**. Manage sidebar layout. **COMPLETE** (P1–P5). |
 | `[V1-Manage-Sidebar-Polish-Plan.md](V1-Manage-Sidebar-Polish-Plan.md)` | Step **8.13**. Panel contrast, narrower sidebar, equal compact pins, larger tabs. **COMPLETE** (P1–P2). |
-| `[V1-Manage-UI-Pass-3-Plan.md](V1-Manage-UI-Pass-3-Plan.md)` | Step **8.14**. Window edge, sidebar density, pin redesign, Overview. **NEXT = P3**. Pass 3 still needs the operator to start it |
+| `[V1-Manage-UI-Pass-3-Plan.md](V1-Manage-UI-Pass-3-Plan.md)` | Step **8.14**. Window edge, sidebar density, pin redesign, Overview. **NEXT = P4**. Pass 3 still needs the operator to start it |
 | `[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)`             | Pass 3 gap-close + follow-on tests. **Do not start** until **8.14** exits and the operator says so |
 | `[V1-QA-Pass-3-Results.md](V1-QA-Pass-3-Results.md)`         | Pass 3 fill-out (do not start until operator says so)                      |
 | `[V1-Bug-Fix-Plan-Pass-1.md](V1-Bug-Fix-Plan-Pass-1.md)`     | Pass 1 fixes; **P1–P8 DONE**. Do not re-open unless a regression.          |
@@ -1856,6 +1856,7 @@ Former MVP Phase **8–9**. Phases **1–7** are **DONE**. Phase **8** is **SKIP
 
 | Date       | Note                                                                                                                                                                                                                                                                                                                              |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-25 | **Step 8.14 P3 DONE** (pin labels/values fully visible; stacked hint; no ellipsis). Living **NEXT = P4** (plan-first). Pass 3 **blocked**. Do not start 8.6.1 or 9.1. |
 | 2026-08-25 | **Step 8.14 P1 DONE** (flush WebView + 10 DIP resize hit-test + zoom lock). Living **NEXT = P2**. Pass 3 **blocked**. Do not start 8.6.1 or 9.1. |
 | 2026-08-25 | **Step 8.14 inserted** (Manage UI pass 3). Living **NEXT = P1** ([`V1-Manage-UI-Pass-3-Plan.md`](V1-Manage-UI-Pass-3-Plan.md), plan-first). Pass 3 **blocked**. Do not start 8.6.1 or 9.1. |
 | 2026-08-25 | **Step 8.13 DONE** (P1–P2). **P2** equal compact pins + larger tabs + Guide. Living **NEXT = Step 8.5.2** Pass 3 (**blocked**). Do not start 8.6.1 or 9.1. |

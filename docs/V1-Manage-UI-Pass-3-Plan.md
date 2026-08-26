@@ -1,6 +1,6 @@
 # V1 Manage UI pass 3 (living)
 
-**Status:** NEXT = P3. Created 2026-08-25 (docs only). **Live NEXT:** [`NEXT.md`](NEXT.md).  
+**Status:** NEXT = P4. Created 2026-08-25 (docs only). **Live NEXT:** [`NEXT.md`](NEXT.md).  
 **Parent:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.14**.  
 **Branch:** `UI-redesign` — keep this work here until the operator likes it. Do not merge to `main` from an agent chat.  
 **Why now:** operator 2026-08-25 — third UI redesign pass after [`V1-Manage-Sidebar-Polish-Plan.md`](V1-Manage-Sidebar-Polish-Plan.md) (Step **8.13**). Window-edge chrome still reads as a 6px frame; sidebar density (gutter, padding, equal power buttons, pin text cutoff); Ctrl+scroll still zooms the WebView; Overview is spare and whitelist names hide IPs. Vague spacing and exact layout: agents **decide inside each section’s bounds** (and [Scrutiny](#scrutiny-plan-decisions)). Stop and ask for spend, `tofu destroy`, `DEFAULT`, or parked after-v1 items.
@@ -62,8 +62,8 @@ P3 waits on P2 (pin width depends on chrome padding). P4 waits on P2 (shared `ap
 |----|-------|--------|----------|--------|
 | P1 | Window edge chrome + disable Ctrl+scroll zoom | **DONE** | PARALLEL-OK with P2 — WPF host vs CSS | plan-first |
 | P2 | Sidebar density: gutter, padding, equal power | **DONE** | PARALLEL-OK with P1 — different files | agent |
-| P3 | Compact pin redesign | **NEXT** | SEQUENTIAL — after P2 width | agent |
-| P4 | Overview enrich + Guide | TODO | SEQUENTIAL after P2; PARALLEL-OK with P1 | plan-first |
+| P3 | Compact pin redesign | **DONE** | SEQUENTIAL — after P2 width | agent |
+| P4 | Overview enrich + Guide | **NEXT** | SEQUENTIAL after P2; PARALLEL-OK with P1 | plan-first |
 
 ---
 
@@ -71,7 +71,7 @@ P3 waits on P2 (pin width depends on chrome padding). P4 waits on P2 (shared `ap
 
 - **WPF edge (P1):** `WindowStyle=None` + `WindowChrome` `ResizeBorderThickness="10"`. BlazorWebView **fills** the client (painted 6px strips removed). Inner resize is a DPI-scaled ~10 DIP `WM_NCHITTEST` hook in `WpfWindowChromeService` (skipped when maximized) because the WebView2 HWND swallows chrome hit-tests. Transparency / DWM glass next to WebView2 is not viable. Default window **1280** / min **920** CSS px (`AppShellWidthDip` / `AppShellMinWidthDip`); `FitWidthToWebView` adds remaining non-client thickness. Do not change those sizes unless a named section says so.
 - **Manage shell (8.13 + P2):** flush 244px sidebar (`--manage-sidebar-width`). Chrome band `--bg`, nav `--surface-1`, content `--manage-content-bg`. Sidebar `border-right: 1px`. `.mcm-tab-body` padding `14px 16px 16px 0` (flush to the 1px edge). `.mcm-sidebar-chrome` padding **6px**. Power wraps share the row (`flex: 1 1 0`).
-- **Pins (8.13):** equal 2×2 `.mcm-statcard` with `grid-auto-rows: 1fr`, compact type, reserved mini-bar slot. Labels and values use `nowrap` + `text-overflow: ellipsis` — that is why **Today's uptime** reads as `Today's u...` and `0... / 11.3h all...`. Pin set stays: today, rollover, this month %, idle timeout.
+- **Pins (P3):** equal 2×2 `.mcm-statcard` with `grid-auto-rows: 1fr`. Labels wrap (no ellipsis); value stacked above hint; compact 10px label/hint; 16px pin help. Mini-bars kept (hidden spacer on cards without one). Pin set stays: today, rollover, this month %, idle timeout.
 - **Overview (8.12 P4):** `OverviewTab.razor` — Live status, Whitelist (name-only via `FriendLabel`), Usage snapshot, Server identity; tab-jump buttons. Spare at current content width.
 - **Zoom (P1):** `CoreWebView2Settings.IsZoomControlEnabled = false` on `BlazorWebViewInitialized` (Ctrl+wheel, Ctrl++, Ctrl+−, Ctrl+0). `ZoomFactor` reset to 1 at init.
 - Setup/FirstRun share this WPF window. They stay on global `--bg`. Flush edges and zoom lock apply to them too.
@@ -207,7 +207,7 @@ When P1–P4 are **DONE**: [`NEXT.md`](NEXT.md) → Step **8.5.2** Pass 3 (**blo
 
 ## P3 — Compact pin redesign
 
-**Status:** NEXT  
+**Status:** DONE  
 **Parallel:** SEQUENTIAL — after P2 (uses the new chrome width)  
 **Cursor mode:** agent  
 **UI skill:** yes
@@ -231,13 +231,13 @@ When P1–P4 are **DONE**: [`NEXT.md`](NEXT.md) → Step **8.5.2** Pass 3 (**blo
 
 - Pin text is fully visible; cards stay equal and inside the 244px rail.
 
-**Changelog:** *(date when finished)*
+**Changelog:** 2026-08-25 — **DONE.** Dropped pin ellipsis. Labels wrap; value stacked above hint; 10px label/hint; 16px pin help. Mini-bars kept. Sidebar 244px unchanged.
 
 ---
 
 ## P4 — Overview enrich + Guide
 
-**Status:** TODO  
+**Status:** NEXT  
 **Parallel:** SEQUENTIAL after P2; PARALLEL-OK with P1  
 **Cursor mode:** plan-first  
 **UI skill:** yes (also search similar app dashboards)
