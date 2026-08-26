@@ -11,7 +11,7 @@
         ResizeMode="CanResize"
         Height="752"
         Width="1280"
-        MinHeight="631"
+        MinHeight="561"
         MinWidth="920"
         Background="#161A21">
     <WindowChrome.WindowChrome>

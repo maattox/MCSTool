@@ -33,7 +33,7 @@
     --app-pad-x: 16px;
     --app-caption-height: 36px;
     --mcm-tab-count: 8;
-    --mcm-tab-gap: 12px;
+    --mcm-tab-gap: 8px;
     --mcm-tab-gap-min: 2px;
     --mcm-tab-min-height: 2.5rem;
     /* Thin overlay-style thumb; lives in the right window gutter, not the tab cards. */
@@ -508,11 +508,15 @@ button.mcm-btn-disabled:hover {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    flex: 0 1000 auto;
-    min-height: 0;
-    overflow: hidden;
-    padding: 6px;
+    flex: 0 0 auto;
+    padding: 6px 6px 10px;
     background: var(--bg);
+}
+
+.mcm-sidebar-gap {
+    height: 6px;
+    background: var(--bg);
+    pointer-events: none;
 }
 
 .mcm-status-card {
@@ -725,10 +729,14 @@ button.mcm-btn-disabled:hover {
 
 .mcm-pins-slot {
     position: relative;
-    flex: 0 1 auto;
+    /* Shrink 1000 vs tabs so pins clip after tab-rest is gone and before
+       tab gaps compress. min-height 0px is the floor; extra height must
+       not land here (grow is 0). Horizontal 6px matches chrome padding. */
+    flex: 0 1000 auto;
     min-width: 0;
-    min-height: 23px;
+    min-height: 0px;
     overflow: hidden;
+    margin: 0px 6px 0px;
 }
 
 .mcm-pins {

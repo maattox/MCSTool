@@ -26,10 +26,10 @@ public partial class MainWindow : Window
     public const double AppShellHeightDip = 752;
 
     /// <summary>
-    /// Smallest WebView client that still fits status, power, and the eight
-    /// sidebar tabs at their 2px minimum gap (pins keep a 23px floor).
+    /// Smallest WebView client that still fits status, power, the 23px pin
+    /// floor, and the eight sidebar tabs at their 2px minimum gap.
     /// </summary>
-    public const double AppShellMinHeightDip = 623;
+    public const double AppShellMinHeightDip = 553;
 
     public MainWindow()
     {
