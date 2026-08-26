@@ -64,7 +64,7 @@ public partial class MainWindow : Window
             Width = defaultOuter;
     }
 
-    private static void OnBlazorWebViewInitialized(object? sender, BlazorWebViewInitializedEventArgs e)
+    private void OnBlazorWebViewInitialized(object sender, BlazorWebViewInitializedEventArgs e)
     {
         var webView = e.WebView;
         webView.ZoomFactor = 1;
