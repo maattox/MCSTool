@@ -8,21 +8,22 @@ Single source of truth for **what to work on next**. Living plan files keep sect
 
 | Field | Value |
 |-------|-------|
-| **Plan** | [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.13** |
-| **Step** | **8.13** Manage sidebar polish |
-| **Sub-plan** | [`V1-Manage-Sidebar-Polish-Plan.md`](V1-Manage-Sidebar-Polish-Plan.md) |
-| **Sub-step** | P2 |
-| **Status** | `ready` |
-| **Cursor mode** | agent |
+| **Plan** | [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.5.2** |
+| **Step** | **8.5.2** Execute QA Pass 3 |
+| **Sub-plan** | [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) |
+| **Sub-step** | *(operator starts Pass 3)* |
+| **Status** | `blocked` |
+| **Cursor mode** | *(per Pass 3 scope)* |
 
-Step **8.13 P1** is **DONE**. Step **8.13 P2** is **NEXT** (compact equal pins + larger tabs + Guide). Pass 3 is **blocked** until the operator says so. Do **not** start Pass 3, Step **8.6.1**, or **9.1**. Pack-corpus P1–P3 is **DONE**; operator may seed `pack-tests/packs/` + sidecars and invoke `/pack-test-phase` in a **separate** chat.
+Step **8.13** (Manage sidebar polish P1–P2) is **DONE**. Pass 3 is **blocked** until the operator says so. Do **not** start Pass 3, Step **8.6.1**, or **9.1**. Pack-corpus P1–P3 is **DONE**; operator may seed `pack-tests/packs/` + sidecars and invoke `/pack-test-phase` in a **separate** chat.
 
 ## Design lock (implementing)
 
-Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) — **implemented** (Step **8.9** P1–P2). Manage sidebar topology: [`assets/UI-design-mockup.png`](../assets/UI-design-mockup.png) + 8.12 Scrutiny (**COMPLETE**). Step **8.13** polishes panel contrast, sidebar width, equal compact pins, and larger tabs. Step **8.5.2** QA Pass 3 stays **blocked** until the operator starts it.
+Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) — **implemented** (Step **8.9** P1–P2). Manage sidebar topology: [`assets/UI-design-mockup.png`](../assets/UI-design-mockup.png) + 8.12 Scrutiny (**COMPLETE**). Step **8.13** polish (**COMPLETE**): three-zone panels, 244px sidebar, equal compact pins, larger tabs. Step **8.5.2** QA Pass 3 stays **blocked** until the operator starts it.
 
 ## Completed recently
 
+- **2026-08-25** — Step **8.13 P2 DONE** (equal compact pins + larger tabs + Guide). Plan **COMPLETE**. Pass 3 **blocked** until the operator says so.
 - **2026-08-25** — Step **8.13 P1 DONE** (three-zone Manage chrome + 244px flush sidebar). Living **NEXT = P2**. Pass 3 **blocked**.
 - **2026-08-25** — Step **8.13** inserted (Manage sidebar polish: three-zone panels, narrower rail, equal compact pins, larger tabs). Living **NEXT = P1**. Pass 3 **blocked**.
 - **2026-08-25** — Step **8.12 P5 DONE** (resize polish + Guide). Plan **COMPLETE**. Pass 3 **blocked** until the operator says so.

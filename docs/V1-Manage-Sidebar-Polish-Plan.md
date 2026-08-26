@@ -1,6 +1,6 @@
 # V1 Manage sidebar polish (living)
 
-**Status:** NEXT = P2. Created 2026-08-25. **Live NEXT:** [`NEXT.md`](NEXT.md).  
+**Status:** COMPLETE (P1–P2 DONE). Created 2026-08-25. **Live NEXT:** [`NEXT.md`](NEXT.md) → Step **8.5.2** Pass 3 (**blocked** until the operator says so).  
 **Parent:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.13**.  
 **Branch:** `UI-redesign` — keep this work here until the operator likes it. Do not merge to `main` from an agent chat.  
 **Why now:** operator 2026-08-25 — after Step **8.12**, Manage still reads as one flat `--bg` field. Make the status/power/pins band, the vertical tab list, and the content pane look like three distinct panels; equalize and compact the pin cards; make the tab list taller with larger buttons; narrow the whole sidebar. Topology still [`assets/UI-design-mockup.png`](../assets/UI-design-mockup.png). Vague spacing and exact hex: agents **decide inside each section’s bounds** (and [Scrutiny](#scrutiny-plan-decisions)). Stop and ask for spend, `tofu destroy`, `DEFAULT`, or parked after-v1 items.
@@ -56,7 +56,7 @@ None. Every section edits `MainLayout.razor` and/or `app.css` manage chrome.
 | ID | Title | Status | Parallel | Cursor |
 |----|-------|--------|----------|--------|
 | P1 | Three-zone chrome + narrower sidebar | **DONE** | SEQUENTIAL — shell grid + sidebar wrap | agent |
-| P2 | Compact equal pins + larger tabs + Guide | **NEXT** | SEQUENTIAL — same sidebar chrome | agent |
+| P2 | Compact equal pins + larger tabs + Guide | **DONE** | SEQUENTIAL — same sidebar chrome | agent |
 
 ---
 
@@ -160,7 +160,7 @@ When P1–P2 are **DONE**: [`NEXT.md`](NEXT.md) → Step **8.5.2** Pass 3 (**blo
 
 ## P2 — Compact equal pins + larger tabs + Guide
 
-**Status:** NEXT  
+**Status:** DONE  
 **Parallel:** SEQUENTIAL — same sidebar as P1  
 **Cursor mode:** agent  
 **UI skill:** yes
@@ -186,4 +186,4 @@ When P1–P2 are **DONE**: [`NEXT.md`](NEXT.md) → Step **8.5.2** Pass 3 (**blo
 
 - Pins are equal and compact; tabs are larger and the nav band is taller; Guide has one short paragraph.
 
-**Changelog:** *(date when finished)*
+**Changelog:** 2026-08-25 — **DONE**. Equal 2×2 pins (`grid-auto-rows: 1fr`, reserved mini-bar slot, compact type); tabs 15px / 18px icons and `flex: 1` to fill leftover nav height. Guide note added.
