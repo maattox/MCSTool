@@ -65,7 +65,7 @@ body,
 }
 
 body {
-    background: var(--bg);
+    background: var(--caption-bg);
     color: var(--text-primary);
     font-family: var(--font-sans);
     font-size: 14px;
@@ -149,13 +149,13 @@ button.mcm-btn-disabled:hover {
     display: flex;
     flex-direction: column;
     padding: 0 var(--app-pad-x) 16px;
-    background: var(--bg);
+    background: var(--caption-bg);
     overflow: hidden;
 }
 
 /*
  * Manage shell: full-bleed caption, then flush sidebar | fluid content.
- * Three panel fills: chrome (--bg), nav (--surface-1), content (--manage-content-bg).
+ * Chrome (--caption-bg) wraps the nav (--surface-1) and content (--manage-content-bg).
  * Extra window width goes to the content pane.
  */
 .mcm-app-manage {
@@ -169,7 +169,7 @@ button.mcm-btn-disabled:hover {
         minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr) auto auto;
     padding: 0;
-    background: var(--manage-content-bg);
+    background: var(--caption-bg);
 }
 
 .mcm-app-manage > * {
@@ -185,14 +185,15 @@ button.mcm-btn-disabled:hover {
 .mcm-app-manage > .mcm-sidebar {
     grid-column: 1;
     grid-row: 2 / -1;
-    border-right: 1px solid var(--border);
 }
 
 .mcm-app-manage > .mcm-tab-body {
     grid-column: 2;
     grid-row: 2;
-    padding: 14px 16px 16px;
+    padding: 14px 3px 16px 16px;
     background: var(--manage-content-bg);
+    border-right: 3px solid var(--manage-content-bg);
+    border-radius: var(--radius) var(--radius) var(--radius) 0;
 }
 
 .mcm-caption {
@@ -204,7 +205,6 @@ button.mcm-btn-disabled:hover {
     user-select: none;
     -webkit-user-select: none;
     background: var(--caption-bg);
-    border-bottom: 1px solid var(--border);
 }
 
 .mcm-caption-drag {
@@ -501,7 +501,7 @@ button.mcm-btn-disabled:hover {
     min-height: 0;
     overflow: hidden;
     overscroll-behavior: contain;
-    background: var(--bg);
+    background: var(--caption-bg);
 }
 
 .mcm-sidebar-chrome {
@@ -509,13 +509,13 @@ button.mcm-btn-disabled:hover {
     flex-direction: column;
     gap: 10px;
     flex: 0 0 auto;
-    padding: 6px 6px 10px;
-    background: var(--bg);
+    padding: 0 6px 10px;
+    background: var(--caption-bg);
 }
 
 .mcm-sidebar-gap {
     height: 6px;
-    background: var(--bg);
+    background: var(--caption-bg);
     pointer-events: none;
 }
 
@@ -523,10 +523,28 @@ button.mcm-btn-disabled:hover {
     background: var(--surface-1);
     border: 1px solid var(--border);
     border-radius: 12px;
-    padding: 0.5rem 0.6rem;
+    padding: 0.5rem 0 0.5rem 0.6rem;
     font-family: var(--font-mono);
     flex: 0 0 auto;
     flex-shrink: 0;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 8px;
+    align-items: center;
+}
+
+.mcm-status-card .mcm-srow {
+    display: contents;
+}
+
+.mcm-status-card .mcm-slabel,
+.mcm-status-card .mcm-sval {
+    padding-top: 3px;
+    padding-bottom: 3px;
+}
+
+.mcm-status-card .mcm-sval:has(.mcm-dot) {
+    gap: 0;
 }
 
 .mcm-srow {
@@ -844,12 +862,15 @@ button.mcm-btn-disabled:hover {
     width: 0%;
 }
 
+/* Overlay the tab pane; abspos grid items do not size tracks, so the toast
+   cannot shrink .mcm-tab-body. Row 2 keeps it in the content column and
+   above the progress dock. */
 .mcm-app-manage > .mcm-action-banner {
+    position: absolute;
     grid-column: 2;
-    grid-row: 3;
+    grid-row: 2;
     justify-self: start;
     align-self: end;
-    position: relative;
     z-index: 30;
     width: max-content;
     max-width: min(420px, 100%);
@@ -1015,7 +1036,7 @@ button.mcm-btn-disabled:hover {
     padding: 8px 6px 10px;
     background: var(--surface-1);
     border: none;
-    border-top: 1px solid var(--border);
+    border-radius: var(--radius) 0 0 var(--radius);
     flex: 1 1 auto;
     min-height: calc(
         (var(--mcm-tab-count) * var(--mcm-tab-min-height))
@@ -1347,6 +1368,16 @@ button.mcm-btn-disabled:hover {
 .mcm-wizard-body::-webkit-scrollbar-thumb:active,
 .mcm-wizard-log::-webkit-scrollbar-thumb:active {
     background-color: color-mix(in srgb, var(--text-secondary) 92%, transparent);
+}
+
+/* Manage content: 3px pad + 10px gutter + 3px right border = 16px.
+   Track inset keeps the thumb out of the 10px corner radii. */
+.mcm-app-manage .mcm-tab-body::-webkit-scrollbar {
+    width: 10px;
+}
+
+.mcm-app-manage .mcm-tab-body::-webkit-scrollbar-track {
+    margin-block: 10px;
 }
 
 @media (prefers-reduced-motion: no-preference) {

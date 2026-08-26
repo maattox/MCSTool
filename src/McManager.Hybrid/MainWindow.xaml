@@ -13,7 +13,7 @@
         Width="1280"
         MinHeight="561"
         MinWidth="920"
-        Background="#161A21">
+        Background="#10141A">
     <WindowChrome.WindowChrome>
         <WindowChrome CaptionHeight="0"
                       ResizeBorderThickness="6"
@@ -22,33 +22,14 @@
                       UseAeroCaptionButtons="False" />
     </WindowChrome.WindowChrome>
     <!-- 6px WPF edges stay outside WebView2 so WindowChrome can resize.
-         Top of the side strips matches CSS caption-bg / app-caption-height
-         so the title bar looks flush with the window. -->
+         Solid caption-bg so the frame, title bar, and sidebar chrome read as one piece. -->
     <DockPanel LastChildFill="True">
-        <Border DockPanel.Dock="Bottom" Height="6" Background="#161A21"
+        <Border DockPanel.Dock="Bottom" Height="6" Background="#10141A"
                 WindowChrome.IsHitTestVisibleInChrome="False" />
-        <Grid DockPanel.Dock="Left" Width="6"
-              WindowChrome.IsHitTestVisibleInChrome="False">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="35" />
-                <RowDefinition Height="1" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
-            <Border Grid.Row="0" Background="#10141A" />
-            <Border Grid.Row="1" Background="#323A48" />
-            <Border Grid.Row="2" Background="#161A21" />
-        </Grid>
-        <Grid DockPanel.Dock="Right" Width="6"
-              WindowChrome.IsHitTestVisibleInChrome="False">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="35" />
-                <RowDefinition Height="1" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
-            <Border Grid.Row="0" Background="#10141A" />
-            <Border Grid.Row="1" Background="#323A48" />
-            <Border Grid.Row="2" Background="#161A21" />
-        </Grid>
+        <Border DockPanel.Dock="Left" Width="6" Background="#10141A"
+                WindowChrome.IsHitTestVisibleInChrome="False" />
+        <Border DockPanel.Dock="Right" Width="6" Background="#10141A"
+                WindowChrome.IsHitTestVisibleInChrome="False" />
         <blazor:BlazorWebView x:Name="HostView"
                               HostPage="wwwroot\index.html"
                               Services="{DynamicResource services}"
