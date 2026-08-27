@@ -227,7 +227,9 @@ Each Manager tab **remembers its own scroll position** when you switch away and 
 
 **Console** sends Minecraft commands (the same ones you would type in the server console) and shows recent logs from the server. **Simple** (default) hides RCON plumbing, modloader startup, and mixin debug noise so chat, joins, world-prep progress, and errors stay readable; **Full** shows the unfiltered service log. Start the server first. A leading `/` is optional. This is not a live terminal, and the RCON port stays local on the server — it is not opened on the cloud firewall. If a crash set a mod aside, use **Server → Modding** to keep it excluded or put it back.
 
-**Advanced** uses inner tabs: **Status** (VM/door lifecycle and break-glass Compute), **Stack** (deploy/repair and stack identity), and **Danger** (idle timeout, turning the idle timer **off**, **changing the server size**, and **Delete infrastructure**). Troubleshooting stays its own tab.
+**Advanced** uses inner tabs: **Status** (VM/door lifecycle and break-glass Compute), **Stack** (deploy/repair, **SSH keys for this PC**, and stack identity), and **Danger** (idle timeout, turning the idle timer **off**, **changing the server size**, and **Delete infrastructure**). Troubleshooting stays its own tab.
+
+**SSH keys** on **Advanced → Stack** point this PC at the private key files Manager uses for the game VM and the doorbell. They can be different files. Browse to pick a key, optionally **Test** SSH (the game VM must be Running; the doorbell is usually always on), then **Save**. That only updates `config.local.json` on this PC — it does not install a new key on the guest. Pick the private key that VM already trusts. Setup still writes the same key to both VMs unless you change them later here.
 
 Do not disable the idle timer except for a short test. Booting the game VM turns it back on.
 
@@ -246,6 +248,8 @@ Setup’s SSH key is how Manager (and you, if needed) log into the Ubuntu VMs as
 - **API key** (`%USERPROFILE%\.oci\*.pem`) = Oracle **control plane** (create VMs, firewall, storage).
 - **SSH key** = **inside** the VMs (install, restart Minecraft, repairs).
 - Never commit either. Never open SSH to `0.0.0.0/0`.
+
+Manager stores **two** private-key paths (`vm1.ssh_key_path` and `door.ssh_key_path`). Setup and Auto-detect usually fill both with the same file. Change them independently on **Advanced → Stack**. That does not rotate `authorized_keys` on the VMs.
 
 Most admins never need a terminal. Prefer Manager **Troubleshooting** buttons over ad-hoc SSH. If you do SSH, many on-box files are root-owned (`Permission denied` as `ubuntu` is common) — use `sudo` or fix ownership; do not chmod the world to 777, and do not run Minecraft as `ubuntu`.
 

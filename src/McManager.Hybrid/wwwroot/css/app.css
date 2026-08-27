@@ -4131,13 +4131,6 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     line-height: 1.35;
 }
 
-.mcm-motd-hex-note {
-    margin: 0;
-    font-size: 11px;
-    color: var(--text-muted);
-    line-height: 1.35;
-}
-
 .mcm-motd-raw {
     margin: 0;
 }

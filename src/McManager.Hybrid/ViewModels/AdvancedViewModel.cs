@@ -13,7 +13,8 @@ namespace McManager.Hybrid.ViewModels;
 /// infra meta publish, Auto-detect, Deploy/repair → Setup wizard.
 /// Danger Zone reuses idle <see cref="EditIdleAgentEnabled"/> apply, VM1 shape
 /// scale lives on <see cref="Vm1ShapeScaleViewModel"/>, and typed-confirm delete
-/// is the existing destroy dialog (not constructed here).
+/// is the existing destroy dialog (not constructed here). SSH private-key paths
+/// (this PC, per VM) live on Stack.
 /// Own <see cref="IsBusy"/> only — does not grey Start/Stop/Restart.
 /// </summary>
 public sealed partial class AdvancedViewModel : ObservableObject
@@ -27,6 +28,7 @@ public sealed partial class AdvancedViewModel : ObservableObject
     private readonly HybridShell _shell;
     private readonly MainViewModel _main;
     private readonly ConnectExistingFlow _connectExisting;
+    private readonly IFilePicker _filePicker;
     private readonly LocalConfigHost _configHost;
     private readonly ManageCloudServices _cloud;
     private readonly ManageSession _session;
@@ -38,6 +40,7 @@ public sealed partial class AdvancedViewModel : ObservableObject
     private string _idleTimeoutSnapshot = "";
     private bool _idleEnabledSnapshot = true;
     private string _infraSnapshot = "";
+    private string _sshKeySnapshot = "";
     private bool _suppressDirty;
     private bool _tabSelected;
 
@@ -87,11 +90,39 @@ public sealed partial class AdvancedViewModel : ObservableObject
     [ObservableProperty]
     private bool _hasInfraChanges;
 
+    [ObservableProperty]
+    private string _editVm1SshKeyPath = "";
+
+    [ObservableProperty]
+    private string _editDoorSshKeyPath = "";
+
+    [ObservableProperty]
+    private bool _hasSshKeyChanges;
+
     public bool CanApplyIdleTimeout => HasIdleTimeoutChanges && !IsBusy;
 
     public bool CanApplyIdleEnabled => HasIdleEnabledChanges && !IsBusy;
 
     public bool CanPublishInfra => HasInfraChanges && !IsBusy && _infraStore is not null;
+
+    public bool CanSaveSshKeys => HasSshKeyChanges && !IsBusy && _config is not null;
+
+    public bool CanCopyVm1KeyToDoor =>
+        !IsBusy && !SshKeyPathUx.PathsEqual(EditVm1SshKeyPath, EditDoorSshKeyPath)
+        && SshKeyPathUx.Normalize(EditVm1SshKeyPath).Length > 0;
+
+    public bool CanCopyDoorKeyToVm1 =>
+        !IsBusy && !SshKeyPathUx.PathsEqual(EditVm1SshKeyPath, EditDoorSshKeyPath)
+        && SshKeyPathUx.Normalize(EditDoorSshKeyPath).Length > 0;
+
+    public bool SshKeysUseSameFile =>
+        SshKeyPathUx.UsesSameFile(EditVm1SshKeyPath, EditDoorSshKeyPath);
+
+    public bool Vm1SshKeyMissing => SshKeyPathUx.FileMissing(EditVm1SshKeyPath);
+
+    public bool DoorSshKeyMissing => SshKeyPathUx.FileMissing(EditDoorSshKeyPath);
+
+    public string SshKeyHelp => SshKeyPathUx.HelpText;
 
     public AdvancedViewModel(
         LocalConfigHost configHost,
@@ -101,6 +132,7 @@ public sealed partial class AdvancedViewModel : ObservableObject
         HybridShell shell,
         MainViewModel main,
         ConnectExistingFlow connectExisting,
+        IFilePicker filePicker,
         ActionBanner banner)
     {
         _configHost = configHost;
@@ -110,6 +142,7 @@ public sealed partial class AdvancedViewModel : ObservableObject
         _shell = shell;
         _main = main;
         _connectExisting = connectExisting;
+        _filePicker = filePicker;
         _banner = banner;
 
         BindFromHost();
@@ -150,10 +183,12 @@ public sealed partial class AdvancedViewModel : ObservableObject
         }
 
         SeedIdleFromLocal();
+        SeedSshKeysFromLocal();
         CaptureInfraSnapshot();
         OnPropertyChanged(nameof(CanPublishInfra));
         OnPropertyChanged(nameof(CanApplyIdleTimeout));
         OnPropertyChanged(nameof(CanApplyIdleEnabled));
+        NotifySshKeyDerived();
     }
 
     /// <summary>Call when the Advanced tab component is created (tab selected).</summary>
@@ -208,6 +243,70 @@ public sealed partial class AdvancedViewModel : ObservableObject
             IsBusy = false;
         }
     }
+
+    public async Task BrowseVm1SshKeyAsync() =>
+        await BrowseSshKeyAsync(forVm1: true).ConfigureAwait(true);
+
+    public async Task BrowseDoorSshKeyAsync() =>
+        await BrowseSshKeyAsync(forVm1: false).ConfigureAwait(true);
+
+    public void CopyVm1KeyToDoor()
+    {
+        if (!CanCopyVm1KeyToDoor)
+            return;
+        EditDoorSshKeyPath = SshKeyPathUx.Normalize(EditVm1SshKeyPath);
+        StatusMessage = "Door VM will use the game VM private key after Save.";
+    }
+
+    public void CopyDoorKeyToVm1()
+    {
+        if (!CanCopyDoorKeyToVm1)
+            return;
+        EditVm1SshKeyPath = SshKeyPathUx.Normalize(EditDoorSshKeyPath);
+        StatusMessage = "Game VM will use the doorbell private key after Save.";
+    }
+
+    public Task SaveSshKeysAsync()
+    {
+        if (!CanSaveSshKeys || _config is null)
+            return Task.CompletedTask;
+
+        var check = SshKeyPathUx.ValidatePair(EditVm1SshKeyPath, EditDoorSshKeyPath);
+        if (!check.Succeeded)
+        {
+            StatusMessage = check.Error ?? "SSH key paths are not valid.";
+            return Task.CompletedTask;
+        }
+
+        IsBusy = true;
+        NotifySshKeyDerived();
+        try
+        {
+            SshKeyPathUx.Apply(_config, EditVm1SshKeyPath, EditDoorSshKeyPath);
+            var saved = LocalConfigStore.SaveConfig(_config);
+            if (!saved.Succeeded)
+            {
+                StatusMessage = saved.Error ?? "Failed to save config.local.json.";
+                return Task.CompletedTask;
+            }
+
+            _session.ReloadFromDisk();
+            StatusMessage = SshKeysUseSameFile
+                ? "Saved SSH key paths on this PC. Both VMs use the same private key file."
+                : "Saved SSH key paths on this PC. Game VM and doorbell now use different private key files.";
+        }
+        finally
+        {
+            IsBusy = false;
+            NotifySshKeyDerived();
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public Task TestVm1SshAsync() => TestSshAsync(forVm1: true);
+
+    public Task TestDoorSshAsync() => TestSshAsync(forVm1: false);
 
     public async Task BreakGlassStartAsync()
     {
@@ -665,11 +764,125 @@ public sealed partial class AdvancedViewModel : ObservableObject
         HasInfraChanges = false;
     }
 
+    private void SeedSshKeysFromLocal()
+    {
+        _suppressDirty = true;
+        try
+        {
+            EditVm1SshKeyPath = _config?.Vm1.SshKeyPath ?? "";
+            EditDoorSshKeyPath = _config?.Door.SshKeyPath ?? "";
+            CaptureSshKeySnapshot();
+        }
+        finally
+        {
+            _suppressDirty = false;
+        }
+    }
+
+    private void CaptureSshKeySnapshot()
+    {
+        _sshKeySnapshot = SshKeyFingerprint();
+        HasSshKeyChanges = false;
+    }
+
     private string IdleTimeoutFingerprint() =>
         $"{EditIdleTimeout}|{EditBudgetWarn}";
 
     private string InfraFingerprint() =>
         $"{EditStackVersion}|{EditServerKind}|{EditMinecraftVersion}";
+
+    private string SshKeyFingerprint() =>
+        $"{SshKeyPathUx.Normalize(EditVm1SshKeyPath)}|{SshKeyPathUx.Normalize(EditDoorSshKeyPath)}";
+
+    private void NotifySshKeyDerived()
+    {
+        OnPropertyChanged(nameof(CanSaveSshKeys));
+        OnPropertyChanged(nameof(CanCopyVm1KeyToDoor));
+        OnPropertyChanged(nameof(CanCopyDoorKeyToVm1));
+        OnPropertyChanged(nameof(SshKeysUseSameFile));
+        OnPropertyChanged(nameof(Vm1SshKeyMissing));
+        OnPropertyChanged(nameof(DoorSshKeyMissing));
+    }
+
+    private async Task BrowseSshKeyAsync(bool forVm1)
+    {
+        if (IsBusy)
+            return;
+
+        var current = forVm1 ? EditVm1SshKeyPath : EditDoorSshKeyPath;
+        var label = forVm1 ? "game VM" : "doorbell VM";
+        var path = await _filePicker.OpenFileAsync(
+            new FilePickRequest
+            {
+                Title = $"Select SSH private key for the {label} (not stored in Object Storage)",
+                InitialDirectory = SshKeyPathUx.InitialDirectory(current),
+                Filters = [new FileTypeFilter("All files", ".*")],
+            });
+
+        if (string.IsNullOrWhiteSpace(path))
+            return;
+
+        var check = SshKeyPathUx.ValidatePrivateKeyFile(path);
+        if (!check.Succeeded)
+        {
+            StatusMessage = check.Error ?? "That file is not a usable SSH private key.";
+            return;
+        }
+
+        if (forVm1)
+            EditVm1SshKeyPath = path;
+        else
+            EditDoorSshKeyPath = path;
+
+        StatusMessage = $"Selected private key for the {label}. Save to use it.";
+    }
+
+    private async Task TestSshAsync(bool forVm1)
+    {
+        if (IsBusy || _config is null)
+            return;
+
+        var path = forVm1 ? EditVm1SshKeyPath : EditDoorSshKeyPath;
+        var check = SshKeyPathUx.ValidatePrivateKeyFile(path);
+        if (!check.Succeeded)
+        {
+            StatusMessage = check.Error ?? "SSH key path is not valid.";
+            return;
+        }
+
+        var target = forVm1
+            ? new SshTarget
+            {
+                Host = _config.Vm1.SshHost,
+                User = string.IsNullOrWhiteSpace(_config.Vm1.SshUser) ? "ubuntu" : _config.Vm1.SshUser,
+                KeyPath = path,
+                Label = "VM1",
+            }
+            : new SshTarget
+            {
+                Host = _config.Door.SshHost,
+                User = string.IsNullOrWhiteSpace(_config.Door.SshUser) ? "ubuntu" : _config.Door.SshUser,
+                KeyPath = path,
+                Label = "door",
+            };
+
+        var label = forVm1 ? "game VM" : "doorbell VM";
+        IsBusy = true;
+        NotifySshKeyDerived();
+        StatusMessage = $"Testing SSH to the {label}…";
+        try
+        {
+            var result = await _ssh.RunCommandAsync(target, "true", TimeSpan.FromSeconds(20));
+            StatusMessage = result.Succeeded
+                ? $"SSH to the {label} succeeded."
+                : result.Error ?? $"SSH to the {label} failed.";
+        }
+        finally
+        {
+            IsBusy = false;
+            NotifySshKeyDerived();
+        }
+    }
 
     protected override void OnPropertyChanged(PropertyChangedEventArgs e)
     {
@@ -691,15 +904,25 @@ public sealed partial class AdvancedViewModel : ObservableObject
                 if (!_suppressDirty)
                     HasInfraChanges = InfraFingerprint() != _infraSnapshot;
                 break;
+            case nameof(EditVm1SshKeyPath):
+            case nameof(EditDoorSshKeyPath):
+                if (!_suppressDirty)
+                    HasSshKeyChanges = SshKeyFingerprint() != _sshKeySnapshot;
+                NotifySshKeyDerived();
+                break;
             case nameof(HasIdleTimeoutChanges):
             case nameof(HasIdleEnabledChanges):
             case nameof(IsBusy):
                 OnPropertyChanged(nameof(CanApplyIdleTimeout));
                 OnPropertyChanged(nameof(CanApplyIdleEnabled));
                 OnPropertyChanged(nameof(CanPublishInfra));
+                NotifySshKeyDerived();
                 break;
             case nameof(HasInfraChanges):
                 OnPropertyChanged(nameof(CanPublishInfra));
+                break;
+            case nameof(HasSshKeyChanges):
+                OnPropertyChanged(nameof(CanSaveSshKeys));
                 break;
         }
     }

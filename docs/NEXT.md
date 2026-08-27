@@ -23,6 +23,7 @@ Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-De
 
 ## Completed recently
 
+- **2026-08-27** — Operator request (off-queue): Advanced → Stack can set **separate SSH private-key paths** for the game VM and doorbell (`vm1.ssh_key_path` / `door.ssh_key_path`). Local path only — does not rotate guest keys. Pass 3 **blocked**.
 - **2026-08-27** — Step **8.15 P4 DONE** (pick/review while VM stopped; Install starts VM1 then replace). Plan **COMPLETE**. Living **NEXT = 8.5.2** Pass 3 **blocked**.
 - **2026-08-27** — Step **8.15 P3 DONE** (Change-pack dock overlays the pane; tab-scoped to Server → Change pack). Living **NEXT = P4**. Pass 3 **blocked**.
 - **2026-08-27** — Step **8.15 P2 DONE** (Change pack compactness: locked copy, taller summary, side-by-side ingest/warnings/checkboxes). Living **NEXT = P3**. Pass 3 **blocked**.
