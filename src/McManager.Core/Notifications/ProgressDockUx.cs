@@ -14,6 +14,10 @@ public static class ProgressDockUx
 
     public const string ChangePackBuildFallback = "Building the derived pack…";
 
+    public const string ChangePackStartFallback = "Starting the game VM…";
+
+    public const string ChangePackIdleHoldFallback = "Disabling the idle timer…";
+
     public const string ChangePackInstallFallback = "Reinstalling Minecraft from this pack…";
 
     public static string FormatElapsed(TimeSpan elapsed)

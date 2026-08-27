@@ -7,15 +7,13 @@ namespace McManager.Core.Tests;
 public sealed class PackReplaceUxTests
 {
     [Fact]
-    public void Pick_and_install_require_running_vm1()
+    public void Pick_and_install_work_while_vm1_stopped()
     {
-        Assert.False(PackReplaceUx.CanPick(vm1Running: false, busy: false));
-        Assert.Equal(PackReplaceUx.StartFirstMessage, PackReplaceUx.PickDisabledReason(false, false));
-        Assert.False(PackReplaceUx.CanInstall(
+        Assert.True(PackReplaceUx.CanPick(vm1Running: false, busy: false));
+        Assert.Equal("", PackReplaceUx.PickDisabledReason(false, false));
+        Assert.True(PackReplaceUx.CanInstall(
             vm1Running: false, busy: false, canContinue: true, packConfirmed: true, clientPackAcknowledged: true));
-        Assert.Equal(
-            PackReplaceUx.StartFirstMessage,
-            PackReplaceUx.InstallDisabledReason(false, false, true, true, true));
+        Assert.Equal("", PackReplaceUx.InstallDisabledReason(false, false, true, true, true));
     }
 
     [Fact]
@@ -53,8 +51,11 @@ public sealed class PackReplaceUxTests
     public void Busy_blocks_pick_and_install()
     {
         Assert.False(PackReplaceUx.CanPick(vm1Running: true, busy: true));
+        Assert.False(PackReplaceUx.CanPick(vm1Running: false, busy: true));
         Assert.False(PackReplaceUx.CanInstall(
             vm1Running: true, busy: true, canContinue: true, packConfirmed: true, clientPackAcknowledged: true));
+        Assert.False(PackReplaceUx.CanInstall(
+            vm1Running: false, busy: true, canContinue: true, packConfirmed: true, clientPackAcknowledged: true));
         Assert.Contains("Wait", PackReplaceUx.PickDisabledReason(true, true), StringComparison.Ordinal);
     }
 
@@ -82,6 +83,8 @@ public sealed class PackReplaceUxTests
     {
         Assert.Contains("world is kept", PackReplaceUx.ConfirmBody(wipeWorld: false), StringComparison.OrdinalIgnoreCase);
         Assert.Contains("world will be deleted", PackReplaceUx.ConfirmBody(wipeWorld: true), StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("started first", PackReplaceUx.ConfirmBody(false), StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("started first", PackReplaceUx.ConfirmBody(true), StringComparison.OrdinalIgnoreCase);
         Assert.Contains("reinstalls Minecraft", PackReplaceUx.ConfirmBody(false), StringComparison.OrdinalIgnoreCase);
         Assert.Equal(PackReplaceUx.ConfirmKeepWorld, PackReplaceUx.ConfirmBody(false));
         Assert.Equal(PackReplaceUx.ConfirmWipeWorld, PackReplaceUx.ConfirmBody(true));

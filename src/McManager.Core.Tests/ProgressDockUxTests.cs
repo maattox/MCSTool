@@ -51,8 +51,14 @@ public sealed class ProgressDockUxTests
         Assert.Equal(expected, ProgressDockUx.ShowJobProgress(analyzing, replace));
 
     [Fact]
-    public void Change_pack_percent_is_unknown() =>
-        Assert.True(ProgressDockUx.PercentUnknown(hasStagePercent: false));
+    public void Change_pack_start_and_idle_copy_is_pronoun_free()
+    {
+        Assert.Equal("Starting the game VM…", ProgressDockUx.ChangePackStartFallback);
+        Assert.Equal("Disabling the idle timer…", ProgressDockUx.ChangePackIdleHoldFallback);
+        var copy = ProgressDockUx.ChangePackStartFallback + " " + ProgressDockUx.ChangePackIdleHoldFallback;
+        Assert.DoesNotContain(" you ", " " + copy + " ", StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(" we ", " " + copy + " ", StringComparison.OrdinalIgnoreCase);
+    }
 
     [Fact]
     public void Setup_percent_is_known() =>

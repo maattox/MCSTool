@@ -12,7 +12,8 @@ using McManager.Hybrid.Ui;
 namespace McManager.Hybrid.ViewModels;
 
 /// <summary>
-/// Server tab: Object Storage world backups + SSH replace/wipe when VM1 is RUNNING.
+/// Server tab: Object Storage world backups + SSH replace/wipe. Change pack pick/review
+/// works while VM1 is stopped; Install starts VM1 then runs the existing replace.
 /// Own <see cref="IsBusy"/> only — does not grey Start/Stop/Restart or dispose <c>OciSession</c>.
 /// </summary>
 public sealed partial class ServerManagementViewModel : ObservableObject, IDisposable
@@ -1321,6 +1322,34 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
                 installPath = build.Value;
                 PackPath = installPath;
+            }
+
+            if (!Vm1IsRunning)
+            {
+                StatusMessage = ProgressDockUx.ChangePackStartFallback;
+                NotifyDock();
+                var started = await _main.EnsureVm1RunningForPackReplaceAsync();
+                if (!started)
+                {
+                    StatusMessage = string.IsNullOrWhiteSpace(_main.ActionFeedback)
+                        ? "Start failed. Pack was not installed."
+                        : _main.ActionFeedback;
+                    return;
+                }
+            }
+
+            StatusMessage = ProgressDockUx.ChangePackIdleHoldFallback;
+            NotifyDock();
+            var idle = await _ssh.ApplyIdleSettingsAsync(
+                _config.Vm1,
+                idleAgentEnabled: false,
+                _config.Budget.IdleTimeoutMinutes,
+                _config.Budget.BudgetWarnMinutes);
+            if (!idle.Succeeded)
+            {
+                StatusMessage = idle.Error ?? "Could not disable the idle timer. Pack was not installed.";
+                _banner.Show(StatusMessage, ActionBannerSeverity.Error);
+                return;
             }
 
             StatusMessage = ProgressDockUx.ChangePackInstallFallback;

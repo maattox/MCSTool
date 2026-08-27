@@ -1,6 +1,6 @@
 # V1 Change pack UX (living)
 
-**Status:** P4 NEXT. Created 2026-08-27 (docs only). **Live NEXT:** [`NEXT.md`](NEXT.md).  
+**Status:** COMPLETE (P1–P4 DONE). Created 2026-08-27 (docs only). **Live NEXT:** [`NEXT.md`](NEXT.md) → Step **8.5.2** Pass 3 (**blocked**).  
 **Parent:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.15**.  
 **Why now:** operator 2026-08-27 — unstructured zip review is three separate scroll lists; Change pack copy/layout is long and stacked; pick is blocked when VM1 is stopped; the Change-pack bottom bar participates in layout and follows the user onto other tabs. Vague copy not named below and compact side-by-side layout: agents **decide inside each section’s bounds** (and [Scrutiny](#scrutiny-plan-decisions)). Stop and ask for spend, `tofu destroy`, `DEFAULT`, or parked after-v1 items.
 
@@ -57,7 +57,7 @@ None. P1–P4 share Change pack Razor, `app.css`, and `ServerManagementViewModel
 | P1 | Single-list assisted review | **DONE** | SEQUENTIAL — shared review panel | agent |
 | P2 | Change pack compactness | **DONE** | SEQUENTIAL — same tab + CSS | agent |
 | P3 | Overlay dock + tab-scoped bars | **DONE** | SEQUENTIAL — same Manage grid CSS | agent |
-| P4 | Pick/review when VM stopped | **NEXT** | SEQUENTIAL — same gates + install path | agent |
+| P4 | Pick/review when VM stopped | **DONE** | SEQUENTIAL — same gates + install path | agent |
 
 ---
 
@@ -68,8 +68,8 @@ None. P1–P4 share Change pack Razor, `app.css`, and `ServerManagementViewModel
 - **Shared panel:** `PackAssistedReviewPanel.razor` (Setup + Change pack). Skip persist: `PackAssistedReviewActions` + Layer 2 per-archive overlay. Unchecking an automatic skip already needs re-analyze (`NeedsReanalyze`).
 - **Identity:** `PackIdentityFields.razor` — Minecraft, loader, loader version, Java. Change pack currently renders identity **below** the review panel.
 - **Summary `<pre>`:** `Vm.PackSummary` in `ServerManagementTab.razor`. Shown for any preview; sits above assisted review.
-- **Pick gate:** `PackReplaceUx.CanPick` requires `vm1Running && !busy`. Drop zone, Choose file, and Modding **Change pack** (opens the inner tab) all bind `CanPickPack`. Analyze is **local** (no SSH).
-- **Install:** `PackReplaceUx.CanInstall` also requires VM1 running. `InstallPackReplaceAsync` is SSH full re-setup. World kept unless wipe is checked.
+- **Pick / analyze:** `PackReplaceUx.CanPick` is not busy (VM1 running is not required). Analyze is **local** (no SSH).
+- **Install:** `PackReplaceUx.CanInstall` is ready checkboxes / identity / freeze — not VM running. `InstallPackReplaceAsync` starts VM1 (sidebar Start / `WakeGameServerAsync`), disables idle, then SSH full re-setup. World kept unless wipe is checked. Minecraft start turns idle back on (`IdleForceEnableNote`).
 - **Dock:** `MainLayout.razor` hosts `ProgressDock` as a content-pane overlay (toast pattern; does not size tracks). Visible only on **Server → Change pack** while `ShowChangePackUi`. Toasts stay `z-index` above. Server tab is keep-alive (`mcm-tab-keep`). Inner pane lives on `ServerManagementViewModel.ServerPane`.
 
 ---
@@ -244,7 +244,7 @@ Locked by the operator. Do not reopen in an implementation chat.
 
 ## P4 — Pick/review when VM stopped
 
-**Status:** NEXT  
+**Status:** DONE  
 **Parallel:** SEQUENTIAL — same gates + `InstallPackReplaceAsync`  
 **Cursor mode:** agent
 
@@ -276,4 +276,4 @@ Locked by the operator. Do not reopen in an implementation chat.
 
 - Stopped VM can pick and review. Install starts VM1 then replace. Tests + Guide updated. This plan **COMPLETE**. [`NEXT.md`](NEXT.md) → Step **8.5.2** Pass 3 **blocked**.
 
-**Changelog:** *(date when finished)*
+**Changelog:** 2026-08-27 — Pick/review while VM1 is stopped. Install starts VM1 (existing Start path), disables idle, then replace. Start failure does not begin replace. Tests + Guide updated. Plan **COMPLETE**.

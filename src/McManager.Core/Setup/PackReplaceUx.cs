@@ -7,9 +7,6 @@ public static class PackReplaceUx
 {
     public const long PackDropMaxBytes = 512L * 1024 * 1024;
 
-    public const string StartFirstMessage =
-        "Start the server first, then change the pack. Change pack reinstalls Minecraft over SSH.";
-
     public const string ConfirmTitle = "Reinstall Minecraft from this pack?";
 
     /// <summary>Manage Change pack only. Setup keeps <see cref="SetupPackImport.ClientPackCopy"/>.</summary>
@@ -44,21 +41,28 @@ public static class PackReplaceUx
 
     public const string ConfirmKeepWorld =
         "Reinstalls Minecraft from the chosen file. "
+        + "If the game VM is stopped, it is started first. "
         + "The world is kept unless wipe is checked. Friends need the new exported pack.";
 
     public const string ConfirmWipeWorld =
         "Reinstalls Minecraft from the chosen file. "
+        + "If the game VM is stopped, it is started first. "
         + "The live world will be deleted. Cloud backups stay. Irreversible except by restoring a backup.";
 
     public static string ConfirmBody(bool wipeWorld) =>
         wipeWorld ? ConfirmWipeWorld : ConfirmKeepWorld;
 
-    public static bool CanPick(bool vm1Running, bool busy) =>
-        vm1Running && !busy;
+    /// <param name="vm1Running">Ignored. Pick, drop, analyze, and review work while VM1 is stopped.</param>
+    public static bool CanPick(bool vm1Running, bool busy)
+    {
+        _ = vm1Running;
+        return !busy;
+    }
 
     public static bool FreezeAllowsContinue(string? freezeBlockReason) =>
         string.IsNullOrWhiteSpace(freezeBlockReason);
 
+    /// <param name="vm1Running">Ignored. Install starts VM1 when it is stopped.</param>
     public static bool CanInstall(
         bool vm1Running,
         bool busy,
@@ -66,21 +70,22 @@ public static class PackReplaceUx
         bool packConfirmed,
         bool clientPackAcknowledged,
         bool identityComplete = true,
-        string? freezeBlockReason = null) =>
-        vm1Running
-        && !busy
-        && canContinue
-        && packConfirmed
-        && clientPackAcknowledged
-        && identityComplete
-        && FreezeAllowsContinue(freezeBlockReason);
+        string? freezeBlockReason = null)
+    {
+        _ = vm1Running;
+        return !busy
+            && canContinue
+            && packConfirmed
+            && clientPackAcknowledged
+            && identityComplete
+            && FreezeAllowsContinue(freezeBlockReason);
+    }
 
     public static string PickDisabledReason(bool vm1Running, bool busy)
     {
+        _ = vm1Running;
         if (busy)
             return "Wait until the current action finishes.";
-        if (!vm1Running)
-            return StartFirstMessage;
         return "";
     }
 
@@ -93,10 +98,9 @@ public static class PackReplaceUx
         bool identityComplete = true,
         string? freezeBlockReason = null)
     {
+        _ = vm1Running;
         if (busy)
             return "Wait until the current action finishes.";
-        if (!vm1Running)
-            return StartFirstMessage;
         if (!canContinue)
             return "Choose a pack that can be installed first.";
         if (!FreezeAllowsContinue(freezeBlockReason))
