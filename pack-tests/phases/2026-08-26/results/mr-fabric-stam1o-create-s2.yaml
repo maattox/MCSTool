@@ -1,0 +1,41 @@
+schema_version: 1
+pack_id: mr-fabric-stam1o-create-s2
+filename: Modrinth-fabric-Stam1o-Create-S2.mrpack
+sha256: 23346ac0bf2fcefba85367f4df7897d5de6815d576864da2701f12ba0929a9ee
+started_utc: "2026-08-26T21:37:54Z"
+finished_utc: "2026-08-26T21:43:47Z"
+verdict: pass
+ready_for_next: true
+fail_message: ""
+identity:
+  expected:
+    minecraft: 1.20.1
+    loader: fabric
+    loader_version: 0.15.11
+    java_major: 17
+  detected:
+    minecraft: 1.20.1
+    loader: fabric
+    loader_version: 0.15.11
+    java_major: 17
+  applied:
+    minecraft: 1.20.1
+    loader: fabric
+    loader_version: 0.15.11
+    java_major: 17
+skip_counts:
+  automatic_client: 16
+  unknown_kept: 0
+health:
+  rcon_list: true
+  crash_loop: false
+  fatal: false
+  quarantine: false
+log_excerpt_path: logs/mr-fabric-stam1o-create-s2.excerpt.txt
+infra:
+  ssh: true
+  vm1: Running
+  minecraft_unit: active
+  idle_disabled: true
+notes:
+  - client-only sidecar not applied (default Keep)

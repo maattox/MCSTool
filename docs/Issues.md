@@ -142,8 +142,8 @@ Product roadmap stays in `PRODUCT-IDEAS.md`. Architecture stays in `Infrastructu
 **Status:** Open (by design / product safety — document for testers)  
 **Summary:** Manager / config can set `idle_agent_enabled=false` and stop `mc-idle-watch.timer`, but the next Minecraft start runs `record_boot.py`, which **force-enables** the timer and rewrites local + OS budget config to `idle_agent_enabled=true`.  
 **Cause:** PRODUCT-IDEAS MVP rule — disabling idle is testing-only and must not survive reboot/start.  
-**Workaround for tests:** keep Minecraft from restarting, or re-disable after each start; accept that SoftStop may return after boot.  
-**Refs:** `vm_agent/record_boot.py` `force_enable_idle_agent`
+**Workaround for tests:** keep Minecraft from restarting, or re-disable after each start; accept that SoftStop may return after boot. Pack-corpus harness stops `minecraft` and disables idle **before** `ReplacePackAsync`, **re-disables every ~15s during replace** (boot oneshot turns idle back on), then again in the ready-gate.  
+**Refs:** `vm_agent/record_boot.py` `force_enable_idle_agent`, `src/McManager.PackTestHarness/IdleHold.cs`
 
 ### OS-ISSUE-8 — Door wake may trust stale OS budget/ledger cache
 **Status:** Fixed (Step 2.4)  

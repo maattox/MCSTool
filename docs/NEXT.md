@@ -1,6 +1,6 @@
 # Workflow state
 
-**Updated:** 2026-08-26
+**Updated:** 2026-08-27
 
 Single source of truth for **what to work on next**. Living plan files keep section history; agents update **this file** when advancing work.
 
@@ -15,7 +15,7 @@ Single source of truth for **what to work on next**. Living plan files keep sect
 | **Status** | `blocked` |
 | **Cursor mode** | — |
 
-Step **8.14** (Manage UI pass 3) is **COMPLETE** (P1–P4; operator 2026-08-26 kept zoom lock, equal power buttons, P3 pins, P4 Overview; restored painted 6px window strips and pre-P2 sidebar gutters). Live **NEXT = 8.5.2** Pass 3, **blocked** until the operator says so. Do **not** start Pass 3, Step **8.6.1**, or **9.1**. Pack-corpus P1–P3 is **DONE**; operator may seed `pack-tests/packs/` + sidecars and invoke `/pack-test-phase` in a **separate** chat.
+Step **8.14** (Manage UI pass 3) is **COMPLETE** (P1–P4; operator 2026-08-26 kept zoom lock, equal power buttons, P3 pins, P4 Overview; restored painted 6px window strips and pre-P2 sidebar gutters). Live **NEXT = 8.5.2** Pass 3, **blocked** until the operator says so. Do **not** start Pass 3, Step **8.6.1**, or **9.1**. Pack-corpus P1–P3 is **DONE**. **Parked:** `mr-fabric-cobblemon-1.7.3` re-run is **UNFINISHED** (operator aborted 2026-08-27). Come back in a **separate** chat: `/pack-test-one` that id (TESTING, `mcmgr-pack-test`; disable idle for the whole replace). Do not treat the later harness `pass` YAML as verified.
 
 ## Design lock (implementing)
 
@@ -23,6 +23,7 @@ Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-De
 
 ## Completed recently
 
+- **2026-08-27** — Pack-corpus cobblemon mrpack re-run **UNFINISHED** (session aborted). VM1 Minecraft stopped; idle re-enabled; `pack-tests/.lock` released. Phase `2026-08-26` stay `complete` except that id. Pass 3 **blocked**.
 - **2026-08-26** — Sidebar shrink: chrome no longer clips status/power after pins tuck; tab gaps 8px→2px; extra height stays under the tab list. Pass 3 **blocked**.
 - **2026-08-26** — Sidebar: no scrollbar; pins clip away before status/power; tab gap fixed at 12px; window min-height raised so tabs stay fully visible. Pass 3 **blocked**.
 - **2026-08-26** — Operator pin pass (no new plan): three stacked full-width sidebar strips (Today's uptime, This month, Rollover bank). Idle timeout left on Usage / Overview / Advanced. Pass 3 **blocked**.
