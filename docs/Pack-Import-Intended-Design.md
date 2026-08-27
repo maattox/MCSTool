@@ -1,8 +1,7 @@
 # Pack import — intended design
 
-**Status:** Living **product spec** (operator 2026-08-23). Implementation queue: Step **8.9** ([`V1-Pack-Import-Assisted-Review-Plan.md`](V1-Pack-Import-Assisted-Review-Plan.md)); live pointer [`NEXT.md`](NEXT.md).  
-Pass 3 stays blocked until 8.9 completes and the operator says otherwise.  
-**Code today** still auto-keeps unknown homemade jars after a warning until 8.9 ships. This file is the **target** contract.
+**Status:** Living **product spec** (operator 2026-08-23; review UI revised 2026-08-27). Skip order + freeze: Step **8.9** ([`V1-Pack-Import-Assisted-Review-Plan.md`](V1-Pack-Import-Assisted-Review-Plan.md)) **DONE**. Single-list review + Change pack UX: Step **8.15** ([`V1-Change-Pack-UX-Plan.md`](V1-Change-Pack-UX-Plan.md)); live pointer [`NEXT.md`](NEXT.md).  
+Pass 3 stays blocked until the operator says otherwise.
 
 **Authority:** operator will (this chat) wins. When this file disagrees with [`PRODUCT-IDEAS.md`](PRODUCT-IDEAS.md), follow **this file** and note drift. Mechanism details stay in the blueprint (named §§ only) and Core analyzers.
 
@@ -53,7 +52,7 @@ Used when the archive is unstructured **or** a material set of mod jars still ha
 **Cannot continue** until:
 
 1. Identity is complete: Minecraft version, loader (`fabric` / `forge` / `neoforge`), loader version, Java major — detected or operator-corrected (jar-root already has this).
-2. The unknown-side list is **acknowledged**: default **Keep** all unknowns, or per-jar **Skip on server**, then a Continue control.
+2. The jar list is **acknowledged**: default **server-compatible** (unchecked) for unknowns, or per-jar **client-only** (checked). Auto-detected client-only start checked. Then a Continue / Install control.
 3. Existing friend-pack checkboxes remain.
 
 No more “64 unknown sides, keep, Deploy” as the only gate.
@@ -95,17 +94,17 @@ Apply after automatic skips and **again** after user Skip ticks, before install.
 
 ## Review UI (assisted)
 
-Not a dump of 60 filenames with no help. Three groups:
+Not a dump of 60 filenames with no help. **One** scrollable list of every review jar (automatic client-only, unknowns, and must-keep). Checking client-only **must not** move the row to another list. Search if the list is long.
 
-1. **Will skip** (automatic) — read-only, with why (list / `env.server` / in-jar).
-2. **Needs your call** — unknown side, **and** not required by a kept jar. Default **Keep**. Optional **Skip on server**. Search if the list is long.
-3. **Must keep** — required dependency of something being kept. Locked. Short reason.
+| Row state | Checkbox | Note |
+|-----------|----------|------|
+| Auto-detected client-only (list / `env.server` / in-jar) | **Checked**, editable | Short why optional |
+| Unknown side, not required by a kept jar | **Unchecked** (server-compatible). Check to mark **client-only** | Empty or “unknown” |
+| **Must keep** (required dep of something being kept) | **Disabled** (greyed) | `required by {mod}` |
 
-Plus the existing identity fields for unstructured packs (Minecraft, loader, loader version, Java).
+Plus the existing identity fields for unstructured packs (Minecraft, loader, loader version, Java), **above** the list. Hide the long pack-summary box while this list is showing.
 
-Copy should say: *We skip obvious client mods. Everything else stays unless you mark it. If the server crashes and the game names one mod, you can exclude it here.*
-
-Do **not** require an explicit Keep/Skip on every unknown row (people will click through blindly). Default-Keep plus optional Skip is the easy path.
+Default-unchecked unknowns plus optional client-only is the easy path. Do **not** require an explicit decision on every unknown row.
 
 Persist per-archive-SHA on the admin PC (Layer 2 local overlay already exists). Same file later → same answers. If the zip bytes change, treat it as a new archive (or show a short “this file changed” note — implementer picks one).
 
@@ -146,12 +145,9 @@ itzg `TYPE=` scripts are a **reference**, not something to port. Each extra load
 
 ## Implementation notes (when NEXT names it)
 
-Suggested order is locked in [`V1-Pack-Import-Assisted-Review-Plan.md`](V1-Pack-Import-Assisted-Review-Plan.md):
+Skip order + freeze shipped in [`V1-Pack-Import-Assisted-Review-Plan.md`](V1-Pack-Import-Assisted-Review-Plan.md) (Step **8.9**). Single-list review + Change pack compactness / overlay dock / stopped-VM pick: [`V1-Change-Pack-UX-Plan.md`](V1-Change-Pack-UX-Plan.md) (Step **8.15**).
 
-1. **P1** — Dependency freeze + skip-order fix + review grouping in Core (testable without Hybrid).
-2. **P2** — Unknown-side review UI + persist Skip (Setup + Change pack) + copy in [`Guide.md`](Guide.md).
-
-Until P2 ships: do not treat informal homemade-zip failures as proof the **loader/Java/bootstrap** pipeline is wrong. Prefer well-formed `.mrpack` / Server Files for “must Just Work” checks.
+Prefer well-formed `.mrpack` / Server Files for “must Just Work” checks. Homemade zip still uses assisted review.
 
 ---
 
@@ -159,6 +155,7 @@ Until P2 ships: do not treat informal homemade-zip failures as proof the **loade
 
 | Date | Note |
 |------|------|
-| 2026-08-24 | **Implemented** (Step **8.9** P1–P2): skip order, dependency freeze, assisted review UI, persist Skip, Guide. Keep this file as the contract. |
+| 2026-08-27 | **Review UI implemented** (Step **8.15** P1): one list (client-only checkbox; must-keep greyed with `required by`; no moving rows). Identity above the list; hide summary while reviewing. Skip order / freeze unchanged. |
+| 2026-08-24 | **Implemented** (Step **8.9** P1–P2): skip order, dependency freeze, three-group assisted review UI, persist Skip, Guide. |
 | 2026-08-23 | **Scheduled** as Step **8.9** ([`V1-Pack-Import-Assisted-Review-Plan.md`](V1-Pack-Import-Assisted-Review-Plan.md)). P1 NEXT. |
 | 2026-08-23 | **Design lock.** Homemade zip kept; unattended success dropped. Automatic vs assisted tiers, skip order, dep freeze, review UI, crash bounds, non-goals. No code. Pass 3 unchanged. |

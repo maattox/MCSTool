@@ -1,7 +1,7 @@
 namespace McManager.Core.Setup;
 
 /// <summary>
-/// One jar/file in the three-group assisted review (Core DTO; no Razor).
+/// One jar/file in the single-list assisted review (Core DTO; no Razor).
 /// </summary>
 public sealed class PackReviewItem
 {
@@ -37,7 +37,8 @@ public sealed class PackReviewItem
 }
 
 /// <summary>
-/// Will skip / Needs your call / Must keep after automatic skips and dependency freeze.
+/// Row-state buckets after automatic skips and dependency freeze.
+/// The review UI is one list; these stay as state, not separate scroll regions.
 /// </summary>
 public sealed class PackAssistedReview
 {
@@ -64,6 +65,56 @@ public sealed class PackAssistedReview
 
     /// <summary>Set when an operator Skip would drop a required dep of a kept jar. P1 does not flip CanContinue.</summary>
     public string? FreezeBlockReason { get; }
+
+    /// <summary>
+    /// Every review jar once, in pack/analyzer order when <paramref name="preferredPathOrder"/>
+    /// is supplied. Must-keep wins on path collisions so the freeze note stays on the row.
+    /// </summary>
+    public IReadOnlyList<PackReviewItem> UnifiedRows(IReadOnlyList<string>? preferredPathOrder = null)
+    {
+        var byPath = new Dictionary<string, PackReviewItem>(StringComparer.OrdinalIgnoreCase);
+        foreach (var item in NeedsYourCall)
+            byPath[item.Path] = item;
+        foreach (var item in WillSkip)
+            byPath[item.Path] = item;
+        foreach (var item in MustKeep)
+            byPath[item.Path] = item;
+
+        if (byPath.Count == 0)
+            return [];
+
+        var rows = new List<PackReviewItem>(byPath.Count);
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        if (preferredPathOrder is { Count: > 0 })
+        {
+            foreach (var path in preferredPathOrder)
+            {
+                if (byPath.TryGetValue(path, out var item) && seen.Add(item.Path))
+                    rows.Add(item);
+            }
+        }
+
+        foreach (var item in NeedsYourCall)
+        {
+            if (byPath.TryGetValue(item.Path, out var chosen) && seen.Add(chosen.Path))
+                rows.Add(chosen);
+        }
+
+        foreach (var item in WillSkip)
+        {
+            if (byPath.TryGetValue(item.Path, out var chosen) && seen.Add(chosen.Path))
+                rows.Add(chosen);
+        }
+
+        foreach (var item in MustKeep)
+        {
+            if (byPath.TryGetValue(item.Path, out var chosen) && seen.Add(chosen.Path))
+                rows.Add(chosen);
+        }
+
+        return rows;
+    }
 }
 
 /// <summary>

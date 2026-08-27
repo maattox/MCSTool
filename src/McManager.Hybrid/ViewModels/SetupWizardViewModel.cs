@@ -580,6 +580,9 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     public PackAssistedReview AssistedReview =>
         _packPreview?.AssistedReview ?? PackAssistedReview.Empty;
 
+    public IReadOnlyList<string> PackJarOrder =>
+        _packPreview?.JarRecords.Select(j => j.Path).ToArray() ?? [];
+
     public string PackFreezeBlockReason => _packPreview?.FreezeBlockReason ?? "";
 
     public bool PackLooksLikeLauncherInstance => _packLooksLikeLauncherInstance;
@@ -1867,6 +1870,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(ShowPackAssistedReview));
         OnPropertyChanged(nameof(AssistedReview));
+        OnPropertyChanged(nameof(PackJarOrder));
         OnPropertyChanged(nameof(PackFreezeBlockReason));
         OnPropertyChanged(nameof(PackLooksLikeLauncherInstance));
         OnPropertyChanged(nameof(GameStepNextTitle));

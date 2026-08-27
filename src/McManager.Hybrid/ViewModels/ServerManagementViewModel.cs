@@ -215,6 +215,9 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     public PackAssistedReview AssistedReview =>
         _packPreview?.AssistedReview ?? PackAssistedReview.Empty;
 
+    public IReadOnlyList<string> PackJarOrder =>
+        _packPreview?.JarRecords.Select(j => j.Path).ToArray() ?? [];
+
     public string PackFreezeBlockReason => _packPreview?.FreezeBlockReason ?? "";
 
     public bool PackLooksLikeLauncherInstance { get; private set; }
@@ -1625,6 +1628,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     {
         OnPropertyChanged(nameof(ShowPackAssistedReview));
         OnPropertyChanged(nameof(AssistedReview));
+        OnPropertyChanged(nameof(PackJarOrder));
         OnPropertyChanged(nameof(PackFreezeBlockReason));
         OnPropertyChanged(nameof(PackLooksLikeLauncherInstance));
         OnPropertyChanged(nameof(CanInstallPack));

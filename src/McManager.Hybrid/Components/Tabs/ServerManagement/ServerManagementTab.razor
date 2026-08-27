@@ -397,17 +397,10 @@
                         <p>@Vm.SaveCompatibilityWarning</p>
                     </aside>
                 }
-                <pre class="mcm-wizard-log mcm-wizard-mono mcm-slim-scroll mcm-pack-summary">@Vm.PackSummary</pre>
-            }
-            @if (Vm.ShowPackAssistedReview)
-            {
-                <PackAssistedReviewPanel IdPrefix="change-pack"
-                                         Disabled="@Vm.AnyBusy"
-                                         Review="@Vm.AssistedReview"
-                                         FreezeBlockReason="@Vm.PackFreezeBlockReason"
-                                         LooksLikeLauncherInstance="@Vm.PackLooksLikeLauncherInstance"
-                                         IsSkipped="@Vm.IsOperatorSkipped"
-                                         SkipChanged="Vm.OnAssistedSkipChanged" />
+                @if (!Vm.ShowPackAssistedReview)
+                {
+                    <pre class="mcm-wizard-log mcm-wizard-mono mcm-slim-scroll mcm-pack-summary">@Vm.PackSummary</pre>
+                }
             }
             @if (Vm.ShowPackIdentityFields)
             {
@@ -419,6 +412,17 @@
                                     @bind-JavaMajorText="Vm.PackJavaMajorText"
                                     ShowDetectionMismatch="@Vm.ShowDetectionMismatch"
                                     DetectionMismatchWarning="@Vm.DetectionMismatchWarning" />
+            }
+            @if (Vm.ShowPackAssistedReview)
+            {
+                <PackAssistedReviewPanel IdPrefix="change-pack"
+                                         Disabled="@Vm.AnyBusy"
+                                         Review="@Vm.AssistedReview"
+                                         JarOrder="@Vm.PackJarOrder"
+                                         FreezeBlockReason="@Vm.PackFreezeBlockReason"
+                                         LooksLikeLauncherInstance="@Vm.PackLooksLikeLauncherInstance"
+                                         IsSkipped="@Vm.IsOperatorSkipped"
+                                         SkipChanged="Vm.OnAssistedSkipChanged" />
             }
             @if (Vm.ShowPackConfirmChecks)
             {

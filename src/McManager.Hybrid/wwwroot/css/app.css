@@ -2811,23 +2811,15 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 }
 
 .mcm-pack-review-title {
-    margin: 0 0 6px !important;
+    margin: 0 0 8px !important;
     font-size: 14px;
     font-weight: 600;
     color: var(--text-primary);
     text-wrap: pretty;
 }
 
-.mcm-pack-review-lead {
-    margin: 0 0 10px !important;
-    font-size: 13px;
-    line-height: 1.45;
-    color: var(--text-primary);
-    max-width: 72ch;
-}
-
 .mcm-pack-review-search {
-    margin: 0 0 12px;
+    margin: 0 0 10px;
 }
 
 .mcm-pack-review-search input[type="search"] {
@@ -2835,37 +2827,34 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     max-width: 28rem;
 }
 
-.mcm-pack-review-group,
-.mcm-pack-review-details {
-    margin: 12px 0 0;
+.mcm-pack-review-head,
+.mcm-pack-review-item {
+    display: grid;
+    grid-template-columns: minmax(7.5rem, 22%) minmax(0, 1fr);
+    column-gap: 10px;
+    align-items: start;
 }
 
-.mcm-pack-review-heading {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-    margin: 0 0 4px !important;
-    font-size: 13px;
+.mcm-pack-review-head {
+    margin: 0 0 2px;
+    padding: 0 0 6px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
     font-weight: 600;
-    color: var(--text-primary);
-}
-
-.mcm-pack-review-details > summary.mcm-pack-review-heading {
-    cursor: pointer;
-    list-style-position: outside;
-}
-
-.mcm-pack-review-count {
-    font-variant-numeric: tabular-nums;
-    font-weight: 500;
+    letter-spacing: 0.02em;
     color: var(--text-secondary);
 }
 
-.mcm-pack-review-help {
-    margin: 0 0 8px !important;
+.mcm-pack-review-client-head {
+    grid-column: 2;
+}
+
+.mcm-pack-review-note {
+    min-width: 0;
     font-size: 12px;
-    line-height: 1.4;
+    line-height: 1.35;
     color: var(--text-secondary);
+    overflow-wrap: anywhere;
 }
 
 .mcm-pack-review-list {
@@ -2878,9 +2867,6 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 }
 
 .mcm-pack-review-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
     min-width: 0;
     padding: 6px 0;
     border-bottom: 1px solid var(--border);
@@ -2891,7 +2877,6 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 }
 
 .mcm-pack-review-hit {
-    flex: 1 1 auto;
     min-width: 0;
     align-items: flex-start;
 }
@@ -2902,13 +2887,6 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     border-radius: 4px;
 }
 
-.mcm-pack-review-meta {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-}
-
 .mcm-pack-review-file {
     font-size: 13px;
     font-weight: 500;
@@ -2916,28 +2894,12 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     overflow-wrap: anywhere;
 }
 
-.mcm-pack-review-why {
-    font-size: 12px;
+.mcm-pack-review-item.is-locked .mcm-pack-review-file {
     color: var(--text-secondary);
 }
 
-.mcm-pack-review-action {
-    flex: 0 0 auto;
-    margin-top: 2px;
-    font-size: 12px;
-    color: var(--text-muted);
-    white-space: nowrap;
-}
-
-.mcm-pack-review-item.is-locked,
-.mcm-pack-review-item.is-readonly {
-    color: var(--text-secondary);
-}
-
-.mcm-pack-review-item .ti {
-    margin-top: 3px;
-    font-size: 14px;
-    color: var(--text-muted);
+.mcm-pack-review-item.is-locked input {
+    cursor: not-allowed;
 }
 
 @media (prefers-reduced-motion: reduce) {

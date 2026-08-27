@@ -232,6 +232,38 @@ public sealed class PackDependencyFreezeTests
     }
 
     [Fact]
+    public void Unified_rows_follow_preferred_order_and_dedupe_must_keep()
+    {
+        var review = new PackAssistedReview(
+            willSkip:
+            [
+                new PackReviewItem("mods/a.jar", "env.server", PackFileSkipReason.PackDeclared),
+                new PackReviewItem("mods/c.jar", "exclude list", PackFileSkipReason.OverrideList),
+            ],
+            needsYourCall:
+            [
+                new PackReviewItem("mods/b.jar", "unknown side"),
+            ],
+            mustKeep:
+            [
+                new PackReviewItem(
+                    "mods/c.jar",
+                    "required by thermal",
+                    PackFileSkipReason.None,
+                    requiredByPath: "mods/thermal.jar",
+                    requiredByName: "thermal"),
+            ]);
+
+        var rows = review.UnifiedRows(["mods/b.jar", "mods/c.jar", "mods/a.jar"]);
+        Assert.Equal(3, rows.Count);
+        Assert.Equal("mods/b.jar", rows[0].Path);
+        Assert.Equal("mods/c.jar", rows[1].Path);
+        Assert.Equal("mods/a.jar", rows[2].Path);
+        Assert.Equal("thermal", rows[1].RequiredByName);
+        Assert.Equal(PackFileSkipReason.None, rows[1].SkipReason);
+    }
+
+    [Fact]
     public void Mrpack_unclear_still_fails_after_freeze()
     {
         var path = Path.Combine(AppContext.BaseDirectory, "fixtures", "packs", "fabric-strip.mrpack");

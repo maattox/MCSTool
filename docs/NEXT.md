@@ -8,21 +8,23 @@ Single source of truth for **what to work on next**. Living plan files keep sect
 
 | Field | Value |
 |-------|-------|
-| **Plan** | [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.5.2** |
-| **Step** | **8.5.2** Execute QA passes |
-| **Sub-plan** | [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) |
-| **Sub-step** | Pass 3 (operator start) |
-| **Status** | `blocked` |
-| **Cursor mode** | — |
+| **Plan** | [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.15** |
+| **Step** | **8.15** Change pack UX |
+| **Sub-plan** | [`V1-Change-Pack-UX-Plan.md`](V1-Change-Pack-UX-Plan.md) |
+| **Sub-step** | **P2** Change pack compactness |
+| **Status** | `ready` |
+| **Cursor mode** | `agent` |
 
-Step **8.14** (Manage UI pass 3) is **COMPLETE** (P1–P4; operator 2026-08-26 kept zoom lock, equal power buttons, P3 pins, P4 Overview; restored painted 6px window strips and pre-P2 sidebar gutters). Live **NEXT = 8.5.2** Pass 3, **blocked** until the operator says so. Do **not** start Pass 3, Step **8.6.1**, or **9.1**. Pack-corpus P1–P3 is **DONE**. **Parked:** `mr-fabric-cobblemon-1.7.3` re-run is **UNFINISHED** (operator aborted 2026-08-27). Come back in a **separate** chat: `/pack-test-one` that id (TESTING, `mcmgr-pack-test`; disable idle for the whole replace). Do not treat the later harness `pass` YAML as verified.
+Step **8.14** (Manage UI pass 3) is **COMPLETE**. Live **NEXT = 8.15 P2** (Change pack compactness). Do **not** start Pass 3, Step **8.6.1**, or **9.1**. Pack-corpus P1–P3 is **DONE**. **Parked:** `mr-fabric-cobblemon-1.7.3` re-run is **UNFINISHED** (operator aborted 2026-08-27). Come back in a **separate** chat: `/pack-test-one` that id (TESTING, `mcmgr-pack-test`; disable idle for the whole replace). Do not treat the later harness `pass` YAML as verified.
 
 ## Design lock (implementing)
 
-Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) — **implemented** (Step **8.9** P1–P2). Manage sidebar topology: [`assets/UI-design-mockup.png`](../assets/UI-design-mockup.png) + 8.12 Scrutiny (**COMPLETE**). Step **8.13** polish (**COMPLETE**): three-zone panels, 244px sidebar, equal compact pins, larger tabs. Step **8.14** (third UI pass) **COMPLETE**: Ctrl+scroll zoom lock, equal-width power buttons, Overview name+IP. Painted 6px window strips and pre-P2 sidebar gutters **restored** (operator 2026-08-26). Operator pin pass: **three** stacked sidebar strips (today / this month / rollover). Step **8.5.2** QA Pass 3 stays **blocked** until the operator starts it.
+Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) — skip order + freeze **implemented** (Step **8.9**); **review UI** is one list (Step **8.15**). Manage sidebar topology: [`assets/UI-design-mockup.png`](../assets/UI-design-mockup.png) + 8.12 Scrutiny (**COMPLETE**). Step **8.13** polish (**COMPLETE**). Step **8.14** (third UI pass) **COMPLETE**. Step **8.5.2** QA Pass 3 stays **blocked** until the operator starts it (after **8.15**).
 
 ## Completed recently
 
+- **2026-08-27** — Step **8.15 P1 DONE** (single-list assisted review: Client-only checkbox, identity above the list, summary hidden during review). Living **NEXT = P2**. Pass 3 **blocked**.
+- **2026-08-27** — Step **8.15** inserted (Change pack UX: single-list review, compactness, overlay dock, stopped-VM pick). Living **NEXT = P1**. Pass 3 **blocked**.
 - **2026-08-26** — Sidebar **Status** now shows **Running** when the Minecraft VM is already on (same “already on” signal as **Stop**), so opening Manager on a live server no longer stays **Stopped**. Pass 3 **blocked**.
 
 - **2026-08-27** — Pack-corpus cobblemon mrpack re-run **UNFINISHED** (session aborted). VM1 Minecraft stopped; idle re-enabled; `pack-tests/.lock` released. Phase `2026-08-26` stay `complete` except that id. Pass 3 **blocked**.
