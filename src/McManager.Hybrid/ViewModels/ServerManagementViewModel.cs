@@ -296,13 +296,13 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     public string WorldBackupsHelpTitle => OversizedWorldBackupUx.HelpTitle;
 
     public string IdentityHelpTitle =>
-        "Name and description show in Minecraft’s server list when the game is running. Select text and apply colors, or paste a motd= string. Check “Don’t put the server name on the MOTD” for a description-only list. The in-game PNG is the list icon while Minecraft is up. Offline / starting / unavailable copies show on the doorbell while the server is off. Automated chat is what the idle timer says in-game before a stop. Save, then Restart Minecraft (or Start) to apply the in-game icon. The doorbell icon updates on Save.";
+        "Name and description show in Minecraft’s server list when the game is running. Each box is one list line (59 characters). Select text and apply colors, or paste a motd= string. The in-game PNG is the list icon while Minecraft is up. Offline / starting / unavailable copies show on the doorbell while the server is off. Automated chat is what the idle timer says in-game before a stop. Save, then Restart Minecraft (or Start) to apply the in-game icon. The doorbell icon updates on Save.";
 
     public string IconStatesHelp =>
         "In-game is the color icon while Minecraft is up. Offline, Starting, and Unavailable are greyscale copies with overlays for the doorbell list while the server is off, waking, or cannot start (daily hours or spend-brake).";
 
     public string MotdPreview =>
-        ServerIdentityUx.BuildMotd(IdentityName, IdentityDescription, IdentityMotdOmitName);
+        ServerIdentityUx.BuildMotd(IdentityName, IdentityDescription);
 
     public bool CanSaveIdentity => HasObjectStorage && !AnyBusy;
 
@@ -316,10 +316,6 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(MotdPreview))]
     private string _identityDescription = "";
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(MotdPreview))]
-    private bool _identityMotdOmitName;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanClearIcon))]
@@ -532,7 +528,6 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         _clearIcon = false;
         IdentityName = "";
         IdentityDescription = "";
-        IdentityMotdOmitName = false;
         HasCustomIcon = false;
         IconPreviewDataUrl = "";
         IdleIconPreviewDataUrl = "";
@@ -1976,9 +1971,9 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         try
         {
             var doc = ChatMessagesDocument.Defaults();
-            doc.ServerName = IdentityName?.Trim() ?? "";
-            doc.Description = IdentityDescription?.Trim() ?? "";
-            doc.MotdOmitName = IdentityMotdOmitName;
+            doc.ServerName = MotdFormatting.ClipToListLine(IdentityName);
+            doc.Description = MotdFormatting.ClipToListLine(IdentityDescription);
+            doc.MotdOmitName = false;
             doc.ChatMessages = ChatTemplates
                 .Where(row => !string.IsNullOrWhiteSpace(row.Key))
                 .ToDictionary(row => row.Key, row => row.Text ?? "", StringComparer.Ordinal);
@@ -2027,9 +2022,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
             }
 
             var doc = got.Value.Document;
-            IdentityName = doc.ServerName ?? "";
-            IdentityDescription = doc.Description ?? "";
-            IdentityMotdOmitName = doc.MotdOmitName;
+            IdentityName = MotdFormatting.ClipToListLine(doc.ServerName);
+            IdentityDescription = MotdFormatting.ClipToListLine(doc.Description);
             ServerNameDisplay = ServerIdentityUx.DisplayName(IdentityName, _config?.Vm1.DisplayName);
             ApplyChatRows(doc.ChatMessages);
             _pendingIconPng = null;

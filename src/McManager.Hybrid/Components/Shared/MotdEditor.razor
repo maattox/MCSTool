@@ -60,7 +60,7 @@
              id="@DescId"
              class="mcm-motd-surface mcm-motd-surface-desc"
              role="textbox"
-             aria-multiline="true"
+             aria-multiline="false"
              aria-label="Description"
              contenteditable="@(Disabled ? "false" : "true")"
              spellcheck="false"
@@ -73,22 +73,15 @@
     <p class="mcm-motd-counters" aria-live="polite">
         @foreach (var metric in LineMetrics)
         {
-            <span class="@(metric.TooLong ? "mcm-motd-counter-over" : null)">@metric.Label</span>
+            <span>@metric.Label</span>
         }
     </p>
-    <label class="mcm-checkbox-row mcm-motd-omit">
-        <input type="checkbox"
-               disabled="@Disabled"
-               checked="@OmitName"
-               @onchange="OnOmitChanged" />
-        <span>Don’t put the server name on the MOTD</span>
-    </label>
     <div class="mcm-field mcm-motd-field mcm-motd-raw">
         <label class="mcm-field-head" for="@RawId">Raw motd= string</label>
         <div class="mcm-motd-raw-row">
             <textarea id="@RawId"
                       class="mcm-motd-raw-input"
-                      rows="3"
+                      rows="2"
                       spellcheck="false"
                       autocomplete="off"
                       disabled="@Disabled"
@@ -112,8 +105,6 @@
     [Parameter] public EventCallback<string> ServerNameChanged { get; set; }
     [Parameter] public string Description { get; set; } = "";
     [Parameter] public EventCallback<string> DescriptionChanged { get; set; }
-    [Parameter] public bool OmitName { get; set; }
-    [Parameter] public EventCallback<bool> OmitNameChanged { get; set; }
     [Parameter] public bool Disabled { get; set; }
     [Parameter] public string IdPrefix { get; set; } = "mcm-motd";
 
@@ -143,24 +134,26 @@
     private string RawBoxValue => _rawFocused && _rawOverride is not null ? _rawOverride : RawEditText;
 
     private string RawMotd =>
-        ServerIdentityUx.BuildMotd(ServerName, Description, OmitName);
+        ServerIdentityUx.BuildMotd(ServerName, Description);
 
     private string PreviewHtml => MotdFormatting.ToPreviewHtml(RawMotd);
 
     private IReadOnlyList<MotdFormatting.MotdLineMetric> LineMetrics =>
-        MotdFormatting.MeasureIdentityLines(ServerName, Description, OmitName);
+        MotdFormatting.MeasureIdentityLines(ServerName, Description);
 
     protected override void OnParametersSet()
     {
-        if (ServerName != _nameRaw)
+        var name = MotdFormatting.ClipToListLine(ServerName);
+        if (name != _nameRaw)
         {
-            _nameRaw = ServerName ?? "";
+            _nameRaw = name;
             _nameSync = true;
         }
 
-        if (Description != _descRaw)
+        var desc = MotdFormatting.ClipToListLine(Description);
+        if (desc != _descRaw)
         {
-            _descRaw = Description ?? "";
+            _descRaw = desc;
             _descSync = true;
         }
     }
@@ -171,7 +164,7 @@
         try
         {
             await JS.InvokeVoidAsync("mcmMotd.bind", _nameEl, _net, "name", true);
-            await JS.InvokeVoidAsync("mcmMotd.bind", _descEl, _net, "desc", false);
+            await JS.InvokeVoidAsync("mcmMotd.bind", _descEl, _net, "desc", true);
             if (_nameSync)
             {
                 await JS.InvokeVoidAsync(
@@ -217,33 +210,12 @@
     {
         if (Disabled)
             return;
-        text ??= "";
-        if (field == "name")
-        {
-            _nameRaw = text;
-            ServerName = text;
-            await ServerNameChanged.InvokeAsync(text);
-            StateHasChanged();
-            return;
-        }
-
-        if (text.Length > ServerIdentityUx.MaxDescriptionLength)
-        {
-            text = text[..ServerIdentityUx.MaxDescriptionLength];
-            _descRaw = text;
-            _descSync = true;
-            var vis = MotdFormatting.RawToVisible(text, text.Length);
-            _descCaretStart = vis;
-            _descCaretEnd = vis;
-        }
+        var clipped = MotdFormatting.ClipToListLine(text);
+        var vis = MotdFormatting.RawToVisible(clipped, clipped.Length);
+        if (clipped != (text ?? ""))
+            await SetFieldAsync(field, clipped, vis, vis);
         else
-        {
-            _descRaw = text;
-        }
-
-        Description = text;
-        await DescriptionChanged.InvokeAsync(text);
-        StateHasChanged();
+            await SetFieldAsync(field, clipped, syncHtml: false);
     }
 
     [JSInvokable]
@@ -251,17 +223,13 @@
     {
         if (Disabled)
             return;
-        var insert = MotdFormatting.NormalizePaste(raw);
+        var insert = MotdFormatting.ClipToListLine(MotdFormatting.NormalizePaste(raw));
         await InsertAsync(field, insert, start, end);
     }
 
     [JSInvokable]
-    public async Task MotdEnter(string field, int start, int end)
-    {
-        if (Disabled || field != "desc")
-            return;
-        await InsertAsync("desc", "\n", start, end);
-    }
+    public Task MotdEnter(string field, int start, int end) =>
+        Task.CompletedTask;
 
     private async Task WrapAsync(char code)
     {
@@ -286,44 +254,36 @@
         var lo = MotdFormatting.VisibleToRaw(text, visStart);
         var hi = MotdFormatting.VisibleToRaw(text, visEnd);
         var result = MotdFormatting.ToggleSpan(text, lo, hi, code);
-        var next = result.Text;
-        if (field == "desc" && next.Length > ServerIdentityUx.MaxDescriptionLength)
-            next = next[..ServerIdentityUx.MaxDescriptionLength];
-        var c0 = MotdFormatting.RawToVisible(next, result.InnerStart);
-        var c1 = MotdFormatting.RawToVisible(next, result.InnerEnd);
+        var next = MotdFormatting.ClipToListLine(result.Text);
+        var c0 = MotdFormatting.RawToVisible(next, Math.Min(result.InnerStart, next.Length));
+        var c1 = MotdFormatting.RawToVisible(next, Math.Min(result.InnerEnd, next.Length));
         await SetFieldAsync(field, next, c0, c1);
     }
 
     private async Task InsertAsync(string field, string insert, int visStart, int visEnd)
     {
         var text = field == "name" ? _nameRaw : _descRaw;
-        insert ??= "";
-        if (field == "name")
-        {
-            insert = insert.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
-            var nl = insert.IndexOf('\n');
-            if (nl >= 0)
-                insert = insert[..nl];
-        }
-
+        insert = MotdFormatting.ClipToListLine(insert);
         var lo = MotdFormatting.VisibleToRaw(text, visStart);
         var hi = MotdFormatting.VisibleToRaw(text, visEnd);
-        var next = text[..lo] + insert + text[hi..];
-        if (field == "desc" && next.Length > ServerIdentityUx.MaxDescriptionLength)
-            next = next[..ServerIdentityUx.MaxDescriptionLength];
-        var caret = MotdFormatting.RawToVisible(next, Math.Min(lo + insert.Length, next.Length));
+        var next = MotdFormatting.ClipToListLine(text[..lo] + insert + text[hi..]);
+        var caretRaw = Math.Min(lo + insert.Length, next.Length);
+        var caret = MotdFormatting.RawToVisible(next, caretRaw);
         await SetFieldAsync(field, next, caret, caret);
     }
 
-    private async Task SetFieldAsync(string field, string next, int caretStart, int caretEnd)
+    private async Task SetFieldAsync(string field, string next, int? caretStart = null, int? caretEnd = null, bool syncHtml = true)
     {
         if (field == "name")
         {
             _nameRaw = next;
             ServerName = next;
-            _nameSync = true;
-            _nameCaretStart = caretStart;
-            _nameCaretEnd = caretEnd;
+            if (syncHtml)
+            {
+                _nameSync = true;
+                _nameCaretStart = caretStart;
+                _nameCaretEnd = caretEnd;
+            }
             await ServerNameChanged.InvokeAsync(next);
             StateHasChanged();
             return;
@@ -331,9 +291,12 @@
 
         _descRaw = next;
         Description = next;
-        _descSync = true;
-        _descCaretStart = caretStart;
-        _descCaretEnd = caretEnd;
+        if (syncHtml)
+        {
+            _descSync = true;
+            _descCaretStart = caretStart;
+            _descCaretEnd = caretEnd;
+        }
         await DescriptionChanged.InvokeAsync(next);
         StateHasChanged();
     }
@@ -364,41 +327,16 @@
     {
         var parsed = MotdFormatting.NormalizePaste(raw);
         var lines = MotdFormatting.SplitListLines(parsed);
-        if (OmitName)
-        {
-            var desc = string.Join('\n', lines);
-            if (desc.Length > ServerIdentityUx.MaxDescriptionLength)
-                desc = desc[..ServerIdentityUx.MaxDescriptionLength];
-            _descRaw = desc;
-            Description = desc;
-            _descSync = true;
-            await DescriptionChanged.InvokeAsync(desc);
-        }
-        else
-        {
-            var name = lines.Count > 0 ? lines[0] : "";
-            var desc = lines.Count > 1 ? string.Join('\n', lines.Skip(1)) : "";
-            if (desc.Length > ServerIdentityUx.MaxDescriptionLength)
-                desc = desc[..ServerIdentityUx.MaxDescriptionLength];
-            _nameRaw = name;
-            ServerName = name;
-            _nameSync = true;
-            _descRaw = desc;
-            Description = desc;
-            _descSync = true;
-            await ServerNameChanged.InvokeAsync(name);
-            await DescriptionChanged.InvokeAsync(desc);
-        }
-
-        StateHasChanged();
-    }
-
-    private async Task OnOmitChanged(ChangeEventArgs e)
-    {
-        var value = e.Value is bool b && b
-                    || string.Equals(e.Value?.ToString(), "true", StringComparison.OrdinalIgnoreCase);
-        OmitName = value;
-        await OmitNameChanged.InvokeAsync(value);
+        var name = MotdFormatting.ClipToListLine(lines.Count > 0 ? lines[0] : "");
+        var desc = MotdFormatting.ClipToListLine(lines.Count > 1 ? lines[1] : "");
+        _nameRaw = name;
+        ServerName = name;
+        _nameSync = true;
+        _descRaw = desc;
+        Description = desc;
+        _descSync = true;
+        await ServerNameChanged.InvokeAsync(name);
+        await DescriptionChanged.InvokeAsync(desc);
         StateHasChanged();
     }
 

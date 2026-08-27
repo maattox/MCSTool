@@ -97,7 +97,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         "Smaller Always Free size. Vanilla can often stay on all month; less room if you add mods or more players later.";
 
     public const string IdentityHelp =
-        "Friends see the name, description, and in-game icon in Minecraft’s server list while the game is running. Select text and apply colors, or paste a motd= string from a generator. Check “Don’t put the server name on the MOTD” when the description already has both list lines. Hex colors need Paper/Spigot 1.16+. You can change this later on the Server tab.";
+        "Friends see the name, description, and in-game icon in Minecraft’s server list while the game is running. Each box is one list line (59 characters). Select text and apply colors, or paste a motd= string from a generator. Hex colors need Paper/Spigot 1.16+. You can change this later on the Server tab.";
 
     public const string IconStatesHelp =
         "In-game is the color icon while Minecraft is up. Offline, Starting, and Unavailable are greyscale copies with overlays for the doorbell list while the server is off, waking, or cannot start (daily hours or spend-brake).";
@@ -281,10 +281,6 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _identityDescriptionCustomized;
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(MotdPreview))]
-    private bool _identityMotdOmitName;
 
     [ObservableProperty]
     private string _identityIconPath = "";
@@ -606,14 +602,10 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         SetupPackImport.FriendsNeedLine(PackName, MinecraftVersion, PackLoader, PackLoaderVersion);
 
     public string MotdPreview =>
-        ServerIdentityUx.BuildMotd(IdentityName, IdentityDescription, IdentityMotdOmitName);
+        ServerIdentityUx.BuildMotd(IdentityName, IdentityDescription);
 
     public bool CanClearIdentityIcon =>
         !string.IsNullOrWhiteSpace(IdentityIconPath);
-
-    public int IdentityNameMaxLength => ServerIdentityUx.MaxNameLength;
-
-    public int IdentityDescriptionMaxLength => ServerIdentityUx.MaxDescriptionLength;
 
     public void SelectDefaultVanilla() => VanillaFlavor = SetupVanillaFlavor.Default;
 
@@ -1681,11 +1673,10 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         PackConfirmed = state.PackConfirmed;
         ClientPackAcknowledged = state.ClientPackAcknowledged;
         _applyingIdentityDefault = true;
-        IdentityName = state.IdentityName ?? "";
-        IdentityDescription = state.IdentityDescription ?? "";
+        IdentityName = MotdFormatting.ClipToListLine(state.IdentityName);
+        IdentityDescription = MotdFormatting.ClipToListLine(state.IdentityDescription);
         IdentityNameCustomized = state.IdentityNameCustomized;
         IdentityDescriptionCustomized = state.IdentityDescriptionCustomized;
-        IdentityMotdOmitName = state.IdentityMotdOmitName;
         IdentityIconPath = state.IdentityIconPath ?? "";
         _applyingIdentityDefault = false;
         ApplyIdentityDefaultsIfUntouched();
@@ -1743,11 +1734,11 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         PackSummary = PackSummary,
         PackConfirmed = PackConfirmed,
         ClientPackAcknowledged = ClientPackAcknowledged,
-        IdentityName = IdentityName?.Trim() ?? "",
-        IdentityDescription = IdentityDescription?.Trim() ?? "",
+        IdentityName = MotdFormatting.ClipToListLine(IdentityName),
+        IdentityDescription = MotdFormatting.ClipToListLine(IdentityDescription),
         IdentityNameCustomized = IdentityNameCustomized,
         IdentityDescriptionCustomized = IdentityDescriptionCustomized,
-        IdentityMotdOmitName = IdentityMotdOmitName,
+        IdentityMotdOmitName = false,
         IdentityIconPath = IdentityIconPath ?? "",
         EulaAccepted = EulaAccepted,
         AuthTokenStored = AuthTokenStored,
@@ -1895,9 +1886,6 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             IdentityDescriptionCustomized = true;
         OnPropertyChanged(nameof(MotdPreview));
     }
-
-    partial void OnIdentityMotdOmitNameChanged(bool value) =>
-        OnPropertyChanged(nameof(MotdPreview));
 
     private void ApplyIdentityDefaultsIfUntouched()
     {

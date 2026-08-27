@@ -35,20 +35,19 @@ public sealed class ChatMessagesDocument
     [JsonPropertyName("updated_at")]
     public string UpdatedAt { get; set; } = "";
 
-    /// <summary>Player-facing server name (Manager display + optional MOTD first line).</summary>
+    /// <summary>Player-facing server name (Manager display + MOTD first line).</summary>
     [JsonPropertyName("server_name")]
     public string ServerName { get; set; } = "";
 
     /// <summary>
-    /// MOTD body. May include Minecraft <c>§</c> codes and newlines for extra list lines.
-    /// Second list line when <see cref="MotdOmitName"/> is false and <see cref="ServerName"/> is set.
+    /// MOTD second list line. May include Minecraft <c>§</c> codes. One line, 59 visible characters.
     /// </summary>
     [JsonPropertyName("description")]
     public string Description { get; set; } = "";
 
     /// <summary>
-    /// When true, the list MOTD is <see cref="Description"/> only (no server-name line).
-    /// Name still exists for Manager display. Default false (omitted in JSON).
+    /// Ignored. List MOTD is always <see cref="ServerName"/> then <see cref="Description"/>.
+    /// Kept so older <c>chat.json</c> still deserializes.
     /// </summary>
     [JsonPropertyName("motd_omit_name")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]

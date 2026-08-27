@@ -4028,15 +4028,11 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     color: inherit;
 }
 
-.mcm-motd-surface-name {
+.mcm-motd-surface-name,
+.mcm-motd-surface-desc {
     min-height: calc(1.4em + 12px);
     white-space: nowrap;
     overflow-x: auto;
-}
-
-.mcm-motd-surface-desc {
-    min-height: 4.5em;
-    white-space: pre-wrap;
 }
 
 .mcm-motd-surface::selection,
@@ -4055,20 +4051,11 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     line-height: 1.35;
 }
 
-.mcm-motd-counter-over {
-    color: var(--text-danger);
-}
-
 .mcm-motd-hex-note {
     margin: 0;
     font-size: 11px;
     color: var(--text-muted);
     line-height: 1.35;
-}
-
-.mcm-motd-omit {
-    margin: 0;
-    color: var(--text-secondary);
 }
 
 .mcm-motd-raw {
@@ -4084,7 +4071,7 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 .mcm-motd-raw-input {
     flex: 1 1 auto;
     min-width: 0;
-    min-height: 4.5em;
+    min-height: 3em;
     resize: vertical;
     margin-bottom: 0;
     font-family: var(--font-mono);

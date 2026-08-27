@@ -132,34 +132,25 @@ public static class MotdFormatting
     }
 
     /// <summary>
-    /// Wrap <c>[start, end)</c> with a vanilla color/format code and close with <c>§r</c>,
-    /// restoring the outer color/format so following text is unchanged. Empty range:
-    /// insert <c>§code</c> + <c>§r</c> (plus restore) with the caret between them
+    /// Apply a vanilla color/format to <c>[start, end)</c> (raw <c>§</c> indices)
+    /// and rebuild the field with the fewest codes Java Edition allows. Empty
+    /// range: insert a wrap hole (<c>§code§r</c>) with the caret between them
     /// (<see cref="MotdWrapResult.InnerStart"/>).
     /// </summary>
-    public static MotdWrapResult WrapSpan(string? text, int start, int end, char code)
-    {
-        var s = text ?? "";
-        var lo = Math.Clamp(Math.Min(start, end), 0, s.Length);
-        var hi = Math.Clamp(Math.Max(start, end), 0, s.Length);
-        var c = char.ToLowerInvariant(code);
-        if (!IsWrapCode(c))
-            return new MotdWrapResult(s, lo, hi);
-
-        var prefix = CodePrefix(c);
-        var suffix = Section + "r" + RestoreCodes(StyleAt(s, lo));
-        var inner = s[lo..hi];
-        var result = s[..lo] + prefix + inner + suffix + s[hi..];
-        var innerStart = lo + prefix.Length;
-        return new MotdWrapResult(result, innerStart, innerStart + inner.Length);
-    }
+    public static MotdWrapResult WrapSpan(string? text, int start, int end, char code) =>
+        EditSpan(text, start, end, code, toggle: false);
 
     /// <summary>
-    /// Apply a color/format to <c>[start, end)</c>, or remove it when that span
-    /// is already wrapped with the same code (so a second Bold click does not
-    /// stack <c>§l§l…§r§l§r</c>). Reset always wraps.
+    /// Apply a color/format to <c>[start, end)</c>, or remove it when every
+    /// character in that span already has the same code (so a second Bold click
+    /// does not stack). Reset clears the range. The whole field is regenerated
+    /// from per-character effects so removing one attribute cannot wipe the
+    /// surrounding color.
     /// </summary>
-    public static MotdWrapResult ToggleSpan(string? text, int start, int end, char code)
+    public static MotdWrapResult ToggleSpan(string? text, int start, int end, char code) =>
+        EditSpan(text, start, end, code, toggle: true);
+
+    private static MotdWrapResult EditSpan(string? text, int start, int end, char code, bool toggle)
     {
         var s = text ?? "";
         var lo = Math.Clamp(Math.Min(start, end), 0, s.Length);
@@ -167,101 +158,19 @@ public static class MotdFormatting
         var c = char.ToLowerInvariant(code);
         if (!IsWrapCode(c))
             return new MotdWrapResult(s, lo, hi);
-        if (c == 'r')
-            return WrapSpan(s, lo, hi, c);
 
-        if (TryExactWrap(s, lo, hi, c, out var prefixLen, out var suffixLen))
-        {
-            var inner = s[lo..hi];
-            var result = s[..(lo - prefixLen)] + inner + s[(hi + suffixLen)..];
-            var innerStart = lo - prefixLen;
-            return new MotdWrapResult(result, innerStart, innerStart + inner.Length);
-        }
+        var visLo = RawToVisible(s, lo);
+        var visHi = RawToVisible(s, hi);
+        var builder = MotdBuilder.Parse(s);
+        if (toggle)
+            builder.Toggle(visLo, visHi, c);
+        else
+            builder.Apply(visLo, visHi, c);
 
-        if (hi > lo && RangeFullyHas(s, lo, hi, c))
-            return RemoveCode(s, lo, hi, c);
-
-        return WrapSpan(s, lo, hi, c);
-    }
-
-    private static bool TryExactWrap(string s, int lo, int hi, char code, out int prefixLen, out int suffixLen)
-    {
-        prefixLen = 0;
-        suffixLen = 0;
-        var prefix = CodePrefix(code);
-        if (lo < prefix.Length)
-            return false;
-        if (!s.AsSpan(lo - prefix.Length, prefix.Length).SequenceEqual(prefix.AsSpan()))
-            return false;
-        var suffix = Section + "r" + RestoreCodes(StyleAt(s, lo - prefix.Length));
-        if (hi + suffix.Length > s.Length)
-            return false;
-        if (!s.AsSpan(hi, suffix.Length).SequenceEqual(suffix.AsSpan()))
-            return false;
-        prefixLen = prefix.Length;
-        suffixLen = suffix.Length;
-        return true;
-    }
-
-    private static bool RangeFullyHas(string s, int lo, int hi, char code)
-    {
-        var any = false;
-        for (var i = lo; i < hi;)
-        {
-            var probe = MotdStyle.Default;
-            if (TryApplyCode(s, i, ref probe, out var consumed))
-            {
-                i += consumed;
-                continue;
-            }
-
-            any = true;
-            if (!StyleHasCode(StyleAt(s, i), code))
-                return false;
-            i++;
-        }
-
-        return any;
-    }
-
-    private static MotdWrapResult RemoveCode(string s, int lo, int hi, char code)
-    {
-        var inner = s[lo..hi];
-        var open = Section + "r" + RestoreCodes(WithoutCode(StyleAt(s, lo), code));
-        var close = Section + "r" + RestoreCodes(StyleAt(s, hi));
-        var result = s[..lo] + open + inner + close + s[hi..];
-        var innerStart = lo + open.Length;
-        return new MotdWrapResult(result, innerStart, innerStart + inner.Length);
-    }
-
-    private static bool StyleHasCode(MotdStyle style, char code) =>
-        code switch
-        {
-            'l' => style.Bold,
-            'o' => style.Italic,
-            'n' => style.Underline,
-            'm' => style.Strike,
-            'k' => style.Obf,
-            _ => ColorByCode.TryGetValue(code, out var hex)
-                 && style.ColorHex.Equals(hex, StringComparison.OrdinalIgnoreCase),
-        };
-
-    private static MotdStyle WithoutCode(MotdStyle style, char code)
-    {
-        switch (code)
-        {
-            case 'l': style.Bold = false; break;
-            case 'o': style.Italic = false; break;
-            case 'n': style.Underline = false; break;
-            case 'm': style.Strike = false; break;
-            case 'k': style.Obf = false; break;
-            default:
-                if (ColorByCode.ContainsKey(code))
-                    style.ColorHex = "#FFFFFF";
-                break;
-        }
-
-        return style;
+        var generated = builder.GenerateCode();
+        var innerStart = VisibleToRaw(generated, visLo);
+        var innerEnd = VisibleToRaw(generated, visHi);
+        return new MotdWrapResult(generated, innerStart, innerEnd);
     }
 
     /// <summary>
@@ -379,12 +288,51 @@ public static class MotdFormatting
         return vis;
     }
 
-    public static string FormatLineCounter(int lineNumber, int used)
+    public static string FormatLineCounter(int lineNumber, int used) =>
+        $"line {lineNumber}: {used}/{ListLineVisibleLimit}";
+
+    /// <summary>
+    /// First MOTD list line only, clipped to <see cref="ListLineVisibleLimit"/>
+    /// visible characters (codes and trailing <c>§r</c> are kept).
+    /// </summary>
+    public static string ClipToListLine(string? text)
     {
-        var label = $"line {lineNumber}: {used}/{ListLineVisibleLimit}";
-        if (used > ListLineVisibleLimit)
-            label += " — too long";
-        return label;
+        var s = text ?? "";
+        s = s.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
+        var nl = s.IndexOf('\n');
+        if (nl >= 0)
+            s = s[..nl];
+
+        var vis = 0;
+        var i = 0;
+        var keep = 0;
+        var style = MotdStyle.Default;
+        while (i < s.Length)
+        {
+            var next = style;
+            if (TryApplyCode(s, i, ref next, out var consumed))
+            {
+                style = next;
+                i += consumed;
+                keep = i;
+                continue;
+            }
+
+            if (s[i] == EditorHole)
+            {
+                i++;
+                keep = i;
+                continue;
+            }
+
+            if (vis >= ListLineVisibleLimit)
+                break;
+            vis++;
+            i++;
+            keep = i;
+        }
+
+        return s[..keep];
     }
 
     public static IReadOnlyList<string> SplitListLines(string? motdPropertiesValue)
@@ -421,9 +369,8 @@ public static class MotdFormatting
     /// </summary>
     public static IReadOnlyList<MotdLineMetric> MeasureIdentityLines(
         string? serverName,
-        string? description,
-        bool omitName = false) =>
-        MeasureListLines(ServerIdentityUx.BuildMotd(serverName, description, omitName));
+        string? description) =>
+        MeasureListLines(ServerIdentityUx.BuildMotd(serverName, description));
 
     /// <summary>True when the MOTD can be written as a single <c>server.properties</c> line.</summary>
     public static bool IsSafePropertiesValue(string motd) =>
@@ -580,59 +527,13 @@ public static class MotdFormatting
     private static MotdRun ToRun(string text, MotdStyle style) =>
         new(text, style.ColorHex, style.Bold, style.Italic, style.Underline, style.Strike, style.Obf);
 
-    private static bool IsResetCodeAt(string text, int i) =>
+    internal static bool IsResetCodeAt(string text, int i) =>
         i + 1 < text.Length && IsSection(text[i]) && char.ToLowerInvariant(text[i + 1]) == 'r';
 
     private static bool IsWrapCode(char code) =>
         ColorByCode.ContainsKey(code) || code is 'l' or 'o' or 'n' or 'm' or 'k' or 'r';
 
-    private static MotdStyle StyleAt(string text, int index)
-    {
-        var style = MotdStyle.Default;
-        var limit = Math.Clamp(index, 0, text.Length);
-        for (var i = 0; i < limit; i++)
-        {
-            if (text[i] == '\n')
-            {
-                style = MotdStyle.Default;
-                continue;
-            }
-
-            if (TryApplyCode(text, i, ref style, out var consumed))
-                i += consumed - 1;
-        }
-
-        return style;
-    }
-
-    private static string RestoreCodes(MotdStyle style)
-    {
-        if (style.IsDefault)
-            return "";
-
-        var sb = new StringBuilder();
-        if (!style.ColorHex.Equals("#FFFFFF", StringComparison.OrdinalIgnoreCase))
-        {
-            if (CodeByHex.TryGetValue(style.ColorHex, out var code))
-                sb.Append(Section).Append(code);
-            else
-                sb.Append(HexPrefix(style.ColorHex.TrimStart('#')));
-        }
-
-        if (style.Bold)
-            sb.Append(Section).Append('l');
-        if (style.Italic)
-            sb.Append(Section).Append('o');
-        if (style.Underline)
-            sb.Append(Section).Append('n');
-        if (style.Strike)
-            sb.Append(Section).Append('m');
-        if (style.Obf)
-            sb.Append(Section).Append('k');
-        return sb.ToString();
-    }
-
-    private static bool TryApplyCode(string line, int i, ref MotdStyle style, out int consumed)
+    internal static bool TryApplyCode(string line, int i, ref MotdStyle style, out int consumed)
     {
         consumed = 0;
         if (i + 1 >= line.Length)
@@ -645,6 +546,9 @@ public static class MotdFormatting
         if (code == 'x' && TryReadHexColor(line, i, out var hex, out consumed))
         {
             style.ColorHex = hex;
+            style.ColorEmit = CodeByHex.TryGetValue(hex, out var vanilla)
+                ? CodePrefix(vanilla)
+                : HexPrefix(hex.TrimStart('#'));
             style.ResetFormats();
             return true;
         }
@@ -652,6 +556,7 @@ public static class MotdFormatting
         if (ColorByCode.TryGetValue(code, out var nextColor))
         {
             style.ColorHex = nextColor;
+            style.ColorEmit = CodePrefix(code);
             style.ResetFormats();
             consumed = 2;
             return true;
@@ -678,19 +583,20 @@ public static class MotdFormatting
         return false;
     }
 
-    private struct MotdStyle
+    internal struct MotdStyle
     {
         public string ColorHex;
+        public string ColorEmit;
         public bool Bold;
         public bool Italic;
         public bool Underline;
         public bool Strike;
         public bool Obf;
 
-        public static MotdStyle Default => new() { ColorHex = "#FFFFFF" };
+        public static MotdStyle Default => new() { ColorHex = "#FFFFFF", ColorEmit = "" };
 
         public readonly bool IsDefault =>
-            ColorHex.Equals("#FFFFFF", StringComparison.OrdinalIgnoreCase)
+            string.IsNullOrEmpty(ColorEmit)
             && !Bold && !Italic && !Underline && !Strike && !Obf;
 
         public void ResetFormats()
