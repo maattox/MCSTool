@@ -448,15 +448,13 @@
 </div>
 
 @code {
-    private string _pane = "identity";
-
-    private bool IsPane(string id) => string.Equals(_pane, id, StringComparison.Ordinal);
+    private bool IsPane(string id) => Vm.IsServerPane(id);
 
     private string PaneClass(string id) => IsPane(id) ? "is-active" : "";
 
-    private void SelectPane(string pane) => _pane = pane;
+    private void SelectPane(string pane) => Vm.SelectServerPane(pane);
 
-    private void OpenChangePack() => SelectPane("pack");
+    private void OpenChangePack() => SelectPane(ServerManagementViewModel.PaneChangePack);
 
     private bool ShowPackSummaryPre =>
         Vm.ShowPackSummary

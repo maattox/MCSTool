@@ -13,7 +13,7 @@
 @inject IJSRuntime JS
 @implements IDisposable
 
-<div class="mcm-app mcm-app-manage">
+<div class="mcm-app mcm-app-manage @(ShowChangePackDockOverlay ? "has-progress-dock" : null) @(ShowChangePackDockOverlay && Server.ShowPackJobProgress ? "is-dock-busy" : null)">
     <CaptionBar>
         <AppActions>
             <div class="mcm-bell">
@@ -335,7 +335,7 @@
         </div>
     </main>
 
-    <ProgressDock IsOpen="@Server.ShowChangePackDock"
+    <ProgressDock IsOpen="@ShowChangePackDockOverlay"
                   AnimateEnter="true"
                   AriaLabel="Change pack"
                   Status="@Server.DockStatus"
@@ -583,6 +583,9 @@
     }
 
     private bool IsTab(string tab) => string.Equals(_tab, tab, StringComparison.Ordinal);
+
+    private bool ShowChangePackDockOverlay =>
+        Server.ShowChangePackDock(IsTab("server"));
 
     private string TabClass(string tab) => IsTab(tab) ? "is-active" : string.Empty;
 

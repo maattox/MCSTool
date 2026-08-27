@@ -249,7 +249,27 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
     public string ModdingHelpTitle => ModdingPanelLogic.HelpTitle;
 
-    public bool ShowChangePackDock => ProgressDockUx.ShowChangePackDock(ShowChangePackUi);
+    public const string PaneIdentity = "identity";
+    public const string PaneWorld = "world";
+    public const string PaneModding = "modding";
+    public const string PaneChangePack = "pack";
+
+    public bool IsChangePackPane =>
+        string.Equals(ServerPane, PaneChangePack, StringComparison.Ordinal);
+
+    public bool IsServerPane(string id) =>
+        string.Equals(ServerPane, id, StringComparison.Ordinal);
+
+    public void SelectServerPane(string pane)
+    {
+        if (string.IsNullOrWhiteSpace(pane)
+            || string.Equals(ServerPane, pane, StringComparison.Ordinal))
+            return;
+        ServerPane = pane;
+    }
+
+    public bool ShowChangePackDock(bool onServerTab) =>
+        ProgressDockUx.ShowChangePackDock(ShowChangePackUi, onServerTab, IsChangePackPane);
 
     public bool ShowPackJobProgress =>
         ProgressDockUx.ShowJobProgress(IsAnalyzingPack, _packReplaceRunning);
@@ -338,6 +358,10 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
     [ObservableProperty]
     private string _identityStatus = "";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsChangePackPane))]
+    private string _serverPane = PaneIdentity;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowPackSummary))]
@@ -1654,13 +1678,15 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         NotifyPackIdentityUi();
     }
 
+    partial void OnServerPaneChanged(string value) => NotifyDock();
+
     partial void OnShowChangePackUiChanged(bool value) => NotifyDock();
 
     partial void OnPackAnalyzeCaptionChanged(string value) => NotifyDock();
 
     private void NotifyDock()
     {
-        OnPropertyChanged(nameof(ShowChangePackDock));
+        OnPropertyChanged(nameof(IsChangePackPane));
         OnPropertyChanged(nameof(ShowPackJobProgress));
         OnPropertyChanged(nameof(ShowPackElapsed));
         OnPropertyChanged(nameof(PackElapsedDisplay));

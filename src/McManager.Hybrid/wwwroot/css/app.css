@@ -167,7 +167,7 @@ button.mcm-btn-disabled:hover {
     grid-template-columns:
         var(--manage-sidebar-width)
         minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    grid-template-rows: auto minmax(0, 1fr);
     padding: 0;
     background: var(--caption-bg);
 }
@@ -862,9 +862,25 @@ button.mcm-btn-disabled:hover {
     width: 0%;
 }
 
+.mcm-app-manage.has-progress-dock {
+    --mcm-toast-bottom: 88px;
+}
+
+.mcm-app-manage.has-progress-dock.is-dock-busy {
+    --mcm-toast-bottom: 128px;
+}
+
+.mcm-app-manage.has-progress-dock .mcm-change-pack {
+    padding-bottom: 80px;
+}
+
+.mcm-app-manage.has-progress-dock.is-dock-busy .mcm-change-pack {
+    padding-bottom: 120px;
+}
+
 /* Overlay the tab pane; abspos grid items do not size tracks, so the toast
-   cannot shrink .mcm-tab-body. Row 2 keeps it in the content column and
-   above the progress dock. */
+   cannot shrink .mcm-tab-body. z-index stays above the Change-pack dock.
+   When the dock is open, --mcm-toast-bottom lifts the toast above it. */
 .mcm-app-manage > .mcm-action-banner {
     position: absolute;
     grid-column: 2;
@@ -3177,12 +3193,16 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 }
 
 .mcm-app-manage > .mcm-progress-dock {
+    position: absolute;
     grid-column: 2;
-    grid-row: 4;
+    grid-row: 2;
+    justify-self: stretch;
+    align-self: end;
     z-index: 20;
     margin: 0 16px 16px;
     border: 0.5px solid var(--border);
     border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(8, 10, 14, 0.45);
 }
 
 .mcm-wizard .mcm-progress-dock {

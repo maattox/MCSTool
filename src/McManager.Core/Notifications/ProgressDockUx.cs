@@ -36,7 +36,15 @@ public static class ProgressDockUx
         return string.IsNullOrWhiteSpace(fallback) ? "" : fallback.Trim();
     }
 
-    public static bool ShowChangePackDock(bool showChangePackUi) => showChangePackUi;
+    /// <summary>
+    /// Overlay dock is visible only on Server → Change pack while a session is open.
+    /// Hiding it does not cancel the review.
+    /// </summary>
+    public static bool ShowChangePackDock(
+        bool showChangePackUi,
+        bool onServerTab,
+        bool onChangePackPane) =>
+        showChangePackUi && onServerTab && onChangePackPane;
 
     public static bool ShowJobProgress(bool analyzing, bool replaceRunning) =>
         analyzing || replaceRunning;

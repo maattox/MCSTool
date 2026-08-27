@@ -11,11 +11,11 @@ Single source of truth for **what to work on next**. Living plan files keep sect
 | **Plan** | [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.15** |
 | **Step** | **8.15** Change pack UX |
 | **Sub-plan** | [`V1-Change-Pack-UX-Plan.md`](V1-Change-Pack-UX-Plan.md) |
-| **Sub-step** | **P3** Overlay dock + tab-scoped bars |
+| **Sub-step** | **P4** Pick/review when VM stopped |
 | **Status** | `ready` |
 | **Cursor mode** | `agent` |
 
-Step **8.14** (Manage UI pass 3) is **COMPLETE**. Live **NEXT = 8.15 P3** (overlay dock + tab-scoped bars). Do **not** start Pass 3, Step **8.6.1**, or **9.1**. Pack-corpus P1–P3 is **DONE**. **Parked:** `mr-fabric-cobblemon-1.7.3` re-run is **UNFINISHED** (operator aborted 2026-08-27). Come back in a **separate** chat: `/pack-test-one` that id (TESTING, `mcmgr-pack-test`; disable idle for the whole replace). Do not treat the later harness `pass` YAML as verified.
+Step **8.14** (Manage UI pass 3) is **COMPLETE**. Live **NEXT = 8.15 P4** (pick/review when VM stopped). Do **not** start Pass 3, Step **8.6.1**, or **9.1**. Pack-corpus P1–P3 is **DONE**. **Parked:** `mr-fabric-cobblemon-1.7.3` re-run is **UNFINISHED** (operator aborted 2026-08-27). Come back in a **separate** chat: `/pack-test-one` that id (TESTING, `mcmgr-pack-test`; disable idle for the whole replace). Do not treat the later harness `pass` YAML as verified.
 
 ## Design lock (implementing)
 
@@ -23,6 +23,7 @@ Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-De
 
 ## Completed recently
 
+- **2026-08-27** — Step **8.15 P3 DONE** (Change-pack dock overlays the pane; tab-scoped to Server → Change pack). Living **NEXT = P4**. Pass 3 **blocked**.
 - **2026-08-27** — Step **8.15 P2 DONE** (Change pack compactness: locked copy, taller summary, side-by-side ingest/warnings/checkboxes). Living **NEXT = P3**. Pass 3 **blocked**.
 - **2026-08-27** — Step **8.15 P1 DONE** (single-list assisted review: Client-only checkbox, identity above the list, summary hidden during review). Living **NEXT = P2**. Pass 3 **blocked**.
 - **2026-08-27** — Step **8.15** inserted (Change pack UX: single-list review, compactness, overlay dock, stopped-VM pick). Living **NEXT = P1**. Pass 3 **blocked**.

@@ -1,6 +1,6 @@
 # V1 Change pack UX (living)
 
-**Status:** P3 NEXT. Created 2026-08-27 (docs only). **Live NEXT:** [`NEXT.md`](NEXT.md).  
+**Status:** P4 NEXT. Created 2026-08-27 (docs only). **Live NEXT:** [`NEXT.md`](NEXT.md).  
 **Parent:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.15**.  
 **Why now:** operator 2026-08-27 — unstructured zip review is three separate scroll lists; Change pack copy/layout is long and stacked; pick is blocked when VM1 is stopped; the Change-pack bottom bar participates in layout and follows the user onto other tabs. Vague copy not named below and compact side-by-side layout: agents **decide inside each section’s bounds** (and [Scrutiny](#scrutiny-plan-decisions)). Stop and ask for spend, `tofu destroy`, `DEFAULT`, or parked after-v1 items.
 
@@ -56,8 +56,8 @@ None. P1–P4 share Change pack Razor, `app.css`, and `ServerManagementViewModel
 |----|-------|--------|----------|--------|
 | P1 | Single-list assisted review | **DONE** | SEQUENTIAL — shared review panel | agent |
 | P2 | Change pack compactness | **DONE** | SEQUENTIAL — same tab + CSS | agent |
-| P3 | Overlay dock + tab-scoped bars | **NEXT** | SEQUENTIAL — same Manage grid CSS | agent |
-| P4 | Pick/review when VM stopped | TODO | SEQUENTIAL — same gates + install path | agent |
+| P3 | Overlay dock + tab-scoped bars | **DONE** | SEQUENTIAL — same Manage grid CSS | agent |
+| P4 | Pick/review when VM stopped | **NEXT** | SEQUENTIAL — same gates + install path | agent |
 
 ---
 
@@ -70,8 +70,7 @@ None. P1–P4 share Change pack Razor, `app.css`, and `ServerManagementViewModel
 - **Summary `<pre>`:** `Vm.PackSummary` in `ServerManagementTab.razor`. Shown for any preview; sits above assisted review.
 - **Pick gate:** `PackReplaceUx.CanPick` requires `vm1Running && !busy`. Drop zone, Choose file, and Modding **Change pack** (opens the inner tab) all bind `CanPickPack`. Analyze is **local** (no SSH).
 - **Install:** `PackReplaceUx.CanInstall` also requires VM1 running. `InstallPackReplaceAsync` is SSH full re-setup. World kept unless wipe is checked.
-- **Dock:** `MainLayout.razor` hosts `ProgressDock` as Manage **grid row 4** (layout-participating card). Toasts (8.10 P1) use `.mcm-action-banner`: `position: absolute` on **grid row 2**, do not size tracks. `ShowChangePackDock` = `ShowChangePackUi` (true after pick, **not** cleared when leaving the inner tab). Server tab is keep-alive (`mcm-tab-keep`).
-- **Inner pane:** `ServerManagementTab.razor` private `_pane` (`identity` / `world` / `modding` / `pack`). MainLayout `_tab` is private; dock cannot see the inner pane today.
+- **Dock:** `MainLayout.razor` hosts `ProgressDock` as a content-pane overlay (toast pattern; does not size tracks). Visible only on **Server → Change pack** while `ShowChangePackUi`. Toasts stay `z-index` above. Server tab is keep-alive (`mcm-tab-keep`). Inner pane lives on `ServerManagementViewModel.ServerPane`.
 
 ---
 
@@ -209,7 +208,7 @@ Locked by the operator. Do not reopen in an implementation chat.
 
 ## P3 — Overlay dock + tab-scoped bars
 
-**Status:** NEXT  
+**Status:** DONE  
 **Parallel:** SEQUENTIAL — Manage grid / `MainLayout` / dock CSS  
 **Cursor mode:** agent
 
@@ -239,13 +238,13 @@ Locked by the operator. Do not reopen in an implementation chat.
 
 - Dock overlays like toasts. Tab-scoped. No leftover Manage grid-row card behind it. Guide updated.
 
-**Changelog:** *(date when finished)*
+**Changelog:** 2026-08-27 — Dock overlays the Change pack pane (no grid-row card). Hidden on other Manage tabs and Server Identity / World / Modding; session stays open. Toasts stay above. Guide updated.
 
 ---
 
 ## P4 — Pick/review when VM stopped
 
-**Status:** TODO  
+**Status:** NEXT  
 **Parallel:** SEQUENTIAL — same gates + `InstallPackReplaceAsync`  
 **Cursor mode:** agent
 
