@@ -57,7 +57,7 @@ One catalog `id`. Stop after result + ready-gate. Do **not** interpret sidecars.
 
 1. Confirm `pack-tests/.lock` is this phase (or refuse). TESTING + `mcmgr-pack-test` only.
 2. Resolve `pack-tests/packs/<filename>` from `catalog.yaml`. If catalog `sha256` is set, verify it (mismatch → `infra_fail` / usage, do not install).
-3. Run PackTestHarness (P2), same Core path as Hybrid Change pack: analyze → identity/derived zip when Hybrid would → default-Keep review → `ReplacePackAsync` unless `--analyze-only`.
+3. Run PackTestHarness (P2), same Core path as Hybrid Change pack: analyze → identity/derived zip when Hybrid would → default-Keep review → **before live replace:** stop `minecraft.service` and disable idle (OS-ISSUE-7; previous pack may have left the game up) → **during** `ReplacePackAsync`, re-disable idle every ~15s (Minecraft start force-enables it) unless `--analyze-only`. SSH abort / VM1 not RUNNING during replace is `infra_fail`.
 4. Intended CLI (P2 lands the binary): `--pack <id>` `--catalog <path>` `--phase <phase-dir>` `--wipe-world` (default on) `--analyze-only` (no SSH).
 5. Write `results/<id>.yaml` (schema below). Journal excerpt **≤80 lines** FATAL/ERROR at `logs/<id>.excerpt.txt` (gitignored). Full journal only under gitignored `logs/`.
 6. Run ready-gate. Set `ready_for_next`. Exit with the code in [Verdicts](#verdicts).

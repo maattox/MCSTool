@@ -28,11 +28,14 @@
     --font-mono: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
     --font-minecraft: "Minecraft", var(--font-sans);
     --radius: 10px;
-    /* Status 330 + gap 14 + pins fill remaining chrome (3×2). Keep in sync with MainWindow.AppShellWidthDip. */
-    --app-chrome-width: 1008px;
+    /* Manage sidebar; keep default window in sync with MainWindow.AppShellWidthDip (1280). */
+    --manage-sidebar-width: 250px;
     --app-pad-x: 16px;
-    --app-shell-width: calc(var(--app-chrome-width) + 2 * var(--app-pad-x));
     --app-caption-height: 36px;
+    --mcm-tab-count: 8;
+    --mcm-tab-gap: 8px;
+    --mcm-tab-gap-min: 2px;
+    --mcm-tab-min-height: 2.5rem;
     /* Thin overlay-style thumb; lives in the right window gutter, not the tab cards. */
     --tab-scrollbar-size: 8px;
 }
@@ -62,7 +65,7 @@ body,
 }
 
 body {
-    background: var(--bg);
+    background: var(--caption-bg);
     color: var(--text-primary);
     font-family: var(--font-sans);
     font-size: 14px;
@@ -146,46 +149,51 @@ button.mcm-btn-disabled:hover {
     display: flex;
     flex-direction: column;
     padding: 0 var(--app-pad-x) 16px;
-    background: var(--bg);
+    background: var(--caption-bg);
     overflow: hidden;
 }
 
 /*
- * Manage shell: outer 1fr tracks absorb extra window width so the caption can
- * full-bleed. Inner pad + chrome columns stay the 1040 CSS px design width.
- * Tab overflow uses the right pad so a scrollbar cannot shrink the chrome column.
+ * Manage shell: full-bleed caption, then flush sidebar | fluid content.
+ * Chrome (--caption-bg) wraps the nav (--surface-1) and content (--manage-content-bg).
+ * Extra window width goes to the content pane.
  */
 .mcm-app-manage {
     position: relative;
     --mcm-toast-bottom: 20px;
     --mcm-toast-fade: 320ms;
+    --manage-content-bg: #3c434c;
     display: grid;
     grid-template-columns:
-        minmax(0, 1fr)
-        var(--app-pad-x)
-        minmax(0, var(--app-chrome-width))
-        var(--app-pad-x)
+        var(--manage-sidebar-width)
         minmax(0, 1fr);
-    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
-    padding-left: 0;
-    padding-right: 0;
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    padding: 0;
+    background: var(--caption-bg);
 }
 
 .mcm-app-manage > * {
-    grid-column: 3;
     min-width: 0;
-}
-
-.mcm-app-manage .mcm-chrome,
-.mcm-app-manage .mcm-tabs {
-    width: 100%;
-    max-width: var(--app-chrome-width);
 }
 
 .mcm-app-manage > .mcm-caption {
     grid-column: 1 / -1;
-    margin-left: 0;
-    margin-right: 0;
+    grid-row: 1;
+    margin: 0;
+}
+
+.mcm-app-manage > .mcm-sidebar {
+    grid-column: 1;
+    grid-row: 2 / -1;
+}
+
+.mcm-app-manage > .mcm-tab-body {
+    grid-column: 2;
+    grid-row: 2;
+    padding: 14px 3px 16px 16px;
+    background: var(--manage-content-bg);
+    border-right: 3px solid var(--manage-content-bg);
+    border-radius: var(--radius) var(--radius) var(--radius) 0;
 }
 
 .mcm-caption {
@@ -197,7 +205,6 @@ button.mcm-btn-disabled:hover {
     user-select: none;
     -webkit-user-select: none;
     background: var(--caption-bg);
-    border-bottom: 1px solid var(--border);
 }
 
 .mcm-caption-drag {
@@ -215,8 +222,7 @@ button.mcm-btn-disabled:hover {
 }
 
 .mcm-caption-actions > .mcm-chrome-btn,
-.mcm-caption-actions > .mcm-bell,
-.mcm-caption-actions > .mcm-overflow {
+.mcm-caption-actions > .mcm-bell {
     align-self: center;
 }
 
@@ -476,41 +482,6 @@ button.mcm-btn-disabled:hover {
     min-width: 0;
 }
 
-.mcm-overflow {
-    position: relative;
-    z-index: 36;
-}
-
-.mcm-overflow-menu {
-    position: absolute;
-    top: calc(100% + 6px);
-    right: 0;
-    min-width: 188px;
-    padding: 4px;
-    background: var(--surface-1);
-    border: 0.5px solid var(--border);
-    border-radius: 10px;
-    box-shadow: 0 8px 24px rgba(8, 10, 14, 0.45);
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.mcm-overflow-menu button {
-    width: 100%;
-    text-align: left;
-    background: transparent;
-    border: none;
-    border-radius: 7px;
-    padding: 8px 10px;
-    font-size: 13px;
-    color: var(--text-primary);
-}
-
-.mcm-overflow-menu button:hover:not(:disabled) {
-    background: var(--surface-2);
-}
-
 .mcm-overflow-catch {
     position: fixed;
     inset: 0;
@@ -523,34 +494,63 @@ button.mcm-btn-disabled:hover {
     grid-column: 1 / -1;
 }
 
-.mcm-chrome {
+.mcm-sidebar {
     display: flex;
-    gap: 14px;
-    align-items: stretch;
-    flex-wrap: nowrap;
-    flex-shrink: 0;
-    width: var(--app-chrome-width);
+    flex-direction: column;
+    gap: 0;
+    min-height: 0;
+    overflow: hidden;
+    overscroll-behavior: contain;
+    background: var(--caption-bg);
 }
 
-.mcm-left {
-    width: 330px;
-    flex: 0 0 330px;
+.mcm-sidebar-chrome {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    flex: 0 0 auto;
+    padding: 0 12px 10px 6px;
+    background: var(--caption-bg);
+}
+
+.mcm-sidebar-gap {
+    height: 12px;
+    background: var(--caption-bg);
+    pointer-events: none;
 }
 
 .mcm-status-card {
     background: var(--surface-1);
     border: 1px solid var(--border);
     border-radius: 12px;
-    padding: 0.9rem 1.1rem;
+    padding: 0.5rem 0 0.5rem 0.6rem;
     font-family: var(--font-mono);
+    flex: 0 0 auto;
+    flex-shrink: 0;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 8px;
+    align-items: center;
+}
+
+.mcm-status-card .mcm-srow {
+    display: contents;
+}
+
+.mcm-status-card .mcm-slabel,
+.mcm-status-card .mcm-sval {
+    padding-top: 3px;
+    padding-bottom: 3px;
+}
+
+.mcm-status-card .mcm-sval:has(.mcm-dot) {
+    gap: 0;
 }
 
 .mcm-srow {
     display: grid;
-    grid-template-columns: 72px 1fr;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 8px;
     align-items: center;
     padding: 3px 0;
 }
@@ -614,14 +614,27 @@ button.mcm-btn-disabled:hover {
     background: var(--fill-accent);
 }
 
+.mcm-play-ip {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .mcm-copy-inline {
     font-family: var(--font-sans);
-    font-size: 11px;
-    padding: 2px 7px;
-    height: auto;
+    width: 26px;
+    height: 26px;
+    padding: 0;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    justify-content: center;
+    flex-shrink: 0;
+    border-radius: 6px;
+}
+
+.mcm-copy-inline .ti {
+    font-size: 14px;
 }
 
 .mcm-help {
@@ -646,12 +659,29 @@ button.mcm-btn-disabled:hover {
 
 .mcm-power-row {
     display: flex;
-    gap: 8px;
+    gap: 6px;
+    flex: 0 0 auto;
+    flex-shrink: 0;
+}
+
+.mcm-sidebar .mcm-action-btn {
+    padding: 8px 4px;
+    font-size: 12px;
+    min-height: 40px;
+    gap: 4px;
+    white-space: nowrap;
 }
 
 .mcm-power-wrap {
-    flex: 1;
+    flex: 1 1 0;
+    min-width: 0;
     display: flex;
+}
+
+.mcm-power-wrap-primary,
+.mcm-power-wrap-restart {
+    flex: 1 1 0;
+    min-width: 0;
 }
 
 .mcm-power-wrap .mcm-action-btn {
@@ -717,61 +747,82 @@ button.mcm-btn-disabled:hover {
 
 .mcm-pins-slot {
     position: relative;
-    flex: 1 1 auto;
+    /* Shrink 1000 vs tabs so pins clip after tab-rest is gone and before
+       tab gaps compress. min-height 0px is the floor; extra height must
+       not land here (grow is 0). 6px left / 12px right match chrome. */
+    flex: 0 1000 auto;
     min-width: 0;
-    min-height: 0;
+    min-height: 0px;
+    overflow: hidden;
+    margin: 0 12px 0 6px;
 }
 
 .mcm-pins {
-    position: absolute;
-    inset: 0;
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    grid-template-rows: 1fr 1fr;
-    gap: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex-shrink: 0;
 }
 
 .mcm-statcard {
     background: var(--surface-1);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 0.55rem 0.8rem;
+    padding: 5px 8px 6px;
     min-width: 0;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 8px;
+    row-gap: 3px;
 }
 
 .mcm-stat-label {
-    font-size: 12px;
+    font-size: 11px;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
     color: var(--text-muted);
     font-family: var(--font-sans);
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 2px;
+    gap: 4px;
+    min-width: 0;
 }
 
-.mcm-stat-metrics {
-    display: inline-flex;
-    flex-direction: column;
-    align-items: stretch;
-    width: 100%;
-    max-width: 100%;
-    margin-top: 4px;
+.mcm-stat-label-text {
+    min-width: 0;
+    white-space: nowrap;
+}
+
+.mcm-statcard .mcm-help {
+    min-width: 16px;
+    min-height: 16px;
+    padding: 1px;
+    margin: 0;
+    border-radius: 8px;
+    flex: 0 0 auto;
+}
+
+.mcm-statcard .mcm-help .ti {
+    font-size: 11px;
 }
 
 .mcm-stat-line {
     display: flex;
+    flex-direction: row;
     align-items: baseline;
-    gap: 6px;
+    justify-content: flex-end;
+    gap: 4px;
+    min-width: 0;
 }
 
 .mcm-stat-value {
-    font-size: 16px;
-    font-weight: 500;
+    font-size: 13px;
+    line-height: 1.2;
+    font-weight: 600;
     color: var(--text-primary);
     font-variant-numeric: tabular-nums;
+    white-space: nowrap;
 }
 
 .mcm-stat-value.is-placeholder {
@@ -783,17 +834,25 @@ button.mcm-btn-disabled:hover {
 }
 
 .mcm-stat-hint {
-    font-size: 12px;
+    font-size: 11px;
+    line-height: 1.2;
     font-weight: 400;
     color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.mcm-statcard:not(:has(.mcm-mini-bar)) {
+    padding-top: 8px;
+    padding-bottom: 9px;
 }
 
 .mcm-mini-bar {
+    grid-column: 1 / -1;
     height: 3px;
     border-radius: 2px;
     background: var(--surface-2);
     overflow: hidden;
-    margin-top: 6px;
     width: 100%;
 }
 
@@ -803,16 +862,19 @@ button.mcm-btn-disabled:hover {
     width: 0%;
 }
 
+/* Overlay the tab pane; abspos grid items do not size tracks, so the toast
+   cannot shrink .mcm-tab-body. Row 2 keeps it in the content column and
+   above the progress dock. */
 .mcm-app-manage > .mcm-action-banner {
-    grid-column: 3;
-    grid-row: 4;
+    position: absolute;
+    grid-column: 2;
+    grid-row: 2;
     justify-self: start;
     align-self: end;
-    position: relative;
     z-index: 30;
     width: max-content;
-    max-width: min(420px, calc(100% - 2 * var(--app-pad-x)));
-    margin: 0 0 var(--mcm-toast-bottom) 0;
+    max-width: min(420px, 100%);
+    margin: 8px 16px var(--mcm-toast-bottom) 16px;
     padding: 0;
     background: transparent;
     border: none;
@@ -966,32 +1028,72 @@ button.mcm-btn-disabled:hover {
     }
 }
 
-/* Trial: equal-width segmented tabs aligned to the chrome row. */
 .mcm-tabs {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
-    gap: 4px;
-    width: var(--app-chrome-width);
-    margin-top: 1.25rem;
-    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin: 0;
+    padding: 8px 6px 10px;
     background: var(--surface-1);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    flex-shrink: 0;
+    border: none;
+    border-radius: var(--radius) 0 0 var(--radius);
+    flex: 1 1 auto;
+    min-height: calc(
+        (var(--mcm-tab-count) * var(--mcm-tab-min-height))
+        + ((var(--mcm-tab-count) - 1) * var(--mcm-tab-gap-min))
+        + 18px
+    );
+}
+
+.mcm-tab-stack {
+    display: flex;
+    flex-direction: column;
+    flex: 0 1 auto;
+    min-width: 0;
+    min-height: calc(
+        (var(--mcm-tab-count) * var(--mcm-tab-min-height))
+        + ((var(--mcm-tab-count) - 1) * var(--mcm-tab-gap-min))
+    );
+}
+
+.mcm-tab-gap {
+    flex: 0 1 var(--mcm-tab-gap);
+    min-height: var(--mcm-tab-gap-min);
+    max-height: var(--mcm-tab-gap);
+    width: 100%;
+    pointer-events: none;
+}
+
+.mcm-tab-rest {
+    flex: 1 1 auto;
+    min-height: 0;
 }
 
 .mcm-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     border: 1px solid transparent;
     border-radius: 8px;
     background: transparent;
-    padding: 8px 6px;
+    padding: 10px 10px;
     margin: 0;
-    font-size: 12px;
-    line-height: 1.25;
+    font-size: 15px;
+    line-height: 1.2;
     color: var(--text-secondary);
     font-weight: 500;
     min-width: 0;
-    white-space: normal;
+    min-height: var(--mcm-tab-min-height);
+    max-height: var(--mcm-tab-min-height);
+    flex: 0 0 auto;
+    white-space: nowrap;
+    text-align: left;
+}
+
+.mcm-tab .ti {
+    font-size: 18px;
+    width: 1.15em;
+    flex-shrink: 0;
     text-align: center;
 }
 
@@ -1003,8 +1105,7 @@ button.mcm-btn-disabled:hover {
 .mcm-tab.is-active {
     color: var(--text-primary);
     font-weight: 600;
-    background: var(--surface-2);
-    border-color: var(--fill-accent);
+    background: color-mix(in srgb, var(--fill-accent) 16%, var(--surface-2));
 }
 
 /* Compact inner tabs — same surfaces as .mcm-tabs, secondary scale. */
@@ -1166,15 +1267,13 @@ button.mcm-btn-disabled:hover {
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
-}
-
-.mcm-app-manage .mcm-tab-body {
-    grid-column: 3 / 5;
+    container-type: inline-size;
+    container-name: mcm-tab-pane;
 }
 
 .mcm-tab-body-inner {
     box-sizing: border-box;
-    width: min(var(--app-chrome-width), calc(100% - var(--app-pad-x) + var(--tab-scrollbar-size)));
+    width: 100%;
 }
 
 .mcm-tab-keep[hidden] {
@@ -1271,6 +1370,16 @@ button.mcm-btn-disabled:hover {
     background-color: color-mix(in srgb, var(--text-secondary) 92%, transparent);
 }
 
+/* Manage content: 3px pad + 10px gutter + 3px right border = 16px.
+   Track inset keeps the thumb out of the 10px corner radii. */
+.mcm-app-manage .mcm-tab-body::-webkit-scrollbar {
+    width: 10px;
+}
+
+.mcm-app-manage .mcm-tab-body::-webkit-scrollbar-track {
+    margin-block: 10px;
+}
+
 @media (prefers-reduced-motion: no-preference) {
     .mcm-slim-scroll::-webkit-scrollbar-thumb,
     .mcm-app-manage .mcm-tab-body::-webkit-scrollbar-thumb,
@@ -1302,6 +1411,8 @@ button.mcm-btn-disabled:hover {
 /* First-run chooser (B11). */
 .mcm-firstrun {
     max-width: 560px;
+    width: 100%;
+    margin-inline: auto;
     display: flex;
     flex-direction: column;
     gap: 14px;
@@ -1511,7 +1622,14 @@ button.mcm-btn-disabled:hover {
 }
 
 .mcm-wl-row {
-    grid-template-columns: 1fr 1fr 56px 128px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 56px 160px;
+}
+
+.mcm-wl-row > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .mcm-bk-row {
@@ -1672,17 +1790,252 @@ button.mcm-btn-disabled:hover {
     font-size: 12px;
 }
 
+.mcm-about {
+    max-width: 42rem;
+}
+
 .mcm-about-name {
-    margin: 0 0 2px;
+    margin: 0;
     font-size: 16px;
     font-weight: 600;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
 }
 
 .mcm-about-version {
-    margin: 0 0 12px;
+    margin: 6px 0 0;
     font-size: 12px;
     color: var(--text-secondary);
     font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+}
+
+.mcm-about-lede {
+    margin: 16px 0 0;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--text-secondary);
+    max-width: 65ch;
+}
+
+.mcm-about-actions {
+    margin-top: 20px;
+}
+
+.mcm-about-actions button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.mcm-overview {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    align-items: stretch;
+}
+
+.mcm-overview-status,
+.mcm-overview-whitelist {
+    grid-column: 1 / -1;
+}
+
+.mcm-overview-title {
+    margin: 0 0 10px;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+}
+
+.mcm-overview-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0 0 10px;
+}
+
+.mcm-overview-head .mcm-overview-title {
+    margin: 0;
+}
+
+.mcm-overview-count {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+}
+
+.mcm-overview-status-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px 24px;
+}
+
+.mcm-overview-status-grid .mcm-srow {
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 10px;
+    min-width: 0;
+}
+
+.mcm-overview-status-grid .mcm-sval {
+    font-size: 15px;
+}
+
+.mcm-overview-status-grid .mcm-play-ip {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mcm-overview-empty {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.mcm-overview-identity-hero {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    margin: 0 0 12px;
+}
+
+.mcm-overview-icon {
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+    border-radius: 8px;
+    image-rendering: pixelated;
+}
+
+.mcm-overview-identity-copy {
+    min-width: 0;
+}
+
+.mcm-overview-identity-name {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    overflow-wrap: anywhere;
+}
+
+.mcm-overview-meta {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: var(--text-secondary);
+    overflow-wrap: anywhere;
+}
+
+.mcm-overview-motd {
+    margin: 0;
+}
+
+.mcm-overview-metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 16px;
+}
+
+.mcm-overview-metric {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    min-width: 0;
+}
+
+.mcm-overview-metric-label {
+    color: var(--text-muted);
+    font-size: 12px;
+    min-width: 0;
+}
+
+.mcm-overview-metric-value {
+    font-size: 14px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.mcm-overview-metric-value.is-placeholder,
+.mcm-overview-identity-name.is-placeholder {
+    color: var(--text-muted);
+}
+
+.mcm-overview-metric-value.is-positive {
+    color: var(--text-success);
+}
+
+.mcm-overview-metric-hint {
+    display: inline;
+    margin-left: 6px;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-muted);
+}
+
+.mcm-overview-friends-wrap {
+    max-height: 16rem;
+    overflow: auto;
+}
+
+.mcm-overview-friends {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.mcm-overview-friends th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--surface-2);
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 0 12px 8px 0;
+}
+
+.mcm-overview-friends td {
+    padding: 7px 12px 7px 0;
+    border-top: 0.5px solid var(--border);
+    vertical-align: baseline;
+    min-width: 0;
+}
+
+.mcm-overview-friends th:last-child,
+.mcm-overview-friends td:last-child {
+    padding-right: 0;
+    text-align: right;
+}
+
+.mcm-overview-friends td.is-placeholder {
+    color: var(--text-muted);
+}
+
+.mcm-overview-friend-ip {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+}
+
+.mcm-overview-admin {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-accent);
+}
+
+.mcm-overview-actions {
+    margin-top: 14px;
 }
 
 .mcm-modal-title {
@@ -1932,8 +2285,8 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     flex: 1 1 auto;
     min-height: 0;
     width: 100%;
-    max-width: var(--app-chrome-width);
-    margin-inline: auto;
+    max-width: none;
+    margin-inline: 0;
     display: flex;
     flex-direction: column;
     background: var(--surface-1);
@@ -2733,6 +3086,7 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 
 .mcm-progress-dock-row {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
@@ -2759,10 +3113,10 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 }
 
 .mcm-app-manage > .mcm-progress-dock {
-    grid-column: 3;
-    grid-row: 5;
+    grid-column: 2;
+    grid-row: 4;
     z-index: 20;
-    margin: 0 0 4px;
+    margin: 0 16px 16px;
     border: 0.5px solid var(--border);
     border-radius: 12px;
 }
@@ -3251,7 +3605,6 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    padding-top: 0.85rem;
 }
 
 .mcm-tab-body.is-console .mcm-tab-body-inner {
@@ -3306,7 +3659,7 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 .mcm-console-log-wrap {
     position: relative;
     flex: 1 1 auto;
-    min-height: 12rem;
+    min-height: 4.5rem;
     min-width: 0;
     display: flex;
     flex-direction: column;
@@ -3794,8 +4147,22 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     margin: 6px 0 0 !important;
 }
 
-@media (max-width: 720px) {
+/* Content pane is ~576px at the 920 min window; viewport queries never fire. */
+@container mcm-tab-pane (max-width: 40rem) {
     .mcm-identity-grid {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    .mcm-card-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .mcm-overview {
+        grid-template-columns: 1fr;
+    }
+
+    .mcm-overview-status-grid,
+    .mcm-overview-metrics {
+        grid-template-columns: 1fr;
     }
 }

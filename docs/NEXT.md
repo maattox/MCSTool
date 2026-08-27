@@ -1,6 +1,6 @@
 # Workflow state
 
-**Updated:** 2026-08-24
+**Updated:** 2026-08-27
 
 Single source of truth for **what to work on next**. Living plan files keep section history; agents update **this file** when advancing work.
 
@@ -11,18 +11,39 @@ Single source of truth for **what to work on next**. Living plan files keep sect
 | **Plan** | [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.5.2** |
 | **Step** | **8.5.2** Execute QA passes |
 | **Sub-plan** | [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) |
-| **Sub-step** | Pass 3 |
+| **Sub-step** | Pass 3 (operator start) |
 | **Status** | `blocked` |
 | **Cursor mode** | — |
 
-Step **8.11** (operator-notes follow-on 3) is **DONE**. Pass 3 stays **blocked** until the operator says so. Do **not** start Pass 3, Step **8.6.1**, or **9.1**. Pack-corpus P1–P3 is **DONE**; operator may seed `pack-tests/packs/` + sidecars and invoke `/pack-test-phase` in a **separate** chat.
+Step **8.14** (Manage UI pass 3) is **COMPLETE** (P1–P4; operator 2026-08-26 kept zoom lock, equal power buttons, P3 pins, P4 Overview; restored painted 6px window strips and pre-P2 sidebar gutters). Live **NEXT = 8.5.2** Pass 3, **blocked** until the operator says so. Do **not** start Pass 3, Step **8.6.1**, or **9.1**. Pack-corpus P1–P3 is **DONE**. **Parked:** `mr-fabric-cobblemon-1.7.3` re-run is **UNFINISHED** (operator aborted 2026-08-27). Come back in a **separate** chat: `/pack-test-one` that id (TESTING, `mcmgr-pack-test`; disable idle for the whole replace). Do not treat the later harness `pass` YAML as verified.
 
 ## Design lock (implementing)
 
-Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) — **implemented** (Step **8.9** P1–P2). Step **8.5.2** QA Pass 3 stays **blocked** until the operator starts it.
+Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) — **implemented** (Step **8.9** P1–P2). Manage sidebar topology: [`assets/UI-design-mockup.png`](../assets/UI-design-mockup.png) + 8.12 Scrutiny (**COMPLETE**). Step **8.13** polish (**COMPLETE**): three-zone panels, 244px sidebar, equal compact pins, larger tabs. Step **8.14** (third UI pass) **COMPLETE**: Ctrl+scroll zoom lock, equal-width power buttons, Overview name+IP. Painted 6px window strips and pre-P2 sidebar gutters **restored** (operator 2026-08-26). Operator pin pass: **three** stacked sidebar strips (today / this month / rollover). Step **8.5.2** QA Pass 3 stays **blocked** until the operator starts it.
 
 ## Completed recently
 
+- **2026-08-26** — Sidebar **Status** now shows **Running** when the Minecraft VM is already on (same “already on” signal as **Stop**), so opening Manager on a live server no longer stays **Stopped**. Pass 3 **blocked**.
+
+- **2026-08-27** — Pack-corpus cobblemon mrpack re-run **UNFINISHED** (session aborted). VM1 Minecraft stopped; idle re-enabled; `pack-tests/.lock` released. Phase `2026-08-26` stay `complete` except that id. Pass 3 **blocked**.
+- **2026-08-26** — Sidebar shrink: chrome no longer clips status/power after pins tuck; tab gaps 8px→2px; extra height stays under the tab list. Pass 3 **blocked**.
+- **2026-08-26** — Sidebar: no scrollbar; pins clip away before status/power; tab gap fixed at 12px; window min-height raised so tabs stay fully visible. Pass 3 **blocked**.
+- **2026-08-26** — Operator pin pass (no new plan): three stacked full-width sidebar strips (Today's uptime, This month, Rollover bank). Idle timeout left on Usage / Overview / Advanced. Pass 3 **blocked**.
+- **2026-08-26** — Step **8.14** operator review: kept zoom lock, equal power `flex: 1 1 0`, P3 pins, P4 Overview; restored painted 6px strips and pre-P2 gutter/chrome padding. Guide no longer describes flush edges. Pass 3 **blocked**.
+- **2026-08-25** — Step **8.14 P4 DONE** (Overview name+IP whitelist, MOTD/pack snapshot, five usage metrics + Guide). Plan **COMPLETE**. Pass 3 **blocked** until the operator says so.
+- **2026-08-25** — Step **8.14 P3 DONE** (pin labels/values fully visible; stacked hint; no ellipsis). Living **NEXT = P4** (plan-first). Pass 3 **blocked**.
+- **2026-08-25** — Step **8.14 P2 DONE** (flush tab-body to sidebar; chrome padding 6px; equal-width power buttons). Living **NEXT = P3**. Pass 3 **blocked**.
+- **2026-08-25** — Step **8.14 P1 DONE** (flush WebView + 10 DIP resize hit-test + Ctrl+scroll zoom lock). Living **NEXT = P2**. Pass 3 **blocked**.
+- **2026-08-25** — Step **8.14** inserted (third UI pass: window edge, sidebar density, pin redesign, Overview). Living **NEXT = P1** (plan-first). Pass 3 **blocked**.
+- **2026-08-25** — Step **8.13 P2 DONE** (equal compact pins + larger tabs + Guide). Plan **COMPLETE**. Pass 3 **blocked** until the operator says so.
+- **2026-08-25** — Step **8.13 P1 DONE** (three-zone Manage chrome + 244px flush sidebar). Living **NEXT = P2**. Pass 3 **blocked**.
+- **2026-08-25** — Step **8.13** inserted (Manage sidebar polish: three-zone panels, narrower rail, equal compact pins, larger tabs). Living **NEXT = P1**. Pass 3 **blocked**.
+- **2026-08-25** — Step **8.12 P5 DONE** (resize polish + Guide). Plan **COMPLETE**. Pass 3 **blocked** until the operator says so.
+- **2026-08-25** — Step **8.12 P4 DONE** (Overview home tab: read-only snapshot + tab jumps). Living **NEXT = P5**. Pass 3 **blocked**.
+- **2026-08-25** — Step **8.12 P3 DONE** (About tab; caption ☰ and About modal removed). Living **NEXT = P4** (plan-first). Pass 3 **blocked**.
+- **2026-08-25** — Step **8.12 P2 DONE** (combined Start/Stop primary + Restart; four sidebar pins). Living **NEXT = P3**. Pass 3 **blocked**.
+- **2026-08-25** — Step **8.12 P1 DONE** (two-column Manage shell: sidebar | content, 1280 default / 920 min, icon-only Copy play IP, Overview/About placeholders). Living **NEXT = P2**. Pass 3 **blocked**.
+- **2026-08-25** — Step **8.12** inserted (Manage sidebar redesign). Living **NEXT = P1**. Pass 3 **blocked**.
 - **2026-08-24** — Step **8.11 P4 DONE** (MOTD WYSIWYG name + description; Minecraft-font preview; 59-char counters). Follow-on 3 **COMPLETE**. Pass 3 **blocked** until the operator says so.
 - **2026-08-24** — Step **8.11 P3 DONE** (MOTD wrap-with-reset + 59-char line counters in Core). Living **NEXT = P4** (plan-first). Pass 3 **blocked**.
 - **2026-08-24** — Step **8.11 P2 DONE** (pin row 3×2 fills chrome; Hours left + Idle timeout from existing budget refresh). Living **NEXT = P3**. Pass 3 **blocked**.

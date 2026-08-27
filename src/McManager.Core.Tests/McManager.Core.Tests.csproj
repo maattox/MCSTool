@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\McManager.Core\McManager.Core.csproj" />
+    <ProjectReference Include="..\McManager.PackTestHarness\McManager.PackTestHarness.csproj" />
   </ItemGroup>
 
   <ItemGroup>

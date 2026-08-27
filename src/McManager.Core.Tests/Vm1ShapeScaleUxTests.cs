@@ -75,7 +75,7 @@ public sealed class Vm1ShapeScaleUxTests
     public void Blocked_reason_tells_operator_to_stop_first_when_running()
     {
         var reason = Vm1ShapeScaleUx.ApplyBlockedReason("RUNNING", 4, 24, 2, 12);
-        Assert.Contains("Stop the server from the top bar first", reason);
+        Assert.Contains("Stop the server from the sidebar first", reason);
         Assert.Contains("RUNNING", reason);
     }
 }

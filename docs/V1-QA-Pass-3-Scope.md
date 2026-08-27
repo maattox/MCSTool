@@ -1,12 +1,12 @@
 # V1 QA Pass 3 — scope (gap-close + follow-on)
 
 **Pass:** 3  
-**Status:** **BLOCKED** — Steps **8.7**, **8.8**, **8.9**, **8.10**, and **8.11** are **DONE**. Do **not** run until the operator says Pass 3 may start. (Step **8.4** P1–P13 is already DONE.) Living execution slice of [Step 8.5.2](V1-Implementation-Plan.md#step-852--execute-qa-passes). **Live queue:** [`NEXT.md`](NEXT.md).  
+**Status:** **BLOCKED** — Steps **8.7**, **8.8**, **8.9**, **8.10**, **8.11**, **8.12**, **8.13**, and **8.14** are **DONE**. Do **not** run until the operator says Pass 3 may start. (Step **8.4** P1–P13 is already DONE.) Living execution slice of [Step 8.5.2](V1-Implementation-Plan.md#step-852--execute-qa-passes). **Live queue:** [`NEXT.md`](NEXT.md).  
 **Catalog:** [`V1-QA-Catalog.md`](V1-QA-Catalog.md) — IDs and expected steps stay there. Do **not** regenerate the catalog. Implementing follow-on sections may **update expected** for product changes (S4-02 tabs, S3-01 overlay, S6-02 jar-root).  
 **Results:** fill [`V1-QA-Pass-3-Results.md`](V1-QA-Pass-3-Results.md) as you go.  
 **Prior:** [`V1-QA-Pass-2-Results.md`](V1-QA-Pass-2-Results.md) (greenfield Modded; closed early). [`V1-QA-Pass-1-Results.md`](V1-QA-Pass-1-Results.md) (Vanilla; historical).
 
-This is a **delta + gap-close**, not a second encyclopedia. Pass 1 already Passed most Vanilla chrome. Pass 2 already Passed Delete + greenfield Modded, live Setup Deploy, modded join, and Modding/Download pack. Pass 3 exists to run what those passes **skipped**, plus tests for **Step 8.4**, **8.7**, **8.8**, **8.9**, **8.10**, and **8.11** follow-on changes.
+This is a **delta + gap-close**, not a second encyclopedia. Pass 1 already Passed most Vanilla chrome. Pass 2 already Passed Delete + greenfield Modded, live Setup Deploy, modded join, and Modding/Download pack. Pass 3 exists to run what those passes **skipped**, plus tests for **Step 8.4**, **8.7**, **8.8**, **8.9**, **8.10**, **8.11**, **8.12**, **8.13**, and **8.14** follow-on changes.
 
 **Cost:** $0. TESTING only. Never `DEFAULT` / live Forge lab. Never Minecraft `0.0.0.0/0`.  
 **Do not start** Step **8.6.1** or **9.1**. Do not create a Pass 3 bug-fix plan until this pass is filled and the operator asks for triage.  

@@ -217,12 +217,64 @@ internal static class Program
             return Finish(opt, result, journal, ReadyGate.AnalyzeOnlySkipped());
         }
 
-        log.Report("ReplacePackAsync wipe_world=true");
-        var bootstrap = new SetupBootstrapService();
-        var replace = await bootstrap.ReplacePackAsync(
-            config.Vm1,
-            new PackReplaceRequest(installPath, wipeWorld: opt.WipeWorld, dataDirectory),
-            log);
+        log.Report("Prepare VM1: stop minecraft, disable idle (OS-ISSUE-7)");
+        var prep = await ReadyGate.RunLiveAsync(config, passLike: false, CancellationToken.None);
+        foreach (var n in prep.Notes)
+        {
+            if (!result.Notes.Contains(n, StringComparer.Ordinal))
+                result.Notes.Add(n);
+        }
+
+        if (!prep.ReadyForNext)
+        {
+            result.Verdict = PackVerdict.InfraFail;
+            result.FailMessage = YamlText.OneLine(
+                prep.Notes.Count > 0
+                    ? string.Join(" ", prep.Notes)
+                    : "VM1 not ready for replace (SSH, lifecycle, idle, or minecraft still up).");
+            result.Ssh = prep.Ssh;
+            result.Vm1 = prep.Vm1;
+            result.MinecraftUnit = prep.MinecraftUnit;
+            result.IdleDisabled = prep.IdleDisabled;
+            return Finish(opt, result, journal, prep);
+        }
+
+        result.Notes.Add("stopped minecraft and disabled idle before replace (OS-ISSUE-7)");
+        log.Report("ReplacePackAsync wipe_world=true (idle hold during start)");
+        using var holdCts = new CancellationTokenSource();
+        var holdTask = IdleHold.HoldUntilCancelledAsync(config, log, holdCts.Token);
+        ServiceResult<PackReplaceResult> replace;
+        try
+        {
+            var bootstrap = new SetupBootstrapService();
+            replace = await bootstrap.ReplacePackAsync(
+                config.Vm1,
+                new PackReplaceRequest(installPath, wipeWorld: opt.WipeWorld, dataDirectory),
+                log);
+        }
+        finally
+        {
+            holdCts.Cancel();
+            try
+            {
+                await holdTask;
+            }
+            catch (OperationCanceledException)
+            {
+                // expected when the hold loop is cancelled
+            }
+
+            try
+            {
+                await IdleHold.DisableOnceAsync(config, CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                result.Notes.Add("Idle disable after replace failed: " + YamlText.OneLine(ex.Message));
+            }
+        }
+
+        result.Notes.Add("held idle disabled during replace (OS-ISSUE-7 record_boot re-enable)");
 
         if (!replace.Succeeded || replace.Value is null)
         {

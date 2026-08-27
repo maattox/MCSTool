@@ -34,6 +34,8 @@ Parent orchestrates; spawn subagents for:
 
 Do not do large explore + implement + docs in one bloated parent thread if subagents can isolate work.
 
+If using Composer 2.5 or Grok as the model for a subagent, do NOT use "Fast" mode. This wastes tokens.
+
 ## OCI / git / tofu
 
 - Default OCI profile: **TESTING**. `DEFAULT` only if this chat explicitly allows.

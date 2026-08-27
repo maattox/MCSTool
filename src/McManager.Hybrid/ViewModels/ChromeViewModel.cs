@@ -6,7 +6,7 @@ using McManager.Hybrid.Ui;
 namespace McManager.Hybrid.ViewModels;
 
 /// <summary>
-/// Title-row overflow + program settings (gear). Bell list is <see cref="NotificationCenterViewModel"/>.
+/// Program settings (gear). Bell list is <see cref="NotificationCenterViewModel"/>.
 /// </summary>
 public sealed partial class ChromeViewModel : ObservableObject
 {
@@ -38,13 +38,7 @@ public sealed partial class ChromeViewModel : ObservableObject
     public string AppVersion { get; }
 
     [ObservableProperty]
-    private bool _overflowOpen;
-
-    [ObservableProperty]
     private bool _settingsOpen;
-
-    [ObservableProperty]
-    private bool _aboutOpen;
 
     [ObservableProperty]
     private bool _checkForUpdates = true;
@@ -62,22 +56,8 @@ public sealed partial class ChromeViewModel : ObservableObject
 
     public bool HasConfigDirOverride => !string.IsNullOrWhiteSpace(ConfigDirOverride);
 
-    public void ToggleOverflow()
-    {
-        OverflowOpen = !OverflowOpen;
-        if (OverflowOpen)
-        {
-            SettingsOpen = false;
-            AboutOpen = false;
-        }
-    }
-
-    public void CloseOverflow() => OverflowOpen = false;
-
     public void OpenSettings()
     {
-        OverflowOpen = false;
-        AboutOpen = false;
         RefreshPaths();
         CopyFeedback = "";
         SettingsOpen = true;
@@ -85,27 +65,9 @@ public sealed partial class ChromeViewModel : ObservableObject
 
     public void CloseSettings() => SettingsOpen = false;
 
-    public void OpenAbout()
-    {
-        OverflowOpen = false;
-        SettingsOpen = false;
-        AboutOpen = true;
-    }
+    public void ClosePanels() => SettingsOpen = false;
 
-    public void CloseAbout() => AboutOpen = false;
-
-    public void ClosePanels()
-    {
-        OverflowOpen = false;
-        SettingsOpen = false;
-        AboutOpen = false;
-    }
-
-    public void OpenGitHub()
-    {
-        OverflowOpen = false;
-        _shell.OpenUrl(GitHubUrl);
-    }
+    public void OpenGitHub() => _shell.OpenUrl(GitHubUrl);
 
     public async Task CopyPathAsync(string id)
     {

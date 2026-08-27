@@ -1,0 +1,44 @@
+schema_version: 1
+pack_id: mr-fabric-cobblemon-1.7.3
+filename: Modrinth-fabric-Cobblemon Modpack 1.7.3.mrpack
+sha256: 2cd8da213369a38c3479c0b5a27bc32cebabb40cbe082134b86f78431d0bc070
+started_utc: "2026-08-26T23:43:10Z"
+finished_utc: "2026-08-27T00:14:51Z"
+verdict: pass
+ready_for_next: true
+fail_message: ""
+identity:
+  expected:
+    minecraft: 1.21.1
+    loader: fabric
+    loader_version: 0.18.4
+    java_major: 21
+  detected:
+    minecraft: 1.21.1
+    loader: fabric
+    loader_version: 0.18.4
+    java_major: 21
+  applied:
+    minecraft: 1.21.1
+    loader: fabric
+    loader_version: 0.18.4
+    java_major: 21
+skip_counts:
+  automatic_client: 26
+  unknown_kept: 0
+health:
+  rcon_list: true
+  crash_loop: false
+  fatal: false
+  quarantine: false
+log_excerpt_path: logs/mr-fabric-cobblemon-1.7.3.excerpt.txt
+infra:
+  ssh: true
+  vm1: Running
+  minecraft_unit: active
+  idle_disabled: true
+notes:
+  - UNFINISHED: operator aborted 2026-08-27 before analysis lock-in. Re-run /pack-test-one mr-fabric-cobblemon-1.7.3. Do not treat this harness pass as verified.
+  - client-only sidecar not applied (default Keep)
+  - stopped minecraft and disabled idle before replace (OS-ISSUE-7)
+  - held idle disabled during replace (OS-ISSUE-7 record_boot re-enable)

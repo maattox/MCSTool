@@ -74,4 +74,36 @@ public sealed class ManagePowerUxTests
             "Wait until the server has fully stopped.",
             ManagePowerUx.WaitUntilFullyStoppedToolTip);
     }
+
+    [Fact]
+    public void Combined_chrome_is_start_when_can_start()
+    {
+        Assert.False(ManagePrimaryPowerChrome.ShowsStop(canStart: true, canStop: false, stopInFlight: false));
+        Assert.False(ManagePrimaryPowerChrome.ShowsStop(canStart: true, canStop: true, stopInFlight: false));
+        Assert.True(ManagePrimaryPowerChrome.IsEnabled(canStart: true, canStop: false));
+    }
+
+    [Fact]
+    public void Combined_chrome_is_stop_when_only_can_stop()
+    {
+        Assert.True(ManagePrimaryPowerChrome.ShowsStop(canStart: false, canStop: true, stopInFlight: false));
+        Assert.True(ManagePrimaryPowerChrome.IsEnabled(canStart: false, canStop: true));
+    }
+
+    [Fact]
+    public void Combined_chrome_is_disabled_when_neither_and_keeps_stop_caption_in_flight()
+    {
+        Assert.False(ManagePrimaryPowerChrome.IsEnabled(canStart: false, canStop: false));
+        Assert.False(ManagePrimaryPowerChrome.ShowsStop(canStart: false, canStop: false, stopInFlight: false));
+        Assert.True(ManagePrimaryPowerChrome.ShowsStop(canStart: false, canStop: false, stopInFlight: true));
+    }
+
+    [Fact]
+    public void Already_on_when_vm_running_or_door_playable()
+    {
+        Assert.True(ManagePowerUx.IsAlreadyOn("RUNNING", doorPlayable: false));
+        Assert.True(ManagePowerUx.IsAlreadyOn("STOPPED", doorPlayable: true));
+        Assert.False(ManagePowerUx.IsAlreadyOn("STOPPED", doorPlayable: false));
+        Assert.False(ManagePowerUx.IsAlreadyOn("STARTING", doorPlayable: false));
+    }
 }

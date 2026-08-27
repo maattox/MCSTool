@@ -39,10 +39,11 @@ public static class AlwaysOnCapableCopy
             ? "This updates the shared hours budget. Usage is still counted; this smaller size can usually stay on all month. Continue?"
             : "This updates the shared hours budget the server uses to stop itself when you run out of free time. Continue?";
 
-    public static string PinTodayHint(double dailyHours, bool alwaysOnCapable) =>
-        alwaysOnCapable
-            ? $"/ {dailyHours:F1}h today"
-            : $"/ {dailyHours:F1}h allowed";
+    public static string PinTodayHint(double dailyHours, bool alwaysOnCapable)
+    {
+        _ = alwaysOnCapable;
+        return $"/ {dailyHours:F1}h";
+    }
 
     public static string PinAvgHint(double dailyHours, bool alwaysOnCapable) =>
         alwaysOnCapable

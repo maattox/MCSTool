@@ -1,0 +1,41 @@
+schema_version: 1
+pack_id: mr-fabric-fabulously-optimized-6.5.0
+filename: modrinth-fabric-Fabulously.Optimized-v6.5.0.mrpack
+sha256: d38de68f71d6b7a475e2fcc3d346371dd386415583f56ee0cb6e4d9ac14dcc57
+started_utc: "2026-08-26T21:25:17Z"
+finished_utc: "2026-08-26T21:27:10Z"
+verdict: pass
+ready_for_next: true
+fail_message: ""
+identity:
+  expected:
+    minecraft: 1.21.1
+    loader: fabric
+    loader_version: 0.19.3
+    java_major: 21
+  detected:
+    minecraft: 1.21.1
+    loader: fabric
+    loader_version: 0.19.3
+    java_major: 21
+  applied:
+    minecraft: 1.21.1
+    loader: fabric
+    loader_version: 0.19.3
+    java_major: 21
+skip_counts:
+  automatic_client: 17
+  unknown_kept: 0
+health:
+  rcon_list: true
+  crash_loop: false
+  fatal: false
+  quarantine: false
+log_excerpt_path: logs/mr-fabric-fabulously-optimized-6.5.0.excerpt.txt
+infra:
+  ssh: true
+  vm1: Running
+  minecraft_unit: active
+  idle_disabled: true
+notes:
+  - client-only sidecar not applied (default Keep)

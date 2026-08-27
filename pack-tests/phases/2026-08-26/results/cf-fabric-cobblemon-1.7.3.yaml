@@ -1,0 +1,42 @@
+schema_version: 1
+pack_id: cf-fabric-cobblemon-1.7.3
+filename: CurseForge-fabric-Server Files-Cobblemon Modpack 1.7.3.zip
+sha256: 7e2e6edfbbfbcaf716b8b251a6cb1ababbd148e01791ee14998d7792ff1a90cb
+started_utc: "2026-08-26T22:04:41Z"
+finished_utc: "2026-08-26T22:06:44Z"
+verdict: pass
+ready_for_next: true
+fail_message: ""
+identity:
+  expected:
+    minecraft: 1.21.1
+    loader: fabric
+    loader_version: 0.18.4
+    java_major: 21
+  detected:
+    minecraft: 1.21.1
+    loader: fabric
+    loader_version: ""
+    java_major: 21
+  applied:
+    minecraft: 1.21.1
+    loader: fabric
+    loader_version: 0.18.4
+    java_major: 21
+skip_counts:
+  automatic_client: 0
+  unknown_kept: 1
+health:
+  rcon_list: true
+  crash_loop: false
+  fatal: false
+  quarantine: false
+log_excerpt_path: logs/cf-fabric-cobblemon-1.7.3.excerpt.txt
+infra:
+  ssh: true
+  vm1: Running
+  minecraft_unit: active
+  idle_disabled: true
+notes:
+  - client-only sidecar not applied (default Keep)
+  - derived zip built; original archive untouched

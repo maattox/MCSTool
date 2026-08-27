@@ -1,7 +1,8 @@
 namespace McManager.Core.Services;
 
 /// <summary>
-/// Top-bar Start/Stop chrome rules. Novice Status is door-playable; Start still
+/// Top-bar Start/Stop chrome rules. Novice Status follows
+/// <see cref="ManageNoviceStatus"/> (VM on or door playable). Start still
 /// requires the Minecraft VM (VM1) OCI lifecycle to be STOPPED.
 /// </summary>
 public static class ManagePowerUx
@@ -23,6 +24,13 @@ public static class ManagePowerUx
         var life = (lifecycle ?? "").Trim().ToUpperInvariant();
         return life is "STARTING" or "PROVISIONING";
     }
+
+    /// <summary>
+    /// VM1 is RUNNING or the door is already playable — Stop is the right
+    /// chrome, and novice Status should not say Stopped.
+    /// </summary>
+    public static bool IsAlreadyOn(string? vm1Lifecycle, bool doorPlayable) =>
+        IsVm1Running(vm1Lifecycle) || doorPlayable;
 
     /// <summary>
     /// Start is allowed only when VM1 is fully STOPPED — not STOPPING, STARTING,
@@ -48,7 +56,7 @@ public static class ManagePowerUx
         if (!doorStatusKnown || spendBrakeBlocks)
             return false;
 
-        var alreadyOn = !doorDegraded && (IsVm1Running(vm1Lifecycle) || doorPlayable);
+        var alreadyOn = !doorDegraded && IsAlreadyOn(vm1Lifecycle, doorPlayable);
         var starting = !doorDegraded && (IsVm1ComingUp(vm1Lifecycle) || doorStarting);
         if (alreadyOn || starting)
             return false;
