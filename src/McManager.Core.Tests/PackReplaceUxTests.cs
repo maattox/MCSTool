@@ -88,6 +88,37 @@ public sealed class PackReplaceUxTests
     }
 
     [Fact]
+    public void Change_pack_copy_is_locked_and_pronoun_free()
+    {
+        Assert.Equal("Players need this mod pack to join the server", PackReplaceUx.FriendsNeedOneLiner);
+        Assert.Equal("Drop a mod pack here", PackReplaceUx.DropTitle);
+        Assert.Contains("Modrinth .mrpack", PackReplaceUx.DropFormats, StringComparison.Ordinal);
+        Assert.Contains("CurseForge Server Pack .zip", PackReplaceUx.DropFormats, StringComparison.Ordinal);
+        Assert.Contains(".jar zip", PackReplaceUx.DropFormats, StringComparison.Ordinal);
+        Assert.Equal(
+            "Known client-only mods will automatically be skipped. Check the list below and confirm that all client-only mods are correctly marked.",
+            PackReplaceUx.SkipWarningBody);
+        Assert.Contains("irreversible", PackReplaceUx.WipeWorldLabel, StringComparison.OrdinalIgnoreCase);
+
+        var paneCopy = string.Join(
+            " ",
+            PackReplaceUx.FriendsNeedOneLiner,
+            PackReplaceUx.DropTitle,
+            PackReplaceUx.DropFormats,
+            PackReplaceUx.DropLargeHint,
+            PackReplaceUx.SkipWarningBody,
+            PackReplaceUx.ChangePackPickHint,
+            PackReplaceUx.PackConfirmLabel,
+            PackReplaceUx.ClientPackAckLabel,
+            PackReplaceUx.WipeWorldLabel,
+            PackReplaceUx.ConfirmKeepWorld,
+            PackReplaceUx.ConfirmWipeWorld);
+        Assert.DoesNotContain(" you ", " " + paneCopy + " ", StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(" we ", " " + paneCopy + " ", StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(" your ", " " + paneCopy + " ", StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void Save_compat_warning_hidden_when_wiping()
     {
         var warning = PackReplaceSaveCompatibility.Warn("1.21.1", "fabric", "1.20.1", "fabric");

@@ -335,71 +335,58 @@
     }
     else
     {
-        <div class="mcm-section-card"
+        <div class="mcm-section-card mcm-change-pack"
              id="mcm-server-pane-pack"
              role="tabpanel"
              aria-labelledby="mcm-server-tab-pack">
-            <div class="mcm-server-pane-head">
-                <div class="mcm-server-pane-title">
-                    <span>Change pack</span>
+            <p class="mcm-change-pack-friends" role="note">@Vm.FriendsNeedOneLiner</p>
+            <div class="mcm-change-pack-ingest">
+                <div class="mcm-pack-drop @(Vm.IsAnalyzingPack ? "is-busy" : "")"
+                     aria-label="@PackReplaceUx.DropTitle">
+                    <InputFile class="mcm-pack-drop-input"
+                               OnChange="OnPackInputAsync"
+                               accept=".mrpack,.zip"
+                               disabled="@(!Vm.CanPickPack || Vm.IsAnalyzingPack)" />
+                    <i class="ti ti-file-zip" aria-hidden="true"></i>
+                    <p class="mcm-pack-drop-title">@PackReplaceUx.DropTitle</p>
+                    <p class="mcm-change-pack-drop-sub">@PackReplaceUx.DropFormats</p>
+                    <p class="mcm-change-pack-drop-sub">@PackReplaceUx.DropLargeHint</p>
+                </div>
+                <div class="mcm-change-pack-ingest-actions">
+                    <button type="button"
+                            disabled="@(!Vm.CanPickPack || Vm.IsAnalyzingPack)"
+                            title="@Vm.ChangePackTitle"
+                            @onclick="Vm.PickPackAsync">
+                        Choose pack file…
+                    </button>
+                    @if (!string.IsNullOrWhiteSpace(Vm.PackFileNameDisplay))
+                    {
+                        <p class="mcm-wizard-hint mcm-wizard-mono mcm-change-pack-file">@Vm.PackFileNameDisplay</p>
+                    }
                 </div>
             </div>
-            <aside class="mcm-client-pack-notice" role="note">
-                <p class="mcm-wizard-kicker">@Vm.ClientPackTitle</p>
-                <p>@Vm.ClientPackCopy</p>
-                @if (Vm.ShowPackConfirmChecks)
-                {
-                    <p class="mcm-wizard-lead">@Vm.ClientPackFriendsNeed</p>
-                }
-            </aside>
-            <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);">
-                This reinstalls Minecraft on the server. The world is kept unless you also wipe. Prefer a Modrinth .mrpack or CurseForge Server Files; a homemade zip is the fallback. There is no pack search box.
-            </p>
-            <div class="mcm-pack-drop @(Vm.IsAnalyzingPack ? "is-busy" : "")"
-                 aria-label="Drop a modpack file">
-                <InputFile class="mcm-pack-drop-input"
-                           OnChange="OnPackInputAsync"
-                           accept=".mrpack,.zip"
-                           disabled="@(!Vm.CanPickPack || Vm.IsAnalyzingPack)" />
-                <i class="ti ti-file-zip" aria-hidden="true"></i>
-                <p class="mcm-pack-drop-title">Drop a .mrpack or Server Files zip here</p>
-                <p class="mcm-wizard-hint">Very large packs: use Choose pack file so Windows can pass the path.</p>
-            </div>
-            <div class="mcm-wizard-actions">
-                <button type="button"
-                        disabled="@(!Vm.CanPickPack || Vm.IsAnalyzingPack)"
-                        title="@Vm.ChangePackTitle"
-                        @onclick="Vm.PickPackAsync">
-                    Choose pack file…
-                </button>
-            </div>
-            @if (!string.IsNullOrWhiteSpace(Vm.PackFileNameDisplay))
-            {
-                <p class="mcm-wizard-hint mcm-wizard-mono">@Vm.PackFileNameDisplay</p>
-            }
             @if (Vm.ShowPackSummary)
             {
                 @if (!string.IsNullOrWhiteSpace(Vm.PackBlockReason))
                 {
                     <p class="mcm-wizard-error">@Vm.PackBlockReason</p>
                 }
-                @if (Vm.ShowOverrideListWarning)
+                @if (Vm.ShowOverrideListWarning || Vm.ShowSaveCompatibilityWarning)
                 {
-                    <aside class="mcm-pack-list-warning" role="status">
-                        <p class="mcm-wizard-kicker">Some client-only mods will be skipped</p>
-                        <p>@Vm.PackOverrideListWarning</p>
-                    </aside>
-                }
-                @if (Vm.ShowSaveCompatibilityWarning)
-                {
-                    <aside class="mcm-pack-list-warning" role="status">
-                        <p class="mcm-wizard-kicker">Existing world</p>
-                        <p>@Vm.SaveCompatibilityWarning</p>
-                    </aside>
-                }
-                @if (!Vm.ShowPackAssistedReview)
-                {
-                    <pre class="mcm-wizard-log mcm-wizard-mono mcm-slim-scroll mcm-pack-summary">@Vm.PackSummary</pre>
+                    <div class="mcm-change-pack-warnings">
+                        @if (Vm.ShowOverrideListWarning)
+                        {
+                            <aside class="mcm-pack-list-warning" role="status">
+                                <p>@Vm.SkipWarningBody</p>
+                            </aside>
+                        }
+                        @if (Vm.ShowSaveCompatibilityWarning)
+                        {
+                            <aside class="mcm-pack-list-warning" role="status">
+                                <p>@Vm.SaveCompatibilityWarning</p>
+                            </aside>
+                        }
+                    </div>
                 }
             }
             @if (Vm.ShowPackIdentityFields)
@@ -424,26 +411,37 @@
                                          IsSkipped="@Vm.IsOperatorSkipped"
                                          SkipChanged="Vm.OnAssistedSkipChanged" />
             }
-            @if (Vm.ShowPackConfirmChecks)
+            @if (ShowPackSummaryPre || Vm.ShowPackConfirmChecks)
             {
-                <label class="mcm-checkbox-row">
-                    <input type="checkbox"
-                           disabled="@Vm.AnyBusy"
-                           @bind="Vm.PackConfirmed" />
-                    <span>@Vm.PackConfirmLabel</span>
-                </label>
-                <label class="mcm-checkbox-row">
-                    <input type="checkbox"
-                           disabled="@Vm.AnyBusy"
-                           @bind="Vm.ClientPackAcknowledged" />
-                    <span>@Vm.ClientPackAckLabel</span>
-                </label>
-                <label class="mcm-checkbox-row">
-                    <input type="checkbox"
-                           disabled="@Vm.AnyBusy"
-                           @bind="Vm.WipeWorld" />
-                    <span>@Vm.WipeWorldLabel</span>
-                </label>
+                <div class="mcm-change-pack-confirm @(ShowPackSummaryPre ? "" : "is-checks-only")">
+                    @if (ShowPackSummaryPre)
+                    {
+                        <pre class="mcm-wizard-log mcm-wizard-mono mcm-slim-scroll mcm-pack-summary">@Vm.PackSummary</pre>
+                    }
+                    @if (Vm.ShowPackConfirmChecks)
+                    {
+                        <div class="mcm-change-pack-checks">
+                            <label class="mcm-checkbox-row">
+                                <input type="checkbox"
+                                       disabled="@Vm.AnyBusy"
+                                       @bind="Vm.PackConfirmed" />
+                                <span>@Vm.PackConfirmLabel</span>
+                            </label>
+                            <label class="mcm-checkbox-row">
+                                <input type="checkbox"
+                                       disabled="@Vm.AnyBusy"
+                                       @bind="Vm.ClientPackAcknowledged" />
+                                <span>@Vm.ClientPackAckLabel</span>
+                            </label>
+                            <label class="mcm-checkbox-row">
+                                <input type="checkbox"
+                                       disabled="@Vm.AnyBusy"
+                                       @bind="Vm.WipeWorld" />
+                                <span>@Vm.WipeWorldLabel</span>
+                            </label>
+                        </div>
+                    }
+                </div>
             }
         </div>
     }
@@ -459,6 +457,11 @@
     private void SelectPane(string pane) => _pane = pane;
 
     private void OpenChangePack() => SelectPane("pack");
+
+    private bool ShowPackSummaryPre =>
+        Vm.ShowPackSummary
+        && !Vm.ShowPackAssistedReview
+        && !string.IsNullOrWhiteSpace(Vm.PackSummary);
 
     private string ModListSummary
     {
@@ -508,7 +511,7 @@
         }
         catch (IOException ex)
         {
-            Vm.StatusMessage = "Could not read the dropped file. Use Choose pack file for large packs. " + ex.Message;
+            Vm.StatusMessage = "Could not read the dropped file. Use Choose pack file. " + ex.Message;
         }
         catch (InvalidOperationException ex)
         {

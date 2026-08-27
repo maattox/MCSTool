@@ -2799,6 +2799,108 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     margin-bottom: 12px;
 }
 
+.mcm-change-pack {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.mcm-change-pack-friends {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.mcm-change-pack-ingest {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px 12px;
+    align-items: stretch;
+    min-width: 0;
+}
+
+.mcm-change-pack-ingest .mcm-pack-drop {
+    margin: 0;
+    min-height: 80px;
+}
+
+.mcm-change-pack-drop-sub {
+    margin: 0 !important;
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.35;
+}
+
+.mcm-change-pack-ingest-actions {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;
+    gap: 8px;
+    min-width: 10.5rem;
+}
+
+.mcm-change-pack-file {
+    margin: 0 !important;
+    max-width: 12rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mcm-change-pack-warnings {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    gap: 8px 12px;
+    min-width: 0;
+}
+
+.mcm-change-pack-warnings .mcm-pack-list-warning {
+    margin: 0;
+    padding: 8px 10px;
+    min-width: 0;
+}
+
+.mcm-change-pack-warnings .mcm-pack-list-warning > p {
+    margin: 0 !important;
+}
+
+.mcm-change-pack-confirm {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(14rem, 20rem);
+    gap: 10px 16px;
+    align-items: start;
+    min-width: 0;
+}
+
+.mcm-change-pack-confirm.is-checks-only {
+    grid-template-columns: 1fr;
+}
+
+.mcm-change-pack .mcm-pack-summary {
+    max-height: 220px;
+    min-height: 96px;
+    margin: 0;
+    min-width: 0;
+}
+
+.mcm-change-pack-checks {
+    min-width: 0;
+}
+
+.mcm-change-pack-checks .mcm-checkbox-row {
+    margin-bottom: 8px;
+}
+
+.mcm-change-pack-checks .mcm-checkbox-row:last-child {
+    margin-bottom: 0;
+}
+
+.mcm-change-pack .mcm-wizard-error {
+    margin: 0;
+}
+
 .mcm-pack-review {
     display: flex;
     flex-direction: column;
@@ -4112,6 +4214,11 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 
     .mcm-overview-status-grid,
     .mcm-overview-metrics {
+        grid-template-columns: 1fr;
+    }
+
+    .mcm-change-pack-ingest,
+    .mcm-change-pack-confirm {
         grid-template-columns: 1fr;
     }
 }

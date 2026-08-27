@@ -185,13 +185,13 @@ Read [`docs/NEXT.md`](NEXT.md) and run `/next-step` in a fresh Agent chat. Workf
 | **8.12** | Manage sidebar redesign (layout rearrange) | **DONE** — [`V1-Manage-Sidebar-Redesign-Plan.md`](V1-Manage-Sidebar-Redesign-Plan.md) P1–P5 |
 | **8.13** | Manage sidebar polish (panel contrast, width, pins, tabs) | **DONE** — [`V1-Manage-Sidebar-Polish-Plan.md`](V1-Manage-Sidebar-Polish-Plan.md) P1–P2 |
 | **8.14** | Manage UI pass 3 (zoom lock, equal power, pins, Overview) | **DONE** — [`V1-Manage-UI-Pass-3-Plan.md`](V1-Manage-UI-Pass-3-Plan.md) P1–P4; flush chrome / denser gutters reverted 2026-08-26 |
-| **8.15** | Change pack UX (single-list review, compactness, overlay dock, stopped-VM pick) | **NEXT** — [`V1-Change-Pack-UX-Plan.md`](V1-Change-Pack-UX-Plan.md) **P2** |
+| **8.15** | Change pack UX (single-list review, compactness, overlay dock, stopped-VM pick) | **NEXT** — [`V1-Change-Pack-UX-Plan.md`](V1-Change-Pack-UX-Plan.md) **P3** |
 | **8.5** | Pre-packaging QA (catalog + passes + bug-fix plans)        | Pass 3 [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) — **blocked** until the operator says so |
 | **8.6** | CI-built ARM spend-brake Function image (no Docker on admin PC) | TODO — after 8.5 exit; **required before 9.1 / official release** |
 | **9**   | Packaging, updates, launch (old MVP Phase 8–9)             | TODO — do not start until Phase 8.5 **and** Step **8.6.1** are DONE |
 
 
-**Current NEXT step:** See [`docs/NEXT.md`](NEXT.md) — Step **8.15 P2** (Change pack compactness). **Do not start** Pass 3, **8.6.1**, or **9.1**.
+**Current NEXT step:** See [`docs/NEXT.md`](NEXT.md) — Step **8.15 P3** (overlay dock + tab-scoped bars). **Do not start** Pass 3, **8.6.1**, or **9.1**.
 
 ---
 
@@ -1540,7 +1540,7 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 
 **Done when:** P1–P4 **DONE** in [`V1-Change-Pack-UX-Plan.md`](V1-Change-Pack-UX-Plan.md). Then [`NEXT.md`](NEXT.md) → Step **8.5.2** Pass 3 (**blocked** until the operator says so).
 
-**Changelog:** 2026-08-27 — **P1 DONE** (single-list assisted review). Living **NEXT = P2**. Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-27 — **Inserted** (docs only). Living **NEXT = P1** (single-list assisted review). Pass 3 stays blocked. Do not start 8.6.1 or 9.1.
+**Changelog:** 2026-08-27 — **P2 DONE** (Change pack compactness). Living **NEXT = P3**. Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-27 — **P1 DONE** (single-list assisted review). Living **NEXT = P2**. Pass 3 stays blocked. Do not start 8.6.1 or 9.1. 2026-08-27 — **Inserted** (docs only). Living **NEXT = P1** (single-list assisted review). Pass 3 stays blocked. Do not start 8.6.1 or 9.1.
 
 ---
 
@@ -1568,7 +1568,7 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 | `[V1-Manage-Sidebar-Redesign-Plan.md](V1-Manage-Sidebar-Redesign-Plan.md)` | Step **8.12**. Manage sidebar layout. **COMPLETE** (P1–P5). |
 | `[V1-Manage-Sidebar-Polish-Plan.md](V1-Manage-Sidebar-Polish-Plan.md)` | Step **8.13**. Panel contrast, narrower sidebar, equal compact pins, larger tabs. **COMPLETE** (P1–P2). |
 | `[V1-Manage-UI-Pass-3-Plan.md](V1-Manage-UI-Pass-3-Plan.md)` | Step **8.14**. Zoom lock, equal power, pin redesign, Overview. Flush chrome / denser gutters reverted 2026-08-26. **COMPLETE** (P1–P4). |
-| `[V1-Change-Pack-UX-Plan.md](V1-Change-Pack-UX-Plan.md)` | Step **8.15**. Single-list review, Change pack compactness, overlay dock, stopped-VM pick. **P1 DONE. P2 NEXT**. Pass 3 still needs the operator to start it |
+| `[V1-Change-Pack-UX-Plan.md](V1-Change-Pack-UX-Plan.md)` | Step **8.15**. Single-list review, Change pack compactness, overlay dock, stopped-VM pick. **P1–P2 DONE. P3 NEXT**. Pass 3 still needs the operator to start it |
 | `[V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)`             | Pass 3 gap-close + follow-on tests. **Do not start** until the operator says so |
 | `[V1-QA-Pass-3-Results.md](V1-QA-Pass-3-Results.md)`         | Pass 3 fill-out (do not start until operator says so)                      |
 | `[V1-Bug-Fix-Plan-Pass-1.md](V1-Bug-Fix-Plan-Pass-1.md)`     | Pass 1 fixes; **P1–P8 DONE**. Do not re-open unless a regression.          |
@@ -1893,6 +1893,7 @@ Former MVP Phase **8–9**. Phases **1–7** are **DONE**. Phase **8** is **SKIP
 
 | Date       | Note                                                                                                                                                                                                                                                                                                                              |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-27 | **Step 8.15 P2 DONE** (Change pack compactness). Living **NEXT = P3** ([`V1-Change-Pack-UX-Plan.md`](V1-Change-Pack-UX-Plan.md)). Pass 3 **blocked**. Do not start 8.6.1 or 9.1. |
 | 2026-08-27 | **Step 8.15 P1 DONE** (single-list assisted review). Living **NEXT = P2** ([`V1-Change-Pack-UX-Plan.md`](V1-Change-Pack-UX-Plan.md)). Pass 3 **blocked**. Do not start 8.6.1 or 9.1. |
 | 2026-08-27 | **Step 8.15 inserted** (Change pack UX: single-list review, compactness, overlay dock, stopped-VM pick). Living **NEXT = P1** ([`V1-Change-Pack-UX-Plan.md`](V1-Change-Pack-UX-Plan.md)). Pass 3 **blocked**. Do not start 8.6.1 or 9.1. |
 | 2026-08-26 | **Step 8.14 operator review.** Keep zoom lock, equal-width power, P3 pins, P4 Overview. Restore painted 6px strips and pre-P2 gutters. Guide no flush-edge copy. Living **NEXT = Step 8.5.2** Pass 3 (**blocked**). Do not start 8.6.1 or 9.1. |

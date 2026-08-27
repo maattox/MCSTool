@@ -1,6 +1,6 @@
 # V1 Change pack UX (living)
 
-**Status:** P2 NEXT. Created 2026-08-27 (docs only). **Live NEXT:** [`NEXT.md`](NEXT.md).  
+**Status:** P3 NEXT. Created 2026-08-27 (docs only). **Live NEXT:** [`NEXT.md`](NEXT.md).  
 **Parent:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.15**.  
 **Why now:** operator 2026-08-27 — unstructured zip review is three separate scroll lists; Change pack copy/layout is long and stacked; pick is blocked when VM1 is stopped; the Change-pack bottom bar participates in layout and follows the user onto other tabs. Vague copy not named below and compact side-by-side layout: agents **decide inside each section’s bounds** (and [Scrutiny](#scrutiny-plan-decisions)). Stop and ask for spend, `tofu destroy`, `DEFAULT`, or parked after-v1 items.
 
@@ -55,8 +55,8 @@ None. P1–P4 share Change pack Razor, `app.css`, and `ServerManagementViewModel
 | ID | Title | Status | Parallel | Cursor |
 |----|-------|--------|----------|--------|
 | P1 | Single-list assisted review | **DONE** | SEQUENTIAL — shared review panel | agent |
-| P2 | Change pack compactness | **NEXT** | SEQUENTIAL — same tab + CSS | agent |
-| P3 | Overlay dock + tab-scoped bars | TODO | SEQUENTIAL — same Manage grid CSS | agent |
+| P2 | Change pack compactness | **DONE** | SEQUENTIAL — same tab + CSS | agent |
+| P3 | Overlay dock + tab-scoped bars | **NEXT** | SEQUENTIAL — same Manage grid CSS | agent |
 | P4 | Pick/review when VM stopped | TODO | SEQUENTIAL — same gates + install path | agent |
 
 ---
@@ -168,7 +168,7 @@ Locked by the operator. Do not reopen in an implementation chat.
 
 ## P2 — Change pack compactness
 
-**Status:** NEXT  
+**Status:** DONE  
 **Parallel:** SEQUENTIAL — same tab + CSS as P1  
 **Cursor mode:** agent  
 **UI skill:** yes
@@ -203,13 +203,13 @@ Locked by the operator. Do not reopen in an implementation chat.
 
 - Locked copy is in the UI. Remaining Change pack strings are shorter and non-repeating. Side-by-side where Scrutiny allows. Guide updated.
 
-**Changelog:** *(date when finished)*
+**Changelog:** 2026-08-27 — Locked copy (no inner heading; friends one-liner; reinstall blurb gone; drop title/formats; skip-warning body). Summary twice as tall beside checkboxes. Side-by-side ingest + warnings. Setup copy unchanged.
 
 ---
 
 ## P3 — Overlay dock + tab-scoped bars
 
-**Status:** TODO  
+**Status:** NEXT  
 **Parallel:** SEQUENTIAL — Manage grid / `MainLayout` / dock CSS  
 **Cursor mode:** agent
 

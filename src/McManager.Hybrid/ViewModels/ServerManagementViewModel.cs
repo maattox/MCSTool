@@ -149,7 +149,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
     public string ChangePackTitle =>
         CanPickPack
-            ? "Reinstall Minecraft from a new .mrpack or server-pack zip. The world is kept unless you also wipe."
+            ? PackReplaceUx.ChangePackPickHint
             : PackReplaceUx.PickDisabledReason(Vm1IsRunning, AnyBusy);
 
     public string InstallPackTitle =>
@@ -228,18 +228,15 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     public bool ShowSaveCompatibilityWarning =>
         ShowPackConfirmChecks && !string.IsNullOrWhiteSpace(SaveCompatibilityWarning);
 
-    public string ClientPackTitle => SetupPackImport.ClientPackTitle;
+    public string FriendsNeedOneLiner => PackReplaceUx.FriendsNeedOneLiner;
 
-    public string ClientPackCopy => SetupPackImport.ClientPackCopy;
-
-    public string ClientPackAckLabel => SetupPackImport.ClientPackAckLabel;
-
-    public string ClientPackFriendsNeed =>
-        SetupPackImport.FriendsNeedLine(PackName, PackMinecraftVersion, PackLoader, PackLoaderVersion);
+    public string ClientPackAckLabel => PackReplaceUx.ClientPackAckLabel;
 
     public string PackConfirmLabel => PackReplaceUx.PackConfirmLabel;
 
     public string WipeWorldLabel => PackReplaceUx.WipeWorldLabel;
+
+    public string SkipWarningBody => PackReplaceUx.SkipWarningBody;
 
     public string DownloadPackTitle =>
         CanDownloadPack
@@ -359,19 +356,15 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     private string _packPath = "";
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ClientPackFriendsNeed))]
     private string _packName = "";
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ClientPackFriendsNeed))]
     private string _packMinecraftVersion = "";
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ClientPackFriendsNeed))]
     private string _packLoader = "";
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ClientPackFriendsNeed))]
     private string _packLoaderVersion = "";
 
     [ObservableProperty]
@@ -1159,7 +1152,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         ShowChangePackUi = true;
         var path = await _filePicker.OpenFileAsync(new FilePickRequest
         {
-            Title = "Choose a modpack file (.mrpack or server-pack zip)",
+            Title = "Choose a mod pack (.mrpack or .zip)",
             Filters = [PackFilter, MrpackFilter, ZipFilter, AllFilesFilter],
         });
         if (string.IsNullOrWhiteSpace(path))
@@ -1619,7 +1612,6 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         OnPropertyChanged(nameof(ShowPackIdentityFields));
         OnPropertyChanged(nameof(ShowDetectionMismatch));
         OnPropertyChanged(nameof(DetectionMismatchWarning));
-        OnPropertyChanged(nameof(ClientPackFriendsNeed));
         OnPropertyChanged(nameof(ShowPackConfirmChecks));
         OnPropertyChanged(nameof(ShowPackAssistedReview));
     }

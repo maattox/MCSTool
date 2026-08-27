@@ -12,22 +12,43 @@ public static class PackReplaceUx
 
     public const string ConfirmTitle = "Reinstall Minecraft from this pack?";
 
+    /// <summary>Manage Change pack only. Setup keeps <see cref="SetupPackImport.ClientPackCopy"/>.</summary>
+    public const string FriendsNeedOneLiner =
+        "Players need this mod pack to join the server";
+
+    public const string DropTitle = "Drop a mod pack here";
+
+    public const string DropFormats =
+        "Modrinth .mrpack, CurseForge Server Pack .zip, or unstructured .jar zip.";
+
+    public const string DropLargeHint = "Large packs: Choose pack file.";
+
+    public const string SkipWarningBody =
+        "Known client-only mods will automatically be skipped. Check the list below and confirm that all client-only mods are correctly marked.";
+
+    public const string ChangePackPickHint =
+        "Reinstall Minecraft from a .mrpack or server-pack zip. The world is kept unless wipe is checked.";
+
     public const string PackConfirmLabel =
-        "Use this pack on the server (server-side mods only; client-only files are skipped).";
+        "Use this pack on the server. Client-only mods are skipped.";
+
+    /// <summary>Manage Change pack only. Setup keeps <see cref="SetupPackImport.ClientPackAckLabel"/>.</summary>
+    public const string ClientPackAckLabel =
+        "Friends will get this same exported pack. They cannot join without it.";
 
     public const string WipeWorldLabel =
-        "Also wipe the world (a new world will generate). Leave unchecked to keep the current world.";
+        "Also wipe the world (irreversible). Cloud backups stay. Leave unchecked to keep the current world.";
 
     public const string IdleForceEnableNote =
         "Minecraft start turns the idle timer back on.";
 
     public const string ConfirmKeepWorld =
-        "This reinstalls Minecraft on the server from the file you chose. "
-        + "The world is kept unless you also wipe. Friends need the new exported pack on their PCs.";
+        "Reinstalls Minecraft from the chosen file. "
+        + "The world is kept unless wipe is checked. Friends need the new exported pack.";
 
     public const string ConfirmWipeWorld =
-        "This reinstalls Minecraft on the server from the file you chose. "
-        + "The live world will be deleted. Cloud backups stay. This cannot be undone except by restoring a backup.";
+        "Reinstalls Minecraft from the chosen file. "
+        + "The live world will be deleted. Cloud backups stay. Irreversible except by restoring a backup.";
 
     public static string ConfirmBody(bool wipeWorld) =>
         wipeWorld ? ConfirmWipeWorld : ConfirmKeepWorld;
