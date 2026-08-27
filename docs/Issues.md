@@ -152,11 +152,11 @@ Product roadmap stays in `PRODUCT-IDEAS.md`. Architecture stays in `Infrastructu
 **Refs:** `door_vm/src/control.c`, `door_vm/oci/pull_os_budget.sh`
 
 ### FN-ISSUE-1 — $1 budget Function SoftStops the door, so reconcile cannot hand back the play IP
-**Status:** **Gone on TESTING** (2026-08-19, Pass 1 P3 / S2-16–18). **Open** for the **live Forge lab** deployed image (0.0.11) until that tenancy is updated. Product **v1 tracked source** (0.0.12) SoftStops **VM1 only**.  
-**Summary:** The **Forge lab** `shutdown_vm` **image** still SoftStops **VM1 and VM2**. Door `mccontrol-reconcile.timer` only runs while VM2 is up, so it **cannot** move the reserved play IP after that path. The IP may be left on VM1’s secondary, the door’s secondary, or mid-move. Starting VM1 alone (Manager Force Start) still does not attach the play IP.  
+**Status:** **Gone on TESTING** (2026-08-19) and **gone on the live Forge lab** (2026-08-27). Product **v1** image **0.0.12** SoftStops **VM1 only** and PUTs the spend-brake lock.  
+**Summary:** The old Forge lab `shutdown_vm` **0.0.11** SoftStopped **VM1 and VM2**. Door `mccontrol-reconcile.timer` only runs while VM2 is up, so it **could not** move the reserved play IP after that path.  
 **Cause:** Live Forge image was updated from VM1-only to both instances; no IP-move or Object Storage lock flag.  
 **TESTING (2026-08-19):** `mcmgr-fn-softstop` runs `mcmgr-fn/softstop:setup` **0.0.12**. Synthetic ACTUAL SoftStops VM1 only, PUTs `meta/spend-brake-triggered.json` (`source=budget_function`), door stays **RUNNING**, play IP stayed on the door secondary. RESET is `SKIPPED` and does not DELETE the lock.  
-**Workaround (Forge lab 0.0.11 only):** After a budget-Function stop from the **old image**, use Manager **Troubleshooting → Park reserved play IP** (starts the door if needed, then `ip_to_vm2.sh` when VM1 is not RUNNING). Manual: start the **door** first, then `ip_to_vm2.sh` / door Wake. Do not assume idle doorbell state. Starting VM1 alone still does not attach the play IP.  
+**Forge lab (2026-08-27):** `budget-repo/shutdown_vm:0.0.12`, Function config `INSTANCE_OCIDS` = VM1 only + Object Storage lock keys. Invoke SoftStopped **VM1 only**; door stayed **RUNNING**; reconcile parked the play IP on the door; Manager/OCI DELETE of the lock restored `DOOR_IDLE`.  
 **Product:** v1 Function leaves the door running (Always Free AMD Micro ≠ Ampere hours) and PUTs `meta/spend-brake-triggered.json`. Door honor of that flag is Step **2.3** (TESTING P2). Official installer image copy is V1 Step **8.6.1** (do not treat TESTING `fn`/Docker as that path).  
 **Refs:** `functions/shutdown_vm/`, `Infrastructure-Information.md` Budget emergency stop, `archive/V1-Bug-Fix-Plan-Pass-1.md` P3
 
