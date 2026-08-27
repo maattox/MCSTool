@@ -49,6 +49,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     private string? _currentLoaderOrDistribution;
     private SetupPackPreview? _packPreview;
     private HashSet<string> _operatorSkipTerms = new(StringComparer.OrdinalIgnoreCase);
+    private HashSet<string> _operatorKeepTerms = new(StringComparer.OrdinalIgnoreCase);
     private string? _sessionError;
     private long _currentBackupBytes;
     private string _dataDirectory = "";
@@ -211,7 +212,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         && (_packPreview.NeedsAssistedReview
             || !PackReplaceUx.FreezeAllowsContinue(_packPreview.FreezeBlockReason)
             || _packPreview.AssistedReview.WillSkip.Any(i => i.SkipReason == PackFileSkipReason.OperatorSkip)
-            || (_operatorSkipTerms.Count > 0 && _packPreview.Kind == SetupPackImport.KindManualZip));
+            || ((_operatorSkipTerms.Count > 0 || _operatorKeepTerms.Count > 0)
+                && _packPreview.Kind == SetupPackImport.KindManualZip));
 
     public PackAssistedReview AssistedReview =>
         _packPreview?.AssistedReview ?? PackAssistedReview.Empty;
@@ -1477,7 +1479,12 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         if (_packPreview is null || AnyBusy)
             return;
 
-        var result = PackAssistedReviewActions.ApplySkip(_packPreview, _operatorSkipTerms, path, skip);
+        var result = PackAssistedReviewActions.ApplySkip(
+            _packPreview,
+            _operatorSkipTerms,
+            path,
+            skip,
+            keepTerms: _operatorKeepTerms);
         if (result.NeedsReanalyze)
         {
             await AnalyzePackPathAsync(_packPreview.SourcePath, keepConfirm: true).ConfigureAwait(true);
@@ -1501,9 +1508,10 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     private void ApplyPackPreview(SetupPackPreview preview, bool keepConfirm = false)
     {
         _operatorSkipTerms = PackAssistedReviewActions.LoadPersistedSkipTerms(preview.SourcePath);
+        _operatorKeepTerms = PackAssistedReviewActions.LoadPersistedKeepTerms(preview.SourcePath);
         PackLooksLikeLauncherInstance = SetupPackImport.LooksLikeLauncherInstance(preview.SourcePath);
-        var bound = _operatorSkipTerms.Count > 0
-            ? preview.ApplyOperatorSkips(_operatorSkipTerms)
+        var bound = _operatorSkipTerms.Count > 0 || _operatorKeepTerms.Count > 0
+            ? preview.ApplyOperatorSkips(_operatorSkipTerms, _operatorKeepTerms)
             : preview;
         _packPreview = bound;
         preview = bound;
@@ -1558,6 +1566,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     {
         _packPreview = null;
         _operatorSkipTerms = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        _operatorKeepTerms = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         PackLooksLikeLauncherInstance = false;
         PackPath = "";
         PackName = "";

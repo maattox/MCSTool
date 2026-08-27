@@ -320,6 +320,10 @@ public sealed class ServerIdentityUxTests
         Assert.Equal("Friends SMP", ServerIdentityUx.BuildMotd("Friends SMP", "  "));
         Assert.Equal("Weekend world", ServerIdentityUx.BuildMotd("", "Weekend world"));
         Assert.Equal(ServerIdentityUx.DefaultMotd, ServerIdentityUx.BuildMotd(null, null));
+        Assert.Equal(
+            "§6§l★§r§l §e§lOCI Server§r§l\u00a0§6§l★§r\\ncreated with §9§ngithub.com/maattox/oci-mc-server§r",
+            ServerIdentityUx.BuildMotd(ServerIdentityUx.DefaultName, ServerIdentityUx.DefaultDescription));
+        Assert.True(MotdFormatting.IsSafePropertiesValue(ServerIdentityUx.DefaultMotd));
     }
 
     [Fact]
@@ -352,15 +356,24 @@ public sealed class ServerIdentityUxTests
     }
 
     [Fact]
-    public void Default_setup_names_follow_game_type_without_oracle()
+    public void Default_setup_motd_is_branded_oci_server_without_oracle()
     {
-        Assert.Equal("Vanilla Server", ServerIdentityUx.DefaultServerName(SetupServerType.Vanilla, SetupVanillaFlavor.Default));
-        Assert.Equal("Paper Server", ServerIdentityUx.DefaultServerName(SetupServerType.Vanilla, SetupVanillaFlavor.Optimized));
-        Assert.Equal("Modded Server", ServerIdentityUx.DefaultServerName(SetupServerType.Modded, SetupVanillaFlavor.Default));
-        Assert.Equal(ServerIdentityUx.DefaultDescription, "made with github.com/maattox/oci-mc-server");
+        Assert.Equal(
+            ServerIdentityUx.DefaultName,
+            ServerIdentityUx.DefaultServerName(SetupServerType.Vanilla, SetupVanillaFlavor.Default));
+        Assert.Equal(
+            ServerIdentityUx.DefaultName,
+            ServerIdentityUx.DefaultServerName(SetupServerType.Vanilla, SetupVanillaFlavor.Optimized));
+        Assert.Equal(
+            ServerIdentityUx.DefaultName,
+            ServerIdentityUx.DefaultServerName(SetupServerType.Modded, SetupVanillaFlavor.Default));
+        Assert.Equal(
+            "created with §9§ngithub.com/maattox/oci-mc-server§r",
+            ServerIdentityUx.DefaultDescription);
 
         foreach (var name in new[]
                  {
+                     ServerIdentityUx.DefaultName,
                      ServerIdentityUx.DefaultVanillaName,
                      ServerIdentityUx.DefaultPaperName,
                      ServerIdentityUx.DefaultModdedName,
@@ -379,7 +392,7 @@ public sealed class ServerIdentityUxTests
             ServerType = SetupServerType.Vanilla,
             VanillaFlavor = SetupVanillaFlavor.Default,
         });
-        Assert.Equal("Vanilla Server", vanilla.ServerName);
+        Assert.Equal(ServerIdentityUx.DefaultName, vanilla.ServerName);
         Assert.Equal(ServerIdentityUx.DefaultDescription, vanilla.Description);
 
         var custom = ServerIdentityUx.CreateSetupSeed(new SetupWizardState

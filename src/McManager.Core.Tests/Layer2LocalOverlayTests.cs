@@ -32,6 +32,16 @@ public sealed class Layer2LocalOverlayTests
             Assert.DoesNotContain(lists.GlobalExcludes, s => s.Equals("badmod", StringComparison.OrdinalIgnoreCase));
             Assert.True(lists.TryGetPack(Layer2LocalOverlay.IdentityKey(hash!), out var packEntry));
             Assert.Contains(packEntry.Excludes, s => s.Equals("badmod", StringComparison.OrdinalIgnoreCase));
+
+            Layer2LocalOverlay.PromoteForceInclude(data, hash!, "badmod");
+            lists = Layer2LocalOverlay.Load(data);
+            Assert.True(lists.TryGetPack(Layer2LocalOverlay.IdentityKey(hash!), out packEntry));
+            Assert.Contains(packEntry.ForceIncludes, s => s.Equals("badmod", StringComparison.OrdinalIgnoreCase));
+            Assert.DoesNotContain(packEntry.Excludes, s => s.Equals("badmod", StringComparison.OrdinalIgnoreCase));
+            matcher = ExcludeIncludeMatcher.ForModrinth(data, hash);
+            Assert.Equal(
+                ExcludeIncludeDecision.Keep,
+                matcher.Match("unrelated-slug", "mods/badmod-1.2.3.jar").Decision);
         }
         finally
         {

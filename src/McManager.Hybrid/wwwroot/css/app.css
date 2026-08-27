@@ -2948,7 +2948,7 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 .mcm-pack-review-head,
 .mcm-pack-review-item {
     display: grid;
-    grid-template-columns: minmax(7.5rem, 22%) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(7.5rem, 22%);
     column-gap: 10px;
     align-items: start;
 }
@@ -2961,10 +2961,6 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     font-weight: 600;
     letter-spacing: 0.02em;
     color: var(--text-secondary);
-}
-
-.mcm-pack-review-client-head {
-    grid-column: 2;
 }
 
 .mcm-pack-review-note {
@@ -4208,6 +4204,23 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 .mcm-pack-identity .mcm-field select {
     margin-bottom: 8px;
     max-width: none;
+}
+
+.mcm-pack-identity-fields {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px 12px;
+    align-items: start;
+    min-width: 0;
+}
+
+.mcm-pack-identity-fields .mcm-field {
+    min-width: 0;
+}
+
+.mcm-pack-identity-fields .mcm-field input[type="text"],
+.mcm-pack-identity-fields .mcm-field select {
+    margin-bottom: 0;
 }
 
 .mcm-wizard-identity .mcm-wizard-actions {

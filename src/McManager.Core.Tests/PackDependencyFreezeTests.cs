@@ -68,6 +68,27 @@ public sealed class PackDependencyFreezeTests
     }
 
     [Fact]
+    public void Operator_keep_unskips_override_list_and_keeps_the_row()
+    {
+        var records = new[]
+        {
+            Record("mods/ok.jar", ["ok"], [], skip: PackFileSkipReason.None),
+            Record("mods/sodium.jar", ["sodium"], [], skip: PackFileSkipReason.OverrideList),
+        };
+
+        var classified = PackDependencyFreeze.Classify(records, operatorKeepTerms: ["sodium.jar"]);
+        Assert.DoesNotContain("mods/sodium.jar", classified.ClientOnlyPaths, StringComparer.OrdinalIgnoreCase);
+        Assert.Contains("mods/sodium.jar", classified.ServerSidePaths, StringComparer.OrdinalIgnoreCase);
+        Assert.Contains(
+            classified.Review.NeedsYourCall,
+            i => i.Path.Contains("sodium", StringComparison.OrdinalIgnoreCase)
+                 && i.SkipReason == PackFileSkipReason.None);
+        Assert.DoesNotContain(
+            classified.Review.WillSkip,
+            i => i.Path.Contains("sodium", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public void Operator_skip_of_unknown_moves_to_will_skip()
     {
         var records = new[]

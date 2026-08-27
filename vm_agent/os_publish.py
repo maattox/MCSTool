@@ -24,7 +24,10 @@ OBJ_BUDGET = "budget/config.json"
 OBJ_CHAT = "messages/chat.json"
 OBJ_ICON = "messages/server-icon.png"
 CONFIG_PATH = os.environ.get("MC_MANAGER_CONFIG", "/etc/mc-manager/config.json")
-DEFAULT_MOTD = "A Minecraft Server"
+DEFAULT_MOTD = (
+    "§6§l★§r§l §e§lOCI Server§r§l\u00a0§6§l★§r"
+    "\\ncreated with §9§ngithub.com/maattox/oci-mc-server§r"
+)
 CONSUMERS = ("manager", "door", "vm1")
 CATEGORIES = ("ledger", "budget", "meta", "ip", "messages")
 

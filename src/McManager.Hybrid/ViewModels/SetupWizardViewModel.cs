@@ -214,6 +214,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     private SetupPackPreview? _packPreview;
     private HashSet<string> _operatorSkipTerms = new(StringComparer.OrdinalIgnoreCase);
+    private HashSet<string> _operatorKeepTerms = new(StringComparer.OrdinalIgnoreCase);
     private bool _packLooksLikeLauncherInstance;
 
     [ObservableProperty]
@@ -568,6 +569,8 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     public bool ShowOverrideListWarning =>
         ShowPackSummary && PackCanContinue && !string.IsNullOrWhiteSpace(PackOverrideListWarning);
 
+    public string SkipWarningBody => PackReplaceUx.SkipWarningBody;
+
     public bool ShowPackAssistedReview =>
         ShowPackSummary
         && PackCanContinue
@@ -575,7 +578,8 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         && (_packPreview.NeedsAssistedReview
             || !PackReplaceUx.FreezeAllowsContinue(_packPreview.FreezeBlockReason)
             || _packPreview.AssistedReview.WillSkip.Any(i => i.SkipReason == PackFileSkipReason.OperatorSkip)
-            || (_operatorSkipTerms.Count > 0 && _packPreview.Kind == SetupPackImport.KindManualZip));
+            || ((_operatorSkipTerms.Count > 0 || _operatorKeepTerms.Count > 0)
+                && _packPreview.Kind == SetupPackImport.KindManualZip));
 
     public PackAssistedReview AssistedReview =>
         _packPreview?.AssistedReview ?? PackAssistedReview.Empty;
@@ -830,6 +834,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         PackAnalyzeCaption = "";
         _packPreview = null;
         _operatorSkipTerms = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        _operatorKeepTerms = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         _packLooksLikeLauncherInstance = false;
         StatusMessage = "Pack cleared. Choose a .mrpack or server-pack zip.";
         Persist();
@@ -932,7 +937,12 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         if (_packPreview is null || IsDeployLocked)
             return;
 
-        var result = PackAssistedReviewActions.ApplySkip(_packPreview, _operatorSkipTerms, path, skip);
+        var result = PackAssistedReviewActions.ApplySkip(
+            _packPreview,
+            _operatorSkipTerms,
+            path,
+            skip,
+            keepTerms: _operatorKeepTerms);
         if (result.NeedsReanalyze)
         {
             await AnalyzePackPathAsync(_packPreview.SourcePath, keepConfirm: true).ConfigureAwait(true);
@@ -955,9 +965,10 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     private void ApplyPackPreview(SetupPackPreview preview, bool keepConfirm)
     {
         _operatorSkipTerms = PackAssistedReviewActions.LoadPersistedSkipTerms(preview.SourcePath);
+        _operatorKeepTerms = PackAssistedReviewActions.LoadPersistedKeepTerms(preview.SourcePath);
         _packLooksLikeLauncherInstance = SetupPackImport.LooksLikeLauncherInstance(preview.SourcePath);
-        var bound = _operatorSkipTerms.Count > 0
-            ? preview.ApplyOperatorSkips(_operatorSkipTerms)
+        var bound = _operatorSkipTerms.Count > 0 || _operatorKeepTerms.Count > 0
+            ? preview.ApplyOperatorSkips(_operatorSkipTerms, _operatorKeepTerms)
             : preview;
         _packPreview = bound;
         preview = bound;

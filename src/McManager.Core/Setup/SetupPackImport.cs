@@ -557,9 +557,11 @@ public sealed class SetupPackPreview
     public bool NeedsAssistedReview => AssistedReview.NeedsAssistedReview;
 
     /// <summary>Re-run freeze after in-session Skip ticks without re-hashing the zip.</summary>
-    public SetupPackPreview ApplyOperatorSkips(IReadOnlyCollection<string> skipTerms)
+    public SetupPackPreview ApplyOperatorSkips(
+        IReadOnlyCollection<string> skipTerms,
+        IReadOnlyCollection<string>? keepTerms = null)
     {
-        var classified = PackDependencyFreeze.Classify(JarRecords, skipTerms);
+        var classified = PackDependencyFreeze.Classify(JarRecords, skipTerms, keepTerms);
         return new SetupPackPreview(
             Kind,
             SourcePath,

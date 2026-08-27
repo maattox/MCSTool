@@ -40,8 +40,8 @@
     else
     {
         <div class="mcm-pack-review-head" aria-hidden="true">
-            <span class="mcm-pack-review-note">Note</span>
             <span class="mcm-pack-review-client-head">Client-only</span>
+            <span class="mcm-pack-review-note">Note</span>
         </div>
         <ul class="mcm-pack-review-list mcm-slim-scroll" aria-label="Mods in this pack">
             @foreach (var item in FilteredRows)
@@ -52,7 +52,6 @@
                 var locked = mustKeep && !IsPathSkipped(item.Path);
                 var note = RowNote(item);
                 <li class="mcm-pack-review-item @(locked ? "is-locked" : "")">
-                    <span class="mcm-pack-review-note">@note</span>
                     <label class="mcm-check-hit mcm-pack-review-hit" for="@inputId" title="@item.Path">
                         <input id="@inputId"
                                type="checkbox"
@@ -64,6 +63,7 @@
                                @onchange="e => OnSkipChange(item, e)" />
                         <span class="mcm-pack-review-file" translate="no">@item.FileName</span>
                     </label>
+                    <span class="mcm-pack-review-note">@note</span>
                 </li>
             }
         </ul>

@@ -69,42 +69,26 @@ public static class Layer2LocalOverlay
     /// <summary>Adds <paramref name="term"/> under <c>modpacks[sha256:…].excludes</c>. Not a global exclude.</summary>
     public static void PromoteExclude(string dataDirectory, string sha256Hex, string term)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(dataDirectory);
-        ArgumentException.ThrowIfNullOrWhiteSpace(sha256Hex);
-        ArgumentException.ThrowIfNullOrWhiteSpace(term);
-
-        var key = IdentityKey(sha256Hex);
-        var needle = term.Trim();
-        var path = FilePath(dataDirectory);
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-
-        OverlayFileDto dto;
-        if (File.Exists(path))
+        MutatePack(dataDirectory, sha256Hex, term, (pack, needle) =>
         {
-            dto = JsonSerializer.Deserialize<OverlayFileDto>(File.ReadAllText(path), JsonOptions)
-                ?? new OverlayFileDto();
-        }
-        else
+            pack.ForceIncludes.RemoveAll(s => string.Equals(s, needle, StringComparison.OrdinalIgnoreCase));
+            if (!pack.Excludes.Exists(s => string.Equals(s, needle, StringComparison.OrdinalIgnoreCase)))
+                pack.Excludes.Add(needle);
+        }, createIfMissing: true);
+    }
+
+    /// <summary>
+    /// Adds <paramref name="term"/> under <c>modpacks[sha256:…].forceIncludes</c> so Layer 1
+    /// excludes and in-jar client tags do not skip it on later analyzes of this archive.
+    /// </summary>
+    public static void PromoteForceInclude(string dataDirectory, string sha256Hex, string term)
+    {
+        MutatePack(dataDirectory, sha256Hex, term, (pack, needle) =>
         {
-            dto = new OverlayFileDto();
-        }
-
-        dto.GlobalExcludes ??= [];
-        dto.GlobalForceIncludes ??= [];
-        dto.Modpacks ??= new Dictionary<string, OverlayPackDto>(StringComparer.OrdinalIgnoreCase);
-
-        if (!dto.Modpacks.TryGetValue(key, out var pack) || pack is null)
-        {
-            pack = new OverlayPackDto();
-            dto.Modpacks[key] = pack;
-        }
-
-        pack.Excludes ??= [];
-        pack.ForceIncludes ??= [];
-        if (!pack.Excludes.Exists(s => string.Equals(s, needle, StringComparison.OrdinalIgnoreCase)))
-            pack.Excludes.Add(needle);
-
-        File.WriteAllText(path, JsonSerializer.Serialize(dto, JsonOptions) + "\n");
+            pack.Excludes.RemoveAll(s => string.Equals(s, needle, StringComparison.OrdinalIgnoreCase));
+            if (!pack.ForceIncludes.Exists(s => string.Equals(s, needle, StringComparison.OrdinalIgnoreCase)))
+                pack.ForceIncludes.Add(needle);
+        }, createIfMissing: true);
     }
 
     /// <summary>
@@ -124,37 +108,73 @@ public static class Layer2LocalOverlay
     /// Removes <paramref name="term"/> from <c>modpacks[sha256:…].excludes</c> (Unskip).
     /// No-op when the file, pack, or term is missing.
     /// </summary>
-    public static void RemoveExclude(string dataDirectory, string sha256Hex, string term)
+    public static void RemoveExclude(string dataDirectory, string sha256Hex, string term) =>
+        MutatePack(dataDirectory, sha256Hex, term, (pack, needle) =>
+            pack.Excludes.RemoveAll(s => string.Equals(s, needle, StringComparison.OrdinalIgnoreCase)),
+            createIfMissing: false);
+
+    /// <summary>
+    /// Removes <paramref name="term"/> from <c>modpacks[sha256:…].forceIncludes</c>.
+    /// No-op when the file, pack, or term is missing.
+    /// </summary>
+    public static void RemoveForceInclude(string dataDirectory, string sha256Hex, string term) =>
+        MutatePack(dataDirectory, sha256Hex, term, (pack, needle) =>
+            pack.ForceIncludes.RemoveAll(s => string.Equals(s, needle, StringComparison.OrdinalIgnoreCase)),
+            createIfMissing: false);
+
+    private static void MutatePack(
+        string dataDirectory,
+        string sha256Hex,
+        string term,
+        Action<OverlayPackDto, string> mutate,
+        bool createIfMissing)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(dataDirectory);
         ArgumentException.ThrowIfNullOrWhiteSpace(sha256Hex);
         ArgumentException.ThrowIfNullOrWhiteSpace(term);
 
         var key = IdentityKey(sha256Hex);
-        var needle = term.Trim();
         var path = FilePath(dataDirectory);
-        if (!File.Exists(path))
+        if (!File.Exists(path) && !createIfMissing)
             return;
 
         OverlayFileDto dto;
-        try
+        if (File.Exists(path))
         {
-            dto = JsonSerializer.Deserialize<OverlayFileDto>(File.ReadAllText(path), JsonOptions)
-                ?? new OverlayFileDto();
+            try
+            {
+                dto = JsonSerializer.Deserialize<OverlayFileDto>(File.ReadAllText(path), JsonOptions)
+                    ?? new OverlayFileDto();
+            }
+            catch (JsonException)
+            {
+                if (!createIfMissing)
+                    return;
+                dto = new OverlayFileDto();
+            }
         }
-        catch (JsonException)
+        else
         {
-            return;
+            dto = new OverlayFileDto();
         }
 
-        if (dto.Modpacks is null
-            || !dto.Modpacks.TryGetValue(key, out var pack)
-            || pack?.Excludes is null)
+        dto.GlobalExcludes ??= [];
+        dto.GlobalForceIncludes ??= [];
+        dto.Modpacks ??= new Dictionary<string, OverlayPackDto>(StringComparer.OrdinalIgnoreCase);
+
+        if (!dto.Modpacks.TryGetValue(key, out var pack) || pack is null)
         {
-            return;
+            if (!createIfMissing)
+                return;
+            pack = new OverlayPackDto();
+            dto.Modpacks[key] = pack;
         }
 
-        pack.Excludes.RemoveAll(s => string.Equals(s, needle, StringComparison.OrdinalIgnoreCase));
+        pack.Excludes ??= [];
+        pack.ForceIncludes ??= [];
+        mutate(pack, term.Trim());
+
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         File.WriteAllText(path, JsonSerializer.Serialize(dto, JsonOptions) + "\n");
     }
 
@@ -167,7 +187,7 @@ public static class Layer2LocalOverlay
 
     private sealed class OverlayPackDto
     {
-        public List<string>? Excludes { get; set; }
-        public List<string>? ForceIncludes { get; set; }
+        public List<string> Excludes { get; set; } = [];
+        public List<string> ForceIncludes { get; set; } = [];
     }
 }

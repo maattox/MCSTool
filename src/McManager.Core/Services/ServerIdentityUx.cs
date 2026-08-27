@@ -1,6 +1,5 @@
 using System.Buffers.Binary;
 using McManager.Core.Config;
-using McManager.Core.Setup;
 using McManager.Core.Usage;
 
 namespace McManager.Core.Services;
@@ -15,11 +14,13 @@ public static class ServerIdentityUx
     public const int MaxIconBytes = 256 * 1024;
     public const int MaxNameLength = MotdFormatting.ListLineVisibleLimit;
     public const int MaxDescriptionLength = MotdFormatting.ListLineVisibleLimit;
-    public const string DefaultMotd = "A Minecraft Server";
-    public const string DefaultDescription = "made with github.com/maattox/oci-mc-server";
-    public const string DefaultVanillaName = "Vanilla Server";
-    public const string DefaultPaperName = "Paper Server";
-    public const string DefaultModdedName = "Modded Server";
+    /// <summary>Line 1 of the product default list MOTD (gold bold stars around yellow bold name).</summary>
+    public const string DefaultName = "§6§l★§r§l §e§lOCI Server§r§l\u00a0§6§l★§r";
+    public const string DefaultDescription = "created with §9§ngithub.com/maattox/oci-mc-server§r";
+    public const string DefaultMotd = DefaultName + "\\n" + DefaultDescription;
+    public const string DefaultVanillaName = DefaultName;
+    public const string DefaultPaperName = DefaultName;
+    public const string DefaultModdedName = DefaultName;
 
     public static IReadOnlyDictionary<string, string> DefaultChatMessages =>
         ChatMessagesDocument.DefaultChatMessages;
@@ -92,16 +93,14 @@ public static class ServerIdentityUx
     }
 
     /// <summary>
-    /// Type-based Setup default. No Oracle trademark wording.
-    /// Vanilla (Mojang) vs Paper vs Modded.
+    /// Setup default list name. Same branded MOTD for Vanilla, Paper, and Modded.
+    /// No Oracle trademark wording.
     /// </summary>
     public static string DefaultServerName(string? serverType, string? vanillaFlavor)
     {
-        if (SetupServerType.IsModded(serverType))
-            return DefaultModdedName;
-        if (SetupVanillaFlavor.IsOptimized(vanillaFlavor))
-            return DefaultPaperName;
-        return DefaultVanillaName;
+        _ = serverType;
+        _ = vanillaFlavor;
+        return DefaultName;
     }
 
     public static ChatMessagesDocument CreateSetupSeed(SetupWizardState state)
