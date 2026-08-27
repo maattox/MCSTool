@@ -29,8 +29,14 @@ public sealed class DoorStatus
         WakeInProgress
         || string.Equals(Door, "STARTING", StringComparison.OrdinalIgnoreCase);
 
-    public bool IsPlayable =>
-        string.Equals(Door, "PLAYABLE", StringComparison.OrdinalIgnoreCase);
+    public static bool IsPlayableName(string? door)
+    {
+        var name = (door ?? "").Trim();
+        return string.Equals(name, "PLAYABLE", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(name, "DOOR_PLAYABLE", StringComparison.OrdinalIgnoreCase);
+    }
+
+    public bool IsPlayable => IsPlayableName(Door);
 
     public bool IsIdle =>
         string.Equals(Door, "DOOR_IDLE", StringComparison.OrdinalIgnoreCase);

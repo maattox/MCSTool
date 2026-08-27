@@ -199,8 +199,30 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public string RestartButtonLabel =>
         _powerAction == PowerActionKind.Restart ? "Restarting…" : "Restart";
 
-    public bool StatusIsBusy =>
-        Status is "Starting…" or "Stopping…" or "Restarting…";
+    public bool CanPrimaryPower =>
+        ManagePrimaryPowerChrome.IsEnabled(CanStart, CanStop);
+
+    public bool PrimaryPowerShowsStop =>
+        ManagePrimaryPowerChrome.ShowsStop(
+            CanStart,
+            CanStop,
+            _powerAction == PowerActionKind.Stop);
+
+    public string PrimaryPowerLabel =>
+        PrimaryPowerShowsStop ? StopButtonLabel : StartButtonLabel;
+
+    public string PrimaryPowerToolTip =>
+        PrimaryPowerShowsStop ? StopToolTip : StartToolTip;
+
+    public string PrimaryPowerIconClass =>
+        PrimaryPowerShowsStop ? "ti ti-player-stop" : "ti ti-player-play";
+
+    public string PrimaryPowerButtonClass =>
+        PrimaryPowerShowsStop
+            ? "mcm-action-btn mcm-action-btn-stop"
+            : "mcm-action-btn mcm-action-btn-start";
+
+    public bool StatusIsBusy => ManageNoviceStatus.IsBusy(Status);
 
     public string StartToolTip => CanStart
         ? (string.Equals(DoorState, "DEGRADED", StringComparison.OrdinalIgnoreCase)
@@ -227,7 +249,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             if (!ConfigLoaded)
                 return "Local config is missing or failed to load.";
             if (ManagePowerUx.IsVm1Running(Vm1Lifecycle)
-                || string.Equals(DoorState, "PLAYABLE", StringComparison.OrdinalIgnoreCase))
+                || DoorStatus.IsPlayableName(DoorState))
                 return "The server is already on. Use Stop or Restart.";
             if (ManagePowerUx.IsVm1ComingUp(Vm1Lifecycle)
                 || string.Equals(DoorState, "STARTING", StringComparison.OrdinalIgnoreCase))
@@ -438,6 +460,15 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         await WakeGameServerAsync();
     }
 
+    public Task PrimaryPowerAsync()
+    {
+        if (CanStart)
+            return StartAsync();
+        if (CanStop)
+            return StopAsync();
+        return Task.CompletedTask;
+    }
+
     /// <summary>
     /// Overlay confirm: park doorbell, DELETE the lock, refresh door OS cache.
     /// Does not wake VM1 — the admin uses top-bar Start.
@@ -489,11 +520,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                     "Lock cleared, but the doorbell cache refresh failed. Try Troubleshooting → Refresh OS budget, then Start.",
                     isError: true);
                 SpendBrakeUnlockStatus =
-                    "Lock cleared. Use Start on the top bar when you are ready (doorbell cache refresh failed).";
+                    "Lock cleared. Use Start in the sidebar when you are ready (doorbell cache refresh failed).";
                 return;
             }
 
-            SpendBrakeUnlockStatus = "Lock cleared. Use Start on the top bar when you are ready.";
+            SpendBrakeUnlockStatus = "Lock cleared. Use Start in the sidebar when you are ready.";
             ShowToast(SpendBrakeUnlockStatus, isError: false);
         }
         finally
@@ -833,8 +864,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             return;
         }
 
-        StatusIsRunning = door?.IsPlayable == true;
-        Status = StatusIsRunning ? "Running" : "Stopped";
+        Status = ManageNoviceStatus.Label(
+            Vm1Lifecycle,
+            doorPlayable: door?.IsPlayable == true,
+            doorStarting: door?.IsStarting == true);
+        StatusIsRunning = ManageNoviceStatus.IsRunning(Status);
+        OnPropertyChanged(nameof(StatusIsBusy));
         if (!StatusIsRunning)
             PlayersDisplay = MinecraftConsoleRemote.FormatPlayersPin(false, null, null);
     }
@@ -858,7 +893,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
         var allowPower = _hasInitialStatus && !_powerActionInFlight && !SpendBrakeUnlockInFlight;
         var degraded = door?.IsDegraded == true;
-        var alreadyOn = !degraded && (ManagePowerUx.IsVm1Running(Vm1Lifecycle) || door?.IsPlayable == true);
+        var alreadyOn = !degraded && ManagePowerUx.IsAlreadyOn(Vm1Lifecycle, door?.IsPlayable == true);
         var starting = !degraded && (ManagePowerUx.IsVm1ComingUp(Vm1Lifecycle) || door?.IsStarting == true);
         CanStop = allowPower && (alreadyOn || starting || degraded);
         CanRestart = allowPower && ManagePowerUx.IsVm1Running(Vm1Lifecycle);
@@ -919,9 +954,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         StatusIsRunning = false;
         Status = _powerAction switch
         {
-            PowerActionKind.Start => "Starting…",
-            PowerActionKind.Stop => "Stopping…",
-            PowerActionKind.Restart => "Restarting…",
+            PowerActionKind.Start => ManageNoviceStatus.Starting,
+            PowerActionKind.Stop => ManageNoviceStatus.Stopping,
+            PowerActionKind.Restart => ManageNoviceStatus.Restarting,
             _ => Status
         };
         if (!StatusIsRunning)
@@ -933,6 +968,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(StartToolTip));
         OnPropertyChanged(nameof(StopToolTip));
         OnPropertyChanged(nameof(RestartToolTip));
+        OnPropertyChanged(nameof(CanPrimaryPower));
+        OnPropertyChanged(nameof(PrimaryPowerShowsStop));
+        OnPropertyChanged(nameof(PrimaryPowerToolTip));
+        OnPropertyChanged(nameof(PrimaryPowerButtonClass));
+        OnPropertyChanged(nameof(PrimaryPowerIconClass));
+        OnPropertyChanged(nameof(PrimaryPowerLabel));
     }
 
     private void NotifyPowerButtonCaptions()
@@ -941,6 +982,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(StopButtonLabel));
         OnPropertyChanged(nameof(RestartButtonLabel));
         OnPropertyChanged(nameof(StatusIsBusy));
+        OnPropertyChanged(nameof(PrimaryPowerShowsStop));
+        OnPropertyChanged(nameof(PrimaryPowerLabel));
+        OnPropertyChanged(nameof(PrimaryPowerIconClass));
+        OnPropertyChanged(nameof(PrimaryPowerButtonClass));
     }
 
     private enum SpendBrakeUiState

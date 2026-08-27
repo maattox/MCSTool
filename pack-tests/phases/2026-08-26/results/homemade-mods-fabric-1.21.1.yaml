@@ -1,0 +1,42 @@
+schema_version: 1
+pack_id: homemade-mods-fabric-1.21.1
+filename: homemade-mods-fabric-1.21.1.zip
+sha256: 7d234d496e0a2d4f6281bca122ca9bf6e0ccf0f88a45f14af61133715077414e
+started_utc: "2026-08-26T21:30:55Z"
+finished_utc: "2026-08-26T21:32:55Z"
+verdict: pass
+ready_for_next: true
+fail_message: ""
+identity:
+  expected:
+    minecraft: 1.21.1
+    loader: fabric
+    loader_version: 0.19.3
+    java_major: 21
+  detected:
+    minecraft: 1.21
+    loader: fabric
+    loader_version: ""
+    java_major: 21
+  applied:
+    minecraft: 1.21.1
+    loader: fabric
+    loader_version: 0.19.3
+    java_major: 21
+skip_counts:
+  automatic_client: 36
+  unknown_kept: 0
+health:
+  rcon_list: true
+  crash_loop: false
+  fatal: false
+  quarantine: false
+log_excerpt_path: logs/homemade-mods-fabric-1.21.1.excerpt.txt
+infra:
+  ssh: true
+  vm1: Running
+  minecraft_unit: active
+  idle_disabled: true
+notes:
+  - client-only sidecar not applied (default Keep)
+  - derived zip built; original archive untouched

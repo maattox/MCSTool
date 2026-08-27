@@ -29,7 +29,7 @@ public sealed class AlwaysOnCapableCopyTests
         Assert.Contains("still counted", AlwaysOnCapableCopy.PublishConfirmBody(true));
         Assert.Equal("used this month", AlwaysOnCapableCopy.PinMonthHint(true));
         Assert.DoesNotContain("monthly cap", AlwaysOnCapableCopy.PinMonthHint(true));
-        Assert.Contains("today", AlwaysOnCapableCopy.PinTodayHint(22.5, true));
+        Assert.Equal("/ 22.5h", AlwaysOnCapableCopy.PinTodayHint(22.5, true));
         Assert.DoesNotContain("allowed", AlwaysOnCapableCopy.PinTodayHint(22.5, true));
         Assert.Contains("typical day", AlwaysOnCapableCopy.PinAvgHint(22.5, true));
         Assert.DoesNotContain("budget", AlwaysOnCapableCopy.PinAvgHint(22.5, true));
@@ -52,7 +52,8 @@ public sealed class AlwaysOnCapableCopyTests
         Assert.Contains("not the rollover bank", AlwaysOnCapableCopy.RemainingHoursHint(false));
         Assert.Contains("run out of free time", AlwaysOnCapableCopy.PublishConfirmBody(false));
         Assert.Equal("of monthly cap", AlwaysOnCapableCopy.PinMonthHint(false));
-        Assert.Contains("allowed", AlwaysOnCapableCopy.PinTodayHint(11.25, false));
+        Assert.Equal("/ 11.2h", AlwaysOnCapableCopy.PinTodayHint(11.25, false));
+        Assert.DoesNotContain("allowed", AlwaysOnCapableCopy.PinTodayHint(11.25, false));
         Assert.Contains("budget", AlwaysOnCapableCopy.PinAvgHint(11.25, false));
         Assert.Contains("daily slice", AlwaysOnCapableCopy.PinTodayHelp(false));
         Assert.Contains("free compute budget already used", AlwaysOnCapableCopy.PinMonthHelp(false));

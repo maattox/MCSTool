@@ -31,7 +31,7 @@ Door OCI scripts are run **as root** with `oci.env` sourced (mode 600; `ubuntu` 
 | *(copy only)* OS-ISSUE-5 | Console | Guest ACPI SoftStop hang — OCI Console Reset / Force stop; then Park play IP; heal only after `STOPPED` |
 | **Delete infrastructure** (Advanced / Danger Zone) | admin PC + OCI | Typed `confirm`; empty product bucket + OCIR `mcmgr-fn/softstop` images; temporary bucket `prevent_destroy` override; `tofu destroy -auto-approve` against `%LOCALAPPDATA%\McManager\tofu\<stack-id>\`; then delete `config.local.json` + `setup-wizard.local.json` + that tofu folder. Does **not** delete the tenancy or `friends.local.json` / `~/.oci` / SSH keys. Window stays open until tofu returns. |
 
-Minecraft **Restart** stays on the top bar (not duplicated).
+Minecraft **Restart** stays in the Manager sidebar (not duplicated).
 
 ---
 

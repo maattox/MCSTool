@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using McManager.Hybrid.Ui;
 using McManager.Hybrid.Ui.Wpf;
+using Microsoft.AspNetCore.Components.WebView;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace McManager.Hybrid;
@@ -8,10 +9,27 @@ namespace McManager.Hybrid;
 public partial class MainWindow : Window
 {
     /// <summary>
-    /// CSS <c>--app-shell-width</c>: chrome row (1008) + 16px padding each side.
-    /// WindowStyle=None: this is the client width (no native caption frame).
+    /// Default WebView client width (~1280 CSS px). WindowStyle=None: XAML Width is
+    /// the outer window; <see cref="FitWidthToWebView"/> adds remaining non-client thickness.
     /// </summary>
-    public const double AppShellWidthDip = 1040;
+    public const double AppShellWidthDip = 1280;
+
+    /// <summary>
+    /// Smallest WebView client that still fits the Manage sidebar plus a usable
+    /// content pane. Must stay below <see cref="AppShellWidthDip"/> so resize is real.
+    /// </summary>
+    public const double AppShellMinWidthDip = 920;
+
+    /// <summary>
+    /// Default WebView client height. Must stay above <see cref="AppShellMinHeightDip"/>.
+    /// </summary>
+    public const double AppShellHeightDip = 752;
+
+    /// <summary>
+    /// Smallest WebView client that still fits status, power, the 23px pin
+    /// floor, and the eight sidebar tabs at their 2px minimum gap.
+    /// </summary>
+    public const double AppShellMinHeightDip = 553;
 
     public MainWindow()
     {
@@ -36,8 +54,10 @@ public partial class MainWindow : Window
 
     private void FitWidthToShell()
     {
-        MinWidth = AppShellWidthDip;
+        MinWidth = AppShellMinWidthDip;
         Width = AppShellWidthDip;
+        MinHeight = AppShellMinHeightDip;
+        Height = AppShellHeightDip;
     }
 
     /// <summary>
@@ -49,11 +69,30 @@ public partial class MainWindow : Window
         if (HostView.ActualWidth <= 0)
             return;
 
-        var nonClient = ActualWidth - HostView.ActualWidth;
-        var outer = AppShellWidthDip + Math.Max(0, nonClient);
-        if (outer > MinWidth)
-            MinWidth = outer;
-        if (Width + 0.5 < outer)
-            Width = outer;
+        var nonClientW = Math.Max(0, ActualWidth - HostView.ActualWidth);
+        MinWidth = AppShellMinWidthDip + nonClientW;
+        var defaultOuterW = AppShellWidthDip + nonClientW;
+        if (Width + 0.5 < defaultOuterW)
+            Width = defaultOuterW;
+
+        if (HostView.ActualHeight <= 0)
+            return;
+
+        var nonClientH = Math.Max(0, ActualHeight - HostView.ActualHeight);
+        MinHeight = AppShellMinHeightDip + nonClientH;
+        var defaultOuterH = AppShellHeightDip + nonClientH;
+        if (Height + 0.5 < defaultOuterH)
+            Height = defaultOuterH;
+    }
+
+    private void OnBlazorWebViewInitialized(object sender, BlazorWebViewInitializedEventArgs e)
+    {
+        var webView = e.WebView;
+        webView.ZoomFactor = 1;
+        var core = webView.CoreWebView2;
+        if (core is null)
+            return;
+
+        core.Settings.IsZoomControlEnabled = false;
     }
 }

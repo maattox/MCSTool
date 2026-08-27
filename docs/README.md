@@ -14,10 +14,13 @@ Read **only** what the current V1 / QA step names. Do not load this whole folder
 | [`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md) | Step **8.8**. **DONE** (P1–P10; P11 deferred). |
 | [`V1-Pack-Import-Assisted-Review-Plan.md`](V1-Pack-Import-Assisted-Review-Plan.md) | Step **8.9**. **DONE** (P1–P2). |
 | [`V1-Operator-Notes-Follow-On-2-Plan.md`](V1-Operator-Notes-Follow-On-2-Plan.md) | Step **8.10**. Density / MOTD / VM1 icon. **COMPLETE.** |
-| [`V1-Operator-Notes-Follow-On-3-Plan.md`](V1-Operator-Notes-Follow-On-3-Plan.md) | Step **8.11**. Caption / pins / MOTD WYSIWYG. **P3 NEXT.** |
+| [`V1-Operator-Notes-Follow-On-3-Plan.md`](V1-Operator-Notes-Follow-On-3-Plan.md) | Step **8.11**. Caption / pins / MOTD WYSIWYG. **COMPLETE.** |
+| [`V1-Manage-Sidebar-Redesign-Plan.md`](V1-Manage-Sidebar-Redesign-Plan.md) | Step **8.12**. Manage sidebar layout. **COMPLETE.** |
+| [`V1-Manage-Sidebar-Polish-Plan.md`](V1-Manage-Sidebar-Polish-Plan.md) | Step **8.13**. Panel contrast, narrower sidebar, equal compact pins, larger tabs. **COMPLETE** (P1–P2). |
+| [`V1-Manage-UI-Pass-3-Plan.md`](V1-Manage-UI-Pass-3-Plan.md) | Step **8.14**. Zoom lock, equal power, pin redesign, Overview. Flush chrome / denser gutters reverted. **COMPLETE.** |
 | [`Mod-Pack-Tests.md`](Mod-Pack-Tests.md) | Operator informal pack tests (input to 8.7; not a living NEXT). |
 | [`Pack-Corpus-Test-Plan.md`](Pack-Corpus-Test-Plan.md) | Headless Change-pack corpus harness. **COMPLETE** (P1–P3). Pass 3 stays blocked. |
-| [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) | Pass 3 (blocked until **8.11** exits and the operator starts it). |
+| [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) | Pass 3 (**blocked** until the operator starts it). |
 | [`V1-QA-Pass-3-Results.md`](V1-QA-Pass-3-Results.md) | Fill during Pass 3. |
 | [`V1-QA-Catalog.md`](V1-QA-Catalog.md) | Test IDs / expected — named IDs only. |
 | [`V1-Pass-2-Follow-On-Plan.md`](V1-Pass-2-Follow-On-Plan.md) | Step 8.4 notes. **P1–P13 DONE.** |

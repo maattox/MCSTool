@@ -5,7 +5,7 @@ using McManager.Hybrid.Ui;
 namespace McManager.Hybrid.ViewModels;
 
 /// <summary>
-/// Compact window-locked toast (lower-left, above the progress dock). Posts go through
+/// Compact toast in the Manage content column (lower-left, above the progress dock). Posts go through
 /// <see cref="ActionBanner"/>. Short success auto-hides with a fade; long copy, progress,
 /// warning, and error wait for X.
 /// </summary>

@@ -1,3 +1,4 @@
+@using McManager.Hybrid.Components.Tabs.Overview
 @using McManager.Hybrid.Components.Tabs.Whitelist
 @using McManager.Hybrid.Components.Tabs.Usage
 @using McManager.Hybrid.Components.Tabs.ServerManagement
@@ -96,244 +97,190 @@
                     @onclick="OpenSettings">
                 <i class="ti ti-settings" aria-hidden="true"></i>
             </button>
-            <div class="mcm-overflow">
-                <button type="button"
-                        class="mcm-chrome-btn @(Chrome.OverflowOpen ? "is-open" : null)"
-                        title="More"
-                        aria-label="More"
-                        aria-haspopup="menu"
-                        aria-expanded="@(Chrome.OverflowOpen ? "true" : "false")"
-                        aria-controls="mcm-overflow-menu"
-                        @onclick="ToggleOverflow"
-                        @onclick:stopPropagation="true">
-                    <i class="ti ti-menu-2" aria-hidden="true"></i>
-                </button>
-                @if (Chrome.OverflowOpen)
-                {
-                    <div class="mcm-overflow-menu"
-                         id="mcm-overflow-menu"
-                         role="menu"
-                         @onclick:stopPropagation="true">
-                        <button type="button" role="menuitem" @onclick="Chrome.OpenAbout">About</button>
-                        <button type="button" role="menuitem" @onclick="Chrome.OpenGitHub">Source on GitHub</button>
-                    </div>
-                }
-            </div>
         </AppActions>
     </CaptionBar>
 
-    <section class="mcm-chrome" aria-label="Server status">
-        <div class="mcm-left">
-            <div class="mcm-status-card">
-                <div class="mcm-srow">
-                    <span class="mcm-slabel">Status</span>
-                    <span class="mcm-sval @(StatusClass)" aria-live="polite">
-                        <span class="mcm-dot @(StatusDotClass)" aria-hidden="true"></span>
-                        @Vm.Status
-                    </span>
-                </div>
-                <div class="mcm-srow">
-                    <span class="mcm-slabel">Play IP</span>
-                    <span class="mcm-sval @(Vm.HasPlayIp ? null : "is-placeholder")">
-                        @Vm.PlayIp
-                        <button type="button"
-                                class="mcm-copy-inline"
-                                disabled="@(!Vm.HasPlayIp)"
-                                title="@(Vm.HasPlayIp ? "Copy play IP" : "No play IP to copy.")"
-                                @onclick="Vm.CopyPlayIpAsync">
-                            <i class="ti ti-copy" aria-hidden="true"></i>
-                            @Vm.CopyPlayIpLabel
-                        </button>
-                    </span>
-                </div>
-                <div class="mcm-srow">
-                    <span class="mcm-slabel">Players</span>
-                    <span class="mcm-sval @(IsPlaceholder(Vm.PlayersDisplay) ? "is-placeholder" : null)">@Vm.PlayersDisplay</span>
-                </div>
+    <aside class="mcm-sidebar" aria-label="Server controls">
+        <div class="mcm-sidebar-chrome">
+        <section class="mcm-status-card" aria-label="Server status">
+            <div class="mcm-srow">
+                <span class="mcm-slabel">Status</span>
+                <span class="mcm-sval @(StatusClass)" aria-live="polite">
+                    <span class="mcm-dot @(StatusDotClass)" aria-hidden="true"></span>
+                    @Vm.Status
+                </span>
             </div>
+            <div class="mcm-srow">
+                <span class="mcm-slabel">Play IP</span>
+                <span class="mcm-sval @(Vm.HasPlayIp ? null : "is-placeholder")">
+                    <span class="mcm-play-ip">@Vm.PlayIp</span>
+                    <button type="button"
+                            class="mcm-copy-inline"
+                            disabled="@(!Vm.HasPlayIp)"
+                            title="@CopyPlayIpTitle"
+                            aria-label="@CopyPlayIpTitle"
+                            @onclick="Vm.CopyPlayIpAsync">
+                        <i class="ti ti-copy" aria-hidden="true"></i>
+                    </button>
+                </span>
+            </div>
+            <div class="mcm-srow">
+                <span class="mcm-slabel">Players</span>
+                <span class="mcm-sval @(IsPlaceholder(Vm.PlayersDisplay) ? "is-placeholder" : null)">@Vm.PlayersDisplay</span>
+            </div>
+        </section>
 
-            <div class="mcm-power-row">
-                <span class="mcm-power-wrap" title="@Vm.StartToolTip">
-                    <button type="button"
-                            class="mcm-action-btn mcm-action-btn-start"
-                            disabled="@(!Vm.CanStart)"
-                            @onclick="Vm.StartAsync">
-                        <i class="ti ti-player-play" aria-hidden="true"></i>
-                        @Vm.StartButtonLabel
-                    </button>
-                </span>
-                <span class="mcm-power-wrap" title="@Vm.StopToolTip">
-                    <button type="button"
-                            class="mcm-action-btn mcm-action-btn-stop"
-                            disabled="@(!Vm.CanStop)"
-                            @onclick="Vm.StopAsync">
-                        <i class="ti ti-player-stop" aria-hidden="true"></i>
-                        @Vm.StopButtonLabel
-                    </button>
-                </span>
-                <span class="mcm-power-wrap" title="@Vm.RestartToolTip">
-                    <button type="button"
-                            class="mcm-action-btn mcm-action-btn-restart"
-                            disabled="@(!Vm.CanRestart)"
-                            @onclick="Vm.RestartAsync">
-                        <i class="ti ti-refresh" aria-hidden="true"></i>
-                        @Vm.RestartButtonLabel
-                    </button>
-                </span>
-            </div>
+        <div class="mcm-power-row">
+            <span class="mcm-power-wrap mcm-power-wrap-primary" title="@Vm.PrimaryPowerToolTip">
+                <button type="button"
+                        class="@Vm.PrimaryPowerButtonClass"
+                        disabled="@(!Vm.CanPrimaryPower)"
+                        @onclick="Vm.PrimaryPowerAsync">
+                    <i class="@Vm.PrimaryPowerIconClass" aria-hidden="true"></i>
+                    @Vm.PrimaryPowerLabel
+                </button>
+            </span>
+            <span class="mcm-power-wrap mcm-power-wrap-restart" title="@Vm.RestartToolTip">
+                <button type="button"
+                        class="mcm-action-btn mcm-action-btn-restart"
+                        disabled="@(!Vm.CanRestart)"
+                        @onclick="Vm.RestartAsync">
+                    <i class="ti ti-refresh" aria-hidden="true"></i>
+                    @Vm.RestartButtonLabel
+                </button>
+            </span>
+        </div>
         </div>
 
         <div class="mcm-pins-slot">
             <div class="mcm-pins">
             <div class="mcm-statcard">
                 <div class="mcm-stat-label">
-                    Today's uptime
+                    <span class="mcm-stat-label-text">Today's uptime</span>
                     <button type="button" class="mcm-help" title="@Vm.PinTodayHelp">
                         <i class="ti ti-help" aria-hidden="true"></i>
                         <span class="sr-only">About today's uptime</span>
                     </button>
                 </div>
-                <div class="mcm-stat-metrics">
-                    <div class="mcm-stat-line">
-                        <span class="mcm-stat-value @(IsPlaceholder(Vm.PinTodayValue) ? "is-placeholder" : null)">@Vm.PinTodayValue</span>
-                        <span class="mcm-stat-hint">@(string.IsNullOrWhiteSpace(Vm.PinTodayHint) ? "—" : Vm.PinTodayHint)</span>
-                    </div>
-                    <div class="mcm-mini-bar" aria-hidden="true">
-                        <div class="mcm-mini-bar-fill" style="width: @ToPercent(Vm.PinTodayFraction)"></div>
-                    </div>
+                <div class="mcm-stat-line">
+                    <span class="mcm-stat-value @(IsPlaceholder(Vm.PinTodayValue) ? "is-placeholder" : null)">@Vm.PinTodayValue</span>
+                    @if (!string.IsNullOrWhiteSpace(Vm.PinTodayHint))
+                    {
+                        <span class="mcm-stat-hint">@Vm.PinTodayHint</span>
+                    }
+                </div>
+                <div class="mcm-mini-bar" aria-hidden="true">
+                    <div class="mcm-mini-bar-fill" style="width: @ToPercent(Vm.PinTodayFraction)"></div>
                 </div>
             </div>
             <div class="mcm-statcard">
                 <div class="mcm-stat-label">
-                    This month
+                    <span class="mcm-stat-label-text">This month</span>
                     <button type="button" class="mcm-help" title="@Vm.PinMonthHelp">
                         <i class="ti ti-help" aria-hidden="true"></i>
                         <span class="sr-only">About this month</span>
                     </button>
                 </div>
-                <div class="mcm-stat-metrics">
-                    <div class="mcm-stat-line">
-                        <span class="mcm-stat-value @(IsPlaceholder(Vm.PinMonthValue) ? "is-placeholder" : null)">@Vm.PinMonthValue</span>
-                        <span class="mcm-stat-hint">@(string.IsNullOrWhiteSpace(Vm.PinMonthHint) ? "—" : Vm.PinMonthHint)</span>
-                    </div>
-                    <div class="mcm-mini-bar" aria-hidden="true">
-                        <div class="mcm-mini-bar-fill" style="width: @ToPercent(Vm.PinMonthFraction)"></div>
-                    </div>
+                <div class="mcm-stat-line">
+                    <span class="mcm-stat-value @(IsPlaceholder(Vm.PinMonthValue) ? "is-placeholder" : null)">@Vm.PinMonthValue</span>
+                </div>
+                <div class="mcm-mini-bar" aria-hidden="true">
+                    <div class="mcm-mini-bar-fill" style="width: @ToPercent(Vm.PinMonthFraction)"></div>
                 </div>
             </div>
             <div class="mcm-statcard">
                 <div class="mcm-stat-label">
-                    Daily average
-                    <button type="button" class="mcm-help" title="@Vm.PinAvgHelp">
-                        <i class="ti ti-help" aria-hidden="true"></i>
-                        <span class="sr-only">About daily average</span>
-                    </button>
-                </div>
-                <div class="mcm-stat-metrics">
-                    <div class="mcm-stat-line">
-                        <span class="mcm-stat-value @(IsPlaceholder(Vm.PinAvgValue) ? "is-placeholder" : null)">@Vm.PinAvgValue</span>
-                        <span class="mcm-stat-hint">@(string.IsNullOrWhiteSpace(Vm.PinAvgHint) ? "—" : Vm.PinAvgHint)</span>
-                    </div>
-                    <div class="mcm-mini-bar" aria-hidden="true">
-                        <div class="mcm-mini-bar-fill" style="width: @ToPercent(Vm.PinAvgFraction)"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="mcm-statcard">
-                <div class="mcm-stat-label">
-                    Rollover bank
+                    <span class="mcm-stat-label-text">Rollover bank</span>
                     <button type="button" class="mcm-help" title="@Vm.PinRolloverHelp">
                         <i class="ti ti-help" aria-hidden="true"></i>
                         <span class="sr-only">About rollover bank</span>
                     </button>
                 </div>
-                <div class="mcm-stat-metrics">
-                    <div class="mcm-stat-line">
-                        <span class="mcm-stat-value @(RolloverValueClass)">@Vm.PinRolloverValue</span>
-                    </div>
-                </div>
-            </div>
-            <div class="mcm-statcard">
-                <div class="mcm-stat-label">
-                    @Vm.PinRemainingLabel
-                    <button type="button" class="mcm-help" title="@Vm.PinRemainingHelp">
-                        <i class="ti ti-help" aria-hidden="true"></i>
-                        <span class="sr-only">About hours left this month</span>
-                    </button>
-                </div>
-                <div class="mcm-stat-metrics">
-                    <div class="mcm-stat-line">
-                        <span class="mcm-stat-value @(IsPlaceholder(Vm.PinRemainingValue) ? "is-placeholder" : null)">@Vm.PinRemainingValue</span>
-                        <span class="mcm-stat-hint">@(string.IsNullOrWhiteSpace(Vm.PinRemainingHint) ? "—" : Vm.PinRemainingHint)</span>
-                    </div>
-                    <div class="mcm-mini-bar" aria-hidden="true">
-                        <div class="mcm-mini-bar-fill" style="width: @ToPercent(Vm.PinRemainingFraction)"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="mcm-statcard">
-                <div class="mcm-stat-label">
-                    Idle timeout
-                    <button type="button" class="mcm-help" title="@Vm.PinIdleHelp">
-                        <i class="ti ti-help" aria-hidden="true"></i>
-                        <span class="sr-only">About idle timeout</span>
-                    </button>
-                </div>
-                <div class="mcm-stat-metrics">
-                    <div class="mcm-stat-line">
-                        <span class="mcm-stat-value @(IsPlaceholder(Vm.PinIdleValue) ? "is-placeholder" : null)">@Vm.PinIdleValue</span>
-                        <span class="mcm-stat-hint">@(string.IsNullOrWhiteSpace(Vm.PinIdleHint) ? "—" : Vm.PinIdleHint)</span>
-                    </div>
+                <div class="mcm-stat-line">
+                    <span class="mcm-stat-value @(RolloverValueClass)">@Vm.PinRolloverValue</span>
                 </div>
             </div>
             </div>
+            <div class="mcm-sidebar-gap" aria-hidden="true"></div>
         </div>
-    </section>
 
-    <nav class="mcm-tabs" role="tablist" aria-label="Manager sections">
-        <button type="button"
-                role="tab"
-                class="mcm-tab @TabClass("whitelist")"
-                aria-selected="@(IsTab("whitelist") ? "true" : "false")"
-                @onclick="@(() => SelectTabAsync("whitelist"))">
-            Whitelist
-        </button>
-        <button type="button"
-                role="tab"
-                class="mcm-tab @TabClass("server")"
-                aria-selected="@(IsTab("server") ? "true" : "false")"
-                @onclick="@(() => SelectTabAsync("server"))">
-            Server
-        </button>
-        <button type="button"
-                role="tab"
-                class="mcm-tab @TabClass("console")"
-                aria-selected="@(IsTab("console") ? "true" : "false")"
-                @onclick="@(() => SelectTabAsync("console"))">
-            Console
-        </button>
-        <button type="button"
-                role="tab"
-                class="mcm-tab @TabClass("usage")"
-                aria-selected="@(IsTab("usage") ? "true" : "false")"
-                @onclick="@(() => SelectTabAsync("usage"))">
-            Usage
-        </button>
-        <button type="button"
-                role="tab"
-                class="mcm-tab @TabClass("advanced")"
-                aria-selected="@(IsTab("advanced") ? "true" : "false")"
-                @onclick="@(() => SelectTabAsync("advanced"))">
-            Advanced
-        </button>
-        <button type="button"
-                role="tab"
-                class="mcm-tab @TabClass("troubleshooting")"
-                aria-selected="@(IsTab("troubleshooting") ? "true" : "false")"
-                @onclick="@(() => SelectTabAsync("troubleshooting"))">
-            Troubleshooting
-        </button>
-    </nav>
+        <nav class="mcm-tabs" role="tablist" aria-label="Manager sections" aria-orientation="vertical">
+            <div class="mcm-tab-stack">
+            <button type="button"
+                    role="tab"
+                    class="mcm-tab @TabClass("overview")"
+                    aria-selected="@(IsTab("overview") ? "true" : "false")"
+                    @onclick="@(() => SelectTabAsync("overview"))">
+                <i class="ti ti-layout-dashboard" aria-hidden="true"></i>
+                Overview
+            </button>
+            <div class="mcm-tab-gap" aria-hidden="true"></div>
+            <button type="button"
+                    role="tab"
+                    class="mcm-tab @TabClass("whitelist")"
+                    aria-selected="@(IsTab("whitelist") ? "true" : "false")"
+                    @onclick="@(() => SelectTabAsync("whitelist"))">
+                <i class="ti ti-list-check" aria-hidden="true"></i>
+                Whitelist
+            </button>
+            <div class="mcm-tab-gap" aria-hidden="true"></div>
+            <button type="button"
+                    role="tab"
+                    class="mcm-tab @TabClass("server")"
+                    aria-selected="@(IsTab("server") ? "true" : "false")"
+                    @onclick="@(() => SelectTabAsync("server"))">
+                <i class="ti ti-server" aria-hidden="true"></i>
+                Server
+            </button>
+            <div class="mcm-tab-gap" aria-hidden="true"></div>
+            <button type="button"
+                    role="tab"
+                    class="mcm-tab @TabClass("console")"
+                    aria-selected="@(IsTab("console") ? "true" : "false")"
+                    @onclick="@(() => SelectTabAsync("console"))">
+                <i class="ti ti-terminal-2" aria-hidden="true"></i>
+                Console
+            </button>
+            <div class="mcm-tab-gap" aria-hidden="true"></div>
+            <button type="button"
+                    role="tab"
+                    class="mcm-tab @TabClass("usage")"
+                    aria-selected="@(IsTab("usage") ? "true" : "false")"
+                    @onclick="@(() => SelectTabAsync("usage"))">
+                <i class="ti ti-chart-bar" aria-hidden="true"></i>
+                Usage
+            </button>
+            <div class="mcm-tab-gap" aria-hidden="true"></div>
+            <button type="button"
+                    role="tab"
+                    class="mcm-tab @TabClass("advanced")"
+                    aria-selected="@(IsTab("advanced") ? "true" : "false")"
+                    @onclick="@(() => SelectTabAsync("advanced"))">
+                <i class="ti ti-adjustments-horizontal" aria-hidden="true"></i>
+                Advanced
+            </button>
+            <div class="mcm-tab-gap" aria-hidden="true"></div>
+            <button type="button"
+                    role="tab"
+                    class="mcm-tab @TabClass("troubleshooting")"
+                    aria-selected="@(IsTab("troubleshooting") ? "true" : "false")"
+                    @onclick="@(() => SelectTabAsync("troubleshooting"))">
+                <i class="ti ti-tool" aria-hidden="true"></i>
+                Troubleshooting
+            </button>
+            <div class="mcm-tab-gap" aria-hidden="true"></div>
+            <button type="button"
+                    role="tab"
+                    class="mcm-tab @TabClass("about")"
+                    aria-selected="@(IsTab("about") ? "true" : "false")"
+                    @onclick="@(() => SelectTabAsync("about"))">
+                <i class="ti ti-info-circle" aria-hidden="true"></i>
+                About
+            </button>
+            </div>
+            <div class="mcm-tab-rest" aria-hidden="true"></div>
+        </nav>
+    </aside>
 
     <main @ref="_tabBody"
           class="mcm-tab-body mcm-slim-scroll @(IsTab("console") ? "is-console" : null)"
@@ -343,6 +290,25 @@
             {
                 @switch (_tab)
                 {
+                    case "overview":
+                        <OverviewTab OnOpenTab="SelectTabAsync" />
+                        break;
+                    case "about":
+                        <div class="mcm-about">
+                            <h2 class="mcm-about-name">@Chrome.AppName</h2>
+                            <p class="mcm-about-version">Version @Chrome.AppVersion</p>
+                            <p class="mcm-about-lede">A Windows app for a private Minecraft server on Oracle Always Free. Friends connect to one play IP. Access is an IP allowlist — this is not a public server.</p>
+                            <div class="mcm-about-actions">
+                                <button type="button"
+                                        class="mcm-primary"
+                                        title="Open the MC Manager source repository"
+                                        @onclick="Chrome.OpenGitHub">
+                                    <i class="ti ti-brand-github" aria-hidden="true"></i>
+                                    Source on GitHub
+                                </button>
+                            </div>
+                        </div>
+                        break;
                     case "usage":
                         <UsageTab />
                         break;
@@ -414,7 +380,7 @@
         </div>
     }
 
-    @if (Chrome.OverflowOpen || Notices.PanelOpen)
+    @if (Notices.PanelOpen)
     {
         <div class="mcm-overflow-catch"
              @onclick="CloseFlyouts"
@@ -497,32 +463,10 @@
         </div>
     }
 
-    @if (Chrome.AboutOpen)
-    {
-        <div class="mcm-modal-overlay open"
-             role="dialog"
-             aria-modal="true"
-             aria-labelledby="mcm-about-title"
-             tabindex="-1"
-             @ref="_chromeOverlay"
-             @onclick="Chrome.CloseAbout"
-             @onkeydown="OnChromeKeyDown">
-            <div class="mcm-modal-card" @onclick:stopPropagation="true">
-                <h2 id="mcm-about-title" class="mcm-modal-title">About</h2>
-                <p class="mcm-about-name">@Chrome.AppName</p>
-                <p class="mcm-about-version">Version @Chrome.AppVersion</p>
-                <p class="mcm-modal-body">A Windows app for a private Minecraft server on Oracle Always Free. Friends connect to one play IP. Access is an IP allowlist — this is not a public server.</p>
-                <div class="mcm-modal-actions">
-                    <button type="button" @onclick="Chrome.OpenGitHub">GitHub</button>
-                    <button type="button" class="mcm-primary" @onclick="Chrome.CloseAbout">Close</button>
-                </div>
-            </div>
-        </div>
-    }
 </div>
 
 @code {
-    private string _tab = "whitelist";
+    private string _tab = "overview";
     private bool _serverTabCreated;
     private ElementReference _chromeOverlay;
     private ElementReference _noticePanel;
@@ -552,7 +496,7 @@
                 await JS.InvokeVoidAsync("mcmTabScroll.set", _tabBody, top);
             }
 
-            if (Chrome.SettingsOpen || Chrome.AboutOpen)
+            if (Chrome.SettingsOpen)
             {
                 await _chromeOverlay.FocusAsync();
             }
@@ -590,12 +534,6 @@
             _noticeFocusPending = true;
     }
 
-    private void ToggleOverflow()
-    {
-        Notices.Close();
-        Chrome.ToggleOverflow();
-    }
-
     private void OpenSettings()
     {
         Notices.Close();
@@ -604,11 +542,7 @@
 
     private void CloseSettings() => Chrome.CloseSettings();
 
-    private void CloseFlyouts()
-    {
-        Chrome.CloseOverflow();
-        Notices.Close();
-    }
+    private void CloseFlyouts() => Notices.Close();
 
     private void OnChromeKeyDown(KeyboardEventArgs e)
     {
@@ -651,6 +585,13 @@
     private bool IsTab(string tab) => string.Equals(_tab, tab, StringComparison.Ordinal);
 
     private string TabClass(string tab) => IsTab(tab) ? "is-active" : string.Empty;
+
+    private string CopyPlayIpTitle =>
+        !Vm.HasPlayIp
+            ? "No play IP to copy."
+            : string.Equals(Vm.CopyPlayIpLabel, "copied", StringComparison.Ordinal)
+                ? "Play IP copied"
+                : "Copy play IP";
 
     private static bool IsPlaceholder(string value) =>
         string.IsNullOrWhiteSpace(value) || value == MainViewModel.Placeholder;

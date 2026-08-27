@@ -1,0 +1,45 @@
+schema_version: 1
+phase_id: 2026-08-26
+status: complete
+abort_reason: ""
+consecutive_infra_fails: 0
+idle: re-enabled
+# 2026-08-27: operator aborted the cobblemon mrpack re-run before lock-in.
+# Come back: /pack-test-one mr-fabric-cobblemon-1.7.3 (TESTING, mcmgr-pack-test).
+# Do not treat the later harness pass YAML as verified.
+catalog: ../../catalog.yaml
+protocol: ../../PROTOCOL.md
+queue:
+  - id: homemade-fabric-strip
+    status: pass
+    result: results/homemade-fabric-strip.yaml
+  - id: mr-neoforge-blockfront-0.9.0.27b
+    status: pass
+    result: results/mr-neoforge-blockfront-0.9.0.27b.yaml
+  - id: mr-fabric-fabulously-optimized-6.5.0
+    status: pass
+    result: results/mr-fabric-fabulously-optimized-6.5.0.yaml
+  - id: homemade-mods-fabric-1.21.1
+    status: pass
+    result: results/homemade-mods-fabric-1.21.1.yaml
+  - id: homemade-jar-root-fabric-1.21.1
+    status: pass
+    result: results/homemade-jar-root-fabric-1.21.1.yaml
+  - id: mr-fabric-simply-optimized-continued-2.1-26.2
+    status: pass
+    result: results/mr-fabric-simply-optimized-continued-2.1-26.2.yaml
+  - id: mr-fabric-stam1o-create-s2
+    status: pass
+    result: results/mr-fabric-stam1o-create-s2.yaml
+  - id: mr-fabric-cobblemon-1.7.3
+    status: unfinished
+    result: results/mr-fabric-cobblemon-1.7.3.yaml
+  - id: cf-fabric-cobblemon-1.7.3
+    status: pass
+    result: results/cf-fabric-cobblemon-1.7.3.yaml
+  - id: cf-neoforge-cobblemon-1.7.3
+    status: pass
+    result: results/cf-neoforge-cobblemon-1.7.3.yaml
+  - id: cf-forge-cobblemon-1.5.2
+    status: pass
+    result: results/cf-forge-cobblemon-1.5.2.yaml

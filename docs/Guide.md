@@ -16,7 +16,7 @@ Oracle still requires a **Pay As You Go (PAYG)** account for Ampere A1 capacity 
 
 **Last-resort $1 brake:** Setup creates a **$1 monthly compartment budget**. If actual spend ever reaches $1, an Oracle Function **SoftStops the Minecraft computer** and writes a lock flag in Object Storage. The small always-on doorbell stays running (it is an Always Free AMD Micro and does not use Ampere hours). That Function is not instant. Oracle bills when spend hits $1, and the Function can take several minutes, so you may see a **~$1–$2** charge **for that month**, then **no further charges** while the brake holds. This is **not** a perfect $0 guarantee.
 
-If that brake fires, friends who ping the play IP see a **MONTHLY SPEND BRAKE FIRED** message (not the daily budget one). Wait for the next calendar month, then open Manager. The app fills the window with a warning; Start stays blocked until you type the exact confirmation sentence (copy-paste is allowed). Confirming **clears the lock** (and recovers the doorbell / play IP) but does **not** start the server — use **Start** on the top bar when you are ready. Idle and daily/monthly free-hour limits still apply. The lock is not cleared automatically at month rollover. Use **Troubleshooting** if the play IP is left on the wrong computer.
+If that brake fires, friends who ping the play IP see a **MONTHLY SPEND BRAKE FIRED** message (not the daily budget one). Wait for the next calendar month, then open Manager. The app fills the window with a warning; Start stays blocked until you type the exact confirmation sentence (copy-paste is allowed). Confirming **clears the lock** (and recovers the doorbell / play IP) but does **not** start the server — use **Start** in the left sidebar when you are ready. Idle and daily/monthly free-hour limits still apply. The lock is not cleared automatically at month rollover. Use **Troubleshooting** if the play IP is left on the wrong computer.
 
 Do **not** add paid shapes, extra volumes, or load balancers. Setup never opens Minecraft to the whole internet. There is no public-server toggle.
 
@@ -179,8 +179,8 @@ Next is not available in Setup until you check that you will give friends this s
 If a friend’s home address keeps changing but a **prefix** stays stable (for example they are always `172.56.x.x`), open **Add IP** → **Advanced** and enter a CIDR such as `172.56.0.0/16` instead of a single address. That prefix is written on the Minecraft (25565) rules only. SSH / doorbell admin stay a single `/32` unless you are editing **your own** admin row. Prefixes `/0`–`/8` are rejected as too wide; anything wider than one host shows a warning. IPv4 only.
 
 The server is **private**. Join is allowlist-only: each friend needs an entry you Save. There is no public mode and no blacklist.
-3. Copy the **Play IP** from the top bar. Give friends that address and the Minecraft version you chose. Port is the default Minecraft port (`25565`). **Modded:** also give them the **same exported pack file** from Setup — they cannot join with vanilla Minecraft. See [Modded: friends need the client pack](#modded-friends-need-the-client-pack).
-4. Click **Start** (enabled only after the Minecraft VM is fully **Stopped** — wait if it is still shutting down). Status **Running** means the game itself is joinable (Modded friends still need the pack installed first). **Stopped** means they should wait or click Start again — first wake can take several minutes. **Players** on the top bar is `0` while Stopped and the live count while Running.
+3. Copy the **Play IP** from the left sidebar. Give friends that address and the Minecraft version you chose. Port is the default Minecraft port (`25565`). **Modded:** also give them the **same exported pack file** from Setup — they cannot join with vanilla Minecraft. See [Modded: friends need the client pack](#modded-friends-need-the-client-pack).
+4. Click **Start** (enabled only after the Minecraft VM is fully **Stopped** — wait if it is still shutting down). Sidebar **Status** is **Running** when the server is on (the power button shows **Stop**), including if you open Manager while it is already up. **Stopped** means it is off — click Start; first wake can take several minutes. **Players** in the sidebar is `0` while Stopped and the live count while Running.
 5. Friends add a server in Minecraft Java using the play IP. Modded friends must launch the matching pack (same loader and pack file), not a vanilla profile.
 
 When everyone is done, click **Stop** (doorbell-aware). If you forget, idle timeout (default **15 minutes** with nobody online, or if Minecraft is not running) SoftStops the game VM. Daily/monthly budgets can also refuse wake with a clear Minecraft kick/MOTD when the day’s hours are exhausted.
@@ -193,12 +193,12 @@ When everyone is done, click **Stop** (doorbell-aware). If you forget, idle time
 
 | Want | Where |
 |------|--------|
-| See if friends can join | Top bar **Status** (`Running` / `Stopped`) |
-| How many are online | Top bar **Players** (`0` when Stopped; `X / Y` while Running) |
-| Copy the address | Top bar **Play IP** |
-| Wake / park the server | **Start** / **Stop** (not raw Compute on Advanced) |
-| Restart Minecraft only | **Restart** (game VM must already be up) |
-| Hours vs budget | Six pinned cards (today, this month, daily average, rollover, hours left, idle timeout) + **Usage** (**Hours**; expand **Detailed usage** for hours by UTC day; **Budget** to edit allowances) |
+| See if the server is on | Left sidebar **Status** (`Running` / `Stopped`; matches Start vs Stop) |
+| How many are online | Left sidebar **Players** (`0` when Stopped; `X / Y` while Running) |
+| Copy the address | Left sidebar **Play IP** (copy icon) |
+| Wake / park the server | One **Start** / **Stop** button in the left sidebar (Start when the server is off, Stop when it is on; not raw Compute on Advanced) |
+| Restart Minecraft only | **Restart** beside that button (game VM must already be up) |
+| Hours vs budget | Three stacked pin strips in the left sidebar (today’s uptime, this month %, rollover bank) + **Usage** (**Hours** still has daily average, hours left, and idle timeout; expand **Detailed usage** for hours by UTC day; **Budget** to edit allowances) |
 | World zip download / replace / wipe | **Server → World** (Object Storage; ~9.5 GB backup soft cap; SSH live copy if the world is too large) |
 | Inspect mods / re-download imported pack | **Server → Modding** (mod list starts collapsed; original Setup file on this PC; not a zip of server mods) |
 | Reinstall from a new pack | **Server → Change pack** |
@@ -207,13 +207,15 @@ When everyone is done, click **Stop** (doorbell-aware). If you forget, idle time
 | Stuck play IP / doorbell | **Troubleshooting** (confirm-gated one-shots) |
 | Technical VM / doorbell state | **Advanced** |
 | Turn idle timer off / idle timeout / change server size / delete the stack | **Advanced → Danger** |
-| Program settings / About / notifications | Top-right **bell**, **gear**, and **menu** (same bar as min / max / close) |
+| Program settings / About / notifications | Top-right **bell** and **gear** (same bar as min / max / close). **About** is a sidebar tab |
 
-The pin row next to **Status** fills the rest of the top bar with **six** cards: today’s uptime, this month, daily average, rollover bank, hours left this month, and idle timeout. They refresh from the same hours budget as the **Usage** tab (no extra fetch). Hours left is the month’s remaining cap — not the rollover bank. Idle timeout is the configured empty-server stop (edit it on **Usage → Budget** or **Advanced → Danger**).
+The left sidebar holds **Status**, **Play IP**, **Players**, one **Start** / **Stop** button plus **Restart**, and **three** stacked pin strips: today’s uptime (hours used vs the daily slice), this month (percent used), and rollover bank. They refresh from the same hours budget as the **Usage** tab (no extra fetch). Daily average, hours left, and idle timeout stay on **Usage** (and Overview) — hours left is the month’s remaining cap, not the rollover bank. Idle timeout is the configured empty-server stop (edit it on **Usage → Budget** or **Advanced → Danger**). The large pane on the right is the current tab. **Overview** (the home tab) is a read-only snapshot: live status / play IP / players, the list MOTD and pack line, usage (including rollover and idle timeout), and the whitelist with **name and IP** per friend. **Manage IPs**, **Open Usage**, and **Open Server** switch tabs — they do not edit from Overview. **About** shows the app name, version, a short private-server sentence, and **Source on GitHub**.
 
-Each Manager tab **remembers its own scroll position** when you switch away and back. A tab you have not opened yet starts at the top. Left to right the tabs are **Whitelist**, **Server**, **Console**, **Usage**, **Advanced**, **Troubleshooting**. **Server** uses inner tabs (**Identity**, **World**, **Modding**, **Change pack**) so the active pane fits the window; the server-side mod list starts collapsed.
+Manage reads as three panels: a dark left band (status, power, and three stacked pin strips), a lighter tab list, and the work pane on the right. Ctrl+scroll does not zoom the UI. The sidebar is narrow and flush to the left edge; the work pane takes the rest of the window. If you shorten the window, empty space under the sidebar tabs goes first, then the pin strips tuck under the tab list; status, Start/Stop, and Restart stay put. Tab buttons stay the same size; the gap between them starts at 8 px and can tighten to 2 px. The window will not shrink past that.
 
-**Wipe world** on **Server → World** deletes only the live save on the game VM. Cloud backups, mods, and `server.properties` are not deleted. Download a world save first if you might want the current world back. The game VM must be running; Minecraft is stopped for the wipe and **started again** so a new world generates. If the server is off, that warning (and other button results) shows in a compact toast at the **lower-left** of the Manager window, above the bottom bar — read it, then **X** to dismiss. Short successes (including Start) fade after a few seconds; errors and in-progress toasts stay until **X**. Setup keeps its footer status.
+Each Manager tab **remembers its own scroll position** when you switch away and back. A tab you have not opened yet starts at the top. The sidebar list is **Overview**, **Whitelist**, **Server**, **Console**, **Usage**, **Advanced**, **Troubleshooting**, **About**. Manager opens on **Overview**. **Server** uses inner tabs (**Identity**, **World**, **Modding**, **Change pack**) so the active pane fits the window; the server-side mod list starts collapsed.
+
+**Wipe world** on **Server → World** deletes only the live save on the game VM. Cloud backups, mods, and `server.properties` are not deleted. Download a world save first if you might want the current world back. The game VM must be running; Minecraft is stopped for the wipe and **started again** so a new world generates. If the server is off, that warning (and other button results) shows in a compact toast at the **lower-left of the content pane**, above the Change-pack bar if it is open — read it, then **X** to dismiss. Short successes (including Start) fade after a few seconds; errors and in-progress toasts stay until **X**. Setup keeps its footer status.
 
 *(Pass 1 catalog recorded leave-stopped; operator 2026-08-19 overrode — bug-fix **P8**. [`PRODUCT-IDEAS.md`](PRODUCT-IDEAS.md) Wipe world step 4 may still say the next Start creates a world.)*
 
@@ -229,11 +231,11 @@ Each Manager tab **remembers its own scroll position** when you switch away and 
 
 Do not disable the idle timer except for a short test. Booting the game VM turns it back on.
 
-**Change server size** on **Advanced → Danger** is disabled until the server is **Stopped** (use top-bar **Stop** so Minecraft is down too). It updates Oracle A1 Flex OCPU/memory, then local config and shared budget/meta so usage math matches. Past usage rows keep the size they were recorded at. A larger size uses Always Free hours faster (less wall-clock left this month); a smaller size does the reverse. Sizes above 4 OCPU / 24 GB are not offered.
+**Change server size** on **Advanced → Danger** is disabled until the server is **Stopped** (use sidebar **Stop** so Minecraft is down too). It updates Oracle A1 Flex OCPU/memory, then local config and shared budget/meta so usage math matches. Past usage rows keep the size they were recorded at. A larger size uses Always Free hours faster (less wall-clock left this month); a smaller size does the reverse. Sizes above 4 OCPU / 24 GB are not offered.
 
 **Smaller size (2 OCPU / 12 GB):** hours are still counted, but Manager and the doorbell MOTD use calmer copy because this size can usually stay on all month inside Always Free. The 4 OCPU / 24 GB size still shows remaining-hours and “cap” language — those hours run out faster. Daily-budget-exhausted and spend-brake messages are the same on both sizes.
 
-The top-right **bell** opens a notification list (empty until something posts; each item can be dismissed). The **gear** opens program settings for this PC: where stack config and OpenTofu files live, plus a **Check for updates** toggle (saved now; GitHub Releases checks start in a later release). The **menu** has **About** and a GitHub link. Those icons share the caption strip with min / max / close. The strip is a step darker than the rest of the window so it reads as chrome, not as more page background, and it spans the full window if you resize. Drag the empty left side of that bar to move the window. Tabs and Start / Stop are unchanged.
+The top-right **bell** opens a notification list (empty until something posts; each item can be dismissed). The **gear** opens program settings for this PC: where stack config and OpenTofu files live, plus a **Check for updates** toggle (saved now; GitHub Releases checks start in a later release). **About** (sidebar tab) has the app name, version, and a GitHub link. Bell and gear share the caption strip with min / max / close — there is no extra ☰ menu. The strip is a step darker than the rest of the window so it reads as chrome, not as more page background, and it spans the full window if you resize. Drag the empty left side of that bar to move the window. The window opens wide (~1280 CSS pixels) and can shrink to about 920. The sidebar stays a fixed width; the right pane grows and shrinks. **Console** keeps the command row at the bottom of the pane and lets the log fill leftover height. **Change pack** Install / Cancel stay in the bottom bar of that pane so they stay reachable while you scroll.
 
 ---
 
@@ -259,7 +261,7 @@ Two computers share **one reserved public play IP**:
 
 Wake reads the shared budget first. If the daily budget is exhausted, wake is refused with a clear kick/MOTD. The doorbell also reconciles “who should hold the IP” after crashes or a $1 Function stop.
 
-**Start** / **Stop** on the top bar are this doorbell-aware path. Advanced **Raw VM Start/Stop** do **not** move the play IP — friends will not follow that.
+**Start** / **Stop** in the left sidebar are this doorbell-aware path. Advanced **Raw VM Start/Stop** do **not** move the play IP — friends will not follow that.
 
 If the IP is stuck on the wrong VM after a Function stop or a failed wake, use **Troubleshooting → park reserved play IP** (if the game VM is running, park on it; otherwise start the doorbell if needed and park there).
 
