@@ -222,8 +222,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             ? "mcm-action-btn mcm-action-btn-stop"
             : "mcm-action-btn mcm-action-btn-start";
 
-    public bool StatusIsBusy =>
-        Status is "Starting…" or "Stopping…" or "Restarting…";
+    public bool StatusIsBusy => ManageNoviceStatus.IsBusy(Status);
 
     public string StartToolTip => CanStart
         ? (string.Equals(DoorState, "DEGRADED", StringComparison.OrdinalIgnoreCase)
@@ -250,7 +249,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             if (!ConfigLoaded)
                 return "Local config is missing or failed to load.";
             if (ManagePowerUx.IsVm1Running(Vm1Lifecycle)
-                || string.Equals(DoorState, "PLAYABLE", StringComparison.OrdinalIgnoreCase))
+                || DoorStatus.IsPlayableName(DoorState))
                 return "The server is already on. Use Stop or Restart.";
             if (ManagePowerUx.IsVm1ComingUp(Vm1Lifecycle)
                 || string.Equals(DoorState, "STARTING", StringComparison.OrdinalIgnoreCase))
@@ -865,8 +864,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             return;
         }
 
-        StatusIsRunning = door?.IsPlayable == true;
-        Status = StatusIsRunning ? "Running" : "Stopped";
+        Status = ManageNoviceStatus.Label(
+            Vm1Lifecycle,
+            doorPlayable: door?.IsPlayable == true,
+            doorStarting: door?.IsStarting == true);
+        StatusIsRunning = ManageNoviceStatus.IsRunning(Status);
+        OnPropertyChanged(nameof(StatusIsBusy));
         if (!StatusIsRunning)
             PlayersDisplay = MinecraftConsoleRemote.FormatPlayersPin(false, null, null);
     }
@@ -890,7 +893,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
         var allowPower = _hasInitialStatus && !_powerActionInFlight && !SpendBrakeUnlockInFlight;
         var degraded = door?.IsDegraded == true;
-        var alreadyOn = !degraded && (ManagePowerUx.IsVm1Running(Vm1Lifecycle) || door?.IsPlayable == true);
+        var alreadyOn = !degraded && ManagePowerUx.IsAlreadyOn(Vm1Lifecycle, door?.IsPlayable == true);
         var starting = !degraded && (ManagePowerUx.IsVm1ComingUp(Vm1Lifecycle) || door?.IsStarting == true);
         CanStop = allowPower && (alreadyOn || starting || degraded);
         CanRestart = allowPower && ManagePowerUx.IsVm1Running(Vm1Lifecycle);
@@ -951,9 +954,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         StatusIsRunning = false;
         Status = _powerAction switch
         {
-            PowerActionKind.Start => "Starting…",
-            PowerActionKind.Stop => "Stopping…",
-            PowerActionKind.Restart => "Restarting…",
+            PowerActionKind.Start => ManageNoviceStatus.Starting,
+            PowerActionKind.Stop => ManageNoviceStatus.Stopping,
+            PowerActionKind.Restart => ManageNoviceStatus.Restarting,
             _ => Status
         };
         if (!StatusIsRunning)

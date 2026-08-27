@@ -55,7 +55,7 @@ public sealed partial class ConsoleViewModel : ObservableObject, IDisposable
     public bool Vm1IsRunning =>
         string.Equals(_main.Vm1Lifecycle, "RUNNING", StringComparison.OrdinalIgnoreCase);
 
-    public bool MinecraftJoinable => _main.StatusIsRunning;
+    public bool MinecraftJoinable => DoorStatus.IsPlayableName(_main.DoorState);
 
     public bool CanRefresh => MinecraftConsoleRemote.CanRefresh(Vm1IsRunning, IsBusy);
 
@@ -112,6 +112,7 @@ public sealed partial class ConsoleViewModel : ObservableObject, IDisposable
     private void OnMainChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
         if (e.PropertyName is nameof(MainViewModel.Vm1Lifecycle)
+            or nameof(MainViewModel.DoorState)
             or nameof(MainViewModel.StatusIsRunning)
             or null)
         {

@@ -23,6 +23,8 @@ Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-De
 
 ## Completed recently
 
+- **2026-08-26** — Sidebar **Status** now shows **Running** when the Minecraft VM is already on (same “already on” signal as **Stop**), so opening Manager on a live server no longer stays **Stopped**. Pass 3 **blocked**.
+
 - **2026-08-27** — Pack-corpus cobblemon mrpack re-run **UNFINISHED** (session aborted). VM1 Minecraft stopped; idle re-enabled; `pack-tests/.lock` released. Phase `2026-08-26` stay `complete` except that id. Pass 3 **blocked**.
 - **2026-08-26** — Sidebar shrink: chrome no longer clips status/power after pins tuck; tab gaps 8px→2px; extra height stays under the tab list. Pass 3 **blocked**.
 - **2026-08-26** — Sidebar: no scrollbar; pins clip away before status/power; tab gap fixed at 12px; window min-height raised so tabs stay fully visible. Pass 3 **blocked**.

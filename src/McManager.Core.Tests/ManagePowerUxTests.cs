@@ -97,4 +97,13 @@ public sealed class ManagePowerUxTests
         Assert.False(ManagePrimaryPowerChrome.ShowsStop(canStart: false, canStop: false, stopInFlight: false));
         Assert.True(ManagePrimaryPowerChrome.ShowsStop(canStart: false, canStop: false, stopInFlight: true));
     }
+
+    [Fact]
+    public void Already_on_when_vm_running_or_door_playable()
+    {
+        Assert.True(ManagePowerUx.IsAlreadyOn("RUNNING", doorPlayable: false));
+        Assert.True(ManagePowerUx.IsAlreadyOn("STOPPED", doorPlayable: true));
+        Assert.False(ManagePowerUx.IsAlreadyOn("STOPPED", doorPlayable: false));
+        Assert.False(ManagePowerUx.IsAlreadyOn("STARTING", doorPlayable: false));
+    }
 }

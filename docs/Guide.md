@@ -180,7 +180,7 @@ If a friend’s home address keeps changing but a **prefix** stays stable (for e
 
 The server is **private**. Join is allowlist-only: each friend needs an entry you Save. There is no public mode and no blacklist.
 3. Copy the **Play IP** from the left sidebar. Give friends that address and the Minecraft version you chose. Port is the default Minecraft port (`25565`). **Modded:** also give them the **same exported pack file** from Setup — they cannot join with vanilla Minecraft. See [Modded: friends need the client pack](#modded-friends-need-the-client-pack).
-4. Click **Start** (enabled only after the Minecraft VM is fully **Stopped** — wait if it is still shutting down). Status **Running** means the game itself is joinable (Modded friends still need the pack installed first). **Stopped** means they should wait or click Start again — first wake can take several minutes. **Players** in the sidebar is `0` while Stopped and the live count while Running.
+4. Click **Start** (enabled only after the Minecraft VM is fully **Stopped** — wait if it is still shutting down). Sidebar **Status** is **Running** when the server is on (the power button shows **Stop**), including if you open Manager while it is already up. **Stopped** means it is off — click Start; first wake can take several minutes. **Players** in the sidebar is `0` while Stopped and the live count while Running.
 5. Friends add a server in Minecraft Java using the play IP. Modded friends must launch the matching pack (same loader and pack file), not a vanilla profile.
 
 When everyone is done, click **Stop** (doorbell-aware). If you forget, idle timeout (default **15 minutes** with nobody online, or if Minecraft is not running) SoftStops the game VM. Daily/monthly budgets can also refuse wake with a clear Minecraft kick/MOTD when the day’s hours are exhausted.
@@ -193,7 +193,7 @@ When everyone is done, click **Stop** (doorbell-aware). If you forget, idle time
 
 | Want | Where |
 |------|--------|
-| See if friends can join | Left sidebar **Status** (`Running` / `Stopped`) |
+| See if the server is on | Left sidebar **Status** (`Running` / `Stopped`; matches Start vs Stop) |
 | How many are online | Left sidebar **Players** (`0` when Stopped; `X / Y` while Running) |
 | Copy the address | Left sidebar **Play IP** (copy icon) |
 | Wake / park the server | One **Start** / **Stop** button in the left sidebar (Start when the server is off, Stop when it is on; not raw Compute on Advanced) |
