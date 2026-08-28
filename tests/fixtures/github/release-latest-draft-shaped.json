@@ -1,0 +1,11 @@
+{
+  "url": "https://api.github.com/repos/maattox/oci-mc-server/releases/99",
+  "html_url": "https://github.com/maattox/oci-mc-server/releases/tag/v9.9.9",
+  "id": 99,
+  "tag_name": "v9.9.9",
+  "name": "Draft-shaped body (GET /releases/latest would not return this)",
+  "draft": true,
+  "prerelease": true,
+  "body": "Fixture only: drafts are ignored by /releases/latest. Parser still reads tag, name, and notes.",
+  "assets": []
+}

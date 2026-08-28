@@ -46,12 +46,12 @@ None. P1–P3 share publish layout and Hybrid csproj. P4 reads the same version 
 | P1 | Publish layout: product tree next to the exe | **DONE** | SEQUENTIAL — ProductPaths + Hybrid publish | agent |
 | P2 | OpenTofu on a clean PC (pinned download) | **DONE** | SEQUENTIAL — needs P1 layout; Setup path | agent |
 | P3 | Windows installer (Inno) + Function tar + Release recipe | **DONE** | SEQUENTIAL — wraps P1 output | agent |
-| P4 | GitHub Releases update check | **NEXT** | SEQUENTIAL — Hybrid launch + settings toggle | agent |
-| P5 | Guide + README v1 pass | TODO | SEQUENTIAL — docs after P1–P4 exist | agent |
+| P4 | GitHub Releases update check | **DONE** | SEQUENTIAL — Hybrid launch + settings toggle | agent |
+| P5 | Guide + README v1 pass | **NEXT** | SEQUENTIAL — docs after P1–P4 exist | agent |
 | P6 | Closed beta / dogfood | TODO | SEQUENTIAL — operator-led; installer preferred | either |
 | P7 | V1 exit review | TODO | SEQUENTIAL — operator declares ready | either |
 
-**Live NEXT:** [`NEXT.md`](NEXT.md) → **P4**.
+**Live NEXT:** [`NEXT.md`](NEXT.md) → **P5**.
 
 ---
 
@@ -62,7 +62,7 @@ None. P1–P3 share publish layout and Hybrid csproj. P4 reads the same version 
 - **ProductPaths:** walks up from `AppContext.BaseDirectory` looking for `infra/` or `config.local.example.json`, then resolves `infra/`, `onbox/mcmgr/`, `door_vm/`, `vm_agent/`, `functions/shutdown_vm/`. A published layout that puts those trees **next to the exe** is enough; do not invent a second resolver.
 - **Function tar (8.6.1 DONE):** `FunctionImageArtifact` already looks next to the app, `artifacts/` next to the app, repo `artifacts/`, and `MCMANAGER_FUNCTION_IMAGE_TAR`. File name `mcmgr-fn-softstop-linux-arm64.tar` (gitignored; do **not** commit). Developer rebuild: Docker Desktop + `buildx` (Guide recipe). Users copy without Docker.
 - **OpenTofu today:** `OpenTofuLocator` finds `tofu.exe` on PATH, WinGet Links, or `%LOCALAPPDATA%\McManager\tofu\tofu.exe`. If still missing, Setup/Destroy **downloads once** a pinned OpenTofu Windows amd64 zip (SHA-256), extracts `tofu.exe` there, and writes an MPL 2.0 pointer. Do **not** require WinGet. Do **not** ship HashiCorp `terraform.exe`. `tofu init` still fetches the OCI provider.
-- **Update toggle (6.1 DONE):** `%LOCALAPPDATA%\McManager\app-settings.json` `check_for_updates` (default **on**). Gear UI saves it; copy still says checks are not live. About already links `https://github.com/maattox/oci-mc-server`.
+- **Update toggle (6.1 DONE; P4 honors it):** `%LOCALAPPDATA%\McManager\app-settings.json` `check_for_updates` (default **on**). Gear UI saves it. On launch, one unauthenticated `GET .../releases/latest`; newer tag → prompt with notes + download link. No silent apply.
 - **WebView2:** Evergreen runtime is a **prerequisite** (MessageBox + Microsoft installer link). Do not bundle the runtime.
 - **No `.github/workflows`:** GitHub Actions stayed **out** of 8.6. Stay out here too. Operator builds locally and uploads a Release by hand.
 - **Repo:** public `maattox/oci-mc-server`. Product work is on branch `staging`. GitHub Releases are **tags + assets**, not a special branch.
@@ -235,7 +235,7 @@ Unauthenticated GitHub API is enough (~60 req/hr/IP). The shipped app must **not
 
 ## P4 — GitHub Releases update check
 
-**Status:** NEXT  
+**Status:** DONE  
 **Parallel:** SEQUENTIAL — Hybrid launch + existing settings toggle  
 **Cursor mode:** agent
 
@@ -263,13 +263,13 @@ Unauthenticated GitHub API is enough (~60 req/hr/IP). The shipped app must **not
 
 **Done when:** Update check ships. Settings copy matches. No Velopack.
 
-**Changelog:** *(empty)*
+**Changelog:** 2026-08-27 — Unauthenticated `GET /repos/maattox/oci-mc-server/releases/latest` after UI is up when `check_for_updates` is on. Newer tag (strip `v`) → confirm with release name + notes and **Open download** (HTML URL). Equal/older, toggle off, 404, 429, and offline → no prompt, no retry loop. Settings copy matches. Fixture tests; no live GitHub. No Velopack. Living **NEXT = P5**.
 
 ---
 
 ## P5 — Guide + README v1 pass
 
-**Status:** TODO  
+**Status:** NEXT  
 **Parallel:** SEQUENTIAL — docs after P1–P4  
 **Cursor mode:** agent
 
@@ -353,7 +353,7 @@ Unauthenticated GitHub API is enough (~60 req/hr/IP). The shipped app must **not
 
 | Date | Note |
 |------|------|
-| 2026-08-27 | **P3 DONE** (Inno Setup 6 per-user installer + Function tar required + operator Release recipe). Living **NEXT = P4** (GitHub Releases update check). Do not start P5. |
+| 2026-08-27 | **P4 DONE** (GitHub Releases update check: prompt + notes; no silent apply). Living **NEXT = P5** (Guide + README v1 pass). Do not start P6. |
 | 2026-08-27 | **P2 DONE** (pinned OpenTofu 1.12.6 Windows amd64 download + SHA-256 into LocalAppData). Living **NEXT = P3** (Inno installer). Do not start P4. |
 | 2026-08-27 | **P1 DONE** (publish layout: product tree + optional Function tar next to the exe). Living **NEXT = P2** (pinned OpenTofu download). Do not start P3. |
 | 2026-08-27 | Created (docs only). Operator unblocked Phase 9. **NEXT = P1** (publish layout). GitHub Actions out; Inno + prompt-on-Release; tofu pinned download; signing deferred. |

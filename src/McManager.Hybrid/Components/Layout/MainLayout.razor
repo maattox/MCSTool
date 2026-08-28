@@ -449,7 +449,7 @@
                                @bind="Chrome.CheckForUpdates" />
                         Check for updates when Manager opens
                     </label>
-                    <p class="mcm-settings-note">GitHub Releases checks are not live yet. This preference is saved for when updates ship.</p>
+                    <p class="mcm-settings-note">When this is on, Manager asks GitHub Releases once as it opens. If a newer version is published, you get the release notes and a download link. Manager never installs an update by itself.</p>
                     @if (!string.IsNullOrWhiteSpace(Chrome.SaveError))
                     {
                         <p class="mcm-settings-error" role="alert">@Chrome.SaveError</p>

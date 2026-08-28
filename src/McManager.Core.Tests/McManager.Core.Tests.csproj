@@ -53,6 +53,10 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>fixtures\journals\%(Filename)%(Extension)</Link>
     </None>
+    <None Include="..\..\tests\fixtures\github\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>fixtures\github\%(Filename)%(Extension)</Link>
+    </None>
   </ItemGroup>
 
 </Project>

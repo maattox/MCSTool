@@ -188,10 +188,10 @@ Read [`docs/NEXT.md`](NEXT.md) and run `/next-step` in a fresh Agent chat. Workf
 | **8.15** | Change pack UX (single-list review, compactness, overlay dock, stopped-VM pick) | **DONE** — [`V1-Change-Pack-UX-Plan.md`](V1-Change-Pack-UX-Plan.md) P1–P4 |
 | **8.5** | Pre-packaging QA (catalog + passes + bug-fix plans)        | **DONE** — Pass 3 filled; triage skipped; S0-01 Nit parked OK |
 | **8.6** | Pre-built ARM spend-brake Function image (**users** no Docker) | **DONE** — [`V1-Function-Image-Plan.md`](V1-Function-Image-Plan.md) P1–P2 |
-| **9**   | Packaging, updates, launch (old MVP Phase 8–9)             | **NEXT** — [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) **P4** |
+| **9**   | Packaging, updates, launch (old MVP Phase 8–9)             | **NEXT** — [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) **P5** |
 
 
-**Current NEXT step:** See [`docs/NEXT.md`](NEXT.md) — Phase **9** / [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) **P4** (GitHub Releases update check).
+**Current NEXT step:** See [`docs/NEXT.md`](NEXT.md) — Phase **9** / [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) **P5** (Guide + README v1 pass).
 
 ---
 
@@ -1748,7 +1748,7 @@ See the living-plan **P** section.
 
 ### Step 9.2 — GitHub Releases update check
 
-**Status:** NEXT (living: [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) **P4**)  
+**Status:** DONE (living: [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) **P4**)  
 **Depends on:** 9.1 (or can ship against `dotnet run` if the operator wants it earlier — still this step)
 
 **Do**
@@ -1762,7 +1762,7 @@ See the living-plan **P** section.
 
 **Done when:** Update check ships in the app.
 
-**Changelog:** *(empty)*
+**Changelog:** 2026-08-27 — **DONE** ([`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) **P4**). GitHub `/releases/latest` after UI is up; prompt with notes + Open download; toggle off / offline / 404 / 429 stay quiet. Living **NEXT = P5** (Step **9.3**).
 
 ---
 
@@ -1770,7 +1770,7 @@ See the living-plan **P** section.
 
 ### Step 9.3 — Guide + README v1 pass
 
-**Status:** TODO (living: [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) **P5**)  
+**Status:** NEXT (living: [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) **P5**)  
 **Depends on:** Phases 1–7 feature work (Phase 8 skipped)
 
 **Read first**
@@ -1899,7 +1899,7 @@ See the living-plan **P** section.
 
 | Date       | Note                                                                                                                                                                                                                                                                                                                              |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-08-27 | **Step 9.1 P3 DONE** (Inno Setup 6 per-user installer + Function tar required + Guide/Release recipe). **9.1 complete.** Living **NEXT = P4** / Step **9.2** ([`V1-Packaging-Plan.md`](V1-Packaging-Plan.md)). Do not start P5. |
+| 2026-08-27 | **Step 9.2 P4 DONE** (GitHub Releases update check: prompt + notes; no silent apply). Living **NEXT = P5** / Step **9.3** ([`V1-Packaging-Plan.md`](V1-Packaging-Plan.md)). Do not start P6. |
 | 2026-08-27 | **Step 9.1 P2 DONE** (pinned OpenTofu 1.12.6 Windows amd64 download + SHA-256 into LocalAppData). Living **NEXT = P3** ([`V1-Packaging-Plan.md`](V1-Packaging-Plan.md)). Do not start P4. |
 | 2026-08-27 | **Step 9.1 P1 DONE** (Hybrid publish layout: product tree + optional Function tar next to the exe). Living **NEXT = P2** ([`V1-Packaging-Plan.md`](V1-Packaging-Plan.md)). Do not start P3. |
 | 2026-08-27 | **Phase 9 unblocked.** Living [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md). **NEXT = P1** (publish layout). GitHub Actions out; Inno + prompt-on-Release. |

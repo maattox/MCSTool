@@ -2065,6 +2065,8 @@ button.mcm-btn-disabled:hover {
     color: var(--text-secondary);
     margin: 0 0 14px;
     white-space: pre-wrap;
+    max-height: 40vh;
+    overflow-y: auto;
 }
 
 .mcm-modal-actions {

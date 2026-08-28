@@ -13,7 +13,7 @@ The Manager WinExe (`McManager.Hybrid`, WPF + BlazorWebView) seeds connectivity 
 | `data/setup-wizard.local.json` | **Ignored** | Setup wizard resume (step index + fields; **no** Auth Token, **no** SSH private key) |
 | `data/sample-packs/` | **Ignored** | Operator-local sample `.mrpack` / CurseForge zips for Phase 4 pack-import work — see [`Sample-Packs.md`](Sample-Packs.md). **Not** CI fixtures. **Not** the Change-pack corpus. |
 | `pack-tests/packs/` | **Ignored** (except `.gitkeep`) | Expected-to-work Change-pack corpus archives — [`pack-tests/README.md`](../pack-tests/README.md). Sidecar/result YAML and [`PROTOCOL.md`](../pack-tests/PROTOCOL.md) stay tracked. |
-| `%LOCALAPPDATA%\McManager\app-settings.json` | **Ignored** (outside the repo) | Program settings for this PC: update-check toggle (Phase 9 honors it). Not stack OCIDs. |
+| `%LOCALAPPDATA%\McManager\app-settings.json` | **Ignored** (outside the repo) | Program settings for this PC: update-check toggle (GitHub Releases on launch when on). Not stack OCIDs. |
 
 Copy examples into `data/` and fill values, or keep the operator-seeded files already present on this machine.
 
@@ -128,7 +128,7 @@ Gitignored [`data/sample-packs/`](../data/sample-packs/) holds homemade parser f
 
 Imported packs the Manager actually installed are copied to **`data/imported-packs/<pack>_<version>/original.mrpack`** (or `original.zip`, plus `archive.json`). **Server Management → Download pack** copies that original archive — never a zip of VM1 `mods/`. The product cannot reconstruct a client pack from server `mods/` (Setup strips client-only files). Gitignored with the rest of `data/`.
 
-**Program settings (gear):** resolved paths for the data folder, `config.local.json`, `%LOCALAPPDATA%\McManager\tofu`, and the Oracle API config file. The update-check checkbox writes `%LOCALAPPDATA%\McManager\app-settings.json` (`check_for_updates`, default on). No GitHub request runs until Phase 9.
+**Program settings (gear):** resolved paths for the data folder, `config.local.json`, `%LOCALAPPDATA%\McManager\tofu`, and the Oracle API config file. The update-check checkbox writes `%LOCALAPPDATA%\McManager\app-settings.json` (`check_for_updates`, default on). When on, Manager does one unauthenticated GitHub Releases request after the UI is up and prompts if a newer published tag exists (notes + download link; it does not install the update).
 
 **Notifications (bell):** in-memory this session only (not a file). Manager posts when `meta/oversized-world-backup.json` is present (world too large for cloud backup). Debug builds can post a sample, or PUT/clear an oversized-world fixture, from Advanced → DEBUG host probes.
 

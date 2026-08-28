@@ -2,6 +2,7 @@
 using System.Windows.Threading;
 using McManager.Core.Config;
 using McManager.Core.Notifications;
+using McManager.Core.Services;
 using McManager.Core.Setup;
 using McManager.Hybrid.Ui;
 using McManager.Hybrid.Ui.Wpf;
@@ -81,6 +82,8 @@ public partial class App : Application
         services.AddSingleton<ActionBanner>();
         services.AddSingleton<ActionBannerViewModel>();
         services.AddSingleton<ChromeViewModel>();
+        services.AddSingleton<GitHubLatestReleaseClient>();
+        services.AddSingleton<AppUpdateCheckHost>();
         services.AddSingleton<WhitelistViewModel>();
         services.AddSingleton<UsageViewModel>();
         services.AddSingleton<PackIdentityCatalogCache>();

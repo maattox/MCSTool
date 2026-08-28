@@ -11,7 +11,7 @@
          @ref="_overlay"
          @onclick="Dialogs.Dismiss"
          @onkeydown="OnKeyDown">
-        <div class="mcm-modal-card" @onclick:stopPropagation="true">
+        <div class="mcm-modal-card @(confirm.Message.Length > 240 ? "is-wide" : null)" @onclick:stopPropagation="true">
             <h2 id="mcm-modal-title" class="mcm-modal-title">@confirm.Title</h2>
             <p class="mcm-modal-body">@confirm.Message</p>
             <div class="mcm-modal-actions">

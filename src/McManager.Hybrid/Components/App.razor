@@ -1,4 +1,5 @@
 @inject HybridShell Shell
+@inject AppUpdateCheckHost UpdateCheck
 @implements IDisposable
 
 @if (Shell.Page == HybridShell.PageKind.FirstRun)
@@ -26,6 +27,12 @@ else
     protected override void OnInitialized()
     {
         Shell.PropertyChanged += OnShellChanged;
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+            _ = UpdateCheck.RunOnceAsync();
     }
 
     public void Dispose()

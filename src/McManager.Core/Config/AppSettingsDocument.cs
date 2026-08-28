@@ -4,8 +4,7 @@ namespace McManager.Core.Config;
 
 /// <summary>
 /// Program settings for this PC (not stack config). Lives under
-/// <c>%LOCALAPPDATA%\McManager\app-settings.json</c>. Phase 9 honors
-/// <see cref="CheckForUpdates"/>; this step only persists the toggle.
+/// <c>%LOCALAPPDATA%\McManager\app-settings.json</c>.
 /// </summary>
 public sealed class AppSettingsDocument
 {
@@ -15,8 +14,8 @@ public sealed class AppSettingsDocument
     public int Version { get; set; } = DocumentVersion;
 
     /// <summary>
-    /// When true, Manager will check GitHub Releases on launch once that ships.
-    /// No network check runs until Phase 9.
+    /// When true, Manager checks GitHub Releases once after the UI is up
+    /// and prompts if a newer published tag exists. Never applies an update.
     /// </summary>
     [JsonPropertyName("check_for_updates")]
     public bool CheckForUpdates { get; set; } = true;
