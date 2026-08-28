@@ -188,10 +188,10 @@ Read [`docs/NEXT.md`](NEXT.md) and run `/next-step` in a fresh Agent chat. Workf
 | **8.15** | Change pack UX (single-list review, compactness, overlay dock, stopped-VM pick) | **DONE** — [`V1-Change-Pack-UX-Plan.md`](V1-Change-Pack-UX-Plan.md) P1–P4 |
 | **8.5** | Pre-packaging QA (catalog + passes + bug-fix plans)        | **DONE** — Pass 3 filled; triage skipped; S0-01 Nit parked OK |
 | **8.6** | Pre-built ARM spend-brake Function image (**users** no Docker) | **DONE** — [`V1-Function-Image-Plan.md`](V1-Function-Image-Plan.md) P1–P2 |
-| **9**   | Packaging, updates, launch (old MVP Phase 8–9)             | **NEXT** — [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) **P5** |
+| **9**   | Packaging, updates, launch (old MVP Phase 8–9)             | **NEXT** — [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) **P6** |
 
 
-**Current NEXT step:** See [`docs/NEXT.md`](NEXT.md) — Phase **9** / [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) **P5** (Guide + README v1 pass).
+**Current NEXT step:** See [`docs/NEXT.md`](NEXT.md) — Phase **9** / [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) **P6** (closed beta / dogfood).
 
 ---
 
@@ -1770,7 +1770,7 @@ See the living-plan **P** section.
 
 ### Step 9.3 — Guide + README v1 pass
 
-**Status:** NEXT (living: [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) **P5**)  
+**Status:** DONE (living: [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) **P5**)  
 **Depends on:** Phases 1–7 feature work (Phase 8 skipped)
 
 **Read first**
@@ -1788,7 +1788,7 @@ See the living-plan **P** section.
 
 **Done when:** Guide matches shipped v1 behavior.
 
-**Changelog:** *(empty)*
+**Changelog:** 2026-08-28 — **DONE** ([`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) **P5**). Guide + README match shipped v1 packaging (installer vs from-source, users no Docker, allowlist, spend-brake lock, update prompt, SmartScreen, WebView2). Living **NEXT = P6** (Step **9.4**).
 
 ---
 
@@ -1796,7 +1796,7 @@ See the living-plan **P** section.
 
 ### Step 9.4 — Closed beta / dogfood
 
-**Status:** TODO (living: [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) **P6**)  
+**Status:** NEXT (living: [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) **P6**)  
 
 **Do**
 
@@ -1899,6 +1899,7 @@ See the living-plan **P** section.
 
 | Date       | Note                                                                                                                                                                                                                                                                                                                              |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-28 | **Step 9.3 P5 DONE** (Guide + README v1 pass). Living **NEXT = P6** / Step **9.4** ([`V1-Packaging-Plan.md`](V1-Packaging-Plan.md)). Do not start P7. |
 | 2026-08-27 | **Step 9.2 P4 DONE** (GitHub Releases update check: prompt + notes; no silent apply). Living **NEXT = P5** / Step **9.3** ([`V1-Packaging-Plan.md`](V1-Packaging-Plan.md)). Do not start P6. |
 | 2026-08-27 | **Step 9.1 P2 DONE** (pinned OpenTofu 1.12.6 Windows amd64 download + SHA-256 into LocalAppData). Living **NEXT = P3** ([`V1-Packaging-Plan.md`](V1-Packaging-Plan.md)). Do not start P4. |
 | 2026-08-27 | **Step 9.1 P1 DONE** (Hybrid publish layout: product tree + optional Function tar next to the exe). Living **NEXT = P2** ([`V1-Packaging-Plan.md`](V1-Packaging-Plan.md)). Do not start P3. |

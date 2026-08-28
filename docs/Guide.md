@@ -4,7 +4,7 @@ This is the short path for a **Windows** admin who wants a **private** Minecraft
 
 Friends always connect to the same **play IP**. When nobody is playing, a small always-on “doorbell” answers Minecraft pings and can wake the server. Idle and budget stops are meant to keep you inside Always Free. Access is an **IP allowlist** — only addresses you add can join. This is not a public server.
 
-**Windows only** for this Manager. There is no macOS or Linux Manager in MVP.
+**Windows only** for this Manager. There is no macOS or Linux Manager in v1.
 
 ---
 
@@ -232,8 +232,6 @@ Each Manager tab **remembers its own scroll position** when you switch away and 
 
 **Wipe world** on **Server → World** deletes only the live save on the game VM. Cloud backups, mods, and `server.properties` are not deleted. Download a world save first if you might want the current world back. The game VM must be running; Minecraft is stopped for the wipe and **started again** so a new world generates. If the server is off, that warning (and other button results) shows in a compact toast at the **lower-left of the content pane**, above the Change-pack bar if it is open — read it, then **X** to dismiss. Short successes (including Start) fade after a few seconds; errors and in-progress toasts stay until **X**. Setup keeps its footer status.
 
-*(Pass 1 catalog recorded leave-stopped; operator 2026-08-19 overrode — bug-fix **P8**. [`PRODUCT-IDEAS.md`](PRODUCT-IDEAS.md) Wipe world step 4 may still say the next Start creates a world.)*
-
 **World too large for cloud backup:** If a single world zip is bigger than the ~9.5 GB free cloud cap, automatic cloud backups stop. The top-right **bell** warns you. **Download latest world save** then copies the **live** world from the game VM over SSH (the VM must be Running). That file stays on this PC and is **not** uploaded to cloud storage. Older cloud backups in the list can still be downloaded.
 
 **Modding** on **Server**: Vanilla and Paper show a short “not a modded server” note. **Change pack** is a compact inner tab (the inner tabs already name the pane). Drop a Modrinth `.mrpack`, CurseForge Server Pack `.zip`, or unstructured `.jar` zip while the game VM is stopped or running; a one-liner notes that players need this mod pack to join. Confirm the two checkboxes (use this pack; friends get the same file). Homemade zips with unknown-side jars show the same one-list review as Setup (identity above the list; **Client-only** checkboxes). Automatic packs show a taller summary beside those checkboxes instead of the list. **Install this pack** starts the game VM if it is stopped, then reinstalls Minecraft. **Install this pack** and **Cancel** overlay the Change pack pane (with elapsed time while it runs) so they stay reachable if you scroll. They hide on other tabs; coming back to Change pack restores them if a review is still open. Toasts still overlay above. The world is **kept** unless you also check wipe. Friends need the new exported pack on their PCs — Manager cannot rebuild a client pack from server `mods/`. On a Modded stack you can inspect the server-side files in `mods/` (the list starts **collapsed**) and **Download pack** — that copies the **original imported archive** saved on this PC, not a zip of the live server mods. If the original file is missing from this PC, download is disabled. A crash while starting shows a short log in the error, not only an RCON timeout. If the loader blamed exactly one mod, that jar is set aside and listed here so you can **Keep excluded** or **Put back**.
@@ -275,7 +273,7 @@ Most admins never need a terminal. Prefer Manager **Troubleshooting** buttons ov
 Two computers share **one reserved public play IP**:
 
 - **Idle:** the tiny always-on doorbell VM holds the play IP. Minecraft pings get a message (MOTD). A connect from an allowlisted IP can **wake** the game VM and move the play IP there.
-- **Playable:** the Ampere game VM holds the play IP and runs Vanilla.
+- **Playable:** the Ampere game VM holds the play IP and runs Minecraft (Vanilla, Paper, or Modded).
 - **Stop / idle timeout:** the game VM SoftStops (world backup on that path) and the IP returns to the doorbell.
 
 Wake reads the shared budget first. If the daily budget is exhausted, wake is refused with a clear kick/MOTD. The doorbell also reconciles “who should hold the IP” after crashes or a $1 Function stop.
@@ -353,7 +351,7 @@ Developer/operator SSH command dump (not required for the happy path): [`Operato
 
 ---
 
-## Out of this guide (not MVP)
+## Out of this guide (not v1)
 
 Public game access, paid/spend mode, and macOS/Linux Manager are **not** in this product. Paid mode is a far-future idea, not v1. The **$1 spend-brake lock** (full-window warning) **is** in this Manager. Setup offers Vanilla (Default or Paper) and **Modded** pack import (local file only).
 

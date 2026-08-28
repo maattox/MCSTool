@@ -1,6 +1,6 @@
 # Workflow state
 
-**Updated:** 2026-08-27
+**Updated:** 2026-08-28
 
 Single source of truth for **what to work on next**. Living plan files keep section history; agents update **this file** when advancing work.
 
@@ -8,14 +8,14 @@ Single source of truth for **what to work on next**. Living plan files keep sect
 
 | Field | Value |
 |-------|-------|
-| **Plan** | [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Phase **9** / Step **9.3** |
-| **Step** | **9.3** Guide + README v1 pass |
+| **Plan** | [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Phase **9** / Step **9.4** |
+| **Step** | **9.4** Closed beta / dogfood |
 | **Sub-plan** | [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) |
-| **Sub-step** | **P5** Guide + README v1 pass |
+| **Sub-step** | **P6** Closed beta / dogfood |
 | **Status** | `ready` |
-| **Cursor mode** | `agent` |
+| **Cursor mode** | `either` |
 
-Phase **8.6** is **DONE**. **P4 DONE** (2026-08-27): GitHub Releases update check (prompt + notes; no silent apply). Step **9.2** **DONE**. Living **NEXT = P5** ([`V1-Packaging-Plan.md`](V1-Packaging-Plan.md)): Guide + README v1 pass. Do **not** start P6–P7. GitHub Actions stays **out**. Users must not need Docker. Do **not** `git push` / `gh release create` unless asked. **Parked:** `mr-fabric-cobblemon-1.7.3` re-run is **UNFINISHED** (operator aborted 2026-08-27). Come back in a **separate** chat: `/pack-test-one` that id (TESTING, `mcmgr-pack-test`; disable idle for the whole replace). Do not treat the later harness `pass` YAML as verified.
+Phase **8.6** is **DONE**. **P5 DONE** (2026-08-28): Guide + README v1 pass (installer vs from-source, users no Docker, allowlist, spend-brake lock, update prompt, SmartScreen, WebView2). Step **9.3** **DONE**. Living **NEXT = P6** ([`V1-Packaging-Plan.md`](V1-Packaging-Plan.md)): closed beta / dogfood. Do **not** start P7. GitHub Actions stays **out**. Users must not need Docker. Do **not** `git push` / `gh release create` unless asked. **Parked:** `mr-fabric-cobblemon-1.7.3` re-run is **UNFINISHED** (operator aborted 2026-08-27). Come back in a **separate** chat: `/pack-test-one` that id (TESTING, `mcmgr-pack-test`; disable idle for the whole replace). Do not treat the later harness `pass` YAML as verified.
 
 ## Design lock (implementing)
 
@@ -23,6 +23,7 @@ Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-De
 
 ## Completed recently
 
+- **2026-08-28** — Step **9.3 P5 DONE** (Guide + README v1 pass). **9.3 complete.** Living **NEXT = P6** / Step **9.4** (closed beta / dogfood). Do not start P7.
 - **2026-08-27** — Step **9.2 P4 DONE** (GitHub Releases update check: prompt + notes; no silent apply). **9.2 complete.** Living **NEXT = P5** / Step **9.3** (Guide + README v1 pass). Do not start P6.
 - **2026-08-27** — Step **9.1 P3 DONE** (Inno Setup 6 per-user installer + Function tar required + Guide/Release recipe). **9.1 complete.** Living **NEXT = P4** / Step **9.2** (GitHub Releases update check). Do not start P5.
 - **2026-08-27** — Step **9.1 P2 DONE** (pinned OpenTofu 1.12.6 download + SHA-256 into LocalAppData). Living **NEXT = P3** (Inno installer). Do not start P4.

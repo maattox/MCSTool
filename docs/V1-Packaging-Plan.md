@@ -47,18 +47,18 @@ None. P1–P3 share publish layout and Hybrid csproj. P4 reads the same version 
 | P2 | OpenTofu on a clean PC (pinned download) | **DONE** | SEQUENTIAL — needs P1 layout; Setup path | agent |
 | P3 | Windows installer (Inno) + Function tar + Release recipe | **DONE** | SEQUENTIAL — wraps P1 output | agent |
 | P4 | GitHub Releases update check | **DONE** | SEQUENTIAL — Hybrid launch + settings toggle | agent |
-| P5 | Guide + README v1 pass | **NEXT** | SEQUENTIAL — docs after P1–P4 exist | agent |
-| P6 | Closed beta / dogfood | TODO | SEQUENTIAL — operator-led; installer preferred | either |
+| P5 | Guide + README v1 pass | **DONE** | SEQUENTIAL — docs after P1–P4 exist | agent |
+| P6 | Closed beta / dogfood | **NEXT** | SEQUENTIAL — operator-led; installer preferred | either |
 | P7 | V1 exit review | TODO | SEQUENTIAL — operator declares ready | either |
 
-**Live NEXT:** [`NEXT.md`](NEXT.md) → **P5**.
+**Live NEXT:** [`NEXT.md`](NEXT.md) → **P6**.
 
 ---
 
 ## What already exists (do not rediscover)
 
 - **One WinExe:** `McManager.Hybrid` (`net8.0-windows`, `Version` 0.1.0). Setup is inside the app. Do not add a second Setup.exe.
-- **From-source run:** `dotnet run --project src/McManager.Hybrid`. Guide still describes this until P3/P5.
+- **From-source run:** `dotnet run --project src/McManager.Hybrid`. Guide and README treat this as the **developer** path; users use the Windows installer.
 - **ProductPaths:** walks up from `AppContext.BaseDirectory` looking for `infra/` or `config.local.example.json`, then resolves `infra/`, `onbox/mcmgr/`, `door_vm/`, `vm_agent/`, `functions/shutdown_vm/`. A published layout that puts those trees **next to the exe** is enough; do not invent a second resolver.
 - **Function tar (8.6.1 DONE):** `FunctionImageArtifact` already looks next to the app, `artifacts/` next to the app, repo `artifacts/`, and `MCMANAGER_FUNCTION_IMAGE_TAR`. File name `mcmgr-fn-softstop-linux-arm64.tar` (gitignored; do **not** commit). Developer rebuild: Docker Desktop + `buildx` (Guide recipe). Users copy without Docker.
 - **OpenTofu today:** `OpenTofuLocator` finds `tofu.exe` on PATH, WinGet Links, or `%LOCALAPPDATA%\McManager\tofu\tofu.exe`. If still missing, Setup/Destroy **downloads once** a pinned OpenTofu Windows amd64 zip (SHA-256), extracts `tofu.exe` there, and writes an MPL 2.0 pointer. Do **not** require WinGet. Do **not** ship HashiCorp `terraform.exe`. `tofu init` still fetches the OCI provider.
@@ -269,7 +269,7 @@ Unauthenticated GitHub API is enough (~60 req/hr/IP). The shipped app must **not
 
 ## P5 — Guide + README v1 pass
 
-**Status:** NEXT  
+**Status:** DONE  
 **Parallel:** SEQUENTIAL — docs after P1–P4  
 **Cursor mode:** agent
 
@@ -292,13 +292,13 @@ Unauthenticated GitHub API is enough (~60 req/hr/IP). The shipped app must **not
 
 **Done when:** Guide and README match shipped v1 packaging behavior.
 
-**Changelog:** *(empty)*
+**Changelog:** 2026-08-28 — Guide + README match shipped v1 packaging (installer vs from-source, no Docker for users, allowlist, spend-brake lock, update prompt, SmartScreen, WebView2). PRODUCT-IDEAS Delivery packaging still says “auto-update” / “9.1 bundles” (vision tense; not rewritten). Living **NEXT = P6**.
 
 ---
 
 ## P6 — Closed beta / dogfood
 
-**Status:** TODO  
+**Status:** NEXT  
 **Parallel:** SEQUENTIAL — operator-led  
 **Cursor mode:** either
 
@@ -353,6 +353,7 @@ Unauthenticated GitHub API is enough (~60 req/hr/IP). The shipped app must **not
 
 | Date | Note |
 |------|------|
+| 2026-08-28 | **P5 DONE** (Guide + README v1 pass: installer vs from-source, users no Docker, allowlist, spend-brake lock, update prompt, SmartScreen, WebView2). Living **NEXT = P6** (closed beta / dogfood). Do not start P7. |
 | 2026-08-27 | **P4 DONE** (GitHub Releases update check: prompt + notes; no silent apply). Living **NEXT = P5** (Guide + README v1 pass). Do not start P6. |
 | 2026-08-27 | **P2 DONE** (pinned OpenTofu 1.12.6 Windows amd64 download + SHA-256 into LocalAppData). Living **NEXT = P3** (Inno installer). Do not start P4. |
 | 2026-08-27 | **P1 DONE** (publish layout: product tree + optional Function tar next to the exe). Living **NEXT = P2** (pinned OpenTofu download). Do not start P3. |
