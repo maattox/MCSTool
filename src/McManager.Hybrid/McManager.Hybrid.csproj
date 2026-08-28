@@ -10,6 +10,8 @@
     <UseWPF>true</UseWPF>
     <Version>0.1.0</Version>
     <Product>MC Manager</Product>
+    <!-- Same grass-block mark as the default Minecraft list icon (assets/server-icons/default-icon.png). -->
+    <ApplicationIcon>..\..\assets\server-icons\default-icon.ico</ApplicationIcon>
     <!-- Ship layout: `dotnet publish -r win-x64` is self-contained. `dotnet run` stays framework-dependent. -->
     <SelfContained Condition="'$(RuntimeIdentifier)' == 'win-x64'">true</SelfContained>
     <McManagerRepoRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\..'))</McManagerRepoRoot>
@@ -23,6 +25,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\McManager.Core\McManager.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="..\..\assets\server-icons\default-icon.ico" Link="Assets\app.ico" />
   </ItemGroup>
 
   <!-- Product trees next to the exe so ProductPaths resolves without a git checkout. Not CopyToOutputDirectory: `dotnet run` still walks up to the repo. -->

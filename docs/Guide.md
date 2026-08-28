@@ -106,14 +106,14 @@ Each user may have at most **two** Auth Tokens. If you lose it, generate a new o
 
 ## 3. Install the Manager
 
-**Intended path:** run the Windows installer (`MCManager-Setup-<version>.exe`). It installs **per-user** (no administrator prompt, not Program Files — typically `%LOCALAPPDATA%\Programs\MC Manager`). When it finishes, open **MC Manager** from the Start Menu. Setup is inside that one app.
+**Intended path:** run the Windows installer (`MCManager-Setup-<version>.exe`). It installs **per-user** (no administrator prompt, not Program Files — typically `%LOCALAPPDATA%\Programs\MC Manager`). Additional tasks offers a **desktop shortcut** (checked by default; uncheck it if you only want Start Menu). When it finishes, open **MC Manager** from the Start Menu or the desktop shortcut. Setup is inside that one app.
 
 - **WebView2:** if Windows is missing the [Evergreen runtime](https://go.microsoft.com/fwlink/p/?LinkId=2124703), Manager shows a message with Microsoft’s installer link. Install that, then open Manager again. The MC Manager installer does **not** bundle WebView2.
 - **Unknown publisher / SmartScreen:** this build is **unsigned** (a code-signing certificate is deferred). Windows may show **Windows protected your PC** or **unknown publisher**. That is expected for closed beta. Click **More info** → **Run anyway** only for an installer you built yourself or downloaded from this project’s [GitHub Releases](https://github.com/maattox/oci-mc-server/releases).
 - **Spend-brake Function image:** the installer already contains `mcmgr-fn-softstop-linux-arm64.tar` next to the app. You do **not** need Docker Desktop.
 - **OpenTofu:** the first **Deploy** on a PC that does not already have OpenTofu needs internet: Manager downloads a pinned OpenTofu 1.12.6 Windows build into `%LOCALAPPDATA%\McManager\tofu` (Mozilla Public License 2.0; source [github.com/opentofu/opentofu](https://github.com/opentofu/opentofu)). You do not install WinGet or `tofu` by hand. `tofu init` still fetches the OCI provider on that first run.
 
-Uninstall from Windows Settings → Apps → **MC Manager** (or the Start Menu uninstall entry). That removes the app folder and the Start Menu shortcut. It does **not** delete `%LOCALAPPDATA%\McManager` (installed `config.local.json`, wizard resume, friends, program settings, and the OpenTofu copy) or your Oracle tenancy. From-source checkouts still keep those JSON files in the repo `data/` folder instead.
+Uninstall from Windows Settings → Apps → **MC Manager** (or the Start Menu uninstall entry). That removes the app folder, the Start Menu shortcut, and the desktop shortcut if you created one. It does **not** delete `%LOCALAPPDATA%\McManager` (installed `config.local.json`, wizard resume, friends, program settings, and the OpenTofu copy) or your Oracle tenancy. From-source checkouts still keep those JSON files in the repo `data/` folder instead.
 
 **Developers (from a checkout, requires [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)):**
 

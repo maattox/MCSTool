@@ -51,7 +51,7 @@ None. P1–P3 share publish layout and Hybrid csproj. P4 reads the same version 
 | P6 | Closed beta / dogfood | **TODO** | SEQUENTIAL — paused for greenfield follow-on | either |
 | P7 | V1 exit review | TODO | SEQUENTIAL — operator declares ready | either |
 
-**Live NEXT:** [`NEXT.md`](NEXT.md) → [`V1-Greenfield-Dogfood-Follow-On-Plan.md`](V1-Greenfield-Dogfood-Follow-On-Plan.md) **P1** (installed local config). Packaging **P6** is paused until that plan’s **P4** restores it. Do not start **P7**.
+**Live NEXT:** [`NEXT.md`](NEXT.md) → [`V1-Greenfield-Dogfood-Follow-On-Plan.md`](V1-Greenfield-Dogfood-Follow-On-Plan.md) **P4** (park reserved play IP after Deploy). Packaging **P6** is paused until that plan’s **P4** restores it. Do not start **P7**.
 
 ---
 

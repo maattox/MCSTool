@@ -45,8 +45,8 @@ None. P2–P3 share [`Guide.md`](Guide.md). P1 then P2 share wizard persist / Se
 |----|-------|--------|----------|--------|
 | P1 | Greenfield local config (installed PC) | **DONE** | SEQUENTIAL — unblocks Close → Manage | agent |
 | P2 | Setup wizard polish | **DONE** | SEQUENTIAL — Hybrid wizard after P1 | agent |
-| P3 | Installer desktop shortcut + app icon | **NEXT** | SEQUENTIAL — Inno + Hybrid; Guide | agent |
-| P4 | Park reserved play IP on VM1 after Deploy | TODO | SEQUENTIAL — last; restores packaging P6 | agent |
+| P3 | Installer desktop shortcut + app icon | **DONE** | SEQUENTIAL — Inno + Hybrid; Guide | agent |
+| P4 | Park reserved play IP on VM1 after Deploy | **NEXT** | SEQUENTIAL — last; restores packaging P6 | agent |
 
 **Live NEXT:** [`NEXT.md`](NEXT.md).
 
@@ -179,7 +179,7 @@ Locked for this plan. Do not reopen in an implementation chat.
 
 ## P3 — Installer desktop shortcut + app icon
 
-**Status:** NEXT  
+**Status:** DONE  
 **Parallel:** SEQUENTIAL — Inno + Hybrid after P2 Guide pass  
 **Cursor mode:** agent
 
@@ -207,13 +207,13 @@ Locked for this plan. Do not reopen in an implementation chat.
 
 **Done when:** Installer can create a desktop shortcut; Manager uses the default server icon.
 
-**Changelog:** *(empty)*
+**Changelog:** 2026-08-28 — Inno optional desktop shortcut (`desktopicon`, default checked). Tracked multi-size `assets/server-icons/default-icon.ico` from the default grass-block PNG; Hybrid `ApplicationIcon` + window icon; Inno `SetupIconFile` + Start Menu/desktop shortcut icons. Guide §3 desktop checkbox; uninstall still leaves `%LOCALAPPDATA%\McManager`.
 
 ---
 
 ## P4 — Park reserved play IP on VM1 after Deploy
 
-**Status:** TODO  
+**Status:** NEXT  
 **Parallel:** SEQUENTIAL — last; restores packaging P6  
 **Cursor mode:** agent
 
@@ -250,6 +250,7 @@ Locked for this plan. Do not reopen in an implementation chat.
 
 | Date | Note |
 |------|------|
+| 2026-08-28 | **P3 DONE** — installer optional desktop shortcut (default checked) + default-server-icon as exe/installer/shortcut icon. Living **NEXT = P4** (park reserved play IP after Deploy). Do not start packaging P7. Follow-on **P4** restores packaging P6. |
 | 2026-08-28 | **P2 DONE** — Setup wizard polish (help icons, skip-list warning only with assisted review, required Auth Token). Living **NEXT = P3** (installer desktop shortcut + app icon). Do not start P4 or packaging P7. |
 | 2026-08-28 | **P1 DONE** — installed local config under `%LOCALAPPDATA%\McManager`. Living **NEXT = P2** (Setup wizard polish). Do not start P3 or packaging P7. |
 | 2026-08-28 | Created (docs only) from operator new-PC greenfield notes. Living **NEXT = P1** (installed local config). Packaging **P6** paused (TODO) until P4 restores it. Do not start P7. |
