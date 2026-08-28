@@ -188,10 +188,10 @@ Read [`docs/NEXT.md`](NEXT.md) and run `/next-step` in a fresh Agent chat. Workf
 | **8.15** | Change pack UX (single-list review, compactness, overlay dock, stopped-VM pick) | **DONE** — [`V1-Change-Pack-UX-Plan.md`](V1-Change-Pack-UX-Plan.md) P1–P4 |
 | **8.5** | Pre-packaging QA (catalog + passes + bug-fix plans)        | **DONE** — Pass 3 filled; triage skipped; S0-01 Nit parked OK |
 | **8.6** | Pre-built ARM spend-brake Function image (**users** no Docker) | **DONE** — [`V1-Function-Image-Plan.md`](V1-Function-Image-Plan.md) P1–P2 |
-| **9**   | Packaging, updates, launch (old MVP Phase 8–9)             | **NEXT** — [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) **P6** |
+| **9**   | Packaging, updates, launch (old MVP Phase 8–9)             | **NEXT** — [`V1-Greenfield-Dogfood-Follow-On-Plan.md`](V1-Greenfield-Dogfood-Follow-On-Plan.md) **P1** (9.4 / packaging P6 paused) |
 
 
-**Current NEXT step:** See [`docs/NEXT.md`](NEXT.md) — Phase **9** / [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) **P6** (closed beta / dogfood).
+**Current NEXT step:** See [`docs/NEXT.md`](NEXT.md) — Phase **9** / Step **9.4** / [`V1-Greenfield-Dogfood-Follow-On-Plan.md`](V1-Greenfield-Dogfood-Follow-On-Plan.md) **P1**. Packaging **P6** is paused until that follow-on’s **P4**.
 
 ---
 
@@ -1796,7 +1796,7 @@ See the living-plan **P** section.
 
 ### Step 9.4 — Closed beta / dogfood
 
-**Status:** NEXT (living: [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) **P6**)  
+**Status:** NEXT (living: [`V1-Greenfield-Dogfood-Follow-On-Plan.md`](V1-Greenfield-Dogfood-Follow-On-Plan.md) **P1**; packaging [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) **P6** paused **TODO** until follow-on **P4**)  
 
 **Do**
 
@@ -1808,7 +1808,7 @@ See the living-plan **P** section.
 
 **Done when:** No v1-blocking bugs open (or deferred with operator OK).
 
-**Changelog:** *(empty)*
+**Changelog:** 2026-08-28 — Greenfield dogfood follow-on created ([`V1-Greenfield-Dogfood-Follow-On-Plan.md`](V1-Greenfield-Dogfood-Follow-On-Plan.md)). Packaging **P6** paused. Living **NEXT = follow-on P1** (installed local config). Follow-on **P4** restores packaging P6. Do not start P7.
 
 ---
 
@@ -1899,6 +1899,7 @@ See the living-plan **P** section.
 
 | Date       | Note                                                                                                                                                                                                                                                                                                                              |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-28 | Greenfield dogfood follow-on ([`V1-Greenfield-Dogfood-Follow-On-Plan.md`](V1-Greenfield-Dogfood-Follow-On-Plan.md)). Packaging **P6** paused. Living **NEXT = follow-on P1**. Follow-on **P4** restores packaging P6. Do not start P7. |
 | 2026-08-28 | **Step 9.3 P5 DONE** (Guide + README v1 pass). Living **NEXT = P6** / Step **9.4** ([`V1-Packaging-Plan.md`](V1-Packaging-Plan.md)). Do not start P7. |
 | 2026-08-27 | **Step 9.2 P4 DONE** (GitHub Releases update check: prompt + notes; no silent apply). Living **NEXT = P5** / Step **9.3** ([`V1-Packaging-Plan.md`](V1-Packaging-Plan.md)). Do not start P6. |
 | 2026-08-27 | **Step 9.1 P2 DONE** (pinned OpenTofu 1.12.6 Windows amd64 download + SHA-256 into LocalAppData). Living **NEXT = P3** ([`V1-Packaging-Plan.md`](V1-Packaging-Plan.md)). Do not start P4. |

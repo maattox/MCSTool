@@ -10,12 +10,12 @@ Single source of truth for **what to work on next**. Living plan files keep sect
 |-------|-------|
 | **Plan** | [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Phase **9** / Step **9.4** |
 | **Step** | **9.4** Closed beta / dogfood |
-| **Sub-plan** | [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) |
-| **Sub-step** | **P6** Closed beta / dogfood |
+| **Sub-plan** | [`V1-Greenfield-Dogfood-Follow-On-Plan.md`](V1-Greenfield-Dogfood-Follow-On-Plan.md) |
+| **Sub-step** | **P1** Greenfield local config (installed PC) |
 | **Status** | `ready` |
-| **Cursor mode** | `either` |
+| **Cursor mode** | `agent` |
 
-Phase **8.6** is **DONE**. **P5 DONE** (2026-08-28): Guide + README v1 pass (installer vs from-source, users no Docker, allowlist, spend-brake lock, update prompt, SmartScreen, WebView2). Step **9.3** **DONE**. Living **NEXT = P6** ([`V1-Packaging-Plan.md`](V1-Packaging-Plan.md)): closed beta / dogfood. Do **not** start P7. GitHub Actions stays **out**. Users must not need Docker. Do **not** `git push` / `gh release create` unless asked. **Parked:** `mr-fabric-cobblemon-1.7.3` re-run is **UNFINISHED** (operator aborted 2026-08-27). Come back in a **separate** chat: `/pack-test-one` that id (TESTING, `mcmgr-pack-test`; disable idle for the whole replace). Do not treat the later harness `pass` YAML as verified.
+Phase **8.6** is **DONE**. Packaging **P5 DONE**. Packaging **P6** (closed beta) is **TODO** until this follow-on **P4** restores it. Living **NEXT = follow-on P1** ([`V1-Greenfield-Dogfood-Follow-On-Plan.md`](V1-Greenfield-Dogfood-Follow-On-Plan.md)): installed Manager must save `config.local.json` under `%LOCALAPPDATA%\McManager` (greenfield had no repo `data/`). Do **not** start follow-on P2–P4 or packaging **P7**. GitHub Actions stays **out**. Users must not need Docker. Do **not** `git push` / `gh release create` unless asked. **Parked:** `mr-fabric-cobblemon-1.7.3` re-run is **UNFINISHED** (operator aborted 2026-08-27). Come back in a **separate** chat: `/pack-test-one` that id (TESTING, `mcmgr-pack-test`; disable idle for the whole replace). Do not treat the later harness `pass` YAML as verified.
 
 ## Design lock (implementing)
 
@@ -23,6 +23,7 @@ Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-De
 
 ## Completed recently
 
+- **2026-08-28** — Greenfield dogfood follow-on created ([`V1-Greenfield-Dogfood-Follow-On-Plan.md`](V1-Greenfield-Dogfood-Follow-On-Plan.md)). Packaging **P6** paused (**TODO**). Living **NEXT = follow-on P1** (installed local config). Do not start P2 or packaging P7. Follow-on **P4** restores packaging P6.
 - **2026-08-28** — Off-queue **SETUP-ISSUE-14** (Danger Zone Delete: purge leftover Functions in `mcmgr-fn-app` + Events `mcmgr-events-budget-alert` before `tofu destroy`). Living **NEXT stays P6**. Do not start P7.
 - **2026-08-28** — Step **9.3 P5 DONE** (Guide + README v1 pass). **9.3 complete.** Living **NEXT = P6** / Step **9.4** (closed beta / dogfood). Do not start P7.
 - **2026-08-27** — Step **9.2 P4 DONE** (GitHub Releases update check: prompt + notes; no silent apply). **9.2 complete.** Living **NEXT = P5** / Step **9.3** (Guide + README v1 pass). Do not start P6.
