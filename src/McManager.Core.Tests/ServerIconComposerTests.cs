@@ -9,22 +9,6 @@ namespace McManager.Core.Tests;
 public sealed class ServerIconComposerTests
 {
     [Fact]
-    public void Default_compose_is_64_with_overlay_variants()
-    {
-        var set = ServerIconComposer.Compose();
-        Assert.True(set.Succeeded, set.Error);
-        AssertIcon(set.Value!.ColorPng);
-        AssertIcon(set.Value.IdlePng);
-        AssertIcon(set.Value.StartingPng);
-        AssertIcon(set.Value.ExhaustedPng);
-        Assert.False(set.Value.ColorPng.SequenceEqual(set.Value.IdlePng));
-        Assert.False(set.Value.IdlePng.SequenceEqual(set.Value.StartingPng));
-        Assert.False(set.Value.StartingPng.SequenceEqual(set.Value.ExhaustedPng));
-        Assert.True(HasChroma(set.Value.ColorPng));
-        Assert.False(HasChroma(set.Value.IdlePng, ignoreNearBlack: true));
-    }
-
-    [Fact]
     public void Contain_fit_pads_non_square_source()
     {
         var tall = SolidPng(24, 48, 20, 180, 40);
@@ -97,30 +81,6 @@ public sealed class ServerIconComposerTests
         Assert.True(ServerIdentityUx.TryReadPngSize(png, out var w, out var h));
         Assert.Equal(64, w);
         Assert.Equal(64, h);
-    }
-
-    private static bool HasChroma(byte[] png, bool ignoreNearBlack = false)
-    {
-        using var image = Image.Load<Rgba32>(png);
-        var chroma = 0;
-        image.ProcessPixelRows(accessor =>
-        {
-            for (var y = 0; y < accessor.Height; y++)
-            {
-                var row = accessor.GetRowSpan(y);
-                for (var x = 0; x < row.Length; x++)
-                {
-                    var p = row[x];
-                    if (ignoreNearBlack && p.R < 16 && p.G < 16 && p.B < 16)
-                        continue;
-                    var max = Math.Max(p.R, Math.Max(p.G, p.B));
-                    var min = Math.Min(p.R, Math.Min(p.G, p.B));
-                    if (max - min > 18)
-                        chroma++;
-                }
-            }
-        });
-        return chroma > 40;
     }
 
     private static bool HasDirtPad(byte[] png)

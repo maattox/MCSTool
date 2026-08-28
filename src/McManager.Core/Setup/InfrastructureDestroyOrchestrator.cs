@@ -13,7 +13,7 @@ public sealed class InfrastructureDestroyOrchestrator
 {
     public const string ConfirmPhrase = "confirm";
 
-    private readonly IOpenTofuRunner _tofu;
+    private IOpenTofuRunner? _tofu;
     private readonly bool _dryRun;
 
     public InfrastructureDestroyOrchestrator(
@@ -29,11 +29,27 @@ public sealed class InfrastructureDestroyOrchestrator
         {
             _tofu = new RecordingOpenTofuRunner();
         }
-        else
+    }
+
+    private IOpenTofuRunner Tofu =>
+        _tofu ?? throw new InvalidOperationException(OpenTofuLocator.MissingMessage());
+
+    private async Task<string?> EnsureTofuAsync(IProgress<string>? log, CancellationToken cancellationToken)
+    {
+        if (_tofu is not null)
+            return null;
+        try
         {
-            var path = OpenTofuLocator.Find()
-                       ?? throw new InvalidOperationException(OpenTofuLocator.MissingMessage());
-            _tofu = new OpenTofuRunner(path);
+            _tofu = await OpenTofuLocator.CreateRunnerAsync(log, cancellationToken).ConfigureAwait(false);
+            return null;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return ex.Message;
         }
     }
 
@@ -58,6 +74,10 @@ public sealed class InfrastructureDestroyOrchestrator
                 + "folder here, or delete leftover product resources in the OCI Console.");
         }
 
+        var tofuError = await EnsureTofuAsync(log, cancellationToken).ConfigureAwait(false);
+        if (tofuError is not null)
+            return InfrastructureDestroyResult.Fail(tofuError);
+
         log?.Report($"Using OpenTofu state: {workspace.StatePath}");
         Report(progress, 8, "Emptying shared storage…");
 
@@ -65,12 +85,12 @@ public sealed class InfrastructureDestroyOrchestrator
         {
             log?.Report("[dry-run] Skipping Object Storage empty, OCIR purge, tofu destroy, and local file deletes.");
             Report(progress, 40, "Planning deletion (dry-run)…");
-            var dryPlan = await _tofu.PlanDestroyAsync(infra, workspace, log, cancellationToken)
+            var dryPlan = await Tofu.PlanDestroyAsync(infra, workspace, log, cancellationToken)
                 .ConfigureAwait(false);
             if (!dryPlan.Succeeded)
                 return InfrastructureDestroyResult.Fail("Dry-run plan failed. See the log.");
             Report(progress, 70, "Destroying cloud resources (dry-run)…");
-            var dryDestroy = await _tofu.DestroyAsync(infra, workspace, log, cancellationToken)
+            var dryDestroy = await Tofu.DestroyAsync(infra, workspace, log, cancellationToken)
                 .ConfigureAwait(false);
             if (!dryDestroy.Succeeded)
                 return InfrastructureDestroyResult.Fail("Dry-run destroy failed. See the log.");
@@ -89,7 +109,7 @@ public sealed class InfrastructureDestroyOrchestrator
         try
         {
             Report(progress, 28, "Initializing OpenTofu…");
-            var init = await _tofu.InitAsync(infra, log, cancellationToken).ConfigureAwait(false);
+            var init = await Tofu.InitAsync(infra, log, cancellationToken).ConfigureAwait(false);
             if (!init.Succeeded)
                 return InfrastructureDestroyResult.Fail("tofu init failed. See the log.");
 
@@ -103,7 +123,7 @@ public sealed class InfrastructureDestroyOrchestrator
             });
 
             Report(progress, 32, "Planning deletion…");
-            var plan = await _tofu.PlanDestroyAsync(infra, workspace, trackedLog, cancellationToken)
+            var plan = await Tofu.PlanDestroyAsync(infra, workspace, trackedLog, cancellationToken)
                 .ConfigureAwait(false);
             if (!plan.Succeeded)
                 return InfrastructureDestroyResult.Fail("tofu plan -destroy failed. See the log.");
@@ -115,7 +135,7 @@ public sealed class InfrastructureDestroyOrchestrator
                     : "OpenTofu destroy plan had no resource count; continuing.");
 
             Report(progress, 35, "Destroying cloud resources…");
-            var destroy = await _tofu.DestroyAsync(infra, workspace, trackedLog, cancellationToken)
+            var destroy = await Tofu.DestroyAsync(infra, workspace, trackedLog, cancellationToken)
                 .ConfigureAwait(false);
             if (!destroy.Succeeded)
             {

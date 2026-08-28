@@ -40,7 +40,7 @@ public sealed class SetupDeployResult
 /// <summary>Resumable Setup apply pipeline. Dry-run via <c>MCMANAGER_TOFU_DRY_RUN=1</c> uses a fake tofu runner and skips live SSH/OCI.</summary>
 public sealed class SetupDeployOrchestrator
 {
-    private readonly IOpenTofuRunner _tofu;
+    private IOpenTofuRunner? _tofu;
     private readonly SetupBootstrapService _bootstrap;
     private readonly IFunctionImagePublisher _functionImages;
     private readonly bool _dryRun;
@@ -62,11 +62,27 @@ public sealed class SetupDeployOrchestrator
         {
             _tofu = new RecordingOpenTofuRunner();
         }
-        else
+    }
+
+    private IOpenTofuRunner Tofu =>
+        _tofu ?? throw new InvalidOperationException(OpenTofuLocator.MissingMessage());
+
+    private async Task<string?> EnsureTofuAsync(IProgress<string>? log, CancellationToken cancellationToken)
+    {
+        if (_tofu is not null)
+            return null;
+        try
         {
-            var path = OpenTofuLocator.Find()
-                       ?? throw new InvalidOperationException(OpenTofuLocator.MissingMessage());
-            _tofu = new OpenTofuRunner(path);
+            _tofu = await OpenTofuLocator.CreateRunnerAsync(log, cancellationToken).ConfigureAwait(false);
+            return null;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return ex.Message;
         }
     }
 
@@ -96,6 +112,10 @@ public sealed class SetupDeployOrchestrator
         if (infra is null)
             return SetupDeployResult.Fail(state.ApplyStage, "Could not find product infra/ (main.tf).");
 
+        var tofuError = await EnsureTofuAsync(log, cancellationToken).ConfigureAwait(false);
+        if (tofuError is not null)
+            return SetupDeployResult.Fail(state.ApplyStage, tofuError);
+
         var named = await CompartmentNameResolver.AssignAsync(state, log, cancellationToken, _dryRun)
             .ConfigureAwait(false);
         if (!named.Succeeded)
@@ -120,7 +140,7 @@ public sealed class SetupDeployOrchestrator
         if (!SetupApplyStage.Reached(stage, SetupApplyStage.TofuApplied))
         {
             ReportProgress(progress, SetupApplyStage.NotStarted, "Creating cloud resources…");
-            var init = await _tofu.InitAsync(infra, log, cancellationToken).ConfigureAwait(false);
+            var init = await Tofu.InitAsync(infra, log, cancellationToken).ConfigureAwait(false);
             if (!init.Succeeded)
                 return SetupDeployResult.Fail(stage, "tofu init failed. See the deploy log.");
 
@@ -134,7 +154,7 @@ public sealed class SetupDeployOrchestrator
                     return SetupDeployResult.Fail(stage, probe.Message);
             }
 
-            var apply = await _tofu.ApplyAsync(infra, workspace, log, cancellationToken).ConfigureAwait(false);
+            var apply = await Tofu.ApplyAsync(infra, workspace, log, cancellationToken).ConfigureAwait(false);
             if (apply.IsCapacityError)
             {
                 return SetupDeployResult.Capacity(
@@ -145,7 +165,7 @@ public sealed class SetupDeployOrchestrator
             if (!apply.Succeeded)
                 return SetupDeployResult.Fail(stage, "tofu apply failed. See the deploy log.");
 
-            var raw = await _tofu.OutputJsonAsync(infra, workspace, log, cancellationToken).ConfigureAwait(false);
+            var raw = await Tofu.OutputJsonAsync(infra, workspace, log, cancellationToken).ConfigureAwait(false);
             if (!raw.Succeeded)
                 return SetupDeployResult.Fail(stage, "tofu output failed. See the deploy log.");
 
@@ -313,7 +333,7 @@ public sealed class SetupDeployOrchestrator
             ReportProgress(progress, SetupApplyStage.Function, "Spend-brake Function…");
             var fn = await FunctionImageDeployer.RunAsync(
                     _functionImages,
-                    _tofu,
+                    Tofu,
                     infra,
                     workspace,
                     state,

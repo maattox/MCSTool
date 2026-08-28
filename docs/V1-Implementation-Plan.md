@@ -188,10 +188,10 @@ Read [`docs/NEXT.md`](NEXT.md) and run `/next-step` in a fresh Agent chat. Workf
 | **8.15** | Change pack UX (single-list review, compactness, overlay dock, stopped-VM pick) | **DONE** — [`V1-Change-Pack-UX-Plan.md`](V1-Change-Pack-UX-Plan.md) P1–P4 |
 | **8.5** | Pre-packaging QA (catalog + passes + bug-fix plans)        | **DONE** — Pass 3 filled; triage skipped; S0-01 Nit parked OK |
 | **8.6** | Pre-built ARM spend-brake Function image (**users** no Docker) | **DONE** — [`V1-Function-Image-Plan.md`](V1-Function-Image-Plan.md) P1–P2 |
-| **9**   | Packaging, updates, launch (old MVP Phase 8–9)             | **NEXT** — [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) **P2** |
+| **9**   | Packaging, updates, launch (old MVP Phase 8–9)             | **NEXT** — [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) **P3** |
 
 
-**Current NEXT step:** See [`docs/NEXT.md`](NEXT.md) — Phase **9** / [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) **P2** (pinned OpenTofu download).
+**Current NEXT step:** See [`docs/NEXT.md`](NEXT.md) — Phase **9** / [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) **P3** (Windows installer).
 
 ---
 
@@ -1719,7 +1719,7 @@ Former MVP Phase **8–9**. Phases **1–7** are **DONE**. Phase **8** is **SKIP
 
 ### Step 9.1 — Windows installer
 
-**Status:** NEXT (living: [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) **P2**)  
+**Status:** NEXT (living: [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) **P3**)  
 **Depends on:** Phase 8.5 exit **and** Step **8.6.1** — **Met.**
 
 **Read first**
@@ -1740,7 +1740,7 @@ See the living-plan **P** section.
 
 **Done when:** Living plan P1–P3 **DONE** (publish layout, tofu download, Inno installer).
 
-**Changelog:** 2026-08-27 — **P1 DONE** (publish layout). Living **NEXT = P2** (pinned OpenTofu download). Unblocked 2026-08-27; living plan created.
+**Changelog:** 2026-08-27 — **P2 DONE** (pinned OpenTofu 1.12.6 download + SHA-256). Living **NEXT = P3** (Inno installer). 2026-08-27 — **P1 DONE** (publish layout). Living **NEXT = P2** (pinned OpenTofu download). Unblocked 2026-08-27; living plan created.
 
 ---
 
@@ -1899,6 +1899,7 @@ See the living-plan **P** section.
 
 | Date       | Note                                                                                                                                                                                                                                                                                                                              |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-27 | **Step 9.1 P2 DONE** (pinned OpenTofu 1.12.6 Windows amd64 download + SHA-256 into LocalAppData). Living **NEXT = P3** ([`V1-Packaging-Plan.md`](V1-Packaging-Plan.md)). Do not start P4. |
 | 2026-08-27 | **Step 9.1 P1 DONE** (Hybrid publish layout: product tree + optional Function tar next to the exe). Living **NEXT = P2** ([`V1-Packaging-Plan.md`](V1-Packaging-Plan.md)). Do not start P3. |
 | 2026-08-27 | **Phase 9 unblocked.** Living [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md). **NEXT = P1** (publish layout). GitHub Actions out; Inno + prompt-on-Release. |
 | 2026-08-27 | **8.6.1 / Phase 8.6 DONE.** P2 TESTING user-copy + proven OCIR login (IAM name + identity domain). Living **NEXT = 9.1** **blocked**. Do not start the installer until asked. |

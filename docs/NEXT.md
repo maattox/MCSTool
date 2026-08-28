@@ -11,11 +11,11 @@ Single source of truth for **what to work on next**. Living plan files keep sect
 | **Plan** | [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Phase **9** / Step **9.1** |
 | **Step** | **9.1** Windows installer |
 | **Sub-plan** | [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) |
-| **Sub-step** | **P2** OpenTofu on a clean PC (pinned download) |
+| **Sub-step** | **P3** Windows installer (Inno) + Function tar + Release recipe |
 | **Status** | `ready` |
 | **Cursor mode** | `agent` |
 
-Phase **8.6** is **DONE**. **P1 DONE** (2026-08-27): Hybrid `dotnet publish -r win-x64 --self-contained` is a product root (`infra/` / on-box / door / agent / Function sources next to the exe; Function tar copies when present). Living **NEXT = P2** ([`V1-Packaging-Plan.md`](V1-Packaging-Plan.md)): pinned OpenTofu download into LocalAppData (no WinGet requirement). Do **not** start P3–P7. GitHub Actions stays **out**. Users must not need Docker. **Parked:** `mr-fabric-cobblemon-1.7.3` re-run is **UNFINISHED** (operator aborted 2026-08-27). Come back in a **separate** chat: `/pack-test-one` that id (TESTING, `mcmgr-pack-test`; disable idle for the whole replace). Do not treat the later harness `pass` YAML as verified.
+Phase **8.6** is **DONE**. **P2 DONE** (2026-08-27): pinned OpenTofu 1.12.6 Windows amd64 zip downloads once into `%LOCALAPPDATA%\McManager\tofu` (SHA-256; no WinGet). Living **NEXT = P3** ([`V1-Packaging-Plan.md`](V1-Packaging-Plan.md)): Inno Setup 6 per-user installer + Function tar + Release recipe. Do **not** start P4–P7. GitHub Actions stays **out**. Users must not need Docker. **Parked:** `mr-fabric-cobblemon-1.7.3` re-run is **UNFINISHED** (operator aborted 2026-08-27). Come back in a **separate** chat: `/pack-test-one` that id (TESTING, `mcmgr-pack-test`; disable idle for the whole replace). Do not treat the later harness `pass` YAML as verified.
 
 ## Design lock (implementing)
 
@@ -23,6 +23,7 @@ Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-De
 
 ## Completed recently
 
+- **2026-08-27** — Step **9.1 P2 DONE** (pinned OpenTofu 1.12.6 download + SHA-256 into LocalAppData). Living **NEXT = P3** (Inno installer). Do not start P4.
 - **2026-08-27** — Step **9.1 P1 DONE** (publish layout: product tree + optional Function tar next to the exe). Living **NEXT = P2** (pinned OpenTofu download). Do not start P3.
 - **2026-08-27** — Phase **9 unblocked.** Living plan [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) created. **NEXT = P1** (publish layout). Do not start P2.
 - **2026-08-27** — Step **8.6.1 P2 DONE** (TESTING OCIR login proven; IAM name + identity domain; copy without Docker; digest match; synthetic ACTUAL VM1 only). Plan **COMPLETE**. Phase **8.6** **DONE**. Living **NEXT = 9.1** **blocked**. Do not start 9.1 until asked.

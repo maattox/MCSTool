@@ -118,6 +118,8 @@ dotnet run --project src\McManager.Hybrid
 
 Or open `src\McManager.slnx` in Visual Studio and run **McManager.Hybrid**. Developers packaging a folder (no installer yet): `dotnet publish src\McManager.Hybrid -c Release -r win-x64 --self-contained` — the output is a product root (`infra/` and on-box trees sit next to the exe; the Function tar copies when `artifacts\mcmgr-fn-softstop-linux-arm64.tar` exists).
 
+The first **Deploy** on a PC that does not already have OpenTofu needs internet: Manager downloads a pinned OpenTofu 1.12.6 Windows build into `%LOCALAPPDATA%\McManager\tofu` (Mozilla Public License 2.0; source [github.com/opentofu/opentofu](https://github.com/opentofu/opentofu)). You do not install WinGet or `tofu` by hand. `tofu init` still fetches the OCI provider on that first run.
+
 ---
 
 ## 4. Setup → Deploy
