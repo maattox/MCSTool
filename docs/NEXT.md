@@ -23,6 +23,7 @@ Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-De
 
 ## Completed recently
 
+- **2026-08-28** — Off-queue **SETUP-ISSUE-14** (Danger Zone Delete: purge leftover Functions in `mcmgr-fn-app` + Events `mcmgr-events-budget-alert` before `tofu destroy`). Living **NEXT stays P6**. Do not start P7.
 - **2026-08-28** — Step **9.3 P5 DONE** (Guide + README v1 pass). **9.3 complete.** Living **NEXT = P6** / Step **9.4** (closed beta / dogfood). Do not start P7.
 - **2026-08-27** — Step **9.2 P4 DONE** (GitHub Releases update check: prompt + notes; no silent apply). **9.2 complete.** Living **NEXT = P5** / Step **9.3** (Guide + README v1 pass). Do not start P6.
 - **2026-08-27** — Step **9.1 P3 DONE** (Inno Setup 6 per-user installer + Function tar required + Guide/Release recipe). **9.1 complete.** Living **NEXT = P4** / Step **9.2** (GitHub Releases update check). Do not start P5.

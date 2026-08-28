@@ -279,6 +279,14 @@ Product roadmap stays in `PRODUCT-IDEAS.md`. Architecture stays in `Infrastructu
 **Verify:** `sudo test -f /opt/mcmgr/lib/quarantine_mod.py`; `sudo python3 /opt/mcmgr/lib/quarantine_mod.py self-test --self-test-root /tmp/mcmgr-p10-selftest`.  
 **Refs:** `onbox/mcmgr/common/quarantine_mod.py`, `onbox/mcmgr/common/quarantine_mod.sh`, `docs/V1-Operator-Notes-Follow-On-Plan.md` P10
 
+### SETUP-ISSUE-14 — Delete infrastructure fails: Functions app still has associated functions
+**Status:** Fixed (2026-08-28) — product Manager Delete purge  
+**Summary:** Danger Zone **Delete infrastructure** ran `tofu destroy` until `DeleteApplication` on `mcmgr-fn-app` returned `400-InvalidParameter, Invalid Application cannot be deleted while it has associated functions`. VMs, reserved play IP, IAM, `$1` budget, shared bucket, and OCIR `mcmgr-fn/softstop` were already gone. Local config + tofu state were kept for retry.  
+**Cause:** Product HCL always creates the Functions **application**. The spend-brake Function `mcmgr-fn-softstop` and Events rule `mcmgr-events-budget-alert` are gated on a non-empty `function_image`. TESTING (and any CLI/API fill-in) can create those in OCI without importing them into OpenTofu state. Destroy already emptied the bucket and purged OCIR images; it did not delete leftover Functions/Events, so OCI refused to delete the app.  
+**Fix (product path):** Before `tofu destroy`, Manager best-effort deletes the product Events rule (display name) and every Function inside `mcmgr-fn-app` in the stack compartment (same idea as OCIR image purge). 404 / already gone is success; per-resource failures are logged and Delete continues. Rebuild Manager, then retry Delete — do **not** `tofu apply` a second stack. Console/CLI one-shot if an older Manager still fails: [`Operator-Troubleshooting.md`](Operator-Troubleshooting.md).  
+**Verify:** `dotnet test` filter `FunctionsEventsPurgerTests`. Live: retry Danger Zone Delete after this build; `mcmgr-fn-app` should go away even when the Function was never in tofu state.  
+**Refs:** `src/McManager.Core/Setup/FunctionsEventsPurger.cs`, `InfrastructureDestroyOrchestrator`, `infra/modules/budget_brake/main.tf`
+
 ### DOOR-ISSUE-4 — `wait_forge.sh` / `ip_to_vm1.sh` abort wake (`set -u` CR-strip, missing `--force`)
 **Status:** Fixed (2026-08-14)  
 **Summary:** After Minecraft was reachable on VM1 private `:25565`, door wake still went **DEGRADED**. First `POLL_INTERVAL_SEC: unbound variable` (CR-strip under `set -u` before `:-10`). After a live patch, `ip_to_vm1.sh failed` until IAM (SETUP-ISSUE-2) plus `--force` (reserved IP parked on the door secondary). Sourcing `/etc/mccontrol/oci.env` as `ubuntu` is **Permission denied** (mode 600 root) — expected; not a misdeploy.  

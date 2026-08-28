@@ -341,7 +341,7 @@ To wipe the **product stack** on a test tenancy and run Setup again:
 4. Keep the window open. The log and percent stay until Oracle finishes deleting (often several minutes). Close is disabled until it succeeds or fails.
 5. After success: close Manager fully, reopen it, then run Setup.
 
-Only resources this Manager deployed (OpenTofu state on **this PC**) are removed. Oracle default tenancy resources stay. The friends list on this PC, API key, and SSH keys stay.
+Only resources this Manager deployed (OpenTofu state on **this PC**) are removed. Oracle default tenancy resources stay. The friends list on this PC, API key, and SSH keys stay. If Delete fails because the Functions application still has a Function (for example one added outside Setup), retry after updating Manager — Delete now removes leftover Functions and Events first. Operator CLI/Console steps: [`Operator-Troubleshooting.md`](Operator-Troubleshooting.md) (SETUP-ISSUE-14).
 
 **Usage hours vs a fresh Setup:** Delete also wipes the cloud bucket — world backups and the usage history Manager uses. A new Setup starts that history at **zero**. Oracle’s Always Free **OCPU-hours for this calendar month** were already used by the old computers while they were on; they do **not** reset when you delete. Until the next month, Manager’s leftover hours can look too high. If you delete and redeploy mid-month, trust Oracle’s monthly Always Free clock, not the new stack’s Usage tab.
 

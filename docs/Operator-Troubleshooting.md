@@ -29,7 +29,7 @@ Door OCI scripts are run **as root** with `oci.env` sourced (mode 600; `ubuntu` 
 | **Minecraft CHDIR diagnosis** | VM1 | `journalctl -u minecraft -n 80`; `systemctl show`; `namei -l` on `WorkingDirectory` (read-only) |
 | **Repair game permissions** | VM1 | `sudo bash /opt/mcmgr/bin/repair-permissions.sh` if present, else upload product `onbox/mcmgr/` to `/tmp/mcmgr-onbox` and run that. Same §5 contract as Step 4.2. Does **not** start Minecraft |
 | *(copy only)* OS-ISSUE-5 | Console | Guest ACPI SoftStop hang — OCI Console Reset / Force stop; then Park play IP; heal only after `STOPPED` |
-| **Delete infrastructure** (Advanced / Danger Zone) | admin PC + OCI | Typed `confirm`; empty product bucket + OCIR `mcmgr-fn/softstop` images; temporary bucket `prevent_destroy` override; `tofu destroy -auto-approve` against `%LOCALAPPDATA%\McManager\tofu\<stack-id>\`; then delete `config.local.json` + `setup-wizard.local.json` + that tofu folder. Does **not** delete the tenancy or `friends.local.json` / `~/.oci` / SSH keys. Window stays open until tofu returns. |
+| **Delete infrastructure** (Advanced / Danger Zone) | admin PC + OCI | Typed `confirm`; empty product bucket + OCIR `mcmgr-fn/softstop` images + leftover Functions in `mcmgr-fn-app` and Events `mcmgr-events-budget-alert` (even if they were never in tofu state); temporary bucket `prevent_destroy` override; `tofu destroy -auto-approve` against `%LOCALAPPDATA%\McManager\tofu\<stack-id>\`; then delete `config.local.json` + `setup-wizard.local.json` + that tofu folder. Does **not** delete the tenancy or `friends.local.json` / `~/.oci` / SSH keys. Window stays open until tofu returns. |
 
 Minecraft **Restart** stays in the Manager sidebar (not duplicated).
 
@@ -529,6 +529,39 @@ If Deploy then times out on `/etc/mcmgr/cloud-init-done` with `Last: WAIT` while
 
 ---
 
+## Delete fails: Functions application has associated functions (SETUP-ISSUE-14)
+
+`tofu destroy` / Danger Zone **Delete infrastructure** ends with `DeleteApplication` / `Invalid Application cannot be deleted while it has associated functions`. OpenTofu owns `mcmgr-fn-app` but the spend-brake Function / Events rule were created **outside** tofu (TESTING CLI fill-in, or an empty `function_image`). Current Manager Delete purges those leftovers before destroy. If you are still on an older build, or Delete still fails after a partial destroy, remove them in Console or with OCI CLI, then **retry Delete** (state + local config were kept). Do **not** `tofu apply` a second Always Free A1.
+
+Profile **`TESTING`**. Compartment OCID from gitignored `data/config.local.json` (`oci.compartment_id`) — do not paste live OCIDs into chat logs you will commit.
+
+```powershell
+$ErrorActionPreference = "Stop"
+$profile = "TESTING"
+$comp = "<COMPARTMENT_OCID>"
+
+$app = oci fn application list --compartment-id $comp --display-name mcmgr-fn-app --profile $profile --query "data[0].id" --raw-output
+if ($app -and $app -ne "null") {
+  oci fn function list --application-id $app --profile $profile --output table
+  $fnIds = oci fn function list --application-id $app --profile $profile --query "data[].id" --raw-output
+  foreach ($id in ($fnIds -split "\s+")) {
+    if ($id) { oci fn function delete --function-id $id --force --profile $profile }
+  }
+}
+
+oci events rule list --compartment-id $comp --display-name mcmgr-events-budget-alert --profile $profile --output table
+$ruleIds = oci events rule list --compartment-id $comp --display-name mcmgr-events-budget-alert --profile $profile --query "data[].id" --raw-output
+foreach ($id in ($ruleIds -split "\s+")) {
+  if ($id) { oci events rule delete --rule-id $id --force --profile $profile }
+}
+```
+
+Console: **Developer Services → Functions → Applications → `mcmgr-fn-app`** → delete each Function (product name `mcmgr-fn-softstop`). **Observability & Management → Events → Rules → `mcmgr-events-budget-alert`** → Delete. Then retry Manager Delete. Wait a few seconds after the Function disappears before retrying if destroy still says the app has associated functions.
+
+Do not greenfield Setup until this destroy finishes.
+
+---
+
 ## What to paste to an AI agent
 
 1. Which host (`mcmgr-vm1` vs `mcmgr-door`) and what you were trying to do.  
@@ -607,6 +640,7 @@ Do not pass `--prerelease`. Do not create `.github/workflows`.
 
 ## Changelog
 
+| 2026-08-28 | SETUP-ISSUE-14: Delete fails on `mcmgr-fn-app` while leftover Function/Events exist (CLI/Console then retry Delete; do not second-apply). |
 | 2026-08-27 | Pack installer (`packaging\pack.ps1`) + GitHub Release recipe (tag + Inno `.exe`; not pre-release; no Actions). Unsigned / SmartScreen expected. |
 | 2026-08-23 | SETUP-ISSUE-13: Layer 3 `quarantine_mod` one-shot copy for VMs that predate P10. |
 | 2026-08-20 | SETUP-ISSUE-10: WAIT with cloud-init already done and no `/etc/mcmgr` — invalid YAML, restart Hybrid, do not destroy. |

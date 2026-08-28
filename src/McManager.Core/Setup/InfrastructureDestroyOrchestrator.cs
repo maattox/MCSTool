@@ -5,8 +5,10 @@ using McManager.Core.Services;
 namespace McManager.Core.Setup;
 
 /// <summary>
-/// Tears down OpenTofu-managed product resources only (state under LocalAppData).
-/// Does not delete the Oracle tenancy or resources that were never in tofu state.
+/// Tears down OpenTofu-managed product resources (state under LocalAppData).
+/// Does not delete the Oracle tenancy. Best-effort first: empty the product bucket,
+/// purge OCIR images, and delete leftover Functions/Events that would block
+/// <c>DeleteApplication</c> even when they were never imported into tofu state.
 /// Dry-run via <c>MCMANAGER_TOFU_DRY_RUN=1</c> never calls live destroy.
 /// </summary>
 public sealed class InfrastructureDestroyOrchestrator
@@ -83,7 +85,7 @@ public sealed class InfrastructureDestroyOrchestrator
 
         if (_dryRun)
         {
-            log?.Report("[dry-run] Skipping Object Storage empty, OCIR purge, tofu destroy, and local file deletes.");
+            log?.Report("[dry-run] Skipping Object Storage empty, OCIR purge, Functions/Events purge, tofu destroy, and local file deletes.");
             Report(progress, 40, "Planning deletion (dry-run)…");
             var dryPlan = await Tofu.PlanDestroyAsync(infra, workspace, log, cancellationToken)
                 .ConfigureAwait(false);
@@ -103,6 +105,8 @@ public sealed class InfrastructureDestroyOrchestrator
         await EmptyBucketAsync(session, workspace, log, cancellationToken).ConfigureAwait(false);
         Report(progress, 18, "Removing Function images…");
         await PurgeOcirAsync(session, workspace, log, cancellationToken).ConfigureAwait(false);
+        Report(progress, 21, "Removing leftover Functions…");
+        await PurgeFunctionsEventsAsync(session, workspace, log, cancellationToken).ConfigureAwait(false);
 
         Report(progress, 24, "Allowing bucket delete…");
         BucketDestroyOverride.Install(infra);
@@ -283,6 +287,40 @@ public sealed class InfrastructureDestroyOrchestrator
         }
 
         log?.Report($"Deleted {result.Value} OCIR image(s) from {OcirImagePurger.ProductRepositoryName}.");
+    }
+
+    private static async Task PurgeFunctionsEventsAsync(
+        OciSession? session,
+        TofuWorkspace workspace,
+        IProgress<string>? log,
+        CancellationToken cancellationToken)
+    {
+        if (session is null)
+        {
+            log?.Report("Skipping Functions/Events purge (no OCI session).");
+            return;
+        }
+
+        var compartmentId = ResolveCompartmentId(workspace);
+        if (string.IsNullOrWhiteSpace(compartmentId))
+        {
+            log?.Report("Skipping Functions/Events purge (no compartment OCID).");
+            return;
+        }
+
+        var result = await FunctionsEventsPurger.PurgeProductLeftoversAsync(
+            session, compartmentId, log, cancellationToken).ConfigureAwait(false);
+        if (!result.Succeeded)
+        {
+            log?.Report(
+                result.Error
+                ?? "Functions/Events purge failed. Continuing; tofu destroy may fail on mcmgr-fn-app.");
+            return;
+        }
+
+        var counts = result.Value;
+        log?.Report(
+            $"Deleted {counts.FunctionsDeleted} leftover Function(s) and {counts.EventsDeleted} Events rule(s).");
     }
 
     private static ObjectStorageSettings? ResolveBucketSettings(TofuWorkspace workspace)

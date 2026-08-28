@@ -559,7 +559,7 @@ App updates (GitHub Releases of the Manager) are independent. A newer app must s
 - This **does not** delete the Oracle **tenancy**. Copy says the user has to log in to the **OCI Console in a browser** to delete the tenancy/account if they want that.  
 - User types **`confirm`** (lowercase, exact) before Delete enables.  
 - Window stays open with a log + percent until `tofu destroy` returns (OpenTofu waits for OCI deletion).  
-- Lift `prevent_destroy` on the bucket only as part of that confirmed path (temporary gitignored `zz_mcmgr_destroy_override.tf` in `infra/modules/storage/`). Empty the bucket and product OCIR images first so destroy is not blocked.  
+- Lift `prevent_destroy` on the bucket only as part of that confirmed path (temporary gitignored `zz_mcmgr_destroy_override.tf` in `infra/modules/storage/`). Empty the bucket, product OCIR images, leftover Functions inside `mcmgr-fn-app`, and Events rule `mcmgr-events-budget-alert` first so destroy is not blocked (Functions/Events may exist in OCI without being in tofu state — SETUP-ISSUE-14).  
 - After success: delete `data/config.local.json`, `data/setup-wizard.local.json`, and the LocalAppData tofu workspace. Keep `friends.local.json`, `~/.oci`, SSH keys, Credential Manager, and downloaded zips on the PC.
 
 Worlds that exist only in Object Storage are deleted with the bucket. No tofu state on this PC → the button fails closed (does not List-and-wipe the tenancy).

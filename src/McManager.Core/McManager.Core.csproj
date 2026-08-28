@@ -45,6 +45,8 @@
     <PackageReference Include="OCI.DotNetSDK.Artifacts" Version="144.0.0" />
     <PackageReference Include="OCI.DotNetSDK.Common" Version="144.0.0" />
     <PackageReference Include="OCI.DotNetSDK.Core" Version="144.0.0" />
+    <PackageReference Include="OCI.DotNetSDK.Events" Version="144.0.0" />
+    <PackageReference Include="OCI.DotNetSDK.Functions" Version="144.0.0" />
     <PackageReference Include="OCI.DotNetSDK.Identity" Version="144.0.0" />
     <PackageReference Include="OCI.DotNetSDK.Objectstorage" Version="144.0.0" />
     <PackageReference Include="SixLabors.ImageSharp" Version="2.1.11" />

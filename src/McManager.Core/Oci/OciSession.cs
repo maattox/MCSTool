@@ -7,6 +7,8 @@ using Oci.Common.Retry;
 using Oci.Common.Waiters;
 using Oci.ArtifactsService;
 using Oci.CoreService;
+using Oci.EventsService;
+using Oci.FunctionsService;
 using Oci.IdentityService;
 using Oci.ObjectstorageService;
 
@@ -24,6 +26,8 @@ public sealed class OciSession : IDisposable
     public VirtualNetworkClient VirtualNetwork { get; }
     public ObjectStorageClient ObjectStorage { get; }
     public ArtifactsClient Artifacts { get; }
+    public FunctionsManagementClient Functions { get; }
+    public EventsClient Events { get; }
 
     /// <summary>Shared retry config for per-call overrides when needed.</summary>
     public RetryConfiguration RetryConfiguration { get; }
@@ -35,6 +39,8 @@ public sealed class OciSession : IDisposable
         VirtualNetworkClient virtualNetwork,
         ObjectStorageClient objectStorage,
         ArtifactsClient artifacts,
+        FunctionsManagementClient functions,
+        EventsClient events,
         RetryConfiguration retryConfiguration)
     {
         _authProvider = authProvider;
@@ -43,6 +49,8 @@ public sealed class OciSession : IDisposable
         VirtualNetwork = virtualNetwork;
         ObjectStorage = objectStorage;
         Artifacts = artifacts;
+        Functions = functions;
+        Events = events;
         RetryConfiguration = retryConfiguration;
     }
 
@@ -119,15 +127,21 @@ public sealed class OciSession : IDisposable
             var virtualNetwork = new VirtualNetworkClient(authProvider, clientConfig);
             var objectStorage = new ObjectStorageClient(authProvider, clientConfig);
             var artifacts = new ArtifactsClient(authProvider, clientConfig);
+            var functions = new FunctionsManagementClient(authProvider, clientConfig);
+            var events = new EventsClient(authProvider, clientConfig);
 
             compute.SetRegion(region);
             identity.SetRegion(region);
             virtualNetwork.SetRegion(region);
             objectStorage.SetRegion(region);
             artifacts.SetRegion(region);
+            functions.SetRegion(region);
+            events.SetRegion(region);
 
             return ServiceResult<OciSession>.Ok(
-                new OciSession(authProvider, compute, identity, virtualNetwork, objectStorage, artifacts, retry));
+                new OciSession(
+                    authProvider, compute, identity, virtualNetwork, objectStorage, artifacts,
+                    functions, events, retry));
         }
         catch (Exception ex)
         {
@@ -142,5 +156,7 @@ public sealed class OciSession : IDisposable
         VirtualNetwork.Dispose();
         ObjectStorage.Dispose();
         Artifacts.Dispose();
+        Functions.Dispose();
+        Events.Dispose();
     }
 }
