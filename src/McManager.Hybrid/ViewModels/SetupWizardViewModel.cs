@@ -434,7 +434,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     public string DeployElapsedDisplay => ProgressDockUx.FormatElapsed(CurrentDeployElapsed());
 
     public string DockStatus =>
-        ProgressDockUx.OneLineStatus(ShowDeployProgress, DeployProgressCaption, StatusMessage);
+        ProgressDockUx.OneLineStatus(ShowDeployProgress && IsBusy, DeployProgressCaption, StatusMessage);
 
     public bool ShowDeployRemaining =>
         IsBusy

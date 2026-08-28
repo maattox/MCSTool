@@ -113,7 +113,7 @@ Each user may have at most **two** Auth Tokens. If you lose it, generate a new o
 - **Spend-brake Function image:** the installer already contains `mcmgr-fn-softstop-linux-arm64.tar` next to the app. You do **not** need Docker Desktop.
 - **OpenTofu:** the first **Deploy** on a PC that does not already have OpenTofu needs internet: Manager downloads a pinned OpenTofu 1.12.6 Windows build into `%LOCALAPPDATA%\McManager\tofu` (Mozilla Public License 2.0; source [github.com/opentofu/opentofu](https://github.com/opentofu/opentofu)). You do not install WinGet or `tofu` by hand. `tofu init` still fetches the OCI provider on that first run.
 
-Uninstall from Windows Settings → Apps → **MC Manager** (or the Start Menu uninstall entry). That removes the app folder and the Start Menu shortcut. It does **not** delete `%LOCALAPPDATA%\McManager` (local config and the OpenTofu copy) or your Oracle tenancy.
+Uninstall from Windows Settings → Apps → **MC Manager** (or the Start Menu uninstall entry). That removes the app folder and the Start Menu shortcut. It does **not** delete `%LOCALAPPDATA%\McManager` (installed `config.local.json`, wizard resume, friends, program settings, and the OpenTofu copy) or your Oracle tenancy. From-source checkouts still keep those JSON files in the repo `data/` folder instead.
 
 **Developers (from a checkout, requires [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)):**
 
@@ -141,7 +141,7 @@ On first launch with no local manage config, choose **Deploy a new stack (Setup)
 
 (If you already deployed from another PC, use **Find an existing stack** instead — see [Connect an existing stack](#connect-an-existing-stack).)
 
-Walk the wizard. Pages are short; hover the **info (i)** next to a label for the extra detail. You can close and resume later from **Advanced → Deploy / repair** (progress is saved locally; secrets are not).
+Walk the wizard. Pages are short; hover the **info (i)** next to a label for the extra detail. You can close and resume later from **Advanced → Deploy / repair** (progress is saved locally under `%LOCALAPPDATA%\McManager` when installed, or repo `data/` from-source; secrets are not).
 
 | Step | What to do |
 |------|------------|

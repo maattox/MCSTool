@@ -354,7 +354,11 @@ public sealed class SetupDeployOrchestrator
         ReportProgress(progress, SetupApplyStage.ConfigWritten, "Saving local config…");
         var saved = LocalConfigStore.SaveConfig(config);
         if (!saved.Succeeded)
-            return SetupDeployResult.Fail(stage, saved.Error ?? "Failed to save config.local.json.");
+        {
+            return SetupDeployResult.Fail(
+                stage,
+                saved.Error ?? LocalConfigStore.CannotWriteSettingsMessage);
+        }
 
         SeedAdminFriend(state);
         stage = SetupApplyStage.ConfigWritten;

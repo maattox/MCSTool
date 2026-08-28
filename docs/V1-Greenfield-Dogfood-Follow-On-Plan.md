@@ -43,8 +43,8 @@ None. P2–P3 share [`Guide.md`](Guide.md). P1 then P2 share wizard persist / Se
 
 | ID | Title | Status | Parallel | Cursor |
 |----|-------|--------|----------|--------|
-| P1 | Greenfield local config (installed PC) | **NEXT** | SEQUENTIAL — unblocks Close → Manage | agent |
-| P2 | Setup wizard polish | TODO | SEQUENTIAL — Hybrid wizard after P1 | agent |
+| P1 | Greenfield local config (installed PC) | **DONE** | SEQUENTIAL — unblocks Close → Manage | agent |
+| P2 | Setup wizard polish | **NEXT** | SEQUENTIAL — Hybrid wizard after P1 | agent |
 | P3 | Installer desktop shortcut + app icon | TODO | SEQUENTIAL — Inno + Hybrid; Guide | agent |
 | P4 | Park reserved play IP on VM1 after Deploy | TODO | SEQUENTIAL — last; restores packaging P6 | agent |
 
@@ -109,7 +109,7 @@ Locked for this plan. Do not reopen in an implementation chat.
 
 ## P1 — Greenfield local config (installed PC)
 
-**Status:** NEXT  
+**Status:** DONE  
 **Parallel:** SEQUENTIAL — unblocks Close → Manage after Deploy  
 **Cursor mode:** agent
 
@@ -138,13 +138,13 @@ Locked for this plan. Do not reopen in an implementation chat.
 
 **Done when:** An installer-layout process can write and reload manage config with no repo checkout and no env var. Wizard no longer shows the repo-root error on a clean PC. Deploy’s config stage can succeed.
 
-**Changelog:** *(empty)*
+**Changelog:** 2026-08-28 — Installed Manager (no repo markers, no `MCMANAGER_CONFIG_DIR`) writes `config.local.json` / friends / wizard JSON under `%LOCALAPPDATA%\McManager`. User-facing save errors; Deploy config-stage failure stays a hard fail. Core finder tests.
 
 ---
 
 ## P2 — Setup wizard polish
 
-**Status:** TODO  
+**Status:** NEXT  
 **Parallel:** SEQUENTIAL — Hybrid Setup after P1  
 **Cursor mode:** agent
 
@@ -250,4 +250,5 @@ Locked for this plan. Do not reopen in an implementation chat.
 
 | Date | Note |
 |------|------|
+| 2026-08-28 | **P1 DONE** — installed local config under `%LOCALAPPDATA%\McManager`. Living **NEXT = P2** (Setup wizard polish). Do not start P3 or packaging P7. |
 | 2026-08-28 | Created (docs only) from operator new-PC greenfield notes. Living **NEXT = P1** (installed local config). Packaging **P6** paused (TODO) until P4 restores it. Do not start P7. |

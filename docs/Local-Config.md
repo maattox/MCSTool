@@ -14,6 +14,7 @@ The Manager WinExe (`McManager.Hybrid`, WPF + BlazorWebView) seeds connectivity 
 | `data/sample-packs/` | **Ignored** | Operator-local sample `.mrpack` / CurseForge zips for Phase 4 pack-import work — see [`Sample-Packs.md`](Sample-Packs.md). **Not** CI fixtures. **Not** the Change-pack corpus. |
 | `pack-tests/packs/` | **Ignored** (except `.gitkeep`) | Expected-to-work Change-pack corpus archives — [`pack-tests/README.md`](../pack-tests/README.md). Sidecar/result YAML and [`PROTOCOL.md`](../pack-tests/PROTOCOL.md) stay tracked. |
 | `%LOCALAPPDATA%\McManager\app-settings.json` | **Ignored** (outside the repo) | Program settings for this PC: update-check toggle (GitHub Releases on launch when on). Not stack OCIDs. |
+| `%LOCALAPPDATA%\McManager\config.local.json` (plus `friends.local.json` / `setup-wizard.local.json`) | **Ignored** (outside the repo) | Installed Manager seeds (same schema as repo `data/`). Survive uninstall. |
 
 Copy examples into `data/` and fill values, or keep the operator-seeded files already present on this machine.
 
@@ -29,7 +30,7 @@ Do **not** copy Auth Tokens into `config.local.json` (OCIR only; Manager uses `~
 
 ## Setup wizard resume
 
-`McManager.Core.Config.SetupWizardStore` reads/writes `data/setup-wizard.local.json` (same data directory as manage config). Saved on each Next/Back/Close.
+`McManager.Core.Config.SetupWizardStore` reads/writes `setup-wizard.local.json` in the same directory as manage config (repo `data/` from-source; `%LOCALAPPDATA%\McManager` when installed). Saved on each Next/Back/Close.
 
 Included: current step, Always Free / residual / capacity flags, OCI profile + region, compartment strategy, alert email, SSH **public** path/line/fingerprint (Generate creates `%USERPROFILE%\.ssh\mcmgr_ed25519_yyyyMMdd_HHmmss`, not a reused default name), **server type** (`vanilla` / `modded`), Vanilla flavor (`default` Mojang vs `optimized` Paper) + version **id**, Modded pack path/kind/name/loader + confirm flags (no catalog URL), **server list name / description / optional 64×64 PNG path** (Setup identity; same Object Storage objects as Server Management), EULA flag, whether a token was stored, **admin `/32` CIDR**, **VM1 OCPUs / memory** (`2`/`12` or `4`/`24`; default **4 / 24**). In-game `white-list` is **off**; OCI Security List is the allowlist. Also **`apply_stage`**, optional Function image after OCIR **copy** of a pre-built ARM tarball when present (Docker buildx only if the artifact is missing; Deploy / repair copies when the bundled digest differs; installer bundling is **9.1**).
 
@@ -37,7 +38,7 @@ Included: current step, Always Free / residual / capacity flags, OCI profile + r
 
 **Step 3.3 writes:**
 
-- `data/config.local.json` after a successful (non-dry-run) Deploy — **replaces** an existing manage seed in that data directory (wizard confirms first). Prefer `MCMANAGER_CONFIG_DIR` pointing at a **new empty folder** so an existing manage seed stays intact.
+- `config.local.json` after a successful (non-dry-run) Deploy — **replaces** an existing manage seed in that data directory (wizard confirms first). Installed: `%LOCALAPPDATA%\McManager\config.local.json`. From-source: repo `data/config.local.json`. Prefer `MCMANAGER_CONFIG_DIR` pointing at a **new empty folder** so an existing manage seed stays intact.
 - OpenTofu `terraform.tfvars` + `terraform.tfstate` under `%LOCALAPPDATA%\McManager\tofu\<stack-id>\` (not the repo, not the shared bucket). **Never** writes [`infra/terraform.tfvars`](../infra/terraform.tfvars). Manual `tofu import` / `plan` for that stack must `-state`/`-var-file` those LocalAppData files while the working directory is repo `infra/` (PowerShell: quote `-state="$state"`).
 - `friends.local.json` with the admin `/32` **only if that file is empty**.
 - Guest netplan (`/etc/netplan/99-mcmgr-play.yaml`) for the secondary play IP; managed `server.properties` with **`white-list=false`** / **`enforce-whitelist=false`** (OCI Security List is the allowlist). Setup does **not** seed `whitelist.json` from a Minecraft username.
@@ -71,13 +72,14 @@ Optional targeted GetInstance/VNIC refresh fills a missing `ssh_host` from the r
 
 ## Load path
 
-Canonical location is the **product repo root** `data/` (next to `AGENTS.md` / `config.local.example.json`), **not** under `src/`.
-
-`McManager.Core.Config.LocalConfigStore` walks upward from the app base directory / cwd and:
+`MCMANAGER_CONFIG_DIR` always wins (QA / pack-test / a throwaway folder). Then `McManager.Core.Config.LocalConfigStore` walks upward from the app base directory / cwd:
 
 1. Uses the first existing `data/config.local.json` it finds  
-2. Else creates `data/` at the directory that contains `AGENTS.md` or `config.local.example.json`  
-3. Else falls back to `data/` next to `McManager.slnx` (only if no repo-root config exists)
+2. Else creates `data/` at the directory that contains `AGENTS.md` or `config.local.example.json` (product **repo** root, **not** under `src/`)  
+3. Else falls back to `data/` next to `McManager.slnx` (only if no repo-root config exists)  
+4. Else (installed Manager: no repo markers) **`%LOCALAPPDATA%\McManager`** — the same folder as `app-settings.json`. Writes `config.local.json`, `friends.local.json`, and `setup-wizard.local.json` **directly there** (not a `data/` subfolder, and not under `%LOCALAPPDATA%\Programs\MC Manager`, so uninstall does not wipe the seed).
+
+From-source and Hybrid QA still use repo `data/` or the env override. Users never need `MCMANAGER_CONFIG_DIR`.
 
 Override with environment variable:
 
@@ -85,7 +87,7 @@ Override with environment variable:
 MCMANAGER_CONFIG_DIR=C:\path\to\OCI-mc-server
 ```
 
-(Expected layout: `{dir}/data/config.local.json`.)
+(Expected layout: `{dir}/data/config.local.json`, or `{dir}` itself when there is no `data/` child.)
 
 Pack-corpus harness: `MCMANAGER_CONFIG_DIR` = **`mcmgr-pack-test`** (TESTING `config.local.json` copied from `mcmgr-blank-test`). Do **not** use repo `data/config.local.json` (Forge / `DEFAULT`) or `mcmgr-blank-test` (keeps interactive Manager Layer 2 overlays clean). Pack bytes live under gitignored [`pack-tests/packs/`](../pack-tests/packs/), not `data/sample-packs/`.
 

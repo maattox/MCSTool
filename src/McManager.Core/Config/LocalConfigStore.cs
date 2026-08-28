@@ -4,8 +4,9 @@ using McManager.Core.Services;
 namespace McManager.Core.Config;
 
 /// <summary>
-/// Loads gitignored operator seeds from <c>data/config.local.json</c> and
-/// <c>data/friends.local.json</c> under the product repo (or <c>MCMANAGER_CONFIG_DIR</c>).
+/// Loads gitignored operator seeds (<c>config.local.json</c>, <c>friends.local.json</c>).
+/// From-source uses repo <c>data/</c>; an installed Manager uses
+/// <c>%LOCALAPPDATA%\McManager</c>; <c>MCMANAGER_CONFIG_DIR</c> still wins.
 /// </summary>
 public static class LocalConfigStore
 {
@@ -13,6 +14,10 @@ public static class LocalConfigStore
     public const string FriendsFileName = "friends.local.json";
     public const string WizardStateFileName = "setup-wizard.local.json";
     public const string ConfigDirEnvVar = "MCMANAGER_CONFIG_DIR";
+
+    /// <summary>User-facing save failure when no writable settings folder can be resolved.</summary>
+    public const string CannotWriteSettingsMessage =
+        "Could not save Manager settings on this PC. Check that files can be written under Local App Data.";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -72,7 +77,27 @@ public static class LocalConfigStore
             return solutionDataFallback;
         }
 
-        return null;
+        var installed = GetInstalledDataDirectory();
+        if (string.IsNullOrWhiteSpace(installed))
+            return null;
+
+        Directory.CreateDirectory(installed);
+        return installed;
+    }
+
+    /// <summary>
+    /// Installed Manager settings folder (same directory as <c>app-settings.json</c>).
+    /// Not a <c>data/</c> subfolder under the install dir.
+    /// </summary>
+    public static string GetInstalledDataDirectory()
+    {
+        if (InstalledDataDirectoryOverride is not null)
+            return InstalledDataDirectoryOverride;
+
+        var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        return string.IsNullOrWhiteSpace(local)
+            ? ""
+            : Path.Combine(local, AppSettingsStore.ProductFolderName);
     }
 
     private static readonly JsonSerializerOptions JsonWriteOptions = new()
@@ -93,10 +118,7 @@ public static class LocalConfigStore
     {
         dataDirectory ??= TryFindDataDirectory();
         if (dataDirectory is null)
-        {
-            return ServiceResult.Fail(
-                $"Could not locate data directory. Set {ConfigDirEnvVar} or ensure data/ exists.");
-        }
+            return ServiceResult.Fail(CannotWriteSettingsMessage);
 
         try
         {
@@ -108,7 +130,7 @@ public static class LocalConfigStore
         }
         catch (Exception ex)
         {
-            return ServiceResult.Fail($"Failed to save friends: {ex.Message}");
+            return ServiceResult.Fail($"Could not write Manager settings: {ex.Message}");
         }
     }
 
@@ -116,10 +138,7 @@ public static class LocalConfigStore
     {
         dataDirectory ??= TryFindDataDirectory();
         if (dataDirectory is null)
-        {
-            return ServiceResult.Fail(
-                $"Could not locate data directory. Set {ConfigDirEnvVar} or ensure data/ exists.");
-        }
+            return ServiceResult.Fail(CannotWriteSettingsMessage);
 
         try
         {
@@ -131,7 +150,7 @@ public static class LocalConfigStore
         }
         catch (Exception ex)
         {
-            return ServiceResult.Fail($"Failed to save config: {ex.Message}");
+            return ServiceResult.Fail($"Could not write Manager settings: {ex.Message}");
         }
     }
 
@@ -166,15 +185,13 @@ public static class LocalConfigStore
         if (dataDir is null)
         {
             return LocalConfigLoadResult.Missing(
-                "Could not locate data/config.local.json. Copy config.local.example.json to data/config.local.json "
-                + $"or set {ConfigDirEnvVar}.");
+                "Could not find Manager settings on this PC.");
         }
 
         var configPath = Path.Combine(dataDir, ConfigFileName);
         if (!File.Exists(configPath))
         {
-            return LocalConfigLoadResult.Missing(
-                $"Missing {configPath}. Copy config.local.example.json into data/ and fill OCIDs.");
+            return LocalConfigLoadResult.Missing($"Missing {configPath}.");
         }
 
         try
@@ -200,8 +217,26 @@ public static class LocalConfigStore
         }
     }
 
+    /// <summary>Test hook: replace binary/cwd walk. Thread-local so parallel tests stay isolated.</summary>
+    [ThreadStatic]
+    internal static Func<IEnumerable<string>>? CandidateStartsOverride;
+
+    /// <summary>
+    /// Test hook: replace <c>%LOCALAPPDATA%\McManager</c>. Empty string disables the installed fallback.
+    /// Thread-local so parallel tests stay isolated.
+    /// </summary>
+    [ThreadStatic]
+    internal static string? InstalledDataDirectoryOverride;
+
     private static IEnumerable<string> CandidateStarts()
     {
+        if (CandidateStartsOverride is not null)
+        {
+            foreach (var start in CandidateStartsOverride())
+                yield return start;
+            yield break;
+        }
+
         yield return AppContext.BaseDirectory;
         yield return Directory.GetCurrentDirectory();
     }

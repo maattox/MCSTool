@@ -113,10 +113,7 @@ public static class SetupWizardStore
     {
         var dataDir = LocalConfigStore.TryFindDataDirectory();
         if (dataDir is null)
-        {
-            return ServiceResult.Fail(
-                $"Could not locate data directory. Set {LocalConfigStore.ConfigDirEnvVar} or ensure the product repo root is findable.");
-        }
+            return ServiceResult.Fail(LocalConfigStore.CannotWriteSettingsMessage);
 
         try
         {
@@ -130,7 +127,7 @@ public static class SetupWizardStore
         }
         catch (Exception ex)
         {
-            return ServiceResult.Fail($"Failed to save wizard state: {ex.Message}");
+            return ServiceResult.Fail($"Could not write Manager settings: {ex.Message}");
         }
     }
 }
