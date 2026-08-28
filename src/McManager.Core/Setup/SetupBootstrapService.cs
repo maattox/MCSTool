@@ -9,7 +9,7 @@ using Renci.SshNet.Common;
 
 namespace McManager.Core.Setup;
 
-/// <summary>SSH wait/cloud-init + door / onbox / idle-agent upload. Follows lab Agent-Deploy-Pitfalls.</summary>
+/// <summary>SSH wait/cloud-init + door / onbox / idle-agent upload.</summary>
 public sealed class SetupBootstrapService
 {
     public async Task<ServiceResult> WaitCloudInitAsync(

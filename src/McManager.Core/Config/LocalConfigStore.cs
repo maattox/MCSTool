@@ -53,9 +53,8 @@ public static class LocalConfigStore
                 if (File.Exists(configPath))
                     return data;
 
-                // Product repo root (example configs / AGENTS.md). Prefer over src/ with only the .slnx.
-                if (File.Exists(Path.Combine(dir.FullName, "AGENTS.md"))
-                    || File.Exists(Path.Combine(dir.FullName, "config.local.example.json")))
+                // Product repo root (example configs). Prefer over src/ with only the .slnx.
+                if (File.Exists(Path.Combine(dir.FullName, "config.local.example.json")))
                 {
                     Directory.CreateDirectory(data);
                     return data;

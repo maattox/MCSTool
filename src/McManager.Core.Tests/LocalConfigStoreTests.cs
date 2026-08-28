@@ -45,7 +45,7 @@ public sealed class LocalConfigStoreTests
     {
         var overrideDir = NewTempDir("mcmgr-cfg-env-");
         var repo = NewTempDir("mcmgr-cfg-repo-");
-        File.WriteAllText(Path.Combine(repo, "AGENTS.md"), "x");
+        File.WriteAllText(Path.Combine(repo, "config.local.example.json"), "{}");
         var installed = NewTempDir("mcmgr-cfg-inst-");
         using (Isolate(configDirEnv: overrideDir, candidateStarts: [repo], installed: installed))
         {
@@ -65,8 +65,8 @@ public sealed class LocalConfigStoreTests
     [Fact]
     public void Repo_root_markers_use_data_subdirectory()
     {
-        var repo = NewTempDir("mcmgr-cfg-agents-");
-        File.WriteAllText(Path.Combine(repo, "AGENTS.md"), "x");
+        var repo = NewTempDir("mcmgr-cfg-example-");
+        File.WriteAllText(Path.Combine(repo, "config.local.example.json"), "{}");
         var installed = NewTempDir("mcmgr-cfg-inst-");
         using (Isolate(configDirEnv: null, candidateStarts: [repo], installed: installed))
         {

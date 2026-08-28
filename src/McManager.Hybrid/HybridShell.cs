@@ -48,7 +48,7 @@ public sealed class HybridShell : INotifyPropertyChanged
     public void OpenSetup()
     {
         // Does not tofu apply — Deploy inside the wizard is a separate click
-        // (agents: MCMANAGER_TOFU_DRY_RUN=1).
+        // (MCMANAGER_TOFU_DRY_RUN=1 for a dry run).
         if (Page != PageKind.Setup)
             _pageBeforeSetup = Page;
         Page = PageKind.Setup;

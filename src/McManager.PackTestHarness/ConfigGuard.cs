@@ -108,7 +108,7 @@ internal static class ConfigGuard
         var parent = dir.Parent;
         if (parent is null)
             return false;
-        return File.Exists(Path.Combine(parent.FullName, "AGENTS.md"));
+        return File.Exists(Path.Combine(parent.FullName, "config.local.example.json"));
     }
 
     internal static bool IsUnder(string path, string parent)

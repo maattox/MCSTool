@@ -1,7 +1,7 @@
 namespace McManager.Core.Setup;
 
 /// <summary>
-/// Records tofu argv and returns canned success. Never starts <c>tofu</c> — agent / dry-run only.
+/// Records tofu argv and returns canned success. Never starts <c>tofu</c> — dry-run / tests only.
 /// </summary>
 public sealed class RecordingOpenTofuRunner : IOpenTofuRunner
 {

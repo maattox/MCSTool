@@ -1,6 +1,0 @@
-# Analysis-only. Harness must not apply as Skip during install.
-# Pack env.server=unsupported (Sodium). Fabric API + Lithium stay server-side.
-pack_id: homemade-fabric-strip
-verified_utc: "2026-08-24T00:00:00Z"
-jars:
-  - "sodium-fabric-0.8.12+mc1.21.1.jar"

@@ -5,8 +5,6 @@ This folder is the **tracked** tree for **VM2 (door Micro)** software: `mccontro
 | Authority | Role |
 |-----------|------|
 | **`door_vm/` (this tree)** | What to rebuild/redeploy onto a new Always Free Micro |
-| [`docs/Door-VM-Control-Plane.md`](../docs/Door-VM-Control-Plane.md) | Behavior / state machine explanation |
-| [`docs/PRODUCT-IDEAS.md`](../docs/PRODUCT-IDEAS.md) | Product intent (wins on design conflicts) |
 
 Do **not** commit `oci.env`, API keys, or tenancy OCIDs. Use `oci/config.example.env` and `config.example.json` as templates; live values stay in `/etc/mccontrol/` on the VM and in gitignored `data/`.
 
@@ -82,7 +80,7 @@ Manager **Troubleshooting** / Setup door deploy covers the same operations (park
 | `scripts/reconcile_vm1.sh` | Idle-empty handback; **no** routine budget pull; heal **once** per down episode when STOPPED (`os-cache/ledger_heal_verified`) |
 | `oci/ip_to_vm1.sh` | Move reserved IP to VM1; clears `ledger_heal_verified` |
 
-Wake path (`do_wake`) also runs pull before the spend-brake lock check and the daily/soft budget gate when `object_storage_enabled` is true. See also `docs/Object-Storage-Phase5.md`.
+Wake path (`do_wake`) also runs pull before the spend-brake lock check and the daily/soft budget gate when `object_storage_enabled` is true.
 
 ---
 
@@ -91,12 +89,8 @@ Wake path (`do_wake`) also runs pull before the spend-brake lock check and the d
 - Prefer `monthly_ocpu_target / days-in-LA-month` from OS `budget/config.json`  
 - Also refuse wake when month-to-date OCPU-h ≥ `soft_ocpu_cap`  
 - Also refuse **START VM1** when `meta/spend-brake-triggered.json` is present (distinct MOTD/kick from daily exhaustion)  
-- Fail closed if OS pull fails (including a non-404 lock GET)  
-
-See `docs/Object-Storage-Phase3.md`.
+- Fail closed if OS pull fails (including a non-404 lock GET)
 
 ---
 
-## Known issues
-
-See [`docs/Issues.md`](../docs/Issues.md) (MOTD first-kick race, heal/reconcile history, etc.).
+---

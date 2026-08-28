@@ -226,7 +226,7 @@ public sealed class MinecraftConsoleRemoteTests
         var dir = AppContext.BaseDirectory;
         while (!string.IsNullOrEmpty(dir))
         {
-            if (File.Exists(Path.Combine(dir, "AGENTS.md")))
+            if (File.Exists(Path.Combine(dir, "config.local.example.json")))
                 return dir;
             dir = Directory.GetParent(dir)?.FullName ?? "";
         }

@@ -367,12 +367,8 @@ data/
 **/appsettings.*.local.json
 *.local.json
 
-# Pack-corpus Change-pack test archives, journals, and phase lock
-# (PROTOCOL.md, catalog.yaml, result YAML, and packs/.gitkeep stay tracked)
-pack-tests/packs/*
-!pack-tests/packs/.gitkeep
-pack-tests/**/logs/
-pack-tests/.lock
+# Pack-corpus fixtures and results (local only)
+pack-tests/
 
 # Secrets and credentials
 .env
@@ -384,18 +380,19 @@ oci.env
 # JetBrains Rider
 .idea/
 
-# VS Code / Cursor (keep repo-level recommendations out of user settings)
+# Editor settings
 .vscode/*
 !.vscode/extensions.json
 
-# Cursor local (rules, plans, MCP). Project skills are shared.
-.cursor/*
-!.cursor/skills/
-!.cursor/skills/**
-AGENTS.md
+# Local tooling
+.cursor/
+
+# Local-only development notes
+docs/archive/
 
 # Operator-copied Setup Deploy logs (may contain OCIDs, IPs, keys)
 docs/deploy-log.txt
+docs/test-deploy-log.txt
 **/.terraform/
 *.tfstate
 *.tfstate.*

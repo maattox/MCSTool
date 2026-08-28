@@ -1,6 +1,0 @@
-# Analysis-only. Harness must not apply as Skip during install.
-# Official Server Files zip; client HUD/render mods already omitted. No extra client-only jars in this archive.
-pack_id: cf-fabric-cobblemon-1.7.3
-verified_utc: "2026-08-24T00:00:00Z"
-jars:
-  []

@@ -2,13 +2,6 @@
 
 Tracked source for software that runs on the **Ampere game host (VM1)** under `/opt/mc-manager` (plus systemd units). Deploy via product Setup or Manager **Deploy / Update Idle Agent**.
 
-| Doc | Role |
-|-----|------|
-| [`docs/VM-Software.md`](../docs/VM-Software.md) | VM1 + VM2 overview + **current build status** |
-| [`docs/Infrastructure-Information.md`](../docs/Infrastructure-Information.md) | Full OCI architecture |
-| [`docs/Contracts-Object-Storage.md`](../docs/Contracts-Object-Storage.md) | Ledger publish, uncertain-stop repair, lease heartbeat |
-| [`docs/Issues.md`](../docs/Issues.md) | SoftStop hang, dual-write, repair rules |
-
 ## What it does
 
 SoftStop VM1 after `idle_timeout_minutes` if Minecraft is **empty** (RCON `list`) **or** the `minecraft` unit is **not** `active` (stopped, failed, crash-loop). Same timeout; do not SoftStop on the first tick of a normal start. When the game is already down, skip RCON; still cold-backup if the world exists, then ledger/lease + OCI SoftStop. Budget soft cap still stops a VM that is up with the game down.
@@ -27,7 +20,7 @@ Intervals always include **`ocpus`** / **`memory_gb`** from **live guest detecti
 
 Default / current operator layout: **`/home/ubuntu/minecraft/server/world`**.
 
-This is **config-driven** (`world_path` in `/etc/mc-manager/config.json`). Automated Setup and Vanilla vs modded installs may place the world elsewhere later — agents and code should read the config key, not assume the path forever.
+This is **config-driven** (`world_path` in `/etc/mc-manager/config.json`). Automated Setup and Vanilla vs modded installs may place the world elsewhere later — read the config key, not a hard-coded path.
 
 RCON stays **localhost only** (`25575`).
 

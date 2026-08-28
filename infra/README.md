@@ -3,7 +3,7 @@
 Product IaC for a private Always Free doorbell (VM1 A1 Flex + door Micro + reserved play IP).  
 **Engine:** OpenTofu (`tofu`), provider `oracle/oci`. Not HashiCorp Terraform. Not OCI Resource Manager.
 
-Authority: [`docs/Automated-Infrastructure-Deployment.md`](../docs/Automated-Infrastructure-Deployment.md), [`docs/Lab-Reference-Stack-Notes.md`](../docs/Lab-Reference-Stack-Notes.md).
+User-facing Setup is documented in [`docs/Guide.md`](../docs/Guide.md). This folder is the OpenTofu module the Manager applies from LocalAppData — do not `tofu apply` here on a tenancy that already has the product stack.
 
 **Step 3.1:** skeleton is validatable / plan-able. **Do not `tofu apply` on the live lab tenancy.** Setup (Step 3.3) applies from the wizard using **LocalAppData state**, not this directory’s `terraform.tfvars`. Applying here would create a second Always Free stack that competes with the running lab for Ampere / Micro / reserved-IP envelopes.
 
@@ -130,13 +130,13 @@ Never `tofu import` the **live Forge lab** into product state. Importing one res
 - Budget + ACTUAL ABSOLUTE $1 alert (email). Residual-charge copy is in the budget description / alert message. OCI **CreateBudget `description` max 200 characters**. When this apply also creates the stack compartment, wait 2 min before OCIR `mcmgr-fn/softstop` (Artifacts 404-DENIED on a brand-new compartment; SETUP-ISSUE-9).
 - Events → Function is the live path. **No ONS topic.**
 - `softstop_instance_ids` defaults to **VM1 only**. Always Free AMD Micro stays up (does not use Ampere OCPU-hours). Function config also passes `OS_NAMESPACE` / `OS_BUCKET` / `OS_LOCK_OBJECT` for the lock PUT.
-- The v1 lock object (`meta/spend-brake-triggered.json`) is **runtime state**, not a tofu resource. Tracked Function source writes it (`functions/shutdown_vm/`). **Product path (before release):** pre-built ARM tarball copied into the user’s OCIR (V1 Step **8.6.1**); **users** do not need Docker Desktop / Cloud Shell. Developer Docker Desktop is OK. TESTING `fn push` remains allowed for agents; do not `fn push` the live Forge lab unless the operator authorizes it.
+- The v1 lock object (`meta/spend-brake-triggered.json`) is **runtime state**, not a tofu resource. Tracked Function source writes it (`functions/shutdown_vm/`). **Product path (before release):** pre-built ARM tarball copied into the user’s OCIR (V1 Step **8.6.1**); **users** do not need Docker Desktop / Cloud Shell. Developer Docker Desktop is OK. Developer `fn push` on a test tenancy is OK; do not `fn push` a live lab unless you mean to.
 
 ---
 
 ## Outputs → Manager config / `meta/infra.json`
 
-Root outputs cover every OCID/IP in [`docs/Local-Config.md`](../docs/Local-Config.md) and nested `meta/infra.json` v2. `output.infra_meta_skeleton` is the map Step 3.3 should PUT (game stays `vanilla` / `unspecified` until SSH bootstrap). Greenfield `world_path` is `/opt/mcmgr/server/world`. **No secrets** (no SSH private key, no RCON, no Auth Token).
+Root outputs cover every OCID/IP the Manager stores in local config and nested `meta/infra.json` v2. `output.infra_meta_skeleton` is the map Step 3.3 should PUT (game stays `vanilla` / `unspecified` until SSH bootstrap). Greenfield `world_path` is `/opt/mcmgr/server/world`. **No secrets** (no SSH private key, no RCON, no Auth Token).
 
 If `mcmgr-shared-data` is taken in the namespace, set `bucket_name` to a suffix and record the actual name in meta.
 

@@ -1,6 +1,6 @@
 # On-box Minecraft bootstrap (VM1) — product SoT
 
-**Authority:** mechanism details live in [`docs/Minecraft-Server-Deployment-Blueprint.md`](../../docs/Minecraft-Server-Deployment-Blueprint.md). This tree is the **executable** Vanilla + Paper + Fabric + NeoForge + Forge bootstrap Setup uploads and runs over SSH. Wizard UI for Fabric/Modded is a later V1 step — the on-box Fabric/NeoForge/Forge modules are invoked with `DISTRIBUTION=fabric`, `DISTRIBUTION=neoforge`, or `DISTRIBUTION=forge`. Forge is **not** a Setup radio next to NeoForge; it exists for packs that declare Forge (1.12.2-era and 1.20.1).
+This tree is the **executable** Vanilla + Paper + Fabric + NeoForge + Forge bootstrap Setup uploads and runs over SSH. The on-box Fabric/NeoForge/Forge modules are invoked with `DISTRIBUTION=fabric`, `DISTRIBUTION=neoforge`, or `DISTRIBUTION=forge`. Forge is **not** a Setup radio next to NeoForge; it exists for packs that declare Forge (1.12.2-era and 1.20.1).
 
 **Not** the idle agent (`/opt/mc-manager` stays in this repo’s `vm_agent/` tree). **Not** a copy of the operator’s live Forge lab under `/home/ubuntu/minecraft`.
 
@@ -123,9 +123,9 @@ bash /path/to/onbox/mcmgr/common/driver.sh
 
 Requires: root, `curl`, `sha1sum` (Vanilla) / `sha256sum` (Paper), `python3`, `apt-get` (Adoptium) or network for Adoptium API fallback, aarch64 Ubuntu. Paper/Fabric/NeoForge/Forge HTTP calls send a descriptive User-Agent (`mcmgr-bootstrap/…` + GitHub URL). Fabric, NeoForge, and Forge have no published installer/launcher checksum (`none_published`). NeoForge GETs use a 45s timeout and retry; failures name `maven.neoforged.net`. Forge GETs `promotions_slim.json` (not the ad HTML page); installer jars come from `maven.minecraftforge.net`. Minecraft **1.20.1 and older are refused for NeoForge** (Forge is the 1.20.1 / 1.12.2 path). Forge refuses Minecraft **older than 1.7**.
 
-## Phase 3 SSH upload notes
+## SSH upload notes
 
-Follow [`Agent-Deploy-Pitfalls.md`](../../docs/Agent-Deploy-Pitfalls.md):
+When uploading from Windows:
 
 1. SFTP as `ubuntu` into a **ubuntu-writable** staging dir under `/tmp/...` (do not `sudo mkdir` then SFTP into it).
 2. Strip **CRLF** on scripts and `*.py` helpers authored on Windows before `bash`/`python3`.

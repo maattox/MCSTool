@@ -24,7 +24,7 @@ public enum CapacityWaitChoice
 /// game (Vanilla Default/Paper or Modded pack file) → name/icon → EULA → Auth Token → summary).
 /// Compartment is auto-named <c>mcmgr</c> / <c>mcmgr-2</c> at Deploy. No Window Host —
 /// pickers/clipboard/dialogs/clock via B3 interfaces. Does not tofu apply unless the
-/// operator clicks Deploy; agents use <c>MCMANAGER_TOFU_DRY_RUN=1</c>.
+/// operator clicks Deploy; set <c>MCMANAGER_TOFU_DRY_RUN=1</c> for a dry run.
 /// </summary>
 public sealed partial class SetupWizardViewModel : ObservableObject
 {

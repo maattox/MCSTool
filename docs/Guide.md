@@ -109,7 +109,7 @@ Each user may have at most **two** Auth Tokens. If you lose it, generate a new o
 **Intended path:** run the Windows installer (`MCManager-Setup-<version>.exe`). It installs **per-user** (no administrator prompt, not Program Files — typically `%LOCALAPPDATA%\Programs\MC Manager`). Additional tasks offers a **desktop shortcut** (checked by default; uncheck it if you only want Start Menu). When it finishes, open **MC Manager** from the Start Menu or the desktop shortcut. Setup is inside that one app.
 
 - **WebView2:** if Windows is missing the [Evergreen runtime](https://go.microsoft.com/fwlink/p/?LinkId=2124703), Manager shows a message with Microsoft’s installer link. Install that, then open Manager again. The MC Manager installer does **not** bundle WebView2.
-- **Unknown publisher / SmartScreen:** this build is **unsigned** (a code-signing certificate is deferred). Windows may show **Windows protected your PC** or **unknown publisher**. That is expected for closed beta. Click **More info** → **Run anyway** only for an installer you built yourself or downloaded from this project’s [GitHub Releases](https://github.com/maattox/oci-mc-server/releases).
+- **Unknown publisher / SmartScreen:** this build is **unsigned** (a code-signing certificate is deferred). Windows may show **Windows protected your PC** or **unknown publisher**. That is expected for open-beta builds. Click **More info** → **Run anyway** only for an installer you built yourself or downloaded from this project’s [GitHub Releases](https://github.com/maattox/oci-mc-server/releases).
 - **Spend-brake Function image:** the installer already contains `mcmgr-fn-softstop-linux-arm64.tar` next to the app. You do **not** need Docker Desktop.
 - **OpenTofu:** the first **Deploy** on a PC that does not already have OpenTofu needs internet: Manager downloads a pinned OpenTofu 1.12.6 Windows build into `%LOCALAPPDATA%\McManager\tofu` (Mozilla Public License 2.0; source [github.com/opentofu/opentofu](https://github.com/opentofu/opentofu)). You do not install WinGet or `tofu` by hand. `tofu init` still fetches the OCI provider on that first run.
 
@@ -131,7 +131,13 @@ Or open `src\McManager.slnx` in Visual Studio and run **McManager.Hybrid**. Fold
 powershell -ExecutionPolicy Bypass -File .\packaging\pack.ps1
 ```
 
-That fails if the Function tar is missing (rebuild recipe: [`functions/shutdown_vm/README.md`](../functions/shutdown_vm/README.md)). The `.exe` lands in `packaging\out\` (gitignored). Cutting a GitHub Release is operator-only — see [`Operator-Troubleshooting.md`](Operator-Troubleshooting.md#pack-the-windows-installer--cut-a-github-release).
+That fails if the Function tar is missing (rebuild recipe: [`functions/shutdown_vm/README.md`](../functions/shutdown_vm/README.md)). The `.exe` lands in `packaging\out\` (gitignored).
+
+**GitHub Release** (when you mean to ship): tag the commit (example `v0.9.0`), push the tag, then open [Releases](https://github.com/maattox/oci-mc-server/releases/new), choose that tag, attach `packaging\out\MCManager-Setup-<version>.exe`, and **do not** mark it as a pre-release (the in-app updater uses `/releases/latest`, which ignores pre-releases). Do not attach the Function tar as a separate asset — it is already inside the installer. Optional:
+
+```powershell
+gh release create v0.9.0 .\packaging\out\MCManager-Setup-0.9.0.exe --title "MC Manager 0.9.0" --notes "Paste the user-facing notes here."
+```
 
 ---
 
@@ -341,13 +347,11 @@ To wipe the **product stack** on a test tenancy and run Setup again:
 4. Keep the window open. The log and percent stay until Oracle finishes deleting (often several minutes). Close is disabled until it succeeds or fails.
 5. After success: close Manager fully, reopen it, then run Setup.
 
-Only resources this Manager deployed (OpenTofu state on **this PC**) are removed. Oracle default tenancy resources stay. The friends list on this PC, API key, and SSH keys stay. If Delete fails because the Functions application still has a Function (for example one added outside Setup), retry after updating Manager — Delete now removes leftover Functions and Events first. Operator CLI/Console steps: [`Operator-Troubleshooting.md`](Operator-Troubleshooting.md) (SETUP-ISSUE-14).
+Only resources this Manager deployed (OpenTofu state on **this PC**) are removed. Oracle default tenancy resources stay. The friends list on this PC, API key, and SSH keys stay. If Delete fails because the Functions application still has a Function (for example one added outside Setup), retry after updating Manager — Delete now removes leftover Functions and Events first.
 
 **Usage hours vs a fresh Setup:** Delete also wipes the cloud bucket — world backups and the usage history Manager uses. A new Setup starts that history at **zero**. Oracle’s Always Free **OCPU-hours for this calendar month** were already used by the old computers while they were on; they do **not** reset when you delete. Until the next month, Manager’s leftover hours can look too high. If you delete and redeploy mid-month, trust Oracle’s monthly Always Free clock, not the new stack’s Usage tab.
 
 If Delete says there is no OpenTofu state, this PC did not deploy the stack (or the `%LOCALAPPDATA%\McManager\tofu` folder is missing). Do not delete random compartments in the Console unless you know they are the product `mcmgr` stack.
-
-Developer/operator SSH command dump (not required for the happy path): [`Operator-Troubleshooting.md`](Operator-Troubleshooting.md).
 
 ---
 

@@ -3,7 +3,7 @@ using System.Text;
 
 namespace McManager.Core.Setup;
 
-/// <summary>Runs local <c>tofu</c>. Callers must not invoke this from agent tests against a real tenancy.</summary>
+/// <summary>Runs local <c>tofu</c>. Callers must not invoke this from tests against a real tenancy.</summary>
 public sealed class OpenTofuRunner : IOpenTofuRunner
 {
     private readonly string _tofuPath;

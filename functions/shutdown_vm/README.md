@@ -88,10 +88,3 @@ python -m unittest test_func.py
 ```
 
 No live budget fire.
-
-## Related
-
-- [`Contracts-Object-Storage.md`](../../docs/Contracts-Object-Storage.md) — lock key + JSON  
-- [`Infrastructure-Information.md`](../../docs/Infrastructure-Information.md) — Budget emergency stop  
-- [`PRODUCT-IDEAS.md`](../../docs/PRODUCT-IDEAS.md) — $1 spend-brake lock  
-- [`Issues.md`](../../docs/Issues.md) — FN-ISSUE-1 (**gone on TESTING**)
