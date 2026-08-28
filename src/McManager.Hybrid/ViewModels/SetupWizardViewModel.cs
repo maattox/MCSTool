@@ -85,7 +85,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         "The installer writes eula.txt only if this is checked. This product will not auto-accept the EULA for you.";
 
     public const string AuthTokenHelp =
-        "Needed later to push the spend-brake Function image. Stored in Windows Credential Manager, not in the Setup resume file. Skip and finish Setup if you do not have one yet.";
+        "Needed to push the spend-brake Function image. Paste it and choose Store token. Saved in Windows Credential Manager, not in the Setup resume file.";
 
     public const string AdminCidrHelp =
         "Oracle’s cloud firewall allowlist. Friends you add later also need their public IPv4 as /32.";
@@ -375,7 +375,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         _catalogs = catalogs;
         LoadFrom(SetupWizardStore.LoadOrNew());
         LoadProfiles();
-        AuthTokenStored = AuthTokenStored || WindowsCredentialStore.Exists();
+        AuthTokenStored = WindowsCredentialStore.Exists();
         HasExistingManageConfig = LocalConfigStore.HasManageConfig();
         _navReady = true;
     }
@@ -570,6 +570,9 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     public bool ShowOverrideListWarning =>
         ShowPackSummary && PackCanContinue && !string.IsNullOrWhiteSpace(PackOverrideListWarning);
 
+    public bool ShowSkipListWarning =>
+        PackReplaceUx.ShouldShowSkipListWarning(ShowPackAssistedReview);
+
     public string SkipWarningBody => PackReplaceUx.SkipWarningBody;
 
     public bool ShowPackAssistedReview =>
@@ -596,6 +599,11 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         PackReplaceUx.FreezeAllowsContinue(PackFreezeBlockReason)
             ? ""
             : PackFreezeBlockReason;
+
+    public string NextButtonTitle =>
+        CurrentStep == SetupWizardState.StepAuthToken && !AuthTokenStored
+            ? "Store an Auth Token in Windows Credential Manager before continuing."
+            : GameStepNextTitle;
 
     public bool IsOperatorSkipped(string path) =>
         PackAssistedReviewActions.IsSkipped(_operatorSkipTerms, path);
@@ -631,7 +639,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         SetupWizardState.StepGame => "Minecraft",
         SetupWizardState.StepIdentity => "Name and icon",
         SetupWizardState.StepEula => "Mojang EULA",
-        SetupWizardState.StepAuthToken => "Optional Auth Token",
+        SetupWizardState.StepAuthToken => "Auth Token",
         SetupWizardState.StepSummary => ShowDeploySuccess ? "Deployment Complete" : "Review and deploy",
         _ => "Setup",
     };
@@ -1780,7 +1788,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
                 string.IsNullOrWhiteSpace(MinecraftVersion) ? _resumeMinecraftVersion : MinecraftVersion),
         SetupWizardState.StepIdentity => !string.IsNullOrWhiteSpace(IdentityName),
         SetupWizardState.StepEula => EulaAccepted,
-        SetupWizardState.StepAuthToken => true,
+        SetupWizardState.StepAuthToken => AuthTokenStored,
         _ => false,
     };
 
@@ -1796,7 +1804,12 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     partial void OnSshGenerateModeChanged(bool value) => OnPropertyChanged(nameof(SshImportMode));
 
-    partial void OnAuthTokenStoredChanged(bool value) => OnPropertyChanged(nameof(AuthTokenStoredDisplay));
+    partial void OnAuthTokenStoredChanged(bool value)
+    {
+        OnPropertyChanged(nameof(AuthTokenStoredDisplay));
+        OnPropertyChanged(nameof(CanGoNext));
+        OnPropertyChanged(nameof(NextButtonTitle));
+    }
 
     partial void OnMinecraftVersionChanged(string value)
     {
@@ -1873,16 +1886,19 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         OnPropertyChanged(nameof(ClientPackFriendsNeed));
         OnPropertyChanged(nameof(ShowPackConfirmChecks));
         OnPropertyChanged(nameof(ShowPackAssistedReview));
+        OnPropertyChanged(nameof(ShowSkipListWarning));
     }
 
     private void NotifyAssistedReviewUi()
     {
         OnPropertyChanged(nameof(ShowPackAssistedReview));
+        OnPropertyChanged(nameof(ShowSkipListWarning));
         OnPropertyChanged(nameof(AssistedReview));
         OnPropertyChanged(nameof(PackJarOrder));
         OnPropertyChanged(nameof(PackFreezeBlockReason));
         OnPropertyChanged(nameof(PackLooksLikeLauncherInstance));
         OnPropertyChanged(nameof(GameStepNextTitle));
+        OnPropertyChanged(nameof(NextButtonTitle));
         OnPropertyChanged(nameof(CanGoNext));
     }
 
@@ -2012,6 +2028,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             case nameof(IsStepSummary):
             case nameof(SshImportMode):
             case nameof(AuthTokenStoredDisplay):
+            case nameof(NextButtonTitle):
             case nameof(StatusMessage):
             case nameof(DeployProgressCaption):
                 OnPropertyChanged(nameof(DockStatus));
@@ -2050,6 +2067,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             case nameof(ShowPackSummary):
             case nameof(ShowPackConfirmChecks):
             case nameof(ShowOverrideListWarning):
+            case nameof(ShowSkipListWarning):
             case nameof(ClientPackTitle):
             case nameof(ClientPackCopy):
             case nameof(ClientPackAckLabel):
@@ -2114,6 +2132,8 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         OnPropertyChanged(nameof(ShowPackSummary));
         OnPropertyChanged(nameof(ShowPackConfirmChecks));
         OnPropertyChanged(nameof(ShowOverrideListWarning));
+        OnPropertyChanged(nameof(ShowSkipListWarning));
+        OnPropertyChanged(nameof(NextButtonTitle));
         OnPropertyChanged(nameof(ClientPackFriendsNeed));
         OnPropertyChanged(nameof(MotdPreview));
         OnPropertyChanged(nameof(CanClearIdentityIcon));

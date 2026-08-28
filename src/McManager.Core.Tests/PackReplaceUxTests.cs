@@ -101,6 +101,8 @@ public sealed class PackReplaceUxTests
         Assert.Equal(
             "Known client-only mods will automatically be skipped. Check the list below and confirm that all client-only mods are correctly marked.",
             PackReplaceUx.SkipWarningBody);
+        Assert.False(PackReplaceUx.ShouldShowSkipListWarning(assistedReviewVisible: false));
+        Assert.True(PackReplaceUx.ShouldShowSkipListWarning(assistedReviewVisible: true));
         Assert.Contains("irreversible", PackReplaceUx.WipeWorldLabel, StringComparison.OrdinalIgnoreCase);
 
         var paneCopy = string.Join(
@@ -119,6 +121,13 @@ public sealed class PackReplaceUxTests
         Assert.DoesNotContain(" you ", " " + paneCopy + " ", StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain(" we ", " " + paneCopy + " ", StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain(" your ", " " + paneCopy + " ", StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Skip_list_warning_only_when_assisted_review_is_visible()
+    {
+        Assert.False(PackReplaceUx.ShouldShowSkipListWarning(assistedReviewVisible: false));
+        Assert.True(PackReplaceUx.ShouldShowSkipListWarning(assistedReviewVisible: true));
     }
 
     [Fact]

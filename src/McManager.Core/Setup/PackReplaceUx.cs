@@ -23,6 +23,13 @@ public static class PackReplaceUx
     public const string SkipWarningBody =
         "Known client-only mods will automatically be skipped. Check the list below and confirm that all client-only mods are correctly marked.";
 
+    /// <summary>
+    /// <see cref="SkipWarningBody"/> is for the assisted-review list. A fully handled
+    /// <c>.mrpack</c> with override-list skips and no list must not show it.
+    /// </summary>
+    public static bool ShouldShowSkipListWarning(bool assistedReviewVisible) =>
+        assistedReviewVisible;
+
     public const string ChangePackPickHint =
         "Reinstall Minecraft from a .mrpack or server-pack zip. The world is kept unless wipe is checked.";
 

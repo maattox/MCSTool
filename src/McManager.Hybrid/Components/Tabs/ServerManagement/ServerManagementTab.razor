@@ -371,10 +371,10 @@
                 {
                     <p class="mcm-wizard-error">@Vm.PackBlockReason</p>
                 }
-                @if (Vm.ShowOverrideListWarning || Vm.ShowSaveCompatibilityWarning)
+                @if (Vm.ShowSkipListWarning || Vm.ShowSaveCompatibilityWarning)
                 {
                     <div class="mcm-change-pack-warnings">
-                        @if (Vm.ShowOverrideListWarning)
+                        @if (Vm.ShowSkipListWarning)
                         {
                             <aside class="mcm-pack-list-warning" role="status">
                                 <p>@Vm.SkipWarningBody</p>

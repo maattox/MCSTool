@@ -205,6 +205,9 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     public bool ShowOverrideListWarning =>
         ShowPackConfirmChecks && !string.IsNullOrWhiteSpace(PackOverrideListWarning);
 
+    public bool ShowSkipListWarning =>
+        PackReplaceUx.ShouldShowSkipListWarning(ShowPackAssistedReview);
+
     public bool ShowPackAssistedReview =>
         ShowPackSummary
         && PackCanContinue
@@ -370,6 +373,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     [NotifyPropertyChangedFor(nameof(ShowPackSummary))]
     [NotifyPropertyChangedFor(nameof(ShowPackConfirmChecks))]
     [NotifyPropertyChangedFor(nameof(ShowOverrideListWarning))]
+    [NotifyPropertyChangedFor(nameof(ShowSkipListWarning))]
     [NotifyPropertyChangedFor(nameof(ShowSaveCompatibilityWarning))]
     private bool _showChangePackUi;
 
@@ -425,6 +429,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowOverrideListWarning))]
+    [NotifyPropertyChangedFor(nameof(ShowSkipListWarning))]
     private string _packOverrideListWarning = "";
 
     [ObservableProperty]
@@ -1676,11 +1681,13 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         OnPropertyChanged(nameof(DetectionMismatchWarning));
         OnPropertyChanged(nameof(ShowPackConfirmChecks));
         OnPropertyChanged(nameof(ShowPackAssistedReview));
+        OnPropertyChanged(nameof(ShowSkipListWarning));
     }
 
     private void NotifyAssistedReviewUi()
     {
         OnPropertyChanged(nameof(ShowPackAssistedReview));
+        OnPropertyChanged(nameof(ShowSkipListWarning));
         OnPropertyChanged(nameof(AssistedReview));
         OnPropertyChanged(nameof(PackJarOrder));
         OnPropertyChanged(nameof(PackFreezeBlockReason));

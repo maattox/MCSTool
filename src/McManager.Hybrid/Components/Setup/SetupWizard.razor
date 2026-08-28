@@ -293,7 +293,7 @@
                                 {
                                     <p class="mcm-wizard-error">@Vm.PackBlockReason</p>
                                 }
-                                @if (Vm.ShowOverrideListWarning)
+                                @if (Vm.ShowSkipListWarning)
                                 {
                                     <aside class="mcm-pack-list-warning" role="status">
                                         <p>@Vm.SkipWarningBody</p>
@@ -411,7 +411,7 @@
             {
                 <div class="mcm-field">
                     <label for="mcm-setup-token" class="mcm-field-head">
-                        Auth Token (optional)
+                        Auth Token
                         <WizardHelp Title="@SetupWizardViewModel.AuthTokenHelp" AriaLabel="About the Auth Token" />
                     </label>
                     <input id="mcm-setup-token"
@@ -580,7 +580,7 @@
                 <button type="button"
                         class="mcm-primary"
                         disabled="@(!Vm.CanGoNext)"
-                        title="@Vm.GameStepNextTitle"
+                        title="@Vm.NextButtonTitle"
                         @onclick="Vm.NextAsync">
                     Next
                 </button>

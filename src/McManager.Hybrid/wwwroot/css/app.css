@@ -2213,6 +2213,11 @@ button.mcm-btn-disabled:hover {
     align-items: center;
 }
 
+.mcm-wizard-body .mcm-checkbox-row > .mcm-check-hit,
+.mcm-wizard-body .mcm-radio-row > .mcm-check-hit {
+    flex: 0 1 auto;
+}
+
 .mcm-wizard-body .mcm-check-hit input {
     margin-top: 2px;
 }
