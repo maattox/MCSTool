@@ -10,12 +10,12 @@ Single source of truth for **what to work on next**. Living plan files keep sect
 |-------|-------|
 | **Plan** | [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Phase **9** / Step **9.4** |
 | **Step** | **9.4** Closed beta / dogfood |
-| **Sub-plan** | [`V1-Greenfield-Dogfood-Follow-On-Plan.md`](V1-Greenfield-Dogfood-Follow-On-Plan.md) |
-| **Sub-step** | **P4** Park reserved play IP on VM1 after Deploy |
+| **Sub-plan** | [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) |
+| **Sub-step** | **P6** Closed beta / dogfood |
 | **Status** | `ready` |
-| **Cursor mode** | `agent` |
+| **Cursor mode** | `either` |
 
-Phase **8.6** is **DONE**. Packaging **P5 DONE**. Packaging **P6** (closed beta) is **TODO** until this follow-on **P4** restores it. Follow-on **P1–P3 DONE**. Living **NEXT = follow-on P4** ([`V1-Greenfield-Dogfood-Follow-On-Plan.md`](V1-Greenfield-Dogfood-Follow-On-Plan.md)): after a successful first Deploy with Minecraft up, park the reserved play IP on VM1 (door `PLAYABLE`). Do **not** start packaging **P7**. GitHub Actions stays **out**. Users must not need Docker. Do **not** `git push` / `gh release create` unless asked. **Parked:** `mr-fabric-cobblemon-1.7.3` re-run is **UNFINISHED** (operator aborted 2026-08-27). Come back in a **separate** chat: `/pack-test-one` that id (TESTING, `mcmgr-pack-test`; disable idle for the whole replace). Do not treat the later harness `pass` YAML as verified.
+Phase **8.6** is **DONE**. Packaging **P5 DONE**. Greenfield follow-on **P1–P4 DONE**. Living **NEXT = packaging P6** ([`V1-Packaging-Plan.md`](V1-Packaging-Plan.md)): closed beta / dogfood. Do **not** start packaging **P7**. GitHub Actions stays **out**. Users must not need Docker. Do **not** `git push` / `gh release create` unless asked. **Parked:** `mr-fabric-cobblemon-1.7.3` re-run is **UNFINISHED** (operator aborted 2026-08-27). Come back in a **separate** chat: `/pack-test-one` that id (TESTING, `mcmgr-pack-test`; disable idle for the whole replace). Do not treat the later harness `pass` YAML as verified.
 
 ## Design lock (implementing)
 
@@ -23,6 +23,7 @@ Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-De
 
 ## Completed recently
 
+- **2026-08-28** — Follow-on **P4 DONE** (SETUP-ISSUE-15: Function-stage tofu apply no longer steals the reserved play IP; Setup re-parks after a Function copy). Living **NEXT = packaging P6** (closed beta / dogfood). Do not start P7.
 - **2026-08-28** — Follow-on **P3 DONE** (installer optional desktop shortcut, default checked; default server icon as exe/installer/shortcut icon). Living **NEXT = P4** (park reserved play IP after Deploy). Do not start packaging P7. Follow-on **P4** restores packaging P6.
 - **2026-08-28** — Follow-on **P2 DONE** (Setup wizard polish: help icons next to checkboxes, skip-list warning only with assisted review, Auth Token required). Living **NEXT = P3** (installer desktop shortcut + app icon). Do not start P4 or packaging P7. Follow-on **P4** restores packaging P6.
 - **2026-08-28** — Follow-on **P1 DONE** (installed Manager writes `config.local.json` under `%LOCALAPPDATA%\McManager`). Living **NEXT = P2** (Setup wizard polish). Do not start P3 or packaging P7. Follow-on **P4** restores packaging P6.

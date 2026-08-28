@@ -228,6 +228,13 @@ resource "oci_core_public_ip" "play" {
   display_name   = "mcmgr-play-ip"
   lifetime       = "RESERVED"
   private_ip_id  = oci_core_private_ip.door_play.id
+
+  # Create parks on the door (idle). Door scripts move it to VM1 while playing.
+  # Without this, a later tofu apply (spend-brake Function image) puts it back
+  # on the door while Minecraft is already up (SETUP-ISSUE-15).
+  lifecycle {
+    ignore_changes = [private_ip_id]
+  }
 }
 
 output "vm1_instance_id" {

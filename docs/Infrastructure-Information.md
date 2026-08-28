@@ -212,7 +212,7 @@ OCI will not assign a second public IP to a private IP that already has an ephem
 Guest OS must configure the secondary address (netplan). **Setup bootstrap** writes `/etc/netplan/99-mcmgr-play.yaml` (mode `600`) on both VMs. Manual rebuilds can use `99-vm1-play.yaml` / `99-door-play.yaml` instead.
 
 `wait_forge` always probes **VM1 primary private IPv4** (`VM1_PRIVATE_IP`), not the secondary.  
-`ip_to_vm1` / `ip_to_vm2` use the **private IP OCIDs** of the secondaries (`VM1_PRIVATE_IP_ID` / `VM2_PRIVATE_IP_ID`) and `--force` when moving the reserved IP.
+`ip_to_vm1` / `ip_to_vm2` use the **private IP OCIDs** of the secondaries (`VM1_PRIVATE_IP_ID` / `VM2_PRIVATE_IP_ID`) and `--force` when moving the reserved IP. OpenTofu **creates** the reserved IP on the door secondary, then **ignores** later `private_ip_id` drift so a Function-stage apply does not move it back while the game is up.
 
 ---
 

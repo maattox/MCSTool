@@ -14,6 +14,8 @@ public sealed class FunctionImageStageResult
 /// Spend-brake Function copy + optional second tofu apply. Runs on first Deploy and on
 /// repair even when <c>apply_stage</c> is already <c>function</c> / <c>config_written</c>
 /// if a bundled tar exists and the live digest differs.
+/// A successful copy+apply can still drift the reserved play IP in OCI unless HCL
+/// ignores <c>private_ip_id</c>; Setup re-parks on VM1 when <see cref="FunctionImageStageResult.Copied"/> is true.
 /// </summary>
 public static class FunctionImageDeployer
 {

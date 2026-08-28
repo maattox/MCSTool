@@ -25,6 +25,23 @@ fi
 echo "promote_playable: moving reserved IP to VM1 (before flipping PLAYABLE)"
 bash -- "$IP_TO_VM1"
 
+: "${RESERVED_PUBLIC_IP_ID:?RESERVED_PUBLIC_IP_ID must be set}"
+: "${VM1_PRIVATE_IP_ID:?VM1_PRIVATE_IP_ID must be set}"
+assigned=""
+for _ in 1 2 3 4 5 6; do
+  assigned="$(oci network public-ip get --public-ip-id "$RESERVED_PUBLIC_IP_ID" \
+    --query 'data."assigned-entity-id"' --raw-output 2>/dev/null || true)"
+  assigned="${assigned//$'\r'/}"
+  if [[ "$assigned" == "$VM1_PRIVATE_IP_ID" ]]; then
+    break
+  fi
+  sleep 2
+done
+if [[ "$assigned" != "$VM1_PRIVATE_IP_ID" ]]; then
+  echo "promote_playable: reserved IP is not on VM1 (assigned-entity-id=${assigned:-empty})" >&2
+  exit 1
+fi
+
 systemctl stop mccontrol.service 2>/dev/null || true
 
 python3 - "$STATE" <<'PY'

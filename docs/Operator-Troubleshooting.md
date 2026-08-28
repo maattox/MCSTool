@@ -72,7 +72,7 @@ sudo ss -lntp | grep 25565
 sudo bash -c 'set -a; source <(tr -d "\r" < /etc/mccontrol/oci.env); set +a; export HOME="${HOME:-/home/ubuntu}"; export OCI_CLI_AUTH=instance_principal; bash -- /opt/mccontrol/oci/start_vm1.sh; bash -- /opt/mccontrol/scripts/promote_playable.sh'
 ```
 
-`start_vm1.sh` should print `already RUNNING` (exit 0) when VM1 is up — do not treat a 409 START as the end of the story. `promote_playable.sh` moves the reserved IP to VM1 **then** sets `PLAYABLE` (SETUP-ISSUE-6 / DOOR-ISSUE-6).
+`start_vm1.sh` should print `already RUNNING` (exit 0) when VM1 is up — do not treat a 409 START as the end of the story. `promote_playable.sh` moves the reserved IP to VM1 **then** sets `PLAYABLE` (SETUP-ISSUE-6 / DOOR-ISSUE-6). If Deploy itself left the reserved IP on the door after a Function image copy, that is **SETUP-ISSUE-15** (rebuild Manager; do not treat Park play IP as the happy path).
 
 If `ss` shows `Recv-Q` equal to the listen backlog on `:25565`, restart `mccontrol` (the promote script does that). Door ephemeral `:25565` is MOTD, not the Vanilla world.
 
@@ -640,6 +640,7 @@ Do not pass `--prerelease`. Do not create `.github/workflows`.
 
 ## Changelog
 
+| 2026-08-28 | SETUP-ISSUE-15: Function-stage tofu apply left reserved play IP on the door; rebuild Manager (not Park play IP as the happy path). |
 | 2026-08-28 | SETUP-ISSUE-14: Delete fails on `mcmgr-fn-app` while leftover Function/Events exist (CLI/Console then retry Delete; do not second-apply). |
 | 2026-08-27 | Pack installer (`packaging\pack.ps1`) + GitHub Release recipe (tag + Inno `.exe`; not pre-release; no Actions). Unsigned / SmartScreen expected. |
 | 2026-08-23 | SETUP-ISSUE-13: Layer 3 `quarantine_mod` one-shot copy for VMs that predate P10. |

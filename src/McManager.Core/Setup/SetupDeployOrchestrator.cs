@@ -349,6 +349,22 @@ public sealed class SetupDeployOrchestrator
             }
 
             ReportProgress(progress, SetupApplyStage.Function, complete: true);
+
+            // Second tofu apply used to re-attach the reserved IP to the door
+            // (HCL idle default) after guest repair had parked it on VM1.
+            if (fn.Copied)
+            {
+                var promote = await _bootstrap.PromotePlayableAfterVm1Async(
+                        outputs,
+                        state,
+                        log,
+                        cancellationToken)
+                    .ConfigureAwait(false);
+                if (!promote.Succeeded)
+                    return SetupDeployResult.Fail(
+                        stage,
+                        promote.Error ?? "Parking reserved play IP after Function apply failed.");
+            }
         }
 
         ReportProgress(progress, SetupApplyStage.ConfigWritten, "Saving local config…");

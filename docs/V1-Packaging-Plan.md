@@ -48,10 +48,10 @@ None. P1–P3 share publish layout and Hybrid csproj. P4 reads the same version 
 | P3 | Windows installer (Inno) + Function tar + Release recipe | **DONE** | SEQUENTIAL — wraps P1 output | agent |
 | P4 | GitHub Releases update check | **DONE** | SEQUENTIAL — Hybrid launch + settings toggle | agent |
 | P5 | Guide + README v1 pass | **DONE** | SEQUENTIAL — docs after P1–P4 exist | agent |
-| P6 | Closed beta / dogfood | **TODO** | SEQUENTIAL — paused for greenfield follow-on | either |
+| P6 | Closed beta / dogfood | **NEXT** | SEQUENTIAL — restored after greenfield follow-on P4 | either |
 | P7 | V1 exit review | TODO | SEQUENTIAL — operator declares ready | either |
 
-**Live NEXT:** [`NEXT.md`](NEXT.md) → [`V1-Greenfield-Dogfood-Follow-On-Plan.md`](V1-Greenfield-Dogfood-Follow-On-Plan.md) **P4** (park reserved play IP after Deploy). Packaging **P6** is paused until that plan’s **P4** restores it. Do not start **P7**.
+**Live NEXT:** [`NEXT.md`](NEXT.md). Do **not** start **P7**.
 
 ---
 
@@ -298,8 +298,8 @@ Unauthenticated GitHub API is enough (~60 req/hr/IP). The shipped app must **not
 
 ## P6 — Closed beta / dogfood
 
-**Status:** TODO  
-**Parallel:** SEQUENTIAL — operator-led; paused for [`V1-Greenfield-Dogfood-Follow-On-Plan.md`](V1-Greenfield-Dogfood-Follow-On-Plan.md) until that plan’s P4 restores this section to **NEXT**  
+**Status:** NEXT  
+**Parallel:** SEQUENTIAL — operator-led; restored after [`V1-Greenfield-Dogfood-Follow-On-Plan.md`](V1-Greenfield-Dogfood-Follow-On-Plan.md) **P4**  
 **Cursor mode:** either
 
 **Read first**
@@ -310,7 +310,7 @@ Unauthenticated GitHub API is enough (~60 req/hr/IP). The shipped app must **not
 
 **Do**
 
-1. Finish [`V1-Greenfield-Dogfood-Follow-On-Plan.md`](V1-Greenfield-Dogfood-Follow-On-Plan.md) **before** treating this section as live **NEXT** again (that plan’s **P4** restores this status).
+1. Greenfield follow-on **P1–P4** are **DONE**. Continue dogfood with a rebuilt installer (P1–P3) and a Deploy that saves config (P1) and parks the play IP (P4).
 2. **Operator:** give friends the **installer** if P3 exists (`dotnet run` is OK only as a fallback). Play on the reserved IP. Keep **$0**. TESTING vs a friend’s tenancy is the operator’s call; agents stay on **TESTING** unless this chat authorizes otherwise.
 3. **Agents:** fix **v1-blocking** bugs only. Do not start after-v1 features. Do not `tofu destroy`. Do not fire a real $1 budget (P7).
 4. File on-box quirks in [`Issues.md`](Issues.md) when they are product bugs.
@@ -321,7 +321,7 @@ Unauthenticated GitHub API is enough (~60 req/hr/IP). The shipped app must **not
 
 **Done when:** Operator says no v1-blocking bugs remain (or defers them in writing).
 
-**Changelog:** 2026-08-28 — Paused (**TODO**) for greenfield dogfood follow-on P1–P4. Follow-on **P4** restores this section to **NEXT**.
+**Changelog:** 2026-08-28 — Restored to **NEXT** after greenfield follow-on **P4** (SETUP-ISSUE-15 play-IP park). Do not start P7. 2026-08-28 — Paused (**TODO**) for greenfield dogfood follow-on P1–P4. Follow-on **P4** restores this section to **NEXT**.
 
 ---
 
@@ -354,6 +354,7 @@ Unauthenticated GitHub API is enough (~60 req/hr/IP). The shipped app must **not
 
 | Date | Note |
 |------|------|
+| 2026-08-28 | Greenfield follow-on **P4 DONE** (SETUP-ISSUE-15). **P6** restored to **NEXT**. Do not start P7. |
 | 2026-08-28 | Greenfield dogfood follow-on [`V1-Greenfield-Dogfood-Follow-On-Plan.md`](V1-Greenfield-Dogfood-Follow-On-Plan.md). **P6** paused (**TODO**). Living **NEXT = follow-on P1**. Follow-on **P4** restores this **P6**. Do not start P7. |
 | 2026-08-28 | **P5 DONE** (Guide + README v1 pass: installer vs from-source, users no Docker, allowlist, spend-brake lock, update prompt, SmartScreen, WebView2). Living **NEXT = P6** (closed beta / dogfood). Do not start P7. |
 | 2026-08-27 | **P4 DONE** (GitHub Releases update check: prompt + notes; no silent apply). Living **NEXT = P5** (Guide + README v1 pass). Do not start P6. |

@@ -317,7 +317,32 @@ public sealed class SetupBootstrapService
     /// <summary>
     /// After VM1 netplan + Minecraft are up: reserved play IP → VM1, door PLAYABLE.
     /// Must not force DOOR_IDLE with the IP still on the door (black hole / MOTD-only).
+    /// Call again after a spend-brake Function tofu apply — that apply used to move
+    /// the reserved IP back to the door (SETUP-ISSUE-15).
     /// </summary>
+    public Task<ServiceResult> PromotePlayableAfterVm1Async(
+        TofuApplyOutputs outputs,
+        SetupWizardState state,
+        IProgress<string>? log,
+        CancellationToken cancellationToken = default)
+    {
+        var key = TofuApplyOutputs.PrivateKeyPath(state);
+        return Task.Run(
+            () =>
+            {
+                try
+                {
+                    PromotePlayableAfterVm1(outputs, key, log);
+                    return ServiceResult.Ok();
+                }
+                catch (Exception ex)
+                {
+                    return ServiceResult.Fail("Parking reserved play IP failed: " + ex.Message);
+                }
+            },
+            cancellationToken);
+    }
+
     private static void PromotePlayableAfterVm1(
         TofuApplyOutputs outputs,
         string keyPath,

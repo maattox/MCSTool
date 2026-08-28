@@ -46,7 +46,7 @@ None. P2–P3 share [`Guide.md`](Guide.md). P1 then P2 share wizard persist / Se
 | P1 | Greenfield local config (installed PC) | **DONE** | SEQUENTIAL — unblocks Close → Manage | agent |
 | P2 | Setup wizard polish | **DONE** | SEQUENTIAL — Hybrid wizard after P1 | agent |
 | P3 | Installer desktop shortcut + app icon | **DONE** | SEQUENTIAL — Inno + Hybrid; Guide | agent |
-| P4 | Park reserved play IP on VM1 after Deploy | **NEXT** | SEQUENTIAL — last; restores packaging P6 | agent |
+| P4 | Park reserved play IP on VM1 after Deploy | **DONE** | SEQUENTIAL — last; restores packaging P6 | agent |
 
 **Live NEXT:** [`NEXT.md`](NEXT.md).
 
@@ -213,7 +213,7 @@ Locked for this plan. Do not reopen in an implementation chat.
 
 ## P4 — Park reserved play IP on VM1 after Deploy
 
-**Status:** NEXT  
+**Status:** DONE  
 **Parallel:** SEQUENTIAL — last; restores packaging P6  
 **Cursor mode:** agent
 
@@ -242,7 +242,7 @@ Locked for this plan. Do not reopen in an implementation chat.
 
 **Done when:** Product Setup parks the play IP on VM1 at the end of a successful first Deploy. NEXT pointer is packaging **P6** again.
 
-**Changelog:** *(empty)*
+**Changelog:** 2026-08-28 — SETUP-ISSUE-15: Function-stage second `tofu apply` was re-attaching the reserved IP to the door after `promote_playable`. HCL `ignore_changes = [private_ip_id]`; Setup re-parks after a Function copy; `promote_playable.sh` fails unless OCI assignment is VM1. Guide: friends join the reserved IP without Park play IP. Living **NEXT = packaging P6**. Do not start P7.
 
 ---
 
@@ -250,6 +250,7 @@ Locked for this plan. Do not reopen in an implementation chat.
 
 | Date | Note |
 |------|------|
+| 2026-08-28 | **P4 DONE** — SETUP-ISSUE-15: Function-stage tofu apply no longer steals the reserved play IP; Setup re-parks after a Function copy. Living **NEXT = packaging P6**. Do not start P7. |
 | 2026-08-28 | **P3 DONE** — installer optional desktop shortcut (default checked) + default-server-icon as exe/installer/shortcut icon. Living **NEXT = P4** (park reserved play IP after Deploy). Do not start packaging P7. Follow-on **P4** restores packaging P6. |
 | 2026-08-28 | **P2 DONE** — Setup wizard polish (help icons, skip-list warning only with assisted review, required Auth Token). Living **NEXT = P3** (installer desktop shortcut + app icon). Do not start P4 or packaging P7. |
 | 2026-08-28 | **P1 DONE** — installed local config under `%LOCALAPPDATA%\McManager`. Living **NEXT = P2** (Setup wizard polish). Do not start P3 or packaging P7. |

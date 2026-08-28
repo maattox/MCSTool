@@ -219,7 +219,7 @@ Product roadmap stays in `PRODUCT-IDEAS.md`. Architecture stays in `Infrastructu
 3. mcdoor’s single accept loop blocked in `recv` with **no socket timeout**; listen backlog 16 filled (`Recv-Q` = backlog) → further TCP to reserved IP **and** door ephemeral timed out. VM1 Java has a large backlog, so the ephemeral game IP still worked.  
 **Fix (product path):** After VM1 netplan/Minecraft repair, Setup runs `door_vm/scripts/promote_playable.sh` (`ip_to_vm1` **then** persist `PLAYABLE`, restart mccontrol). Do not force `DOOR_IDLE` at the end of a successful deploy. `start_vm1.sh` no-ops when VM1 is already RUNNING/STARTING. mcdoor sets 8s recv/send timeouts and listen backlog 128.  
 **Verify:** VM1 RUNNING, game up, **no** prior VM1-ephemeral connect: Minecraft to the reserved play IP joins Vanilla. Door `/api/status` is `PLAYABLE`. Door ephemeral `:25565` may show MOTD (mcdoor still binds `0.0.0.0`); it must not TCP-timeout. Idle timer left **disabled**.  
-**Refs:** `src/McManager.Core/Setup/SetupBootstrapService.cs`, `door_vm/scripts/promote_playable.sh`, `door_vm/oci/start_vm1.sh`, `door_vm/src/mcdoor.c`, E2E **F7**
+**Refs:** `src/McManager.Core/Setup/SetupBootstrapService.cs`, `door_vm/scripts/promote_playable.sh`, `door_vm/oci/start_vm1.sh`, `door_vm/src/mcdoor.c`, E2E **F7**. Later installer regression: **SETUP-ISSUE-15**.
 
 ### SETUP-ISSUE-7 — After SoftStop reboot, Oracle `netfilter-persistent` kills firewalld (25565 closed)
 **Status:** Fixed (2026-08-18) — cloud-init + Setup guest repair  
@@ -286,6 +286,14 @@ Product roadmap stays in `PRODUCT-IDEAS.md`. Architecture stays in `Infrastructu
 **Fix (product path):** Before `tofu destroy`, Manager best-effort deletes the product Events rule (display name) and every Function inside `mcmgr-fn-app` in the stack compartment (same idea as OCIR image purge). 404 / already gone is success; per-resource failures are logged and Delete continues. Rebuild Manager, then retry Delete — do **not** `tofu apply` a second stack. Console/CLI one-shot if an older Manager still fails: [`Operator-Troubleshooting.md`](Operator-Troubleshooting.md).  
 **Verify:** `dotnet test` filter `FunctionsEventsPurgerTests`. Live: retry Danger Zone Delete after this build; `mcmgr-fn-app` should go away even when the Function was never in tofu state.  
 **Refs:** `src/McManager.Core/Setup/FunctionsEventsPurger.cs`, `InfrastructureDestroyOrchestrator`, `infra/modules/budget_brake/main.tf`
+
+### SETUP-ISSUE-15 — Function-stage tofu apply moves reserved play IP back to the door
+**Status:** Fixed (2026-08-28) — HCL `ignore_changes` + Setup re-park
+**Summary:** After a successful first Deploy with Minecraft up (installer greenfield 2026-08-28), the reserved play IP was still **ASSIGNED to the door** secondary. Door `/api/status` could be **PLAYABLE**. Friends joining the reserved address hit the doorbell, not VM1. Troubleshooting **Park play IP** was the workaround. VM1 **ephemeral** still worked.
+**Cause:** OpenTofu creates `oci_core_public_ip.play` on the **door** secondary (idle default). Guest repair then runs `promote_playable.sh` (`ip_to_vm1` + PLAYABLE). The installer always ships the spend-brake tarball, so first Deploy **copies** the Function image and runs a **second `tofu apply`**. That apply saw drift (`private_ip_id` = VM1) and put the reserved IP **back on the door**. Promote had already logged success. Pass 2 greenfields often skipped the Function image (no Docker), so this did not show up there. SETUP-ISSUE-6 (no promote at all) stays a separate, earlier bug.
+**Fix (product path):** `lifecycle { ignore_changes = [private_ip_id] }` on the reserved public IP so later applies do not steal it. After a Function image **copy** (second apply attempted), Setup runs `promote_playable.sh` again. The script fails unless OCI `assigned-entity-id` is VM1’s play private IP. Idle/SoftStop still parks on the door via `ip_to_vm2` (not tofu).
+**Verify:** `dotnet test` filter `PlayReservedIpHclTests`. Live: after Deploy with Minecraft up, reserved IP on VM1 secondary; door `PLAYABLE`. Do not use Troubleshooting Park play IP as the happy path.
+**Refs:** `infra/modules/compute/main.tf`, `SetupDeployOrchestrator`, `SetupBootstrapService.PromotePlayableAfterVm1Async`, `door_vm/scripts/promote_playable.sh`
 
 ### DOOR-ISSUE-4 — `wait_forge.sh` / `ip_to_vm1.sh` abort wake (`set -u` CR-strip, missing `--force`)
 **Status:** Fixed (2026-08-14)  
