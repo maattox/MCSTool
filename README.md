@@ -6,7 +6,7 @@ The Manager is a .NET 8 **Blazor Hybrid** app (WPF + WebView2): one WinExe, `McM
 
 ## Status
 
-Manage + Setup are usable. Happy-path: [`docs/Guide.md`](docs/Guide.md) — **Windows installer** (per-user, no admin), private **IP allowlist** (no public Minecraft), **$1 spend-brake lock**, WebView2 Evergreen as a prerequisite, unsigned/SmartScreen expected for open-beta builds, and GitHub Releases **check** (prompt + notes; Manager never installs the update). **Users do not need Docker** or the .NET SDK: the installer bundles a pre-built ARM Function tarball that Setup copies into the user’s OCIR.
+**Open beta 0.9.0** (not 1.0.0). Manage + Setup are usable. Happy-path: [`docs/Guide.md`](docs/Guide.md) — **Windows installer** (per-user, no admin), private **IP allowlist** (no public Minecraft), **$1 spend-brake lock**, WebView2 Evergreen as a prerequisite, unsigned/SmartScreen expected for open-beta builds, and GitHub Releases **check** (prompt + notes; Manager never installs the update). **Users do not need Docker** or the .NET SDK: the installer bundles a pre-built ARM Function tarball that Setup copies into the user’s OCIR.
 
 There is **no paid / spend mode**. Danger Zone can **Delete infrastructure** (`tofu destroy` of the product stack only).
 
