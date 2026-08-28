@@ -2,7 +2,9 @@ namespace McManager.Core.Setup;
 
 /// <summary>
 /// Locates a pre-built <c>linux/arm64</c> spend-brake Function image tarball.
-/// Docker is not required when this file exists; V1 Step 8.6.1 still owns CI / installer bundling.
+/// Docker is not required on the user copy path when this file exists.
+/// The developer may pre-build it with Docker Desktop. V1 Step 8.6.1 owns username
+/// derivation and digest converge; 9.1 bundles the tar with the installer.
 /// </summary>
 public static class FunctionImageArtifact
 {

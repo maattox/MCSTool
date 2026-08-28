@@ -8,21 +8,28 @@ Single source of truth for **what to work on next**. Living plan files keep sect
 
 | Field | Value |
 |-------|-------|
-| **Plan** | [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.5.2** |
-| **Step** | **8.5.2** QA Pass 3 |
-| **Sub-plan** | [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) |
-| **Sub-step** | Pass 3 |
-| **Status** | `blocked` |
+| **Plan** | [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.6.1** |
+| **Step** | **8.6.1** Pre-built ARM Function image (user copy, no Docker) |
+| **Sub-plan** | [`V1-Function-Image-Plan.md`](V1-Function-Image-Plan.md) |
+| **Sub-step** | **P1** |
+| **Status** | `ready` |
 | **Cursor mode** | `agent` |
 
-Step **8.15** (Change pack UX) is **COMPLETE**. Live **NEXT = 8.5.2** Pass 3 (**blocked** until the operator says so). Do **not** start Pass 3, Step **8.6.1**, or **9.1**. Pack-corpus P1–P3 is **DONE**. **Parked:** `mr-fabric-cobblemon-1.7.3` re-run is **UNFINISHED** (operator aborted 2026-08-27). Come back in a **separate** chat: `/pack-test-one` that id (TESTING, `mcmgr-pack-test`; disable idle for the whole replace). Do not treat the later harness `pass` YAML as verified.
+Phase **8.5** is **DONE** (Pass 3 filled; triage **skipped**; S0-01 Nit **parked OK** — stale assert vs intended `overlay-offline`, not a bug-fix plan). Living **NEXT = 8.6.1 P1** (OCIR username + digest converge + Guide). Developer Docker Desktop pre-build is OK; **users** must not need Docker. GitHub Actions is **out**. Do **not** start **9.1**. Pack-corpus P1–P3 is **DONE**. **Parked:** `mr-fabric-cobblemon-1.7.3` re-run is **UNFINISHED** (operator aborted 2026-08-27). Come back in a **separate** chat: `/pack-test-one` that id (TESTING, `mcmgr-pack-test`; disable idle for the whole replace). Do not treat the later harness `pass` YAML as verified.
 
 ## Design lock (implementing)
 
-Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) — skip order + freeze **implemented** (Step **8.9**); **review UI** is one list (Step **8.15**). Manage sidebar topology: [`assets/UI-design-mockup.png`](../assets/UI-design-mockup.png) + 8.12 Scrutiny (**COMPLETE**). Step **8.13** polish (**COMPLETE**). Step **8.14** (third UI pass) **COMPLETE**. Step **8.15** (Change pack UX) **COMPLETE**. Step **8.5.2** QA Pass 3 stays **blocked** until the operator starts it.
+Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) — skip order + freeze **implemented** (Step **8.9**); **review UI** is one list (Step **8.15**). Manage sidebar topology: [`assets/UI-design-mockup.png`](../assets/UI-design-mockup.png) + 8.12 Scrutiny (**COMPLETE**). Steps **8.13**–**8.15** **COMPLETE**. Phase **8.5** **COMPLETE**. Living **NEXT = Step 8.6.1 P1**. P13 already copies a pre-built tar into OCIR. Developer Docker Desktop pre-build is OK; users must not need Docker. Do not start 9.1.
 
 ## Completed recently
 
+- **2026-08-27** — Step **8.6.1** plan rewritten: developer Docker Desktop pre-build OK; users must not need Docker; GitHub Actions dropped. Living **NEXT = P1** (username + digest + Guide). Do not start 9.1.
+- **2026-08-27** — Phase **8.5** **CLOSED** (8.5.3). Pass 3 triage **skipped**. S0-01 Nit **parked OK** (operator: intended overlay design, not a product bug). Living **NEXT = 8.6.1 P1**. Do not start 9.1.
+- **2026-08-27** — Pass 3 **Phase B DONE** / pass **filled**. S3-01 Pass (overlay Clear lock did not Start; lock 404; VM1 STOPPED). S3-02 / S5-05 operator-confirmed Pass. Restore: lock absent, VM1 STOPPED, door RUNNING, idle 15+on. Post-Pass overlay copy nits applied (not re-tested). Living **NEXT** = triage if the operator asks. Do not start 8.6.1 or 9.1.
+- **2026-08-27** — Pass 3 **Phase A DONE**. S0–S1 and leftover S2 filled (S0-01 Fail Nit; remaining in-scope S1/S2 Pass). Restore: VM1 STOPPED, door RUNNING, play IP on door, lock absent, idle 15+on. Living **NEXT = Phase B**. Do not start Phase B, 8.6.1, or 9.1 until a new Agent chat.
+- **2026-08-27** — Operator aborted Phase A S1/S2 mid **S2-09**. S0 is recorded. Do not resume that runner. A later chat can continue S1/S2 from the catalog order (re-check idle timeout; it may still be 2).
+- **2026-08-27** — Operator unblocked Pass 3. Living **NEXT = 8.5.2 Phase A**. Do not start Phase B, 8.6.1, or 9.1.
+- **2026-08-27** — Pass 3 include-list narrowed. Operator pre-confirmed checklist **17–21**, **23–24**, **25–92**. Remaining: Phase A (agent S0/S1/S2 leftovers) + **S3-01**, **S3-02**, optional **S5-05**.
 - **2026-08-27** — Operator request (off-queue): Advanced → Stack can set **separate SSH private-key paths** for the game VM and doorbell (`vm1.ssh_key_path` / `door.ssh_key_path`). Local path only — does not rotate guest keys. Pass 3 **blocked**.
 - **2026-08-27** — Step **8.15 P4 DONE** (pick/review while VM stopped; Install starts VM1 then replace). Plan **COMPLETE**. Living **NEXT = 8.5.2** Pass 3 **blocked**.
 - **2026-08-27** — Step **8.15 P3 DONE** (Change-pack dock overlays the pane; tab-scoped to Server → Change pack). Living **NEXT = P4**. Pass 3 **blocked**.

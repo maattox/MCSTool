@@ -19,9 +19,10 @@ Read **only** what the current V1 / QA step names. Do not load this whole folder
 | [`V1-Manage-Sidebar-Polish-Plan.md`](V1-Manage-Sidebar-Polish-Plan.md) | Step **8.13**. Panel contrast, narrower sidebar, equal compact pins, larger tabs. **COMPLETE** (P1–P2). |
 | [`V1-Manage-UI-Pass-3-Plan.md`](V1-Manage-UI-Pass-3-Plan.md) | Step **8.14**. Zoom lock, equal power, pin redesign, Overview. Flush chrome / denser gutters reverted. **COMPLETE.** |
 | [`Mod-Pack-Tests.md`](Mod-Pack-Tests.md) | Operator informal pack tests (input to 8.7; not a living NEXT). |
-| [`Pack-Corpus-Test-Plan.md`](Pack-Corpus-Test-Plan.md) | Headless Change-pack corpus harness. **COMPLETE** (P1–P3). Pass 3 stays blocked. |
-| [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) | Pass 3 (**blocked** until the operator starts it). |
-| [`V1-QA-Pass-3-Results.md`](V1-QA-Pass-3-Results.md) | Fill during Pass 3. |
+| [`Pack-Corpus-Test-Plan.md`](Pack-Corpus-Test-Plan.md) | Headless Change-pack corpus harness. **COMPLETE** (P1–P3). |
+| [`V1-Function-Image-Plan.md`](V1-Function-Image-Plan.md) | Step **8.6.1**. Username + digest converge. **NEXT = P1.** (No GitHub Actions.) |
+| [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) | Pass 3 **filled**. Phase **8.5** **closed**. Historical. |
+| [`V1-QA-Pass-3-Results.md`](V1-QA-Pass-3-Results.md) | Pass 3 results. S0-01 Nit **parked OK**. |
 | [`V1-QA-Catalog.md`](V1-QA-Catalog.md) | Test IDs / expected — named IDs only. |
 | [`V1-Pass-2-Follow-On-Plan.md`](V1-Pass-2-Follow-On-Plan.md) | Step 8.4 notes. **P1–P13 DONE.** |
 | [`Guide.md`](Guide.md) | Happy-path user guide. Update in the same step if UX changes. |

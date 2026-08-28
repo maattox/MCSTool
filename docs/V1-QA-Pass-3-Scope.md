@@ -1,15 +1,15 @@
-# V1 QA Pass 3 — scope (gap-close + follow-on)
+# V1 QA Pass 3 — scope (gap-close)
 
 **Pass:** 3  
-**Status:** **BLOCKED** — Steps **8.7**–**8.14** are **DONE**. Step **8.15** (Change pack UX) is in progress. Do **not** run until the operator says Pass 3 may start **after 8.15**. (Step **8.4** P1–P13 is already DONE.) Living execution slice of [Step 8.5.2](V1-Implementation-Plan.md#step-852--execute-qa-passes). **Live queue:** [`NEXT.md`](NEXT.md).  
-**Catalog:** [`V1-QA-Catalog.md`](V1-QA-Catalog.md) — IDs and expected steps stay there. Do **not** regenerate the catalog. Implementing follow-on sections may **update expected** for product changes (S4-02 tabs, S3-01 overlay, S6-02 jar-root).  
+**Status:** **CLOSED** — Phases A–C **DONE**. Pass 3 **filled**. Operator 2026-08-27 **skipped** triage; S0-01 Nit **parked OK**. Phase **8.5** **DONE**. Living queue: [`NEXT.md`](NEXT.md) → Step **8.6.1**.  
+**Catalog:** [`V1-QA-Catalog.md`](V1-QA-Catalog.md) — IDs and expected steps stay there. Do **not** regenerate the catalog.  
 **Results:** fill [`V1-QA-Pass-3-Results.md`](V1-QA-Pass-3-Results.md) as you go.  
 **Prior:** [`V1-QA-Pass-2-Results.md`](V1-QA-Pass-2-Results.md) (greenfield Modded; closed early). [`V1-QA-Pass-1-Results.md`](V1-QA-Pass-1-Results.md) (Vanilla; historical).
 
-This is a **delta + gap-close**, not a second encyclopedia. Pass 1 already Passed most Vanilla chrome. Pass 2 already Passed Delete + greenfield Modded, live Setup Deploy, modded join, and Modding/Download pack. Pass 3 exists to run what those passes **skipped**, plus tests for **Step 8.4**, **8.7**, **8.8**, **8.9**, **8.10**, **8.11**, **8.12**, **8.13**, **8.14**, and **8.15** follow-on changes.
+This is a **delta**, not a second encyclopedia. Pass 1 Passed most Vanilla chrome. Pass 2 Passed Delete + greenfield Modded, live Setup Deploy, modded join, and Modding/Download pack. Operator 2026-08-27 confirmed the post-Pass-2 Manager / Setup / pack-import surface (checklist **17–21**, **23–24**, **25–92**). Pass 3 now runs only what that confirmation **did not** cover: **Phase A** agent on-box/cloud leftovers, plus three Hybrid IDs.
 
 **Cost:** $0. TESTING only. Never `DEFAULT` / live Forge lab. Never Minecraft `0.0.0.0/0`.  
-**Do not start** Step **8.6.1** or **9.1**. Do not create a Pass 3 bug-fix plan until this pass is filled and the operator asks for triage.  
+**Do not start** Step **9.1**. Pass 3 bug-fix plan: **not created** (triage skipped).  
 **Tofu:** do **not** `tofu destroy` / second greenfield unless the operator authorizes it. Prefer the **existing** Pass 2 TESTING stack (`mcmgr-blank-test`).
 
 ---
@@ -19,8 +19,8 @@ This is a **delta + gap-close**, not a second encyclopedia. Pass 1 already Passe
 | | Pass 1 | Pass 2 | Pass 3 |
 |---|--------|--------|--------|
 | Stack | Existing TESTING (old) | **Destroy + Setup** Modded | **Keep** Pass 2 stack unless operator says otherwise |
-| Game | Vanilla | Modded (FO 6.5.0 Fabric) | Still Modded (may have changed pack in P11) |
-| Catalog | Full S0–S7 (S7-04 skipped) | Delta include-list; **closed early** | Leftover include-list **plus** follow-on checks |
+| Game | Vanilla | Modded (FO 6.5.0 Fabric) | Still Modded |
+| Catalog | Full S0–S7 (S7-04 skipped) | Delta include-list; **closed early** | Agent leftovers + 3 Hybrid IDs |
 | Tofu | Forbidden | Phase A authorized destroy-then-apply | **Forbidden** unless operator says so |
 
 ---
@@ -29,7 +29,7 @@ This is a **delta + gap-close**, not a second encyclopedia. Pass 1 already Passe
 
 1. Read **this protocol**, the [Progress](#progress) line, and **only the phase you were asked to run**.  
 2. Catalog expected steps: open **named IDs** in [`V1-QA-Catalog.md`](V1-QA-Catalog.md). Do not load the Minecraft blueprint, PRODUCT-IDEAS, or the whole V1 file.  
-3. Fill [`V1-QA-Pass-3-Results.md`](V1-QA-Pass-3-Results.md). Out-of-scope rows stay `Skipped` — do **not** re-run Pass 1 chrome that already Passed unless a follow-on section changed those files.  
+3. Fill [`V1-QA-Pass-3-Results.md`](V1-QA-Pass-3-Results.md). Out-of-scope and operator-preconfirmed rows stay as recorded — do **not** re-run them.  
 4. **One agent chat owns the TESTING stack at a time.**  
 5. Mirror guest/cloud fixes into local SoT. File [`Issues.md`](Issues.md) for Setup/HCL/bootstrap/door bugs.  
 6. Git: commits allowed; never push/PR unless the operator asks.  
@@ -40,7 +40,7 @@ This is a **delta + gap-close**, not a second encyclopedia. Pass 1 already Passe
 
 ### Context budget
 
-This file + the named catalog IDs + [`Guide.md`](Guide.md) for changed copy. Follow-on Fail → also the named P-section in [`V1-Pass-2-Follow-On-Plan.md`](V1-Pass-2-Follow-On-Plan.md), [`V1-Modpack-Test-Follow-On-Plan.md`](V1-Modpack-Test-Follow-On-Plan.md), or [`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md).
+This file + the named catalog IDs + [`Guide.md`](Guide.md) for changed copy.
 
 ---
 
@@ -48,11 +48,11 @@ This file + the named catalog IDs + [`Guide.md`](Guide.md) for changed copy. Fol
 
 | Phase | Focus | Status |
 |-------|--------|--------|
-| **A** | S0 smoke + Pass 2 leftover on-box inspect (S1/S2) | **TODO** — after follow-on + operator |
-| **B** | Hybrid leftovers + follow-on UI (S3/S4/S5) | TODO — after A |
-| **C** | Setup leftovers (jar-root continue, Deploy Complete if re-opened) | TODO — after B |
+| **A** | S0 smoke + Pass 2 leftover on-box inspect (S1/S2) | **DONE** |
+| **B** | Remaining Hybrid: overlay, sidebar Start, optional daily-exhaust | **DONE** |
+| **C** | Setup leftovers (jar-root, Deploy Complete) | **DONE** — operator pre-confirmed 2026-08-27 (checklist 23–24). Do not re-run. |
 
-**NEXT = Phase A** only after Steps **8.7** and **8.8** exit and the operator says Pass 3 may run.
+**Pass 3 filled. Phase 8.5 closed.** S0-01 Nit parked OK. Do not start 9.1. Do not create a Pass 3 bug-fix plan.
 
 ---
 
@@ -60,66 +60,56 @@ This file + the named catalog IDs + [`Guide.md`](Guide.md) for changed copy. Fol
 
 ### In scope (run these)
 
-**Phase A — agent**
+**Phase A — agent** (checklist **1–14**)
+
+Suggested order: S0 → S1 preflight → inspect S2-01–S2-07 / S2-21–S2-22 while RUNNING → S2-08 wake → S2-09 idle SoftStop → S2-10 heal → S2-11 lock refuse → S2-16/S2-17 Function → S1-05 restore.
 
 | ID | Why |
 |----|-----|
 | **S0-01** | Follow-on Core tests; QA-exit smoke |
 | **S0-04** | Cheap; skipped in Pass 2 |
 | **S1-01–S1-05** | Pass 2 never snapshotted the new stack |
-| **S2-01–S2-11** | Pass 2 never inspected greenfield SoT (P1 cloud-init, door, wake, idle, heal, lock GET) |
+| **S2-01–S2-11** | Pass 2 never inspected greenfield SoT (cloud-init, door, wake, idle, heal, lock GET) |
 | **S2-16, S2-17** | Function should exist after follow-on **P12**; skip S2-17 only if still absent |
 | **S2-21, S2-22** | Cheap while Minecraft is up |
 
-**Phase B — Hybrid / operator**
+**Phase B — Hybrid / operator** (checklist **15**, **16**, **22**)
 
 | ID | Why |
 |----|-----|
-| **S3-01** | Overlay confirm must **not** Start (follow-on P1) |
-| **S3-02, S3-03** | Pass 2 did not record doorbell Start/Stop |
-| **S3-04** | P4 leftover CIDR; skipped in Pass 2 |
-| **S3-07** | Wipe auto-start; skipped in Pass 2 |
-| **S4-01** | Novice chrome + **Players** pin (P1) |
-| **S4-02** | Tabs: Danger Zone **merged into Advanced** (P3) — use **updated** catalog expected |
-| **S4-08** | With S3-04 |
-| **S4-09** | Usage + **Detailed usage** expander (P8) |
-| **S4-11** | Modding + **Change pack** if P11 shipped |
-| **S4-12** | Identity apply on Setup `vm_agent` |
-| **S4-13** | Console simple vs full (P6) |
-| **S4-18** | Idle controls now under Advanced → Danger Zone (P3) |
-| **S5-01, S5-02** | MOTD / wake on **modded** (Pass 2 join was already PLAYABLE) |
-| **S5-05** | Daily-exhaust Manager Start (P6 from Pass 1) |
-
-**Phase C — Setup**
-
-| ID | Why |
-|----|-----|
-| **S6-02** | Jar-root / user zip **continue** (P9). P7 jar-less CF still hard-block. Do not Deploy a second stack. |
-| **Deploy Complete page** | Re-open Setup / use a finished Deploy page (P2) — reserved IP + Copy + close hint |
+| **S3-01** | Overlay typed confirm must **not** Start (follow-on P1). Agent PUT lock; operator clicks; agent verifies VM1 stayed down. |
+| **S3-02** | Pass 2 did not record doorbell **Start**. Click **Start** in the **left sidebar** (not a top bar). Status in-flight then **Running**. |
+| **S5-05** | Optional. Temporarily lower daily cap; Manager sidebar Start / kick/MOTD is daily, **not** spend-brake. Restore the cap. Skip if the operator does not want to touch budgets — record `Skipped`. |
 
 **S8:** fill as you hit known issues.
 
-### Add when Steps 8.7 / 8.8 exit (do not run now)
+### Operator pre-confirmed (do not re-run)
 
-Pass 3 writers should **add catalog expected / include-list rows** for these once those plans are DONE (do not invent IDs here until then):
+Recorded as **Pass** in [`V1-QA-Pass-3-Results.md`](V1-QA-Pass-3-Results.md) on 2026-08-27. Do **not** re-click these unless a Phase A/B Fail shows a regression.
 
-- Crash-loop vs slow-start fail copy (8.7 P1); Java major applied on Change pack (8.7 P4)
-- Console Simple is not a near-copy of Full (8.8 P1); no tab-open backup/infra toasts (8.8 P2)
-- Compact toasts; progress dock on Deploy / Change pack (8.8 P3–P4)
-- Setup: no Compartment step; identity page; taller deploy log; no “stack” in novice copy (8.8 P5–P7)
-- Door idle/starting/exhausted favicons from user/default icon + overlays (8.8 P8)
-- Jar-root confirm fields (8.8 P9); quarantine UI if a one-mod crash is available (8.8 P10)
-- CF client-export still blocked **with** project links (8.8 P11)
+| Checklist | Catalog / topic |
+|-----------|-----------------|
+| 17 | **S3-03** sidebar Stop |
+| 18 | **S3-04**, **S4-08** allowlist Save + CIDR |
+| 19 | **S3-07** wipe world auto-start |
+| 20 | **S5-01** door MOTD when VM1 stopped |
+| 21 | **S5-02** wake from client connect |
+| 23 | **S6-02** jar-root / homemade zip continue |
+| 24 | Setup **Deployment Complete** + reserved IP Copy |
+| 25–92 | Manage chrome (caption, sidebar, pins, Overview/About, toasts, Server/Advanced inner tabs, MOTD WYSIWYG, Change pack overlay/stopped-VM pick/assisted review, Setup pages, SSH key paths, Console Simple/Full, Usage, Danger, World backups, Layer 3 UI if seen) |
+
+Those 25–92 rows cover the original Phase B chrome IDs **S4-01**, **S4-02**, **S4-09**, **S4-11**, **S4-12**, **S4-13**, **S4-18** and the 8.7–8.15 follow-on that never got separate catalog IDs.
 
 ### Out of scope (do not re-run)
 
 - **S7-04** — Pass 2 already destroyed + deployed. Do not Delete again.  
 - **S7-02, S7-03** — Pass 1 Pass; no resize/world-replace unless a Fail requires it.  
-- **S4-03, S4-10, S4-14–S4-17, S4-19–S4-22** — Pass 1 Pass chrome, unless a Fail shows up while running an in-scope ID.  
+- **S4-03, S4-10, S4-14–S4-17, S4-19–S4-22** — Pass 1 Pass and/or operator checklist **25–92**.  
 - **S6-01 live Deploy**, **S6-03–S6-05** — Pass 1/2 already covered; do not greenfield.  
 - **S0-02, S0-03, S0-05** — unchanged / optional gcc.  
-- **S3-05** — Pass 2 Pass (modded join). Re-run only if P11 changed the pack.  
-- **S3-06** — Pass 1 Pass oversized-world bell.
+- **S3-05** — Pass 2 Pass (modded join).  
+- **S3-06** — Pass 1 Pass oversized-world bell.  
+- Pack-corpus harness, unfinished Cobblemon re-run, CurseForge API helper (deferred), installer / CI Function image, real `$1` budget fire.
 
 If a skipped ID **regresses**, record it under Additional problems or promote to Fail.
 
@@ -133,7 +123,7 @@ DELETE spend-brake lock; restore idle timeout; re-enable idle unless the next Hy
 
 ## Operator prompts (copy-paste)
 
-Do **not** use these until Steps **8.7** and **8.8** are DONE.
+Phases A–C are **DONE**. Pass 3 is **filled**. Phase **8.5** is **closed**. Living **NEXT = 8.6.1**.
 
 ### Phase A
 
@@ -146,11 +136,10 @@ Run S2-17 only if the Function exists (follow-on P12). Stop after Phase A. Promp
 ### Phase B
 
 ```text
-Read docs/V1-QA-Pass-3-Scope.md Phase B only and those catalog IDs. I will click Hybrid / Minecraft. Fill Pass 3 results. TESTING only. Stay at $0. Do not tofu apply. Do not commit. Do not Delete infrastructure.
+Read docs/V1-QA-Pass-3-Scope.md Phase B only and those catalog IDs (S3-01, S3-02, optional S5-05). I will click Hybrid / Minecraft. Fill Pass 3 results. TESTING only. Stay at $0. Do not tofu apply. Do not commit. Do not Delete infrastructure. Do not re-run operator-preconfirmed IDs.
+Use MCMANAGER_CONFIG_DIR = mcmgr-blank-test, not repo data/config.local.json. Prompt sequential steps in Agent mode (not Plan mode). Include this same Agent-vs-Plan instruction in the prompt for the following phase.
 ```
 
-### Phase C
+### After Pass 3 (closed)
 
-```text
-Read docs/V1-QA-Pass-3-Scope.md Phase C only. Analyze a jar-root / user zip (continue after P9). Re-open finished Setup for Deployment Complete + IP copy. Do not Deploy a second stack. Do not start 8.6.1 or 9.1.
-```
+Phase 8.5 exited 2026-08-27. Do not run triage or a Pass 3 bug-fix plan. See [`NEXT.md`](NEXT.md) for **8.6.1**.

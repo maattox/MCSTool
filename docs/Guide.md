@@ -14,9 +14,9 @@ This product is built to stay at **$0** using Oracle [Always Free resources](htt
 
 Oracle still requires a **Pay As You Go (PAYG)** account for Ampere A1 capacity in many regions. PAYG means you *can* be billed if you leave Always Free. It is **not** permission to spend. Oracle’s docs say Always Free resources remain free after you upgrade; you are charged only for usage **above** those limits.
 
-**Last-resort $1 brake:** Setup creates a **$1 monthly compartment budget**. If actual spend ever reaches $1, an Oracle Function **SoftStops the Minecraft computer** and writes a lock flag in Object Storage. The small always-on doorbell stays running (it is an Always Free AMD Micro and does not use Ampere hours). That Function is not instant. Oracle bills when spend hits $1, and the Function can take several minutes, so you may see a **~$1–$2** charge **for that month**, then **no further charges** while the brake holds. This is **not** a perfect $0 guarantee.
+**Last-resort $1 brake:** Setup creates a **$1 monthly compartment budget**. If actual spend ever reaches $1, an Oracle Function **SoftStops the Minecraft server** and writes a lock flag in Object Storage. The small always-on doorbell stays running (it is an Always Free AMD Micro and does not use Ampere hours). That Function is not instant. Oracle bills when spend hits $1, and the Function can take several minutes, so you may see a **~$1–$2** charge **for that month**, then **no further charges** while the brake holds. This is **not** a perfect $0 guarantee.
 
-If that brake fires, friends who ping the play IP see a **MONTHLY SPEND BRAKE FIRED** message (not the daily budget one). Wait for the next calendar month, then open Manager. The app fills the window with a warning; Start stays blocked until you type the exact confirmation sentence (copy-paste is allowed). Confirming **clears the lock** (and recovers the doorbell / play IP) but does **not** start the server — use **Start** in the left sidebar when you are ready. Idle and daily/monthly free-hour limits still apply. The lock is not cleared automatically at month rollover. Use **Troubleshooting** if the play IP is left on the wrong computer.
+If that brake fires, friends who ping the play IP see a **MONTHLY SPEND BRAKE FIRED** message (not the daily budget one). Wait for the next calendar month, then open Manager. The app fills the window with a warning; Start stays blocked until you type the exact confirmation sentence. Confirming **clears the lock** (and recovers the doorbell / play IP) but does **not** start the server — use **Start** in the left sidebar when you are ready. Idle and daily/monthly free-hour limits still apply. The lock is not cleared automatically at month rollover. Use **Troubleshooting** if the play IP is left on the wrong computer.
 
 Do **not** add paid shapes, extra volumes, or load balancers. Setup never opens Minecraft to the whole internet. There is no public-server toggle.
 
@@ -30,7 +30,7 @@ Do **not** add paid shapes, extra volumes, or load balancers. Setup never opens 
 | [Evergreen WebView2](https://go.microsoft.com/fwlink/p/?LinkId=2124703) | The app tells you if this is missing. |
 | Oracle Cloud account | PAYG as needed (see below). Prefer the **home region**. |
 | API key files | `%USERPROFILE%\.oci\config` + PEM (not an SSH key). |
-| Auth Token | **Needed** to install the $1 spend-brake Function image (Oracle Container Registry login). **Not** Docker Desktop when a pre-built ARM tarball is present (`artifacts/mcmgr-fn-softstop-linux-arm64.tar` next to the app or in the repo). Without that artifact, from-source Setup still builds with Docker. CI / installer bundling remains [V1 Step 8.6.1](V1-Implementation-Plan.md#step-861--ci-built-arm-image--setup-copy-into-ocir). |
+| Auth Token | **Needed** to install the $1 spend-brake Function image (Oracle Container Registry login). **Not** Docker Desktop when a pre-built ARM tarball is present (`artifacts/mcmgr-fn-softstop-linux-arm64.tar` next to the app or in the repo). Without that artifact, from-source Setup still builds with Docker (developer). The installer (**9.1**) will ship the tarball so you never need Docker. |
 | Public IPv4 | Yours, and each friend’s, for the allowlist. Home IPs change. |
 | Minecraft Java Edition | Same release Setup chooses: Vanilla/Paper picker, or the version declared in a Modded pack. **Modded:** friends also need **that same exported pack file** — vanilla Minecraft cannot join. See [Modded: friends need the client pack](#modded-friends-need-the-client-pack). |
 
@@ -100,7 +100,7 @@ Official reference: [Getting an Auth Token](https://docs.oracle.com/en-us/iaas/C
 
 Each user may have at most **two** Auth Tokens. If you lose it, generate a new one.
 
-**If a pre-built ARM image is present:** Docker is not required; Setup copies it. **If it is missing** (typical from-source checkout without `artifacts/`): Setup still tries to **build** with Docker on this PC and skips if Docker is not running. [V1 Step 8.6.1](V1-Implementation-Plan.md#step-861--ci-built-arm-image--setup-copy-into-ocir) is the CI / installer path that always ships the artifact. Auth Token is required for the copy either way. `MCMANAGER_OCIR_USERNAME` (`<namespace>/<username>`) is still required until 8.6.1 derives it.
+**If a pre-built ARM image is present:** Docker is not required; Setup copies it. **If it is missing** (typical from-source checkout without `artifacts/`): Setup still tries to **build** with Docker on this PC and skips if Docker is not running. The Windows installer will ship the tarball. Auth Token is required for the copy either way. `MCMANAGER_OCIR_USERNAME` (`<namespace>/<username>`) is still required until [Step 8.6.1](V1-Implementation-Plan.md#step-861--pre-built-arm-image--setup-copy-into-ocir) derives it.
 
 ---
 
@@ -149,7 +149,7 @@ Deploy creates the compartment, network, reserved play IP, game VM, doorbell VM,
 
 When Deploy **succeeds**, Setup shows **Deployment Complete** and the **reserved play IP** friends should use, with a **Copy** button. Click **Close** (footer) to continue to the Manager app. The deploy log stays on that page, collapsed under **Deploy log**. Reopening a finished Setup from **Advanced → Deploy / repair** shows the same complete page — do not click Deploy again.
 
-The Function image is copied into your OCIR from a **pre-built ARM** tarball when present (next to the app or gitignored `artifacts/mcmgr-fn-softstop-linux-arm64.tar`). Docker is not required for that copy. Without the artifact, from-source Deploy may log that the Function was skipped if Docker is missing. CI / installer bundling is V1 Step 8.6.1.
+The Function image is copied into your OCIR from a **pre-built ARM** tarball when present (next to the app or gitignored `artifacts/mcmgr-fn-softstop-linux-arm64.tar`). Docker is not required for that copy. Without the artifact, from-source Deploy may log that the Function was skipped if Docker is missing. The Windows installer will ship the tarball.
 
 ---
 

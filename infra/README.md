@@ -48,7 +48,7 @@ State for **manual** `tofu` in this folder stays here (`terraform.tfstate`, giti
 
 **Not created:** NAT gateway, private subnet, service gateway, IPv6, NSGs, ONS topic, Object Storage objects (ledger/meta/backups), Minecraft/Java/door binaries.
 
-**Gated on `function_image`:** Function `mcmgr-fn-softstop` and Events rule `mcmgr-events-budget-alert`. Leave the variable empty until Setup has copied the CI-built ARM image into OCIR (V1 Step **8.6.1**). The current Docker `buildx` publisher is interim and must not ship.
+**Gated on `function_image`:** Function `mcmgr-fn-softstop` and Events rule `mcmgr-events-budget-alert`. Leave the variable empty until Setup has copied the pre-built ARM image into OCIR (V1 Step **8.6.1**). Developer Docker Desktop may produce that tar; **users** do not need Docker.
 
 ---
 
@@ -130,7 +130,7 @@ Never `tofu import` the **live Forge lab** into product state. Importing one res
 - Budget + ACTUAL ABSOLUTE $1 alert (email). Residual-charge copy is in the budget description / alert message. OCI **CreateBudget `description` max 200 characters**. When this apply also creates the stack compartment, wait 2 min before OCIR `mcmgr-fn/softstop` (Artifacts 404-DENIED on a brand-new compartment; SETUP-ISSUE-9).
 - Events → Function is the live path. **No ONS topic.**
 - `softstop_instance_ids` defaults to **VM1 only**. Always Free AMD Micro stays up (does not use Ampere OCPU-hours). Function config also passes `OS_NAMESPACE` / `OS_BUCKET` / `OS_LOCK_OBJECT` for the lock PUT.
-- The v1 lock object (`meta/spend-brake-triggered.json`) is **runtime state**, not a tofu resource. Tracked Function source writes it (`functions/shutdown_vm/`). **Product path (before release):** CI-built ARM image copied into the user’s OCIR (V1 Step **8.6.1**), not Docker Desktop / Cloud Shell on the admin PC. TESTING `fn push` remains allowed for agents; do not `fn push` the live Forge lab unless the operator authorizes it.
+- The v1 lock object (`meta/spend-brake-triggered.json`) is **runtime state**, not a tofu resource. Tracked Function source writes it (`functions/shutdown_vm/`). **Product path (before release):** pre-built ARM tarball copied into the user’s OCIR (V1 Step **8.6.1**); **users** do not need Docker Desktop / Cloud Shell. Developer Docker Desktop is OK. TESTING `fn push` remains allowed for agents; do not `fn push` the live Forge lab unless the operator authorizes it.
 
 ---
 

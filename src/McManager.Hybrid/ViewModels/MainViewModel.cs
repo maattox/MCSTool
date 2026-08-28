@@ -185,8 +185,6 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public string SpendBrakeConfirmationSentence =>
         SpendBrakeLockUx.ConfirmationSentence;
 
-    public bool SpendBrakeDebugEnabled => UiHostProbes.Enabled;
-
     public bool HasPlayIp =>
         !string.IsNullOrWhiteSpace(PlayIp) && PlayIp != Placeholder;
 

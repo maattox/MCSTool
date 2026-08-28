@@ -20,7 +20,7 @@
                 The $1 budget safety mechanism — in place to ensure you are not accidentally charged — has been triggered. Your Minecraft server exceeded the allowed monthly free usage, and any further use will result in your account being billed.
             </p>
             <p>
-                The safety mechanism automatically shut down your Minecraft computer to prevent further charges. The small doorbell computer is still meant to stay on. The mechanism can take several minutes to activate, so your account may have been charged somewhere between $1 and $2, but there will be no further charges while this lock remains.
+                The safety mechanism automatically shut down your Minecraft server to prevent further charges. The small doorbell computer is still meant to stay on. The mechanism can take several minutes to activate, so your account may have been charged somewhere between $1 and $2, but there will be no further charges while this lock remains.
             </p>
             <p>
                 Wait until the start of the next calendar month before turning the server back on. To turn it back on, you must give explicit permission. This lock is not cleared automatically at month rollover.
@@ -28,7 +28,7 @@
         </div>
 
         <p class="mcm-spend-brake-prompt">
-            Type this statement <strong>exactly</strong> (copy-paste is allowed):
+            Type this statement exactly
         </p>
         <div class="mcm-spend-brake-sentence-row">
             <blockquote class="mcm-spend-brake-sentence">@Vm.SpendBrakeConfirmationSentence</blockquote>
@@ -62,15 +62,6 @@
         </p>
 
         <div class="mcm-spend-brake-actions">
-            @if (Vm.SpendBrakeDebugEnabled)
-            {
-                <button type="button"
-                        disabled="@Vm.SpendBrakeUnlockInFlight"
-                        title="DEBUG: DELETE the lock object without starting the server"
-                        @onclick="Vm.DebugClearSpendBrakeAsync">
-                    DEBUG: clear lock
-                </button>
-            }
             <button type="button"
                     class="mcm-action-btn mcm-action-btn-start"
                     disabled="@(!Vm.CanConfirmSpendBrakeUnlock)"
