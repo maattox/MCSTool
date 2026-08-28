@@ -46,7 +46,7 @@ Do **not** add this policy or a timer in OpenTofu in this step.
 
 ## Deploy later (operator-authorized)
 
-- Same **CI-built ARM + copy into the user’s OCIR** channel as [`shutdown_vm`](../shutdown_vm/README.md) (V1 Step **8.6.1**). Do **not** require Docker Desktop on the admin PC. TESTING `fn push` is a lab/agent path only.  
+- Same **pre-built ARM tar + copy into the user’s OCIR** channel as [`shutdown_vm`](../shutdown_vm/README.md) (V1 Step **8.6.1**). Do **not** require Docker Desktop on the **user’s** PC. Developer Docker Desktop is OK. TESTING `fn push` is a lab/agent path only.  
 - Prefer the existing Functions application (`GENERIC_ARM`) rather than a paid second app.  
 - Timeout in `func.yaml` is **120s** (Usage API + GET/PUT). Memory 256 MiB.
 

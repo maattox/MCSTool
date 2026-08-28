@@ -111,7 +111,7 @@ public sealed class Vm1Settings
     public string SshUser { get; init; } = "ubuntu";
 
     [JsonPropertyName("ssh_key_path")]
-    public string SshKeyPath { get; init; } = "";
+    public string SshKeyPath { get; set; } = "";
 
     [JsonPropertyName("world_path")]
     public string WorldPath { get; init; } = "";
@@ -144,7 +144,7 @@ public sealed class DoorSettings
     public string SshUser { get; init; } = "ubuntu";
 
     [JsonPropertyName("ssh_key_path")]
-    public string SshKeyPath { get; init; } = "";
+    public string SshKeyPath { get; set; } = "";
 
     [JsonPropertyName("http_port")]
     public int HttpPort { get; init; } = 8080;

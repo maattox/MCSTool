@@ -142,7 +142,7 @@ public sealed class SetupWizardState
     [JsonPropertyName("identity_description_customized")]
     public bool IdentityDescriptionCustomized { get; set; }
 
-    /// <summary>When true, list MOTD is description only (no name line).</summary>
+    /// <summary>Ignored. List MOTD is always name then description (legacy resume field).</summary>
     [JsonPropertyName("identity_motd_omit_name")]
     public bool IdentityMotdOmitName { get; set; }
 

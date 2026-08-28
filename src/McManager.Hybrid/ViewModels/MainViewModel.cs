@@ -185,8 +185,6 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public string SpendBrakeConfirmationSentence =>
         SpendBrakeLockUx.ConfirmationSentence;
 
-    public bool SpendBrakeDebugEnabled => UiHostProbes.Enabled;
-
     public bool HasPlayIp =>
         !string.IsNullOrWhiteSpace(PlayIp) && PlayIp != Placeholder;
 
@@ -460,6 +458,40 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         await WakeGameServerAsync();
     }
 
+    /// <summary>
+    /// Same wake stack as sidebar Start. True when VM1 is already RUNNING, or after
+    /// wake finishes without spend-brake or timeout. False does not begin pack replace.
+    /// </summary>
+    public async Task<bool> EnsureVm1RunningForPackReplaceAsync()
+    {
+        if (ManagePowerUx.IsVm1Running(Vm1Lifecycle))
+            return true;
+
+        if (_powerActionInFlight || SpendBrakeUnlockInFlight)
+        {
+            ActionFeedback = StartDisabledReason;
+            ShowToast(ActionFeedback, isError: true);
+            return false;
+        }
+
+        await RefreshSpendBrakeLockAsync();
+        if (_spendBrakeUi is SpendBrakeUiState.Locked or SpendBrakeUiState.Unknown)
+        {
+            ActionFeedback = StartDisabledReason;
+            ShowToast(ActionFeedback, isError: true);
+            return false;
+        }
+
+        if (_door is null || !CanStart)
+        {
+            ActionFeedback = StartDisabledReason;
+            ShowToast(ActionFeedback, isError: true);
+            return false;
+        }
+
+        return await WakeGameServerAsync();
+    }
+
     public Task PrimaryPowerAsync()
     {
         if (CanStart)
@@ -643,10 +675,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         await RefreshOversizedWorldFlagAsync();
     }
 
-    private async Task WakeGameServerAsync()
+    private async Task<bool> WakeGameServerAsync()
     {
         if (_door is null)
-            return;
+            return false;
 
         BeginPowerAction(PowerActionKind.Start);
         ActionFeedback = "Starting…";
@@ -659,13 +691,23 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             {
                 ActionFeedback = wake.Error ?? "Start failed.";
                 ShowToast(ActionFeedback, isError: true);
-                return;
+                return false;
             }
 
             ActionFeedback = "Start accepted — waiting until friends can connect…";
-            await WaitForDoorAsync(
+            var reached = await WaitForDoorAsync(
                 s => s.IsPlayable || s.IsDegraded || s.IsSpendBrake,
                 TimeSpan.FromMinutes(30));
+            if (!reached)
+                return false;
+
+            var door = CachedDoorStatus();
+            if (door?.IsSpendBrake == true)
+                return false;
+
+            return ManagePowerUx.IsVm1Running(Vm1Lifecycle)
+                || door?.IsPlayable == true
+                || door?.IsDegraded == true;
         }
         finally
         {
@@ -1128,10 +1170,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         }
     }
 
-    private async Task WaitForDoorAsync(Func<DoorStatus, bool> predicate, TimeSpan timeout)
+    private async Task<bool> WaitForDoorAsync(Func<DoorStatus, bool> predicate, TimeSpan timeout)
     {
         if (_door is null)
-            return;
+            return false;
 
         var deadline = _clock.UtcNow + timeout;
         var delaySeconds = 3.0;
@@ -1157,7 +1199,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                         ActionFeedback,
                         isError: result.Value.IsDegraded || result.Value.IsSpendBrake,
                         autoHide: result.Value.IsPlayable ? true : null);
-                    return;
+                    return true;
                 }
             }
 
@@ -1167,5 +1209,6 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
         ActionFeedback = "Timed out waiting for the server to change state.";
         ShowToast(ActionFeedback, isError: true);
+        return false;
     }
 }

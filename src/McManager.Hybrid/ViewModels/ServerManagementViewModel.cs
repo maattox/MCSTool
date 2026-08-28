@@ -12,7 +12,8 @@ using McManager.Hybrid.Ui;
 namespace McManager.Hybrid.ViewModels;
 
 /// <summary>
-/// Server tab: Object Storage world backups + SSH replace/wipe when VM1 is RUNNING.
+/// Server tab: Object Storage world backups + SSH replace/wipe. Change pack pick/review
+/// works while VM1 is stopped; Install starts VM1 then runs the existing replace.
 /// Own <see cref="IsBusy"/> only — does not grey Start/Stop/Restart or dispose <c>OciSession</c>.
 /// </summary>
 public sealed partial class ServerManagementViewModel : ObservableObject, IDisposable
@@ -48,6 +49,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     private string? _currentLoaderOrDistribution;
     private SetupPackPreview? _packPreview;
     private HashSet<string> _operatorSkipTerms = new(StringComparer.OrdinalIgnoreCase);
+    private HashSet<string> _operatorKeepTerms = new(StringComparer.OrdinalIgnoreCase);
     private string? _sessionError;
     private long _currentBackupBytes;
     private string _dataDirectory = "";
@@ -149,7 +151,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
     public string ChangePackTitle =>
         CanPickPack
-            ? "Reinstall Minecraft from a new .mrpack or server-pack zip. The world is kept unless you also wipe."
+            ? PackReplaceUx.ChangePackPickHint
             : PackReplaceUx.PickDisabledReason(Vm1IsRunning, AnyBusy);
 
     public string InstallPackTitle =>
@@ -210,10 +212,14 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         && (_packPreview.NeedsAssistedReview
             || !PackReplaceUx.FreezeAllowsContinue(_packPreview.FreezeBlockReason)
             || _packPreview.AssistedReview.WillSkip.Any(i => i.SkipReason == PackFileSkipReason.OperatorSkip)
-            || (_operatorSkipTerms.Count > 0 && _packPreview.Kind == SetupPackImport.KindManualZip));
+            || ((_operatorSkipTerms.Count > 0 || _operatorKeepTerms.Count > 0)
+                && _packPreview.Kind == SetupPackImport.KindManualZip));
 
     public PackAssistedReview AssistedReview =>
         _packPreview?.AssistedReview ?? PackAssistedReview.Empty;
+
+    public IReadOnlyList<string> PackJarOrder =>
+        _packPreview?.JarRecords.Select(j => j.Path).ToArray() ?? [];
 
     public string PackFreezeBlockReason => _packPreview?.FreezeBlockReason ?? "";
 
@@ -225,18 +231,15 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     public bool ShowSaveCompatibilityWarning =>
         ShowPackConfirmChecks && !string.IsNullOrWhiteSpace(SaveCompatibilityWarning);
 
-    public string ClientPackTitle => SetupPackImport.ClientPackTitle;
+    public string FriendsNeedOneLiner => PackReplaceUx.FriendsNeedOneLiner;
 
-    public string ClientPackCopy => SetupPackImport.ClientPackCopy;
-
-    public string ClientPackAckLabel => SetupPackImport.ClientPackAckLabel;
-
-    public string ClientPackFriendsNeed =>
-        SetupPackImport.FriendsNeedLine(PackName, PackMinecraftVersion, PackLoader, PackLoaderVersion);
+    public string ClientPackAckLabel => PackReplaceUx.ClientPackAckLabel;
 
     public string PackConfirmLabel => PackReplaceUx.PackConfirmLabel;
 
     public string WipeWorldLabel => PackReplaceUx.WipeWorldLabel;
+
+    public string SkipWarningBody => PackReplaceUx.SkipWarningBody;
 
     public string DownloadPackTitle =>
         CanDownloadPack
@@ -249,7 +252,27 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
     public string ModdingHelpTitle => ModdingPanelLogic.HelpTitle;
 
-    public bool ShowChangePackDock => ProgressDockUx.ShowChangePackDock(ShowChangePackUi);
+    public const string PaneIdentity = "identity";
+    public const string PaneWorld = "world";
+    public const string PaneModding = "modding";
+    public const string PaneChangePack = "pack";
+
+    public bool IsChangePackPane =>
+        string.Equals(ServerPane, PaneChangePack, StringComparison.Ordinal);
+
+    public bool IsServerPane(string id) =>
+        string.Equals(ServerPane, id, StringComparison.Ordinal);
+
+    public void SelectServerPane(string pane)
+    {
+        if (string.IsNullOrWhiteSpace(pane)
+            || string.Equals(ServerPane, pane, StringComparison.Ordinal))
+            return;
+        ServerPane = pane;
+    }
+
+    public bool ShowChangePackDock(bool onServerTab) =>
+        ProgressDockUx.ShowChangePackDock(ShowChangePackUi, onServerTab, IsChangePackPane);
 
     public bool ShowPackJobProgress =>
         ProgressDockUx.ShowJobProgress(IsAnalyzingPack, _packReplaceRunning);
@@ -296,13 +319,13 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     public string WorldBackupsHelpTitle => OversizedWorldBackupUx.HelpTitle;
 
     public string IdentityHelpTitle =>
-        "Name and description show in Minecraft’s server list when the game is running. Select text and apply colors, or paste a motd= string. Check “Don’t put the server name on the MOTD” for a description-only list. The in-game PNG is the list icon while Minecraft is up. Offline / starting / unavailable copies show on the doorbell while the server is off. Automated chat is what the idle timer says in-game before a stop. Save, then Restart Minecraft (or Start) to apply the in-game icon. The doorbell icon updates on Save.";
+        "Name and description show in Minecraft’s server list when the game is running. Each box is one list line (59 characters). Select text and apply colors, or paste a motd= string. The in-game PNG is the list icon while Minecraft is up. Offline / starting / unavailable copies show on the doorbell while the server is off. Automated chat is what the idle timer says in-game before a stop. Save, then Restart Minecraft (or Start) to apply the in-game icon. The doorbell icon updates on Save.";
 
     public string IconStatesHelp =>
         "In-game is the color icon while Minecraft is up. Offline, Starting, and Unavailable are greyscale copies with overlays for the doorbell list while the server is off, waking, or cannot start (daily hours or spend-brake).";
 
     public string MotdPreview =>
-        ServerIdentityUx.BuildMotd(IdentityName, IdentityDescription, IdentityMotdOmitName);
+        ServerIdentityUx.BuildMotd(IdentityName, IdentityDescription);
 
     public bool CanSaveIdentity => HasObjectStorage && !AnyBusy;
 
@@ -316,10 +339,6 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(MotdPreview))]
     private string _identityDescription = "";
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(MotdPreview))]
-    private bool _identityMotdOmitName;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanClearIcon))]
@@ -344,6 +363,10 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     private string _identityStatus = "";
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsChangePackPane))]
+    private string _serverPane = PaneIdentity;
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowPackSummary))]
     [NotifyPropertyChangedFor(nameof(ShowPackConfirmChecks))]
     [NotifyPropertyChangedFor(nameof(ShowOverrideListWarning))]
@@ -360,19 +383,15 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     private string _packPath = "";
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ClientPackFriendsNeed))]
     private string _packName = "";
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ClientPackFriendsNeed))]
     private string _packMinecraftVersion = "";
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ClientPackFriendsNeed))]
     private string _packLoader = "";
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ClientPackFriendsNeed))]
     private string _packLoaderVersion = "";
 
     [ObservableProperty]
@@ -532,7 +551,6 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         _clearIcon = false;
         IdentityName = "";
         IdentityDescription = "";
-        IdentityMotdOmitName = false;
         HasCustomIcon = false;
         IconPreviewDataUrl = "";
         IdleIconPreviewDataUrl = "";
@@ -1161,7 +1179,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         ShowChangePackUi = true;
         var path = await _filePicker.OpenFileAsync(new FilePickRequest
         {
-            Title = "Choose a modpack file (.mrpack or server-pack zip)",
+            Title = "Choose a mod pack (.mrpack or .zip)",
             Filters = [PackFilter, MrpackFilter, ZipFilter, AllFilesFilter],
         });
         if (string.IsNullOrWhiteSpace(path))
@@ -1308,6 +1326,34 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
                 PackPath = installPath;
             }
 
+            if (!Vm1IsRunning)
+            {
+                StatusMessage = ProgressDockUx.ChangePackStartFallback;
+                NotifyDock();
+                var started = await _main.EnsureVm1RunningForPackReplaceAsync();
+                if (!started)
+                {
+                    StatusMessage = string.IsNullOrWhiteSpace(_main.ActionFeedback)
+                        ? "Start failed. Pack was not installed."
+                        : _main.ActionFeedback;
+                    return;
+                }
+            }
+
+            StatusMessage = ProgressDockUx.ChangePackIdleHoldFallback;
+            NotifyDock();
+            var idle = await _ssh.ApplyIdleSettingsAsync(
+                _config.Vm1,
+                idleAgentEnabled: false,
+                _config.Budget.IdleTimeoutMinutes,
+                _config.Budget.BudgetWarnMinutes);
+            if (!idle.Succeeded)
+            {
+                StatusMessage = idle.Error ?? "Could not disable the idle timer. Pack was not installed.";
+                _banner.Show(StatusMessage, ActionBannerSeverity.Error);
+                return;
+            }
+
             StatusMessage = ProgressDockUx.ChangePackInstallFallback;
             NotifyDock();
 
@@ -1433,7 +1479,12 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         if (_packPreview is null || AnyBusy)
             return;
 
-        var result = PackAssistedReviewActions.ApplySkip(_packPreview, _operatorSkipTerms, path, skip);
+        var result = PackAssistedReviewActions.ApplySkip(
+            _packPreview,
+            _operatorSkipTerms,
+            path,
+            skip,
+            keepTerms: _operatorKeepTerms);
         if (result.NeedsReanalyze)
         {
             await AnalyzePackPathAsync(_packPreview.SourcePath, keepConfirm: true).ConfigureAwait(true);
@@ -1457,9 +1508,10 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     private void ApplyPackPreview(SetupPackPreview preview, bool keepConfirm = false)
     {
         _operatorSkipTerms = PackAssistedReviewActions.LoadPersistedSkipTerms(preview.SourcePath);
+        _operatorKeepTerms = PackAssistedReviewActions.LoadPersistedKeepTerms(preview.SourcePath);
         PackLooksLikeLauncherInstance = SetupPackImport.LooksLikeLauncherInstance(preview.SourcePath);
-        var bound = _operatorSkipTerms.Count > 0
-            ? preview.ApplyOperatorSkips(_operatorSkipTerms)
+        var bound = _operatorSkipTerms.Count > 0 || _operatorKeepTerms.Count > 0
+            ? preview.ApplyOperatorSkips(_operatorSkipTerms, _operatorKeepTerms)
             : preview;
         _packPreview = bound;
         preview = bound;
@@ -1514,6 +1566,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     {
         _packPreview = null;
         _operatorSkipTerms = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        _operatorKeepTerms = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         PackLooksLikeLauncherInstance = false;
         PackPath = "";
         PackName = "";
@@ -1621,7 +1674,6 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         OnPropertyChanged(nameof(ShowPackIdentityFields));
         OnPropertyChanged(nameof(ShowDetectionMismatch));
         OnPropertyChanged(nameof(DetectionMismatchWarning));
-        OnPropertyChanged(nameof(ClientPackFriendsNeed));
         OnPropertyChanged(nameof(ShowPackConfirmChecks));
         OnPropertyChanged(nameof(ShowPackAssistedReview));
     }
@@ -1630,6 +1682,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     {
         OnPropertyChanged(nameof(ShowPackAssistedReview));
         OnPropertyChanged(nameof(AssistedReview));
+        OnPropertyChanged(nameof(PackJarOrder));
         OnPropertyChanged(nameof(PackFreezeBlockReason));
         OnPropertyChanged(nameof(PackLooksLikeLauncherInstance));
         OnPropertyChanged(nameof(CanInstallPack));
@@ -1663,13 +1716,15 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         NotifyPackIdentityUi();
     }
 
+    partial void OnServerPaneChanged(string value) => NotifyDock();
+
     partial void OnShowChangePackUiChanged(bool value) => NotifyDock();
 
     partial void OnPackAnalyzeCaptionChanged(string value) => NotifyDock();
 
     private void NotifyDock()
     {
-        OnPropertyChanged(nameof(ShowChangePackDock));
+        OnPropertyChanged(nameof(IsChangePackPane));
         OnPropertyChanged(nameof(ShowPackJobProgress));
         OnPropertyChanged(nameof(ShowPackElapsed));
         OnPropertyChanged(nameof(PackElapsedDisplay));
@@ -1976,9 +2031,9 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         try
         {
             var doc = ChatMessagesDocument.Defaults();
-            doc.ServerName = IdentityName?.Trim() ?? "";
-            doc.Description = IdentityDescription?.Trim() ?? "";
-            doc.MotdOmitName = IdentityMotdOmitName;
+            doc.ServerName = MotdFormatting.ClipToListLine(IdentityName);
+            doc.Description = MotdFormatting.ClipToListLine(IdentityDescription);
+            doc.MotdOmitName = false;
             doc.ChatMessages = ChatTemplates
                 .Where(row => !string.IsNullOrWhiteSpace(row.Key))
                 .ToDictionary(row => row.Key, row => row.Text ?? "", StringComparer.Ordinal);
@@ -2027,9 +2082,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
             }
 
             var doc = got.Value.Document;
-            IdentityName = doc.ServerName ?? "";
-            IdentityDescription = doc.Description ?? "";
-            IdentityMotdOmitName = doc.MotdOmitName;
+            IdentityName = MotdFormatting.ClipToListLine(doc.ServerName);
+            IdentityDescription = MotdFormatting.ClipToListLine(doc.Description);
             ServerNameDisplay = ServerIdentityUx.DisplayName(IdentityName, _config?.Vm1.DisplayName);
             ApplyChatRows(doc.ChatMessages);
             _pendingIconPng = null;

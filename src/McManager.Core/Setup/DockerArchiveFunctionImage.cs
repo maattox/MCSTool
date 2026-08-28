@@ -310,6 +310,8 @@ public sealed class PreparedFunctionImage
     public required byte[] ManifestJson { get; init; }
     public required string ManifestMediaType { get; init; }
     public required IReadOnlyList<PreparedFunctionBlob> Blobs { get; init; }
+
+    public string ManifestDigest => "sha256:" + DockerArchiveFunctionImage.Sha256Hex(ManifestJson);
 }
 
 public sealed class PreparedFunctionBlob

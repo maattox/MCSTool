@@ -8,21 +8,37 @@ Single source of truth for **what to work on next**. Living plan files keep sect
 
 | Field | Value |
 |-------|-------|
-| **Plan** | [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.5.2** |
-| **Step** | **8.5.2** Execute QA passes |
-| **Sub-plan** | [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) |
-| **Sub-step** | Pass 3 (operator start) |
-| **Status** | `blocked` |
-| **Cursor mode** | — |
+| **Plan** | [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Phase **9** / Step **9.1** |
+| **Step** | **9.1** Windows installer |
+| **Sub-plan** | [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) |
+| **Sub-step** | **P1** Publish layout: product tree next to the exe |
+| **Status** | `ready` |
+| **Cursor mode** | `agent` |
 
-Step **8.14** (Manage UI pass 3) is **COMPLETE** (P1–P4; operator 2026-08-26 kept zoom lock, equal power buttons, P3 pins, P4 Overview; restored painted 6px window strips and pre-P2 sidebar gutters). Live **NEXT = 8.5.2** Pass 3, **blocked** until the operator says so. Do **not** start Pass 3, Step **8.6.1**, or **9.1**. Pack-corpus P1–P3 is **DONE**. **Parked:** `mr-fabric-cobblemon-1.7.3` re-run is **UNFINISHED** (operator aborted 2026-08-27). Come back in a **separate** chat: `/pack-test-one` that id (TESTING, `mcmgr-pack-test`; disable idle for the whole replace). Do not treat the later harness `pass` YAML as verified.
+Phase **8.6** is **DONE**. Operator **unblocked Phase 9** (2026-08-27). Living **NEXT = P1** ([`V1-Packaging-Plan.md`](V1-Packaging-Plan.md)): `dotnet publish` so `infra/` / on-box / door / agent / Function sources sit next to the exe. Do **not** start P2–P7. GitHub Actions stays **out**. Users must not need Docker (Function tar already copies). **Parked:** `mr-fabric-cobblemon-1.7.3` re-run is **UNFINISHED** (operator aborted 2026-08-27). Come back in a **separate** chat: `/pack-test-one` that id (TESTING, `mcmgr-pack-test`; disable idle for the whole replace). Do not treat the later harness `pass` YAML as verified.
 
 ## Design lock (implementing)
 
-Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) — **implemented** (Step **8.9** P1–P2). Manage sidebar topology: [`assets/UI-design-mockup.png`](../assets/UI-design-mockup.png) + 8.12 Scrutiny (**COMPLETE**). Step **8.13** polish (**COMPLETE**): three-zone panels, 244px sidebar, equal compact pins, larger tabs. Step **8.14** (third UI pass) **COMPLETE**: Ctrl+scroll zoom lock, equal-width power buttons, Overview name+IP. Painted 6px window strips and pre-P2 sidebar gutters **restored** (operator 2026-08-26). Operator pin pass: **three** stacked sidebar strips (today / this month / rollover). Step **8.5.2** QA Pass 3 stays **blocked** until the operator starts it.
+Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) — skip order + freeze **implemented** (Step **8.9**); **review UI** is one list (Step **8.15**). Manage sidebar topology: [`assets/UI-design-mockup.png`](../assets/UI-design-mockup.png) + 8.12 Scrutiny (**COMPLETE**). Steps **8.13**–**8.15** **COMPLETE**. Phase **8.5** **COMPLETE**. Step **8.6.1** **COMPLETE**. Phase **9** packaging: [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) Scrutiny (Inno installer, GitHub prompt-not-apply, no Actions).
 
 ## Completed recently
 
+- **2026-08-27** — Phase **9 unblocked.** Living plan [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) created. **NEXT = P1** (publish layout). Do not start P2.
+- **2026-08-27** — Step **8.6.1 P2 DONE** (TESTING OCIR login proven; IAM name + identity domain; copy without Docker; digest match; synthetic ACTUAL VM1 only). Plan **COMPLETE**. Phase **8.6** **DONE**. Living **NEXT = 9.1** **blocked**. Do not start 9.1 until asked.
+- **2026-08-27** — Step **8.6.1 P1 DONE** (OCIR username derived from namespace + `~/.oci` user; Deploy/repair digest converge; Guide + developer recipe). Living **NEXT = P2** (TESTING user-copy verify). Do not start 9.1.
+- **2026-08-27** — Step **8.6.1** plan rewritten: developer Docker Desktop pre-build OK; users must not need Docker; GitHub Actions dropped. Living **NEXT = P1** (username + digest + Guide). Do not start 9.1.
+- **2026-08-27** — Phase **8.5** **CLOSED** (8.5.3). Pass 3 triage **skipped**. S0-01 Nit **parked OK** (operator: intended overlay design, not a product bug). Living **NEXT = 8.6.1 P1**. Do not start 9.1.
+- **2026-08-27** — Pass 3 **Phase B DONE** / pass **filled**. S3-01 Pass (overlay Clear lock did not Start; lock 404; VM1 STOPPED). S3-02 / S5-05 operator-confirmed Pass. Restore: lock absent, VM1 STOPPED, door RUNNING, idle 15+on. Post-Pass overlay copy nits applied (not re-tested). Living **NEXT** = triage if the operator asks. Do not start 8.6.1 or 9.1.
+- **2026-08-27** — Pass 3 **Phase A DONE**. S0–S1 and leftover S2 filled (S0-01 Fail Nit; remaining in-scope S1/S2 Pass). Restore: VM1 STOPPED, door RUNNING, play IP on door, lock absent, idle 15+on. Living **NEXT = Phase B**. Do not start Phase B, 8.6.1, or 9.1 until a new Agent chat.
+- **2026-08-27** — Operator aborted Phase A S1/S2 mid **S2-09**. S0 is recorded. Do not resume that runner. A later chat can continue S1/S2 from the catalog order (re-check idle timeout; it may still be 2).
+- **2026-08-27** — Operator unblocked Pass 3. Living **NEXT = 8.5.2 Phase A**. Do not start Phase B, 8.6.1, or 9.1.
+- **2026-08-27** — Pass 3 include-list narrowed. Operator pre-confirmed checklist **17–21**, **23–24**, **25–92**. Remaining: Phase A (agent S0/S1/S2 leftovers) + **S3-01**, **S3-02**, optional **S5-05**.
+- **2026-08-27** — Operator request (off-queue): Advanced → Stack can set **separate SSH private-key paths** for the game VM and doorbell (`vm1.ssh_key_path` / `door.ssh_key_path`). Local path only — does not rotate guest keys. Pass 3 **blocked**.
+- **2026-08-27** — Step **8.15 P4 DONE** (pick/review while VM stopped; Install starts VM1 then replace). Plan **COMPLETE**. Living **NEXT = 8.5.2** Pass 3 **blocked**.
+- **2026-08-27** — Step **8.15 P3 DONE** (Change-pack dock overlays the pane; tab-scoped to Server → Change pack). Living **NEXT = P4**. Pass 3 **blocked**.
+- **2026-08-27** — Step **8.15 P2 DONE** (Change pack compactness: locked copy, taller summary, side-by-side ingest/warnings/checkboxes). Living **NEXT = P3**. Pass 3 **blocked**.
+- **2026-08-27** — Step **8.15 P1 DONE** (single-list assisted review: Client-only checkbox, identity above the list, summary hidden during review). Living **NEXT = P2**. Pass 3 **blocked**.
+- **2026-08-27** — Step **8.15** inserted (Change pack UX: single-list review, compactness, overlay dock, stopped-VM pick). Living **NEXT = P1**. Pass 3 **blocked**.
 - **2026-08-26** — Sidebar **Status** now shows **Running** when the Minecraft VM is already on (same “already on” signal as **Stop**), so opening Manager on a live server no longer stays **Stopped**. Pass 3 **blocked**.
 
 - **2026-08-27** — Pack-corpus cobblemon mrpack re-run **UNFINISHED** (session aborted). VM1 Minecraft stopped; idle re-enabled; `pack-tests/.lock` released. Phase `2026-08-26` stay `complete` except that id. Pass 3 **blocked**.

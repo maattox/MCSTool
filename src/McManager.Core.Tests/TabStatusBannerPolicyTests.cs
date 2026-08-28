@@ -40,6 +40,9 @@ public sealed class TabStatusBannerPolicyTests
     [InlineData("Publish meta failed.", true)]
     [InlineData("Break-glass: START VM1 (no IP move)…", true)]
     [InlineData("Auto-detect: scanning OCI profiles…", true)]
+    [InlineData("Selected private key for the game VM. Save to use it.", false)]
+    [InlineData("Door VM will use the game VM private key after Save.", false)]
+    [InlineData("Saved SSH key paths on this PC. Both VMs use the same private key file.", true)]
     public void Advanced_status_gate(string message, bool forward) =>
         Assert.Equal(forward, TabStatusBannerPolicy.ShouldForwardAdvancedStatus(message));
 }

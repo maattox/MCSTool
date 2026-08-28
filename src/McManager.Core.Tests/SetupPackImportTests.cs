@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using System.Text;
 using McManager.Core.Config;
+using McManager.Core.Services;
 using McManager.Core.Setup;
 using Xunit;
 
@@ -188,10 +189,70 @@ public sealed class SetupPackImportTests
 
             var unskip = PackAssistedReviewActions.ApplySkip(
                 again.Value, terms, "mods/mystery.jar", skip: false, dataDirectory: data);
-            Assert.True(unskip.NeedsReanalyze);
+            Assert.False(unskip.NeedsReanalyze);
+            Assert.Contains(
+                unskip.Preview.AssistedReview.NeedsYourCall,
+                i => i.FileName.Contains("mystery.jar", StringComparison.OrdinalIgnoreCase));
             var restored = SetupPackImport.AnalyzeFile(path, dataDirectory: data);
             Assert.True(restored.Succeeded, restored.Error);
             Assert.True(restored.Value!.NeedsAssistedReview);
+        }
+        finally
+        {
+            TryDelete(path);
+            try { Directory.Delete(data, recursive: true); } catch (IOException) { }
+        }
+    }
+
+    [Fact]
+    public void Unskip_override_list_reclassifies_without_reanalyze()
+    {
+        var ok = MakeJar(("fabric.mod.json", """{"schemaVersion":1,"id":"ok","version":"0","environment":"*"}"""));
+        using var zip = MakeZipBytes(
+            ("mods/ok.jar", ok),
+            ("mods/unique-client-mod-1.0.jar", Encoding.UTF8.GetBytes("not-a-jar")));
+        var path = WriteTemp("unskip-auto.zip", zip);
+        var data = Path.Combine(Path.GetTempPath(), "mcmgr-unskip-auto-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(Path.Combine(data, Layer2LocalOverlay.DirectoryName));
+        File.WriteAllText(
+            Layer2LocalOverlay.FilePath(data),
+            """{"globalExcludes":["unique-client-mod"],"globalForceIncludes":[],"modpacks":{}}""");
+        try
+        {
+            var first = SetupPackImport.AnalyzeFile(path, dataDirectory: data);
+            Assert.True(first.Succeeded, first.Error);
+            var preview = first.Value!;
+            Assert.Contains(
+                preview.AssistedReview.WillSkip,
+                i => i.FileName.Contains("unique-client-mod", StringComparison.OrdinalIgnoreCase)
+                     && i.SkipReason == PackFileSkipReason.OverrideList);
+
+            var skipTerms = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var keepTerms = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var unskip = PackAssistedReviewActions.ApplySkip(
+                preview,
+                skipTerms,
+                "mods/unique-client-mod-1.0.jar",
+                skip: false,
+                dataDirectory: data,
+                keepTerms: keepTerms);
+            Assert.False(unskip.NeedsReanalyze);
+            Assert.Equal(preview.MinecraftVersion, unskip.Preview.MinecraftVersion);
+            Assert.Equal(preview.Loader, unskip.Preview.Loader);
+            Assert.DoesNotContain(
+                unskip.Preview.AssistedReview.WillSkip,
+                i => i.FileName.Contains("unique-client-mod", StringComparison.OrdinalIgnoreCase));
+            Assert.Contains(
+                unskip.Preview.AssistedReview.NeedsYourCall,
+                i => i.FileName.Contains("unique-client-mod", StringComparison.OrdinalIgnoreCase));
+            Assert.Contains("unique-client-mod-1.0.jar", keepTerms, StringComparer.OrdinalIgnoreCase);
+
+            var hash = Layer2LocalOverlay.TryHashFile(path);
+            var lists = Layer2LocalOverlay.Load(data);
+            Assert.True(lists.TryGetPack(Layer2LocalOverlay.IdentityKey(hash!), out var pack));
+            Assert.Contains(
+                pack.ForceIncludes,
+                s => s.Contains("unique-client-mod", StringComparison.OrdinalIgnoreCase));
         }
         finally
         {
@@ -435,7 +496,7 @@ public sealed class SetupPackImportTests
 
         var text = InfraPlanSummary.Build(state);
         Assert.Contains("Modded — CI Fabric Strip Fixture (fabric 0.16.9) 1.21.1", text, StringComparison.Ordinal);
-        Assert.Contains("Server list name: Modded Server", text, StringComparison.Ordinal);
+        Assert.Contains("Server list name: " + ServerIdentityUx.DefaultName, text, StringComparison.Ordinal);
         Assert.Contains("same exported pack required to join", text, StringComparison.Ordinal);
         Assert.DoesNotContain("lab stack", text, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("search", text, StringComparison.OrdinalIgnoreCase);

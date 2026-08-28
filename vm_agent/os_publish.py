@@ -24,7 +24,10 @@ OBJ_BUDGET = "budget/config.json"
 OBJ_CHAT = "messages/chat.json"
 OBJ_ICON = "messages/server-icon.png"
 CONFIG_PATH = os.environ.get("MC_MANAGER_CONFIG", "/etc/mc-manager/config.json")
-DEFAULT_MOTD = "A Minecraft Server"
+DEFAULT_MOTD = (
+    "§6§l★§r§l §e§lOCI Server§r§l\u00a0§6§l★§r"
+    "\\ncreated with §9§ngithub.com/maattox/oci-mc-server§r"
+)
 CONSUMERS = ("manager", "door", "vm1")
 CATEGORIES = ("ledger", "budget", "meta", "ip", "messages")
 
@@ -227,15 +230,79 @@ def _patch_properties_key(path: str, key: str, value: str) -> None:
         pass
 
 
-def _normalize_motd_lines(text: str) -> str:
-    raw = (text or "").replace("\r\n", "\n").replace("\r", "\n").replace("\\n", "\n")
-    lines = [part.strip() for part in raw.split("\n") if part.strip()]
-    return "\\n".join(lines)
+LIST_LINE_LIMIT = 59
+SECTION = "\u00a7"
+
+
+def _first_line(text: str) -> str:
+    raw = (text or "").replace("\r\n", "\n").replace("\r", "\n")
+    return raw.split("\n", 1)[0]
+
+
+def _code_len(s: str, i: int) -> int:
+    if i + 1 >= len(s) or s[i] not in (SECTION, "&"):
+        return 0
+    code = s[i + 1].lower()
+    if code == "x":
+        if i + 13 < len(s) and s[i + 2] in (SECTION, "&"):
+            p = i + 2
+            for _ in range(6):
+                if p + 1 >= len(s) or s[p] not in (SECTION, "&") or s[p + 1] not in "0123456789abcdefABCDEF":
+                    return 0
+                p += 2
+            return p - i
+        if i + 7 < len(s) and all(ch in "0123456789abcdefABCDEF" for ch in s[i + 2 : i + 8]):
+            return 8
+        return 0
+    if code in "0123456789abcdefklmnor":
+        return 2
+    return 0
+
+
+def _clip_motd_line(text: str, limit: int = LIST_LINE_LIMIT) -> str:
+    s = _first_line(text)
+    i = 0
+    vis = 0
+    n = len(s)
+    keep = 0
+    while i < n:
+        consumed = _code_len(s, i)
+        if consumed:
+            i += consumed
+            keep = i
+            continue
+        if vis >= limit:
+            break
+        vis += 1
+        i += 1
+        keep = i
+    return s[:keep]
+
+
+def _visible_text(text: str) -> str:
+    s = text or ""
+    out: list[str] = []
+    i = 0
+    n = len(s)
+    while i < n:
+        consumed = _code_len(s, i)
+        if consumed:
+            i += consumed
+            continue
+        out.append(s[i])
+        i += 1
+    return "".join(out)
+
+
+def _motd_line(text: str) -> str:
+    line = _clip_motd_line(text)
+    return "" if not _visible_text(line).strip() else line
 
 
 def _build_motd(server_name: str, description: str, omit_name: bool = False) -> str:
-    name = "" if omit_name else " ".join((server_name or "").split())
-    desc = _normalize_motd_lines(description)
+    # omit_name is ignored (legacy chat.json); MOTD is always name then description.
+    name = _motd_line(server_name)
+    desc = _motd_line(description)
     if name and desc:
         return f"{name}\\n{desc}"
     if desc:
@@ -277,8 +344,7 @@ def _apply_identity(cfg: dict[str, Any], doc: dict[str, Any], client, namespace:
 
     name = str(doc.get("server_name") or "").strip()
     description = str(doc.get("description") or "").strip()
-    omit_name = bool(doc.get("motd_omit_name"))
-    motd = _build_motd(name, description, omit_name=omit_name)
+    motd = _build_motd(name, description)
     props = os.path.join(server_dir, "server.properties")
     try:
         _patch_properties_key(props, "motd", motd)

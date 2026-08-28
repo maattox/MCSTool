@@ -73,6 +73,64 @@ public static class OcirRegistryPusher
         return ServiceResult.Ok();
     }
 
+    /// <summary>
+    /// Live tag digest (<c>Docker-Content-Digest</c>), or <c>null</c> when the tag is missing.
+    /// </summary>
+    public static async Task<ServiceResult<string?>> TryGetManifestDigestAsync(
+        string registryHost,
+        string repository,
+        string tag,
+        string username,
+        string password,
+        IProgress<string>? log,
+        HttpMessageHandler? handler = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(registryHost) || string.IsNullOrWhiteSpace(repository) || string.IsNullOrWhiteSpace(tag))
+            return ServiceResult<string?>.Fail("OCIR host, repository, or tag is missing.");
+
+        var ownsHandler = handler is null;
+        handler ??= new HttpClientHandler();
+        using var client = new HttpClient(handler, disposeHandler: ownsHandler)
+        {
+            Timeout = TimeSpan.FromMinutes(2),
+            BaseAddress = new Uri("https://" + registryHost.TrimEnd('/') + "/"),
+        };
+        client.DefaultRequestHeaders.UserAgent.ParseAdd("McManager-Setup");
+
+        var auth = await AuthenticateAsync(
+            client,
+            repository,
+            username,
+            password,
+            log,
+            cancellationToken).ConfigureAwait(false);
+        if (!auth.Succeeded)
+            return ServiceResult<string?>.Fail(auth.Error ?? "OCIR login failed.");
+
+        using var get = new HttpRequestMessage(HttpMethod.Get, $"v2/{repository}/manifests/{tag}");
+        get.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(DockerArchiveFunctionImage.DockerManifestMediaType));
+        get.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(DockerArchiveFunctionImage.OciManifestMediaType));
+        using var resp = await client.SendAsync(get, cancellationToken).ConfigureAwait(false);
+        if (resp.StatusCode == HttpStatusCode.NotFound)
+            return ServiceResult<string?>.Ok(null);
+        if (!resp.IsSuccessStatusCode)
+        {
+            var body = await resp.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+            return ServiceResult<string?>.Fail($"OCIR manifest GET failed ({(int)resp.StatusCode}): {TrimBody(body)}");
+        }
+
+        if (resp.Headers.TryGetValues("Docker-Content-Digest", out var values))
+        {
+            var header = values.FirstOrDefault();
+            if (!string.IsNullOrWhiteSpace(header))
+                return ServiceResult<string?>.Ok(header.Trim());
+        }
+
+        var bytes = await resp.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
+        return ServiceResult<string?>.Ok("sha256:" + DockerArchiveFunctionImage.Sha256Hex(bytes));
+    }
+
     internal static async Task<ServiceResult<string?>> AuthenticateAsync(
         HttpClient client,
         string repository,

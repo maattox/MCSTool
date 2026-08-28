@@ -90,6 +90,15 @@ public static class TabStatusBannerPolicy
                 StringComparison.Ordinal))
             return false;
 
+        if (text.StartsWith("Selected private key for the", StringComparison.Ordinal))
+            return false;
+
+        if (text.StartsWith("Door VM will use the game VM private key", StringComparison.Ordinal))
+            return false;
+
+        if (text.StartsWith("Game VM will use the doorbell private key", StringComparison.Ordinal))
+            return false;
+
         return true;
     }
 }

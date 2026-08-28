@@ -20,15 +20,17 @@ class MotdTests(unittest.TestCase):
             "Friends SMP\\nWeekend world",
             osp._build_motd("Friends SMP", "Weekend world"),
         )
-
-    def test_omit_name(self) -> None:
+        self.assertEqual(osp.DEFAULT_MOTD, osp._build_motd("", ""))
         self.assertEqual(
-            "Weekend world",
-            osp._build_motd("Friends SMP", "Weekend world", omit_name=True),
-        )
-        self.assertEqual(
+            "§6§l★§r§l §e§lOCI Server§r§l\u00a0§6§l★§r"
+            "\\ncreated with §9§ngithub.com/maattox/oci-mc-server§r",
             osp.DEFAULT_MOTD,
-            osp._build_motd("Friends SMP", "  ", omit_name=True),
+        )
+
+    def test_omit_name_is_ignored(self) -> None:
+        self.assertEqual(
+            "Friends SMP\\nWeekend world",
+            osp._build_motd("Friends SMP", "Weekend world", omit_name=True),
         )
 
     def test_section_codes_preserved(self) -> None:
@@ -37,8 +39,12 @@ class MotdTests(unittest.TestCase):
         self.assertNotIn("\n", motd)
         self.assertNotIn("\r", motd)
 
+    def test_extra_lines_and_overlong_are_clipped(self) -> None:
+        self.assertEqual("§cHello", osp._build_motd("", "§cHello\n§aWorld"))
+        self.assertEqual("x" * 59, osp._build_motd("", "x" * 80))
+
     def test_properties_write_keeps_section_and_escape(self) -> None:
-        motd = osp._build_motd("", "§cHello\n§aWorld")
+        motd = osp._build_motd("§cHello", "§aWorld")
         self.assertEqual("§cHello\\n§aWorld", motd)
         with tempfile.TemporaryDirectory() as tmp:
             path = os.path.join(tmp, "server.properties")

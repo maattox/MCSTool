@@ -115,10 +115,12 @@ public sealed class MotdFormattingTests
         const string text = "§ctest MOTD message";
         var start = text.IndexOf("MOTD", StringComparison.Ordinal);
         var result = MotdFormatting.WrapSpan(text, start, start + 4, 'l');
-        Assert.Equal("§ctest §lMOTD§r§c message", result.Text);
+        // Re-emit §c to drop bold (a color code resets formats). Trailing §r
+        // closes the still-red run; bare §r before D would also clear the red.
+        Assert.Equal("§ctest §lMOTD§c message§r", result.Text);
 
         var empty = MotdFormatting.WrapSpan(text, start, start, 'l');
-        Assert.Equal("§ctest §l§r§cMOTD message", empty.Text);
+        Assert.Equal("§ctest §l§r§cMOTD message§r", empty.Text);
     }
 
     [Fact]
@@ -127,7 +129,7 @@ public sealed class MotdFormattingTests
         const string text = "§c§ltest MOTD message";
         var start = text.IndexOf("MOTD", StringComparison.Ordinal);
         var result = MotdFormatting.WrapSpan(text, start, start + 4, 'o');
-        Assert.Equal("§c§ltest §oMOTD§r§c§l message", result.Text);
+        Assert.Equal("§c§ltest §oMOTD§c§l message§r", result.Text);
     }
 
     [Fact]
@@ -137,7 +139,7 @@ public sealed class MotdFormattingTests
         var text = prefix + "test MOTD message";
         var start = text.IndexOf("MOTD", StringComparison.Ordinal);
         var result = MotdFormatting.WrapSpan(text, start, start + 4, 'l');
-        Assert.Equal(prefix + "test §lMOTD§r" + prefix + " message", result.Text);
+        Assert.Equal(prefix + "test §lMOTD" + prefix + " message§r", result.Text);
     }
 
     [Fact]
@@ -171,10 +173,11 @@ public sealed class MotdFormattingTests
         const string text = "§ctest MOTD message";
         var start = text.IndexOf("MOTD", StringComparison.Ordinal);
         var wrapped = MotdFormatting.ToggleSpan(text, start, start + 4, 'l');
-        Assert.Equal("§ctest §lMOTD§r§c message", wrapped.Text);
+        Assert.Equal("§ctest §lMOTD§c message§r", wrapped.Text);
 
         var again = MotdFormatting.ToggleSpan(wrapped.Text, wrapped.InnerStart, wrapped.InnerEnd, 'l');
-        Assert.Equal(text, again.Text);
+        Assert.Equal("§ctest MOTD message§r", again.Text);
+        AssertMotdLooksLike(text, again.Text);
     }
 
     [Fact]
@@ -199,15 +202,15 @@ public sealed class MotdFormattingTests
     }
 
     [Fact]
-    public void Line_counters_use_59_limit_and_too_long_suffix()
+    public void Line_counters_use_59_limit()
     {
-        var motd = new string('a', 41) + "\\n" + new string('b', 60);
+        var motd = new string('a', 41) + "\\n" + new string('b', 59);
         var metrics = MotdFormatting.MeasureListLines(motd);
         Assert.Equal(2, metrics.Count);
         Assert.Equal("line 1: 41/59", metrics[0].Label);
         Assert.False(metrics[0].TooLong);
-        Assert.Equal("line 2: 60/59 — too long", metrics[1].Label);
-        Assert.True(metrics[1].TooLong);
+        Assert.Equal("line 2: 59/59", metrics[1].Label);
+        Assert.False(metrics[1].TooLong);
         Assert.Equal(MotdFormatting.ListLineVisibleLimit, metrics[0].Limit);
     }
 
@@ -260,16 +263,60 @@ public sealed class MotdFormattingTests
     }
 
     [Fact]
-    public void Line_counters_follow_BuildMotd_and_omit_name_split()
+    public void Line_counters_follow_BuildMotd_two_lines()
     {
         var named = MotdFormatting.MeasureIdentityLines("Friends SMP", "Weekend world");
         Assert.Equal(2, named.Count);
         Assert.Equal(11, named[0].Used);
         Assert.Equal(13, named[1].Used);
 
-        var omitted = MotdFormatting.MeasureIdentityLines("Ignored", "§cHello\n§aWorld", omitName: true);
-        Assert.Equal(2, omitted.Count);
-        Assert.Equal("line 1: 5/59", omitted[0].Label);
-        Assert.Equal("line 2: 5/59", omitted[1].Label);
+        var extraDescLinesDropped = MotdFormatting.MeasureIdentityLines("Friends SMP", "§cHello\n§aWorld");
+        Assert.Equal(2, extraDescLinesDropped.Count);
+        Assert.Equal("line 1: 11/59", extraDescLinesDropped[0].Label);
+        Assert.Equal("line 2: 5/59", extraDescLinesDropped[1].Label);
     }
+
+    [Fact]
+    public void Clip_to_list_line_drops_newlines_and_extra_visible_chars()
+    {
+        Assert.Equal("Hello", MotdFormatting.ClipToListLine("Hello\nWorld"));
+        Assert.Equal("§cHello", MotdFormatting.ClipToListLine("§cHello\n§aWorld"));
+        var over = new string('a', 60);
+        Assert.Equal(59, MotdFormatting.VisibleLength(MotdFormatting.ClipToListLine(over)));
+        Assert.Equal(new string('a', 59), MotdFormatting.ClipToListLine(over));
+        var coded = "§c" + new string('a', 59) + "§r" + "zzz";
+        var clipped = MotdFormatting.ClipToListLine(coded);
+        Assert.Equal(59, MotdFormatting.VisibleLength(clipped));
+        Assert.StartsWith("§c", clipped, StringComparison.Ordinal);
+        Assert.DoesNotContain("zzz", clipped, StringComparison.Ordinal);
+    }
+
+    internal static void AssertMotdLooksLike(string expected, string actual)
+    {
+        var exp = MotdBuilder.Parse(expected);
+        var got = MotdBuilder.Parse(actual);
+        Assert.Equal(VisiblePlain(exp), VisiblePlain(got));
+        var expFx = NonHoleEffects(exp);
+        var gotFx = NonHoleEffects(got);
+        Assert.Equal(expFx.Length, gotFx.Length);
+        for (var i = 0; i < expFx.Length; i++)
+        {
+            Assert.True(
+                expFx[i].SameAs(gotFx[i]),
+                $"style mismatch at visible index {i}: expected {Describe(expFx[i])}, got {Describe(gotFx[i])}");
+        }
+    }
+
+    private static string VisiblePlain(MotdBuilder builder) =>
+        builder.InputText.Replace(MotdFormatting.EditorHole.ToString(), "");
+
+    private static MotdCharEffects[] NonHoleEffects(MotdBuilder builder) =>
+        builder.InputText
+            .Select((ch, i) => (ch, fx: builder.InputEffects[i]))
+            .Where(x => x.ch != MotdFormatting.EditorHole)
+            .Select(x => x.fx)
+            .ToArray();
+
+    private static string Describe(MotdCharEffects e) =>
+        $"color={e.Color} b={e.Bold} i={e.Italic} u={e.Underline} s={e.Strikethrough} k={e.Obfuscated}";
 }

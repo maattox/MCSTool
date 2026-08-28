@@ -68,6 +68,27 @@ public sealed class PackDependencyFreezeTests
     }
 
     [Fact]
+    public void Operator_keep_unskips_override_list_and_keeps_the_row()
+    {
+        var records = new[]
+        {
+            Record("mods/ok.jar", ["ok"], [], skip: PackFileSkipReason.None),
+            Record("mods/sodium.jar", ["sodium"], [], skip: PackFileSkipReason.OverrideList),
+        };
+
+        var classified = PackDependencyFreeze.Classify(records, operatorKeepTerms: ["sodium.jar"]);
+        Assert.DoesNotContain("mods/sodium.jar", classified.ClientOnlyPaths, StringComparer.OrdinalIgnoreCase);
+        Assert.Contains("mods/sodium.jar", classified.ServerSidePaths, StringComparer.OrdinalIgnoreCase);
+        Assert.Contains(
+            classified.Review.NeedsYourCall,
+            i => i.Path.Contains("sodium", StringComparison.OrdinalIgnoreCase)
+                 && i.SkipReason == PackFileSkipReason.None);
+        Assert.DoesNotContain(
+            classified.Review.WillSkip,
+            i => i.Path.Contains("sodium", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public void Operator_skip_of_unknown_moves_to_will_skip()
     {
         var records = new[]
@@ -229,6 +250,38 @@ public sealed class PackDependencyFreezeTests
         {
             TryDelete(path);
         }
+    }
+
+    [Fact]
+    public void Unified_rows_follow_preferred_order_and_dedupe_must_keep()
+    {
+        var review = new PackAssistedReview(
+            willSkip:
+            [
+                new PackReviewItem("mods/a.jar", "env.server", PackFileSkipReason.PackDeclared),
+                new PackReviewItem("mods/c.jar", "exclude list", PackFileSkipReason.OverrideList),
+            ],
+            needsYourCall:
+            [
+                new PackReviewItem("mods/b.jar", "unknown side"),
+            ],
+            mustKeep:
+            [
+                new PackReviewItem(
+                    "mods/c.jar",
+                    "required by thermal",
+                    PackFileSkipReason.None,
+                    requiredByPath: "mods/thermal.jar",
+                    requiredByName: "thermal"),
+            ]);
+
+        var rows = review.UnifiedRows(["mods/b.jar", "mods/c.jar", "mods/a.jar"]);
+        Assert.Equal(3, rows.Count);
+        Assert.Equal("mods/b.jar", rows[0].Path);
+        Assert.Equal("mods/c.jar", rows[1].Path);
+        Assert.Equal("mods/a.jar", rows[2].Path);
+        Assert.Equal("thermal", rows[1].RequiredByName);
+        Assert.Equal(PackFileSkipReason.None, rows[1].SkipReason);
     }
 
     [Fact]

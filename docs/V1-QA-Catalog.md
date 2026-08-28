@@ -4,10 +4,10 @@
 **Parent:** `[V1-Implementation-Plan.md](V1-Implementation-Plan.md)`.  
 **Results:** fill `[V1-QA-Pass-N-Results.md](V1-QA-Pass-3-Results.md)` for the current pass. Pass 1 and Pass 2 are historical. Do **not** edit expected steps in this catalog just to record an outcome. Product changes (Steps 8.4, **8.7**, **8.8**) **may** update expected (S4-02, S3-01, S6-01, S6-02, S4-01, S3-07, plus 8.7/8.8 chrome).  
 **Pass 2 execution:** [`archive/V1-QA-Pass-2-Scope.md`](archive/V1-QA-Pass-2-Scope.md) (**closed early**).  
-**Pass 3 execution:** [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) (**blocked** until Step **8.10** completes and the operator starts Pass 3). Do not re-run the full catalog.  
+**Pass 3 execution:** [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) (**filled**). Include-list was Phase A leftovers + **S3-01** / **S3-02** / optional **S5-05**. Do not re-run the full catalog.  
 **Fix work:** after triage, an agent writes `[V1-Bug-Fix-Plan-Pass-N.md](V1-Bug-Fix-Plan-TEMPLATE.md)` from the filled results. Agents implement **that** plan, not this catalog.
 
-This catalog is `dotnet run` **+ TESTING**. Pass 1 used the existing Vanilla stack. Pass 2 is Delete + greenfield **Modded** (**closed early**). Pass 3 is gap-close + Steps **8.4 / 8.7 / 8.8 / 8.9 / 8.10** tests on that stack. It is not the PRODUCT-IDEAS clean-room (new account + installer + real $1 budget fire). Do not start [Step 8.6.1](V1-Implementation-Plan.md#step-861--ci-built-arm-image--setup-copy-into-ocir) or [Step 9.1](V1-Implementation-Plan.md#step-91--windows-installer) from this file.
+This catalog is `dotnet run` **+ TESTING**. Pass 1 used the existing Vanilla stack. Pass 2 is Delete + greenfield **Modded** (**closed early**). Pass 3 is leftover S0–S2 plus remaining Hybrid smoke on that stack (operator pre-confirmed 8.4 / 8.7–8.15 chrome 2026-08-27). It is not the PRODUCT-IDEAS clean-room (new account + installer + real $1 budget fire). Do not start [Step 8.6.1](V1-Implementation-Plan.md#step-861--pre-built-arm-image--setup-copy-into-ocir) or [Step 9.1](V1-Implementation-Plan.md#step-91--windows-installer) from this file.
 
 **Cost:** $0 (Always Free–eligible). Never open `0.0.0.0/0` on Minecraft, SSH, or door admin.
 
@@ -19,22 +19,18 @@ This catalog is `dotnet run` **+ TESTING**. Pass 1 used the existing Vanilla sta
 
 1. **Pass 1 (DONE):** full S0–S7 on Vanilla (S7-04 Skipped). Bug-fix P1–P8 DONE.
 2. **Pass 2 (DONE, closed early):** follow [`V1-QA-Pass-2-Scope.md`](V1-QA-Pass-2-Scope.md) was Phase A + join only. Filled [`V1-QA-Pass-2-Results.md`](V1-QA-Pass-2-Results.md). Do **not** re-run it.
-3. **Pass 3 (blocked):** follow [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) after Step **8.9**. Fill [`V1-QA-Pass-3-Results.md`](V1-QA-Pass-3-Results.md).
+3. **Pass 3 (blocked):** follow [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) when the operator starts it. Fill [`V1-QA-Pass-3-Results.md`](V1-QA-Pass-3-Results.md).
 4. **One agent chat owns the TESTING stack at a time.** Two chats shortening idle and invoking the spend-brake Function will collide. Greenfield destroy/apply was Pass 2 Phase A only.
 5. Fill the pass results file as you go. Do not wait until the end of a three-hour session.
 6. Later passes = **failed tests from the last pass + smoke ([S0-01](#s0-01--core-unit-tests), [S1-03](#s1-03--stack-snapshot), [S2-08](#s2-08--wake-from-stopped-unlocked), [S2-09](#s2-09--idle-softstop-short-timeout), [S2-17](#s2-17--invoke-function-with-fake-actual-alert), [S3-01](#s3-01--spend-brake-overlay--typed-confirm), [S4-01](#s4-01--novice-chrome)) + tests for files that changed** + gaps the last pass never covered. Full catalog re-run only before declaring Phase 8.5 done.
 7. Agents: read **the current pass scope + named catalog IDs**. Do not load the Minecraft blueprint, PRODUCT-IDEAS, or the whole V1 plan.
-8. The operator **may pause a pass after a suite** for a Blocker (write/run [`V1-Bug-Fix-Plan-Pass-N.md`](V1-Bug-Fix-Plan-TEMPLATE.md), then a delta). Do not start 8.6.1 or 9.1. Living product work: Step **8.9** [`V1-Pack-Import-Assisted-Review-Plan.md`](V1-Pack-Import-Assisted-Review-Plan.md). Historical: Step **8.7** [`V1-Modpack-Test-Follow-On-Plan.md`](V1-Modpack-Test-Follow-On-Plan.md), Step **8.8** [`V1-Operator-Notes-Follow-On-Plan.md`](V1-Operator-Notes-Follow-On-Plan.md), Pass 2 pause [`V1-Pass-2-Follow-On-Plan.md`](V1-Pass-2-Follow-On-Plan.md) (**DONE**).
+8. The operator **may pause a pass after a suite** for a Blocker (write/run [`V1-Bug-Fix-Plan-Pass-N.md`](V1-Bug-Fix-Plan-TEMPLATE.md), then a delta). Do not start 8.6.1 or 9.1. Pass 3 living execution: [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md). Historical follow-on: Steps **8.7**–**8.15** (**DONE**).
 
 
 
 ### Operator prompt (copy-paste)
 
-**Current follow-on (Step 8.9) — not a QA pass:**
-
-Canonical text: [`V1-Pack-Import-Assisted-Review-Plan.md`](V1-Pack-Import-Assisted-Review-Plan.md) → Operator entry.
-
-**Pass 3 (blocked until 8.9):** [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md).
+**Pass 3 (blocked until the operator starts it):** [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md).
 
 **Historical Pass 2 / Pass 1:** filled results files. Do not use Pass 2 Phase A (tofu destroy) again.
 
@@ -104,8 +100,8 @@ Optional on Fail: screenshot path, `journalctl` snippet, approximate timestamp (
 | DEBUG Advanced probes as a suite        | Optional while diagnosing; not v1 user paths                                             |
 | Core unit tests as manual steps         | S0 cites them                                                                            |
 | Real Oracle **$1 budget fire**          | Clean-room / accepted spend; not TESTING day-to-day                                      |
-| Windows installer / GitHub update check | V1 Phase 9 — **after** Phase 8.6 (CI Function image)                                     |
-| Docker Desktop on the admin PC to install the spend-brake Function | **Rejected** for the product path (V1 Step **8.6.1**). TESTING `fn`/`docker` remains an agent fill-in until then. |
+| Windows installer / GitHub update check | V1 Phase 9 — **after** Phase 8.6 (Function image copy)                                     |
+| Docker Desktop on the **user’s** PC to install the spend-brake Function | **Rejected** for the product path (V1 Step **8.6.1**). Developer Docker Desktop is OK. TESTING `fn`/`docker` remains an agent fill-in. |
 | After-v1 PRODUCT-IDEAS                  | Players tab, pack-replace **light swap**, PTY, paid mode, … **Change pack (full re-setup)** is v1 in Step 8.4 |
 | In-app pack browser / public Minecraft  | **Rejected**                                                                             |
 | Live Forge lab (`DEFAULT` profile)      | Forbidden                                                                                |
@@ -135,7 +131,7 @@ Same stack as the V1 plan [Test stack access](V1-Implementation-Plan.md#test-sta
 
 ### Product Functions (blanket, $0)
 
-This blanket is **TESTING / until V1 Step 8.6.1**. The **product** path is a CI-built ARM image copied into the user’s OCIR (no Docker on the admin PC). `fn`/`docker` here does not define the installer story.
+This blanket is **TESTING / until V1 Step 8.6.1**. The **product** path is a pre-built ARM tarball copied into the user’s OCIR (**users** do not need Docker). `fn`/`docker` here does not define the installer story.
 
 Agents **may** without asking, on **TESTING** only:
 
@@ -189,10 +185,12 @@ Treat as `Known`, not a new Fail, unless worse than documented. Living list: [`I
 
 ## QA exit (Phase 8.5 done)
 
-- No open **Blocker** or **Major** on the latest pass (or parked with operator OK).  
-- Smoke: S0-01, S1-03, S2-08, S2-09, S2-17, S3-01, S4-01 all `Pass` (or S3-01/S4-01 Pass on the operator pass).  
-- Remaining items are `Known` / `After-v1` / `Won't-fix` with ids.  
+- No open **Blocker** or **Major** on the latest pass (or parked with operator OK).
+- Smoke: S0-01, S1-03, S2-08, S2-09, S2-17, S3-01, S4-01 all `Pass` (or S3-01/S4-01 Pass on the operator pass). **Exception (2026-08-27):** S0-01 Nit **parked OK** — stale idle-chroma assert vs intended red `overlay-offline`; not a product bug.
+- Remaining items are `Known` / `After-v1` / `Won't-fix` with ids.
 - Then V1 **NEXT** may move to Step **8.6.1** (not 9.1). Operator asks.
+
+**Phase 8.5 exit (2026-08-27):** Pass 3 filled; triage skipped; S0-01 parked OK. **DONE.** Living NEXT is 8.6.1.
 
 ---
 
@@ -605,23 +603,23 @@ Agent: put the fixture, watch OCI/SSH. Operator: Hybrid or Minecraft. Fill **bot
 2. Confirm **full-window** warning (not a small banner). Start blocked.
 3. Copy/paste the exact sentence (copy button OK):
   `I confirm that we have entered a new calendar month and that my free monthly usage limits have been reset. I understand that if I ignore these warnings and turn on my server before a new month has started, the card I created my Oracle Cloud account with will automatically be charged for the excess usage.`
-4. Confirm (**Clear lock** — this does **not** Start). Overlay dismisses. Watch that VM1 stays down until you click top-bar **Start**.
+4. Confirm (**Clear lock** — this does **not** Start). Overlay dismisses. Watch that VM1 stays down until you click sidebar **Start**.
 
 **Agent**
 
 - Before: lock GET exists.  
-- After confirm: lock **DELETE**d (404). Play IP parked/reconciled. Door OS-refresh. VM1 **not** woken by the overlay. Idle/daily/monthly gates still apply (top-bar Start still refuses if those gates are exhausted).  
+- After confirm: lock **DELETE**d (404). Play IP parked/reconciled. Door OS-refresh. VM1 **not** woken by the overlay. Idle/daily/monthly gates still apply (sidebar Start still refuses if those gates are exhausted).  
 - Fail-closed: optional — break Get (hard); skip unless easy.
 
 **Expected:** Overlay copy matches PRODUCT-IDEAS except confirm is **unlock only** (no overlay Start — follow-on P1; PRODUCT-IDEAS may still say overlay Start). Manager is the only clearer. No auto-clear at month rollover (do not wait a month — just confirm code/docs; UX has no “it’s a new month so skip typing”).
 
 **Restore:** Lock absent. Idle as agreed.
 
-### S3-02 — Top-bar Start (doorbell)
+### S3-02 — Sidebar Start (doorbell)
 
 **Runner:** `hybrid` · **Duration:** `wait` · **State:** VM1 STOPPED, unlocked
 
-**Operator:** Click **Start**. Status should show in-flight (Starting…) then **Running** when joinable.
+**Operator:** Click **Start** in the **left sidebar** (combined Start/Stop). Status should show in-flight (Starting…) then **Running** when joinable.
 
 **Agent:** VM1 RUNNING; play IP on VM1; 25565 listens. Start while already on stays disabled (E2E F5).
 
@@ -629,11 +627,11 @@ Agent: put the fixture, watch OCI/SSH. Operator: Hybrid or Minecraft. Fill **bot
 
 **Restore:** Disable idle after Minecraft start.
 
-### S3-03 — Top-bar Stop
+### S3-03 — Sidebar Stop
 
 **Runner:** `hybrid` · **Duration:** `wait`
 
-**Operator:** **Stop**. Must not hang forever on `POST /api/idle-empty` (DOOR-ISSUE-9).
+**Operator:** Sidebar **Stop**. Must not hang forever on `POST /api/idle-empty` (DOOR-ISSUE-9).
 
 **Agent:** VM1 STOPPED; IP on door; door listening.
 
@@ -767,7 +765,7 @@ For each: click the path, then Result Pass or Fail with what you saw.
 
 **Steps:** Set a harmless description. Save. Restart Minecraft to apply the in-game name/icon. Optional PNG (any size; Manager fits 64×64). Setup also has a **Name and icon** page that seeds the same `messages/chat.json` (default icon if none chosen). Save also refreshes doorbell favicons (offline / starting / unavailable).
 
-**Expected:** MOTD/list name and color icon update after restart while the game holds the play IP. Door-off list ping shows the greyscale+overlay idle (or starting/unavailable) favicon, not a solid color. Setup defaults are Vanilla/Paper/Modded Server (no Oracle™). Manager remains the day-2 editor.
+**Expected:** MOTD/list name and color icon update after restart while the game holds the play IP. Door-off list ping shows the greyscale+overlay idle (or starting/unavailable) favicon, not a solid color. Setup default MOTD is branded **OCI Server** plus `created with github.com/maattox/oci-mc-server` (no Oracle™). Manager remains the day-2 editor.
 
 **Restore:** Put the old name back if you care.
 
@@ -899,7 +897,7 @@ Use the play IP. Matching version/pack. One wake-from-client if S2-08 already pr
 
 **Runner:** `operator` · **Duration:** `wait`
 
-**Steps:** Only if you temporarily lower daily cap. Kick/MOTD is daily, **not** spend-brake. Restore cap.
+**Steps:** Only if you temporarily lower daily cap. Kick/MOTD is daily, **not** spend-brake. Sidebar **Start** must refuse with the same daily copy. Restore cap.
 
 **Expected:** Distinct strings. Skip if you do not want to touch budgets.
 
@@ -915,9 +913,9 @@ Do **not** `tofu apply` from these tests unless the operator authorizes it in th
 
 **Runner:** `operator` · **Duration:** `wait`
 
-**Steps:** If you can open Setup without destroying manage config: walk Always Free checkboxes ($1 residual honesty), profile picker, game Vanilla vs Modded, Paper vs Default Vanilla, **Name and icon** (defaults Vanilla/Paper/Modded Server; no Oracle™; optional 64×64 PNG), EULA link, Auth Token skip copy, shape 2/12 vs 4/24, admin `/32`. **No Compartment page** — Setup auto-names `mcmgr` (or `mcmgr-2` if taken). **Do not click Deploy** unless S7. If Setup already finished, reopen the last step from **Advanced → Deploy / repair** (no second Deploy) to check the finish page.
+**Steps:** If you can open Setup without destroying manage config: walk Always Free checkboxes ($1 residual honesty), profile picker, game Vanilla vs Modded, Paper vs Default Vanilla, **Name and icon** (default branded **OCI Server** MOTD; no Oracle™; optional 64×64 PNG), EULA link, Auth Token skip copy, shape 2/12 vs 4/24, admin `/32`. **No Compartment page** — Setup auto-names `mcmgr` (or `mcmgr-2` if taken). **Do not click Deploy** unless S7. If Setup already finished, reopen the last step from **Advanced → Deploy / repair** (no second Deploy) to check the finish page.
 
-**Expected:** Copy matches Guide. Pages are short; extra Always Free / EULA / pack copy is on info-icon hover. Name and icon sits after Minecraft; changing game type updates the default name until you edit it. Back/Deploy lock behavior is described (cannot verify without Deploy). While Deploy runs, percent, elapsed time, and a **humanized** status live in the **bottom dock** (same bar as Back/Deploy/Close) — never a raw `> rm -rf …` line. The detailed log stays on the page and is the tall viewport (review form and plan hidden). Modded: file picker/drop only; client-pack checkboxes; Quilt cannot continue; CurseForge **client** export refused. After a successful Deploy (or resume of a finished wizard): heading **Deployment Complete**, reserved play IP with **Copy**, Close to continue to Manager; deploy log may be collapsed below.
+**Expected:** Copy matches Guide. Pages are short; extra Always Free / EULA / pack copy is on info-icon hover. Name and icon sits after Minecraft; the branded **OCI Server** default stays until you edit it (Vanilla/Paper/Modded does not change the MOTD name). Back/Deploy lock behavior is described (cannot verify without Deploy). While Deploy runs, percent, elapsed time, and a **humanized** status live in the **bottom dock** (same bar as Back/Deploy/Close) — never a raw `> rm -rf …` line. The detailed log stays on the page and is the tall viewport (review form and plan hidden). Modded: file picker/drop only; client-pack checkboxes; Quilt cannot continue; CurseForge **client** export refused. After a successful Deploy (or resume of a finished wizard): heading **Deployment Complete**, reserved play IP with **Copy**, Close to continue to Manager; deploy log may be collapsed below.
 
 ### S6-02 — Modded analyze (local file)
 

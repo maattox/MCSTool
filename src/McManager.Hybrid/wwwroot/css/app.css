@@ -167,7 +167,7 @@ button.mcm-btn-disabled:hover {
     grid-template-columns:
         var(--manage-sidebar-width)
         minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    grid-template-rows: auto minmax(0, 1fr);
     padding: 0;
     background: var(--caption-bg);
 }
@@ -862,9 +862,25 @@ button.mcm-btn-disabled:hover {
     width: 0%;
 }
 
+.mcm-app-manage.has-progress-dock {
+    --mcm-toast-bottom: 88px;
+}
+
+.mcm-app-manage.has-progress-dock.is-dock-busy {
+    --mcm-toast-bottom: 128px;
+}
+
+.mcm-app-manage.has-progress-dock .mcm-change-pack {
+    padding-bottom: 80px;
+}
+
+.mcm-app-manage.has-progress-dock.is-dock-busy .mcm-change-pack {
+    padding-bottom: 120px;
+}
+
 /* Overlay the tab pane; abspos grid items do not size tracks, so the toast
-   cannot shrink .mcm-tab-body. Row 2 keeps it in the content column and
-   above the progress dock. */
+   cannot shrink .mcm-tab-body. z-index stays above the Change-pack dock.
+   When the dock is open, --mcm-toast-bottom lifts the toast above it. */
 .mcm-app-manage > .mcm-action-banner {
     position: absolute;
     grid-column: 2;
@@ -2799,6 +2815,108 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     margin-bottom: 12px;
 }
 
+.mcm-change-pack {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.mcm-change-pack-friends {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.mcm-change-pack-ingest {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px 12px;
+    align-items: stretch;
+    min-width: 0;
+}
+
+.mcm-change-pack-ingest .mcm-pack-drop {
+    margin: 0;
+    min-height: 80px;
+}
+
+.mcm-change-pack-drop-sub {
+    margin: 0 !important;
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.35;
+}
+
+.mcm-change-pack-ingest-actions {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;
+    gap: 8px;
+    min-width: 10.5rem;
+}
+
+.mcm-change-pack-file {
+    margin: 0 !important;
+    max-width: 12rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mcm-change-pack-warnings {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    gap: 8px 12px;
+    min-width: 0;
+}
+
+.mcm-change-pack-warnings .mcm-pack-list-warning {
+    margin: 0;
+    padding: 8px 10px;
+    min-width: 0;
+}
+
+.mcm-change-pack-warnings .mcm-pack-list-warning > p {
+    margin: 0 !important;
+}
+
+.mcm-change-pack-confirm {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(14rem, 20rem);
+    gap: 10px 16px;
+    align-items: start;
+    min-width: 0;
+}
+
+.mcm-change-pack-confirm.is-checks-only {
+    grid-template-columns: 1fr;
+}
+
+.mcm-change-pack .mcm-pack-summary {
+    max-height: 220px;
+    min-height: 96px;
+    margin: 0;
+    min-width: 0;
+}
+
+.mcm-change-pack-checks {
+    min-width: 0;
+}
+
+.mcm-change-pack-checks .mcm-checkbox-row {
+    margin-bottom: 8px;
+}
+
+.mcm-change-pack-checks .mcm-checkbox-row:last-child {
+    margin-bottom: 0;
+}
+
+.mcm-change-pack .mcm-wizard-error {
+    margin: 0;
+}
+
 .mcm-pack-review {
     display: flex;
     flex-direction: column;
@@ -2811,23 +2929,15 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 }
 
 .mcm-pack-review-title {
-    margin: 0 0 6px !important;
+    margin: 0 0 8px !important;
     font-size: 14px;
     font-weight: 600;
     color: var(--text-primary);
     text-wrap: pretty;
 }
 
-.mcm-pack-review-lead {
-    margin: 0 0 10px !important;
-    font-size: 13px;
-    line-height: 1.45;
-    color: var(--text-primary);
-    max-width: 72ch;
-}
-
 .mcm-pack-review-search {
-    margin: 0 0 12px;
+    margin: 0 0 10px;
 }
 
 .mcm-pack-review-search input[type="search"] {
@@ -2835,37 +2945,30 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     max-width: 28rem;
 }
 
-.mcm-pack-review-group,
-.mcm-pack-review-details {
-    margin: 12px 0 0;
+.mcm-pack-review-head,
+.mcm-pack-review-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(7.5rem, 22%);
+    column-gap: 10px;
+    align-items: start;
 }
 
-.mcm-pack-review-heading {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-    margin: 0 0 4px !important;
-    font-size: 13px;
+.mcm-pack-review-head {
+    margin: 0 0 2px;
+    padding: 0 0 6px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
     font-weight: 600;
-    color: var(--text-primary);
-}
-
-.mcm-pack-review-details > summary.mcm-pack-review-heading {
-    cursor: pointer;
-    list-style-position: outside;
-}
-
-.mcm-pack-review-count {
-    font-variant-numeric: tabular-nums;
-    font-weight: 500;
+    letter-spacing: 0.02em;
     color: var(--text-secondary);
 }
 
-.mcm-pack-review-help {
-    margin: 0 0 8px !important;
+.mcm-pack-review-note {
+    min-width: 0;
     font-size: 12px;
-    line-height: 1.4;
+    line-height: 1.35;
     color: var(--text-secondary);
+    overflow-wrap: anywhere;
 }
 
 .mcm-pack-review-list {
@@ -2878,9 +2981,6 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 }
 
 .mcm-pack-review-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
     min-width: 0;
     padding: 6px 0;
     border-bottom: 1px solid var(--border);
@@ -2891,7 +2991,6 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 }
 
 .mcm-pack-review-hit {
-    flex: 1 1 auto;
     min-width: 0;
     align-items: flex-start;
 }
@@ -2902,13 +3001,6 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     border-radius: 4px;
 }
 
-.mcm-pack-review-meta {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-}
-
 .mcm-pack-review-file {
     font-size: 13px;
     font-weight: 500;
@@ -2916,28 +3008,12 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     overflow-wrap: anywhere;
 }
 
-.mcm-pack-review-why {
-    font-size: 12px;
+.mcm-pack-review-item.is-locked .mcm-pack-review-file {
     color: var(--text-secondary);
 }
 
-.mcm-pack-review-action {
-    flex: 0 0 auto;
-    margin-top: 2px;
-    font-size: 12px;
-    color: var(--text-muted);
-    white-space: nowrap;
-}
-
-.mcm-pack-review-item.is-locked,
-.mcm-pack-review-item.is-readonly {
-    color: var(--text-secondary);
-}
-
-.mcm-pack-review-item .ti {
-    margin-top: 3px;
-    font-size: 14px;
-    color: var(--text-muted);
+.mcm-pack-review-item.is-locked input {
+    cursor: not-allowed;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -3113,12 +3189,16 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 }
 
 .mcm-app-manage > .mcm-progress-dock {
+    position: absolute;
     grid-column: 2;
-    grid-row: 4;
+    grid-row: 2;
+    justify-self: stretch;
+    align-self: end;
     z-index: 20;
     margin: 0 16px 16px;
     border: 0.5px solid var(--border);
     border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(8, 10, 14, 0.45);
 }
 
 .mcm-wizard .mcm-progress-dock {
@@ -4028,15 +4108,11 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     color: inherit;
 }
 
-.mcm-motd-surface-name {
+.mcm-motd-surface-name,
+.mcm-motd-surface-desc {
     min-height: calc(1.4em + 12px);
     white-space: nowrap;
     overflow-x: auto;
-}
-
-.mcm-motd-surface-desc {
-    min-height: 4.5em;
-    white-space: pre-wrap;
 }
 
 .mcm-motd-surface::selection,
@@ -4055,22 +4131,6 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     line-height: 1.35;
 }
 
-.mcm-motd-counter-over {
-    color: var(--text-danger);
-}
-
-.mcm-motd-hex-note {
-    margin: 0;
-    font-size: 11px;
-    color: var(--text-muted);
-    line-height: 1.35;
-}
-
-.mcm-motd-omit {
-    margin: 0;
-    color: var(--text-secondary);
-}
-
 .mcm-motd-raw {
     margin: 0;
 }
@@ -4084,7 +4144,7 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 .mcm-motd-raw-input {
     flex: 1 1 auto;
     min-width: 0;
-    min-height: 4.5em;
+    min-height: 3em;
     resize: vertical;
     margin-bottom: 0;
     font-family: var(--font-mono);
@@ -4139,6 +4199,23 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     max-width: none;
 }
 
+.mcm-pack-identity-fields {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px 12px;
+    align-items: start;
+    min-width: 0;
+}
+
+.mcm-pack-identity-fields .mcm-field {
+    min-width: 0;
+}
+
+.mcm-pack-identity-fields .mcm-field input[type="text"],
+.mcm-pack-identity-fields .mcm-field select {
+    margin-bottom: 0;
+}
+
 .mcm-wizard-identity .mcm-wizard-actions {
     margin: 0;
 }
@@ -4163,6 +4240,11 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 
     .mcm-overview-status-grid,
     .mcm-overview-metrics {
+        grid-template-columns: 1fr;
+    }
+
+    .mcm-change-pack-ingest,
+    .mcm-change-pack-confirm {
         grid-template-columns: 1fr;
     }
 }

@@ -1,7 +1,7 @@
 # Product vision & staged roadmap (ideas / planning)
 
 **Status:** Living product vision and staged feature plan (MVP → v1 → later).  
-**Execution:** implement **v1 features** before Windows installer / GitHub Releases / public launch. **Paid / spend mode is not v1** (later / far future). Living checklist: [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) (**NEXT = Step 8.5.2** Pass 3, **blocked** until the operator says so). Pack-import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) (**implemented**, Step **8.9**). Do not start Step 9.1 until QA exits **and** Step **8.6.1** is DONE.  
+**Execution:** implement **v1 features** before Windows installer / GitHub Releases / public launch. **Paid / spend mode is not v1** (later / far future). Living checklist: [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) (Phase **9** packaging — [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md)). Pack-import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) (**implemented**, Step **8.9**). Phase **8.5** and Step **8.6.1** are **DONE**.  
 **Not** an implementation checklist by itself — agents follow the V1 plan’s NEXT step (and must not implement **after v1** / later items from this file).  
 **Not** a substitute for architecture docs. Doc map: [`README.md`](README.md).
 
@@ -179,18 +179,19 @@ Per OCI Always Free Object Storage notes for **paid accounts** (confirm against 
 
 ### Spend-brake Function image (v1, before release)
 
-Oracle Functions need a container image in **the user’s** OCIR (same region, `GENERIC_ARM`). The product path is **not** “install Docker Desktop and build it” and **not** “open Cloud Shell / Code Editor.”
+Oracle Functions need a container image in **the user’s** OCIR (same region, `GENERIC_ARM`). The **user** path is **not** “install Docker Desktop and build it” and **not** “open Cloud Shell / Code Editor.” The **developer** may pre-build `linux/arm64` with Docker Desktop and ship the tarball with the app.
 
 | Piece | Product rule |
 |-------|----------------|
-| **Build** | CI builds `linux/arm64` from product `functions/shutdown_vm/` (same channel later for `reconcile_usage`). |
-| **First Setup** | Manager **copies** that versioned artifact into the user’s `mcmgr-fn/softstop` repo (bundled registry client or equivalent). Then OpenTofu creates the Function + Events rule. |
-| **Admin PC** | API key + **Auth Token** (OCIR login). **No** Docker Desktop, **no** `fn` CLI, **no** Cloud Shell. OCIR username is derived (not an extra env var). |
-| **Updates** | New Manager / GitHub Release carries a new image digest. Deploy / repair **converges** when bundled ≠ live. Config (VM1 OCID, bucket, lock key) stays Function config — no rebuild. Users do not rebuild in Cloud Shell to pick up a code fix. |
+| **Build** | Developer pre-builds `linux/arm64` from product `functions/shutdown_vm/` (Docker Desktop + `buildx`; same channel later for `reconcile_usage`). Not GitHub Actions. |
+| **First Setup** | Manager **copies** that tarball into the user’s `mcmgr-fn/softstop` repo (C# registry push). Then OpenTofu creates the Function + Events rule. |
+| **User PC** | API key + **Auth Token** (OCIR login). **No** Docker Desktop, **no** `fn` CLI, **no** Cloud Shell. OCIR username is derived (not an extra env var). |
+| **Developer PC** | Docker Desktop is OK to produce `artifacts/mcmgr-fn-softstop-linux-arm64.tar` (gitignored). **9.1** bundles it with the installer. |
+| **Updates** | New Manager / installer carries a new image digest. Deploy / repair **converges** when bundled ≠ live. Config (VM1 OCID, bucket, lock key) stays Function config — no rebuild. Users do not rebuild in Cloud Shell to pick up a code fix. |
 | **Not the live image** | Do not point the Function at a public GHCR/Docker Hub image; OCI Functions expect OCIR in that region/tenancy. |
-| **Lab only** | Cloud Shell / `fn push` / Docker on a developer PC remain break-glass and TESTING-agent paths until/alongside V1 Step **8.6.1**. They are **not** the installer story. |
+| **Lab only** | Cloud Shell / `fn push` remain break-glass and TESTING-agent paths. They are **not** the installer story. |
 
-This must ship **before any official release** (V1 plan Phase **8.6**, then Phase 9 installer). The current Setup publisher that `docker buildx`s on the admin PC is **interim** and must not ship.
+This must ship **before any official release** (V1 plan Phase **8.6**, then Phase 9 installer). Setup’s `docker buildx` fallback is for developers when the tar is missing — not for users.
 
 ### App version vs infrastructure version
 
@@ -296,7 +297,7 @@ For users okay spending past free envelopes (or if Oracle shrinks free tier) —
 
 ### v1 — “Flexible product”
 
-Builds on MVP. Still novice-first. **Execution:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) (Manager UX first, then spend-brake lock, private allowlist + CIDR, Setup game types, remaining v1, **CI Function image**, **then packaging**). **Paid / spend mode is not v1** (later / far future). Do not start Windows installer work until that plan’s Phase 9, and do not start Phase 9 until Step **8.6.1** is DONE.
+Builds on MVP. Still novice-first. **Execution:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) (Manager UX first, then spend-brake lock, private allowlist + CIDR, Setup game types, remaining v1, **Function image copy**, **then packaging**). **Paid / spend mode is not v1** (later / far future). Phase **8.5** and Step **8.6.1** are **DONE**. Phase **9** living plan: [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md).
 
 | Add in v1 |
 |-----------|
@@ -316,7 +317,7 @@ Builds on MVP. Still novice-first. **Execution:** [`V1-Implementation-Plan.md`](
 | **Top-bar right chrome:** bell (**notification center**), cog (**program settings**), overflow / “hamburger” menu (About, extras) |
 | **Oversized world backup UX** — see [Oversized world backup (v1)](#oversized-world-backup-v1): detect OS flag; notify via bell; adapt **Download World Save** to SSH pull when Object Storage backups are disabled for size |
 | **$1 spend-brake lock** — see [$1 spend-brake lock (v1)](#1-spend-brake-lock-v1): Function sets a durable Object Storage flag when the $1 budget fires; Manager shows a full-window warning; Start is blocked until the admin types an exact confirmation that a new calendar month has begun; then Manager starts the stack into a valid IP state and clears the flag. Door must honor the flag if it is left running. |
-| **Spend-brake Function image (before release)** — see [Spend-brake Function image](#spend-brake-function-image-v1-before-release): CI-built ARM image copied into the user’s OCIR. No Docker Desktop / Cloud Shell on the admin PC. |
+| **Spend-brake Function image (before release)** — see [Spend-brake Function image](#spend-brake-function-image-v1-before-release): developer-prebuilt ARM tarball copied into the user’s OCIR. Users do not need Docker Desktop / Cloud Shell. |
 
 | Moved **after v1** (was tempting for v1) |
 |------------------------------------------|
@@ -760,7 +761,7 @@ This is **not** the same as two admins sharing one stack (that remains a later m
 
 **MVP** still deploys the $1 compartment budget → Events → Function SoftStop path (halt spend). **v1** adds a durable lock so the admin cannot quietly turn the stack back on the same month, and so the door cannot wake VM1 while the lock is set.
 
-How the Function **image** reaches a user’s tenancy: [Spend-brake Function image](#spend-brake-function-image-v1-before-release) (CI-built ARM, copy into OCIR — not Docker on their PC).
+How the Function **image** reaches a user’s tenancy: [Spend-brake Function image](#spend-brake-function-image-v1-before-release) (pre-built ARM tarball, copy into OCIR — not Docker on **their** PC).
 
 ### What the Function must do (v1)
 
@@ -1060,7 +1061,7 @@ Parked items—not blocking the staged plan, but should be revisited:
 | Avalonia as Manager UI vehicle | Replaced by **.NET + Blazor Hybrid** (WPF + WebView2) before MVP Phase 7 |
 | Two product exes (Setup.exe + Manager.exe) | Replaced by **one installer / one app** |
 | itzg Docker as default | Not in MVP/v1 plan; revisit only if needed |
-| Docker Desktop / Cloud Shell / `fn deploy` on the user’s PC to install the spend-brake Function | **Rejected for the product path** — CI-built ARM image copied into the user’s OCIR (V1 Step **8.6.1**). Cloud Shell remains lab break-glass. |
+| Docker Desktop / Cloud Shell / `fn deploy` on the **user’s** PC to install the spend-brake Function | **Rejected for the product path** — pre-built ARM tarball copied into the user’s OCIR (V1 Step **8.6.1**). Developer Docker Desktop is OK. Cloud Shell remains lab break-glass. |
 | Root compartment default | Replaced by **dedicated compartment** |
 | Full day-budget tool in v1 | Deferred to **after v1** |
 | Setup wizard “public vs private” choice | **Rejected** — always private; no Manager public toggle |
@@ -1081,6 +1082,8 @@ Parked items—not blocking the staged plan, but should be revisited:
 
 ## Changelog
 
+| 2026-08-27 | **Function image lock corrected:** developer Docker Desktop pre-build is OK; **users** must not need Docker. GitHub Actions not required. Living **NEXT = Step 8.6.1 P1**. Do not start 9.1 until 8.6.1 is DONE. |
+| 2026-08-27 | **Phase 8.5 exited.** Pass 3 triage skipped; S0-01 Nit parked OK. Living **NEXT = Step 8.6.1**. Do not start 9.1 until 8.6.1 is DONE. |
 | 2026-08-24 | **Step 8.10 scheduled** (density / MOTD / VM1 icon notes): [`V1-Operator-Notes-Follow-On-2-Plan.md`](V1-Operator-Notes-Follow-On-2-Plan.md). Living NEXT = P1. Rich MOTD editor pulled into v1 via that plan (this file’s after-v1 MOTD row may drift). Pass 3 still blocked. |
 | 2026-08-24 | **Step 8.9 done** (assisted review UI + dep freeze). Living NEXT then moved to Step **8.10**. Pass 3 **blocked**. |
 | 2026-08-23 | **Step 8.9 scheduled** (assisted review + dep freeze): [`V1-Pack-Import-Assisted-Review-Plan.md`](V1-Pack-Import-Assisted-Review-Plan.md). Living NEXT = P1. Pass 3 still blocked. |

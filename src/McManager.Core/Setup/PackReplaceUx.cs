@@ -7,37 +7,62 @@ public static class PackReplaceUx
 {
     public const long PackDropMaxBytes = 512L * 1024 * 1024;
 
-    public const string StartFirstMessage =
-        "Start the server first, then change the pack. Change pack reinstalls Minecraft over SSH.";
-
     public const string ConfirmTitle = "Reinstall Minecraft from this pack?";
 
+    /// <summary>Manage Change pack only. Setup keeps <see cref="SetupPackImport.ClientPackCopy"/>.</summary>
+    public const string FriendsNeedOneLiner =
+        "Players need this mod pack to join the server";
+
+    public const string DropTitle = "Drop a mod pack here";
+
+    public const string DropFormats =
+        "Modrinth .mrpack, CurseForge Server Pack .zip, or unstructured .jar zip.";
+
+    public const string DropLargeHint = "Large packs: Choose pack file.";
+
+    public const string SkipWarningBody =
+        "Known client-only mods will automatically be skipped. Check the list below and confirm that all client-only mods are correctly marked.";
+
+    public const string ChangePackPickHint =
+        "Reinstall Minecraft from a .mrpack or server-pack zip. The world is kept unless wipe is checked.";
+
     public const string PackConfirmLabel =
-        "Use this pack on the server (server-side mods only; client-only files are skipped).";
+        "Use this pack on the server. Client-only mods are skipped.";
+
+    /// <summary>Manage Change pack only. Setup keeps <see cref="SetupPackImport.ClientPackAckLabel"/>.</summary>
+    public const string ClientPackAckLabel =
+        "Friends will get this same exported pack. They cannot join without it.";
 
     public const string WipeWorldLabel =
-        "Also wipe the world (a new world will generate). Leave unchecked to keep the current world.";
+        "Also wipe the world (irreversible). Cloud backups stay. Leave unchecked to keep the current world.";
 
     public const string IdleForceEnableNote =
         "Minecraft start turns the idle timer back on.";
 
     public const string ConfirmKeepWorld =
-        "This reinstalls Minecraft on the server from the file you chose. "
-        + "The world is kept unless you also wipe. Friends need the new exported pack on their PCs.";
+        "Reinstalls Minecraft from the chosen file. "
+        + "If the game VM is stopped, it is started first. "
+        + "The world is kept unless wipe is checked. Friends need the new exported pack.";
 
     public const string ConfirmWipeWorld =
-        "This reinstalls Minecraft on the server from the file you chose. "
-        + "The live world will be deleted. Cloud backups stay. This cannot be undone except by restoring a backup.";
+        "Reinstalls Minecraft from the chosen file. "
+        + "If the game VM is stopped, it is started first. "
+        + "The live world will be deleted. Cloud backups stay. Irreversible except by restoring a backup.";
 
     public static string ConfirmBody(bool wipeWorld) =>
         wipeWorld ? ConfirmWipeWorld : ConfirmKeepWorld;
 
-    public static bool CanPick(bool vm1Running, bool busy) =>
-        vm1Running && !busy;
+    /// <param name="vm1Running">Ignored. Pick, drop, analyze, and review work while VM1 is stopped.</param>
+    public static bool CanPick(bool vm1Running, bool busy)
+    {
+        _ = vm1Running;
+        return !busy;
+    }
 
     public static bool FreezeAllowsContinue(string? freezeBlockReason) =>
         string.IsNullOrWhiteSpace(freezeBlockReason);
 
+    /// <param name="vm1Running">Ignored. Install starts VM1 when it is stopped.</param>
     public static bool CanInstall(
         bool vm1Running,
         bool busy,
@@ -45,21 +70,22 @@ public static class PackReplaceUx
         bool packConfirmed,
         bool clientPackAcknowledged,
         bool identityComplete = true,
-        string? freezeBlockReason = null) =>
-        vm1Running
-        && !busy
-        && canContinue
-        && packConfirmed
-        && clientPackAcknowledged
-        && identityComplete
-        && FreezeAllowsContinue(freezeBlockReason);
+        string? freezeBlockReason = null)
+    {
+        _ = vm1Running;
+        return !busy
+            && canContinue
+            && packConfirmed
+            && clientPackAcknowledged
+            && identityComplete
+            && FreezeAllowsContinue(freezeBlockReason);
+    }
 
     public static string PickDisabledReason(bool vm1Running, bool busy)
     {
+        _ = vm1Running;
         if (busy)
             return "Wait until the current action finishes.";
-        if (!vm1Running)
-            return StartFirstMessage;
         return "";
     }
 
@@ -72,10 +98,9 @@ public static class PackReplaceUx
         bool identityComplete = true,
         string? freezeBlockReason = null)
     {
+        _ = vm1Running;
         if (busy)
             return "Wait until the current action finishes.";
-        if (!vm1Running)
-            return StartFirstMessage;
         if (!canContinue)
             return "Choose a pack that can be installed first.";
         if (!FreezeAllowsContinue(freezeBlockReason))

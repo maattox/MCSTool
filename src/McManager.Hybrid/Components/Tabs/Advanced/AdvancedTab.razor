@@ -96,6 +96,97 @@
 
     <div class="mcm-section-card">
         <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
+            <span style="font-size:14px;font-weight:600;">SSH keys (this PC)</span>
+            <button type="button"
+                    class="mcm-help"
+                    title="@Vm.SshKeyHelp">
+                <i class="ti ti-help" aria-hidden="true"></i>
+                <span class="sr-only">About SSH keys</span>
+            </button>
+        </div>
+        <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);">
+            Game VM and doorbell can use different private keys. Paths stay on this PC. Changing a path does not install a new key on the VM.
+        </p>
+        @if (Vm.SshKeysUseSameFile)
+        {
+            <p style="margin:0 0 10px;font-size:12px;color:var(--text-muted);">Both VMs currently use the same file.</p>
+        }
+        <ul class="mcm-path-list">
+            <li class="mcm-path-row">
+                <div class="mcm-path-copy">
+                    <span class="mcm-path-label">Game VM (VM1)</span>
+                    <span class="mcm-path-hint">Used for Minecraft, world, pack, and idle-agent SSH.</span>
+                    <code class="mcm-path-value @(Vm.Vm1SshKeyMissing ? "is-missing" : null)">
+                        @(string.IsNullOrWhiteSpace(Vm.EditVm1SshKeyPath) ? "—" : Vm.EditVm1SshKeyPath)
+                    </code>
+                </div>
+                <div class="mcm-path-actions">
+                    <button type="button"
+                            disabled="@Vm.IsBusy"
+                            title="Choose a private key file for the game VM"
+                            @onclick="Vm.BrowseVm1SshKeyAsync">
+                        Browse
+                    </button>
+                    <button type="button"
+                            disabled="@(Vm.IsBusy || Vm.Vm1SshKeyMissing)"
+                            title="Try SSH with the selected key. The game VM must be Running."
+                            @onclick="Vm.TestVm1SshAsync">
+                        Test
+                    </button>
+                    @if (Vm.CanCopyDoorKeyToVm1)
+                    {
+                        <button type="button"
+                                title="Use the doorbell private key for the game VM too"
+                                @onclick="Vm.CopyDoorKeyToVm1">
+                            Use door key
+                        </button>
+                    }
+                </div>
+            </li>
+            <li class="mcm-path-row">
+                <div class="mcm-path-copy">
+                    <span class="mcm-path-label">Door VM</span>
+                    <span class="mcm-path-hint">Used for doorbell troubleshooting and repair SSH.</span>
+                    <code class="mcm-path-value @(Vm.DoorSshKeyMissing ? "is-missing" : null)">
+                        @(string.IsNullOrWhiteSpace(Vm.EditDoorSshKeyPath) ? "—" : Vm.EditDoorSshKeyPath)
+                    </code>
+                </div>
+                <div class="mcm-path-actions">
+                    <button type="button"
+                            disabled="@Vm.IsBusy"
+                            title="Choose a private key file for the doorbell VM"
+                            @onclick="Vm.BrowseDoorSshKeyAsync">
+                        Browse
+                    </button>
+                    <button type="button"
+                            disabled="@(Vm.IsBusy || Vm.DoorSshKeyMissing)"
+                            title="Try SSH with the selected key. The doorbell VM is usually always on."
+                            @onclick="Vm.TestDoorSshAsync">
+                        Test
+                    </button>
+                    @if (Vm.CanCopyVm1KeyToDoor)
+                    {
+                        <button type="button"
+                                title="Use the game VM private key for the doorbell too"
+                                @onclick="Vm.CopyVm1KeyToDoor">
+                            Use game VM key
+                        </button>
+                    }
+                </div>
+            </li>
+        </ul>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">
+            <button type="button"
+                    class="mcm-primary"
+                    disabled="@(!Vm.CanSaveSshKeys)"
+                    @onclick="Vm.SaveSshKeysAsync">
+                Save SSH keys
+            </button>
+        </div>
+    </div>
+
+    <div class="mcm-section-card">
+        <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
             <span style="font-size:14px;font-weight:600;">Stack identity (shared storage)</span>
             <button type="button"
                     class="mcm-help"

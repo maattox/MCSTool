@@ -8,10 +8,12 @@ public static class PackDependencyFreeze
 {
     public static PackClassification Classify(
         IReadOnlyList<PackJarRecord> records,
-        IReadOnlyCollection<string>? operatorSkipTerms = null)
+        IReadOnlyCollection<string>? operatorSkipTerms = null,
+        IReadOnlyCollection<string>? operatorKeepTerms = null)
     {
         records ??= [];
         var terms = operatorSkipTerms ?? [];
+        var keepTerms = operatorKeepTerms ?? [];
 
         var byId = new Dictionary<string, List<PackJarRecord>>(StringComparer.OrdinalIgnoreCase);
         foreach (var jar in records)
@@ -36,14 +38,15 @@ public static class PackDependencyFreeze
 
         foreach (var jar in records)
         {
-            if (jar.AutomaticSkipReason != PackFileSkipReason.None)
+            var forceKeep = MatchesOperator(jar, keepTerms);
+            if (!forceKeep && jar.AutomaticSkipReason != PackFileSkipReason.None)
             {
                 skipped.Add(jar.Path);
                 skipReason[jar.Path] = jar.AutomaticSkipReason;
                 skipDetail[jar.Path] = jar.SkipDetail ?? ReasonLabel(jar.AutomaticSkipReason);
             }
 
-            if (!MatchesOperator(jar, terms))
+            if (forceKeep || !MatchesOperator(jar, terms))
                 continue;
 
             skipped.Add(jar.Path);
@@ -171,6 +174,12 @@ public static class PackDependencyFreeze
             {
                 needsCall.Add(new PackReviewItem(jar.Path, "unknown side", PackFileSkipReason.None));
                 unclear.Add(jar.Path);
+            }
+            else if (MatchesOperator(jar, keepTerms)
+                     && jar.AutomaticSkipReason != PackFileSkipReason.None)
+            {
+                // Stay on the review list unchecked after the operator un-marks an auto-skip.
+                needsCall.Add(new PackReviewItem(jar.Path, "", PackFileSkipReason.None));
             }
         }
 

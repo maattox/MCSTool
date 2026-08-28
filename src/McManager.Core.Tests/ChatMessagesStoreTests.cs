@@ -71,14 +71,13 @@ public sealed class ChatMessagesStoreTests
     }
 
     [Fact]
-    public async Task Publish_round_trips_formatted_motd_and_omit_name()
+    public async Task Publish_round_trips_formatted_motd()
     {
         var storage = new EtagMemoryStorage();
         var store = new ChatMessagesStore(storage, Prefixes);
         var doc = ChatMessagesDocument.Defaults();
         doc.ServerName = "Friends SMP";
         doc.Description = "§cHello  §aWorld";
-        doc.MotdOmitName = true;
 
         var put = await store.PublishAsync(doc);
         Assert.True(put.Succeeded, put.Error);
@@ -86,11 +85,10 @@ public sealed class ChatMessagesStoreTests
         var got = await store.GetAsync();
         Assert.True(got.Succeeded, got.Error);
         Assert.Equal("§cHello  §aWorld", got.Value!.Document.Description);
-        Assert.True(got.Value.Document.MotdOmitName);
-        Assert.Equal("§cHello  §aWorld", ServerIdentityUx.BuildMotd(
+        Assert.False(got.Value.Document.MotdOmitName);
+        Assert.Equal("Friends SMP\\n§cHello  §aWorld", ServerIdentityUx.BuildMotd(
             got.Value.Document.ServerName,
-            got.Value.Document.Description,
-            got.Value.Document.MotdOmitName));
+            got.Value.Document.Description));
     }
 
     [Fact]
@@ -322,14 +320,20 @@ public sealed class ServerIdentityUxTests
         Assert.Equal("Friends SMP", ServerIdentityUx.BuildMotd("Friends SMP", "  "));
         Assert.Equal("Weekend world", ServerIdentityUx.BuildMotd("", "Weekend world"));
         Assert.Equal(ServerIdentityUx.DefaultMotd, ServerIdentityUx.BuildMotd(null, null));
+        Assert.Equal(
+            "§6§l★§r§l §e§lOCI Server§r§l\u00a0§6§l★§r\\ncreated with §9§ngithub.com/maattox/oci-mc-server§r",
+            ServerIdentityUx.BuildMotd(ServerIdentityUx.DefaultName, ServerIdentityUx.DefaultDescription));
+        Assert.True(MotdFormatting.IsSafePropertiesValue(ServerIdentityUx.DefaultMotd));
     }
 
     [Fact]
-    public void Motd_omit_name_uses_description_only()
+    public void Motd_drops_extra_description_lines()
     {
-        Assert.Equal("Weekend world", ServerIdentityUx.BuildMotd("Friends SMP", "Weekend world", omitName: true));
-        Assert.Equal(ServerIdentityUx.DefaultMotd, ServerIdentityUx.BuildMotd("Friends SMP", "  ", omitName: true));
-        Assert.Equal("§cHello\\n§aWorld", ServerIdentityUx.BuildMotd("Friends SMP", "§cHello\n§aWorld", omitName: true));
+        Assert.Equal("Friends SMP\\n§cHello", ServerIdentityUx.BuildMotd("Friends SMP", "§cHello\n§aWorld"));
+        Assert.Equal("Line one", ServerIdentityUx.BuildMotd("", "Line one\r\nLine two"));
+        Assert.Equal("§cA", ServerIdentityUx.BuildMotd("", "§cA\n§aB"));
+        Assert.Equal(59, MotdFormatting.VisibleLength(
+            ServerIdentityUx.BuildMotd("", new string('x', 80))));
     }
 
     [Fact]
@@ -343,13 +347,6 @@ public sealed class ServerIdentityUxTests
     }
 
     [Fact]
-    public void Motd_collapses_real_newlines_to_minecraft_escape()
-    {
-        Assert.Equal("Line one\\nLine two", ServerIdentityUx.BuildMotd("", "Line one\r\nLine two"));
-        Assert.Equal("§cA\\n§aB", ServerIdentityUx.BuildMotd("", "§cA\\n§aB"));
-    }
-
-    [Fact]
     public void Display_name_prefers_custom_over_oci_name()
     {
         Assert.Equal("Friends SMP", ServerIdentityUx.DisplayName("Friends SMP", "mcmgr-vm1"));
@@ -359,15 +356,24 @@ public sealed class ServerIdentityUxTests
     }
 
     [Fact]
-    public void Default_setup_names_follow_game_type_without_oracle()
+    public void Default_setup_motd_is_branded_oci_server_without_oracle()
     {
-        Assert.Equal("Vanilla Server", ServerIdentityUx.DefaultServerName(SetupServerType.Vanilla, SetupVanillaFlavor.Default));
-        Assert.Equal("Paper Server", ServerIdentityUx.DefaultServerName(SetupServerType.Vanilla, SetupVanillaFlavor.Optimized));
-        Assert.Equal("Modded Server", ServerIdentityUx.DefaultServerName(SetupServerType.Modded, SetupVanillaFlavor.Default));
-        Assert.Equal(ServerIdentityUx.DefaultDescription, "made with github.com/maattox/oci-mc-server");
+        Assert.Equal(
+            ServerIdentityUx.DefaultName,
+            ServerIdentityUx.DefaultServerName(SetupServerType.Vanilla, SetupVanillaFlavor.Default));
+        Assert.Equal(
+            ServerIdentityUx.DefaultName,
+            ServerIdentityUx.DefaultServerName(SetupServerType.Vanilla, SetupVanillaFlavor.Optimized));
+        Assert.Equal(
+            ServerIdentityUx.DefaultName,
+            ServerIdentityUx.DefaultServerName(SetupServerType.Modded, SetupVanillaFlavor.Default));
+        Assert.Equal(
+            "created with §9§ngithub.com/maattox/oci-mc-server§r",
+            ServerIdentityUx.DefaultDescription);
 
         foreach (var name in new[]
                  {
+                     ServerIdentityUx.DefaultName,
                      ServerIdentityUx.DefaultVanillaName,
                      ServerIdentityUx.DefaultPaperName,
                      ServerIdentityUx.DefaultModdedName,
@@ -386,7 +392,7 @@ public sealed class ServerIdentityUxTests
             ServerType = SetupServerType.Vanilla,
             VanillaFlavor = SetupVanillaFlavor.Default,
         });
-        Assert.Equal("Vanilla Server", vanilla.ServerName);
+        Assert.Equal(ServerIdentityUx.DefaultName, vanilla.ServerName);
         Assert.Equal(ServerIdentityUx.DefaultDescription, vanilla.Description);
 
         var custom = ServerIdentityUx.CreateSetupSeed(new SetupWizardState
@@ -400,7 +406,7 @@ public sealed class ServerIdentityUxTests
         Assert.Equal("", custom.Description);
         Assert.False(custom.MotdOmitName);
 
-        var omit = ServerIdentityUx.CreateSetupSeed(new SetupWizardState
+        var omitIgnored = ServerIdentityUx.CreateSetupSeed(new SetupWizardState
         {
             ServerType = SetupServerType.Vanilla,
             IdentityName = "Friends SMP",
@@ -408,8 +414,8 @@ public sealed class ServerIdentityUxTests
             IdentityDescriptionCustomized = true,
             IdentityMotdOmitName = true,
         });
-        Assert.True(omit.MotdOmitName);
-        Assert.Equal("§cLine", omit.Description);
+        Assert.False(omitIgnored.MotdOmitName);
+        Assert.Equal("§cLine", omitIgnored.Description);
     }
 
     [Fact]

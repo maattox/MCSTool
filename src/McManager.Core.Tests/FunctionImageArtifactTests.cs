@@ -162,6 +162,25 @@ public sealed class FunctionImageArtifactTests
     }
 
     [Fact]
+    public async Task Registry_reads_live_manifest_digest_without_docker()
+    {
+        var handler = new ScriptedRegistryHandler();
+        var result = await OcirRegistryPusher.TryGetManifestDigestAsync(
+            "sjc.ocir.io",
+            "examplens/mcmgr-fn/softstop",
+            "setup",
+            "examplens/user",
+            "token-not-a-secret",
+            log: null,
+            handler,
+            CancellationToken.None);
+
+        Assert.True(result.Succeeded, result.Error);
+        Assert.Equal("sha256:livedigest0001", result.Value);
+        Assert.Contains(handler.Uris, u => u.Contains("/manifests/setup", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void Bearer_challenge_parses_ocir_realm()
     {
         var ok = OcirRegistryPusher.TryParseBearerChallenge(
@@ -349,6 +368,14 @@ public sealed class FunctionImageArtifactTests
 
             if (request.Method == HttpMethod.Get && uri.EndsWith("/v2/", StringComparison.Ordinal))
                 return Task.FromResult(Ok());
+
+            if (request.Method == HttpMethod.Get && uri.Contains("/manifests/", StringComparison.Ordinal))
+            {
+                var resp = new HttpResponseMessage(HttpStatusCode.OK);
+                resp.Headers.TryAddWithoutValidation("Docker-Content-Digest", "sha256:livedigest0001");
+                resp.Content = new StringContent("{}");
+                return Task.FromResult(resp);
+            }
 
             if (request.Method == HttpMethod.Head && uri.Contains("/blobs/", StringComparison.Ordinal))
                 return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound));

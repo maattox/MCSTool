@@ -3,7 +3,7 @@
 **Status:** Product **v1** source (V1 Step **2.2**). `func.yaml` version **0.0.12**.  
 **TESTING (2026-08-20 P12):** Pass 2 Setup skipped the image (Docker daemon down). P12 pushed product `linux/arm64` to OCIR `mcmgr-fn/softstop:setup` and created `mcmgr-fn-softstop` + Events via OCI CLI (no `tofu apply`; tfvars `function_image` still empty). Synthetic RESET skip + ACTUAL SoftStop **VM1** + lock PUT; door stays up. Live **Forge lab** may still be **0.0.11** (SoftStop both VMs, no lock PUT). TESTING agents **may** `fn build` / `fn push` / invoke this tree without asking — stay at **$0**, do **not** fire a real $1 budget alert, **do not SoftStop the door**. Never `DEFAULT` / live Forge lab.
 
-**Product path (required before official release — V1 Step 8.6.1):** CI builds `linux/arm64`; Setup **copies** the image into the user’s OCIR. Users do **not** install Docker Desktop, `fn`, or use Cloud Shell. The current Setup `docker buildx` publisher is **interim**. Cloud Shell / Code Editor remain lab break-glass only (`oci fn` never builds an image). Later code fixes ship as a new image version with the app / GitHub Release; Deploy / repair converges digest. Function **config** (VM1 OCID, bucket, lock key) stays tofu-owned — no rebuild.
+**Product path (required before official release — V1 Step 8.6.1):** developer pre-builds `linux/arm64` with Docker Desktop; Setup **copies** the tarball into the user’s OCIR. **Users** do not install Docker Desktop, `fn`, or use Cloud Shell. GitHub Actions is not required. Cloud Shell / Code Editor remain lab break-glass only (`oci fn` never builds an image). Later code fixes: rebuild the tar, ship with a new Manager / installer; Deploy / repair converges digest. Function **config** (VM1 OCID, bucket, lock key) stays tofu-owned — no rebuild.
 
 Tracked placeholders only — resolve OCIDs from Function config / gitignored `data/config.local.json`. Do not bake live OCIDs into git.
 
@@ -56,7 +56,28 @@ IAM: Functions dynamic group needs `use instance-family` (SoftStop) and **object
 | `func.yaml` | Fn project metadata (memory 256 MiB, Python 3.12) |
 | `requirements.txt` | `fdk`, `oci` |
 
-`INSTANCE_OCIDS` placeholders in git must stay placeholders. The shipped image must read `INSTANCE_OCIDS` from Function config/env (Setup’s interim publisher rewrites the baked list when it still builds locally). CI in Step **8.6.1** must produce the same env-driven image.
+`INSTANCE_OCIDS` placeholders in git must stay placeholders. The shipped image must read `INSTANCE_OCIDS` from Function config/env (Setup’s publisher rewrites the baked list when it still builds locally). A developer rebuild must produce the same env-driven image (recipe below).
+
+## Developer rebuild (Docker Desktop)
+
+Users never run this. Produce the gitignored ARM tarball Setup copies into OCIR (`FunctionImageArtifact.FileName`). Do not commit the tar. Do not add GitHub Actions.
+
+From the product repo, with Docker Desktop running:
+
+1. Stage like Setup (`OcirFunctionPublisher.StageFunctionSources`): copy `func.py`, `requirements.txt`, and `func.yaml` into a temp directory; rewrite the baked `INSTANCE_OCIDS = [...]` list to read from the `INSTANCE_OCIDS` env var (skip placeholder OCIDs); write the FDK Python **3.12** Dockerfile Setup uses.
+2. Build ARM and write a docker-archive tarball (no registry push). Prefer `-o type=docker,dest=...` so a Windows/amd64 Docker Desktop does not need to `--load` arm64:
+
+```bash
+mkdir -p artifacts
+docker buildx build --platform linux/arm64 --provenance=false --sbom=false \
+  -t mcmgr-fn/softstop:setup \
+  -o type=docker,dest=artifacts/mcmgr-fn-softstop-linux-arm64.tar \
+  <staging-dir>
+```
+
+`docker save mcmgr-fn/softstop:setup -o artifacts/mcmgr-fn-softstop-linux-arm64.tar` after a `--load` is equivalent when the engine can load arm64.
+
+Setup copies that file into the user’s OCIR. `MCMANAGER_FUNCTION_IMAGE_TAR` can point at another path. Rebuild whenever `functions/shutdown_vm/` changes; Deploy / repair converges digest. Function **config** (VM1 OCID, bucket, lock key) stays tofu-owned — no rebuild.
 
 ## Tests
 

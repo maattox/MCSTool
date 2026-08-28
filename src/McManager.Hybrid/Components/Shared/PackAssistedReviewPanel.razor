@@ -1,17 +1,20 @@
+@using System.Collections.Generic
 @using System.Linq
 @using McManager.Core.Setup
 @using McManager.Hybrid.Components.Setup
 
-<section class="mcm-pack-review" aria-labelledby="@HeadingId">
-    <h2 id="@HeadingId" class="mcm-pack-review-title">Review unknown jars</h2>
-    <p class="mcm-pack-review-lead">@SetupPackImport.AssistedReviewLead</p>
+<section class="mcm-pack-review" aria-label="Client-only review">
+    @if (ShowHeading)
+    {
+        <h2 id="@HeadingId" class="mcm-pack-review-title">Review jars</h2>
+    }
     @if (LooksLikeLauncherInstance)
     {
         <p class="mcm-wizard-hint">@SetupPackImport.PrismExportHint</p>
     }
     @if (!string.IsNullOrWhiteSpace(FreezeBlockReason))
     {
-        <p class="mcm-wizard-error" role="alert">@FreezeBlockReason Unmark Skip on that jar to continue.</p>
+        <p class="mcm-wizard-error" role="alert">@FreezeBlockReason Unmark Client-only on that jar to continue.</p>
     }
 
     @if (ShowSearch)
@@ -30,189 +33,141 @@
         </div>
     }
 
-    <div class="mcm-pack-review-group">
-        <h3 class="mcm-pack-review-heading" id="@NeedsHeadingId">
-            Needs your call
-            <span class="mcm-pack-review-count">@FilteredCallRows.Count</span>
-        </h3>
-        <p class="mcm-pack-review-help">Default is Keep. Mark Skip on server only for jars you do not want installed.</p>
-        @if (FilteredCallRows.Count == 0)
-        {
-            <p class="mcm-wizard-hint">@(CallRows.Count == 0 ? "Nothing left to decide." : "No jars match that name.")</p>
-        }
-        else
-        {
-            <ul class="mcm-pack-review-list mcm-slim-scroll" aria-labelledby="@NeedsHeadingId">
-                @foreach (var item in FilteredCallRows)
-                {
-                    var inputId = RowId("call", item);
-                    var skipped = IsPathSkipped(item.Path);
-                    <li class="mcm-pack-review-item">
-                        <label class="mcm-check-hit mcm-pack-review-hit" for="@inputId" title="@item.Path">
-                            <input id="@inputId"
-                                   type="checkbox"
-                                   name="@(IdPrefix)-skip"
-                                   autocomplete="off"
-                                   disabled="@Disabled"
-                                   checked="@skipped"
-                                   @onchange="e => OnSkipChange(item, e)" />
-                            <span class="mcm-pack-review-meta">
-                                <span class="mcm-pack-review-file" translate="no">@item.FileName</span>
-                                <span class="mcm-pack-review-why">@CallWhy(item, skipped)</span>
-                            </span>
-                        </label>
-                        <span class="mcm-pack-review-action">Skip on server</span>
-                    </li>
-                }
-            </ul>
-        }
-    </div>
-
-    <div class="mcm-pack-review-group">
-        <h3 class="mcm-pack-review-heading" id="@MustHeadingId">
-            Must keep
-            <span class="mcm-pack-review-count">@Review.MustKeep.Count</span>
-        </h3>
-        @if (Review.MustKeep.Count == 0)
-        {
-            <p class="mcm-wizard-hint">No required-dependency locks.</p>
-        }
-        else
-        {
-            <ul class="mcm-pack-review-list mcm-slim-scroll" aria-labelledby="@MustHeadingId">
-                @foreach (var item in Review.MustKeep)
-                {
-                    <li class="mcm-pack-review-item is-locked" title="@item.Path">
-                        <i class="ti ti-lock" aria-hidden="true"></i>
-                        <span class="mcm-pack-review-meta">
-                            <span class="mcm-pack-review-file" translate="no">@item.FileName</span>
-                            <span class="mcm-pack-review-why">@item.Reason</span>
-                        </span>
-                        <span class="sr-only">Locked</span>
-                    </li>
-                }
-            </ul>
-        }
-    </div>
-
-    @{
-        var willSkip = AutomaticWillSkip;
+    @if (FilteredRows.Count == 0)
+    {
+        <p class="mcm-wizard-hint">@(AllRows.Count == 0 ? "No jars to review." : "No jars match that name.")</p>
     }
-    <details class="mcm-pack-review-details" open="@OpenWillSkip">
-        <summary class="mcm-pack-review-heading">
-            Will skip
-            <span class="mcm-pack-review-count">@willSkip.Count</span>
-        </summary>
-        @if (willSkip.Count == 0)
-        {
-            <p class="mcm-wizard-hint">No automatic skips.</p>
-        }
-        else
-        {
-            <ul class="mcm-pack-review-list mcm-slim-scroll" aria-label="Jars this pack will skip">
-                @foreach (var item in willSkip)
-                {
-                    <li class="mcm-pack-review-item is-readonly" title="@item.Path">
-                        <span class="mcm-pack-review-meta">
-                            <span class="mcm-pack-review-file" translate="no">@item.FileName</span>
-                            <span class="mcm-pack-review-why">@WillSkipWhy(item)</span>
-                        </span>
-                    </li>
-                }
-            </ul>
-        }
-    </details>
+    else
+    {
+        <div class="mcm-pack-review-head" aria-hidden="true">
+            <span class="mcm-pack-review-client-head">Client-only</span>
+            <span class="mcm-pack-review-note">Note</span>
+        </div>
+        <ul class="mcm-pack-review-list mcm-slim-scroll" aria-label="Mods in this pack">
+            @foreach (var item in FilteredRows)
+            {
+                var inputId = RowId(item);
+                var mustKeep = IsMustKeep(item.Path);
+                var skipped = IsClientOnly(item);
+                var locked = mustKeep && !IsPathSkipped(item.Path);
+                var note = RowNote(item);
+                <li class="mcm-pack-review-item @(locked ? "is-locked" : "")">
+                    <label class="mcm-check-hit mcm-pack-review-hit" for="@inputId" title="@item.Path">
+                        <input id="@inputId"
+                               type="checkbox"
+                               name="@(IdPrefix)-client-only"
+                               autocomplete="off"
+                               disabled="@(Disabled || locked)"
+                               checked="@skipped"
+                               aria-label="@($"Client-only, {item.FileName}")"
+                               @onchange="e => OnSkipChange(item, e)" />
+                        <span class="mcm-pack-review-file" translate="no">@item.FileName</span>
+                    </label>
+                    <span class="mcm-pack-review-note">@note</span>
+                </li>
+            }
+        </ul>
+    }
 </section>
 
 @code {
     [Parameter] public string IdPrefix { get; set; } = "pack";
     [Parameter] public bool Disabled { get; set; }
     [Parameter] public PackAssistedReview Review { get; set; } = PackAssistedReview.Empty;
+    [Parameter] public IReadOnlyList<string>? JarOrder { get; set; }
     [Parameter] public string? FreezeBlockReason { get; set; }
     [Parameter] public bool LooksLikeLauncherInstance { get; set; }
+    [Parameter] public bool ShowHeading { get; set; }
     [Parameter] public Func<string, bool>? IsSkipped { get; set; }
     [Parameter] public EventCallback<PackAssistedReviewActions.OperatorSkipChange> SkipChanged { get; set; }
 
     private string _query = "";
+    private PackAssistedReview? _mustKeepSource;
+    private HashSet<string>? _mustKeepPaths;
 
     private string HeadingId => $"{IdPrefix}-review-heading";
     private string SearchId => $"{IdPrefix}-review-search";
-    private string NeedsHeadingId => $"{IdPrefix}-review-needs";
-    private string MustHeadingId => $"{IdPrefix}-review-must";
 
-    private List<PackReviewItem> CallRows
+    private HashSet<string> MustKeepPaths
     {
         get
         {
-            var rows = new List<PackReviewItem>();
-            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            void Add(PackReviewItem item)
+            if (_mustKeepSource != Review || _mustKeepPaths is null)
             {
-                if (seen.Add(item.Path))
-                    rows.Add(item);
+                _mustKeepSource = Review;
+                _mustKeepPaths = Review.MustKeep
+                    .Select(i => i.Path)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
             }
 
-            foreach (var item in Review.NeedsYourCall)
-                Add(item);
-            foreach (var item in Review.WillSkip)
-            {
-                if (item.SkipReason == PackFileSkipReason.OperatorSkip || IsPathSkipped(item.Path))
-                    Add(item);
-            }
-
-            foreach (var item in Review.MustKeep)
-            {
-                if (IsPathSkipped(item.Path))
-                    Add(item);
-            }
-
-            return rows;
+            return _mustKeepPaths;
         }
     }
 
-    private List<PackReviewItem> AutomaticWillSkip =>
-        Review.WillSkip
-            .Where(i => i.SkipReason != PackFileSkipReason.OperatorSkip && !IsPathSkipped(i.Path))
-            .ToList();
+    private IReadOnlyList<PackReviewItem> AllRows => Review.UnifiedRows(JarOrder);
 
-    private List<PackReviewItem> FilteredCallRows
+    private IReadOnlyList<PackReviewItem> FilteredRows
     {
         get
         {
             var q = _query.Trim();
             if (q.Length == 0)
-                return CallRows;
-            return CallRows
+                return AllRows;
+            return AllRows
                 .Where(i => i.FileName.Contains(q, StringComparison.OrdinalIgnoreCase)
                             || i.Path.Contains(q, StringComparison.OrdinalIgnoreCase))
                 .ToList();
         }
     }
 
-    private bool ShowSearch => CallRows.Count >= SetupPackImport.UnclearSideHighCountThreshold;
-
-    private bool OpenWillSkip => AutomaticWillSkip.Count > 0 && AutomaticWillSkip.Count < SetupPackImport.UnclearSideHighCountThreshold;
+    private bool ShowSearch => AllRows.Count >= SetupPackImport.UnclearSideHighCountThreshold;
 
     private bool IsPathSkipped(string path) => IsSkipped?.Invoke(path) == true;
 
-    private string RowId(string group, PackReviewItem item)
+    private bool IsMustKeep(string path) => MustKeepPaths.Contains(path);
+
+    private bool IsClientOnly(PackReviewItem item)
     {
-        var hash = StringComparer.OrdinalIgnoreCase.GetHashCode(item.Path);
-        return $"{IdPrefix}-{group}-{unchecked((uint)hash):x}";
+        if (IsMustKeep(item.Path) && !IsPathSkipped(item.Path))
+            return false;
+        if (IsPathSkipped(item.Path))
+            return true;
+        return IsAutomaticClientOnly(item);
     }
 
-    private static string CallWhy(PackReviewItem _, bool skipped) =>
-        skipped ? "Will skip on the server" : "Unknown side · Keep";
+    private static bool IsAutomaticClientOnly(PackReviewItem item) =>
+        item.SkipReason is PackFileSkipReason.PackDeclared
+            or PackFileSkipReason.OverrideList
+            or PackFileSkipReason.InJarMetadata;
 
-    private static string WillSkipWhy(PackReviewItem item) =>
-        item.SkipReason switch
+    private string RowNote(PackReviewItem item)
+    {
+        if (IsMustKeep(item.Path))
         {
-            PackFileSkipReason.PackDeclared => "Pack env.server",
-            PackFileSkipReason.OverrideList => "Exclude list",
-            PackFileSkipReason.InJarMetadata => "Client-only in the jar",
-            PackFileSkipReason.OperatorSkip => "You marked Skip",
-            _ => string.IsNullOrWhiteSpace(item.Reason) ? "Will skip" : item.Reason,
-        };
+            if (!string.IsNullOrWhiteSpace(item.RequiredByName))
+                return "required by " + item.RequiredByName;
+            return item.Reason;
+        }
+
+        if (IsAutomaticClientOnly(item))
+        {
+            return item.SkipReason switch
+            {
+                PackFileSkipReason.PackDeclared => "env.server",
+                PackFileSkipReason.OverrideList => "exclude list",
+                PackFileSkipReason.InJarMetadata => "in-jar client",
+                _ => string.IsNullOrWhiteSpace(item.Reason) ? "" : item.Reason,
+            };
+        }
+
+        return "";
+    }
+
+    private string RowId(PackReviewItem item)
+    {
+        var hash = StringComparer.OrdinalIgnoreCase.GetHashCode(item.Path);
+        return $"{IdPrefix}-row-{unchecked((uint)hash):x}";
+    }
 
     private void OnSearchInput(ChangeEventArgs e) =>
         _query = e.Value?.ToString() ?? "";

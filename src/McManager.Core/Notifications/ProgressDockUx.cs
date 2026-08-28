@@ -14,6 +14,10 @@ public static class ProgressDockUx
 
     public const string ChangePackBuildFallback = "Building the derived pack…";
 
+    public const string ChangePackStartFallback = "Starting the game VM…";
+
+    public const string ChangePackIdleHoldFallback = "Disabling the idle timer…";
+
     public const string ChangePackInstallFallback = "Reinstalling Minecraft from this pack…";
 
     public static string FormatElapsed(TimeSpan elapsed)
@@ -36,7 +40,15 @@ public static class ProgressDockUx
         return string.IsNullOrWhiteSpace(fallback) ? "" : fallback.Trim();
     }
 
-    public static bool ShowChangePackDock(bool showChangePackUi) => showChangePackUi;
+    /// <summary>
+    /// Overlay dock is visible only on Server → Change pack while a session is open.
+    /// Hiding it does not cancel the review.
+    /// </summary>
+    public static bool ShowChangePackDock(
+        bool showChangePackUi,
+        bool onServerTab,
+        bool onChangePackPane) =>
+        showChangePackUi && onServerTab && onChangePackPane;
 
     public static bool ShowJobProgress(bool analyzing, bool replaceRunning) =>
         analyzing || replaceRunning;

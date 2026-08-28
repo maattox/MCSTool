@@ -1,6 +1,5 @@
 using System.Buffers.Binary;
 using McManager.Core.Config;
-using McManager.Core.Setup;
 using McManager.Core.Usage;
 
 namespace McManager.Core.Services;
@@ -13,13 +12,15 @@ public static class ServerIdentityUx
     public const int IconWidth = 64;
     public const int IconHeight = 64;
     public const int MaxIconBytes = 256 * 1024;
-    public const int MaxNameLength = 40;
-    public const int MaxDescriptionLength = 512;
-    public const string DefaultMotd = "A Minecraft Server";
-    public const string DefaultDescription = "made with github.com/maattox/oci-mc-server";
-    public const string DefaultVanillaName = "Vanilla Server";
-    public const string DefaultPaperName = "Paper Server";
-    public const string DefaultModdedName = "Modded Server";
+    public const int MaxNameLength = MotdFormatting.ListLineVisibleLimit;
+    public const int MaxDescriptionLength = MotdFormatting.ListLineVisibleLimit;
+    /// <summary>Line 1 of the product default list MOTD (gold bold stars around yellow bold name).</summary>
+    public const string DefaultName = "§6§l★§r§l §e§lOCI Server§r§l\u00a0§6§l★§r";
+    public const string DefaultDescription = "created with §9§ngithub.com/maattox/oci-mc-server§r";
+    public const string DefaultMotd = DefaultName + "\\n" + DefaultDescription;
+    public const string DefaultVanillaName = DefaultName;
+    public const string DefaultPaperName = DefaultName;
+    public const string DefaultModdedName = DefaultName;
 
     public static IReadOnlyDictionary<string, string> DefaultChatMessages =>
         ChatMessagesDocument.DefaultChatMessages;
@@ -37,23 +38,21 @@ public static class ServerIdentityUx
 
     /// <summary>
     /// Minecraft <c>motd</c> value for <c>server.properties</c> (literal <c>\n</c>, <c>§</c> preserved).
-    /// When <paramref name="omitName"/> is true, only the description is used.
+    /// Server name is list line 1; description is list line 2. Each line is clipped to
+    /// <see cref="MotdFormatting.ListLineVisibleLimit"/> visible characters.
     /// Empty identity → the default MOTD.
     /// </summary>
-    public static string BuildMotd(string? serverName, string? description, bool omitName = false)
+    public static string BuildMotd(string? serverName, string? description)
     {
-        var name = omitName ? "" : CollapseWhitespace(serverName);
-        var desc = NormalizeDescription(description);
-        string text;
+        var name = MotdLine(serverName);
+        var desc = MotdLine(description);
         if (name.Length > 0 && desc.Length > 0)
-            text = name + "\\n" + desc;
-        else if (desc.Length > 0)
-            text = desc;
-        else if (name.Length > 0)
-            text = name;
-        else
-            text = DefaultMotd;
-        return text;
+            return name + "\\n" + desc;
+        if (desc.Length > 0)
+            return desc;
+        if (name.Length > 0)
+            return name;
+        return DefaultMotd;
     }
 
     public static string? ValidateIcon(byte[]? png)
@@ -94,16 +93,14 @@ public static class ServerIdentityUx
     }
 
     /// <summary>
-    /// Type-based Setup default. No Oracle trademark wording.
-    /// Vanilla (Mojang) vs Paper vs Modded.
+    /// Setup default list name. Same branded MOTD for Vanilla, Paper, and Modded.
+    /// No Oracle trademark wording.
     /// </summary>
     public static string DefaultServerName(string? serverType, string? vanillaFlavor)
     {
-        if (SetupServerType.IsModded(serverType))
-            return DefaultModdedName;
-        if (SetupVanillaFlavor.IsOptimized(vanillaFlavor))
-            return DefaultPaperName;
-        return DefaultVanillaName;
+        _ = serverType;
+        _ = vanillaFlavor;
+        return DefaultName;
     }
 
     public static ChatMessagesDocument CreateSetupSeed(SetupWizardState state)
@@ -112,13 +109,13 @@ public static class ServerIdentityUx
         var doc = ChatMessagesDocument.Defaults();
         var name = state.IdentityName?.Trim() ?? "";
         doc.ServerName = name.Length > 0
-            ? name
+            ? MotdFormatting.ClipToListLine(name)
             : DefaultServerName(state.ServerType, state.VanillaFlavor);
         var desc = state.IdentityDescription?.Trim() ?? "";
         doc.Description = desc.Length > 0 || state.IdentityDescriptionCustomized
-            ? desc
+            ? MotdFormatting.ClipToListLine(desc)
             : DefaultDescription;
-        doc.MotdOmitName = state.IdentityMotdOmitName;
+        doc.MotdOmitName = false;
         return doc;
     }
 
@@ -158,25 +155,17 @@ public static class ServerIdentityUx
         return bytes;
     }
 
+    private static string MotdLine(string? value)
+    {
+        var line = MotdFormatting.ClipToListLine(value);
+        return string.IsNullOrWhiteSpace(MotdFormatting.VisibleText(line)) ? "" : line;
+    }
+
     private static string CollapseWhitespace(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
             return "";
         return string.Join(' ', value.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
-    }
-
-    private static string NormalizeDescription(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return "";
-        var unified = value
-            .Replace("\r\n", "\n", StringComparison.Ordinal)
-            .Replace('\r', '\n')
-            .Replace("\\n", "\n", StringComparison.Ordinal);
-        var lines = unified.Split('\n');
-        return string.Join(
-            "\\n",
-            lines.Select(static s => s.Trim()).Where(static s => s.Length > 0));
     }
 }
 

@@ -1,4 +1,5 @@
 using McManager.Core.Config;
+using McManager.Core.Services;
 using McManager.Core.Setup;
 using Xunit;
 
@@ -51,8 +52,8 @@ public sealed class SetupVanillaFlavorTests
 
         Assert.Contains("Default Vanilla 1.21.11", defText, StringComparison.Ordinal);
         Assert.DoesNotContain("Paper", defText, StringComparison.Ordinal);
-        Assert.Contains("Server list name: Vanilla Server", defText, StringComparison.Ordinal);
+        Assert.Contains("Server list name: " + ServerIdentityUx.DefaultName, defText, StringComparison.Ordinal);
         Assert.Contains("Optimized Vanilla (Paper) 1.21.10", optText, StringComparison.Ordinal);
-        Assert.Contains("Server list name: Paper Server", optText, StringComparison.Ordinal);
+        Assert.Contains("Server list name: " + ServerIdentityUx.DefaultName, optText, StringComparison.Ordinal);
     }
 }
