@@ -540,8 +540,74 @@ Do not paste RCON passwords, Auth Tokens, PEM keys, or `/etc/mccontrol/oci.env` 
 
 ---
 
+## Pack the Windows installer / cut a GitHub Release
+
+**Audience:** operator packing a build on this Windows PC. Users never run these commands.
+
+### Pack (local)
+
+1. Install [Inno Setup 6](https://jrsoftware.org/isinfo.php) if `ISCC.exe` is missing:
+
+```powershell
+winget install --id JRSoftware.InnoSetup -e --accept-package-agreements --accept-source-agreements
+```
+
+Typical compiler path: `%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe` (per-user winget) or `C:\Program Files (x86)\Inno Setup 6\ISCC.exe`.
+
+2. Confirm the Function tar exists (gitignored; do not commit it):
+
+```powershell
+Test-Path .\artifacts\mcmgr-fn-softstop-linux-arm64.tar
+```
+
+If that prints `False`, rebuild with Docker Desktop using [`functions/shutdown_vm/README.md`](../functions/shutdown_vm/README.md) (Developer rebuild). The pack script **refuses** to build an installer without this file.
+
+3. From the **repo root**:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\packaging\pack.ps1
+```
+
+Output (gitignored): `packaging\out\MCManager-Setup-<version>.exe`. Per-user install, no admin, no Program Files, no bundled WebView2, no bundled `tofu.exe`.
+
+**SmartScreen / unknown publisher:** unsigned is expected until a code-signing cert is purchased (deferred). More info → Run anyway only for a build you packed or a GitHub Release from `maattox/oci-mc-server`.
+
+### Cut a GitHub Release (operator only — do not run until you mean to ship)
+
+No Settings toggle, no `release` branch, no GitHub Actions. A Release is a **git tag** plus notes plus the Inno `.exe`. Do **not** mark it as a pre-release (`/releases/latest` ignores those).
+
+Replace `0.1.0` with the version in `src\McManager.Hybrid\McManager.Hybrid.csproj`.
+
+**Browser:**
+
+1. Tag the commit you intend to ship (example: you are on `staging`):
+
+```powershell
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+(`git push` is operator-only. Agents will not push unless you say so in that chat.)
+
+2. Open [github.com/maattox/oci-mc-server/releases/new](https://github.com/maattox/oci-mc-server/releases/new).
+3. Choose tag `v0.1.0`. Title example: `MC Manager 0.1.0`.
+4. Write release notes (the in-app update prompt in a later step shows this body).
+5. Attach `packaging\out\MCManager-Setup-0.1.0.exe`. Do **not** attach the Function tar as a separate asset (it is already inside the installer).
+6. Leave **Set as a pre-release** **unchecked**. Publish.
+
+**Optional `gh` (same rules — you run it, not an agent, unless you ask):**
+
+```powershell
+gh release create v0.1.0 .\packaging\out\MCManager-Setup-0.1.0.exe --title "MC Manager 0.1.0" --notes "Paste the user-facing notes here."
+```
+
+Do not pass `--prerelease`. Do not create `.github/workflows`.
+
+---
+
 ## Changelog
 
+| 2026-08-27 | Pack installer (`packaging\pack.ps1`) + GitHub Release recipe (tag + Inno `.exe`; not pre-release; no Actions). Unsigned / SmartScreen expected. |
 | 2026-08-23 | SETUP-ISSUE-13: Layer 3 `quarantine_mod` one-shot copy for VMs that predate P10. |
 | 2026-08-20 | SETUP-ISSUE-10: WAIT with cloud-init already done and no `/etc/mcmgr` — invalid YAML, restart Hybrid, do not destroy. |
 | 2026-08-20 | SETUP-ISSUE-9: retry Deploy on a partial stack (do not destroy); budget description 200-char cap + OCIR 404 on new compartment. |

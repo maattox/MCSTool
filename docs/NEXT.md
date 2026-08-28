@@ -8,14 +8,14 @@ Single source of truth for **what to work on next**. Living plan files keep sect
 
 | Field | Value |
 |-------|-------|
-| **Plan** | [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Phase **9** / Step **9.1** |
-| **Step** | **9.1** Windows installer |
+| **Plan** | [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Phase **9** / Step **9.2** |
+| **Step** | **9.2** GitHub Releases update check |
 | **Sub-plan** | [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) |
-| **Sub-step** | **P3** Windows installer (Inno) + Function tar + Release recipe |
+| **Sub-step** | **P4** GitHub Releases update check |
 | **Status** | `ready` |
 | **Cursor mode** | `agent` |
 
-Phase **8.6** is **DONE**. **P2 DONE** (2026-08-27): pinned OpenTofu 1.12.6 Windows amd64 zip downloads once into `%LOCALAPPDATA%\McManager\tofu` (SHA-256; no WinGet). Living **NEXT = P3** ([`V1-Packaging-Plan.md`](V1-Packaging-Plan.md)): Inno Setup 6 per-user installer + Function tar + Release recipe. Do **not** start P4–P7. GitHub Actions stays **out**. Users must not need Docker. **Parked:** `mr-fabric-cobblemon-1.7.3` re-run is **UNFINISHED** (operator aborted 2026-08-27). Come back in a **separate** chat: `/pack-test-one` that id (TESTING, `mcmgr-pack-test`; disable idle for the whole replace). Do not treat the later harness `pass` YAML as verified.
+Phase **8.6** is **DONE**. **P3 DONE** (2026-08-27): Inno Setup 6 per-user installer (`packaging\pack.ps1`) + Function tar required + Guide/Release recipe. Step **9.1** **DONE**. Living **NEXT = P4** ([`V1-Packaging-Plan.md`](V1-Packaging-Plan.md)): GitHub Releases update check (prompt + notes; no silent apply). Do **not** start P5–P7. GitHub Actions stays **out**. Users must not need Docker. Do **not** `git push` / `gh release create` unless asked. **Parked:** `mr-fabric-cobblemon-1.7.3` re-run is **UNFINISHED** (operator aborted 2026-08-27). Come back in a **separate** chat: `/pack-test-one` that id (TESTING, `mcmgr-pack-test`; disable idle for the whole replace). Do not treat the later harness `pass` YAML as verified.
 
 ## Design lock (implementing)
 
@@ -23,6 +23,7 @@ Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-De
 
 ## Completed recently
 
+- **2026-08-27** — Step **9.1 P3 DONE** (Inno Setup 6 per-user installer + Function tar required + Guide/Release recipe). **9.1 complete.** Living **NEXT = P4** / Step **9.2** (GitHub Releases update check). Do not start P5.
 - **2026-08-27** — Step **9.1 P2 DONE** (pinned OpenTofu 1.12.6 download + SHA-256 into LocalAppData). Living **NEXT = P3** (Inno installer). Do not start P4.
 - **2026-08-27** — Step **9.1 P1 DONE** (publish layout: product tree + optional Function tar next to the exe). Living **NEXT = P2** (pinned OpenTofu download). Do not start P3.
 - **2026-08-27** — Phase **9 unblocked.** Living plan [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) created. **NEXT = P1** (publish layout). Do not start P2.

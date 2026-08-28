@@ -6,7 +6,7 @@ namespace McManager.Hybrid;
 
 /// <summary>
 /// Evergreen WebView2 is required for <c>BlazorWebView</c>. Do not bundle a runtime
-/// (installer packaging is Phase 8).
+/// (the Windows installer does not ship WebView2).
 /// </summary>
 internal static class WebView2RuntimeGuard
 {

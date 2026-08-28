@@ -30,11 +30,11 @@ Do **not** add paid shapes, extra volumes, or load balancers. Setup never opens 
 | [Evergreen WebView2](https://go.microsoft.com/fwlink/p/?LinkId=2124703) | The app tells you if this is missing. |
 | Oracle Cloud account | PAYG as needed (see below). Prefer the **home region**. |
 | API key files | `%USERPROFILE%\.oci\config` + PEM (not an SSH key). |
-| Auth Token | **Needed** to install the $1 spend-brake Function image (Oracle Container Registry login). **Not** Docker Desktop when a pre-built ARM tarball is present (`artifacts/mcmgr-fn-softstop-linux-arm64.tar` next to the app or in the repo). Without that artifact, from-source Setup still builds with Docker (developer). The installer (**9.1**) will ship the tarball so you never need Docker. |
+| Auth Token | **Needed** to install the $1 spend-brake Function image (Oracle Container Registry login). **Not** Docker Desktop: the Windows installer already includes the pre-built ARM tarball next to the app. From-source checkouts without `artifacts/mcmgr-fn-softstop-linux-arm64.tar` still build with Docker (developer). |
 | Public IPv4 | Yours, and each friend’s, for the allowlist. Home IPs change. |
 | Minecraft Java Edition | Same release Setup chooses: Vanilla/Paper picker, or the version declared in a Modded pack. **Modded:** friends also need **that same exported pack file** — vanilla Minecraft cannot join. See [Modded: friends need the client pack](#modded-friends-need-the-client-pack). |
 
-Until a Windows installer ships (MVP packaging step), run Manager from this repo — see [Install the Manager](#3-install-the-manager).
+Install Manager with the Windows installer — see [Install the Manager](#3-install-the-manager). Developers may still run from this repo.
 
 ---
 
@@ -100,15 +100,22 @@ Official reference: [Getting an Auth Token](https://docs.oracle.com/en-us/iaas/C
 
 Each user may have at most **two** Auth Tokens. If you lose it, generate a new one.
 
-**If a pre-built ARM image is present:** Docker is not required; Setup copies it. **If it is missing** (typical from-source checkout without `artifacts/`): Setup still tries to **build** with Docker on this PC and skips if Docker is not running. The Windows installer will ship the tarball. Auth Token is required for the copy either way. Setup derives the Oracle Container Registry login as `{Object Storage namespace}/{identity domain}/{IAM user name}` (the Console username, often an email — not the `user=` OCID in `~/.oci/config`). An env override exists only as an escape hatch. Skipping the token skips Function+Events; the budget email can still exist.
+**If a pre-built ARM image is present:** Docker is not required; Setup copies it. The Windows installer always includes that tarball. **If it is missing** (typical from-source checkout without `artifacts/`): Setup still tries to **build** with Docker on this PC and skips if Docker is not running. Auth Token is required for the copy either way. Setup derives the Oracle Container Registry login as `{Object Storage namespace}/{identity domain}/{IAM user name}` (the Console username, often an email — not the `user=` OCID in `~/.oci/config`). An env override exists only as an escape hatch. Skipping the token skips Function+Events; the budget email can still exist.
 
 ---
 
 ## 3. Install the Manager
 
-**When a Windows installer is available:** install it, then open **MC Manager**. That is the intended path (one app; Setup is inside it).
+**Intended path:** run the Windows installer (`MCManager-Setup-<version>.exe`). It installs **per-user** (no administrator prompt, not Program Files — typically `%LOCALAPPDATA%\Programs\MC Manager`). When it finishes, open **MC Manager** from the Start Menu. Setup is inside that one app.
 
-**Until the installer ships**, from a checkout of this repo (requires [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)):
+- **WebView2:** if Windows is missing the [Evergreen runtime](https://go.microsoft.com/fwlink/p/?LinkId=2124703), Manager shows a message with Microsoft’s installer link. Install that, then open Manager again. The MC Manager installer does **not** bundle WebView2.
+- **Unknown publisher / SmartScreen:** this build is **unsigned** (a code-signing certificate is deferred). Windows may show **Windows protected your PC** or **unknown publisher**. That is expected for closed beta. Click **More info** → **Run anyway** only for an installer you built yourself or downloaded from this project’s [GitHub Releases](https://github.com/maattox/oci-mc-server/releases).
+- **Spend-brake Function image:** the installer already contains `mcmgr-fn-softstop-linux-arm64.tar` next to the app. You do **not** need Docker Desktop.
+- **OpenTofu:** the first **Deploy** on a PC that does not already have OpenTofu needs internet: Manager downloads a pinned OpenTofu 1.12.6 Windows build into `%LOCALAPPDATA%\McManager\tofu` (Mozilla Public License 2.0; source [github.com/opentofu/opentofu](https://github.com/opentofu/opentofu)). You do not install WinGet or `tofu` by hand. `tofu init` still fetches the OCI provider on that first run.
+
+Uninstall from Windows Settings → Apps → **MC Manager** (or the Start Menu uninstall entry). That removes the app folder and the Start Menu shortcut. It does **not** delete `%LOCALAPPDATA%\McManager` (local config and the OpenTofu copy) or your Oracle tenancy.
+
+**Developers (from a checkout, requires [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)):**
 
 ```powershell
 dotnet restore src\McManager.slnx
@@ -116,9 +123,15 @@ dotnet build src\McManager.slnx
 dotnet run --project src\McManager.Hybrid
 ```
 
-Or open `src\McManager.slnx` in Visual Studio and run **McManager.Hybrid**. Developers packaging a folder (no installer yet): `dotnet publish src\McManager.Hybrid -c Release -r win-x64 --self-contained` — the output is a product root (`infra/` and on-box trees sit next to the exe; the Function tar copies when `artifacts\mcmgr-fn-softstop-linux-arm64.tar` exists).
+Or open `src\McManager.slnx` in Visual Studio and run **McManager.Hybrid**. Folder publish (no installer): `dotnet publish src\McManager.Hybrid -c Release -r win-x64 --self-contained` — the output is a product root (`infra/` and on-box trees sit next to the exe; the Function tar copies when `artifacts\mcmgr-fn-softstop-linux-arm64.tar` exists).
 
-The first **Deploy** on a PC that does not already have OpenTofu needs internet: Manager downloads a pinned OpenTofu 1.12.6 Windows build into `%LOCALAPPDATA%\McManager\tofu` (Mozilla Public License 2.0; source [github.com/opentofu/opentofu](https://github.com/opentofu/opentofu)). You do not install WinGet or `tofu` by hand. `tofu init` still fetches the OCI provider on that first run.
+**Pack the installer** (operator / developer PC): install [Inno Setup 6](https://jrsoftware.org/isinfo.php), then from the repo root:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\packaging\pack.ps1
+```
+
+That fails if the Function tar is missing (rebuild recipe: [`functions/shutdown_vm/README.md`](../functions/shutdown_vm/README.md)). The `.exe` lands in `packaging\out\` (gitignored). Cutting a GitHub Release is operator-only — see [`Operator-Troubleshooting.md`](Operator-Troubleshooting.md#pack-the-windows-installer--cut-a-github-release).
 
 ---
 
@@ -151,7 +164,7 @@ Deploy creates the compartment, network, reserved play IP, game VM, doorbell VM,
 
 When Deploy **succeeds**, Setup shows **Deployment Complete** and the **reserved play IP** friends should use, with a **Copy** button. Click **Close** (footer) to continue to the Manager app. The deploy log stays on that page, collapsed under **Deploy log**. Reopening from **Advanced → Deploy / repair** shows **Review and deploy** again so you can re-run guest repair and copy a **newer** spend-brake image when the bundled tarball’s digest changed.
 
-The Function image is copied into your OCIR from a **pre-built ARM** tarball when present (next to the app or gitignored `artifacts/mcmgr-fn-softstop-linux-arm64.tar`). Docker is not required for that copy. Deploy / repair compares that tarball to the live Function image and copies only when the digest is missing or different. Without the artifact, from-source Deploy may log that the Function was skipped if Docker is missing. The Windows installer will ship the tarball.
+The Function image is copied into your OCIR from a **pre-built ARM** tarball when present (next to the app — the Windows installer always includes it — or gitignored `artifacts/mcmgr-fn-softstop-linux-arm64.tar`). Docker is not required for that copy. Deploy / repair compares that tarball to the live Function image and copies only when the digest is missing or different. Without the artifact, from-source Deploy may log that the Function was skipped if Docker is missing.
 
 ---
 

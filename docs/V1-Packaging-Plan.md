@@ -45,13 +45,13 @@ None. P1–P3 share publish layout and Hybrid csproj. P4 reads the same version 
 |----|-------|--------|----------|--------|
 | P1 | Publish layout: product tree next to the exe | **DONE** | SEQUENTIAL — ProductPaths + Hybrid publish | agent |
 | P2 | OpenTofu on a clean PC (pinned download) | **DONE** | SEQUENTIAL — needs P1 layout; Setup path | agent |
-| P3 | Windows installer (Inno) + Function tar + Release recipe | **NEXT** | SEQUENTIAL — wraps P1 output | agent |
-| P4 | GitHub Releases update check | TODO | SEQUENTIAL — Hybrid launch + settings toggle | agent |
+| P3 | Windows installer (Inno) + Function tar + Release recipe | **DONE** | SEQUENTIAL — wraps P1 output | agent |
+| P4 | GitHub Releases update check | **NEXT** | SEQUENTIAL — Hybrid launch + settings toggle | agent |
 | P5 | Guide + README v1 pass | TODO | SEQUENTIAL — docs after P1–P4 exist | agent |
 | P6 | Closed beta / dogfood | TODO | SEQUENTIAL — operator-led; installer preferred | either |
 | P7 | V1 exit review | TODO | SEQUENTIAL — operator declares ready | either |
 
-**Live NEXT:** [`NEXT.md`](NEXT.md) → **P3**.
+**Live NEXT:** [`NEXT.md`](NEXT.md) → **P4**.
 
 ---
 
@@ -202,7 +202,7 @@ Unauthenticated GitHub API is enough (~60 req/hr/IP). The shipped app must **not
 
 ## P3 — Windows installer (Inno) + Function tar + Release recipe
 
-**Status:** NEXT  
+**Status:** DONE  
 **Parallel:** SEQUENTIAL — wraps P1 publish output  
 **Cursor mode:** agent
 
@@ -229,13 +229,13 @@ Unauthenticated GitHub API is enough (~60 req/hr/IP). The shipped app must **not
 
 **Done when:** Reproducible installer artifact. Guide has install + SmartScreen + operator Release recipe. No GitHub Release created unless the operator asked.
 
-**Changelog:** *(empty)*
+**Changelog:** 2026-08-27 — Inno Setup 6 per-user installer (`packaging\McManager.iss` + `packaging\pack.ps1`). Pack publishes Hybrid, **fails** without `artifacts/mcmgr-fn-softstop-linux-arm64.tar`, writes `packaging\out\MCManager-Setup-<version>.exe` (gitignored). Start Menu **MC Manager**. No admin / Program Files / WebView2 / `tofu.exe`. Guide §3 + operator Release recipe (not pre-release; no Actions; no tag push). Living **NEXT = P4**.
 
 ---
 
 ## P4 — GitHub Releases update check
 
-**Status:** TODO  
+**Status:** NEXT  
 **Parallel:** SEQUENTIAL — Hybrid launch + existing settings toggle  
 **Cursor mode:** agent
 
@@ -353,6 +353,7 @@ Unauthenticated GitHub API is enough (~60 req/hr/IP). The shipped app must **not
 
 | Date | Note |
 |------|------|
+| 2026-08-27 | **P3 DONE** (Inno Setup 6 per-user installer + Function tar required + operator Release recipe). Living **NEXT = P4** (GitHub Releases update check). Do not start P5. |
 | 2026-08-27 | **P2 DONE** (pinned OpenTofu 1.12.6 Windows amd64 download + SHA-256 into LocalAppData). Living **NEXT = P3** (Inno installer). Do not start P4. |
 | 2026-08-27 | **P1 DONE** (publish layout: product tree + optional Function tar next to the exe). Living **NEXT = P2** (pinned OpenTofu download). Do not start P3. |
 | 2026-08-27 | Created (docs only). Operator unblocked Phase 9. **NEXT = P1** (publish layout). GitHub Actions out; Inno + prompt-on-Release; tofu pinned download; signing deferred. |

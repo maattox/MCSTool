@@ -415,6 +415,9 @@ publish/
 *.appx
 *.msix
 *.msixbundle
+
+# Inno Setup pack output (installer .exe + publish staging). Do not commit.
+packaging/out/
 )
 
 # Development / Testing
