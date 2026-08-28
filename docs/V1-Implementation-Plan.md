@@ -125,7 +125,7 @@ Agents **may** without asking, on profile `TESTING` **only**:
 
 **Still $0:** do **not** fire a real Oracle **$1 compartment budget alert** (that can bill ~$1–$2). SoftStop **VM1** via the Function is OK (Always Free A1 hours). **Do not SoftStop the door Micro**; if an old image still stops both, START the door immediately and push v1 (`0.0.12`, VM1 only + lock PUT). Do not add paid Function memory, extra OCIR repos, or extra Function apps. After lock tests, DELETE `meta/spend-brake-triggered.json` unless the next test needs it. Never print Auth Tokens. **Never** `fn push` / invoke on `DEFAULT` / the live Forge lab.
 
-This blanket is **TESTING / until Step 8.6.1 ships**. The **product** path is a **pre-built** ARM tarball copied into the user’s OCIR (**users** do not need Docker). The operator **may** produce that tar with Docker Desktop. Do not treat `fn`/`docker buildx` on a **user** PC as the installer story.
+This blanket is **TESTING**. Step **8.6.1** **shipped**: the **product** path is a **pre-built** ARM tarball copied into the user’s OCIR (**users** do not need Docker). Agents may still `fn`/`docker` on TESTING. The operator **may** produce that tar with Docker Desktop. Do not treat `fn`/`docker buildx` on a **user** PC as the installer story.
 
 **Not allowed without operator approval in that chat**
 
@@ -187,11 +187,11 @@ Read [`docs/NEXT.md`](NEXT.md) and run `/next-step` in a fresh Agent chat. Workf
 | **8.14** | Manage UI pass 3 (zoom lock, equal power, pins, Overview) | **DONE** — [`V1-Manage-UI-Pass-3-Plan.md`](V1-Manage-UI-Pass-3-Plan.md) P1–P4; flush chrome / denser gutters reverted 2026-08-26 |
 | **8.15** | Change pack UX (single-list review, compactness, overlay dock, stopped-VM pick) | **DONE** — [`V1-Change-Pack-UX-Plan.md`](V1-Change-Pack-UX-Plan.md) P1–P4 |
 | **8.5** | Pre-packaging QA (catalog + passes + bug-fix plans)        | **DONE** — Pass 3 filled; triage skipped; S0-01 Nit parked OK |
-| **8.6** | Pre-built ARM spend-brake Function image (**users** no Docker) | **NEXT** — [`V1-Function-Image-Plan.md`](V1-Function-Image-Plan.md) **P2**; **required before 9.1** |
-| **9**   | Packaging, updates, launch (old MVP Phase 8–9)             | TODO — do not start until Phase 8.5 **and** Step **8.6.1** are DONE |
+| **8.6** | Pre-built ARM spend-brake Function image (**users** no Docker) | **DONE** — [`V1-Function-Image-Plan.md`](V1-Function-Image-Plan.md) P1–P2 |
+| **9**   | Packaging, updates, launch (old MVP Phase 8–9)             | TODO — **blocked** until the operator starts Step **9.1** |
 
 
-**Current NEXT step:** See [`docs/NEXT.md`](NEXT.md) — Step **8.6.1 P2** (TESTING user-copy verify). Do **not** start **9.1**.
+**Current NEXT step:** See [`docs/NEXT.md`](NEXT.md) — Step **9.1** **blocked** on the operator. Do **not** start the installer until asked.
 
 ---
 
@@ -1569,7 +1569,7 @@ Historical **Do** (not to be started): ship a preset Cost Estimator configuratio
 | `[V1-Manage-Sidebar-Polish-Plan.md](V1-Manage-Sidebar-Polish-Plan.md)` | Step **8.13**. Panel contrast, narrower sidebar, equal compact pins, larger tabs. **COMPLETE** (P1–P2). |
 | `[V1-Manage-UI-Pass-3-Plan.md](V1-Manage-UI-Pass-3-Plan.md)` | Step **8.14**. Zoom lock, equal power, pin redesign, Overview. Flush chrome / denser gutters reverted 2026-08-26. **COMPLETE** (P1–P4). |
 | [`V1-Change-Pack-UX-Plan.md`](V1-Change-Pack-UX-Plan.md) | Step **8.15**. Single-list review, compactness, overlay dock, stopped-VM pick. **COMPLETE** (P1–P4). |
-| [`V1-Function-Image-Plan.md`](V1-Function-Image-Plan.md) | Step **8.6.1**. Username + digest converge. **NEXT = P1.** |
+| [`V1-Function-Image-Plan.md`](V1-Function-Image-Plan.md) | Step **8.6.1**. **COMPLETE** (P1–P2). |
 | [`V1-QA-Pass-3-Scope.md](V1-QA-Pass-3-Scope.md)` | Pass 3 **filled**; Phase **8.5** **closed**. Historical. |
 | `[V1-QA-Pass-3-Results.md](V1-QA-Pass-3-Results.md)`         | Pass 3 fill-out. S0-01 Nit **parked OK** (no bug-fix plan). |
 | `[V1-Bug-Fix-Plan-Pass-1.md](V1-Bug-Fix-Plan-Pass-1.md)`     | Pass 1 fixes; **P1–P8 DONE**. Do not re-open unless a regression.          |
@@ -1677,11 +1677,11 @@ Do **not** start Step **9.1** from this step. Do not rewrite the catalog each pa
 
 This phase is **required before any official release**. Do **not** start Step **9.1** until **8.6.1** is DONE.
 
-**Interim (until this step ships):** from-source Setup may still skip the Function if the tar and Docker are both missing. TESTING agents may still `fn build`/`push` under the [Product Functions blanket](#product-functions-on-testing-blanket).
+**Interim (until 9.1 bundles the tar):** from-source Setup may still skip the Function if the tar and Docker are both missing. TESTING agents may still `fn build`/`push` under the [Product Functions blanket](#product-functions-on-testing-blanket).
 
 ### Step 8.6.1 — Pre-built ARM image + Setup copy into OCIR
 
-**Status:** NEXT (living: [`V1-Function-Image-Plan.md`](V1-Function-Image-Plan.md) **P2**)  
+**Status:** DONE (living: [`V1-Function-Image-Plan.md`](V1-Function-Image-Plan.md) P1–P2 **COMPLETE**)  
 **Depends on:** Step 8.5.3 (QA exit). **Met.** P13 already copies a pre-built tar into OCIR. Developer Docker Desktop pre-build is OK.
 
 **Read first**
@@ -1707,7 +1707,7 @@ See the living-plan **P** section. User path: no Docker/`fn`/Cloud Shell/`MCMANA
 
 **Done when:** Living plan P1–P2 **DONE**. User path no longer requires Docker Desktop / `fn` / Cloud Shell / `MCMANAGER_OCIR_USERNAME`. Repair converges image digest. Guide matches. **Do not start 9.1** until this is DONE.
 
-**Changelog:** 2026-08-27 — **P1 DONE** (OCIR username derived; digest converge on Deploy/repair; Guide + developer recipe). Living **NEXT = P2**. Do not start 9.1. 2026-08-27 — Plan rewritten: developer Docker Desktop OK; users must not need Docker; GitHub Actions dropped. Living **NEXT = P1** (username + digest + Guide). 2026-08-27 — Living plan created. P13 copy path is in.
+**Changelog:** 2026-08-27 — **P2 DONE.** TESTING OCIR login proven (`{ns}/{identity-domain}/{IAM user name}`; user OCID **401**). Product copy without Docker; digest matched; synthetic ACTUAL SoftStop VM1 only; door up. Plan **COMPLETE**. Phase **8.6** **DONE**. Do not start 9.1 until asked. 2026-08-27 — **P1 DONE** (OCIR username derived; digest converge on Deploy/repair; Guide + developer recipe). Living **NEXT = P2**. Do not start 9.1. 2026-08-27 — Plan rewritten: developer Docker Desktop OK; users must not need Docker; GitHub Actions dropped. Living **NEXT = P1** (username + digest + Guide). 2026-08-27 — Living plan created. P13 copy path is in.
 
 ---
 
@@ -1891,7 +1891,7 @@ Former MVP Phase **8–9**. Phases **1–7** are **DONE**. Phase **8** is **SKIP
 
 | Date       | Note                                                                                                                                                                                                                                                                                                                              |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-08-27 | **8.6.1 rewritten.** Developer Docker Desktop pre-build is OK; **users** must not need Docker; GitHub Actions dropped. Living **NEXT = P1** (username + digest + Guide). Do not start 9.1. |
+| 2026-08-27 | **8.6.1 / Phase 8.6 DONE.** P2 TESTING user-copy + proven OCIR login (IAM name + identity domain). Living **NEXT = 9.1** **blocked**. Do not start the installer until asked. |
 | 2026-08-27 | **Phase 8.5 DONE** (8.5.3). Pass 3 triage skipped. S0-01 Nit parked OK (intended overlay; stale assert). Living **NEXT = 8.6.1 P1**. Do not start 9.1. |
 | 2026-08-27 | **Pass 3 Phase A DONE.** S1 snapshot + leftover S2 Pass (S0-01 Fail Nit remains). Living **NEXT = Phase B**. Do not start Phase B, 8.6.1, or 9.1 until a new Agent chat. |
 | 2026-08-27 | **Pass 3 unblocked.** Operator started Step **8.5.2**. Living **NEXT = Phase A**. Do not start Phase B, 8.6.1, or 9.1. |

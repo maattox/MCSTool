@@ -8,21 +8,22 @@ Single source of truth for **what to work on next**. Living plan files keep sect
 
 | Field | Value |
 |-------|-------|
-| **Plan** | [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Step **8.6.1** |
-| **Step** | **8.6.1** Pre-built ARM Function image (user copy, no Docker) |
-| **Sub-plan** | [`V1-Function-Image-Plan.md`](V1-Function-Image-Plan.md) |
-| **Sub-step** | **P2** |
-| **Status** | `ready` |
-| **Cursor mode** | `agent` |
+| **Plan** | [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Phase **9** / Step **9.1** |
+| **Step** | **9.1** Windows installer |
+| **Sub-plan** | — |
+| **Sub-step** | — |
+| **Status** | `blocked` |
+| **Cursor mode** | — |
 
-Phase **8.5** is **DONE** (Pass 3 filled; triage **skipped**; S0-01 Nit **parked OK** — stale assert vs intended `overlay-offline`, not a bug-fix plan). Living **NEXT = 8.6.1 P2** (TESTING user-copy verify). Developer Docker Desktop pre-build is OK; **users** must not need Docker. GitHub Actions is **out**. Do **not** start **9.1**. Pack-corpus P1–P3 is **DONE**. **Parked:** `mr-fabric-cobblemon-1.7.3` re-run is **UNFINISHED** (operator aborted 2026-08-27). Come back in a **separate** chat: `/pack-test-one` that id (TESTING, `mcmgr-pack-test`; disable idle for the whole replace). Do not treat the later harness `pass` YAML as verified.
+Phase **8.6** / Step **8.6.1** is **DONE** (P1 username+digest; **P2** TESTING user-copy + proven OCIR login). Living **NEXT = Phase 9 / Step 9.1**, **blocked** until the operator asks — do **not** auto-start the installer. Developer Docker Desktop pre-build is OK; **users** must not need Docker. GitHub Actions is **out**. Pack-corpus P1–P3 is **DONE**. **Parked:** `mr-fabric-cobblemon-1.7.3` re-run is **UNFINISHED** (operator aborted 2026-08-27). Come back in a **separate** chat: `/pack-test-one` that id (TESTING, `mcmgr-pack-test`; disable idle for the whole replace). Do not treat the later harness `pass` YAML as verified.
 
 ## Design lock (implementing)
 
-Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) — skip order + freeze **implemented** (Step **8.9**); **review UI** is one list (Step **8.15**). Manage sidebar topology: [`assets/UI-design-mockup.png`](../assets/UI-design-mockup.png) + 8.12 Scrutiny (**COMPLETE**). Steps **8.13**–**8.15** **COMPLETE**. Phase **8.5** **COMPLETE**. Living **NEXT = Step 8.6.1 P2**. P13 already copies a pre-built tar into OCIR. Developer Docker Desktop pre-build is OK; users must not need Docker. Do not start 9.1.
+Pack import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) — skip order + freeze **implemented** (Step **8.9**); **review UI** is one list (Step **8.15**). Manage sidebar topology: [`assets/UI-design-mockup.png`](../assets/UI-design-mockup.png) + 8.12 Scrutiny (**COMPLETE**). Steps **8.13**–**8.15** **COMPLETE**. Phase **8.5** **COMPLETE**. Step **8.6.1** **COMPLETE**. Do not start 9.1 until the operator unblocks it.
 
 ## Completed recently
 
+- **2026-08-27** — Step **8.6.1 P2 DONE** (TESTING OCIR login proven; IAM name + identity domain; copy without Docker; digest match; synthetic ACTUAL VM1 only). Plan **COMPLETE**. Phase **8.6** **DONE**. Living **NEXT = 9.1** **blocked**. Do not start 9.1 until asked.
 - **2026-08-27** — Step **8.6.1 P1 DONE** (OCIR username derived from namespace + `~/.oci` user; Deploy/repair digest converge; Guide + developer recipe). Living **NEXT = P2** (TESTING user-copy verify). Do not start 9.1.
 - **2026-08-27** — Step **8.6.1** plan rewritten: developer Docker Desktop pre-build OK; users must not need Docker; GitHub Actions dropped. Living **NEXT = P1** (username + digest + Guide). Do not start 9.1.
 - **2026-08-27** — Phase **8.5** **CLOSED** (8.5.3). Pass 3 triage **skipped**. S0-01 Nit **parked OK** (operator: intended overlay design, not a product bug). Living **NEXT = 8.6.1 P1**. Do not start 9.1.

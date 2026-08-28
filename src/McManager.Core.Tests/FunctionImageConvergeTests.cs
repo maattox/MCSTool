@@ -8,11 +8,35 @@ namespace McManager.Core.Tests;
 public sealed class FunctionImageConvergeTests
 {
     [Fact]
-    public void Username_derives_namespace_slash_user()
+    public void Username_derives_namespace_domain_iam_name()
+    {
+        var result = OcirUsername.Derive("idbxxxexample", "alice@example.com");
+        Assert.True(result.Succeeded, result.Error);
+        Assert.Equal("idbxxxexample/Default/alice@example.com", result.Value);
+    }
+
+    [Fact]
+    public void Username_classic_two_part_when_domain_blank()
+    {
+        var result = OcirUsername.Derive("idbxxxexample", "alice", identityDomain: "");
+        Assert.True(result.Succeeded, result.Error);
+        Assert.Equal("idbxxxexample/alice", result.Value);
+    }
+
+    [Fact]
+    public void Username_uses_listed_identity_domain()
+    {
+        var result = OcirUsername.Derive("ns", "alice", identityDomain: "Corp");
+        Assert.True(result.Succeeded, result.Error);
+        Assert.Equal("ns/Corp/alice", result.Value);
+    }
+
+    [Fact]
+    public void Username_rejects_user_ocid()
     {
         var result = OcirUsername.Derive("idbxxxexample", "ocid1.user.oc1..example");
-        Assert.True(result.Succeeded, result.Error);
-        Assert.Equal("idbxxxexample/ocid1.user.oc1..example", result.Value);
+        Assert.False(result.Succeeded);
+        Assert.Contains("not the ~/.oci user= OCID", result.Error, StringComparison.Ordinal);
     }
 
     [Theory]

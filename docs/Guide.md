@@ -100,7 +100,7 @@ Official reference: [Getting an Auth Token](https://docs.oracle.com/en-us/iaas/C
 
 Each user may have at most **two** Auth Tokens. If you lose it, generate a new one.
 
-**If a pre-built ARM image is present:** Docker is not required; Setup copies it. **If it is missing** (typical from-source checkout without `artifacts/`): Setup still tries to **build** with Docker on this PC and skips if Docker is not running. The Windows installer will ship the tarball. Auth Token is required for the copy either way. Setup derives the Oracle Container Registry login from your Object Storage namespace plus the `user=` line in `~/.oci/config` (an env override exists only as an escape hatch). Skipping the token skips Function+Events; the budget email can still exist.
+**If a pre-built ARM image is present:** Docker is not required; Setup copies it. **If it is missing** (typical from-source checkout without `artifacts/`): Setup still tries to **build** with Docker on this PC and skips if Docker is not running. The Windows installer will ship the tarball. Auth Token is required for the copy either way. Setup derives the Oracle Container Registry login as `{Object Storage namespace}/{identity domain}/{IAM user name}` (the Console username, often an email — not the `user=` OCID in `~/.oci/config`). An env override exists only as an escape hatch. Skipping the token skips Function+Events; the budget email can still exist.
 
 ---
 

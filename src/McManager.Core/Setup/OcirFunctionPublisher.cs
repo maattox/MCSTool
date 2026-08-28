@@ -69,18 +69,13 @@ public sealed class OcirFunctionPublisher : IFunctionImagePublisher
                 "Region or Object Storage namespace missing; cannot form OCIR image.");
         }
 
-        var ocirUser = OcirUsername.Resolve(ns, OciConfigProfiles.TryGetValue(state.OciProfile, "user"));
+        var ocirUser = await ResolveLoginAsync(ns, state, log, cancellationToken).ConfigureAwait(false);
         if (!ocirUser.Succeeded || string.IsNullOrWhiteSpace(ocirUser.Value))
         {
             return ServiceResult<FunctionImagePublishResult>.Fail(
                 ocirUser.Error
-                ?? "Could not derive OCIR username from Object Storage namespace + ~/.oci user=. Function/Events stay skipped.");
+                ?? "Could not derive OCIR username. Function/Events stay skipped.");
         }
-
-        if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(OcirUsername.EnvVar)))
-            log?.Report("OCIR login user: " + OcirUsername.EnvVar + " override.");
-        else
-            log?.Report("OCIR login user derived from Object Storage namespace + ~/.oci user=.");
 
         var host = $"{region}.ocir.io";
         var image = $"{host}/{ns}/{ImageRepository}:{ImageTag}";
@@ -184,6 +179,40 @@ public sealed class OcirFunctionPublisher : IFunctionImagePublisher
         string.IsNullOrWhiteSpace(artifactPath)
             ? "[dry-run] OCIR push skipped (no pre-built artifact; would docker buildx)."
             : "[dry-run] would copy pre-built Function image into OCIR (Docker not required): " + artifactPath;
+
+    private static async Task<ServiceResult<string>> ResolveLoginAsync(
+        string ns,
+        SetupWizardState state,
+        IProgress<string>? log,
+        CancellationToken cancellationToken)
+    {
+        var env = Environment.GetEnvironmentVariable(OcirUsername.EnvVar);
+        if (!string.IsNullOrWhiteSpace(env))
+        {
+            log?.Report("OCIR login user: " + OcirUsername.EnvVar + " override.");
+            return ServiceResult<string>.Ok(env.Trim());
+        }
+
+        var looked = await OcirUsernameLookup.LookupAsync(state, log, cancellationToken)
+            .ConfigureAwait(false);
+        if (!looked.Succeeded || looked.Value is null)
+        {
+            return ServiceResult<string>.Fail(
+                looked.Error
+                ?? "Could not resolve IAM user name for OCIR login. Function/Events stay skipped.");
+        }
+
+        var derived = OcirUsername.Derive(ns, looked.Value.IamUserName, looked.Value.IdentityDomain);
+        if (derived.Succeeded)
+        {
+            log?.Report(
+                string.IsNullOrWhiteSpace(looked.Value.IdentityDomain)
+                    ? "OCIR login user derived as {namespace}/{IAM user name}."
+                    : "OCIR login user derived as {namespace}/{identity-domain}/{IAM user name}.");
+        }
+
+        return derived;
+    }
 
     internal static string SkipNoArtifactNoDocker(bool fnPresent) =>
         fnPresent
