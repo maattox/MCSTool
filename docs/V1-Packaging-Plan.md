@@ -43,15 +43,15 @@ None. P1–P3 share publish layout and Hybrid csproj. P4 reads the same version 
 
 | ID | Title | Status | Parallel | Cursor |
 |----|-------|--------|----------|--------|
-| P1 | Publish layout: product tree next to the exe | **NEXT** | SEQUENTIAL — ProductPaths + Hybrid publish | agent |
-| P2 | OpenTofu on a clean PC (pinned download) | TODO | SEQUENTIAL — needs P1 layout; Setup path | agent |
+| P1 | Publish layout: product tree next to the exe | **DONE** | SEQUENTIAL — ProductPaths + Hybrid publish | agent |
+| P2 | OpenTofu on a clean PC (pinned download) | **NEXT** | SEQUENTIAL — needs P1 layout; Setup path | agent |
 | P3 | Windows installer (Inno) + Function tar + Release recipe | TODO | SEQUENTIAL — wraps P1 output | agent |
 | P4 | GitHub Releases update check | TODO | SEQUENTIAL — Hybrid launch + settings toggle | agent |
 | P5 | Guide + README v1 pass | TODO | SEQUENTIAL — docs after P1–P4 exist | agent |
 | P6 | Closed beta / dogfood | TODO | SEQUENTIAL — operator-led; installer preferred | either |
 | P7 | V1 exit review | TODO | SEQUENTIAL — operator declares ready | either |
 
-**Live NEXT:** [`NEXT.md`](NEXT.md) → **P1**.
+**Live NEXT:** [`NEXT.md`](NEXT.md) → **P2**.
 
 ---
 
@@ -135,7 +135,7 @@ Unauthenticated GitHub API is enough (~60 req/hr/IP). The shipped app must **not
 
 ## P1 — Publish layout: product tree next to the exe
 
-**Status:** NEXT  
+**Status:** DONE  
 **Parallel:** SEQUENTIAL — ProductPaths + Hybrid publish  
 **Cursor mode:** agent
 
@@ -163,13 +163,13 @@ Unauthenticated GitHub API is enough (~60 req/hr/IP). The shipped app must **not
 
 **Done when:** A published folder is a usable product root (no repo checkout). Function tar copies when present. No installer yet.
 
-**Changelog:** *(empty)*
+**Changelog:** 2026-08-27 — Hybrid `dotnet publish -r win-x64 --self-contained` copies `infra/` (no `.terraform` / tfstate / filled `terraform.tfvars`), `onbox/mcmgr/`, `door_vm/`, `vm_agent/`, `functions/shutdown_vm/` next to the exe. Function tar copies from gitignored `artifacts/` when present. `ProductPaths` treats that folder as a product root (no git checkout). Living **NEXT = P2**.
 
 ---
 
 ## P2 — OpenTofu on a clean PC (pinned download)
 
-**Status:** TODO  
+**Status:** NEXT  
 **Parallel:** SEQUENTIAL — Setup uses the published layout from P1  
 **Cursor mode:** agent
 
@@ -353,4 +353,5 @@ Unauthenticated GitHub API is enough (~60 req/hr/IP). The shipped app must **not
 
 | Date | Note |
 |------|------|
+| 2026-08-27 | **P1 DONE** (publish layout: product tree + optional Function tar next to the exe). Living **NEXT = P2** (pinned OpenTofu download). Do not start P3. |
 | 2026-08-27 | Created (docs only). Operator unblocked Phase 9. **NEXT = P1** (publish layout). GitHub Actions out; Inno + prompt-on-Release; tofu pinned download; signing deferred. |

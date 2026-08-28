@@ -19,34 +19,62 @@ public static class ProductPaths
     {
         foreach (var start in CandidateStarts())
         {
-            var dir = new DirectoryInfo(start);
-            while (dir is not null)
-            {
-                if (File.Exists(Path.Combine(dir.FullName, "config.local.example.json"))
-                    || Directory.Exists(Path.Combine(dir.FullName, "infra")))
-                {
-                    return dir.FullName;
-                }
-
-                dir = dir.Parent;
-            }
+            var found = FindProductRepoRootFrom(start);
+            if (found is not null)
+                return found;
         }
 
         return null;
     }
 
-    public static string? FindInfraDirectory()
+    /// <summary>
+    /// Walks from <paramref name="start"/> looking for a product root
+    /// (<c>infra/</c> or <c>config.local.example.json</c>). A published folder
+    /// with those trees next to the exe is a root; no git checkout required.
+    /// </summary>
+    internal static string? FindProductRepoRootFrom(string start)
     {
-        var root = FindProductRepoRoot();
+        if (string.IsNullOrWhiteSpace(start))
+            return null;
+
+        DirectoryInfo? dir;
+        try
+        {
+            dir = new DirectoryInfo(start);
+        }
+        catch (Exception ex) when (ex is ArgumentException or IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+
+        while (dir is not null)
+        {
+            if (File.Exists(Path.Combine(dir.FullName, "config.local.example.json"))
+                || Directory.Exists(Path.Combine(dir.FullName, "infra")))
+            {
+                return dir.FullName;
+            }
+
+            dir = dir.Parent;
+        }
+
+        return null;
+    }
+
+    public static string? FindInfraDirectory() => InfraDirectoryAt(FindProductRepoRoot());
+
+    internal static string? InfraDirectoryAt(string? root)
+    {
         if (root is null)
             return null;
         var infra = Path.Combine(root, "infra");
         return File.Exists(Path.Combine(infra, "main.tf")) ? infra : null;
     }
 
-    public static string? FindOnboxDirectory()
+    public static string? FindOnboxDirectory() => OnboxDirectoryAt(FindProductRepoRoot());
+
+    internal static string? OnboxDirectoryAt(string? root)
     {
-        var root = FindProductRepoRoot();
         if (root is null)
             return null;
         var onbox = Path.Combine(root, "onbox", "mcmgr");
@@ -64,27 +92,30 @@ public static class ProductPaths
         return null;
     }
 
-    public static string? FindDoorVmDirectory()
+    public static string? FindDoorVmDirectory() => DoorVmDirectoryAt(FindProductRepoRoot());
+
+    internal static string? DoorVmDirectoryAt(string? root)
     {
-        var root = FindProductRepoRoot();
         if (root is null)
             return null;
         var door = Path.Combine(root, "door_vm");
         return File.Exists(Path.Combine(door, "Makefile")) ? door : null;
     }
 
-    public static string? FindVmAgentDirectory()
+    public static string? FindVmAgentDirectory() => VmAgentDirectoryAt(FindProductRepoRoot());
+
+    internal static string? VmAgentDirectoryAt(string? root)
     {
-        var root = FindProductRepoRoot();
         if (root is null)
             return null;
         var agent = Path.Combine(root, "vm_agent");
         return File.Exists(Path.Combine(agent, "install.sh")) ? agent : null;
     }
 
-    public static string? FindFunctionDirectory()
+    public static string? FindFunctionDirectory() => FunctionDirectoryAt(FindProductRepoRoot());
+
+    internal static string? FunctionDirectoryAt(string? root)
     {
-        var root = FindProductRepoRoot();
         if (root is null)
             return null;
         var fn = Path.Combine(root, "functions", "shutdown_vm");

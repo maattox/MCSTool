@@ -10,6 +10,9 @@
     <UseWPF>true</UseWPF>
     <Version>0.1.0</Version>
     <Product>MC Manager</Product>
+    <!-- Ship layout: `dotnet publish -r win-x64` is self-contained. `dotnet run` stays framework-dependent. -->
+    <SelfContained Condition="'$(RuntimeIdentifier)' == 'win-x64'">true</SelfContained>
+    <McManagerRepoRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\..'))</McManagerRepoRoot>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,5 +24,47 @@
   <ItemGroup>
     <ProjectReference Include="..\McManager.Core\McManager.Core.csproj" />
   </ItemGroup>
+
+  <!-- Product trees next to the exe so ProductPaths resolves without a git checkout. Not CopyToOutputDirectory: `dotnet run` still walks up to the repo. -->
+  <Target Name="CopyProductTreeToPublishDir" AfterTargets="Publish">
+    <PropertyGroup>
+      <_ProductPublishDir>$([MSBuild]::EnsureTrailingSlash('$(PublishDir)'))</_ProductPublishDir>
+      <_FunctionImageTar>mcmgr-fn-softstop-linux-arm64.tar</_FunctionImageTar>
+    </PropertyGroup>
+    <ItemGroup>
+      <_ProductInfra Include="$(McManagerRepoRoot)\infra\**\*"
+                     Exclude="$(McManagerRepoRoot)\infra\.terraform\**\*;$(McManagerRepoRoot)\infra\**\.terraform\**\*;$(McManagerRepoRoot)\infra\**\*.tfstate*;$(McManagerRepoRoot)\infra\**\terraform.tfvars" />
+      <_ProductOnbox Include="$(McManagerRepoRoot)\onbox\mcmgr\**\*"
+                     Exclude="$(McManagerRepoRoot)\onbox\mcmgr\**\__pycache__\**\*;$(McManagerRepoRoot)\onbox\mcmgr\**\*.pyc" />
+      <_ProductDoor Include="$(McManagerRepoRoot)\door_vm\**\*"
+                    Exclude="$(McManagerRepoRoot)\door_vm\build\**\*" />
+      <_ProductAgent Include="$(McManagerRepoRoot)\vm_agent\**\*"
+                     Exclude="$(McManagerRepoRoot)\vm_agent\**\__pycache__\**\*;$(McManagerRepoRoot)\vm_agent\**\*.pyc" />
+      <_ProductFn Include="$(McManagerRepoRoot)\functions\shutdown_vm\**\*"
+                  Exclude="$(McManagerRepoRoot)\functions\shutdown_vm\**\__pycache__\**\*;$(McManagerRepoRoot)\functions\shutdown_vm\**\*.pyc" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_ProductInfra)"
+          DestinationFiles="@(_ProductInfra->'$(_ProductPublishDir)infra\%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(_ProductOnbox)"
+          DestinationFiles="@(_ProductOnbox->'$(_ProductPublishDir)onbox\mcmgr\%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(_ProductDoor)"
+          DestinationFiles="@(_ProductDoor->'$(_ProductPublishDir)door_vm\%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(_ProductAgent)"
+          DestinationFiles="@(_ProductAgent->'$(_ProductPublishDir)vm_agent\%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(_ProductFn)"
+          DestinationFiles="@(_ProductFn->'$(_ProductPublishDir)functions\shutdown_vm\%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(McManagerRepoRoot)\artifacts\$(_FunctionImageTar)"
+          DestinationFolder="$(_ProductPublishDir)"
+          SkipUnchangedFiles="true"
+          Condition="Exists('$(McManagerRepoRoot)\artifacts\$(_FunctionImageTar)')" />
+    <Message Importance="high"
+             Text="Function image tar not at $(McManagerRepoRoot)\artifacts\$(_FunctionImageTar); publish continues without it. The installer pack (P3) will refuse to ship without this file."
+             Condition="!Exists('$(McManagerRepoRoot)\artifacts\$(_FunctionImageTar)')" />
+  </Target>
 
 </Project>

@@ -116,7 +116,7 @@ dotnet build src\McManager.slnx
 dotnet run --project src\McManager.Hybrid
 ```
 
-Or open `src\McManager.slnx` in Visual Studio and run **McManager.Hybrid**.
+Or open `src\McManager.slnx` in Visual Studio and run **McManager.Hybrid**. Developers packaging a folder (no installer yet): `dotnet publish src\McManager.Hybrid -c Release -r win-x64 --self-contained` — the output is a product root (`infra/` and on-box trees sit next to the exe; the Function tar copies when `artifacts\mcmgr-fn-softstop-linux-arm64.tar` exists).
 
 ---
 
