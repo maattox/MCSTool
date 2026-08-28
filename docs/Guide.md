@@ -100,7 +100,7 @@ Official reference: [Getting an Auth Token](https://docs.oracle.com/en-us/iaas/C
 
 Each user may have at most **two** Auth Tokens. If you lose it, generate a new one.
 
-**If a pre-built ARM image is present:** Docker is not required; Setup copies it. **If it is missing** (typical from-source checkout without `artifacts/`): Setup still tries to **build** with Docker on this PC and skips if Docker is not running. The Windows installer will ship the tarball. Auth Token is required for the copy either way. `MCMANAGER_OCIR_USERNAME` (`<namespace>/<username>`) is still required until [Step 8.6.1](V1-Implementation-Plan.md#step-861--pre-built-arm-image--setup-copy-into-ocir) derives it.
+**If a pre-built ARM image is present:** Docker is not required; Setup copies it. **If it is missing** (typical from-source checkout without `artifacts/`): Setup still tries to **build** with Docker on this PC and skips if Docker is not running. The Windows installer will ship the tarball. Auth Token is required for the copy either way. Setup derives the Oracle Container Registry login from your Object Storage namespace plus the `user=` line in `~/.oci/config` (an env override exists only as an escape hatch). Skipping the token skips Function+Events; the budget email can still exist.
 
 ---
 
@@ -147,9 +147,9 @@ Walk the wizard. Pages are short; hover the **info (i)** next to a label for the
 
 Deploy creates the compartment, network, reserved play IP, game VM, doorbell VM, shared storage, IAM, and (when the Auth Token is present) the $1 budget Function, then installs the chosen Default Vanilla, Paper, or Modded (loader + server-side mods) server on the game VM. It can take a while. Leave the app open until the log shows success.
 
-When Deploy **succeeds**, Setup shows **Deployment Complete** and the **reserved play IP** friends should use, with a **Copy** button. Click **Close** (footer) to continue to the Manager app. The deploy log stays on that page, collapsed under **Deploy log**. Reopening a finished Setup from **Advanced → Deploy / repair** shows the same complete page — do not click Deploy again.
+When Deploy **succeeds**, Setup shows **Deployment Complete** and the **reserved play IP** friends should use, with a **Copy** button. Click **Close** (footer) to continue to the Manager app. The deploy log stays on that page, collapsed under **Deploy log**. Reopening from **Advanced → Deploy / repair** shows **Review and deploy** again so you can re-run guest repair and copy a **newer** spend-brake image when the bundled tarball’s digest changed.
 
-The Function image is copied into your OCIR from a **pre-built ARM** tarball when present (next to the app or gitignored `artifacts/mcmgr-fn-softstop-linux-arm64.tar`). Docker is not required for that copy. Without the artifact, from-source Deploy may log that the Function was skipped if Docker is missing. The Windows installer will ship the tarball.
+The Function image is copied into your OCIR from a **pre-built ARM** tarball when present (next to the app or gitignored `artifacts/mcmgr-fn-softstop-linux-arm64.tar`). Docker is not required for that copy. Deploy / repair compares that tarball to the live Function image and copies only when the digest is missing or different. Without the artifact, from-source Deploy may log that the Function was skipped if Docker is missing. The Windows installer will ship the tarball.
 
 ---
 

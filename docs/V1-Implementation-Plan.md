@@ -187,11 +187,11 @@ Read [`docs/NEXT.md`](NEXT.md) and run `/next-step` in a fresh Agent chat. Workf
 | **8.14** | Manage UI pass 3 (zoom lock, equal power, pins, Overview) | **DONE** — [`V1-Manage-UI-Pass-3-Plan.md`](V1-Manage-UI-Pass-3-Plan.md) P1–P4; flush chrome / denser gutters reverted 2026-08-26 |
 | **8.15** | Change pack UX (single-list review, compactness, overlay dock, stopped-VM pick) | **DONE** — [`V1-Change-Pack-UX-Plan.md`](V1-Change-Pack-UX-Plan.md) P1–P4 |
 | **8.5** | Pre-packaging QA (catalog + passes + bug-fix plans)        | **DONE** — Pass 3 filled; triage skipped; S0-01 Nit parked OK |
-| **8.6** | Pre-built ARM spend-brake Function image (**users** no Docker) | **NEXT** — [`V1-Function-Image-Plan.md`](V1-Function-Image-Plan.md) **P1**; **required before 9.1** |
+| **8.6** | Pre-built ARM spend-brake Function image (**users** no Docker) | **NEXT** — [`V1-Function-Image-Plan.md`](V1-Function-Image-Plan.md) **P2**; **required before 9.1** |
 | **9**   | Packaging, updates, launch (old MVP Phase 8–9)             | TODO — do not start until Phase 8.5 **and** Step **8.6.1** are DONE |
 
 
-**Current NEXT step:** See [`docs/NEXT.md`](NEXT.md) — Step **8.6.1 P1** (username + digest + Guide). Do **not** start **9.1**.
+**Current NEXT step:** See [`docs/NEXT.md`](NEXT.md) — Step **8.6.1 P2** (TESTING user-copy verify). Do **not** start **9.1**.
 
 ---
 
@@ -1681,7 +1681,7 @@ This phase is **required before any official release**. Do **not** start Step **
 
 ### Step 8.6.1 — Pre-built ARM image + Setup copy into OCIR
 
-**Status:** NEXT (living: [`V1-Function-Image-Plan.md`](V1-Function-Image-Plan.md) **P1**)  
+**Status:** NEXT (living: [`V1-Function-Image-Plan.md`](V1-Function-Image-Plan.md) **P2**)  
 **Depends on:** Step 8.5.3 (QA exit). **Met.** P13 already copies a pre-built tar into OCIR. Developer Docker Desktop pre-build is OK.
 
 **Read first**
@@ -1707,7 +1707,7 @@ See the living-plan **P** section. User path: no Docker/`fn`/Cloud Shell/`MCMANA
 
 **Done when:** Living plan P1–P2 **DONE**. User path no longer requires Docker Desktop / `fn` / Cloud Shell / `MCMANAGER_OCIR_USERNAME`. Repair converges image digest. Guide matches. **Do not start 9.1** until this is DONE.
 
-**Changelog:** 2026-08-27 — Plan rewritten: developer Docker Desktop OK; users must not need Docker; GitHub Actions dropped. Living **NEXT = P1** (username + digest + Guide). 2026-08-27 — Living plan created. P13 copy path is in.
+**Changelog:** 2026-08-27 — **P1 DONE** (OCIR username derived; digest converge on Deploy/repair; Guide + developer recipe). Living **NEXT = P2**. Do not start 9.1. 2026-08-27 — Plan rewritten: developer Docker Desktop OK; users must not need Docker; GitHub Actions dropped. Living **NEXT = P1** (username + digest + Guide). 2026-08-27 — Living plan created. P13 copy path is in.
 
 ---
 

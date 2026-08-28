@@ -393,6 +393,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         IsLastStep
         && !IsBusy
         && !CapacityWaiting
+        && IsDeployLocked
         && string.Equals(ApplyStage, SetupApplyStage.ConfigWritten, StringComparison.Ordinal);
 
     public bool HasReservedPlayIp => !string.IsNullOrWhiteSpace(ReservedPlayIp);
@@ -1706,10 +1707,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             : state.ApplyStage;
         _functionImage = state.FunctionImage ?? "";
         if (string.Equals(ApplyStage, SetupApplyStage.ConfigWritten, StringComparison.Ordinal))
-        {
-            IsDeployLocked = true;
             CurrentStep = SetupWizardState.StepCount - 1;
-        }
         RefreshReservedPlayIp();
     }
 

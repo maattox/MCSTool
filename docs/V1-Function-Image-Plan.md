@@ -1,6 +1,6 @@
 # V1 Function image (living)
 
-**Status:** Living. Created 2026-08-27 (docs only). **Rewritten** 2026-08-27 — no GitHub Actions. **Live NEXT:** [`NEXT.md`](NEXT.md) → Step **8.6.1** **P1**.  
+**Status:** Living. Created 2026-08-27 (docs only). **Rewritten** 2026-08-27 — no GitHub Actions. **Live NEXT:** [`NEXT.md`](NEXT.md) → Step **8.6.1** **P2**.  
 **Parent:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) Phase **8.6** / Step **8.6.1**.  
 **Why now:** Phase **8.5** exited. Remaining product path: derive OCIR username, Deploy/repair digest converge, Guide, TESTING verify that **users** copy without Docker. Step **8.4 P13** already copies a pre-built tar into OCIR. The operator pre-builds that tar with **Docker Desktop** (already done for TESTING: gitignored `artifacts/mcmgr-fn-softstop-linux-arm64.tar`).
 
@@ -43,8 +43,8 @@ None. **P2** needs **P1** code and owns TESTING. **SEQUENTIAL.**
 
 | ID | Title | Status | Parallel | Cursor |
 |----|-------|--------|----------|--------|
-| P1 | OCIR username + digest converge + Guide | **NEXT** | SEQUENTIAL — Core + Guide | agent |
-| P2 | TESTING verify without Docker (user copy path) | **TODO** | SEQUENTIAL — owns TESTING; needs P1 | agent |
+| P1 | OCIR username + digest converge + Guide | **DONE** | SEQUENTIAL — Core + Guide | agent |
+| P2 | TESTING verify without Docker (user copy path) | **NEXT** | SEQUENTIAL — owns TESTING; needs P1 | agent |
 
 ---
 
@@ -55,8 +55,8 @@ None. **P2** needs **P1** code and owns TESTING. **SEQUENTIAL.**
 - **Developer pre-build (DONE for TESTING):** P12 produced the gitignored ARM tar with Docker Desktop + `buildx`. The operator **may** rebuild that way whenever `functions/shutdown_vm/` changes. Do not commit the tar. **9.1** bundles it with the installer.
 - **Staging / env-rewrite:** `OcirFunctionPublisher.StageFunctionSources` copies `func.py` / `requirements.txt` / `func.yaml`, rewrites `INSTANCE_OCIDS` to env-driven, writes the FDK Python **3.12** Dockerfile. Function config (VM1 OCID, bucket, lock key) stays **tofu-owned**. `func.yaml` **0.0.12**.
 - **OCIR coordinates:** `{region}.ocir.io/{namespace}/mcmgr-fn/softstop:setup`. Repo/app names stay `mcmgr-fn/softstop` / `mcmgr-fn-app`.
-- **Username gap:** `MCMANAGER_OCIR_USERNAME` (`<namespace>/<username>`) is still required. `OciConfigProfile.User` already parses `user=` from `~/.oci/config`. Object Storage namespace is on tofu outputs.
-- **Skip-stage gap:** `SetupDeployOrchestrator` only runs the Function stage when `apply_stage` has **not** reached `function`. A skipped or stale push still marks Function complete. Deploy / repair does **not** compare bundled digest vs live image.
+- **Username:** Setup derives OCIR login as `{object-storage-namespace}/{ ~/.oci user= }`. `MCMANAGER_OCIR_USERNAME` is an optional override, not a requirement. Auth Token (Windows Credential Manager `McManager/ocir`) still required.
+- **Digest converge (P1):** Deploy / repair copies when a bundled tar exists and its digest differs from the live OCIR tag (including `apply_stage` already `function` / `config_written`). A skipped push does **not** persist the Function stage.
 - **TESTING fill-in (P12):** Function + Events already exist on TESTING (OCI CLI; tofu `function_image` may still be empty). Do **not** `tofu apply` a second Function/app. Synthetic invoke SoftStops **VM1 only** + lock PUT; door stays RUNNING.
 - **crane / oras / GitHub Actions:** not required. C# registry push is the product copy client.
 
@@ -99,7 +99,7 @@ Locked by the operator 2026-08-27. Do not reopen in an implementation chat.
 
 ## P1 — OCIR username + digest converge + Guide
 
-**Status:** NEXT  
+**Status:** DONE  
 **Parallel:** SEQUENTIAL — Core + Guide  
 **Cursor mode:** agent
 
@@ -128,13 +128,13 @@ Locked by the operator 2026-08-27. Do not reopen in an implementation chat.
 
 **Done when:** Product Setup/repair copies without `MCMANAGER_OCIR_USERNAME` and without Docker when the tar is present, and converges digest. Guide + developer recipe match. **NEXT = P2**.
 
-**Changelog:** *(empty)*
+**Changelog:** 2026-08-27 — Derived OCIR username from Object Storage namespace + `~/.oci` `user=`; `MCMANAGER_OCIR_USERNAME` is an optional override. Deploy / repair copies when the bundled tar digest differs even if `apply_stage` is already `function` / `config_written`; skipped push no longer marks Function complete. Guide + Local-Config + developer rebuild recipe. **NEXT = P2**.
 
 ---
 
 ## P2 — TESTING verify without Docker (user copy path)
 
-**Status:** TODO  
+**Status:** NEXT  
 **Parallel:** SEQUENTIAL — owns TESTING; needs P1  
 **Cursor mode:** agent
 
@@ -176,5 +176,6 @@ When **P1–P2** are **DONE**:
 
 | Date | Note |
 |------|------|
+| 2026-08-27 | **P1 DONE.** Derived OCIR username; digest converge on Deploy/repair; Guide + developer recipe. Living **NEXT = P2**. Do not start 9.1. |
 | 2026-08-27 | **Rewritten.** Developer Docker Desktop pre-build is OK; **users** must not need Docker. Dropped GitHub Actions (old P1). Living **NEXT = P1** (username + digest + Guide). **P2** = TESTING user-copy verify. Do not start 9.1. |
 | 2026-08-27 | **Created** (docs only). Phase **8.5** closed. Original P1 was GitHub Actions (superseded the same day). |

@@ -42,15 +42,18 @@ public sealed class SetupDeployOrchestrator
 {
     private readonly IOpenTofuRunner _tofu;
     private readonly SetupBootstrapService _bootstrap;
+    private readonly IFunctionImagePublisher _functionImages;
     private readonly bool _dryRun;
 
     public SetupDeployOrchestrator(
         IOpenTofuRunner? tofu = null,
         SetupBootstrapService? bootstrap = null,
-        bool? dryRun = null)
+        bool? dryRun = null,
+        IFunctionImagePublisher? functionImages = null)
     {
         _dryRun = dryRun ?? ProductPaths.IsTofuDryRun();
         _bootstrap = bootstrap ?? new SetupBootstrapService();
+        _functionImages = functionImages ?? new OcirFunctionPublisher();
         if (tofu is not null)
         {
             _tofu = tofu;
@@ -177,6 +180,7 @@ public sealed class SetupDeployOrchestrator
                 log?.Report($"[dry-run] Game: {SetupVanillaFlavor.PlanLabel(state.VanillaFlavor)} {state.MinecraftVersion}.");
             }
             log?.Report("[dry-run] apply_stage left unchanged so a later real Deploy still runs tofu apply.");
+            log?.Report(OcirFunctionPublisher.DryRunMessage(FunctionImageArtifact.Find()));
             ReportProgress(
                 progress,
                 SetupApplyStage.ConfigWritten,
@@ -303,33 +307,28 @@ public sealed class SetupDeployOrchestrator
         }
 
         string? fnSkip = null;
-        if (!SetupApplyStage.Reached(stage, SetupApplyStage.Function))
+        var artifact = FunctionImageArtifact.Find();
+        if (FunctionImageDeployer.ShouldAttempt(stage, artifact))
         {
             ReportProgress(progress, SetupApplyStage.Function, "Spend-brake Function…");
-            var push = await OcirFunctionPublisher.TryPushAsync(outputs, state, log, cancellationToken)
+            var fn = await FunctionImageDeployer.RunAsync(
+                    _functionImages,
+                    _tofu,
+                    infra,
+                    workspace,
+                    state,
+                    outputs,
+                    log,
+                    cancellationToken)
                 .ConfigureAwait(false);
-            if (push.Succeeded && !string.IsNullOrWhiteSpace(push.Value))
+            fnSkip = fn.SkipReason;
+            if (fnSkip is null && !SetupApplyStage.Reached(stage, SetupApplyStage.Function))
             {
-                state.FunctionImage = push.Value;
-                var rewrite = TfvarsWriter.Write(workspace, state, push.Value);
-                if (!rewrite.Succeeded)
-                    return SetupDeployResult.Fail(stage, rewrite.Error ?? "tfvars rewrite failed.");
-                var apply2 = await _tofu.ApplyAsync(infra, workspace, log, cancellationToken).ConfigureAwait(false);
-                if (!apply2.Succeeded)
-                {
-                    fnSkip = "Function image pushed but second tofu apply failed: " + apply2.Output;
-                    log?.Report(fnSkip);
-                }
-            }
-            else
-            {
-                fnSkip = push.Error ?? "Function image skipped.";
-                log?.Report(fnSkip);
+                stage = SetupApplyStage.Function;
+                PersistStage(state, stage);
             }
 
-            stage = SetupApplyStage.Function;
-            PersistStage(state, stage);
-            ReportProgress(progress, stage, complete: true);
+            ReportProgress(progress, SetupApplyStage.Function, complete: true);
         }
 
         ReportProgress(progress, SetupApplyStage.ConfigWritten, "Saving local config…");
@@ -347,7 +346,8 @@ public sealed class SetupDeployOrchestrator
             "Setup finished. Local config written. "
             + (fnSkip is null
                 ? "Function image applied."
-                : "Function image skipped or second apply failed — see the deploy log.")
+                : "Function image skipped or second apply failed — see the deploy log. "
+                  + "Deploy / repair will retry when an Auth Token and pre-built image are present.")
             + (string.IsNullOrWhiteSpace(quarantineNotice) ? "" : " " + quarantineNotice.Trim()),
             outputs,
             fnSkip);

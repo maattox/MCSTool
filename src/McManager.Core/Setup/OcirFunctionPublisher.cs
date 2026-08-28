@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Net.Http;
 using System.Text.RegularExpressions;
 using McManager.Core.Config;
 using McManager.Core.Services;
@@ -9,7 +10,7 @@ namespace McManager.Core.Setup;
 /// Best-effort OCIR push for the $1 Function. Prefers a pre-built ARM tarball (no Docker).
 /// Falls back to docker buildx. Never fails the whole Setup if Docker/token/artifact is missing.
 /// </summary>
-public static class OcirFunctionPublisher
+public sealed class OcirFunctionPublisher : IFunctionImagePublisher
 {
     public const string ImageRepository = "mcmgr-fn/softstop";
     public const string ImageTag = "setup";
@@ -31,39 +32,55 @@ public static class OcirFunctionPublisher
         ENTRYPOINT ["/python/bin/fdk", "/function/func.py", "handler"]
         """;
 
-    public static async Task<ServiceResult<string>> TryPushAsync(
+    public Task<ServiceResult<FunctionImagePublishResult>> TryPublishAsync(
         TofuApplyOutputs outputs,
         SetupWizardState state,
         IProgress<string>? log,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        TryPublishAsync(outputs, state, log, handler: null, cancellationToken);
+
+    internal static async Task<ServiceResult<FunctionImagePublishResult>> TryPublishAsync(
+        TofuApplyOutputs outputs,
+        SetupWizardState state,
+        IProgress<string>? log,
+        HttpMessageHandler? handler,
+        CancellationToken cancellationToken)
     {
         var artifact = FunctionImageArtifact.Find();
         if (ProductPaths.IsTofuDryRun())
         {
             var dry = DryRunMessage(artifact);
             log?.Report(dry);
-            return ServiceResult<string>.Fail(dry);
+            return ServiceResult<FunctionImagePublishResult>.Fail(dry);
         }
 
         if (!WindowsCredentialStore.TryRead(WindowsCredentialStore.OcirTarget, out var token)
             || string.IsNullOrWhiteSpace(token))
         {
-            return ServiceResult<string>.Fail(
+            return ServiceResult<FunctionImagePublishResult>.Fail(
                 "No Auth Token in Windows Credential Manager (McManager/ocir). Function/Events stay skipped.");
         }
 
         var region = string.IsNullOrWhiteSpace(outputs.Region) ? state.OciRegion : outputs.Region;
         var ns = outputs.ObjectStorageNamespace;
         if (string.IsNullOrWhiteSpace(region) || string.IsNullOrWhiteSpace(ns))
-            return ServiceResult<string>.Fail("Region or Object Storage namespace missing; cannot form OCIR image.");
-
-        var ocirUser = Environment.GetEnvironmentVariable("MCMANAGER_OCIR_USERNAME");
-        if (string.IsNullOrWhiteSpace(ocirUser))
         {
-            return ServiceResult<string>.Fail(
-                "Set MCMANAGER_OCIR_USERNAME to <namespace>/<username> for OCIR login. "
-                + "Function/Events stay skipped. (Deriving this from the OCI user is V1 Step 8.6.1.)");
+            return ServiceResult<FunctionImagePublishResult>.Fail(
+                "Region or Object Storage namespace missing; cannot form OCIR image.");
         }
+
+        var ocirUser = OcirUsername.Resolve(ns, OciConfigProfiles.TryGetValue(state.OciProfile, "user"));
+        if (!ocirUser.Succeeded || string.IsNullOrWhiteSpace(ocirUser.Value))
+        {
+            return ServiceResult<FunctionImagePublishResult>.Fail(
+                ocirUser.Error
+                ?? "Could not derive OCIR username from Object Storage namespace + ~/.oci user=. Function/Events stay skipped.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(OcirUsername.EnvVar)))
+            log?.Report("OCIR login user: " + OcirUsername.EnvVar + " override.");
+        else
+            log?.Report("OCIR login user derived from Object Storage namespace + ~/.oci user=.");
 
         var host = $"{region}.ocir.io";
         var image = $"{host}/{ns}/{ImageRepository}:{ImageTag}";
@@ -72,41 +89,40 @@ public static class OcirFunctionPublisher
         if (!string.IsNullOrWhiteSpace(artifact))
         {
             log?.Report("Using pre-built Function image (Docker not required): " + artifact);
-            var copied = await CopyPrebuiltAsync(
+            return await CopyPrebuiltAsync(
                 artifact,
                 host,
                 ns,
-                ocirUser,
+                ocirUser.Value,
                 token,
+                image,
                 log,
+                handler,
                 cancellationToken).ConfigureAwait(false);
-            return copied.Succeeded
-                ? ServiceResult<string>.Ok(image)
-                : ServiceResult<string>.Fail(copied.Error ?? "Pre-built Function image copy failed.");
         }
 
         var docker = FindOnPath("docker.exe") ?? FindOnPath("docker");
         var fn = FindOnPath("fn.exe") ?? FindOnPath("fn");
         if (docker is null)
         {
-            return ServiceResult<string>.Fail(SkipNoArtifactNoDocker(fn is not null));
+            return ServiceResult<FunctionImagePublishResult>.Fail(SkipNoArtifactNoDocker(fn is not null));
         }
 
         var funcDir = ProductPaths.FindFunctionDirectory();
         if (funcDir is null)
         {
-            return ServiceResult<string>.Fail(
+            return ServiceResult<FunctionImagePublishResult>.Fail(
                 "Product functions/shutdown_vm/ not found (expected OCI-mc-server/functions/shutdown_vm).");
         }
 
         var login = await RunAsync(
             docker,
-            ["login", host, "-u", ocirUser, "--password-stdin"],
+            ["login", host, "-u", ocirUser.Value, "--password-stdin"],
             token,
             log,
             cancellationToken).ConfigureAwait(false);
         if (!login.Succeeded)
-            return ServiceResult<string>.Fail("docker login failed: " + login.Output);
+            return ServiceResult<FunctionImagePublishResult>.Fail("docker login failed: " + login.Output);
 
         var staging = Path.Combine(Path.GetTempPath(), "mcmgr-fn-" + Guid.NewGuid().ToString("N")[..10]);
         try
@@ -121,7 +137,7 @@ public static class OcirFunctionPublisher
                 log,
                 cancellationToken).ConfigureAwait(false);
             if (!build.Succeeded)
-                return ServiceResult<string>.Fail("docker buildx push failed: " + build.Output);
+                return ServiceResult<FunctionImagePublishResult>.Fail("docker buildx push failed: " + build.Output);
         }
         finally
         {
@@ -137,7 +153,7 @@ public static class OcirFunctionPublisher
         }
 
         log?.Report("Pushed Function image.");
-        return ServiceResult<string>.Ok(image);
+        return ServiceResult<FunctionImagePublishResult>.Ok(new FunctionImagePublishResult { Image = image, Copied = true });
     }
 
     internal static void StageFunctionSources(string funcDir, string staging)
@@ -177,13 +193,15 @@ public static class OcirFunctionPublisher
             : "No pre-built Function image (" + FunctionImageArtifact.FileName
               + " next to the app or in artifacts/) and Docker was not found. Function/Events stay skipped.";
 
-    private static async Task<ServiceResult> CopyPrebuiltAsync(
+    private static async Task<ServiceResult<FunctionImagePublishResult>> CopyPrebuiltAsync(
         string artifactPath,
         string registryHost,
         string ns,
         string username,
         string password,
+        string image,
         IProgress<string>? log,
+        HttpMessageHandler? handler,
         CancellationToken cancellationToken)
     {
         var work = Path.Combine(Path.GetTempPath(), "mcmgr-fn-copy-" + Guid.NewGuid().ToString("N")[..10]);
@@ -192,10 +210,42 @@ public static class OcirFunctionPublisher
             Directory.CreateDirectory(work);
             var prepared = DockerArchiveFunctionImage.Prepare(artifactPath, work);
             if (!prepared.Succeeded || prepared.Value is null)
-                return ServiceResult.Fail(prepared.Error ?? "Failed to read pre-built Function image.");
+            {
+                return ServiceResult<FunctionImagePublishResult>.Fail(
+                    prepared.Error ?? "Failed to read pre-built Function image.");
+            }
 
             var repository = ns.Trim() + "/" + ImageRepository;
-            return await OcirRegistryPusher.PushAsync(
+            var bundled = prepared.Value.ManifestDigest;
+            log?.Report("Bundled Function image digest " + bundled + ".");
+            var live = await OcirRegistryPusher.TryGetManifestDigestAsync(
+                registryHost,
+                repository,
+                ImageTag,
+                username,
+                password,
+                log,
+                handler,
+                cancellationToken).ConfigureAwait(false);
+            if (!live.Succeeded)
+            {
+                return ServiceResult<FunctionImagePublishResult>.Fail(
+                    live.Error ?? "Could not read live Function image digest.");
+            }
+
+            if (!FunctionImageDigest.NeedsCopy(bundled, live.Value))
+            {
+                log?.Report("Live Function image digest matches the bundled tar; copy skipped.");
+                return ServiceResult<FunctionImagePublishResult>.Ok(
+                    new FunctionImagePublishResult { Image = image, Copied = false });
+            }
+
+            if (string.IsNullOrWhiteSpace(live.Value))
+                log?.Report("No live Function image tag (missing or Function not created yet); copying.");
+            else
+                log?.Report("Live Function image digest differs; copying bundled tar.");
+
+            var pushed = await OcirRegistryPusher.PushAsync(
                 registryHost,
                 repository,
                 ImageTag,
@@ -203,8 +253,12 @@ public static class OcirFunctionPublisher
                 password,
                 prepared.Value,
                 log,
-                handler: null,
+                handler,
                 cancellationToken).ConfigureAwait(false);
+            return pushed.Succeeded
+                ? ServiceResult<FunctionImagePublishResult>.Ok(
+                    new FunctionImagePublishResult { Image = image, Copied = true })
+                : ServiceResult<FunctionImagePublishResult>.Fail(pushed.Error ?? "Pre-built Function image copy failed.");
         }
         finally
         {

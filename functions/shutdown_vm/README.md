@@ -56,7 +56,28 @@ IAM: Functions dynamic group needs `use instance-family` (SoftStop) and **object
 | `func.yaml` | Fn project metadata (memory 256 MiB, Python 3.12) |
 | `requirements.txt` | `fdk`, `oci` |
 
-`INSTANCE_OCIDS` placeholders in git must stay placeholders. The shipped image must read `INSTANCE_OCIDS` from Function config/env (Setup’s publisher rewrites the baked list when it still builds locally). A developer rebuild for Step **8.6.1** must produce the same env-driven image.
+`INSTANCE_OCIDS` placeholders in git must stay placeholders. The shipped image must read `INSTANCE_OCIDS` from Function config/env (Setup’s publisher rewrites the baked list when it still builds locally). A developer rebuild must produce the same env-driven image (recipe below).
+
+## Developer rebuild (Docker Desktop)
+
+Users never run this. Produce the gitignored ARM tarball Setup copies into OCIR (`FunctionImageArtifact.FileName`). Do not commit the tar. Do not add GitHub Actions.
+
+From the product repo, with Docker Desktop running:
+
+1. Stage like Setup (`OcirFunctionPublisher.StageFunctionSources`): copy `func.py`, `requirements.txt`, and `func.yaml` into a temp directory; rewrite the baked `INSTANCE_OCIDS = [...]` list to read from the `INSTANCE_OCIDS` env var (skip placeholder OCIDs); write the FDK Python **3.12** Dockerfile Setup uses.
+2. Build ARM and write a docker-archive tarball (no registry push). Prefer `-o type=docker,dest=...` so a Windows/amd64 Docker Desktop does not need to `--load` arm64:
+
+```bash
+mkdir -p artifacts
+docker buildx build --platform linux/arm64 --provenance=false --sbom=false \
+  -t mcmgr-fn/softstop:setup \
+  -o type=docker,dest=artifacts/mcmgr-fn-softstop-linux-arm64.tar \
+  <staging-dir>
+```
+
+`docker save mcmgr-fn/softstop:setup -o artifacts/mcmgr-fn-softstop-linux-arm64.tar` after a `--load` is equivalent when the engine can load arm64.
+
+Setup copies that file into the user’s OCIR. `MCMANAGER_FUNCTION_IMAGE_TAR` can point at another path. Rebuild whenever `functions/shutdown_vm/` changes; Deploy / repair converges digest. Function **config** (VM1 OCID, bucket, lock key) stays tofu-owned — no rebuild.
 
 ## Tests
 
