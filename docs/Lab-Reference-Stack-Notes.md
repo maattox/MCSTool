@@ -143,7 +143,7 @@ Function stop list stays a **variable** defaulting to both VMs (lab). Whether th
 - Lab `compartment_id` on many resources pointed at a License Manager configuration data source. That is a discovery artifact. Use the real compartment OCID.
 - `are_legacy_imds_endpoints_disabled = true` is fine to keep.
 - Boot volume VPUs were `10` (balanced). Stay on default/Always Free–safe; do not add extra volumes.
-- Door and VM1 used different fault domains (FD-3 vs FD-2). Nice-to-have, not required.
+- Door and VM1 used different fault domains (FD-3 vs FD-2). Nice-to-have, not required. Product Setup no longer pins the door (`FAULT-DOMAIN-3` was causing Micro `Out of host capacity` while other FDs could still place).
 - Security List descriptions in the lab are player names (OCI Minecraft rule ownership). Keep that convention in Manager sync, not in tofu friend rules.
 
 ---

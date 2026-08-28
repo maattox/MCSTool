@@ -151,7 +151,7 @@ If `mcmgr-shared-data` is taken in the namespace, set `bucket_name` to a suffix 
 - Ubuntu **22.04** platform images via `data.oci_core_images` (no hardcoded image OCIDs)
 - Compute plugins disabled (`are_all_plugins_disabled`) to avoid log-ingest extras
 
-A1 host capacity is probed with `CreateComputeCapacityReport` before apply (no VCN required). If the AD is empty, apply is skipped. Apply-time `Out of host capacity` is still handled (Retry / 5 min auto-retry; no 1 s loop). Do not tight-loop plan/apply. VM1 does not pin a fault domain so OCI can place the A1.
+A1 host capacity is probed with `CreateComputeCapacityReport` before apply (no VCN required). If the AD is empty, apply is skipped. Apply-time `Out of host capacity` is still handled (Retry / 5 min auto-retry; no 1 s loop). Do not tight-loop plan/apply. Neither VM1 nor the door pins a fault domain (same FD is fine) so OCI can place Always Free A1 / Micro.
 
 ---
 

@@ -148,7 +148,8 @@ resource "oci_core_instance" "door" {
   compartment_id      = var.compartment_id
   display_name        = "mcmgr-door"
   shape               = "VM.Standard.E2.1.Micro"
-  fault_domain        = "FAULT-DOMAIN-3"
+  # Do not pin a fault domain: Always Free Micro is often empty in one FD.
+  # Same FD as VM1 is fine.
 
   create_vnic_details {
     assign_public_ip          = true
@@ -184,7 +185,7 @@ resource "oci_core_instance" "door" {
   }
 
   lifecycle {
-    ignore_changes = [metadata]
+    ignore_changes = [metadata, fault_domain]
 
     precondition {
       condition     = startswith(local.door_image_id, "ocid1.image.")
