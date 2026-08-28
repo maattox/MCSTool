@@ -9,7 +9,7 @@
 
 **OCI API:** follow `[OCI-API-Usage.md](OCI-API-Usage.md)` — **429** exponential backoff (≤60s), lifecycle waiters (≤30s between polls, ~20 min), list pagination, modest Object Storage chatter (~50k requests/month). Prefer Get-by-OCID from local config over chatty List discovery.
 
-**Execution order (operator 2026-08-17):** finish **v1 features** before Windows installer, GitHub Releases, public launch. **Pre-packaging QA is Phase 8.5** (catalog + passes + bug-fix plans) — do **not** start Phase 9 until 8.5 exits. **Phase 8.6** (pre-built ARM Function image copied into the user’s OCIR; **users** do not need Docker) must be **DONE** before Step **9.1** / any official release. Informal dogfood with friends (run from source) is allowed any time; it is not a plan step.
+**Execution order (operator 2026-08-17):** finish **v1 features** before Windows installer, GitHub Releases, public launch. **Pre-packaging QA (Phase 8.5) and Function-image copy (Phase 8.6) are DONE.** Operator unblocked Phase **9** on 2026-08-27 — living [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md). Informal dogfood with friends (run from source) is allowed any time; it is not a plan step.
 
 ---
 
@@ -188,10 +188,10 @@ Read [`docs/NEXT.md`](NEXT.md) and run `/next-step` in a fresh Agent chat. Workf
 | **8.15** | Change pack UX (single-list review, compactness, overlay dock, stopped-VM pick) | **DONE** — [`V1-Change-Pack-UX-Plan.md`](V1-Change-Pack-UX-Plan.md) P1–P4 |
 | **8.5** | Pre-packaging QA (catalog + passes + bug-fix plans)        | **DONE** — Pass 3 filled; triage skipped; S0-01 Nit parked OK |
 | **8.6** | Pre-built ARM spend-brake Function image (**users** no Docker) | **DONE** — [`V1-Function-Image-Plan.md`](V1-Function-Image-Plan.md) P1–P2 |
-| **9**   | Packaging, updates, launch (old MVP Phase 8–9)             | TODO — **blocked** until the operator starts Step **9.1** |
+| **9**   | Packaging, updates, launch (old MVP Phase 8–9)             | **NEXT** — [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) **P1** |
 
 
-**Current NEXT step:** See [`docs/NEXT.md`](NEXT.md) — Step **9.1** **blocked** on the operator. Do **not** start the installer until asked.
+**Current NEXT step:** See [`docs/NEXT.md`](NEXT.md) — Phase **9** / [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) **P1** (publish layout).
 
 ---
 
@@ -1715,25 +1715,32 @@ See the living-plan **P** section. User path: no Docker/`fn`/Cloud Shell/`MCMANA
 
 ## Phase 9 — Packaging, updates, launch
 
-Former MVP Phase **8–9**. Phases **1–7** are **DONE**. Phase **8** is **SKIPPED**. Phase **8.5** (pre-packaging QA) must **exit** before this phase. Step **8.6.1** (pre-built ARM Function image copied into the user’s OCIR; users do not need Docker) must be **DONE** before Step **9.1**. **Do not start Step 9.1** until [Step 8.5.3](#step-853--qa-exit) **and** [Step 8.6.1](#step-861--pre-built-arm-image--setup-copy-into-ocir) are DONE.
+Former MVP Phase **8–9**. Phases **1–7** are **DONE**. Phase **8** is **SKIPPED**. Phase **8.5** and Step **8.6.1** are **DONE**. Operator unblocked this phase **2026-08-27**. Implement **only** the living-plan section in [`NEXT.md`](NEXT.md) ([`V1-Packaging-Plan.md`](V1-Packaging-Plan.md)).
 
 ### Step 9.1 — Windows installer
 
-**Status:** TODO  
-**Depends on:** Phase 8.5 exit **and** Step **8.6.1**  
+**Status:** NEXT (living: [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) **P1**)  
+**Depends on:** Phase 8.5 exit **and** Step **8.6.1** — **Met.**
+
+**Read first**
+
+- Living plan protocol + Scrutiny + **only** the NEXT P-section
 
 **Do**
 
-- Single installer → one app (Setup integrated). Document code-signing strategy (purchase may be deferred); SmartScreen notes.  
-- Bundle (or Release-pull) the **8.6.1** ARM Function image tarball the same way `infra/` is bundled — **users** must not need Docker Desktop to finish Setup.
+Implement **only** the living-plan section marked NEXT. Constraints (do not re-open):
+
+- Single installer → one app (Setup integrated). Inno Setup 6; per-user; unsigned OK (SmartScreen notes; cert purchase deferred).
+- Bundle the **8.6.1** ARM Function tarball next to the exe the same way `infra/` is bundled — **users** must not need Docker Desktop.
+- GitHub Actions **out**. Velopack / silent apply **out**. P1 is publish layout only (no Inno yet).
 
 **Test**
 
-- Clean Windows user install; app runs; config locations documented.
+See the living-plan **P** section.
 
-**Done when:** Installer artifact builds reproducibly.
+**Done when:** Living plan P1–P3 **DONE** (publish layout, tofu download, Inno installer).
 
-**Changelog:** *(empty)*
+**Changelog:** 2026-08-27 — Unblocked. Living plan created. **NEXT = P1** (publish layout).
 
 ---
 
@@ -1741,7 +1748,7 @@ Former MVP Phase **8–9**. Phases **1–7** are **DONE**. Phase **8** is **SKIP
 
 ### Step 9.2 — GitHub Releases update check
 
-**Status:** TODO  
+**Status:** TODO (living: [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) **P4**)  
 **Depends on:** 9.1 (or can ship against `dotnet run` if the operator wants it earlier — still this step)
 
 **Do**
@@ -1763,7 +1770,7 @@ Former MVP Phase **8–9**. Phases **1–7** are **DONE**. Phase **8** is **SKIP
 
 ### Step 9.3 — Guide + README v1 pass
 
-**Status:** TODO  
+**Status:** TODO (living: [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) **P5**)  
 **Depends on:** Phases 1–7 feature work (Phase 8 skipped)
 
 **Read first**
@@ -1789,7 +1796,7 @@ Former MVP Phase **8–9**. Phases **1–7** are **DONE**. Phase **8** is **SKIP
 
 ### Step 9.4 — Closed beta / dogfood
 
-**Status:** TODO  
+**Status:** TODO (living: [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) **P6**)  
 
 **Do**
 
@@ -1809,7 +1816,7 @@ Former MVP Phase **8–9**. Phases **1–7** are **DONE**. Phase **8** is **SKIP
 
 ### Step 9.5 — V1 exit review
 
-**Status:** TODO  
+**Status:** TODO (living: [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) **P7**)  
 
 **Do**
 
@@ -1852,6 +1859,7 @@ Former MVP Phase **8–9**. Phases **1–7** are **DONE**. Phase **8** is **SKIP
 | Manage sidebar polish     | [`V1-Manage-Sidebar-Polish-Plan.md`](V1-Manage-Sidebar-Polish-Plan.md) (Step **8.13**)                     |
 | Manage UI pass 3          | [`V1-Manage-UI-Pass-3-Plan.md`](V1-Manage-UI-Pass-3-Plan.md) (Step **8.14**)                                 |
 | Change pack UX            | [`V1-Change-Pack-UX-Plan.md`](V1-Change-Pack-UX-Plan.md) (Step **8.15**)                                   |
+| Packaging / installer     | [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) (Phase **9**)                                              |
 | Informal pack tests       | [`Mod-Pack-Tests.md`](Mod-Pack-Tests.md) (input to 8.7; not a living NEXT)                                 |
 | Modpack robustness (4.13) | [`archive/V1-Modpack-Robustness-Plan.md`](archive/V1-Modpack-Robustness-Plan.md)                           |
 | Bug-fix plan template     | `[V1-Bug-Fix-Plan-TEMPLATE.md](V1-Bug-Fix-Plan-TEMPLATE.md)`                                               |
@@ -1891,6 +1899,7 @@ Former MVP Phase **8–9**. Phases **1–7** are **DONE**. Phase **8** is **SKIP
 
 | Date       | Note                                                                                                                                                                                                                                                                                                                              |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-27 | **Phase 9 unblocked.** Living [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md). **NEXT = P1** (publish layout). GitHub Actions out; Inno + prompt-on-Release. |
 | 2026-08-27 | **8.6.1 / Phase 8.6 DONE.** P2 TESTING user-copy + proven OCIR login (IAM name + identity domain). Living **NEXT = 9.1** **blocked**. Do not start the installer until asked. |
 | 2026-08-27 | **Phase 8.5 DONE** (8.5.3). Pass 3 triage skipped. S0-01 Nit parked OK (intended overlay; stale assert). Living **NEXT = 8.6.1 P1**. Do not start 9.1. |
 | 2026-08-27 | **Pass 3 Phase A DONE.** S1 snapshot + leftover S2 Pass (S0-01 Fail Nit remains). Living **NEXT = Phase B**. Do not start Phase B, 8.6.1, or 9.1 until a new Agent chat. |

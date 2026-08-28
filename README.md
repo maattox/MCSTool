@@ -6,7 +6,7 @@ This is the **official product repository**. The Manager UI is **.NET 8 + Blazor
 
 ## Status
 
-Manage + Setup are usable on the Blazor Hybrid WinExe. Happy-path user guide: [`docs/Guide.md`](docs/Guide.md). Living execution: [`docs/NEXT.md`](docs/NEXT.md) (V1 Step **8.6.1** Function image copy; do not start 9.1 until **8.6.1** is DONE). MVP Phases 0–7 are **DONE** ([`docs/archive/MVP-Implementation-Plan.md`](docs/archive/MVP-Implementation-Plan.md)); Phase **8.6** is a pre-built ARM Function tarball copied into the user’s OCIR (**users** do not need Docker; developer Docker Desktop is OK); packaging is V1 Phase 9. **Paid / spend mode is skipped** (later / far future). Danger Zone can **Delete infrastructure** (`tofu destroy` of the product stack only). Doc map: [`docs/README.md`](docs/README.md).
+Manage + Setup are usable on the Blazor Hybrid WinExe. Happy-path user guide: [`docs/Guide.md`](docs/Guide.md). Living execution: [`docs/NEXT.md`](docs/NEXT.md) (V1 Phase **9** packaging — [`docs/V1-Packaging-Plan.md`](docs/V1-Packaging-Plan.md) **P1**). MVP Phases 0–7 are **DONE** ([`docs/archive/MVP-Implementation-Plan.md`](docs/archive/MVP-Implementation-Plan.md)); Phase **8.6** is a pre-built ARM Function tarball copied into the user’s OCIR (**users** do not need Docker; developer Docker Desktop is OK). **Paid / spend mode is skipped** (later / far future). Danger Zone can **Delete infrastructure** (`tofu destroy` of the product stack only). Doc map: [`docs/README.md`](docs/README.md).
 
 Licensing is **TBD** (no `LICENSE` file yet).
 

@@ -20,7 +20,8 @@ Read **only** what the current V1 / QA step names. Do not load this whole folder
 | [`V1-Manage-UI-Pass-3-Plan.md`](V1-Manage-UI-Pass-3-Plan.md) | Step **8.14**. Zoom lock, equal power, pin redesign, Overview. Flush chrome / denser gutters reverted. **COMPLETE.** |
 | [`Mod-Pack-Tests.md`](Mod-Pack-Tests.md) | Operator informal pack tests (input to 8.7; not a living NEXT). |
 | [`Pack-Corpus-Test-Plan.md`](Pack-Corpus-Test-Plan.md) | Headless Change-pack corpus harness. **COMPLETE** (P1–P3). |
-| [`V1-Function-Image-Plan.md`](V1-Function-Image-Plan.md) | Step **8.6.1**. Username + digest converge. **NEXT = P1.** (No GitHub Actions.) |
+| [`V1-Function-Image-Plan.md`](V1-Function-Image-Plan.md) | Step **8.6.1**. **COMPLETE** (P1–P2). No GitHub Actions. |
+| [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md) | Phase **9**. **NEXT = P1** (publish layout). Inno installer; GitHub prompt; no Actions. |
 | [`V1-QA-Pass-3-Scope.md`](V1-QA-Pass-3-Scope.md) | Pass 3 **filled**. Phase **8.5** **closed**. Historical. |
 | [`V1-QA-Pass-3-Results.md`](V1-QA-Pass-3-Results.md) | Pass 3 results. S0-01 Nit **parked OK**. |
 | [`V1-QA-Catalog.md`](V1-QA-Catalog.md) | Test IDs / expected — named IDs only. |

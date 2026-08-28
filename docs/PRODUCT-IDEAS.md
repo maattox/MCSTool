@@ -1,7 +1,7 @@
 # Product vision & staged roadmap (ideas / planning)
 
 **Status:** Living product vision and staged feature plan (MVP → v1 → later).  
-**Execution:** implement **v1 features** before Windows installer / GitHub Releases / public launch. **Paid / spend mode is not v1** (later / far future). Living checklist: [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) (**NEXT = Step 8.6.1** Function image copy). Pack-import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) (**implemented**, Step **8.9**). Do not start Step 9.1 until QA exits **and** Step **8.6.1** is DONE.  
+**Execution:** implement **v1 features** before Windows installer / GitHub Releases / public launch. **Paid / spend mode is not v1** (later / far future). Living checklist: [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) (Phase **9** packaging — [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md)). Pack-import contract: [`Pack-Import-Intended-Design.md`](Pack-Import-Intended-Design.md) (**implemented**, Step **8.9**). Phase **8.5** and Step **8.6.1** are **DONE**.  
 **Not** an implementation checklist by itself — agents follow the V1 plan’s NEXT step (and must not implement **after v1** / later items from this file).  
 **Not** a substitute for architecture docs. Doc map: [`README.md`](README.md).
 
@@ -297,7 +297,7 @@ For users okay spending past free envelopes (or if Oracle shrinks free tier) —
 
 ### v1 — “Flexible product”
 
-Builds on MVP. Still novice-first. **Execution:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) (Manager UX first, then spend-brake lock, private allowlist + CIDR, Setup game types, remaining v1, **Function image copy**, **then packaging**). **Paid / spend mode is not v1** (later / far future). Do not start Windows installer work until that plan’s Phase 9, and do not start Phase 9 until Step **8.6.1** is DONE.
+Builds on MVP. Still novice-first. **Execution:** [`V1-Implementation-Plan.md`](V1-Implementation-Plan.md) (Manager UX first, then spend-brake lock, private allowlist + CIDR, Setup game types, remaining v1, **Function image copy**, **then packaging**). **Paid / spend mode is not v1** (later / far future). Phase **8.5** and Step **8.6.1** are **DONE**. Phase **9** living plan: [`V1-Packaging-Plan.md`](V1-Packaging-Plan.md).
 
 | Add in v1 |
 |-----------|
