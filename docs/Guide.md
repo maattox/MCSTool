@@ -1,4 +1,4 @@
-# Happy-path guide
+# Setup guide
 
 This is the short path for a **Windows** admin who wants a **private** Minecraft server for friends, hosted on **Oracle Cloud Infrastructure (OCI)** Always Free resources, managed from one desktop app.
 
@@ -7,6 +7,8 @@ Friends always connect to the same **play IP**. When nobody is playing, a small 
 **Windows only** for this Manager. There is no macOS or Linux Manager in v1.
 
 ---
+
+
 
 ## Cost: built for $0, not a hard guarantee
 
@@ -22,21 +24,27 @@ Do **not** add paid shapes, extra volumes, or load balancers. Setup never opens 
 
 ---
 
+
+
 ## What you need
 
-| Item | Notes |
-|------|--------|
-| Windows 10/11 PC | Manager is a desktop WinExe (WebView2). |
-| [Evergreen WebView2](https://go.microsoft.com/fwlink/p/?LinkId=2124703) | The app tells you if this is missing. |
-| Oracle Cloud account | PAYG as needed (see below). Prefer the **home region**. |
-| API key files | `%USERPROFILE%\.oci\config` + PEM (not an SSH key). |
-| Auth Token | **Needed** to install the $1 spend-brake Function image (Oracle Container Registry login). **Not** Docker Desktop: the Windows installer already includes the pre-built ARM tarball next to the app. From-source checkouts without `artifacts/mcmgr-fn-softstop-linux-arm64.tar` still build with Docker (developer). |
-| Public IPv4 | Yours, and each friend’s, for the allowlist. Home IPs change. |
-| Minecraft Java Edition | Same release Setup chooses: Vanilla/Paper picker, or the version declared in a Modded pack. **Modded:** friends also need **that same exported pack file** — vanilla Minecraft cannot join. See [Modded: friends need the client pack](#modded-friends-need-the-client-pack). |
 
-Install Manager with the Windows installer — see [Install the Manager](#3-install-the-manager). Developers may still run from this repo.
+| Item                                                                    | Notes                                                                                                                                                                                                                                                                                                                 |
+| ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Windows 10/11 PC                                                        | Manager is a desktop WinExe (WebView2).                                                                                                                                                                                                                                                                               |
+| [Evergreen WebView2](https://go.microsoft.com/fwlink/p/?LinkId=2124703) | The app tells you if this is missing.                                                                                                                                                                                                                                                                                 |
+| Oracle Cloud account                                                    | PAYG as needed (see below). Prefer the **home region**.                                                                                                                                                                                                                                                               |
+| API key files                                                           | `%USERPROFILE%\.oci\config` + PEM (not an SSH key).                                                                                                                                                                                                                                                                   |
+| Auth Token                                                              | **Needed** to install the $1 spend-brake Function image (Oracle Container Registry login). **Not** Docker Desktop: the Windows installer already includes the pre-built ARM tarball next to the app. From-source checkouts without `artifacts/mcmgr-fn-softstop-linux-arm64.tar` still build with Docker (developer). |
+| Public IPv4                                                             | Yours, and each friend’s, for the allowlist. Home IPs change.                                                                                                                                                                                                                                                         |
+| Minecraft Java Edition                                                  | Same release Setup chooses: Vanilla/Paper picker, or the version declared in a Modded pack. **Modded:** friends also need **that same exported pack file** — vanilla Minecraft cannot join. See [Modded: friends need the client pack](#modded-friends-need-the-client-pack).                                         |
+
+
+Install Manager with the Windows installer — see [Install the Manager](#3-install-the-manager). Building from source: `[docs/README.md](README.md)`.
 
 ---
+
+
 
 ## 1. Create the Oracle Cloud account (PAYG as needed)
 
@@ -53,6 +61,8 @@ Oracle can change the Ampere envelope. Setup will ask you to confirm you underst
 
 ---
 
+
+
 ## 2. Put an API key and Auth Token on this PC
 
 Manager talks to Oracle with an **API signing key**. That is **not** the SSH key Setup generates later, and **not** the Auth Token.
@@ -61,8 +71,8 @@ Official reference: [Required Keys and OCIDs](https://docs.oracle.com/en-us/iaas
 
 ### API signing key + `%USERPROFILE%\.oci\config`
 
-1. Create the folder if it does not exist: `%USERPROFILE%\.oci\`  
-   Example: `C:\Users\you\.oci\`
+1. Create the folder if it does not exist: `%USERPROFILE%\.oci\`
+  Example: `C:\Users\you\.oci\`
 2. In the Console, open the **Profile** menu (top right) → **User settings** (or **My profile**).
 3. Open **Tokens and keys** / **API Keys** → **Add API Key**.
 4. Prefer **Generate API key pair**. Download the **private** key into `%USERPROFILE%\.oci\` (for example `oci_api_key.pem`). Move it there if the browser saved it in Downloads.
@@ -80,7 +90,7 @@ region=us-sanjose-1
 
 Use **your** home region, not a copy-paste from this example. `region` should match the region currently selected in the Console when the snippet was generated.
 
-7. Restrict the PEM so only your Windows user can read it. Do not commit it, email it, or put it in chat.
+1. Restrict the PEM so only your Windows user can read it. Do not commit it, email it, or put it in chat.
 
 If Oracle returns **401 NotAuthenticated** with a valid key, check that this PC’s clock is within **5 minutes** of real time.
 
@@ -104,42 +114,24 @@ Each user may have at most **two** Auth Tokens. If you lose it, generate a new o
 
 ---
 
+
+
 ## 3. Install the Manager
 
-**Intended path:** run the Windows installer (`MCManager-Setup-<version>.exe`). It installs **per-user** (no administrator prompt, not Program Files — typically `%LOCALAPPDATA%\Programs\MC Manager`). Additional tasks offers a **desktop shortcut** (checked by default; uncheck it if you only want Start Menu). When it finishes, open **MC Manager** from the Start Menu or the desktop shortcut. Setup is inside that one app.
+**Intended path:** download `MCManager-Setup-0.9.0.exe` from [GitHub Releases](https://github.com/maattox/oci-mc-server/releases) (open beta **v0.9.0**, not 1.0.0). It installs **per-user** (no administrator prompt, not Program Files — typically `%LOCALAPPDATA%\Programs\MC Manager`). Additional tasks offers a **desktop shortcut** (checked by default; uncheck it if you only want Start Menu). When it finishes, open **MC Manager** from the Start Menu or the desktop shortcut. Setup is inside that one app.
 
 - **WebView2:** if Windows is missing the [Evergreen runtime](https://go.microsoft.com/fwlink/p/?LinkId=2124703), Manager shows a message with Microsoft’s installer link. Install that, then open Manager again. The MC Manager installer does **not** bundle WebView2.
 - **Unknown publisher / SmartScreen:** this build is **unsigned** (a code-signing certificate is deferred). Windows may show **Windows protected your PC** or **unknown publisher**. That is expected for open-beta builds. Click **More info** → **Run anyway** only for an installer you built yourself or downloaded from this project’s [GitHub Releases](https://github.com/maattox/oci-mc-server/releases).
 - **Spend-brake Function image:** the installer already contains `mcmgr-fn-softstop-linux-arm64.tar` next to the app. You do **not** need Docker Desktop.
 - **OpenTofu:** the first **Deploy** on a PC that does not already have OpenTofu needs internet: Manager downloads a pinned OpenTofu 1.12.6 Windows build into `%LOCALAPPDATA%\McManager\tofu` (Mozilla Public License 2.0; source [github.com/opentofu/opentofu](https://github.com/opentofu/opentofu)). You do not install WinGet or `tofu` by hand. `tofu init` still fetches the OCI provider on that first run.
 
-Uninstall from Windows Settings → Apps → **MC Manager** (or the Start Menu uninstall entry). That removes the app folder, the Start Menu shortcut, and the desktop shortcut if you created one. It does **not** delete `%LOCALAPPDATA%\McManager` (installed `config.local.json`, wizard resume, friends, program settings, and the OpenTofu copy) or your Oracle tenancy. From-source checkouts still keep those JSON files in the repo `data/` folder instead.
+Uninstall from Windows Settings → Apps → **MC Manager** (or the Start Menu uninstall entry). That removes the app folder, the Start Menu shortcut, and the desktop shortcut if you created one. It does **not** delete `%LOCALAPPDATA%\McManager` (installed `config.local.json`, wizard resume, friends, program settings, and the OpenTofu copy) or your Oracle tenancy.
 
-**Developers (from a checkout, requires [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)):**
-
-```powershell
-dotnet restore src\McManager.slnx
-dotnet build src\McManager.slnx
-dotnet run --project src\McManager.Hybrid
-```
-
-Or open `src\McManager.slnx` in Visual Studio and run **McManager.Hybrid**. Folder publish (no installer): `dotnet publish src\McManager.Hybrid -c Release -r win-x64 --self-contained` — the output is a product root (`infra/` and on-box trees sit next to the exe; the Function tar copies when `artifacts\mcmgr-fn-softstop-linux-arm64.tar` exists).
-
-**Pack the installer** (operator / developer PC): install [Inno Setup 6](https://jrsoftware.org/isinfo.php), then from the repo root:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\packaging\pack.ps1
-```
-
-That fails if the Function tar is missing (rebuild recipe: [`functions/shutdown_vm/README.md`](../functions/shutdown_vm/README.md)). The `.exe` lands in `packaging\out\` (gitignored).
-
-**GitHub Release** (when you mean to ship): tag the commit (example `v0.9.0`), push the tag, then open [Releases](https://github.com/maattox/oci-mc-server/releases/new), choose that tag, attach `packaging\out\MCManager-Setup-<version>.exe`, and **do not** mark it as a pre-release (the in-app updater uses `/releases/latest`, which ignores pre-releases). Do not attach the Function tar as a separate asset — it is already inside the installer. Optional:
-
-```powershell
-gh release create v0.9.0 .\packaging\out\MCManager-Setup-0.9.0.exe --title "MC Manager 0.9.0" --notes "Paste the user-facing notes here."
-```
+Building from source, packing an installer, or cutting a GitHub Release: `[docs/README.md](README.md)`.
 
 ---
+
+
 
 ## 4. Setup → Deploy
 
@@ -149,20 +141,22 @@ On first launch with no local manage config, choose **Deploy a new stack (Setup)
 
 Walk the wizard. Pages are short; hover the **info (i)** next to a label for the extra detail. You can close and resume later from **Advanced → Deploy / repair** (progress is saved locally under `%LOCALAPPDATA%\McManager` when installed, or repo `data/` from-source; secrets are not).
 
-| Step | What to do |
-|------|------------|
-| Always Free | Read the short Always Free summary (eligible shapes, $0 target, $1 brake, possible ~$1–$2 residual). Open the docs link if you want Oracle’s page. Check all three boxes. Extra detail is on the **info (i)** hover next to each box. |
-| Oracle Cloud | Pick the profile from `%USERPROFILE%\.oci\config`. Confirm tenancy and **home region**. Enter the email Oracle should use for the $1 budget alert. Setup creates a compartment named **`mcmgr`**, or **`mcmgr-2`** / **`mcmgr-3`** if that name is already used. There is no Compartment page; Advanced **Auto-detect** is how you attach to an existing stack. |
-| SSH | **Generate a new key** (recommended). This is **not** the API key. The private key stays on disk; Setup does not put it in the resume file. |
-| Game | **Vanilla** or **Modded** is the main choice on the left. Beside it: Vanilla flavor and version, or the Modded pack drop with Choose / Clear (visible together without scrolling). Vanilla: **Default Vanilla** (official Mojang) or **Optimized Vanilla** (Paper), then pick a **release**. Snapshots are Advanced and apply only to Default Vanilla. Paper’s list hides versions Paper does not build. Paper is a faster server, not a Forge/Fabric modpack. **Modded:** choose a local **`.mrpack` or server-pack zip** (file picker or drag-and-drop). Prefer a **Modrinth `.mrpack`** or CurseForge **Server Files** (jars already inside) — those usually continue after the two friend-pack checkboxes. A homemade zip is the fallback and may open a single review list. Check **Client-only** for jars that should not install on the server; required dependencies stay locked. There is no pack search box. CurseForge *client* exports (manifest IDs, no jars) are refused. Quilt packs are detected but not installable yet. After a pack is analyzed, review lists may scroll. Details: [Modded: friends need the client pack](#modded-friends-need-the-client-pack). |
-| Name and icon | Friends see this in Minecraft’s server list. The default MOTD is gold bold stars around yellow bold **OCI Server**, then `created with github.com/maattox/oci-mc-server` in blue underline — the same for Vanilla, Paper, and Modded until you edit it. Format the list MOTD in the **name and description**: each box is **one line of 59 characters** (the two lines Minecraft shows). Highlight text and use the toolbar (the typing boxes show the look, not `§` codes). Click the same color or effect again to remove it. Counters under the Minecraft-font preview show `line 1: 41/59`. **Raw motd= string** is always visible: paste a generator string there (or type `§` codes) to fill the preview, or **Copy** to take the value written to the game VM. Hex/gradient colors need Paper or Spigot 1.16+ (Vanilla / Forge / Fabric ignore them). Icon is an optional **PNG** (Manager fits it to 64×64). Skipping it uses the product default. Offline / starting / unavailable copies show on the doorbell while the server is off. You can change all of this later on the **Server** tab. |
-| EULA | Open and accept the [Minecraft EULA](https://aka.ms/MinecraftEULA). Setup will not auto-accept it. |
-| Auth Token | Paste the token and **Store token**. Required to install the $1 spend-brake Function (copy a pre-built image into your registry when the ARM tarball is present). Next stays off until it is stored in Windows Credential Manager. You do **not** need Docker Desktop if that artifact exists. |
-| Summary | Confirm **your public IPv4** as `x.x.x.x/32`. Pick the server size (**4 OCPU / 24 GB** recommended, or **2 OCPU / 12 GB**). Read the plan. Check the create-resources box. Click **Deploy**. |
+
+| Step          | What to do                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Always Free   | Read the short Always Free summary (eligible shapes, $0 target, $1 brake, possible ~$1–$2 residual). Open the docs link if you want Oracle’s page. Check all three boxes. Extra detail is on the **info (i)** hover next to each box.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Oracle Cloud  | Pick the profile from `%USERPROFILE%\.oci\config`. Confirm tenancy and **home region**. Enter the email Oracle should use for the $1 budget alert. Setup creates a compartment named `mcmgr`, or `mcmgr-2` / `mcmgr-3` if that name is already used. There is no Compartment page; Advanced **Auto-detect** is how you attach to an existing stack.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| SSH           | **Generate a new key** (recommended). This is **not** the API key. The private key stays on disk; Setup does not put it in the resume file.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Game          | **Vanilla** or **Modded** is the main choice on the left. Beside it: Vanilla flavor and version, or the Modded pack drop with Choose / Clear (visible together without scrolling). Vanilla: **Default Vanilla** (official Mojang) or **Optimized Vanilla** (Paper), then pick a **release**. Snapshots are Advanced and apply only to Default Vanilla. Paper’s list hides versions Paper does not build. Paper is a faster server, not a Forge/Fabric modpack. **Modded:** choose a local `.mrpack` **or server-pack zip** (file picker or drag-and-drop). Prefer a **Modrinth** `.mrpack` or CurseForge **Server Files** (jars already inside) — those usually continue after the two friend-pack checkboxes. A homemade zip is the fallback and may open a single review list. Check **Client-only** for jars that should not install on the server; required dependencies stay locked. There is no pack search box. CurseForge *client* exports (manifest IDs, no jars) are refused. Quilt packs are detected but not installable yet. After a pack is analyzed, review lists may scroll. Details: [Modded: friends need the client pack](#modded-friends-need-the-client-pack). |
+| Name and icon | Friends see this in Minecraft’s server list. The default MOTD is gold bold stars around yellow bold **OCI Server**, then `created with github.com/maattox/oci-mc-server` in blue underline — the same for Vanilla, Paper, and Modded until you edit it. Format the list MOTD in the **name and description**: each box is **one line of 59 characters** (the two lines Minecraft shows). Highlight text and use the toolbar (the typing boxes show the look, not `§` codes). Click the same color or effect again to remove it. Counters under the Minecraft-font preview show `line 1: 41/59`. **Raw motd= string** is always visible: paste a generator string there (or type `§` codes) to fill the preview, or **Copy** to take the value written to the game VM. Hex/gradient colors need Paper or Spigot 1.16+ (Vanilla / Forge / Fabric ignore them). Icon is an optional **PNG** (Manager fits it to 64×64). Skipping it uses the product default. Offline / starting / unavailable copies show on the doorbell while the server is off. You can change all of this later on the **Server** tab.                                                                            |
+| EULA          | Open and accept the [Minecraft EULA](https://aka.ms/MinecraftEULA). Setup will not auto-accept it.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Auth Token    | Paste the token and **Store token**. Required to install the $1 spend-brake Function (copy a pre-built image into your registry when the ARM tarball is present). Next stays off until it is stored in Windows Credential Manager. You do **not** need Docker Desktop if that artifact exists.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Summary       | Confirm **your public IPv4** as `x.x.x.x/32`. Pick the server size (**4 OCPU / 24 GB** recommended, or **2 OCPU / 12 GB**). Read the plan. Check the create-resources box. Click **Deploy**.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+
 
 **After Deploy starts:** percent, elapsed time, and a short English status stay in the **bottom bar** with Back and Deploy locked — they stay reachable if you scroll. The status is never a raw SSH command (those stay in the **Deploy log**, which grows to fill the page while Deploy runs). The plan summary is collapsed under **Plan summary**. Do not start a second Deploy. Resume / Re-Deploy is a separate Advanced action.
 
-**If the log times out waiting for `/etc/mcmgr/cloud-init-done` with `Last: WAIT`:** cloud-init likely already finished; `ubuntu` cannot see that file (`0750`). Rebuild Manager and resume from **Advanced → Deploy / repair** (skips `tofu apply` if apply already succeeded). Do not wait longer, reboot, or chmod `/etc/mcmgr`.
+**If the log times out waiting for** `/etc/mcmgr/cloud-init-done` **with** `Last: WAIT`**:** cloud-init likely already finished; `ubuntu` cannot see that file (`0750`). Rebuild Manager and resume from **Advanced → Deploy / repair** (skips `tofu apply` if apply already succeeded). Do not wait longer, reboot, or chmod `/etc/mcmgr`.
 
 **If Ampere A1 is out of capacity:** a window offers try again now, auto-retry every 5 minutes while the app stays open, or close and resume later. That wait does not spam Oracle’s API.
 
@@ -174,6 +168,8 @@ The Function image is copied into your OCIR from a **pre-built ARM** tarball whe
 
 ---
 
+
+
 ## Modded: friends need the client pack
 
 A **Modded** server is **not playable** until friends install the **same exported pack file** you chose in Setup. Vanilla Minecraft (and a different pack, or a different version of the same pack) cannot join.
@@ -184,13 +180,15 @@ A **Modded** server is **not playable** until friends install the **same exporte
 
 Some packs mark client-only mods as required on the server. Setup skips those known names automatically (including Fabric loading-screen and GUI-loader **classes**, not only Sodium/Iris) and still lets you continue. When homemade or leftover jars open a review list, Setup and **Change pack** show a warning to check the list and confirm the marks. Leftover Fabric jars that declare themselves client-only in `fabric.mod.json` (or have only client entrypoints) are also skipped. If the game later fails to start, check that skipped list first. If Setup or **Change pack** fails because Minecraft crashed while starting, the error includes a short server log (and the loader’s blamed mod when it printed one). When the loader names **exactly one** mod, Manager moves that jar to `mods.quarantined` (never deletes it) and retries once. You then choose **Keep excluded** (skip it on future installs of this same pack file) or **Put back** on **Server → Modding**. Several blamed mods, or no loader report, stay a normal crash with the log — nothing is stripped automatically. A slow first world gen still waits for RCON; that is not the same as a crash-loop. **Change pack** installs the **Required Java** major from pack analyze before starting Minecraft (for example Java 25 for Minecraft 26.x); if Temurin for that major cannot be installed, Setup stops with a clear message instead of an RCON timeout.
 
-User-made server zips, jar-root archives, and leftover unknowns on a Server Files zip go through **assisted review** when jars still have no client/server metadata after automatic skips. That is **one list**: automatic client-only jars start **checked**, unknowns start unchecked, and jars required by something being kept are greyed with **required by …**. Checking **Client-only** leaves the row in place (saved for that same file on this PC). Unchecking a jar that was auto-marked from the exclude list also stays in the list and does not re-analyze the pack. Force-skipping a required dep keeps Next / Install this pack disabled until Client-only is unmarked on that jar. Identity fields (Minecraft, loader, loader version, Java) sit **above** the list on one row; the long pack-summary box is hidden while the list is showing. If the server crashes and the game names one mod, it can be excluded here (or after a crash via Layer 3 Keep excluded, once). Homemade zips and jar-root archives also let you **correct** detected Minecraft version, loader, loader version, and Java from version lists before install; Manager then saves a **confirmed copy** (with manifest) for **Download pack** — still not a zip of live server `mods/`. A long list shows a search box. A Modrinth **`.mrpack`** with unclear `env.server` still **cannot** continue — fix the pack or pick a different export. Novices should prefer `.mrpack` or CurseForge **Server Files** so they can skip the review.
+User-made server zips, jar-root archives, and leftover unknowns on a Server Files zip go through **assisted review** when jars still have no client/server metadata after automatic skips. That is **one list**: automatic client-only jars start **checked**, unknowns start unchecked, and jars required by something being kept are greyed with **required by …**. Checking **Client-only** leaves the row in place (saved for that same file on this PC). Unchecking a jar that was auto-marked from the exclude list also stays in the list and does not re-analyze the pack. Force-skipping a required dep keeps Next / Install this pack disabled until Client-only is unmarked on that jar. Identity fields (Minecraft, loader, loader version, Java) sit **above** the list on one row; the long pack-summary box is hidden while the list is showing. If the server crashes and the game names one mod, it can be excluded here (or after a crash via Layer 3 Keep excluded, once). Homemade zips and jar-root archives also let you **correct** detected Minecraft version, loader, loader version, and Java from version lists before install; Manager then saves a **confirmed copy** (with manifest) for **Download pack** — still not a zip of live server `mods/`. A long list shows a search box. A Modrinth `.mrpack` with unclear `env.server` still **cannot** continue — fix the pack or pick a different export. Novices should prefer `.mrpack` or CurseForge **Server Files** so they can skip the review.
 
 Next is not available in Setup until you check that you will give friends this same pack. The same reminder appears on the Review page before Deploy.
 
 **CurseForge files:** if the zip is a *client* export (a `manifest.json` of project/file IDs and no mod jars), Setup will refuse it. On that pack’s CurseForge page, download **Server Files** (jars already inside) and import that zip — or use a Modrinth `.mrpack` when the pack exists there. This app does not call the CurseForge API and does not reconstruct missing jars.
 
 ---
+
+
 
 ## 5. Allow friends, then play
 
@@ -210,25 +208,29 @@ When everyone is done, click **Stop** (doorbell-aware). If you forget, idle time
 
 ---
 
+
+
 ## Day-to-day in Manager
 
-| Want | Where |
-|------|--------|
-| See if the server is on | Left sidebar **Status** (`Running` / `Stopped`; matches Start vs Stop) |
-| How many are online | Left sidebar **Players** (`0` when Stopped; `X / Y` while Running) |
-| Copy the address | Left sidebar **Play IP** (copy icon) |
-| Wake / park the server | One **Start** / **Stop** button in the left sidebar (Start when the server is off, Stop when it is on; not raw Compute on Advanced) |
-| Restart Minecraft only | **Restart** beside that button (game VM must already be up) |
-| Hours vs budget | Three stacked pin strips in the left sidebar (today’s uptime, this month %, rollover bank) + **Usage** (**Hours** still has daily average, hours left, and idle timeout; expand **Detailed usage** for hours by UTC day; **Budget** to edit allowances) |
-| World zip download / replace / wipe | **Server → World** (Object Storage; ~9.5 GB backup soft cap; SSH live copy if the world is too large) |
-| Inspect mods / re-download imported pack | **Server → Modding** (mod list starts collapsed; original Setup file on this PC; not a zip of server mods) |
-| Reinstall from a new pack | **Server → Change pack** |
-| Name, icon, description, idle chat lines | **Server → Identity** (formatted list MOTD; Restart Minecraft to apply) |
-| Send Minecraft commands / view logs | **Console** (not a live terminal) |
-| Stuck play IP / doorbell | **Troubleshooting** (confirm-gated one-shots) |
-| Technical VM / doorbell state | **Advanced** |
-| Turn idle timer off / idle timeout / change server size / delete the stack | **Advanced → Danger** |
-| Program settings / About / notifications | Top-right **bell** and **gear** (same bar as min / max / close). **About** is a sidebar tab |
+
+| Want                                                                       | Where                                                                                                                                                                                                                                                   |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| See if the server is on                                                    | Left sidebar **Status** (`Running` / `Stopped`; matches Start vs Stop)                                                                                                                                                                                  |
+| How many are online                                                        | Left sidebar **Players** (`0` when Stopped; `X / Y` while Running)                                                                                                                                                                                      |
+| Copy the address                                                           | Left sidebar **Play IP** (copy icon)                                                                                                                                                                                                                    |
+| Wake / park the server                                                     | One **Start** / **Stop** button in the left sidebar (Start when the server is off, Stop when it is on; not raw Compute on Advanced)                                                                                                                     |
+| Restart Minecraft only                                                     | **Restart** beside that button (game VM must already be up)                                                                                                                                                                                             |
+| Hours vs budget                                                            | Three stacked pin strips in the left sidebar (today’s uptime, this month %, rollover bank) + **Usage** (**Hours** still has daily average, hours left, and idle timeout; expand **Detailed usage** for hours by UTC day; **Budget** to edit allowances) |
+| World zip download / replace / wipe                                        | **Server → World** (Object Storage; ~9.5 GB backup soft cap; SSH live copy if the world is too large)                                                                                                                                                   |
+| Inspect mods / re-download imported pack                                   | **Server → Modding** (mod list starts collapsed; original Setup file on this PC; not a zip of server mods)                                                                                                                                              |
+| Reinstall from a new pack                                                  | **Server → Change pack**                                                                                                                                                                                                                                |
+| Name, icon, description, idle chat lines                                   | **Server → Identity** (formatted list MOTD; Restart Minecraft to apply)                                                                                                                                                                                 |
+| Send Minecraft commands / view logs                                        | **Console** (not a live terminal)                                                                                                                                                                                                                       |
+| Stuck play IP / doorbell                                                   | **Troubleshooting** (confirm-gated one-shots)                                                                                                                                                                                                           |
+| Technical VM / doorbell state                                              | **Advanced**                                                                                                                                                                                                                                            |
+| Turn idle timer off / idle timeout / change server size / delete the stack | **Advanced → Danger**                                                                                                                                                                                                                                   |
+| Program settings / About / notifications                                   | Top-right **bell** and **gear** (same bar as min / max / close). **About** is a sidebar tab                                                                                                                                                             |
+
 
 The left sidebar holds **Status**, **Play IP**, **Players**, one **Start** / **Stop** button plus **Restart**, and **three** stacked pin strips: today’s uptime (hours used vs the daily slice), this month (percent used), and rollover bank. They refresh from the same hours budget as the **Usage** tab (no extra fetch). Daily average, hours left, and idle timeout stay on **Usage** (and Overview) — hours left is the month’s remaining cap, not the rollover bank. Idle timeout is the configured empty-server stop (edit it on **Usage → Budget** or **Advanced → Danger**). The large pane on the right is the current tab. **Overview** (the home tab) is a read-only snapshot: live status / play IP / players, the list MOTD and pack line, usage (including rollover and idle timeout), and the whitelist with **name and IP** per friend. **Manage IPs**, **Open Usage**, and **Open Server** switch tabs — they do not edit from Overview. **About** shows the app name, version, a short private-server sentence, and **Source on GitHub**.
 
@@ -260,6 +262,8 @@ The top-right **bell** opens a notification list (empty until something posts; e
 
 ---
 
+
+
 ## Appendix A — SSH
 
 Setup’s SSH key is how Manager (and you, if needed) log into the Ubuntu VMs as `ubuntu`. It lives under `%USERPROFILE%\.ssh\` when generated (name like `mcmgr_ed25519_yyyyMMdd_HHmmss`).
@@ -273,6 +277,8 @@ Manager stores **two** private-key paths (`vm1.ssh_key_path` and `door.ssh_key_p
 Most admins never need a terminal. Prefer Manager **Troubleshooting** buttons over ad-hoc SSH. If you do SSH, many on-box files are root-owned (`Permission denied` as `ubuntu` is common) — use `sudo` or fix ownership; do not chmod the world to 777, and do not run Minecraft as `ubuntu`.
 
 ---
+
+
 
 ## Appendix B — Door (doorbell)
 
@@ -289,6 +295,8 @@ Wake reads the shared budget first. If the daily budget is exhausted, wake is re
 If the IP is stuck on the wrong VM after a Function stop or a failed wake, use **Troubleshooting → park reserved play IP** (if the game VM is running, park on it; otherwise start the doorbell if needed and park there).
 
 ---
+
+
 
 ## Appendix C — Object Storage
 
@@ -310,6 +318,8 @@ Do not put SSH private keys, API keys, Auth Tokens, or RCON passwords in the buc
 
 ---
 
+
+
 ## Connect an existing stack
 
 On a **new PC** (or after reinstall):
@@ -323,6 +333,8 @@ On a **new PC** (or after reinstall):
 “I already have a stack” skips the scan — only use that if you already placed `config.local.json` by hand.
 
 ---
+
+
 
 ## If something is stuck
 
@@ -343,7 +355,7 @@ To wipe the **product stack** on a test tenancy and run Setup again:
 
 1. In Manager, open **Advanced → Danger**.
 2. Click **Delete infrastructure**.
-3. Read the warning. Type **`confirm`** (lowercase) to enable Delete. This does **not** close your Oracle account.
+3. Read the warning. Type `confirm` (lowercase) to enable Delete. This does **not** close your Oracle account.
 4. Keep the window open. The log and percent stay until Oracle finishes deleting (often several minutes). Close is disabled until it succeeds or fails.
 5. After success: close Manager fully, reopen it, then run Setup.
 
@@ -354,6 +366,8 @@ Only resources this Manager deployed (OpenTofu state on **this PC**) are removed
 If Delete says there is no OpenTofu state, this PC did not deploy the stack (or the `%LOCALAPPDATA%\McManager\tofu` folder is missing). Do not delete random compartments in the Console unless you know they are the product `mcmgr` stack.
 
 ---
+
+
 
 ## Out of this guide (not v1)
 
