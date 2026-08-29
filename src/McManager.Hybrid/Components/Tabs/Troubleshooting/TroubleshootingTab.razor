@@ -3,7 +3,7 @@
 
 <div class="mcm-pane-stack">
     <p style="margin:0;font-size:13px;color:var(--text-secondary);">
-        One-click repairs for a stuck doorbell. Confirm before anything that moves the play IP. Idle disable is on Advanced → Danger; raw VM stop is on Advanced → Status.
+        One-click repairs for a common issues.
     </p>
 
     <div class="mcm-card-grid">
@@ -12,13 +12,13 @@
             <span style="font-size:14px;font-weight:600;">Play address</span>
             <button type="button"
                     class="mcm-help"
-                    title="FN-ISSUE-1: $1 Function SoftStops VM1 and the door; Park play IP is the recovery.">
+                    title="The Play address is the IP players use to connect. Mechanisms that manage the play IP and move it between the door VM and the server VM can sometimes break, resulting in the play IP being placed on the wrong VM.">
                 <i class="ti ti-help" aria-hidden="true"></i>
                 <span class="sr-only">About Play address</span>
             </button>
         </div>
         <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);">
-            If friends cannot connect: if the game VM is running, put the reserved IP on it; otherwise start the doorbell VM and park the IP there. Also covers leftover after the $1 last-resort brake stops both VMs.
+            Reconfigure the reserved play IP if the server is running but players cannot connect or if the server is off but the play IP is still assigned to the server VM. Also covers leftover after the $1 last-resort brake stops both VMs.
         </p>
         <div style="display:flex;flex-wrap:wrap;gap:8px;">
             <button type="button"
@@ -74,13 +74,13 @@
             <span style="font-size:14px;font-weight:600;">Game VM / idle timer</span>
             <button type="button"
                     class="mcm-help"
-                    title="OS-ISSUE-7: boot / Minecraft start force-enables the idle timer. Minecraft Restart is in the left sidebar.">
+                    title="Boot / Minecraft start force-enables the idle timer.">
                 <i class="ti ti-help" aria-hidden="true"></i>
                 <span class="sr-only">About Game VM / idle timer</span>
             </button>
         </div>
         <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);">
-            Minecraft Restart is in the left sidebar. Repair permissions uses the same install layout as Setup. Force-enable idle does not start Minecraft — a reboot already turns the timer back on.
+            Repair permissions uses the same install layout as Setup. Force-enable idle does not start Minecraft — a reboot already turns the timer back on.
         </p>
         <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
             <button type="button" disabled="@Vm.IsBusy" @onclick="Vm.ShowIdleStatusAsync">

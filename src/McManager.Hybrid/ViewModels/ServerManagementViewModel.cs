@@ -325,7 +325,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         "Name and description show in Minecraft’s server list when the game is running. Each box is one list line (59 characters). Select text and apply colors, or paste a motd= string. The in-game PNG is the list icon while Minecraft is up. Offline / starting / unavailable copies show on the doorbell while the server is off. Automated chat is what the idle timer says in-game before a stop. Save, then Restart Minecraft (or Start) to apply the in-game icon. The doorbell icon updates on Save.";
 
     public string IconStatesHelp =>
-        "In-game is the color icon while Minecraft is up. Offline, Starting, and Unavailable are greyscale copies with overlays for the doorbell list while the server is off, waking, or cannot start (daily hours or spend-brake).";
+        "In-game is the icon shown while the server is up. Offline, Starting, and Unavailable are shown while the server is off, waking, or cannot start (daily hours or spend-brake).";
 
     public string MotdPreview =>
         ServerIdentityUx.BuildMotd(IdentityName, IdentityDescription);

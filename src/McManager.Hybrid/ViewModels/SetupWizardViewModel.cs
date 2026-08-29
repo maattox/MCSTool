@@ -45,16 +45,19 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     public const long PackDropMaxBytes = 512L * 1024 * 1024;
 
     public const string AlwaysFreeStayHelp =
-        "This product uses Always Free Ampere A1 for the game server plus a tiny doorbell computer. There is no paid mode. A1 capacity can be unavailable in the region.";
+        "This product uses an Ampere A1 VM for the game server plus a micro VM for the door VM. These are included in Oracle's Always Free offering. There is no paid mode. A1 capacity can be unavailable in the region.";
+
+    public const string IncompleteDeployWarning =
+        "If the server deployment is interrupted after the server VM is created but before the Minecraft server is started, the server VM will NOT turn off automatically. If you selected the 4 OCPU / 24 GB Memory VM shape, make sure to restart and finish the deployment or turn off the VM manually in the OCI Console. If the VM is left on for over 375 hours, your account will begin to charged.";
 
     public const string AlwaysFreeResidualHelp =
         "A $1 monthly budget is a last-resort brake that stops the game server. Oracle may still bill a small residual (~$1–$2) after that brake fires. This is not a hard $0 guarantee.";
 
     public const string AlwaysFreeCapacityHelp =
-        "If A1 Flex is out of capacity, a window offers try again now, auto-retry every 5 minutes, or resume later. It does not spam the Oracle API.";
+        "If A1 Flex is out of capacity, the deployment may stall. You can either try deployment again, start an auto-retry every 5 minutes, or resume later. If you close the setup wizard during deployment, your progress is saved and you are able to begin deployment again later.";
 
     public const string AlwaysFreeBodyCopy =
-        "This product uses Always Free–eligible shapes: Ampere A1 for the game server and a tiny AMD Micro doorbell. The target is $0. A $1 monthly budget is the last-resort spend brake; Oracle may still bill about $1–$2 that month if it fires.";
+        "This product utilizes Oracle Cloud Infrastructure and its Always Free resources to host and manage a Minecraft server for free. Oracle's Free Resource policies are subject to change, so it is recommended that you open the `Always Free compute` documentation and confirm that OCI tenancies still get the first 1,500 OCPU hours and 9,000 GB hours per month for free for VM instances using the VM.Standard.A1.Flex shape. The target is $0, and there are several mechanisms in place to ensure your account is not charged. A $1 monthly budget is the last-resort spend brake, but Oracle may still bill about $1–$2 that month if it fires. All cost control mechanisms are automatically activated upon deployment, so you don't have to do any additional work outside of this setup wizard.";
 
     public const string OciProfileHelp =
         "Region and account details come from ~/.oci/config on this PC. Prefer the tenancy home region so Always Free A1 and Micro eligibility apply.";
@@ -66,16 +69,16 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         "Create a new key on this PC, or import an existing public key. The private key stays on disk and is not saved in Setup’s resume file. This is not the Oracle API key.";
 
     public const string VanillaHelp =
-        "Official Mojang jar, or Optimized Vanilla (Paper) for better multiplayer. Friends join with the same Java version. Paper is not Forge or Fabric.";
+        "Official Mojang jar, or Optimized Vanilla (Paper) for better multiplayer.";
 
     public const string ModdedHelp =
-        "Choose a local .mrpack or server-pack zip you already exported. There is no pack search. Friends need that same pack to join.";
+        "Choose a local .mrpack or server-pack zip you already exported. There is no pack search. Players need that same pack to join.";
 
     public const string DefaultVanillaHelp =
         "Official Mojang server jar. Same path as before.";
 
     public const string OptimizedVanillaHelp =
-        "Better multiplayer performance. Not Forge or Fabric mods. Paper is a faster vanilla-compatible server.";
+        "Better multiplayer performance. Paper is a faster vanilla-compatible server.";
 
     public const string PackFileHelp = SetupPackImport.PackFileNoviceHelp;
 
@@ -88,7 +91,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         "Needed to push the spend-brake Function image. Paste it and choose Store token. Saved in Windows Credential Manager, not in the Setup resume file.";
 
     public const string AdminCidrHelp =
-        "Oracle’s cloud firewall allowlist. Friends you add later also need their public IPv4 as /32.";
+        "Oracle’s cloud firewall allowlist. Players you add later also need their public IPv4 as /32.";
 
     public const string ShapeDefaultHelp =
         "More room for players and later mods. Uses Always Free hours faster while the server is on. Chosen once at deploy — not a later resize.";
@@ -97,7 +100,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         "Smaller Always Free size. Vanilla can often stay on all month; less room if you add mods or more players later.";
 
     public const string IdentityHelp =
-        "Friends see the name, description, and in-game icon in Minecraft’s server list while the game is running. Each box is one list line (59 characters). Select text and apply colors, or paste a motd= string from a generator. Hex colors need Paper/Spigot 1.16+. You can change this later on the Server tab.";
+        "Players see the name, description, and in-game icon in Minecraft’s server list while the game is running. Each box is one list line (59 characters). Select text and apply colors, or paste a motd= string from a generator. Hex colors need Paper/Spigot 1.16+. You can change this later on the Server tab.";
 
     public const string IconStatesHelp =
         "In-game is the color icon while Minecraft is up. Offline, Starting, and Unavailable are greyscale copies with overlays for the doorbell list while the server is off, waking, or cannot start (daily hours or spend-brake).";
