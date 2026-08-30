@@ -315,6 +315,34 @@ public sealed class SetupBootstrapService
     }
 
     /// <summary>
+    /// Restart Minecraft after Setup seeds <c>messages/chat.json</c> and the list icon.
+    /// <c>record_boot</c> applies identity Before=minecraft; without this restart Paper
+    /// and vanilla create never write <c>/opt/mcmgr/server/server-icon.png</c>.
+    /// </summary>
+    public Task<ServiceResult> RestartMinecraftForIdentityAsync(
+        TofuApplyOutputs outputs,
+        SetupWizardState state,
+        IProgress<string>? log,
+        CancellationToken cancellationToken = default)
+    {
+        var key = TofuApplyOutputs.PrivateKeyPath(state);
+        return Task.Run(
+            () =>
+            {
+                try
+                {
+                    return RestartMinecraftForIdentity(outputs, key, log);
+                }
+                catch (Exception ex)
+                {
+                    return ServiceResult.Fail(
+                        "Minecraft restart after identity seed failed: " + ex.Message);
+                }
+            },
+            cancellationToken);
+    }
+
+    /// <summary>
     /// After VM1 netplan + Minecraft are up: reserved play IP → VM1, door PLAYABLE.
     /// Must not force DOOR_IDLE with the IP still on the door (black hole / MOTD-only).
     /// Call again after a spend-brake Function tofu apply — that apply used to move
@@ -341,6 +369,23 @@ public sealed class SetupBootstrapService
                 }
             },
             cancellationToken);
+    }
+
+    private static ServiceResult RestartMinecraftForIdentity(
+        TofuApplyOutputs outputs,
+        string keyPath,
+        IProgress<string>? log)
+    {
+        using var client = Connect(outputs.Vm1SshHost, outputs.SshUser, keyPath);
+        Exec(
+            client,
+            "sudo bash -c " + ShQuote(
+                "set -euo pipefail; "
+                + "HOME=\"${HOME:-/home/ubuntu}\"; "
+                + "systemctl restart minecraft"),
+            TimeSpan.FromMinutes(3),
+            log);
+        return WaitRcon(client, log);
     }
 
     private static void PromotePlayableAfterVm1(

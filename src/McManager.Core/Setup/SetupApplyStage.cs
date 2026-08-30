@@ -37,7 +37,7 @@ public static class SetupApplyStage
         180, // cloud-init (operator: 3 min, not the false 19 min wait)
         300, // door bootstrap (4m54s)
         150, // VM1 idle-agent + Minecraft + guest repair (~2m + 25s)
-        15,  // Object Storage seed (~1s)
+        90,  // Object Storage seed + Minecraft restart so list icon/MOTD apply
         15,  // Function/OCIR (skipped in the timed run)
         15,  // config.local.json write
     ];

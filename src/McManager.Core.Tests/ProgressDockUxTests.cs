@@ -81,6 +81,8 @@ public sealed class ProgressDockUxTests
     [InlineData("Door src: C:\\repo\\door_vm", "Installing doorbell software…")]
     [InlineData("onbox src: /opt DISTRIBUTION=fabric MINECRAFT_VERSION=1.21.1", "Installing Minecraft…")]
     [InlineData("uploaded pack files (12 files, skipped 0 eula/properties/world) → /opt/mcmgr", "Installing pack files…")]
+    [InlineData("Restarting Minecraft so the list name and icon apply…", "Applying the server list name and icon…")]
+    [InlineData("> sudo bash -c 'systemctl restart minecraft'", "Applying the server list name and icon…")]
     [InlineData("RCON list succeeded.", "Minecraft is ready.")]
     [InlineData("Minecraft crash detected during health check; stopping the unit.", "Minecraft crashed while starting.")]
     [InlineData("The loader blamed one mod for the crash; moving it aside and retrying once…", "Moving the blamed mod aside…")]

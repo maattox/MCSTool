@@ -149,6 +149,10 @@ public sealed class ChatMessagesStoreTests
         Assert.NotNull(got.Value.IconPng);
         Assert.True(storage.Objects.ContainsKey("messages/door-idle.png"));
 
+        var flagsJson = Encoding.UTF8.GetString(storage.Content("meta/flags.json"));
+        using var flags = JsonDocument.Parse(flagsJson);
+        Assert.True(flags.RootElement.GetProperty("categories").GetProperty("messages").GetProperty("vm1").GetBoolean());
+
         var again = ChatMessagesDocument.Defaults();
         again.ServerName = "Overwrite";
         var second = await store.SeedIfMissingAsync(again, iconPng: null);
@@ -394,6 +398,14 @@ public sealed class ServerIdentityUxTests
         });
         Assert.Equal(ServerIdentityUx.DefaultName, vanilla.ServerName);
         Assert.Equal(ServerIdentityUx.DefaultDescription, vanilla.Description);
+
+        var paper = ServerIdentityUx.CreateSetupSeed(new SetupWizardState
+        {
+            ServerType = SetupServerType.Vanilla,
+            VanillaFlavor = SetupVanillaFlavor.Optimized,
+        });
+        Assert.Equal(ServerIdentityUx.DefaultName, paper.ServerName);
+        Assert.Equal(ServerIdentityUx.DefaultDescription, paper.Description);
 
         var custom = ServerIdentityUx.CreateSetupSeed(new SetupWizardState
         {

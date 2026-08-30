@@ -152,6 +152,8 @@ public static class ProgressDockUx
             return "Installing pack files…";
         if (StartsWithToken(body, "uploaded") || StartsWithToken(body, "put"))
             return "Copying files to the server…";
+        if (Contains(body, "list name and icon") || Contains(body, "systemctl restart minecraft"))
+            return "Applying the server list name and icon…";
         if (Contains(body, "Object Storage") || Contains(body, "Published budget")
             || Contains(body, "Seeding Object") || Contains(body, "meta/infra.json"))
             return "Saving shared storage…";

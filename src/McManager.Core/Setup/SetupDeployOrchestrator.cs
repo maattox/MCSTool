@@ -321,6 +321,26 @@ public sealed class SetupDeployOrchestrator
             if (!icons.Succeeded)
                 log?.Report("Door icon refresh skipped: " + (icons.Error ?? "unknown"));
 
+            // OsMeta runs after the first Minecraft start. record_boot only applies
+            // server-icon.png / MOTD Before=minecraft, so Paper and vanilla were
+            // left without a list icon on create. Restart so this start loads the seed.
+            log?.Report(SetupIdentityApply.RestartLog);
+            var applyIcon = await _bootstrap.RestartMinecraftForIdentityAsync(
+                    outputs, state, log, cancellationToken)
+                .ConfigureAwait(false);
+            if (!applyIcon.Succeeded)
+            {
+                return SetupDeployResult.Fail(
+                    stage,
+                    applyIcon.Error ?? "Minecraft restart after identity seed failed.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(applyIcon.Warning))
+            {
+                log?.Report(applyIcon.Warning);
+                quarantineNotice ??= applyIcon.Warning;
+            }
+
             stage = SetupApplyStage.OsMeta;
             PersistStage(state, stage);
             ReportProgress(progress, stage, complete: true);
