@@ -1,6 +1,6 @@
 # Setup guide
 
-This is the short path guide for setting up your Minecraft server, hosted on Oracle Cloud Infrastructure (OCI) using Always Free resources, and managed from one desktop app.
+This is the guide for setting up your Minecraft server, hosted on Oracle Cloud Infrastructure (OCI) using Always Free resources, and managed from one desktop app.
 
 **Windows only.** There is no macOS or Linux Manager in this version.
 
