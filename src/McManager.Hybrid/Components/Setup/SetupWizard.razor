@@ -432,6 +432,9 @@
             }
             else if (Vm.IsStepSummary)
             {
+                <aside class="mcm-pack-list-warning" role="note">
+                    <p>@SetupWizardViewModel.IncompleteDeployWarning</p>
+                </aside>
                 @if (Vm.ShowDeploySuccess)
                 {
                     <aside class="mcm-wizard-complete" role="status">

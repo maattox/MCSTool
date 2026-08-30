@@ -2350,6 +2350,10 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     overflow: hidden;
 }
 
+.mcm-wizard-body.is-deploying > .mcm-pack-list-warning {
+    flex-shrink: 0;
+}
+
 .mcm-wizard-review-form {
     flex: 0 0 auto;
 }

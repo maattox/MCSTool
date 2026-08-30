@@ -48,7 +48,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         "This product uses an Ampere A1 VM for the game server plus a micro VM for the door VM. These are included in Oracle's Always Free offering. There is no paid mode. A1 capacity can be unavailable in the region.";
 
     public const string IncompleteDeployWarning =
-        "If the server deployment is interrupted after the server VM is created but before the Minecraft server is started, the server VM will NOT turn off automatically. If you selected the 4 OCPU / 24 GB Memory VM shape, make sure to restart and finish the deployment or turn off the VM manually in the OCI Console. If the VM is left on for over 375 hours, your account will begin to charged.";
+        "If the server deployment is interrupted after the server VM is created but before the Minecraft server is started, the server VM will NOT turn off automatically. If you selected the 4 OCPU / 24 GB Memory VM shape, make sure to restart and finish the deployment or turn off the VM manually in the OCI Console. If the VM is left on for over 375 hours, your account will begin to be charged.";
 
     public const string AlwaysFreeResidualHelp =
         "A $1 monthly budget is a last-resort brake that stops the game server. Oracle may still bill a small residual (~$1–$2) after that brake fires. This is not a hard $0 guarantee.";

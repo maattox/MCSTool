@@ -147,6 +147,7 @@ Paste the Auth Token you saved in Part 2 and store it.
 Pick a size and start deployment.
 
 - Deployment often takes **10–25 minutes**, depending on VM size and pack. Leave the app open until it finishes.
+- If Deploy is interrupted after the game VM already exists, that VM may stay on. Finish Setup, or stop it in the OCI Console (especially the 4 OCPU / 24 GB size).
 - The recommended size (**4 OCPU / 24 GB**) can only run about **~11.5 hours a day** on average over a month. Manager’s usage stats make that easy to track.
 - The smaller size (**2 OCPU / 12 GB**) can usually stay on all month, with less room for mods and players.
 

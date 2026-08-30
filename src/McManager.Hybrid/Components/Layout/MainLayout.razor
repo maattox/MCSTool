@@ -19,7 +19,6 @@
             <div class="mcm-bell">
                 <button type="button"
                         class="mcm-chrome-btn @(Notices.PanelOpen ? "is-open" : null)"
-                        title="Notifications"
                         aria-label="@Notices.BellAriaLabel"
                         aria-haspopup="dialog"
                         aria-expanded="@(Notices.PanelOpen ? "true" : "false")"
@@ -92,7 +91,6 @@
             </div>
             <button type="button"
                     class="mcm-chrome-btn"
-                    title="Program settings"
                     aria-label="Program settings"
                     @onclick="OpenSettings">
                 <i class="ti ti-settings" aria-hidden="true"></i>

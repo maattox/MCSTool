@@ -3,14 +3,12 @@
 
 <header class="mcm-caption">
     <div class="mcm-caption-drag"
-         title="Drag to move"
          @onpointerdown="OnDragPointerDown"></div>
     <div class="mcm-caption-actions">
         @AppActions
         <div class="mcm-caption-win">
             <button type="button"
                     class="mcm-caption-winbtn"
-                    title="Minimize"
                     aria-label="Minimize"
                     @onclick="WindowChrome.Minimize"
                     @onclick:stopPropagation="true">
@@ -18,7 +16,6 @@
             </button>
             <button type="button"
                     class="mcm-caption-winbtn"
-                    title="@MaximizeTitle"
                     aria-label="@MaximizeTitle"
                     @onclick="WindowChrome.ToggleMaximize"
                     @onclick:stopPropagation="true">
@@ -26,7 +23,6 @@
             </button>
             <button type="button"
                     class="mcm-caption-winbtn is-close"
-                    title="Close"
                     aria-label="Close"
                     @onclick="WindowChrome.Close"
                     @onclick:stopPropagation="true">
