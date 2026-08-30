@@ -8,16 +8,14 @@ A Windows app for a **private Minecraft server** (modded or vanilla) for you and
 
 ## What you get
 
-- One app to create the server and run it afterward
-- Vanilla, Paper, or a modpack you already have on your PC
-- Friends always join the same address
-- When nobody is playing, the game server sleeps. A small always-on “doorbell” still answers Minecraft and can wake it
-- Only people whose IP you add in the manager can connect
+- One app to create the server and manage it afterward
+- Vanilla or modded server
+- Players always join the same address
+- When nobody is playing, the game server sleeps. A small always-on “doorbell” still answers Minecraft and can wake the server
+- Only players whose IP you add in the manager can connect
 - Start and stop, the friend list, usage, and world backups — all in the app
 
 Windows only. There is no Mac or Linux app yet.
-
-For a modpack, friends need **that same pack file** on their PCs.
 
 ## Cost
 
@@ -37,7 +35,3 @@ Step-by-step: [docs/Guide.md](docs/Guide.md).
 ## License
 
 [MIT](LICENSE)
-
----
-
-Working on the code? See [docs/README.md](docs/README.md).
