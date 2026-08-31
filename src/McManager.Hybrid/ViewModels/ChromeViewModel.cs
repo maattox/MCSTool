@@ -127,6 +127,6 @@ public sealed partial class ChromeViewModel : ObservableObject
             return plus > 0 ? informational[..plus] : informational;
         }
 
-        return asm.GetName().Version?.ToString(3) ?? "0.9.0";
+        return asm.GetName().Version?.ToString(3) ?? "0.9.1";
     }
 }

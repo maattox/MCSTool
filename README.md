@@ -4,7 +4,7 @@
 
 A Windows app for a **private Minecraft server** (modded or vanilla) for you and your friends, hosted on [Oracle Cloud](https://www.oracle.com/cloud/). Built to run on Oracle’s Always Free resources.
 
-**Open beta 0.9.0** — download it from [Releases](https://github.com/maattox/oci-mc-server/releases).
+**Open beta 0.9.1** — download it from [Releases](https://github.com/maattox/oci-mc-server/releases).
 
 ![MC Manager](assets/sample-image.png)
 
@@ -28,7 +28,7 @@ Oracle often requires a **Pay As You Go** account so the server can be created. 
 ## Get started
 
 1. You need **Windows 10 or 11**, an [Oracle Cloud](https://cloud.oracle.com) account, and **Minecraft Java Edition**.
-2. Download **MCManager-Setup-0.9.0.exe** from [Releases](https://github.com/maattox/oci-mc-server/releases).
+2. Download **MCManager-Setup-0.9.1.exe** from [Releases](https://github.com/maattox/oci-mc-server/releases).
 3. Windows may say the publisher is unknown. That is expected for this beta. Choose **More info** → **Run anyway** only if you downloaded the file from this project’s Releases.
 4. Open **MC Manager** and follow Setup. The app will tell you if a Microsoft component is missing.
 
