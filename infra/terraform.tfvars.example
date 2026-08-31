@@ -6,8 +6,10 @@ tenancy_ocid = "ocid1.tenancy.oc1..REPLACE_ME" # must replace — tofu does not 
 region       = "us-sanjose-1"
 oci_profile  = "DEFAULT"
 
-# Contents of ~/.ssh/id_ed25519.pub (or the key Setup will use)
+# Contents of ~/.ssh/id_ed25519.pub (or the key Setup will use for the game VM)
 ssh_public_key = "ssh-ed25519 AAAA... comment"
+# Optional: different public key for the door. Empty = same as ssh_public_key.
+# door_ssh_public_key = ""
 
 admin_cidr = "203.0.113.10/32"
 admin_name = "admin"

@@ -221,15 +221,16 @@ public sealed class SetupDeployOrchestrator
             if (!waitVm.Succeeded)
                 return SetupDeployResult.Fail(stage, waitVm.Error ?? "Wait RUNNING failed.");
 
-            var key = TofuApplyOutputs.PrivateKeyPath(state);
+            var vm1Key = TofuApplyOutputs.PrivateKeyPath(state);
+            var doorKey = TofuApplyOutputs.DoorPrivateKeyPath(state);
             var c1 = await _bootstrap.WaitCloudInitAsync(
-                outputs.Vm1SshHost, outputs.SshUser, key, "/etc/mcmgr/cloud-init-done", log, cancellationToken)
+                outputs.Vm1SshHost, outputs.SshUser, vm1Key, "/etc/mcmgr/cloud-init-done", log, cancellationToken)
                 .ConfigureAwait(false);
             if (!c1.Succeeded)
                 return SetupDeployResult.Fail(stage, c1.Error ?? "VM1 cloud-init wait failed.");
 
             var c2 = await _bootstrap.WaitCloudInitAsync(
-                outputs.DoorSshHost, outputs.SshUser, key, "/etc/mcmgr-door/cloud-init-done", log, cancellationToken)
+                outputs.DoorSshHost, outputs.SshUser, doorKey, "/etc/mcmgr-door/cloud-init-done", log, cancellationToken)
                 .ConfigureAwait(false);
             if (!c2.Succeeded)
                 return SetupDeployResult.Fail(stage, c2.Error ?? "Door cloud-init wait failed.");

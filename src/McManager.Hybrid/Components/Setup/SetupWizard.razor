@@ -93,7 +93,7 @@
             else if (Vm.IsStepSsh)
             {
                 <p class="mcm-wizard-inline-help">
-                    Generate a new key, or import a .pub.
+                    Generate a new key, or import a .pub. Both VMs use this key unless you pick a different one for the door.
                     <WizardHelp Title="@SetupWizardViewModel.SshKeyHelp" AriaLabel="About the SSH key" />
                 </p>
                 <label class="mcm-radio-row">
@@ -125,7 +125,7 @@
                     </button>
                 </div>
                 <div class="mcm-field">
-                    <label for="mcm-setup-ssh-pub">Public key</label>
+                    <label for="mcm-setup-ssh-pub">Game VM (VM1) public key</label>
                     <textarea id="mcm-setup-ssh-pub"
                               class="mcm-wizard-mono"
                               name="ssh-public-key"
@@ -143,6 +143,50 @@
                 @if (!string.IsNullOrWhiteSpace(Vm.SshFingerprint))
                 {
                     <p class="mcm-wizard-hint mcm-wizard-mono">@Vm.SshFingerprint</p>
+                }
+                <div class="mcm-checkbox-row">
+                    <label class="mcm-check-hit">
+                        <input type="checkbox"
+                               disabled="@(!Vm.CanMutateWizard)"
+                               @bind="Vm.SshSplitDoorKey" />
+                        <span>Use a different key for the door VM</span>
+                    </label>
+                    <WizardHelp Title="@SetupWizardViewModel.DoorSshHelp" AriaLabel="About a separate door SSH key" />
+                </div>
+                @if (Vm.SshSplitDoorKey)
+                {
+                    <div class="mcm-wizard-actions">
+                        <button type="button"
+                                disabled="@(!Vm.CanMutateWizard)"
+                                @onclick="Vm.GenerateDoorSshKeyAsync">
+                            Generate door key
+                        </button>
+                        <button type="button"
+                                disabled="@(!Vm.CanMutateWizard)"
+                                @onclick="Vm.ImportDoorSshKeyAsync">
+                            Import door .pub…
+                        </button>
+                    </div>
+                    <div class="mcm-field">
+                        <label for="mcm-setup-door-ssh-pub">Door VM public key</label>
+                        <textarea id="mcm-setup-door-ssh-pub"
+                                  class="mcm-wizard-mono"
+                                  name="door-ssh-public-key"
+                                  autocomplete="off"
+                                  spellcheck="false"
+                                  rows="3"
+                                  disabled="@(!Vm.CanMutateWizard)"
+                                  @bind="Vm.DoorSshPublicKey"
+                                  @bind:event="oninput"></textarea>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(Vm.DoorSshPublicKeyPath))
+                    {
+                        <p class="mcm-wizard-hint mcm-wizard-mono">@Vm.DoorSshPublicKeyPath</p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Vm.DoorSshFingerprint))
+                    {
+                        <p class="mcm-wizard-hint mcm-wizard-mono">@Vm.DoorSshFingerprint</p>
+                    }
                 }
             }
             else if (Vm.IsStepGame)

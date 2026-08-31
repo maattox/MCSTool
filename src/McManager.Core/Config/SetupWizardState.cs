@@ -72,6 +72,22 @@ public sealed class SetupWizardState
     [JsonPropertyName("ssh_fingerprint")]
     public string SshFingerprint { get; set; } = "";
 
+    /// <summary>
+    /// When true, the door uses <see cref="DoorSshPublicKey"/> / <see cref="DoorSshPublicKeyPath"/>
+    /// instead of the game-VM key. Default false = same key for both.
+    /// </summary>
+    [JsonPropertyName("ssh_split_door_key")]
+    public bool SshSplitDoorKey { get; set; }
+
+    [JsonPropertyName("door_ssh_public_key_path")]
+    public string DoorSshPublicKeyPath { get; set; } = "";
+
+    [JsonPropertyName("door_ssh_public_key")]
+    public string DoorSshPublicKey { get; set; } = "";
+
+    [JsonPropertyName("door_ssh_fingerprint")]
+    public string DoorSshFingerprint { get; set; } = "";
+
     [JsonPropertyName("vanilla_confirmed")]
     public bool VanillaConfirmed { get; set; }
 

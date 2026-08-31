@@ -36,13 +36,14 @@ module "storage" {
 }
 
 module "compute" {
-  source         = "./modules/compute"
-  tenancy_ocid   = var.tenancy_ocid
-  compartment_id = module.compartment.id
-  subnet_id      = module.network.subnet_id
-  ssh_public_key = var.ssh_public_key
-  vm1_ocpus      = var.vm1_ocpus
-  vm1_memory_gb  = var.vm1_memory_gb
+  source              = "./modules/compute"
+  tenancy_ocid        = var.tenancy_ocid
+  compartment_id      = module.compartment.id
+  subnet_id           = module.network.subnet_id
+  ssh_public_key      = var.ssh_public_key
+  door_ssh_public_key = var.door_ssh_public_key
+  vm1_ocpus           = var.vm1_ocpus
+  vm1_memory_gb       = var.vm1_memory_gb
   vm1_user_data = base64gzip(templatefile("${path.module}/cloud-init/vm1.yaml.tftpl", {
     firewalld_unit = replace(file("${path.module}/cloud-init/firewalld-mcmgr.service"), "\r\n", "\n")
   }))

@@ -125,7 +125,8 @@ public sealed class TofuApplyOutputs
 
     public ManagerLocalConfig ToLocalConfig(SetupWizardState state, string rconPassword)
     {
-        var keyPath = PrivateKeyPath(state);
+        var vm1Key = PrivateKeyPath(state);
+        var doorKey = DoorPrivateKeyPath(state);
         var ociConfig = "%USERPROFILE%\\.oci\\config";
         return new ManagerLocalConfig
         {
@@ -157,7 +158,7 @@ public sealed class TofuApplyOutputs
                 SecondaryPrivateIpId = Vm1SecondaryPrivateIpId,
                 SshHost = Vm1SshHost,
                 SshUser = SshUser,
-                SshKeyPath = keyPath,
+                SshKeyPath = vm1Key,
                 WorldPath = WorldPath,
                 MinecraftUnit = MinecraftUnit,
             },
@@ -170,7 +171,7 @@ public sealed class TofuApplyOutputs
                 SecondaryPrivateIpId = DoorSecondaryPrivateIpId,
                 SshHost = DoorSshHost,
                 SshUser = SshUser,
-                SshKeyPath = keyPath,
+                SshKeyPath = doorKey,
                 HttpPort = DoorHttpPort,
             },
             Play = new PlaySettings
@@ -188,9 +189,31 @@ public sealed class TofuApplyOutputs
         };
     }
 
-    public static string PrivateKeyPath(SetupWizardState state)
+    /// <summary>Local private-key path for the game VM (VM1).</summary>
+    public static string PrivateKeyPath(SetupWizardState state) =>
+        DerivePrivateKeyPath(state.SshPublicKeyPath);
+
+    /// <summary>
+    /// Local private-key path for the door. Same as <see cref="PrivateKeyPath"/> unless
+    /// Setup split a second door public key.
+    /// </summary>
+    public static string DoorPrivateKeyPath(SetupWizardState state) =>
+        UsesSplitDoorKey(state)
+            ? DerivePrivateKeyPath(state.DoorSshPublicKeyPath)
+            : PrivateKeyPath(state);
+
+    /// <summary>Public key line tofu installs on the door. Falls back to the game-VM key.</summary>
+    public static string DoorPublicKeyLine(SetupWizardState state) =>
+        UsesSplitDoorKey(state)
+            ? state.DoorSshPublicKey.Trim()
+            : (state.SshPublicKey ?? "").Trim();
+
+    public static bool UsesSplitDoorKey(SetupWizardState state) =>
+        state.SshSplitDoorKey && SshKeyHelper.LooksLikePublicKey(state.DoorSshPublicKey ?? "");
+
+    public static string DerivePrivateKeyPath(string? publicKeyPath)
     {
-        var pub = state.SshPublicKeyPath?.Trim() ?? "";
+        var pub = publicKeyPath?.Trim() ?? "";
         if (pub.EndsWith(".pub", StringComparison.OrdinalIgnoreCase))
             return pub[..^4];
         return SshKeyHelper.DefaultPrivateKeyPath();

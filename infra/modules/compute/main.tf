@@ -22,6 +22,11 @@ variable "ssh_public_key" {
   type = string
 }
 
+variable "door_ssh_public_key" {
+  type    = string
+  default = ""
+}
+
 variable "vm1_ocpus" {
   type = number
 }
@@ -77,9 +82,10 @@ data "oci_core_images" "ubuntu_x86" {
 }
 
 locals {
-  availability_domain = try(data.oci_identity_availability_domains.ads.availability_domains[0].name, "")
-  vm1_image_id        = try(data.oci_core_images.ubuntu_aarch64.images[0].id, "")
-  door_image_id       = try(data.oci_core_images.ubuntu_x86.images[0].id, "")
+  availability_domain      = try(data.oci_identity_availability_domains.ads.availability_domains[0].name, "")
+  vm1_image_id             = try(data.oci_core_images.ubuntu_aarch64.images[0].id, "")
+  door_image_id            = try(data.oci_core_images.ubuntu_x86.images[0].id, "")
+  door_ssh_authorized_keys = trimspace(var.door_ssh_public_key) != "" ? var.door_ssh_public_key : var.ssh_public_key
 }
 
 resource "oci_core_instance" "vm1" {
@@ -166,7 +172,7 @@ resource "oci_core_instance" "door" {
   }
 
   metadata = {
-    ssh_authorized_keys = var.ssh_public_key
+    ssh_authorized_keys = local.door_ssh_authorized_keys
     user_data           = var.door_user_data
   }
 

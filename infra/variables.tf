@@ -21,11 +21,25 @@ variable "oci_profile" {
 
 variable "ssh_public_key" {
   type        = string
-  description = "OpenSSH public key injected into both instances (ubuntu user). Entire single line from a .pub file."
+  description = "OpenSSH public key injected into the game VM (ubuntu user). Entire single line from a .pub file. Also used for the door when door_ssh_public_key is empty."
 
   validation {
     condition     = can(regex("^ssh-(ed25519|rsa|ed25519-sk|rsa-sha2-256|rsa-sha2-512) [A-Za-z0-9+/=]+", var.ssh_public_key)) && !strcontains(var.ssh_public_key, "AAAA...")
     error_message = "ssh_public_key must be a real OpenSSH public key line (starts with ssh-ed25519 or ssh-rsa), not the example AAAA... comment placeholder."
+  }
+}
+
+variable "door_ssh_public_key" {
+  type        = string
+  description = "OpenSSH public key for the door VM. Empty = same as ssh_public_key."
+  default     = ""
+
+  validation {
+    condition = var.door_ssh_public_key == "" || (
+      can(regex("^ssh-(ed25519|rsa|ed25519-sk|rsa-sha2-256|rsa-sha2-512) [A-Za-z0-9+/=]+", var.door_ssh_public_key))
+      && !strcontains(var.door_ssh_public_key, "AAAA...")
+    )
+    error_message = "door_ssh_public_key must be empty (use ssh_public_key) or a real OpenSSH public key line."
   }
 }
 

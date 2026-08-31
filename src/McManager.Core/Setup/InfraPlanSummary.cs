@@ -28,6 +28,13 @@ public static class InfraPlanSummary
         var ssh = string.IsNullOrWhiteSpace(state.SshFingerprint)
             ? (string.IsNullOrWhiteSpace(state.SshPublicKeyPath) ? "(no key yet)" : state.SshPublicKeyPath)
             : state.SshFingerprint;
+        if (TofuApplyOutputs.UsesSplitDoorKey(state))
+        {
+            var door = string.IsNullOrWhiteSpace(state.DoorSshFingerprint)
+                ? (string.IsNullOrWhiteSpace(state.DoorSshPublicKeyPath) ? "(door key set)" : state.DoorSshPublicKeyPath)
+                : state.DoorSshFingerprint;
+            ssh = $"game VM {ssh}; door {door}";
+        }
 
         var shape = Vm1ShapeChoice.Format(state.Vm1Ocpus, state.Vm1MemoryGb);
         var hours = Vm1ShapeChoice.HoursHint(state.Vm1Ocpus, state.Vm1MemoryGb);

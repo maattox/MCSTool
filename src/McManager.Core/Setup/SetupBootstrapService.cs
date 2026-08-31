@@ -69,7 +69,7 @@ public sealed class SetupBootstrapService
                 "Product door_vm/ not found. Expected OCI-mc-server/door_vm (not lab development/)."));
         }
 
-        var key = TofuApplyOutputs.PrivateKeyPath(state);
+        var key = TofuApplyOutputs.DoorPrivateKeyPath(state);
         return Task.Run(
             () =>
             {
@@ -158,15 +158,16 @@ public sealed class SetupBootstrapService
         IProgress<string>? log,
         CancellationToken cancellationToken = default)
     {
-        var key = TofuApplyOutputs.PrivateKeyPath(state);
+        var vm1Key = TofuApplyOutputs.PrivateKeyPath(state);
+        var doorKey = TofuApplyOutputs.DoorPrivateKeyPath(state);
         return Task.Run(
             () =>
             {
                 try
                 {
-                    EnsureDoorRuntime(outputs, key, log);
-                    EnsureVm1Runtime(outputs, key, log);
-                    PromotePlayableAfterVm1(outputs, key, log);
+                    EnsureDoorRuntime(outputs, doorKey, log);
+                    EnsureVm1Runtime(outputs, vm1Key, log);
+                    PromotePlayableAfterVm1(outputs, doorKey, log);
                     return ServiceResult.Ok();
                 }
                 catch (Exception ex)
@@ -354,7 +355,7 @@ public sealed class SetupBootstrapService
         IProgress<string>? log,
         CancellationToken cancellationToken = default)
     {
-        var key = TofuApplyOutputs.PrivateKeyPath(state);
+        var key = TofuApplyOutputs.DoorPrivateKeyPath(state);
         return Task.Run(
             () =>
             {

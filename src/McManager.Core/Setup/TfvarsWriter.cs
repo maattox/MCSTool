@@ -28,8 +28,14 @@ public static class TfvarsWriter
             if (cidr is null)
                 return ServiceResult.Fail("admin_cidr must be an IPv4 address or /32 CIDR.");
 
-            if (!SshKeyHelper.LooksLikePublicKey(state.SshPublicKey))
+            var vm1Pub = (state.SshPublicKey ?? "").Trim();
+            if (!SshKeyHelper.LooksLikePublicKey(vm1Pub))
                 return ServiceResult.Fail("SSH public key is missing or invalid.");
+
+            if (state.SshSplitDoorKey && !SshKeyHelper.LooksLikePublicKey(state.DoorSshPublicKey ?? ""))
+                return ServiceResult.Fail("Door SSH public key is missing or invalid.");
+
+            var doorPub = TofuApplyOutputs.DoorPublicKeyLine(state);
 
             if (!Vm1ShapeChoice.IsAllowed(state.Vm1Ocpus, state.Vm1MemoryGb))
             {
@@ -43,7 +49,8 @@ public static class TfvarsWriter
                 + $"tenancy_ocid            = {HclString(tenancy)}\n"
                 + $"region                  = {HclString(state.OciRegion.Trim())}\n"
                 + $"oci_profile             = {HclString(string.IsNullOrWhiteSpace(state.OciProfile) ? "DEFAULT" : state.OciProfile.Trim())}\n"
-                + $"ssh_public_key          = {HclString(state.SshPublicKey.Trim())}\n"
+                + $"ssh_public_key          = {HclString(vm1Pub)}\n"
+                + $"door_ssh_public_key     = {HclString(doorPub)}\n"
                 + $"admin_cidr              = {HclString(cidr)}\n"
                 + $"admin_name              = {HclString("admin")}\n"
                 + $"alert_email             = {HclString(state.AlertEmail.Trim())}\n"

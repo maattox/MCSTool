@@ -66,7 +66,10 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         "Oracle emails the $1 last-resort budget alert here. Use a comma between addresses if more than one.";
 
     public const string SshKeyHelp =
-        "Create a new key on this PC, or import an existing public key. The private key stays on disk and is not saved in Setup’s resume file. This is not the Oracle API key.";
+        "Create a new key on this PC, or import an existing public key. The private key stays on disk and is not saved in Setup’s resume file. This is not the Oracle API key. Default is one key for both VMs. You can optionally import a different key for the door.";
+
+    public const string DoorSshHelp =
+        "Game VM and door can use different keys. The door public key is installed at deploy. Advanced can still change local paths later without installing a new key on the VM.";
 
     public const string VanillaHelp =
         "Official Mojang jar, or Optimized Vanilla (Paper) for better multiplayer.";
@@ -190,6 +193,18 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     [ObservableProperty]
     private string _sshFingerprint = "";
+
+    [ObservableProperty]
+    private bool _sshSplitDoorKey;
+
+    [ObservableProperty]
+    private string _doorSshPublicKeyPath = "";
+
+    [ObservableProperty]
+    private string _doorSshPublicKey = "";
+
+    [ObservableProperty]
+    private string _doorSshFingerprint = "";
 
     [ObservableProperty]
     private bool _vanillaConfirmed;
@@ -710,13 +725,21 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     public void OpenEula() => OpenUrl(MinecraftEulaUrl);
 
-    public async Task GenerateSshKeyAsync()
+    public async Task GenerateSshKeyAsync() => await GenerateSshKeyCoreAsync(forDoor: false).ConfigureAwait(true);
+
+    public async Task GenerateDoorSshKeyAsync() => await GenerateSshKeyCoreAsync(forDoor: true).ConfigureAwait(true);
+
+    public async Task ImportSshKeyAsync() => await ImportSshKeyCoreAsync(forDoor: false).ConfigureAwait(true);
+
+    public async Task ImportDoorSshKeyAsync() => await ImportSshKeyCoreAsync(forDoor: true).ConfigureAwait(true);
+
+    private async Task GenerateSshKeyCoreAsync(bool forDoor)
     {
         if (IsBusy || IsDeployLocked)
             return;
 
         IsBusy = true;
-        StatusMessage = "Generating ed25519 key…";
+        StatusMessage = forDoor ? "Generating door ed25519 key…" : "Generating ed25519 key…";
         try
         {
             var result = await SshKeyHelper.GenerateEd25519Async().ConfigureAwait(true);
@@ -726,8 +749,17 @@ public sealed partial class SetupWizardViewModel : ObservableObject
                 return;
             }
 
-            SshGenerateMode = true;
-            ApplySsh(result.Value);
+            if (forDoor)
+            {
+                SshSplitDoorKey = true;
+                ApplyDoorSsh(result.Value);
+            }
+            else
+            {
+                SshGenerateMode = true;
+                ApplySsh(result.Value);
+            }
+
             StatusMessage = $"Created {result.Value.Path} (private key stays on disk).";
             Persist();
         }
@@ -910,14 +942,14 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         }
     }
 
-    public async Task ImportSshKeyAsync()
+    private async Task ImportSshKeyCoreAsync(bool forDoor)
     {
         if (IsDeployLocked)
             return;
 
         var path = await _picker.OpenFileAsync(new FilePickRequest
         {
-            Title = "Import OpenSSH public key",
+            Title = forDoor ? "Import door OpenSSH public key" : "Import OpenSSH public key",
             Filters =
             [
                 new FileTypeFilter("Public keys", ".pub"),
@@ -935,8 +967,17 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             return;
         }
 
-        SshGenerateMode = false;
-        ApplySsh(imported.Value);
+        if (forDoor)
+        {
+            SshSplitDoorKey = true;
+            ApplyDoorSsh(imported.Value);
+        }
+        else
+        {
+            SshGenerateMode = false;
+            ApplySsh(imported.Value);
+        }
+
         StatusMessage = $"Imported {imported.Value.Path}";
         Persist();
     }
@@ -1661,6 +1702,13 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         SshFingerprint = info.Fingerprint;
     }
 
+    private void ApplyDoorSsh(SshPublicKeyInfo info)
+    {
+        DoorSshPublicKeyPath = info.Path;
+        DoorSshPublicKey = info.PublicKeyLine;
+        DoorSshFingerprint = info.Fingerprint;
+    }
+
     private void LoadFrom(SetupWizardState state)
     {
         CurrentStep = state.CurrentStep;
@@ -1679,6 +1727,10 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         SshPublicKeyPath = state.SshPublicKeyPath;
         SshPublicKey = state.SshPublicKey;
         SshFingerprint = state.SshFingerprint;
+        SshSplitDoorKey = state.SshSplitDoorKey;
+        DoorSshPublicKeyPath = state.DoorSshPublicKeyPath ?? "";
+        DoorSshPublicKey = state.DoorSshPublicKey ?? "";
+        DoorSshFingerprint = state.DoorSshFingerprint ?? "";
         VanillaConfirmed = state.VanillaConfirmed;
         ServerType = SetupServerType.Normalize(state.ServerType);
         VanillaFlavor = SetupVanillaFlavor.Normalize(state.VanillaFlavor);
@@ -1739,6 +1791,10 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         SshPublicKeyPath = SshPublicKeyPath,
         SshPublicKey = SshPublicKey,
         SshFingerprint = SshFingerprint,
+        SshSplitDoorKey = SshSplitDoorKey,
+        DoorSshPublicKeyPath = DoorSshPublicKeyPath,
+        DoorSshPublicKey = DoorSshPublicKey,
+        DoorSshFingerprint = DoorSshFingerprint,
         VanillaConfirmed = true,
         ServerType = SetupServerType.Normalize(ServerType),
         VanillaFlavor = SetupVanillaFlavor.Normalize(VanillaFlavor),
@@ -1778,7 +1834,8 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         SetupWizardState.StepOci => !string.IsNullOrWhiteSpace(OciProfile)
             && !string.IsNullOrWhiteSpace(OciRegion)
             && AlertEmail.Contains('@', StringComparison.Ordinal),
-        SetupWizardState.StepSsh => SshKeyHelper.LooksLikePublicKey(SshPublicKey),
+        SetupWizardState.StepSsh => SshKeyHelper.LooksLikePublicKey(SshPublicKey)
+            && (!SshSplitDoorKey || SshKeyHelper.LooksLikePublicKey(DoorSshPublicKey)),
         SetupWizardState.StepGame => SetupServerType.IsModded(ServerType)
             ? PackConfirmed
                 && ClientPackAcknowledged
