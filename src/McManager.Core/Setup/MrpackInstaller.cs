@@ -14,7 +14,7 @@ namespace McManager.Core.Setup;
 /// </summary>
 public sealed class MrpackInstaller
 {
-    public const string UserAgent = "McManager/0.1 (https://github.com/maattox/oci-mc-server)";
+    public const string UserAgent = "McManager/0.1 (https://github.com/maattox/MCSTool)";
     public const int HttpTimeoutSeconds = 120;
     public const string OverridesPrefix = "overrides/";
     public const string ServerOverridesPrefix = "server-overrides/";

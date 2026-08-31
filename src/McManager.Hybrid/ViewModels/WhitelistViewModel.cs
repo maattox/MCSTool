@@ -119,7 +119,7 @@ public sealed partial class WhitelistViewModel : ObservableObject
             Ip = normalized,
             IsAdmin = isAdmin,
         });
-        StatusMessage = "Friend added (not saved yet).";
+        StatusMessage = "Player added (not saved yet).";
         RecalculateDirty();
         return true;
     }
@@ -143,7 +143,7 @@ public sealed partial class WhitelistViewModel : ObservableObject
         row.Name = name.Trim();
         row.Ip = normalized;
         row.IsAdmin = isAdmin;
-        StatusMessage = "Friend updated (not saved yet).";
+        StatusMessage = "Player updated (not saved yet).";
         RecalculateDirty();
         NotifyFriendsUi();
         return true;
@@ -155,7 +155,7 @@ public sealed partial class WhitelistViewModel : ObservableObject
             return;
 
         Friends.Remove(row);
-        StatusMessage = "Friend removed (not saved yet).";
+        StatusMessage = "Player removed (not saved yet).";
     }
 
     public async Task SaveChangesAsync()
@@ -214,7 +214,7 @@ public sealed partial class WhitelistViewModel : ObservableObject
         var admin = FindAdminFriend();
         if (admin is null)
         {
-            StatusMessage = "No admin friend found. Mark a friend as Admin or set admin_name in config.";
+            StatusMessage = "No admin player found. Mark a player as Admin or set admin_name in config.";
             return;
         }
 

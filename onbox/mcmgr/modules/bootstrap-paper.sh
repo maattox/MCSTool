@@ -8,7 +8,7 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/../common" && pwd)/env.sh"
 
 FILL_V3_PROJECT_URL="${FILL_V3_PROJECT_URL:-https://fill.papermc.io/v3/projects/paper}"
-PAPER_FILL_USER_AGENT="${PAPER_FILL_USER_AGENT:-mcmgr-bootstrap/0.1.0 (https://github.com/maattox/oci-mc-server)}"
+PAPER_FILL_USER_AGENT="${PAPER_FILL_USER_AGENT:-mcmgr-bootstrap/0.1.0 (https://github.com/maattox/MCSTool)}"
 PAPER_FILL_PY="${MCMGR_HOME}/common/paper_fill_v3.py"
 
 # Exports for driver:

@@ -1,8 +1,12 @@
 # Setup guide
 
-This is the guide for setting up your Minecraft server, hosted on Oracle Cloud Infrastructure (OCI) using Always Free resources, and managed from one desktop app.
+This is the guide for setting up your Minecraft server with **MCSTool**, hosted on Oracle Cloud Infrastructure (OCI) using Always Free resources, and managed from one desktop app.
 
-**Windows only.** There is no macOS or Linux Manager in this version.
+**Windows only.** There is no macOS or Linux MCSTool in this version.
+
+MCSTool does not include an in-app pack browser. You supply the pack file. Supported formats are **Modrinth `.mrpack`**, **CurseForge Server Files**, and a **zip of `.jar` mods**. For a zip of jars, Setup asks you to confirm the loader, Minecraft version, and Java.
+
+Always Free *can* work at **$0**, but Oracle **capacity often blocks creating the VMs**. Upgrading the account to **Pay As You Go (PAYG)** raises scheduling priority. You can still stay at $0 if you stay inside Always Free limits.
 
 ## What you need
 
@@ -111,18 +115,18 @@ Setup also creates a last-resort **$1 monthly budget**. If spend ever reaches $1
 
 ### Download and install
 
-1. On the [GitHub repo](https://github.com/maattox/oci-mc-server), open the latest **MC Manager** release under **Releases**.
+1. On the [GitHub repo](https://github.com/maattox/MCSTool), open the latest **MCSTool** release under **Releases**.
 2. Download and run the setup `.exe`.
 
 - The installer is not signed. Windows Defender / SmartScreen may show **Windows protected your PC**. Choose **More info** → **Run anyway**.
 
-1. If Manager says a Microsoft component is missing, install [Evergreen WebView2](https://go.microsoft.com/fwlink/p/?LinkId=2124703), then open the app again.
+1. If MCSTool says a Microsoft component is missing, install [Evergreen WebView2](https://go.microsoft.com/fwlink/p/?LinkId=2124703), then open the app again.
 
 
 
 ### Walk through the wizard
 
-1. Open **MC Manager**. On first launch, select **Deploy a new stack**.
+1. Open **MCSTool**. On first launch, select **Deploy a new stack**.
 2. Work through the pages:
 
 **Step 1 — Disclaimers**  
@@ -140,7 +144,7 @@ Choose **Vanilla** or **Modded**.
 - Supported pack formats: Modrinth `.mrpack`, CurseForge **Server Files**, or a `.zip` of `.jar` mods (you may need to confirm some details about the pack).
 - Supported loaders: Fabric, Forge, NeoForge.
 - Large packs with heavy mods will lag on this VM. In particular, skip **Distant Horizons** — generating new chunks on this size of VM causes significant lag.
-- You can change the pack later from Manager.
+- You can change the pack later from MCSTool.
 - **Modded:** players need **that same exported pack file** on their PCs.
 
 **Step 5 — Server identity**  
@@ -157,12 +161,12 @@ Pick a size and start deployment.
 
 - Deployment often takes **10–25 minutes**, depending on VM size and pack. Leave the app open until it finishes.
 - If Deploy is interrupted after the game VM already exists, that VM may stay on. Finish Setup, or stop it in the OCI Console (especially the 4 OCPU / 24 GB size).
-- The recommended size (**4 OCPU / 24 GB**) can only run about **~11.5 hours a day** on average over a month. Manager’s usage stats make that easy to track.
+- The recommended size (**4 OCPU / 24 GB**) can only run about **~11.5 hours a day** on average over a month. MCSTool’s usage stats make that easy to track.
 - The smaller size (**2 OCPU / 12 GB**) can usually stay on all month, with less room for mods and players.
 
 
 
-#### When deployment completes, click **Close** to enter the Manager.
+#### When deployment completes, click **Close** to enter MCSTool.
 
 ---
 
@@ -170,9 +174,9 @@ Pick a size and start deployment.
 
 ## Start playing
 
-The Minecraft server should now be up. Copy the **play IP** from Manager and connect from Minecraft Java Edition.
+The Minecraft server should now be up. Copy the **play IP** from MCSTool and connect from Minecraft Java Edition.
 
-- Your public IP is allowlisted during Setup. To allow other players, add each players’s **current public IPv4** on the **Whitelist** tab and click **Save changes**. Home IPs can change; update the list when they do.
+- Your public IP is allowlisted during Setup. To allow other players, add each player’s **current public IPv4** on the **Whitelist** tab and click **Save changes**. Home IPs can change; update the list when they do.
 - **Modded:** also give players the **same mod pack file** you chose in Setup.
 
 
@@ -180,5 +184,5 @@ The Minecraft server should now be up. Copy the **play IP** from Manager and con
 ### Idle stop and wake
 
 - The game server turns off after **15 minutes** with no players. That is how the app stays inside Oracle’s free-hour allowance. The doorbell stays on and keeps the same play IP.
-- When the server is off, it can be started from Manager, or by a player attempting to connect from the Minecraft client. The doorbell then starts the server VM. Wake can take **2–5 minutes**, depending on the pack and world.
+- When the server is off, it can be started from MCSTool, or by a player attempting to connect from the Minecraft client. The doorbell then starts the server VM. Wake can take **2–5 minutes**, depending on the pack and world.
 

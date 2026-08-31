@@ -10,7 +10,7 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/../common" && pwd)/env.sh"
 
 FORGE_PROMOTIONS_URL="${FORGE_PROMOTIONS_URL:-https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json}"
-FORGE_USER_AGENT="${FORGE_USER_AGENT:-mcmgr-bootstrap/0.1.0 (https://github.com/maattox/oci-mc-server)}"
+FORGE_USER_AGENT="${FORGE_USER_AGENT:-mcmgr-bootstrap/0.1.0 (https://github.com/maattox/MCSTool)}"
 FORGE_META_PY="${MCMGR_HOME}/common/forge_meta.py"
 FORGE_VERSION="${FORGE_VERSION:-}"
 FORGE_CURL_MAX_TIME="${FORGE_CURL_MAX_TIME:-45}"

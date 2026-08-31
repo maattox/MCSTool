@@ -153,7 +153,7 @@ public sealed class FabricMetaClientTests
             Assert.Equal("meta.fabricmc.net", r.RequestUri!.Host);
             Assert.StartsWith("/v2/versions/", r.RequestUri.AbsolutePath, StringComparison.Ordinal);
             Assert.Contains("McManager", r.UserAgent, StringComparison.Ordinal);
-            Assert.Contains("github.com/maattox/oci-mc-server", r.UserAgent, StringComparison.Ordinal);
+            Assert.Contains("github.com/maattox/MCSTool", r.UserAgent, StringComparison.Ordinal);
         });
     }
 

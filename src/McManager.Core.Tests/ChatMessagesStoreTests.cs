@@ -325,7 +325,7 @@ public sealed class ServerIdentityUxTests
         Assert.Equal("Weekend world", ServerIdentityUx.BuildMotd("", "Weekend world"));
         Assert.Equal(ServerIdentityUx.DefaultMotd, ServerIdentityUx.BuildMotd(null, null));
         Assert.Equal(
-            "§6§l★§r§l §e§lOCI Server§r§l\u00a0§6§l★§r\\ncreated with §9§ngithub.com/maattox/oci-mc-server§r",
+            "§6§l★§r§l §e§lOCI Server§r§l\u00a0§6§l★§r\\ncreated with §9§ngithub.com/maattox/MCSTool§r",
             ServerIdentityUx.BuildMotd(ServerIdentityUx.DefaultName, ServerIdentityUx.DefaultDescription));
         Assert.True(MotdFormatting.IsSafePropertiesValue(ServerIdentityUx.DefaultMotd));
     }
@@ -372,7 +372,7 @@ public sealed class ServerIdentityUxTests
             ServerIdentityUx.DefaultName,
             ServerIdentityUx.DefaultServerName(SetupServerType.Modded, SetupVanillaFlavor.Default));
         Assert.Equal(
-            "created with §9§ngithub.com/maattox/oci-mc-server§r",
+            "created with §9§ngithub.com/maattox/MCSTool§r",
             ServerIdentityUx.DefaultDescription);
 
         foreach (var name in new[]

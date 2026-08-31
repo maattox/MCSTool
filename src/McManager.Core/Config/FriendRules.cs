@@ -125,7 +125,7 @@ public static class FriendRules
             return null;
 
         var hosts = 1L << (32 - source.PrefixLength);
-        return $"This prefix is wider than one host ({hosts.ToString("N0", CultureInfo.InvariantCulture)} addresses). Prefer the tightest prefix that matches the friend’s ISP.";
+        return $"This prefix is wider than one host ({hosts.ToString("N0", CultureInfo.InvariantCulture)} addresses). Prefer the tightest prefix that matches the player’s ISP.";
     }
 
     public static string ToMinecraftCidr(string stored)

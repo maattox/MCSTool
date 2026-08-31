@@ -33,7 +33,11 @@ public sealed partial class ChromeViewModel : ObservableObject
         _loading = false;
     }
 
-    public string AppName { get; } = "MC Manager";
+    public string AppName { get; } = "MCSTool";
+
+    public string Tagline { get; } = "Automated Minecraft server deployment and management tool";
+
+    public string ContactEmail { get; } = "mcstool.contact@gmail.com";
 
     public string AppVersion { get; }
 

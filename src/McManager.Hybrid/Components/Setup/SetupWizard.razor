@@ -233,7 +233,7 @@
                                 <p class="mcm-wizard-inline-help mcm-wizard-game-note">
                                     <span class="mcm-wizard-kicker">@Vm.ClientPackTitle</span>
                                     <WizardHelp Title="@SetupWizardViewModel.ClientPackHelp" AriaLabel="About the client pack" />
-                                    <span>Friends must install this same pack. Vanilla Minecraft cannot join.</span>
+                                    <span>Players must install this same pack. Vanilla Minecraft cannot join.</span>
                                 </p>
                                 <div class="mcm-wizard-game-ingest">
                                     <div class="mcm-pack-drop @(Vm.IsAnalyzingPack ? "is-busy" : "")"
@@ -351,7 +351,7 @@
             {
                 <div class="mcm-wizard-identity">
                     <p class="mcm-wizard-inline-help">
-                        Friends see this in Minecraft’s server list.
+                        Players see this in Minecraft’s server list.
                         <WizardHelp Title="@SetupWizardViewModel.IdentityHelp" AriaLabel="About the server name and icon" />
                     </p>
                     <div class="mcm-identity-grid">
@@ -457,7 +457,7 @@
                             <p class="mcm-wizard-hint">The reserved play IP was not found in local config. Close and copy Play IP from the Manager sidebar.</p>
                         }
                         <p>
-                            Close this wizard to continue to the Manager app. Give friends the play IP above so they can join (Minecraft port 25565).
+                            Close this wizard to continue to the Manager app. Give players the play IP above so they can join (Minecraft port 25565).
                         </p>
                     </aside>
                     @if (!string.IsNullOrWhiteSpace(Vm.DeployLog))

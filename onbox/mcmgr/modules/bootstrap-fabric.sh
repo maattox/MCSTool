@@ -9,7 +9,7 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/../common" && pwd)/env.sh"
 
 FABRIC_META_BASE="${FABRIC_META_BASE:-https://meta.fabricmc.net}"
-FABRIC_META_USER_AGENT="${FABRIC_META_USER_AGENT:-mcmgr-bootstrap/0.1.0 (https://github.com/maattox/oci-mc-server)}"
+FABRIC_META_USER_AGENT="${FABRIC_META_USER_AGENT:-mcmgr-bootstrap/0.1.0 (https://github.com/maattox/MCSTool)}"
 FABRIC_META_PY="${MCMGR_HOME}/common/fabric_meta.py"
 FABRIC_LOADER_VERSION="${FABRIC_LOADER_VERSION:-}"
 FABRIC_INSTALLER_VERSION="${FABRIC_INSTALLER_VERSION:-}"

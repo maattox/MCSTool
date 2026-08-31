@@ -67,7 +67,7 @@ public sealed class AppSettingsStoreTests
     {
         var path = AppSettingsStore.DefaultFilePath();
         Assert.EndsWith(
-            Path.Combine("McManager", "app-settings.json"),
+            Path.Combine("MCSTool", "app-settings.json"),
             path,
             StringComparison.OrdinalIgnoreCase);
     }

@@ -35,12 +35,14 @@ public static class InfraPlanSummary
             ? ServerIdentityUx.DefaultServerName(state.ServerType, state.VanillaFlavor)
             : state.IdentityName.Trim();
         var friendsLine = SetupServerType.IsModded(state.ServerType)
-            ? "  Friends: same exported pack required to join (vanilla Minecraft is not enough; "
+            ? "  Players: same exported pack required to join (vanilla Minecraft is not enough; "
               + "cannot rebuild a client pack from server mods)\n"
             : "";
 
         return
-            "OpenTofu apply from this window creates Always Free resources (state under %LOCALAPPDATA%\\McManager\\tofu). "
+            "OpenTofu apply from this window creates Always Free resources (state under %LOCALAPPDATA%\\"
+            + AppSettingsStore.ProductFolderName
+            + "\\tofu). "
             + $"VM1 is {shape} ({hours}). "
             + "A second A1 in the same tenancy as other Ampere computers competes for Always Free hours. Deploy writes config.local.json after success.\n\n"
             + "Chosen variables\n"

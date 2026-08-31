@@ -16,7 +16,7 @@ public static class ServerIdentityUx
     public const int MaxDescriptionLength = MotdFormatting.ListLineVisibleLimit;
     /// <summary>Line 1 of the product default list MOTD (gold bold stars around yellow bold name).</summary>
     public const string DefaultName = "§6§l★§r§l §e§lOCI Server§r§l\u00a0§6§l★§r";
-    public const string DefaultDescription = "created with §9§ngithub.com/maattox/oci-mc-server§r";
+    public const string DefaultDescription = "created with §9§ngithub.com/maattox/MCSTool§r";
     public const string DefaultMotd = DefaultName + "\\n" + DefaultDescription;
     public const string DefaultVanillaName = DefaultName;
     public const string DefaultPaperName = DefaultName;

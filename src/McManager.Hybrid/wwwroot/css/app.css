@@ -1834,6 +1834,20 @@ button.mcm-btn-disabled:hover {
     max-width: 65ch;
 }
 
+.mcm-about-contact {
+    margin: 12px 0 0;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--text-secondary);
+    max-width: 65ch;
+}
+
+.mcm-about-contact a {
+    color: var(--text-accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
 .mcm-about-actions {
     margin-top: 20px;
 }

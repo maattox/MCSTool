@@ -1,4 +1,4 @@
-# OpenTofu module — MC Manager greenfield stack
+# OpenTofu module — MCSTool greenfield stack
 
 Product IaC for a private Always Free doorbell (VM1 A1 Flex + door Micro + reserved play IP).  
 **Engine:** OpenTofu (`tofu`), provider `oracle/oci`. Not HashiCorp Terraform. Not OCI Resource Manager.
@@ -24,10 +24,10 @@ copy terraform.tfvars.example terraform.tfvars
 tofu init
 tofu validate
 tofu plan
-# tofu apply   # operator-only; never on the live Forge lab. Setup uses %LOCALAPPDATA%\McManager\tofu instead.
+# tofu apply   # operator-only; never on the live Forge lab. Setup uses %LOCALAPPDATA%\MCSTool\tofu instead.
 ```
 
-State for **manual** `tofu` in this folder stays here (`terraform.tfstate`, gitignored). **Setup** writes variables and state under `%LOCALAPPDATA%\McManager\tofu\<stack-id>\` and never overwrites this repo’s `terraform.tfvars`. Do not copy Setup’s LocalAppData tfvars over the 3.1 lab file. Encryption of tofu state is later (Phase 7).
+State for **manual** `tofu` in this folder stays here (`terraform.tfstate`, gitignored). **Setup** writes variables and state under `%LOCALAPPDATA%\MCSTool\tofu\<stack-id>\` and never overwrites this repo’s `terraform.tfvars`. Do not copy Setup’s LocalAppData tfvars over the 3.1 lab file. Encryption of tofu state is later (Phase 7).
 
 ---
 
@@ -104,7 +104,7 @@ Identity-domain tenancies: classic `oci iam dynamic-group list` may show `matchi
 
 Greenfield `tofu apply` from current HCL **creates** this policy. Import is only needed if it was created **out of band** (CLI/Console) so the next apply does not collide on the name.
 
-Setup state lives under `%LOCALAPPDATA%\McManager\tofu\<stack-id>\` (**no** `.tf` files). Config is the repo `infra/` directory. Do not `cd` into LocalAppData and run `tofu import`.
+Setup state lives under `%LOCALAPPDATA%\MCSTool\tofu\<stack-id>\` (**no** `.tf` files). Config is the repo `infra/` directory. Do not `cd` into LocalAppData and run `tofu import`.
 
 PowerShell does **not** expand `$var` in unquoted `-flag=$var` (tofu then looks for a directory literally named `$infra`). Quote: `-state="$state"`.
 
@@ -115,8 +115,8 @@ $Env:OCI_CLI_SUPPRESS_FILE_PERMISSIONS_WARNING = "True"
 $tenancy = (Get-Content '<config.local.json>' -Raw | ConvertFrom-Json).oci.tenancy_id
 $pol = (oci --profile TESTING iam policy list --compartment-id $tenancy --name mcmgr-door-ip --all --output json | ConvertFrom-Json).data[0].id
 $infra = '<repo>\infra'
-$state = "$env:LOCALAPPDATA\McManager\tofu\mcmgr\terraform.tfstate"
-$vars  = "$env:LOCALAPPDATA\McManager\tofu\mcmgr\terraform.tfvars"
+$state = "$env:LOCALAPPDATA\MCSTool\tofu\mcmgr\terraform.tfstate"
+$vars  = "$env:LOCALAPPDATA\MCSTool\tofu\mcmgr\terraform.tfvars"
 Set-Location $infra
 tofu import -input=false -state="$state" -var-file="$vars" 'module.iam.oci_identity_policy.door_ip' $pol
 ```
@@ -162,7 +162,7 @@ A1 host capacity is probed with `CreateComputeCapacityReport` before apply (no V
 | `400-InvalidParameter` / `Invalid compartmentId` on `oci_budget_budget` | `CreateBudget` `compartment_id` must be the **tenancy** OCID; `targets` is the mcmgr compartment. |
 | Validation error mentioning `REPLACE_ME` or `AAAA...` | Example placeholders left in `terraform.tfvars`. |
 | Plan proposes creating `mcmgr` + VMs but you did not apply | Expected. Plan is read-only. |
-| File looks like it “reset” to the example | `tofu plan` / `validate` **never write** `terraform.tfvars`. OpenTofu reads the **saved disk** file, not an unsaved editor buffer. Do not `copy terraform.tfvars.example terraform.tfvars` over a filled file. The Setup wizard writes a **different** tfvars under `%LOCALAPPDATA%\McManager\tofu`, not this file. |
+| File looks like it “reset” to the example | `tofu plan` / `validate` **never write** `terraform.tfvars`. OpenTofu reads the **saved disk** file, not an unsaved editor buffer. Do not `copy terraform.tfvars.example terraform.tfvars` over a filled file. The Setup wizard writes a **different** tfvars under `%LOCALAPPDATA%\MCSTool\tofu`, not this file. |
 
 ---
 
@@ -172,6 +172,6 @@ Setup wizard UI, `tofu apply` orchestration, SSH bootstrap (`onbox/mcmgr`, `door
 
 ## Destroy (Manager Danger Zone)
 
-Manager **Advanced / Danger Zone → Delete infrastructure** runs `tofu destroy` against `%LOCALAPPDATA%\McManager\tofu\<stack-id>\` (never this folder’s `terraform.tfvars`). It empties the product bucket and `mcmgr-fn/softstop` images first, lifts bucket `prevent_destroy` via a gitignored override for that run only, then waits until OpenTofu reports OCI deletion finished.
+Manager **Advanced / Danger Zone → Delete infrastructure** runs `tofu destroy` against `%LOCALAPPDATA%\MCSTool\tofu\<stack-id>\` (never this folder’s `terraform.tfvars`). It empties the product bucket and `mcmgr-fn/softstop` images first, lifts bucket `prevent_destroy` via a gitignored override for that run only, then waits until OpenTofu reports OCI deletion finished.
 
 That path does **not** delete the Oracle tenancy or resources that were never in tofu state. Manual CLI destroy from this directory is still operator-only and still blocked by `prevent_destroy` on the bucket until that override exists.

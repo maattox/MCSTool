@@ -29,7 +29,7 @@ managed = {
 # Identity (name/icon/description) owns motd after first write. Only seed a
 # default when the key is missing so repair does not clobber Manager saves.
 if_missing = {
-    "motd": "§6§l★§r§l §e§lOCI Server§r§l\u00a0§6§l★§r\\ncreated with §9§ngithub.com/maattox/oci-mc-server§r",
+    "motd": "§6§l★§r§l §e§lOCI Server§r§l\u00a0§6§l★§r\\ncreated with §9§ngithub.com/maattox/MCSTool§r",
 }
 # Intentionally never allow online-mode false via this writer.
 assert managed["online-mode"] == "true"

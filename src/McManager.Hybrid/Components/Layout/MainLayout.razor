@@ -295,11 +295,12 @@
                         <div class="mcm-about">
                             <h2 class="mcm-about-name">@Chrome.AppName</h2>
                             <p class="mcm-about-version">Version @Chrome.AppVersion</p>
-                            <p class="mcm-about-lede">A Windows app for a private Minecraft server on Oracle Cloud Infrastructure utilizing Always Free resources. Players connect to one play IP. Access is an IP allowlist.</p>
+                            <p class="mcm-about-lede">@Chrome.Tagline</p>
+                            <p class="mcm-about-contact">Questions, issues, or suggestions? Email us at <a href="@($"mailto:{Chrome.ContactEmail}")">@Chrome.ContactEmail</a></p>
                             <div class="mcm-about-actions">
                                 <button type="button"
                                         class="mcm-primary"
-                                        title="Open the MC Manager source repository"
+                                        title="Open the MCSTool source repository"
                                         @onclick="Chrome.OpenGitHub">
                                     <i class="ti ti-brand-github" aria-hidden="true"></i>
                                     Source on GitHub

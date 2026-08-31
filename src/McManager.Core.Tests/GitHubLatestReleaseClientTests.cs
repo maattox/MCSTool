@@ -15,19 +15,19 @@ public sealed class GitHubLatestReleaseClientTests
         var info = GitHubLatestReleaseClient.ParseLatest(Read("release-latest-newer.json"));
         Assert.NotNull(info);
         Assert.Equal("v0.2.0", info.TagName);
-        Assert.Equal("MC Manager 0.2.0", info.Name);
+        Assert.Equal("MCSTool 0.2.0", info.Name);
         Assert.Contains("Inno Setup", info.Body, StringComparison.Ordinal);
-        Assert.Equal("https://github.com/maattox/oci-mc-server/releases/tag/v0.2.0", info.HtmlUrl);
+        Assert.Equal("https://github.com/maattox/MCSTool/releases/tag/v0.2.0", info.HtmlUrl);
         Assert.False(info.Draft);
         Assert.False(info.Prerelease);
         Assert.Equal(
-            "https://github.com/maattox/oci-mc-server/releases/download/v0.2.0/MCManager-Setup-0.2.0.exe",
+            "https://github.com/maattox/MCSTool/releases/download/v0.2.0/MCSTool-Setup-0.2.0.exe",
             info.InstallerAssetUrl);
 
         Assert.True(AppUpdateCheck.IsNewerThan(Local, info.TagName));
         var prompt = AppUpdateCheck.TryBuildPrompt(Local, info);
         Assert.NotNull(prompt);
-        Assert.Equal("MC Manager 0.2.0", prompt.Title);
+        Assert.Equal("MCSTool 0.2.0", prompt.Title);
         Assert.Contains("update check", prompt.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Equal(info.HtmlUrl, prompt.OpenUrl);
     }
@@ -77,13 +77,13 @@ public sealed class GitHubLatestReleaseClientTests
 
         var prompt = await AppUpdateCheck.EvaluateAsync(checkForUpdates: true, Local, client);
         Assert.NotNull(prompt);
-        Assert.Equal("MC Manager 0.2.0", prompt.Title);
-        Assert.Equal("https://github.com/maattox/oci-mc-server/releases/tag/v0.2.0", prompt.OpenUrl);
+        Assert.Equal("MCSTool 0.2.0", prompt.Title);
+        Assert.Equal("https://github.com/maattox/MCSTool/releases/tag/v0.2.0", prompt.OpenUrl);
 
         var request = Assert.Single(handler.Requests);
         Assert.Equal(GitHubLatestReleaseClient.LatestUrl, request.RequestUri.ToString());
         Assert.Contains("McManager", request.UserAgent, StringComparison.Ordinal);
-        Assert.Contains("github.com/maattox/oci-mc-server", request.UserAgent, StringComparison.Ordinal);
+        Assert.Contains("github.com/maattox/MCSTool", request.UserAgent, StringComparison.Ordinal);
         Assert.Contains("application/vnd.github+json", request.Accept, StringComparison.Ordinal);
         Assert.Null(request.Authorization);
     }

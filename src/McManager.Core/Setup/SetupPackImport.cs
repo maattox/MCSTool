@@ -24,17 +24,17 @@ public static class SetupPackImport
     public const string LoaderRefusal =
         "Setup can install Fabric, Forge, or NeoForge packs. This pack's loader is not supported.";
 
-    public const string ClientPackTitle = "Friends need this pack to play";
+    public const string ClientPackTitle = "Players need this pack to play";
 
     /// <summary>Dedicated wizard/Guide copy (blueprint §25). Novice wording; no VM1 jargon.</summary>
     public const string ClientPackCopy =
-        "This server is not playable for friends until they install the same exported pack "
+        "This server is not playable for players until they install the same exported pack "
         + "on their PCs. Vanilla Minecraft is not enough. Keep the file you upload — Manager "
         + "also saves a copy so you can share it later. This app cannot rebuild a client pack "
         + "from the mods folder on the server.";
 
     public const string ClientPackAckLabel =
-        "I will give friends this same exported pack. They cannot join until they have it.";
+        "I will give players this same exported pack. They cannot join until they have it.";
 
     /// <summary>
     /// Confirmable-summary warning when the override list skips mods the pack treated as
@@ -114,7 +114,7 @@ public static class SetupPackImport
         else
             identity = $"{name} — {mc} with {loaderLabel}";
         return "Share " + identity
-            + ". Give friends the same file you uploaded (not a zip of the server mods folder).";
+            + ". Give players the same file you uploaded (not a zip of the server mods folder).";
     }
 
     public static string DisplayLoader(string? loader)

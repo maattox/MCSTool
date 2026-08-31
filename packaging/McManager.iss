@@ -1,4 +1,4 @@
-; MC Manager — Inno Setup 6 per-user installer.
+; MCSTool — Inno Setup 6 per-user installer.
 ; Built by packaging\pack.ps1. Do not compile this script until pack.ps1 has
 ; published into packaging\out\publish\ (including the Function tar).
 
@@ -6,13 +6,13 @@
   #define MyAppVersion "0.9.1"
 #endif
 
-#define MyAppName "MC Manager"
+#define MyAppName "MCSTool"
 #define MyAppPublisher "maattox"
-#define MyAppURL "https://github.com/maattox/oci-mc-server"
+#define MyAppURL "https://github.com/maattox/MCSTool"
 #define MyAppExeName "McManager.Hybrid.exe"
 
 [Setup]
-AppId={{B3E8C5A2-7F14-4D9E-A6C1-9E2F0B8D4A71}
+AppId={{D2F7A6ED-DBA3-4D2E-B67B-DE983C7C82C4}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppVerName={#MyAppName} {#MyAppVersion}
@@ -20,7 +20,7 @@ AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}/issues
 AppUpdatesURL={#MyAppURL}/releases
-DefaultDirName={localappdata}\Programs\MC Manager
+DefaultDirName={localappdata}\Programs\MCSTool
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 ; Per-user: no UAC, not Program Files.
@@ -28,7 +28,7 @@ PrivilegesRequired=lowest
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 OutputDir=out
-OutputBaseFilename=MCManager-Setup-{#MyAppVersion}
+OutputBaseFilename=MCSTool-Setup-{#MyAppVersion}
 Compression=lzma2/fast
 SolidCompression=yes
 WizardStyle=modern

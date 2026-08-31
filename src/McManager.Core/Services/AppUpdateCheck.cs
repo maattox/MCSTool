@@ -40,7 +40,7 @@ public static class AppUpdateCheck
             return null;
 
         var notes = string.IsNullOrWhiteSpace(latest.Body)
-            ? "A newer Manager is on GitHub Releases."
+            ? "A newer MCSTool is on GitHub Releases."
             : latest.Body.Replace("\r\n", "\n", StringComparison.Ordinal).Trim();
         if (notes.Length > NotesMaxChars)
             notes = notes[..NotesMaxChars] + "\n\n…";

@@ -1,5 +1,6 @@
 using System.IO.Compression;
 using System.Security.Cryptography;
+using McManager.Core.Config;
 
 namespace McManager.Core.Setup;
 
@@ -22,7 +23,7 @@ public sealed record OpenTofuDownloadPin(string Version, string ZipUrl, string S
 /// </summary>
 public static class OpenTofuLocator
 {
-    public const string UserAgent = "McManager/0.1 (https://github.com/maattox/oci-mc-server)";
+    public const string UserAgent = "McManager/0.1 (https://github.com/maattox/MCSTool)";
     public const string SourceUrl = "https://github.com/opentofu/opentofu";
     public const string MplLicenseUrl = "https://www.mozilla.org/MPL/2.0/";
     public const string ExeFileName = "tofu.exe";
@@ -33,7 +34,7 @@ public static class OpenTofuLocator
     public static string DefaultInstallDirectory =>
         Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "McManager",
+            AppSettingsStore.ProductFolderName,
             "tofu");
 
     public static string DefaultExePath => Path.Combine(DefaultInstallDirectory, ExeFileName);
@@ -65,7 +66,7 @@ public static class OpenTofuLocator
     public static string MissingMessage() =>
         "OpenTofu (tofu.exe) was not found and could not be downloaded. "
         + "The first Setup needs internet to fetch a pinned OpenTofu Windows build into "
-        + @"%LOCALAPPDATA%\McManager\tofu. Check the connection and try again. "
+        + @"%LOCALAPPDATA%\" + AppSettingsStore.ProductFolderName + @"\tofu. Check the connection and try again. "
         + "OpenTofu is MPL 2.0 (" + SourceUrl + ").";
 
     public static async Task<IOpenTofuRunner> CreateRunnerAsync(
@@ -206,7 +207,7 @@ public static class OpenTofuLocator
         "OpenTofu " + version + " is licensed under the Mozilla Public License 2.0." + Environment.NewLine
         + "Source: " + SourceUrl + Environment.NewLine
         + "License: " + MplLicenseUrl + Environment.NewLine
-        + "MC Manager downloads this pinned Windows amd64 build once into this folder."
+        + "MCSTool downloads this pinned Windows amd64 build once into this folder."
         + Environment.NewLine;
 
     private static async Task DownloadToFileAsync(

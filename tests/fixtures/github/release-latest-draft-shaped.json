@@ -1,6 +1,6 @@
 {
-  "url": "https://api.github.com/repos/maattox/oci-mc-server/releases/99",
-  "html_url": "https://github.com/maattox/oci-mc-server/releases/tag/v9.9.9",
+  "url": "https://api.github.com/repos/maattox/MCSTool/releases/99",
+  "html_url": "https://github.com/maattox/MCSTool/releases/tag/v9.9.9",
   "id": 99,
   "tag_name": "v9.9.9",
   "name": "Draft-shaped body (GET /releases/latest would not return this)",

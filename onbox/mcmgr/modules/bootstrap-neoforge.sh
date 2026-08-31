@@ -9,7 +9,7 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/../common" && pwd)/env.sh"
 
 NEOFORGE_MAVEN_BASE="${NEOFORGE_MAVEN_BASE:-https://maven.neoforged.net/releases/net/neoforged/neoforge}"
-NEOFORGE_USER_AGENT="${NEOFORGE_USER_AGENT:-mcmgr-bootstrap/0.1.0 (https://github.com/maattox/oci-mc-server)}"
+NEOFORGE_USER_AGENT="${NEOFORGE_USER_AGENT:-mcmgr-bootstrap/0.1.0 (https://github.com/maattox/MCSTool)}"
 NEOFORGE_META_PY="${MCMGR_HOME}/common/neoforge_meta.py"
 NEOFORGE_VERSION="${NEOFORGE_VERSION:-}"
 NEOFORGE_CURL_MAX_TIME="${NEOFORGE_CURL_MAX_TIME:-45}"

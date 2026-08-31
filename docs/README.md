@@ -1,12 +1,12 @@
 # Developer notes
 
-Users start at the [root README](../README.md) and the [guide](Guide.md). This file is for people building, packing, or changing MC Manager.
+Users start at the [root README](../README.md) and the [guide](Guide.md). This file is for people building, packing, or changing MCSTool.
 
-The Manager is a .NET 8 **Blazor Hybrid** app (WPF + WebView2): one WinExe, `McManager.Hybrid`. Setup is inside that same app.
+The app is a .NET 8 **Blazor Hybrid** app (WPF + WebView2): one WinExe, `McManager.Hybrid`. Setup is inside that same app.
 
 ## Status
 
-**Open beta 0.9.1** is published on [GitHub Releases](https://github.com/maattox/oci-mc-server/releases). Users install the Windows installer from there. Pushing `master` does **not** cut a new Release — only a new tag + Release does.
+**Open beta 0.9.1** is published on [GitHub Releases](https://github.com/maattox/MCSTool/releases). Users install the Windows installer from there. Pushing `master` does **not** cut a new Release — only a new tag + Release does.
 
 Licensed under the [MIT License](../LICENSE).
 
@@ -56,14 +56,14 @@ That fails if the Function tar is missing (rebuild recipe: [`functions/shutdown_
 
 ## GitHub Releases
 
-When you mean to ship a newer installer: bump Hybrid `<Version>`, pack with `packaging/pack.ps1`, tag the commit, then open [Releases](https://github.com/maattox/oci-mc-server/releases/new).
+When you mean to ship a newer installer: bump Hybrid `<Version>`, pack with `packaging/pack.ps1`, tag the commit, then open [Releases](https://github.com/maattox/MCSTool/releases/new).
 
 **Do not** mark it as a pre-release (the in-app updater uses `/releases/latest`, which ignores pre-releases). Do not attach the Function tar as a separate asset — it is already inside the installer. The GitHub **repository** must be **public** or the updater’s unauthenticated request 404s and stays quiet.
 
 Optional:
 
 ```powershell
-gh release create v0.9.1 .\packaging\out\MCManager-Setup-0.9.1.exe --title "MC Manager 0.9.1" --notes "Paste the user-facing notes here."
+gh release create v0.9.1 .\packaging\out\MCSTool-Setup-0.9.1.exe --title "MCSTool 0.9.1" --notes "Paste the user-facing notes here."
 ```
 
 ## Cost
@@ -76,7 +76,7 @@ Stay on **Always Free–eligible** OCI resources unless you explicitly accept sp
 
 - OCI API: `%USERPROFILE%\.oci\config` + PEM
 - SSH: under `%USERPROFILE%\.ssh\`
-- App seeds (gitignored): `data/config.local.json` and `data/friends.local.json` when running from a checkout; an installed Manager writes the same files under `%LOCALAPPDATA%\McManager`
+- App seeds (gitignored): `data/config.local.json` and `data/friends.local.json` when running from a checkout; an installed MCSTool writes the same files under `%LOCALAPPDATA%\MCSTool`
 
 From a checkout:
 
@@ -85,7 +85,7 @@ copy config.local.example.json data\config.local.json
 copy friends.local.example.json data\friends.local.json
 ```
 
-Then fill OCIDs from OCI Console / Setup tofu outputs (`%LOCALAPPDATA%\McManager\tofu\<stack-id>\`).
+Then fill OCIDs from OCI Console / Setup tofu outputs (`%LOCALAPPDATA%\MCSTool\tofu\<stack-id>\`).
 
 ## Docs
 

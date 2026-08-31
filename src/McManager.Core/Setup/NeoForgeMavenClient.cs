@@ -12,7 +12,7 @@ namespace McManager.Core.Setup;
 public sealed class NeoForgeMavenClient
 {
     public const string MavenBase = "https://maven.neoforged.net/releases/net/neoforged/neoforge";
-    public const string UserAgent = "McManager/0.1 (https://github.com/maattox/oci-mc-server)";
+    public const string UserAgent = "McManager/0.1 (https://github.com/maattox/MCSTool)";
     public const string HashAlgorithm = "none_published";
     public const string ArtifactKind = "argfile_tree";
     public const string LoaderId = "neoforge";

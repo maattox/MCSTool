@@ -53,7 +53,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private PowerActionKind _powerAction = PowerActionKind.None;
     private bool _playersPollInFlight;
 
-    public string Title { get; } = "mc manager";
+    public string Title { get; } = "MCSTool";
 
     [ObservableProperty]
     private string _status = Placeholder;
@@ -225,7 +225,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public string StartToolTip => CanStart
         ? (string.Equals(DoorState, "DEGRADED", StringComparison.OrdinalIgnoreCase)
             ? "The server is on but not joinable. Start retries the wake path."
-            : "Start the Minecraft server so friends can connect.")
+            : "Start the Minecraft server so players can connect.")
         : StartDisabledReason;
 
     public string StopToolTip => CanStop
@@ -694,7 +694,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 return false;
             }
 
-            ActionFeedback = "Start accepted — waiting until friends can connect…";
+            ActionFeedback = "Start accepted — waiting until players can connect…";
             var reached = await WaitForDoorAsync(
                 s => s.IsPlayable || s.IsDegraded || s.IsSpendBrake,
                 TimeSpan.FromMinutes(30));

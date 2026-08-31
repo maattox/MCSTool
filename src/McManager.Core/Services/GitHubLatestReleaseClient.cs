@@ -10,8 +10,8 @@ namespace McManager.Core.Services;
 /// </summary>
 public sealed class GitHubLatestReleaseClient
 {
-    public const string LatestUrl = "https://api.github.com/repos/maattox/oci-mc-server/releases/latest";
-    public const string UserAgent = "McManager/0.1 (https://github.com/maattox/oci-mc-server)";
+    public const string LatestUrl = "https://api.github.com/repos/maattox/MCSTool/releases/latest";
+    public const string UserAgent = "McManager/0.1 (https://github.com/maattox/MCSTool)";
     public const string Accept = "application/vnd.github+json";
     public const string ApiVersion = "2022-11-28";
     public const int HttpTimeoutSeconds = 12;
@@ -125,6 +125,7 @@ public sealed class GitHubLatestReleaseClient
                 continue;
 
             if (name.Contains("Setup", StringComparison.OrdinalIgnoreCase)
+                || name.Contains("MCSTool", StringComparison.OrdinalIgnoreCase)
                 || name.Contains("MCManager", StringComparison.OrdinalIgnoreCase))
             {
                 return url;

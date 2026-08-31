@@ -1,3 +1,5 @@
+using McManager.Core.Config;
+
 namespace McManager.Core.Setup;
 
 /// <summary>
@@ -32,7 +34,7 @@ public sealed class TofuWorkspace
     public static string TofuRootDirectory()
     {
         var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        return Path.Combine(local, "McManager", "tofu");
+        return Path.Combine(local, AppSettingsStore.ProductFolderName, "tofu");
     }
 
     public bool HasState => File.Exists(StatePath);

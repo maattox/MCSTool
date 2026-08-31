@@ -161,7 +161,7 @@ public sealed class PaperFillV3ClientTests
             Assert.StartsWith("/v3/projects/paper", r.RequestUri.AbsolutePath, StringComparison.Ordinal);
             Assert.DoesNotContain("api.papermc.io", r.RequestUri.ToString(), StringComparison.OrdinalIgnoreCase);
             Assert.Contains("McManager", r.UserAgent, StringComparison.Ordinal);
-            Assert.Contains("github.com/maattox/oci-mc-server", r.UserAgent, StringComparison.Ordinal);
+            Assert.Contains("github.com/maattox/MCSTool", r.UserAgent, StringComparison.Ordinal);
         });
     }
 

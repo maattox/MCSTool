@@ -130,7 +130,7 @@ public sealed class NeoForgeMavenClientTests
             Assert.Equal("maven.neoforged.net", r.RequestUri!.Host);
             Assert.EndsWith("/maven-metadata.xml", r.RequestUri.AbsolutePath, StringComparison.Ordinal);
             Assert.Contains("McManager", r.UserAgent, StringComparison.Ordinal);
-            Assert.Contains("github.com/maattox/oci-mc-server", r.UserAgent, StringComparison.Ordinal);
+            Assert.Contains("github.com/maattox/MCSTool", r.UserAgent, StringComparison.Ordinal);
         });
     }
 

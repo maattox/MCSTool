@@ -71,7 +71,9 @@ public sealed class InfrastructureDestroyOrchestrator
         {
             return InfrastructureDestroyResult.Fail(
                 "No OpenTofu state on this PC. Destroy only removes resources this Manager "
-                + "deployed (from %LOCALAPPDATA%\\McManager\\tofu). Oracle’s default tenancy "
+                + "deployed (from %LOCALAPPDATA%\\"
+                + AppSettingsStore.ProductFolderName
+                + "\\tofu). Oracle’s default tenancy "
                 + "resources are never touched. If Setup ran on another PC, copy that tofu "
                 + "folder here, or delete leftover product resources in the OCI Console.");
         }
@@ -386,7 +388,7 @@ public sealed class InfrastructureDestroyOrchestrator
         if (!local.Succeeded)
             log?.Report(local.Error ?? "Could not delete local manage config.");
         else
-            log?.Report("Removed data/config.local.json and data/setup-wizard.local.json (friends list kept).");
+            log?.Report("Removed data/config.local.json and data/setup-wizard.local.json (player list kept).");
 
         try
         {

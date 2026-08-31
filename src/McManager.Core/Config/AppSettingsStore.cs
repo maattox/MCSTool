@@ -10,7 +10,7 @@ namespace McManager.Core.Config;
 public static class AppSettingsStore
 {
     public const string FileName = "app-settings.json";
-    public const string ProductFolderName = "McManager";
+    public const string ProductFolderName = "MCSTool";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {

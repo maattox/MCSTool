@@ -66,7 +66,7 @@ internal static class WebView2RuntimeGuard
     internal static void ShowMissingRuntimeMessage(string? detail)
     {
         var body =
-            "Microsoft Edge WebView2 Runtime is required to run MC Server Manager." +
+            "Microsoft Edge WebView2 Runtime is required to run MCSTool." +
             Environment.NewLine + Environment.NewLine +
             "Install the Evergreen runtime from:" + Environment.NewLine +
             EvergreenInstallerUrl;

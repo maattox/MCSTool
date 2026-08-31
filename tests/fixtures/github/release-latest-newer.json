@@ -1,16 +1,16 @@
 {
-  "url": "https://api.github.com/repos/maattox/oci-mc-server/releases/42",
-  "html_url": "https://github.com/maattox/oci-mc-server/releases/tag/v0.2.0",
+  "url": "https://api.github.com/repos/maattox/MCSTool/releases/42",
+  "html_url": "https://github.com/maattox/MCSTool/releases/tag/v0.2.0",
   "id": 42,
   "tag_name": "v0.2.0",
-  "name": "MC Manager 0.2.0",
+  "name": "MCSTool 0.2.0",
   "draft": false,
   "prerelease": false,
   "body": "Installer and update check.\n\n- Inno Setup per-user install\n- Prompt when a newer Release exists",
   "assets": [
     {
-      "name": "MCManager-Setup-0.2.0.exe",
-      "browser_download_url": "https://github.com/maattox/oci-mc-server/releases/download/v0.2.0/MCManager-Setup-0.2.0.exe"
+      "name": "MCSTool-Setup-0.2.0.exe",
+      "browser_download_url": "https://github.com/maattox/MCSTool/releases/download/v0.2.0/MCSTool-Setup-0.2.0.exe"
     }
   ]
 }

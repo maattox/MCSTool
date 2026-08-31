@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-  Publish MC Manager (P1 layout) and build the per-user Inno Setup installer.
+  Publish MCSTool (P1 layout) and build the per-user Inno Setup installer.
 
 .DESCRIPTION
   Fails if artifacts\mcmgr-fn-softstop-linux-arm64.tar is missing — the installer
@@ -132,7 +132,7 @@ if ($LASTEXITCODE -ne 0) {
     throw "ISCC failed with exit code $LASTEXITCODE (see $logPath)"
 }
 
-$installer = Join-Path $outDir "MCManager-Setup-$version.exe"
+$installer = Join-Path $outDir "MCSTool-Setup-$version.exe"
 if (-not (Test-Path -LiteralPath $installer)) {
     throw "Installer was not produced: $installer"
 }

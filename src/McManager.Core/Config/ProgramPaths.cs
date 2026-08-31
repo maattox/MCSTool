@@ -12,7 +12,7 @@ public sealed record ProgramPathItem(
 
 public static class ProgramPaths
 {
-    public const string GitHubUrl = "https://github.com/maattox/oci-mc-server";
+    public const string GitHubUrl = "https://github.com/maattox/MCSTool";
 
     public static IReadOnlyList<ProgramPathItem> Describe(
         string? dataDirectory,
@@ -24,7 +24,7 @@ public static class ProgramPaths
             rows,
             "data",
             "Manager data folder",
-            "Stack config, friends list, and imported packs on this PC.",
+            "Stack config, player list, and imported packs on this PC.",
             dataDirectory);
 
         var config = string.IsNullOrWhiteSpace(dataDirectory)

@@ -38,7 +38,7 @@ public static class PackReplaceUx
 
     /// <summary>Manage Change pack only. Setup keeps <see cref="SetupPackImport.ClientPackAckLabel"/>.</summary>
     public const string ClientPackAckLabel =
-        "Friends will get this same exported pack. They cannot join without it.";
+        "Players will get this same exported pack. They cannot join without it.";
 
     public const string WipeWorldLabel =
         "Also wipe the world (irreversible). Cloud backups stay. Leave unchecked to keep the current world.";
@@ -49,7 +49,7 @@ public static class PackReplaceUx
     public const string ConfirmKeepWorld =
         "Reinstalls Minecraft from the chosen file. "
         + "If the game VM is stopped, it is started first. "
-        + "The world is kept unless wipe is checked. Friends need the new exported pack.";
+        + "The world is kept unless wipe is checked. Players need the new exported pack.";
 
     public const string ConfirmWipeWorld =
         "Reinstalls Minecraft from the chosen file. "
@@ -115,7 +115,7 @@ public static class PackReplaceUx
         if (!identityComplete)
             return DerivedPackIdentity.IdentityIncompleteReason;
         if (!packConfirmed || !clientPackAcknowledged)
-            return "Confirm the pack and that friends will get the same file.";
+            return "Confirm the pack and that players will get the same file.";
         return "";
     }
 

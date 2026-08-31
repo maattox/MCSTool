@@ -23,7 +23,7 @@ class MotdTests(unittest.TestCase):
         self.assertEqual(osp.DEFAULT_MOTD, osp._build_motd("", ""))
         self.assertEqual(
             "§6§l★§r§l §e§lOCI Server§r§l\u00a0§6§l★§r"
-            "\\ncreated with §9§ngithub.com/maattox/oci-mc-server§r",
+            "\\ncreated with §9§ngithub.com/maattox/MCSTool§r",
             osp.DEFAULT_MOTD,
         )
 
