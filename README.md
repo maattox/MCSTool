@@ -1,5 +1,7 @@
 # MC Manager
 
+### Setup guide: [docs/Guide.md](docs/Guide.md)
+
 A Windows app for a **private Minecraft server** (modded or vanilla) for you and your friends, hosted on [Oracle Cloud](https://www.oracle.com/cloud/). Built to run on Oracle’s Always Free resources.
 
 **Open beta 0.9.0** — download it from [Releases](https://github.com/maattox/oci-mc-server/releases).

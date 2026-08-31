@@ -19,6 +19,8 @@ Setup also creates a last-resort **$1 monthly budget**. If spend ever reaches $1
 
 ---
 
+
+
 ## Part 1 — Create an Oracle Cloud account and upgrade to PAYG
 
 
@@ -26,6 +28,7 @@ Setup also creates a last-resort **$1 monthly budget**. If spend ever reaches $1
 ### 1. Create a free account
 
 1. Sign up at [signup.oraclecloud.com](https://signup.oraclecloud.com/).
+
 - For a detailed walkthrough, use Oracle’s [account creation guide](https://docs.oracle.com/en/learn/get-started-with-oci-and-oci-console/index.html#introduction).
 - You start with a free account. The next step upgrades it to PAYG.
 
@@ -50,6 +53,8 @@ Setup also creates a last-resort **$1 monthly budget**. If spend ever reaches $1
 
 ## Part 2 — Create an API key and Auth Token
 
+
+
 ### 1. Create and download the API key
 
 1. Click the profile icon in the top right of the OCI Console.
@@ -57,31 +62,33 @@ Setup also creates a last-resort **$1 monthly budget**. If spend ever reaches $1
 
 ![OCI Console profile menu with User settings highlighted](../assets/guide-images/2.1.png)
 
-3. Open the **Tokens and keys** tab and click **Add API key**.
+1. Open the **Tokens and keys** tab and click **Add API key**.
 
 ![User settings Tokens and keys tab with Add API key highlighted](../assets/guide-images/2.2.png)
 
-4. Select **Generate API key pair**.
-5. On your PC, create a folder named `.oci` at `C:\Users\YourUser` (use your Windows user name).
-6. In that folder, create a file named `config` with **no file extension**. To do that, enable **File name extensions** in File Explorer, then create and rename a text file and remove `.txt`.
+1. Select **Generate API key pair**.
+2. On your PC, create a folder named `.oci` at `C:\Users\YourUser` (use your Windows user name).
+3. In that folder, create a file named `config` with **no file extension**. To do that, enable **File name extensions** in File Explorer, then create and rename a text file and remove `.txt`.
 
 ![File Explorer View tab with File name extensions enabled](../assets/guide-images/2.3.png)
 
-7. Download the **private** and **public** keys and move both files into `C:\Users\YourUser\.oci`.
-8. Back in the OCI Console, click **Add**.
+1. Download the **private** and **public** keys and move both files into `C:\Users\YourUser\.oci`.
+2. Back in the OCI Console, click **Add**.
 
 ![Add API key dialog with Generate API key pair selected and Add highlighted](../assets/guide-images/2.4.png)
 
-9. Copy the configuration file preview.
+1. Copy the configuration file preview.
 
 ![Configuration file preview with the Copy button highlighted](../assets/guide-images/2.5.png)
 
-10. Open the `config` file in a text editor and paste the snippet.
-11. Set the `key_file` line to the full path of the **private** key in your `.oci` folder. Your file name will be different from the example.
+1. Open the `config` file in a text editor and paste the snippet.
+2. Set the `key_file` line to the full path of the **private** key in your `.oci` folder. Your file name will be different from the example.
 
 ![Notepad config file with key_file path filled in](../assets/guide-images/2.6.png)
 
-12. Save the file.
+1. Save the file.
+
+
 
 ### 2. Create the Auth Token
 
@@ -106,8 +113,10 @@ Setup also creates a last-resort **$1 monthly budget**. If spend ever reaches $1
 
 1. On the [GitHub repo](https://github.com/maattox/oci-mc-server), open the latest **MC Manager** release under **Releases**.
 2. Download and run the setup `.exe`.
+
 - The installer is not signed. Windows Defender / SmartScreen may show **Windows protected your PC**. Choose **More info** → **Run anyway**.
-4. If Manager says a Microsoft component is missing, install [Evergreen WebView2](https://go.microsoft.com/fwlink/p/?LinkId=2124703), then open the app again.
+
+1. If Manager says a Microsoft component is missing, install [Evergreen WebView2](https://go.microsoft.com/fwlink/p/?LinkId=2124703), then open the app again.
 
 
 
@@ -150,6 +159,8 @@ Pick a size and start deployment.
 - If Deploy is interrupted after the game VM already exists, that VM may stay on. Finish Setup, or stop it in the OCI Console (especially the 4 OCPU / 24 GB size).
 - The recommended size (**4 OCPU / 24 GB**) can only run about **~11.5 hours a day** on average over a month. Manager’s usage stats make that easy to track.
 - The smaller size (**2 OCPU / 12 GB**) can usually stay on all month, with less room for mods and players.
+
+
 
 #### When deployment completes, click **Close** to enter the Manager.
 
