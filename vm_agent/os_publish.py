@@ -23,6 +23,42 @@ OBJ_LEASE = "ledger/lease.json"
 OBJ_BUDGET = "budget/config.json"
 OBJ_CHAT = "messages/chat.json"
 OBJ_ICON = "messages/server-icon.png"
+OBJ_PROPS = "messages/server-properties.json"
+CURATED_PROPERTIES = frozenset(
+    {
+        "difficulty",
+        "gamemode",
+        "max-players",
+        "pvp",
+        "spawn-protection",
+        "view-distance",
+        "simulation-distance",
+        "hardcore",
+        "force-gamemode",
+        "allow-flight",
+    }
+)
+FORBIDDEN_PROPERTIES = frozenset(
+    {
+        "enable-rcon",
+        "rcon.password",
+        "rcon.port",
+        "server-port",
+        "server-ip",
+        "query.port",
+        "enable-query",
+        "white-list",
+        "enforce-whitelist",
+        "online-mode",
+        "motd",
+        "level-name",
+        "management-server-secret",
+        "management-server-enabled",
+        "management-server-host",
+        "management-server-port",
+        "management-server-tls-keystore-password",
+    }
+)
 CONFIG_PATH = os.environ.get("MC_MANAGER_CONFIG", "/etc/mc-manager/config.json")
 DEFAULT_MOTD = (
     "§6§l★§r§l §e§lOCI Server§r§l\u00a0§6§l★§r"
@@ -230,6 +266,59 @@ def _patch_properties_key(path: str, key: str, value: str) -> None:
         pass
 
 
+def _stringify_prop(value: Any) -> str:
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if value is None:
+        return ""
+    text = str(value).strip()
+    if text.lower() in ("true", "false"):
+        return text.lower()
+    return text
+
+
+def _apply_properties_map(path: str, properties: dict[str, Any]) -> list[str]:
+    """Patch allowlisted keys only. Never writes RCON, port, MOTD, or online-mode."""
+    view = _stringify_prop(properties.get("view-distance"))
+    sim = _stringify_prop(properties.get("simulation-distance"))
+    if view.isdigit() and sim.isdigit() and int(sim) > int(view):
+        properties = dict(properties)
+        properties["simulation-distance"] = view
+
+    applied: list[str] = []
+    for key, raw in properties.items():
+        if key in FORBIDDEN_PROPERTIES or key not in CURATED_PROPERTIES:
+            continue
+        value = _stringify_prop(raw)
+        if not value:
+            continue
+        _patch_properties_key(path, key, value)
+        applied.append(key)
+    return applied
+
+
+def _apply_game_settings(
+    cfg: dict[str, Any], client, namespace: str, bucket: str
+) -> list[str]:
+    server_dir = _server_dir(cfg)
+    if not server_dir:
+        return ["world_path missing; skipped server.properties apply."]
+    doc = _get_json(client, namespace, bucket, OBJ_PROPS)
+    if not isinstance(doc, dict):
+        return [f"{OBJ_PROPS} missing; left on-disk keys."]
+    raw = doc.get("properties")
+    if not isinstance(raw, dict):
+        return [f"{OBJ_PROPS} has no properties object; skipped."]
+    props_path = os.path.join(server_dir, "server.properties")
+    try:
+        applied = _apply_properties_map(props_path, raw)
+    except OSError as exc:
+        return [f"server.properties write failed: {exc}"]
+    if not applied:
+        return [f"{OBJ_PROPS} had no allowed keys; left on-disk file."]
+    return [f"wrote {', '.join(applied)} in {props_path}"]
+
+
 LIST_LINE_LIMIT = 59
 SECTION = "\u00a7"
 
@@ -375,9 +464,9 @@ def pull_messages_if_dirty(cfg: dict[str, Any], *, force: bool = False) -> str:
     """Download messages/chat.json when messages.vm1 is dirty (or force on boot).
 
     Merges chat templates into local idle-agent config and applies motd/icon
-    under the Minecraft server directory. systemd runs this Before=minecraft
-    so this start loads the new identity (Vanilla rewrites server.properties
-    on stop from in-memory values).
+    plus curated server.properties from messages/server-properties.json.
+    systemd runs this Before=minecraft so this start loads the new files
+    (Vanilla rewrites server.properties on stop from in-memory values).
     """
     ns_bucket = _ns_bucket(cfg)
     if ns_bucket is None:
@@ -389,17 +478,16 @@ def pull_messages_if_dirty(cfg: dict[str, Any], *, force: bool = False) -> str:
     if not force and not dirty:
         return "messages.vm1 clear; skipped pull."
 
+    notes: list[str] = []
     doc = _get_json(client, namespace, bucket, OBJ_CHAT)
-    if not isinstance(doc, dict):
-        if dirty:
-            flags["categories"]["messages"]["vm1"] = False
-            flags["updated_at"] = _utc_now()
-            _put_json(client, namespace, bucket, OBJ_FLAGS, flags)
-        return f"{OBJ_CHAT} missing; skipped identity apply."
+    if isinstance(doc, dict):
+        chat_messages = doc.get("chat_messages") if isinstance(doc.get("chat_messages"), dict) else {}
+        _merge_chat_into_local_config(cfg, chat_messages)
+        notes.extend(_apply_identity(cfg, doc, client, namespace, bucket))
+    else:
+        notes.append(f"{OBJ_CHAT} missing; skipped identity apply.")
 
-    chat_messages = doc.get("chat_messages") if isinstance(doc.get("chat_messages"), dict) else {}
-    _merge_chat_into_local_config(cfg, chat_messages)
-    notes = _apply_identity(cfg, doc, client, namespace, bucket)
+    notes.extend(_apply_game_settings(cfg, client, namespace, bucket))
     if dirty:
         flags["categories"]["messages"]["vm1"] = False
         flags["updated_at"] = _utc_now()

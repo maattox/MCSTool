@@ -149,7 +149,6 @@ doc = {
   "minecraft_unit": os.environ.get("MINECRAFT_UNIT", "minecraft"),
   "server_properties_managed_keys": [
     "enable-rcon", "rcon.port", "rcon.password",
-    "motd", "difficulty", "max-players",
     "white-list", "enforce-whitelist", "online-mode",
   ],
   "eula": {

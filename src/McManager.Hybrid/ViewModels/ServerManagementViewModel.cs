@@ -30,6 +30,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     private InfraMetaStore? _infra;
     private OversizedWorldBackupStore? _oversizedWorld;
     private ChatMessagesStore? _chat;
+    private ServerPropertiesStore? _settings;
     private byte[]? _pendingIconPng;
     private bool _clearIcon;
     private ISshService _ssh = null!;
@@ -256,6 +257,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     public string ModdingHelpTitle => ModdingPanelLogic.HelpTitle;
 
     public const string PaneIdentity = "identity";
+    public const string PaneSettings = "settings";
     public const string PaneWorld = "world";
     public const string PaneModding = "modding";
     public const string PaneChangePack = "pack";
@@ -330,7 +332,16 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     public string MotdPreview =>
         ServerIdentityUx.BuildMotd(IdentityName, IdentityDescription);
 
+    public string SettingsHelpTitle =>
+        "Gameplay settings are stored in the cloud and written to server.properties the next time Minecraft starts. Save, then Restart (or Start). Name, icon, and MOTD stay on Identity. PvP and simulation distance hide when this Minecraft version does not have those keys.";
+
+    public IReadOnlyList<string> SettingsDifficulties => ServerPropertiesCatalog.Difficulties;
+
+    public IReadOnlyList<string> SettingsGamemodes => ServerPropertiesCatalog.Gamemodes;
+
     public bool CanSaveIdentity => HasObjectStorage && !AnyBusy;
+
+    public bool CanSaveSettings => HasObjectStorage && !AnyBusy;
 
     public bool CanClearIcon =>
         HasObjectStorage && !AnyBusy && (HasCustomIcon || _pendingIconPng is { Length: > 0 });
@@ -364,6 +375,45 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
     [ObservableProperty]
     private string _identityStatus = "";
+
+    [ObservableProperty]
+    private string _settingsDifficulty = "normal";
+
+    [ObservableProperty]
+    private string _settingsGamemode = "survival";
+
+    [ObservableProperty]
+    private int _settingsMaxPlayers = 20;
+
+    [ObservableProperty]
+    private bool _settingsPvp = true;
+
+    [ObservableProperty]
+    private int _settingsSpawnProtection = 16;
+
+    [ObservableProperty]
+    private int _settingsViewDistance = 10;
+
+    [ObservableProperty]
+    private int _settingsSimulationDistance = 10;
+
+    [ObservableProperty]
+    private bool _settingsHardcore;
+
+    [ObservableProperty]
+    private bool _settingsForceGamemode;
+
+    [ObservableProperty]
+    private bool _settingsAllowFlight;
+
+    [ObservableProperty]
+    private bool _showSettingsPvp;
+
+    [ObservableProperty]
+    private bool _showSettingsSimulationDistance;
+
+    [ObservableProperty]
+    private string _settingsStatus = "";
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsChangePackPane))]
@@ -552,6 +602,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         _infra = null;
         _oversizedWorld = null;
         _chat = null;
+        _settings = null;
         _pendingIconPng = null;
         _clearIcon = false;
         IdentityName = "";
@@ -562,6 +613,9 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         StartingIconPreviewDataUrl = "";
         ExhaustedIconPreviewDataUrl = "";
         IdentityStatus = "";
+        SettingsStatus = "";
+        _currentMinecraftVersion = null;
+        ApplySettingsDefaults();
         ChatTemplates.Clear();
         ServerNameDisplay = "—";
         MinecraftVersionDisplay = "—";
@@ -591,6 +645,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
             _infra = new InfraMetaStore(os, _config.ObjectStorage.Prefixes);
             _oversizedWorld = new OversizedWorldBackupStore(os, _config.ObjectStorage.Prefixes);
             _chat = new ChatMessagesStore(os, _config.ObjectStorage.Prefixes);
+            _settings = new ServerPropertiesStore(os, _config.ObjectStorage.Prefixes);
             SoftCapDisplay = _backups.FormatSoftCapLine(0);
             BackupStorageDisplay = $"0.0 / {_backups.SoftCapGb:0.#} GB";
         }
@@ -602,6 +657,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
             : "Open this tab to list world backups.";
         OnPropertyChanged(nameof(HasObjectStorage));
         OnPropertyChanged(nameof(CanSaveIdentity));
+        OnPropertyChanged(nameof(CanSaveSettings));
         OnPropertyChanged(nameof(CanClearIcon));
         BindLocalPack();
         FillDefaultChatRows();
@@ -662,6 +718,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         {
             await RefreshOversizedFlagAsync();
             await LoadIdentityAsync();
+            await LoadSettingsAsync();
             var result = await _backups.ListWorldBackupsAsync();
             if (!result.Succeeded || result.Value is null)
             {
@@ -908,6 +965,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
             _currentMinecraftVersion = null;
             MinecraftVersionDisplay = "—";
             ApplyServerKind(null);
+            await LoadSettingsAsync();
             return;
         }
 
@@ -916,6 +974,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         {
             _currentMinecraftVersion = null;
             ApplyServerKind(null);
+            await LoadSettingsAsync();
             return;
         }
 
@@ -925,6 +984,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         MinecraftVersionDisplay = _currentMinecraftVersion ?? "—";
         ApplyServerKind(doc.Game.ServerKind);
         RefreshSaveCompatibilityWarning();
+        await LoadSettingsAsync();
         if (includeLiveMods)
             await RefreshLiveModsAsync();
     }
@@ -1666,6 +1726,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         OnPropertyChanged(nameof(CanInstallPack));
         OnPropertyChanged(nameof(InstallPackTitle));
         OnPropertyChanged(nameof(CanSaveIdentity));
+        OnPropertyChanged(nameof(CanSaveSettings));
         OnPropertyChanged(nameof(CanClearIcon));
         OnPropertyChanged(nameof(HasQuarantinedMods));
         OnPropertyChanged(nameof(CanActOnQuarantine));
@@ -2026,6 +2087,146 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         HasCustomIcon = false;
         IdentityStatus = _clearIcon ? "Default icon will be used on Save." : "";
         OnPropertyChanged(nameof(CanClearIcon));
+    }
+
+    public async Task SaveSettingsAsync()
+    {
+        if (_settings is null || AnyBusy)
+            return;
+
+        IsBusy = true;
+        SettingsStatus = "Saving…";
+        try
+        {
+            var put = await _settings.PublishAsync(CollectSettingsProperties(), _currentMinecraftVersion);
+            if (!put.Succeeded)
+            {
+                SettingsStatus = put.Error ?? "Save failed.";
+                return;
+            }
+
+            BindSettingsDocument(put.Value!.Document, _currentMinecraftVersion);
+            SettingsStatus =
+                "Saved. Restart Minecraft (or Start) to apply these settings in-game.";
+        }
+        finally
+        {
+            IsBusy = false;
+            OnPropertyChanged(nameof(CanSaveSettings));
+        }
+    }
+
+    private async Task LoadSettingsAsync()
+    {
+        ApplySettingsVersion(_currentMinecraftVersion);
+        if (_settings is null)
+        {
+            ApplySettingsDefaults();
+            return;
+        }
+
+        var got = await _settings.GetAsync();
+        if (!got.Succeeded || got.Value is null)
+        {
+            SettingsStatus = got.Error ?? "Could not load server settings.";
+            ApplySettingsDefaults();
+            return;
+        }
+
+        BindSettingsDocument(got.Value.Document, _currentMinecraftVersion);
+        SettingsStatus = got.Value.Present
+            ? ""
+            : "No saved settings yet — defaults are shown. Save to store them in the cloud.";
+    }
+
+    private void ApplySettingsVersion(string? minecraftVersion)
+    {
+        ShowSettingsPvp = ServerPropertiesCatalog.SupportsPvpProperty(minecraftVersion);
+        ShowSettingsSimulationDistance = ServerPropertiesCatalog.SupportsSimulationDistance(minecraftVersion);
+    }
+
+    private void ApplySettingsDefaults()
+    {
+        var defaults = ServerPropertiesDocument.Defaults();
+        BindSettingsDocument(defaults, _currentMinecraftVersion);
+    }
+
+    private void BindSettingsDocument(ServerPropertiesDocument document, string? minecraftVersion)
+    {
+        ApplySettingsVersion(minecraftVersion);
+        var props = document.Properties ?? new Dictionary<string, string>(StringComparer.Ordinal);
+        SettingsDifficulty = ReadEnum(props, ServerPropertiesCatalog.Difficulty, ServerPropertiesCatalog.Difficulties, "normal");
+        SettingsGamemode = ReadEnum(props, ServerPropertiesCatalog.Gamemode, ServerPropertiesCatalog.Gamemodes, "survival");
+        SettingsMaxPlayers = ReadInt(props, ServerPropertiesCatalog.MaxPlayers, 20, ServerPropertiesCatalog.MaxPlayersMin, ServerPropertiesCatalog.MaxPlayersMax);
+        SettingsPvp = ReadBool(props, ServerPropertiesCatalog.Pvp, defaultValue: true);
+        SettingsSpawnProtection = ReadInt(props, ServerPropertiesCatalog.SpawnProtection, 16, ServerPropertiesCatalog.SpawnProtectionMin, ServerPropertiesCatalog.SpawnProtectionMax);
+        SettingsViewDistance = ReadInt(props, ServerPropertiesCatalog.ViewDistance, 10, ServerPropertiesCatalog.DistanceMin, ServerPropertiesCatalog.DistanceMax);
+        SettingsSimulationDistance = ReadInt(props, ServerPropertiesCatalog.SimulationDistance, 10, ServerPropertiesCatalog.DistanceMin, ServerPropertiesCatalog.DistanceMax);
+        SettingsHardcore = ReadBool(props, ServerPropertiesCatalog.Hardcore, defaultValue: false);
+        SettingsForceGamemode = ReadBool(props, ServerPropertiesCatalog.ForceGamemode, defaultValue: false);
+        SettingsAllowFlight = ReadBool(props, ServerPropertiesCatalog.AllowFlight, defaultValue: false);
+    }
+
+    private Dictionary<string, string> CollectSettingsProperties()
+    {
+        var props = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            [ServerPropertiesCatalog.Difficulty] = SettingsDifficulty,
+            [ServerPropertiesCatalog.Gamemode] = SettingsGamemode,
+            [ServerPropertiesCatalog.MaxPlayers] = SettingsMaxPlayers.ToString(),
+            [ServerPropertiesCatalog.SpawnProtection] = SettingsSpawnProtection.ToString(),
+            [ServerPropertiesCatalog.ViewDistance] = SettingsViewDistance.ToString(),
+            [ServerPropertiesCatalog.Hardcore] = SettingsHardcore ? "true" : "false",
+            [ServerPropertiesCatalog.ForceGamemode] = SettingsForceGamemode ? "true" : "false",
+            [ServerPropertiesCatalog.AllowFlight] = SettingsAllowFlight ? "true" : "false",
+        };
+        if (ShowSettingsPvp)
+            props[ServerPropertiesCatalog.Pvp] = SettingsPvp ? "true" : "false";
+        if (ShowSettingsSimulationDistance)
+            props[ServerPropertiesCatalog.SimulationDistance] = SettingsSimulationDistance.ToString();
+        return props;
+    }
+
+    private static string ReadEnum(
+        IReadOnlyDictionary<string, string> props,
+        string key,
+        IReadOnlyList<string> names,
+        string fallback)
+    {
+        if (!props.TryGetValue(key, out var raw) || string.IsNullOrWhiteSpace(raw))
+            return fallback;
+        foreach (var name in names)
+        {
+            if (string.Equals(name, raw.Trim(), StringComparison.OrdinalIgnoreCase))
+                return name;
+        }
+
+        return fallback;
+    }
+
+    private static int ReadInt(
+        IReadOnlyDictionary<string, string> props,
+        string key,
+        int fallback,
+        int min,
+        int max)
+    {
+        if (!props.TryGetValue(key, out var raw) || !int.TryParse(raw, out var value))
+            return fallback;
+        if (value < min || value > max)
+            return fallback;
+        return value;
+    }
+
+    private static bool ReadBool(
+        IReadOnlyDictionary<string, string> props,
+        string key,
+        bool defaultValue)
+    {
+        if (!props.TryGetValue(key, out var raw))
+            return defaultValue;
+        return string.Equals(raw.Trim(), "true", StringComparison.OrdinalIgnoreCase)
+               || raw.Trim() == "1";
     }
 
     public async Task SaveIdentityAsync()

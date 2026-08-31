@@ -56,6 +56,43 @@ class MotdTests(unittest.TestCase):
         self.assertIn("motd=§cHello\\n§aWorld\n", text)
         self.assertIn("max-players=8\n", text)
 
+    def test_apply_properties_map_writes_curated_and_skips_forbidden(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "server.properties")
+            with open(path, "w", encoding="utf-8") as f:
+                f.write("max-players=20\nenable-rcon=true\nrcon.password=secret\nmotd=keep\n")
+            applied = osp._apply_properties_map(
+                path,
+                {
+                    "difficulty": "hard",
+                    "max-players": 8,
+                    "pvp": False,
+                    "view-distance": "6",
+                    "simulation-distance": "12",
+                    "enable-rcon": "false",
+                    "rcon.password": "hacked",
+                    "online-mode": "false",
+                    "motd": "nope",
+                    "unknown-key": "x",
+                },
+            )
+            with open(path, encoding="utf-8") as f:
+                text = f.read()
+        self.assertIn("difficulty", applied)
+        self.assertIn("max-players", applied)
+        self.assertNotIn("enable-rcon", applied)
+        self.assertNotIn("motd", applied)
+        self.assertIn("difficulty=hard\n", text)
+        self.assertIn("max-players=8\n", text)
+        self.assertIn("pvp=false\n", text)
+        self.assertIn("view-distance=6\n", text)
+        self.assertIn("simulation-distance=6\n", text)
+        self.assertIn("enable-rcon=true\n", text)
+        self.assertIn("rcon.password=secret\n", text)
+        self.assertIn("motd=keep\n", text)
+        self.assertNotIn("online-mode", text)
+        self.assertNotIn("unknown-key", text)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -179,7 +179,12 @@ The Minecraft server should now be up. Copy the **play IP** from MCSTool and con
 - Your public IP is allowlisted during Setup. To allow other players, add each player’s **current public IPv4** on the **Whitelist** tab and click **Save changes**. Home IPs can change; update the list when they do.
 - **Modded:** also give players the **same mod pack file** you chose in Setup.
 
+### Server tab
 
+On the **Server** tab:
+
+- **Identity** — name, description, and icon in the Minecraft server list.
+- **Settings** — difficulty, default game mode, max players, view distance, simulation distance (Minecraft 1.18+), PvP when that version still has a `pvp` property, spawn protection, hardcore, force game mode, and allow flight. **Save**, then **Restart** (or **Start**) so Minecraft reads the file. Name and MOTD stay on Identity.
 
 ### Idle stop and wake
 

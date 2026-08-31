@@ -22,14 +22,15 @@ managed = {
     "rcon.password": password,
     "white-list": "false",
     "enforce-whitelist": "false",
-    "difficulty": "normal",
-    "max-players": "20",
     "online-mode": "true",
 }
-# Identity (name/icon/description) owns motd after first write. Only seed a
-# default when the key is missing so repair does not clobber Manager saves.
+# Identity owns motd after first write. Gameplay keys (difficulty / max-players)
+# are Manager Settings after first Save — seed only when missing so repair
+# and pack replace do not clobber operator values.
 if_missing = {
     "motd": "§6§l★§r§l §e§lOCI Server§r§l\u00a0§6§l★§r\\ncreated with §9§ngithub.com/maattox/MCSTool§r",
+    "difficulty": "normal",
+    "max-players": "20",
 }
 # Intentionally never allow online-mode false via this writer.
 assert managed["online-mode"] == "true"

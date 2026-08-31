@@ -3891,6 +3891,21 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     margin-bottom: 8px;
 }
 
+.mcm-settings-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px 24px;
+    align-items: start;
+}
+
+.mcm-settings-grid .mcm-num-input {
+    margin-bottom: 4px;
+}
+
+.mcm-settings-grid .mcm-wizard-hint {
+    margin: 0 0 12px;
+}
+
 .mcm-identity-icon-row {
     display: flex;
     align-items: flex-start;
@@ -4252,6 +4267,10 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 /* Content pane is ~576px at the 920 min window; viewport queries never fire. */
 @container mcm-tab-pane (max-width: 40rem) {
     .mcm-identity-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .mcm-settings-grid {
         grid-template-columns: minmax(0, 1fr);
     }
 

@@ -221,6 +221,8 @@ with open(props_path, encoding="utf-8") as f:
 assert props.get("white-list") == "false", f"white-list want false got {props.get('white-list')}"
 assert props.get("enforce-whitelist") == "false", f"enforce-whitelist want false got {props.get('enforce-whitelist')}"
 assert props.get("online-mode") == "true", f"online-mode want true got {props.get('online-mode')}"
+assert props.get("difficulty") == "normal", f"difficulty want normal got {props.get('difficulty')}"
+assert props.get("max-players") == "20", f"max-players want 20 got {props.get('max-players')}"
 
 print("assert-dry-run: all checks passed (incl. §10.2 idle sync, §7.3 whitelist off)")
 PY

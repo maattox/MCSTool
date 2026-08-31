@@ -49,7 +49,7 @@ sudo bash /path/to/onbox/mcmgr/repair-permissions.sh
 sudo bash /opt/mcmgr/bin/repair-permissions.sh
 ```
 
-Managed `server.properties` (in-game whitelist off — SETUP-ISSUE-3):
+Managed `server.properties` (in-game whitelist off — SETUP-ISSUE-3). Repair always rewrites RCON, `white-list=false`, `enforce-whitelist=false`, and `online-mode=true`. `difficulty` / `max-players` / `motd` are seeded only when missing so Manager Settings and Identity are not clobbered.
 
 ```bash
 sudo bash /path/to/onbox/mcmgr/repair-server-properties.sh
