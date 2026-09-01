@@ -4,7 +4,7 @@ This is the guide for setting up your Minecraft server with **MCSTool**, hosted 
 
 **Windows only.** There is no macOS or Linux MCSTool in this version.
 
-MCSTool does not include an in-app pack browser. You supply the pack file. Supported formats are **Modrinth `.mrpack`**, **CurseForge Server Files**, and a **zip of `.jar` mods**. For a zip of jars, Setup asks you to confirm the loader, Minecraft version, and Java.
+MCSTool does not include an in-app pack browser. You supply the pack file. Supported formats are **Modrinth** `.mrpack`, **CurseForge Server Files**, and a **zip of** `.jar` **mods**. For a zip of jars, Setup asks you to confirm the loader, Minecraft version, and Java.
 
 Always Free *can* work at **$0**, but Oracle **capacity often blocks creating the VMs**. Upgrading the account to **Pay As You Go (PAYG)** raises scheduling priority. You can still stay at $0 if you stay inside Always Free limits.
 
@@ -12,6 +12,8 @@ Always Free *can* work at **$0**, but Oracle **capacity often blocks creating th
 
 - Windows 10 or 11
 - An [Oracle Cloud](https://www.oracle.com/cloud/) account (you will create one in Part 1)
+
+
 
 ## Cost
 
@@ -136,7 +138,7 @@ Read them and confirm you understand them. This includes Always Free limits and 
 Select your OCI profile and enter an email. The profile should be detected automatically if you finished Part 2. The email is only used to alert you if the $1 budget is triggered.
 
 **Step 3 — SSH key**  
-Generate a new key, or import an existing one. This is **not** the API key from Part 2. Setup can use one key for both VMs or a different key for the door; Advanced can still change the local paths later.
+Generate a new key, or import an existing one. This is **not** the API key from Part 2. Setup can use one key for both VMs or a different key for the door.
 
 **Step 4 — Server type**  
 Choose **Vanilla** or **Modded**.
@@ -179,6 +181,8 @@ The Minecraft server should now be up. Copy the **play IP** from MCSTool and con
 - Your public IP is allowlisted during Setup. To allow other players, add each player’s **current public IPv4** on the **Whitelist** tab and click **Save changes**. Home IPs can change; update the list when they do.
 - **Modded:** also give players the **same mod pack file** you chose in Setup.
 
+
+
 ### Players tab
 
 On the **Players** tab:
@@ -187,7 +191,8 @@ On the **Players** tab:
 - Hover a row for **Kick** (optional reason), **Mod** / **Unmod**, and **Ban** (confirm + optional reason).
 - **Banned** lists in-game banned players under **Online now**. Hover **Unban** (`pardon`). This still does not change **Whitelist** / Who can join.
 - **Ban** is Minecraft’s in-game ban only. It does **not** change **Whitelist** / Who can join (the cloud IP allowlist). An in-game `/ban` from another operator also does not update that list.
-- Kick, Ban, and Mod sent from MCSTool may appear in operator chat. Minecraft defaults `broadcast-rcon-to-ops` to true; MCSTool does not expose that setting.
+
+
 
 ### Server tab
 
@@ -195,6 +200,8 @@ On the **Server** tab:
 
 - **Identity** — name, description, and icon in the Minecraft server list.
 - **Settings** — difficulty, default game mode, max players, view distance, simulation distance (Minecraft 1.18+), PvP when that version still has a `pvp` property, spawn protection, hardcore, force game mode, and allow flight. **Save**, then **Restart** (or **Start**) so Minecraft reads the file. Name and MOTD stay on Identity.
+
+
 
 ### Idle stop and wake
 

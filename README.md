@@ -4,11 +4,9 @@ Create a vanilla or modded Minecraft server using OCI Always Free resources.
 
 ### Setup guide: [docs/Guide.md](docs/Guide.md)
 
-MCSTool does not browse or download packs for you. You supply the pack file. Supported formats are **Modrinth `.mrpack`**, **CurseForge Server Files**, and a **zip of `.jar` mods**. For a zip of jars, Setup asks you to confirm the loader, Minecraft version, and Java.
-
-Always Free *can* work at **$0**, but Oracle **capacity often blocks creating the VMs**. Upgrading the account to **Pay As You Go (PAYG)** raises scheduling priority. You can still stay at $0 if you stay inside Always Free limits.
-
-A Windows app for a **private Minecraft server** (modded or vanilla) for you and other players, hosted on [Oracle Cloud](https://www.oracle.com/cloud/). Built to run on Oracle’s Always Free resources.
+- Always Free *can* work at **$0**, but Oracle **capacity often blocks creating the VMs**. Upgrading the account to **Pay As You Go (PAYG)** raises scheduling priority. You can still stay at $0 if you stay inside Always Free limits.
+- A Windows app for a **private Minecraft server** (modded or vanilla) for you and other players, hosted on [Oracle Cloud](https://www.oracle.com/cloud/). Built to run on Oracle’s Always Free resources.
+- For modded servers, you supply the mod pack. Supported formats are **Modrinth** `.mrpack`, **CurseForge Server Files**, and a **zip of** `.jar` **mods**. For a zip of jars, Setup asks you to confirm the loader, Minecraft version, and Java.
 
 **Open beta 0.9.1** — download it from [Releases](https://github.com/maattox/MCSTool/releases).
 
