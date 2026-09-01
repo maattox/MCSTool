@@ -1,0 +1,252 @@
+@inject PlayersViewModel Vm
+@implements IDisposable
+
+<div>
+    <div style="margin-bottom:12px;">
+        <div style="display:flex;align-items:center;gap:4px;">
+            <span style="font-size:16px;font-weight:600;">Online now</span>
+            <button type="button"
+                    class="mcm-help"
+                    title="@PlayersViewModel.HelpTitle">
+                <i class="ti ti-help" aria-hidden="true"></i>
+                <span class="sr-only">About Players</span>
+            </button>
+        </div>
+        <p style="margin:4px 0 0;font-size:13px;color:var(--text-secondary);">
+            Players connected to Minecraft. Ban is in-game only — it does not change Who can join.
+        </p>
+    </div>
+
+    <div class="mcm-section-card">
+        @if (Vm.Players.Count == 0)
+        {
+            <p class="mcm-pl-empty">@Vm.EmptyHint</p>
+        }
+        else
+        {
+            @foreach (var player in Vm.Players)
+            {
+                <div class="mcm-pl-row">
+                    @if (!string.IsNullOrEmpty(player.FaceDataUrl))
+                    {
+                        <img class="mcm-pl-face"
+                             src="@player.FaceDataUrl"
+                             width="32"
+                             height="32"
+                             alt="" />
+                    }
+                    else
+                    {
+                        <span class="mcm-pl-face mcm-pl-face-fallback" aria-hidden="true">
+                            <i class="ti ti-user"></i>
+                        </span>
+                    }
+                    <span class="mcm-pl-name">@player.Name</span>
+                    <div class="mcm-wl-actions">
+                        <button type="button"
+                                disabled="@(!Vm.CanAct)"
+                                @onclick="@(() => OpenKick(player))">
+                            Kick
+                        </button>
+                        <button type="button"
+                                disabled="@(!Vm.CanAct)"
+                                @onclick="@(() => Vm.ModAsync(player))">
+                            Mod
+                        </button>
+                        <button type="button"
+                                disabled="@(!Vm.CanAct)"
+                                @onclick="@(() => Vm.UnmodAsync(player))">
+                            Unmod
+                        </button>
+                        <button type="button"
+                                style="color:var(--text-danger);border-color:var(--border-danger);"
+                                disabled="@(!Vm.CanAct)"
+                                @onclick="@(() => OpenBan(player))">
+                            Ban
+                        </button>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+
+    <div style="margin:20px 0 12px;">
+        <span style="font-size:16px;font-weight:600;">Banned</span>
+    </div>
+
+    <div class="mcm-section-card">
+        @if (Vm.BannedPlayers.Count == 0)
+        {
+            <p class="mcm-pl-empty">@PlayersViewModel.NobodyBannedHint</p>
+        }
+        else
+        {
+            @foreach (var player in Vm.BannedPlayers)
+            {
+                <div class="mcm-pl-row">
+                    @if (!string.IsNullOrEmpty(player.FaceDataUrl))
+                    {
+                        <img class="mcm-pl-face"
+                             src="@player.FaceDataUrl"
+                             width="32"
+                             height="32"
+                             alt="" />
+                    }
+                    else
+                    {
+                        <span class="mcm-pl-face mcm-pl-face-fallback" aria-hidden="true">
+                            <i class="ti ti-user"></i>
+                        </span>
+                    }
+                    <span class="mcm-pl-name">@player.Name</span>
+                    <div class="mcm-wl-actions">
+                        <button type="button"
+                                disabled="@(!Vm.CanAct)"
+                                @onclick="@(() => Vm.UnbanAsync(player))">
+                            Unban
+                        </button>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@if (_modalOpen)
+{
+    <div class="mcm-modal-overlay open"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="mcm-pl-modal-title"
+         tabindex="-1"
+         @onclick="CloseModal"
+         @onkeydown="OnModalKeyDown">
+        <div class="mcm-modal-card" @onclick:stopPropagation="true">
+            <h2 id="mcm-pl-modal-title" class="mcm-modal-title">
+                @(_isBan ? "Ban " + _modalName : "Kick " + _modalName)
+            </h2>
+            @if (_isBan)
+            {
+                <p class="mcm-settings-note" style="margin:0 0 12px;">
+                    This uses Minecraft’s in-game ban and disconnects them. It does not remove anyone from Who can join.
+                </p>
+            }
+            <div class="mcm-field">
+                <label for="mcm-pl-reason">Reason (optional)</label>
+                <input id="mcm-pl-reason"
+                       type="text"
+                       maxlength="@MinecraftConsoleRemote.PlayerActionReasonMaxChars"
+                       placeholder="Shown to the player"
+                       @bind="_reason"
+                       @bind:event="oninput" />
+            </div>
+            <div class="mcm-modal-actions">
+                <button type="button" @onclick="CloseModal">Cancel</button>
+                <button type="button"
+                        class="mcm-primary"
+                        disabled="@(!Vm.CanAct)"
+                        @onclick="SubmitModalAsync">
+                    @(_isBan ? "Ban" : "Kick")
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool _modalOpen;
+    private bool _isBan;
+    private PlayerRowViewModel? _target;
+    private string _modalName = "";
+    private string _reason = "";
+
+    protected override void OnInitialized()
+    {
+        Vm.PropertyChanged += OnVmChanged;
+        Vm.Players.CollectionChanged += OnPlayersChanged;
+        Vm.BannedPlayers.CollectionChanged += OnPlayersChanged;
+        foreach (var row in Vm.Players)
+            row.PropertyChanged += OnRowChanged;
+        foreach (var row in Vm.BannedPlayers)
+            row.PropertyChanged += OnRowChanged;
+    }
+
+    public void Dispose()
+    {
+        Vm.PropertyChanged -= OnVmChanged;
+        Vm.Players.CollectionChanged -= OnPlayersChanged;
+        Vm.BannedPlayers.CollectionChanged -= OnPlayersChanged;
+        foreach (var row in Vm.Players)
+            row.PropertyChanged -= OnRowChanged;
+        foreach (var row in Vm.BannedPlayers)
+            row.PropertyChanged -= OnRowChanged;
+    }
+
+    private void OnVmChanged(object? sender, PropertyChangedEventArgs e) =>
+        _ = InvokeAsync(StateHasChanged);
+
+    private void OnPlayersChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.OldItems is not null)
+        {
+            foreach (PlayerRowViewModel row in e.OldItems)
+                row.PropertyChanged -= OnRowChanged;
+        }
+
+        if (e.NewItems is not null)
+        {
+            foreach (PlayerRowViewModel row in e.NewItems)
+                row.PropertyChanged += OnRowChanged;
+        }
+
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void OnRowChanged(object? sender, PropertyChangedEventArgs e) =>
+        _ = InvokeAsync(StateHasChanged);
+
+    private void OpenKick(PlayerRowViewModel player)
+    {
+        _isBan = false;
+        _target = player;
+        _modalName = player.Name;
+        _reason = "";
+        _modalOpen = true;
+    }
+
+    private void OpenBan(PlayerRowViewModel player)
+    {
+        _isBan = true;
+        _target = player;
+        _modalName = player.Name;
+        _reason = "";
+        _modalOpen = true;
+    }
+
+    private void CloseModal()
+    {
+        _modalOpen = false;
+        _target = null;
+        _reason = "";
+    }
+
+    private async Task SubmitModalAsync()
+    {
+        var row = _target;
+        var reason = _reason;
+        var ban = _isBan;
+        CloseModal();
+        if (row is null)
+            return;
+        if (ban)
+            await Vm.BanAsync(row, reason);
+        else
+            await Vm.KickAsync(row, reason);
+    }
+
+    private void OnModalKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+            CloseModal();
+    }
+}

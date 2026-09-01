@@ -1,5 +1,6 @@
 @using McManager.Hybrid.Components.Tabs.Overview
 @using McManager.Hybrid.Components.Tabs.Whitelist
+@using McManager.Hybrid.Components.Tabs.Players
 @using McManager.Hybrid.Components.Tabs.Usage
 @using McManager.Hybrid.Components.Tabs.ServerManagement
 @using McManager.Hybrid.Components.Tabs.Console
@@ -224,6 +225,15 @@
             <div class="mcm-tab-gap" aria-hidden="true"></div>
             <button type="button"
                     role="tab"
+                    class="mcm-tab @TabClass("players")"
+                    aria-selected="@(IsTab("players") ? "true" : "false")"
+                    @onclick="@(() => SelectTabAsync("players"))">
+                <i class="ti ti-users" aria-hidden="true"></i>
+                Players
+            </button>
+            <div class="mcm-tab-gap" aria-hidden="true"></div>
+            <button type="button"
+                    role="tab"
                     class="mcm-tab @TabClass("server")"
                     aria-selected="@(IsTab("server") ? "true" : "false")"
                     @onclick="@(() => SelectTabAsync("server"))">
@@ -313,6 +323,9 @@
                         break;
                     case "console":
                         <ConsoleTab />
+                        break;
+                    case "players":
+                        <PlayersTab />
                         break;
                     case "advanced":
                         <AdvancedTab />

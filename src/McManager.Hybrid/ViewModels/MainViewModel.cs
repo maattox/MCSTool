@@ -67,6 +67,16 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private string _playersDisplay = "0";
 
+    private IReadOnlyList<OnlinePlayer> _onlinePlayers = Array.Empty<OnlinePlayer>();
+
+    /// <summary>Last successful <c>list uuids</c> roster. Empty when Stopped or the count is unknown.</summary>
+    public IReadOnlyList<OnlinePlayer> OnlinePlayers => _onlinePlayers;
+
+    private IReadOnlyList<OnlinePlayer> _bannedPlayers = Array.Empty<OnlinePlayer>();
+
+    /// <summary>Last successful <c>banlist</c> roster. Empty when Stopped, unknown, or none banned.</summary>
+    public IReadOnlyList<OnlinePlayer> BannedPlayers => _bannedPlayers;
+
     [ObservableProperty]
     private string _copyPlayIpLabel = "copy";
 
@@ -369,7 +379,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         {
             Status = Placeholder;
             StatusIsRunning = false;
-            PlayersDisplay = MinecraftConsoleRemote.FormatPlayersPin(false, null, null);
+            SetPlayersPin(false, null, null);
             Vm1Lifecycle = Placeholder;
             DoorState = Placeholder;
         }
@@ -395,7 +405,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         {
             Status = "Stopped";
             StatusIsRunning = false;
-            PlayersDisplay = MinecraftConsoleRemote.FormatPlayersPin(false, null, null);
+            SetPlayersPin(false, null, null);
             ShowToast(_configHost.LoadResult.Error ?? "Local config failed to load.", isError: true);
             return;
         }
@@ -913,7 +923,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         StatusIsRunning = ManageNoviceStatus.IsRunning(Status);
         OnPropertyChanged(nameof(StatusIsBusy));
         if (!StatusIsRunning)
-            PlayersDisplay = MinecraftConsoleRemote.FormatPlayersPin(false, null, null);
+            SetPlayersPin(false, null, null);
     }
 
     private void UpdateCommandFlags(DoorStatus? door = null)
@@ -956,23 +966,52 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _playersPollInFlight = true;
         try
         {
-            var run = await _ssh.SendMinecraftRconAsync(_config.Vm1, "list");
+            var run = await _ssh.SendMinecraftRconAsync(_config.Vm1, MinecraftConsoleRemote.ListUuidsCommand);
             if (!StatusIsRunning)
                 return;
 
             if (!run.Succeeded
-                || !MinecraftConsoleRemote.TryParsePlayerList(run.Output, out var online, out var max))
+                || !MinecraftConsoleRemote.TryParsePlayerList(
+                    run.Output, out var online, out var max, out var roster))
             {
-                PlayersDisplay = MinecraftConsoleRemote.FormatPlayersPin(true, null, null);
-                return;
+                SetPlayersPin(true, null, null);
+            }
+            else
+            {
+                SetPlayersPin(true, online, max, roster);
             }
 
-            PlayersDisplay = MinecraftConsoleRemote.FormatPlayersPin(true, online, max);
+            if (!StatusIsRunning)
+                return;
+
+            var banRun = await _ssh.SendMinecraftRconAsync(
+                _config.Vm1, MinecraftConsoleRemote.ListBanlistCommand);
+            if (!StatusIsRunning)
+                return;
+
+            if (banRun.Succeeded
+                && MinecraftConsoleRemote.TryParseBanList(banRun.Output, out var banned))
+            {
+                SetBannedPlayers(banned);
+            }
+            else
+            {
+                SetBannedPlayers(Array.Empty<OnlinePlayer>());
+            }
         }
         finally
         {
             _playersPollInFlight = false;
         }
+    }
+
+    /// <summary>Same pin poll as the 15s door tick — used after Kick/Ban/Unban so the roster and banlist refresh.</summary>
+    public async Task RefreshPlayersPinNowAsync()
+    {
+        var spins = 0;
+        while (_playersPollInFlight && spins++ < 40)
+            await Task.Delay(50);
+        await RefreshPlayersPinAsync();
     }
 
     private void BeginPowerAction(PowerActionKind kind)
@@ -1002,7 +1041,47 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             _ => Status
         };
         if (!StatusIsRunning)
-            PlayersDisplay = MinecraftConsoleRemote.FormatPlayersPin(false, null, null);
+            SetPlayersPin(false, null, null);
+    }
+
+    private void SetPlayersPin(
+        bool statusIsRunning,
+        int? online,
+        int? max,
+        IReadOnlyList<OnlinePlayer>? roster = null)
+    {
+        PlayersDisplay = MinecraftConsoleRemote.FormatPlayersPin(statusIsRunning, online, max);
+        var next = !statusIsRunning || online is null
+            ? Array.Empty<OnlinePlayer>()
+            : (IReadOnlyList<OnlinePlayer>)(roster ?? Array.Empty<OnlinePlayer>());
+        if (!statusIsRunning || online is null)
+            SetBannedPlayers(Array.Empty<OnlinePlayer>());
+        if (SameRoster(_onlinePlayers, next))
+            return;
+        _onlinePlayers = next;
+        OnPropertyChanged(nameof(OnlinePlayers));
+    }
+
+    private void SetBannedPlayers(IReadOnlyList<OnlinePlayer> next)
+    {
+        if (SameRoster(_bannedPlayers, next))
+            return;
+        _bannedPlayers = next;
+        OnPropertyChanged(nameof(BannedPlayers));
+    }
+
+    private static bool SameRoster(IReadOnlyList<OnlinePlayer> left, IReadOnlyList<OnlinePlayer> right)
+    {
+        if (left.Count != right.Count)
+            return false;
+        for (var i = 0; i < left.Count; i++)
+        {
+            if (!string.Equals(left[i].Name, right[i].Name, StringComparison.Ordinal)
+                || !string.Equals(left[i].UuidHyphenless, right[i].UuidHyphenless, StringComparison.Ordinal))
+                return false;
+        }
+
+        return true;
     }
 
     private void NotifyPowerTooltips()

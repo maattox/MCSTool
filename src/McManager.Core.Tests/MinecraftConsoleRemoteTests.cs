@@ -110,6 +110,171 @@ public sealed class MinecraftConsoleRemoteTests
         Assert.Equal(max, parsedMax);
     }
 
+    [Fact]
+    public void Parses_list_uuids_names_and_hyphenated_uuids()
+    {
+        const string payload =
+            "There are 2 of a max of 20 players online: "
+            + "Steve (069a79f4-44e9-4726-a5be-fca90e38aaf5), "
+            + "Alex (61699b2e-d327-4a01-9f1e-0ea8c3f06bc6)";
+
+        Assert.True(MinecraftConsoleRemote.TryParsePlayerList(
+            payload, out var online, out var max, out var players));
+        Assert.Equal(2, online);
+        Assert.Equal(20, max);
+        Assert.Equal(2, players.Count);
+        Assert.Equal("Steve", players[0].Name);
+        Assert.Equal("069a79f444e94726a5befca90e38aaf5", players[0].UuidHyphenless);
+        Assert.True(players[0].HasUuid);
+        Assert.Equal("Alex", players[1].Name);
+        Assert.Equal("61699b2ed3274a019f1e0ea8c3f06bc6", players[1].UuidHyphenless);
+    }
+
+    [Fact]
+    public void Parses_list_uuids_empty_and_newline_wrapped()
+    {
+        Assert.True(MinecraftConsoleRemote.TryParsePlayerList(
+            "There are 0 of a max of 20 players online:",
+            out _,
+            out _,
+            out var empty));
+        Assert.Empty(empty);
+
+        const string wrapped =
+            "There are 1 of a max of 20 players online:\n"
+            + "Steve (069a79f4-44e9-4726-a5be-fca90e38aaf5)";
+        Assert.True(MinecraftConsoleRemote.TryParsePlayerList(wrapped, out var online, out _, out var players));
+        Assert.Equal(1, online);
+        Assert.Single(players);
+        Assert.Equal("Steve", players[0].Name);
+    }
+
+    [Fact]
+    public void Parses_list_uuids_strips_section_codes()
+    {
+        const string payload =
+            "§eThere are 1 of a max of 20 players online:§r "
+            + "Steve (069a79f4-44e9-4726-a5be-fca90e38aaf5)";
+        Assert.True(MinecraftConsoleRemote.TryParsePlayerList(payload, out var online, out _, out var players));
+        Assert.Equal(1, online);
+        Assert.Equal("Steve", Assert.Single(players).Name);
+    }
+
+    [Fact]
+    public void Hyphenless_uuid_rejects_short_or_non_hex()
+    {
+        Assert.Equal(
+            "069a79f444e94726a5befca90e38aaf5",
+            MinecraftConsoleRemote.ToHyphenlessUuid("069a79f4-44e9-4726-a5be-fca90e38aaf5"));
+        Assert.Equal(
+            "069a79f444e94726a5befca90e38aaf5",
+            MinecraftConsoleRemote.ToHyphenlessUuid("069A79F444E94726A5BEFCA90E38AAF5"));
+        Assert.Equal("", MinecraftConsoleRemote.ToHyphenlessUuid("steve"));
+        Assert.Equal("", MinecraftConsoleRemote.ToHyphenlessUuid(""));
+        Assert.Equal("", MinecraftConsoleRemote.ToHyphenlessUuid("069a79f4-44e9"));
+    }
+
+    [Fact]
+    public void Player_action_commands_append_reason_only_for_kick_and_ban()
+    {
+        Assert.True(MinecraftConsoleRemote.TryBuildPlayerActionCommand(
+            "Kick", "Steve", "be nice", out var kick, out var error));
+        Assert.Null(error);
+        Assert.Equal("kick Steve be nice", kick);
+
+        Assert.True(MinecraftConsoleRemote.TryBuildPlayerActionCommand(
+            "op", "Steve", "ignored", out var op, out _));
+        Assert.Equal("op Steve", op);
+
+        Assert.True(MinecraftConsoleRemote.TryBuildPlayerActionCommand(
+            "deop", "Steve", null, out var deop, out _));
+        Assert.Equal("deop Steve", deop);
+
+        Assert.True(MinecraftConsoleRemote.TryBuildPlayerActionCommand(
+            "ban", "Steve", "griefing", out var ban, out _));
+        Assert.Equal("ban Steve griefing", ban);
+
+        Assert.True(MinecraftConsoleRemote.TryBuildPlayerActionCommand(
+            "kick", "Steve", "  \n  ", out var kickNoReason, out _));
+        Assert.Equal("kick Steve", kickNoReason);
+    }
+
+    [Fact]
+    public void Pardon_builds_without_reason()
+    {
+        Assert.True(MinecraftConsoleRemote.TryBuildPlayerActionCommand(
+            "pardon", "Steve", "ignored", out var pardon, out var error));
+        Assert.Null(error);
+        Assert.Equal("pardon Steve", pardon);
+    }
+
+    [Fact]
+    public void Parses_empty_banlist()
+    {
+        Assert.True(MinecraftConsoleRemote.TryParseBanList("There are no bans", out var none));
+        Assert.Empty(none);
+
+        Assert.True(MinecraftConsoleRemote.TryParseBanList("There are 0 ban(s):", out var zero));
+        Assert.Empty(zero);
+    }
+
+    [Fact]
+    public void Parses_one_banlist_was_banned_by_line()
+    {
+        const string payload = "There are 1 ban(s):\nSteve was banned by Server: griefing";
+        Assert.True(MinecraftConsoleRemote.TryParseBanList(payload, out var banned));
+        var player = Assert.Single(banned);
+        Assert.Equal("Steve", player.Name);
+        Assert.False(player.HasUuid);
+    }
+
+    [Fact]
+    public void Parses_two_banlist_names()
+    {
+        const string payload =
+            "There are 2 ban(s):\n"
+            + "Steve was banned by Server: griefing\n"
+            + "Alex was banned by Console: spam";
+        Assert.True(MinecraftConsoleRemote.TryParseBanList(payload, out var banned));
+        Assert.Equal(2, banned.Count);
+        Assert.Equal("Steve", banned[0].Name);
+        Assert.Equal("Alex", banned[1].Name);
+    }
+
+    [Fact]
+    public void Parses_banlist_comma_names_when_no_was_banned_by_lines()
+    {
+        Assert.True(MinecraftConsoleRemote.TryParseBanList(
+            "There are 2 ban(s): Steve, Alex", out var banned));
+        Assert.Equal(2, banned.Count);
+        Assert.Equal("Steve", banned[0].Name);
+        Assert.Equal("Alex", banned[1].Name);
+        Assert.False(banned[0].HasUuid);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("RCON authentication failed")]
+    [InlineData("There are players online")]
+    public void Banlist_parse_rejects_garbage(string? payload)
+    {
+        Assert.False(MinecraftConsoleRemote.TryParseBanList(payload, out var banned));
+        Assert.Empty(banned);
+    }
+
+    [Fact]
+    public void Player_action_commands_reject_bad_names_and_strip_control_in_reason()
+    {
+        Assert.False(MinecraftConsoleRemote.TryBuildPlayerActionCommand(
+            "kick", "bad name", null, out _, out var error));
+        Assert.Equal("That is not a Minecraft username.", error);
+
+        Assert.True(MinecraftConsoleRemote.TryBuildPlayerActionCommand(
+            "ban", "Steve", "line\r\none\0two", out var ban, out _));
+        Assert.Equal("ban Steve lineonetwo", ban);
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]

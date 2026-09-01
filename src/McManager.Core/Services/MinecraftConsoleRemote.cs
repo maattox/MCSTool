@@ -49,8 +49,37 @@ public static class MinecraftConsoleRemote
     public const string RconUnreachableHint =
         "Could not reach Minecraft. Is the server Running?";
 
+    public const string ListUuidsCommand = "list uuids";
+
+    public const string ListBanlistCommand = "banlist";
+
+    public const string PlayersEmptyHint =
+        "Start the server to see who is online";
+
+    public const int PlayerActionReasonMaxChars = 100;
+
     private static readonly Regex VanillaPlayerList = new(
         @"There are (\d+) of a max of (\d+) players online",
+        RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
+    private static readonly Regex SectionCode = new(
+        @"§.",
+        RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
+    private static readonly Regex PlayerUuidEntry = new(
+        @"([A-Za-z0-9_]{1,16})\s+\(([0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}|[0-9a-fA-F]{32})\)",
+        RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
+    private static readonly Regex PlayerNameOnly = new(
+        @"^[A-Za-z0-9_]{1,16}$",
+        RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
+    private static readonly Regex BanListCount = new(
+        @"There are (\d+) ban",
+        RegexOptions.CultureInvariant | RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    private static readonly Regex BanListEntry = new(
+        @"([A-Za-z0-9_]{1,16})\s+was banned by\b",
         RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
     /// <summary>
@@ -396,16 +425,29 @@ public static class MinecraftConsoleRemote
     }
 
     /// <summary>
-    /// Parse vanilla / Fabric <c>list</c> RCON text. Does not read the RCON secret.
+    /// Parse vanilla / Fabric <c>list</c> or <c>list uuids</c> RCON text. Does not read the RCON secret.
     /// </summary>
-    public static bool TryParsePlayerList(string? rconPayload, out int online, out int? max)
+    public static bool TryParsePlayerList(string? rconPayload, out int online, out int? max) =>
+        TryParsePlayerList(rconPayload, out online, out max, out _);
+
+    /// <summary>
+    /// Same count prefix as <see cref="TryParsePlayerList(string?, out int, out int?)"/>,
+    /// plus name (+ UUID when <c>list uuids</c> was used).
+    /// </summary>
+    public static bool TryParsePlayerList(
+        string? rconPayload,
+        out int online,
+        out int? max,
+        out IReadOnlyList<OnlinePlayer> players)
     {
         online = 0;
         max = null;
+        players = Array.Empty<OnlinePlayer>();
         if (string.IsNullOrWhiteSpace(rconPayload))
             return false;
 
-        var match = VanillaPlayerList.Match(rconPayload);
+        var text = StripSectionCodes(rconPayload);
+        var match = VanillaPlayerList.Match(text);
         if (!match.Success)
             return false;
 
@@ -413,7 +455,197 @@ public static class MinecraftConsoleRemote
             return false;
         if (int.TryParse(match.Groups[2].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var parsedMax))
             max = parsedMax;
+
+        var tail = text[(match.Index + match.Length)..];
+        players = ParseOnlinePlayers(tail);
         return true;
+    }
+
+    /// <summary>
+    /// Parse vanilla / Paper <c>banlist</c> (same as <c>banlist players</c>) RCON text.
+    /// Empty lists are success. Does not read the RCON secret.
+    /// </summary>
+    public static bool TryParseBanList(string? payload, out IReadOnlyList<OnlinePlayer> banned)
+    {
+        banned = Array.Empty<OnlinePlayer>();
+        if (string.IsNullOrWhiteSpace(payload))
+            return false;
+
+        var text = StripSectionCodes(payload).Replace('\r', '\n').Trim();
+        if (string.IsNullOrEmpty(text))
+            return false;
+
+        var countMatch = BanListCount.Match(text);
+        if (countMatch.Success)
+        {
+            if (!int.TryParse(countMatch.Groups[1].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var count))
+                return false;
+            if (count == 0)
+                return true;
+            banned = ParseBannedPlayers(text);
+            return true;
+        }
+
+        if (text.Contains("no bans", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        var fromLines = ParseWasBannedBy(text);
+        if (fromLines.Count > 0)
+        {
+            banned = fromLines;
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>32-char lowercase hex, or empty when the value is not a UUID.</summary>
+    public static string ToHyphenlessUuid(string? uuid)
+    {
+        if (string.IsNullOrWhiteSpace(uuid))
+            return "";
+
+        Span<char> buf = stackalloc char[32];
+        var n = 0;
+        foreach (var c in uuid)
+        {
+            if (c is '-' or '{' or '}')
+                continue;
+            if (!Uri.IsHexDigit(c))
+                return "";
+            if (n >= 32)
+                return "";
+            buf[n++] = char.ToLowerInvariant(c);
+        }
+
+        return n == 32 ? new string(buf) : "";
+    }
+
+    public static bool TryNormalizePlayerName(string? raw, out string name, out string? error)
+    {
+        name = "";
+        error = null;
+        var text = (raw ?? "").Trim();
+        if (text.Length == 0)
+        {
+            error = "Missing player name.";
+            return false;
+        }
+
+        if (!PlayerNameOnly.IsMatch(text))
+        {
+            error = "That is not a Minecraft username.";
+            return false;
+        }
+
+        name = text;
+        return true;
+    }
+
+    /// <summary>
+    /// Build <c>kick</c>/<c>op</c>/<c>deop</c>/<c>ban</c>/<c>pardon</c> for RCON.
+    /// Reason is only appended for kick/ban — never for op/deop/pardon.
+    /// </summary>
+    public static bool TryBuildPlayerActionCommand(
+        string verb,
+        string? playerName,
+        string? reason,
+        out string command,
+        out string? error)
+    {
+        command = "";
+        var action = (verb ?? "").Trim().ToLowerInvariant();
+        if (action is not ("kick" or "op" or "deop" or "ban" or "pardon"))
+        {
+            error = "Unknown player action.";
+            return false;
+        }
+
+        if (!TryNormalizePlayerName(playerName, out var name, out error))
+            return false;
+
+        if (action is "op" or "deop" or "pardon" || string.IsNullOrWhiteSpace(reason))
+        {
+            command = action + " " + name;
+            return true;
+        }
+
+        var cleaned = SanitizeReason(reason);
+        command = string.IsNullOrEmpty(cleaned)
+            ? action + " " + name
+            : action + " " + name + " " + cleaned;
+        return true;
+    }
+
+    private static string StripSectionCodes(string text) =>
+        SectionCode.Replace(text, "");
+
+    private static IReadOnlyList<OnlinePlayer> ParseOnlinePlayers(string tail)
+    {
+        var blob = StripSectionCodes(tail)
+            .Replace('\r', ' ')
+            .Replace('\n', ' ')
+            .Trim()
+            .TrimStart(':')
+            .Trim();
+        if (string.IsNullOrEmpty(blob))
+            return Array.Empty<OnlinePlayer>();
+
+        var withUuid = new List<OnlinePlayer>();
+        foreach (Match entry in PlayerUuidEntry.Matches(blob))
+            withUuid.Add(OnlinePlayer.Create(entry.Groups[1].Value, entry.Groups[2].Value));
+        if (withUuid.Count > 0)
+            return withUuid;
+
+        var names = new List<OnlinePlayer>();
+        foreach (var part in blob.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            if (PlayerNameOnly.IsMatch(part))
+                names.Add(OnlinePlayer.Create(part, ""));
+        }
+
+        return names.Count == 0 ? Array.Empty<OnlinePlayer>() : names;
+    }
+
+    private static IReadOnlyList<OnlinePlayer> ParseBannedPlayers(string text)
+    {
+        var fromLines = ParseWasBannedBy(text);
+        if (fromLines.Count > 0)
+            return fromLines;
+
+        var colon = text.IndexOf(':');
+        if (colon < 0)
+            return Array.Empty<OnlinePlayer>();
+        return ParseOnlinePlayers(text[(colon + 1)..]);
+    }
+
+    private static IReadOnlyList<OnlinePlayer> ParseWasBannedBy(string text)
+    {
+        var names = new List<OnlinePlayer>();
+        foreach (Match entry in BanListEntry.Matches(text))
+            names.Add(OnlinePlayer.Create(entry.Groups[1].Value, ""));
+        return names.Count == 0 ? Array.Empty<OnlinePlayer>() : names;
+    }
+
+    private static string SanitizeReason(string? reason)
+    {
+        if (string.IsNullOrWhiteSpace(reason))
+            return "";
+
+        var chars = new char[Math.Min(reason.Length, PlayerActionReasonMaxChars)];
+        var n = 0;
+        foreach (var c in reason.Trim())
+        {
+            if (c is '\r' or '\n' or '\0')
+                continue;
+            if (char.IsControl(c))
+                continue;
+            if (n >= PlayerActionReasonMaxChars)
+                break;
+            chars[n++] = c;
+        }
+
+        return new string(chars, 0, n).Trim();
     }
 
     /// <summary>

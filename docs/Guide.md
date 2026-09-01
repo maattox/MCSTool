@@ -179,6 +179,16 @@ The Minecraft server should now be up. Copy the **play IP** from MCSTool and con
 - Your public IP is allowlisted during Setup. To allow other players, add each player’s **current public IPv4** on the **Whitelist** tab and click **Save changes**. Home IPs can change; update the list when they do.
 - **Modded:** also give players the **same mod pack file** you chose in Setup.
 
+### Players tab
+
+On the **Players** tab:
+
+- **Online now** shows who is connected (name and face). Start the server to see the list.
+- Hover a row for **Kick** (optional reason), **Mod** / **Unmod**, and **Ban** (confirm + optional reason).
+- **Banned** lists in-game banned players under **Online now**. Hover **Unban** (`pardon`). This still does not change **Whitelist** / Who can join.
+- **Ban** is Minecraft’s in-game ban only. It does **not** change **Whitelist** / Who can join (the cloud IP allowlist). An in-game `/ban` from another operator also does not update that list.
+- Kick, Ban, and Mod sent from MCSTool may appear in operator chat. Minecraft defaults `broadcast-rcon-to-ops` to true; MCSTool does not expose that setting.
+
 ### Server tab
 
 On the **Server** tab:

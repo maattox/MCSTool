@@ -85,6 +85,8 @@ public partial class App : Application
         services.AddSingleton<GitHubLatestReleaseClient>();
         services.AddSingleton<AppUpdateCheckHost>();
         services.AddSingleton<WhitelistViewModel>();
+        services.AddSingleton<CrafatarAvatarCache>();
+        services.AddSingleton<PlayersViewModel>();
         services.AddSingleton<UsageViewModel>();
         services.AddSingleton<PackIdentityCatalogCache>();
         services.AddSingleton<SetupBootstrapService>();
