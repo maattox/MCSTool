@@ -3418,48 +3418,338 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 }
 
 .mcm-usage-still-on {
-    display: inline-block;
     margin-left: 8px;
-    padding: 1px 7px;
-    border-radius: 999px;
+    color: var(--text-accent);
+    font-size: 11px;
+}
+
+.mcm-cal-wrap {
+    background: var(--surface-2);
+    border: 0.5px solid var(--border);
+    border-radius: 12px;
+    padding: 0.65rem 0.85rem 0.75rem;
+    overflow: visible;
+}
+
+.mcm-cal-head {
+    margin-bottom: 0;
+}
+
+.mcm-cal-title-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.mcm-cal-title {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.mcm-cal-hint {
+    color: var(--text-secondary);
+    font-size: 12px;
+    margin: 4px 0 0;
+}
+
+.mcm-cal-selected {
+    color: var(--text-secondary);
+    font-size: 12px;
+    line-height: 1.4;
+    min-height: 1.4em;
+    margin: 4px 0 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.mcm-cal-warn {
+    color: var(--text-warning);
+    font-size: 12px;
+    margin: 4px 0 0;
+}
+
+.mcm-cal {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+    margin-top: 6px;
+}
+
+.mcm-cal-wd {
+    color: var(--text-muted);
+    font-size: 11px;
+    text-align: center;
+    padding: 2px 0;
+}
+
+.mcm-cal-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+    min-height: 40px;
+    padding: 4px 6px;
+    border: 0.5px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface-1);
+    color: var(--text-primary);
+    cursor: pointer;
+    text-align: left;
+}
+
+.mcm-cal-cell.is-pad {
+    border: none;
+    background: transparent;
+    min-height: 0;
+    padding: 0;
+    cursor: default;
+}
+
+.mcm-cal-cell.is-today {
+    border-color: var(--fill-accent);
+}
+
+.mcm-cal-cell.is-selected {
+    outline: 2px solid var(--fill-accent);
+    outline-offset: 0;
+}
+
+.mcm-cal-cell.is-zeroed {
+    background: var(--surface-1);
+    color: var(--text-muted);
+}
+
+.mcm-cal-cell.is-closed {
+    cursor: pointer;
+}
+
+.mcm-cal-num {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.mcm-cal-hours {
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+}
+
+.mcm-cal-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: flex-end;
+    margin: 0;
+}
+
+.mcm-cal-body {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 10px;
+    margin-top: 8px;
+    overflow: visible;
+}
+
+.mcm-cal-buckets,
+.mcm-cal-controls {
+    background: var(--surface-1);
+    border: 0.5px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+}
+
+.mcm-cal-buckets {
+    flex: 0 0 auto;
+    width: max-content;
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: visible;
+}
+
+.mcm-cal-buckets .mcm-cal-menu-wrap,
+.mcm-cal-buckets .mcm-cal-menu-wrap > button {
+    width: 100%;
+}
+
+.mcm-cal-controls {
+    flex: 1 1 auto;
+    min-width: min(16rem, 100%);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.mcm-cal-controls-main {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.mcm-cal-controls-footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: auto;
+}
+
+.mcm-cal-set {
+    background: color-mix(in srgb, var(--fill-accent) 22%, var(--surface-2));
+    border-color: color-mix(in srgb, var(--fill-accent) 55%, var(--border));
+    color: var(--text-accent);
+    font-weight: 600;
+}
+
+.mcm-cal-set:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--fill-accent) 32%, var(--surface-2));
+}
+
+.mcm-cal-rollover-fields {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.mcm-cal-field-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.mcm-cal-menu-wrap {
+    position: relative;
+    display: inline-flex;
+}
+
+.mcm-cal-menu-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    background: transparent;
+}
+
+.mcm-cal-menu {
+    position: absolute;
+    z-index: 21;
+    top: auto;
+    bottom: calc(100% + 4px);
+    left: 0;
+    min-width: 15.5rem;
+    padding: 10px;
+    background: var(--surface-1);
+    border: 0.5px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.38);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: auto;
+}
+
+.mcm-cal-menu-available {
+    margin: 0;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.mcm-cal-menu-choice {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.mcm-cal-menu-choice input {
+    margin: 0;
+}
+
+.mcm-cal-menu-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 2px;
+}
+
+.mcm-cal-menu .mcm-cal-field .mcm-num-input {
+    width: 100%;
+}
+
+.mcm-cal-stat {
+    min-width: 0;
+}
+
+.mcm-cal-stat-label {
     font-size: 11px;
     font-weight: 600;
-    letter-spacing: 0.02em;
-    color: var(--text-success);
-    background: color-mix(in srgb, var(--text-success) 14%, transparent);
-    vertical-align: middle;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.mcm-cal-stat-value {
+    margin-top: 2px;
+    font-size: 16px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+}
+
+.mcm-cal-stat-value.is-warn {
+    color: var(--text-warning);
+}
+
+.mcm-cal-check {
+    margin: 0;
+    align-items: center;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.mcm-cal-check input {
+    margin-top: 0;
+}
+
+.mcm-cal-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.mcm-cal-field .mcm-num-input {
+    width: 5.5rem;
 }
 
 .mcm-usage {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
 }
 
-.mcm-usage-head {
+.mcm-usage-toolbar {
     display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
+    align-items: center;
+    gap: 8px;
 }
 
-.mcm-usage-title {
+.mcm-usage-toolbar .mcm-subtabs {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: auto;
     margin: 0;
-    font-size: 16px;
-    font-weight: 600;
 }
 
-.mcm-usage-status {
-    margin: 4px 0 0;
-    font-size: 13px;
-    color: var(--text-secondary);
-}
-
-.mcm-usage-lead {
-    margin: 0;
-    font-size: 13px;
-    color: var(--text-secondary);
-    line-height: 1.45;
+.mcm-usage-refresh {
+    flex: 0 0 auto;
+    align-self: center;
 }
 
 .mcm-usage-hero {

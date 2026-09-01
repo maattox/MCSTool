@@ -70,8 +70,8 @@ public static class AlwaysOnCapableCopy
 
     public static string PinRolloverHelp(bool alwaysOnCapable) =>
         alwaysOnCapable
-            ? "Unused daily hours saved from earlier days this month."
-            : "Unused daily hours saved from earlier days this month. This is not the hours still left in the month — that remaining figure is the Hours left pin.";
+            ? "Unused hours from closed UTC days. You can leave them for idle overage or put them on later days on Usage → Edit Budget. They do not unlock a zeroed day for the doorbell."
+            : "Unused hours from closed UTC days. Leave them for idle overage or put them on later days on Usage → Edit Budget. They do not unlock a zeroed day for the doorbell. This is not the hours still left in the month — that remaining figure is the Hours left pin.";
 
     public static string PinRemainingHint(bool alwaysOnCapable) =>
         alwaysOnCapable ? "still counted" : "not rollover";

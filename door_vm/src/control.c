@@ -113,8 +113,8 @@ static int days_in_month(int year, int month) {
   return mdays[month];
 }
 
-/* Prefer monthly_ocpu_target / days-in-LA-month (shared SoT). Fall back to
- * daily_ocpu_limit_phase_a for older budget docs. */
+/* Prefer today's daily_ocpu sculpt (including 0 = park). Else monthly_ocpu_target
+ * / UTC days-in-month. Fall back to daily_ocpu_limit_phase_a for older docs. */
 static int apply_os_budget_file(ControlContext *ctx, const char *path) {
   if (ctx == NULL || path == NULL || path[0] == '\0') {
     return -1;
@@ -129,26 +129,40 @@ static int apply_os_budget_file(ControlContext *ctx, const char *path) {
   if (soft > 0.0) {
     ctx->cfg.soft_ocpu_cap = soft;
   }
+  int have_daily = 0;
   double daily = 0.0;
-  if (monthly > 0.0) {
-    char la_day[16];
-    if (budget_la_date_for(NULL, la_day, sizeof la_day) == 0) {
+  char utc_day[16];
+  if (budget_utc_date_for(NULL, utc_day, sizeof utc_day) == 0) {
+    const JsonValue *map = json_object_get(root, "daily_ocpu");
+    const JsonValue *val = json_object_get(map, utc_day);
+    if (val != NULL && json_type(val) == JSON_NUMBER) {
+      daily = json_as_number(val, 0.0);
+      have_daily = 1;
+    }
+  }
+  if (!have_daily && monthly > 0.0) {
+    if (budget_utc_date_for(NULL, utc_day, sizeof utc_day) == 0) {
       int year = 0, month = 0, day = 0;
-      if (sscanf(la_day, "%d-%d-%d", &year, &month, &day) == 3) {
+      if (sscanf(utc_day, "%d-%d-%d", &year, &month, &day) == 3) {
         int dim = days_in_month(year, month);
         if (dim > 0) {
           daily = monthly / (double)dim;
+          have_daily = 1;
         }
       }
     }
   }
-  if (daily <= 0.0) {
+  if (!have_daily) {
     daily = json_as_number(json_object_get(root, "daily_ocpu_limit_phase_a"), 0.0);
+    if (daily > 0.0) {
+      have_daily = 1;
+    }
   }
-  if (daily <= 0.0) {
+  if (!have_daily) {
     daily = json_as_number(json_object_get(root, "daily_ocpu_limit"), ctx->cfg.daily_ocpu_limit);
+    have_daily = 1;
   }
-  if (daily > 0.0) {
+  if (have_daily) {
     ctx->cfg.daily_ocpu_limit = daily;
   }
   double ocpus = json_as_number(json_object_get(root, "shape_ocpus"), 0.0);
@@ -162,21 +176,21 @@ static int apply_os_budget_file(ControlContext *ctx, const char *path) {
   return 0;
 }
 
-/* Month-to-date OCPU-h for the current LA calendar month (through today). */
+/* Month-to-date OCPU-h for the current UTC calendar month (through today). */
 static double month_used_ocpu_unlocked(ControlContext *ctx) {
-  char la_day[16];
-  if (budget_la_date_for(NULL, la_day, sizeof la_day) != 0) {
+  char utc_day[16];
+  if (budget_utc_date_for(NULL, utc_day, sizeof utc_day) != 0) {
     return -1.0;
   }
   int year = 0, month = 0, day = 0;
-  if (sscanf(la_day, "%d-%d-%d", &year, &month, &day) != 3 || day < 1) {
+  if (sscanf(utc_day, "%d-%d-%d", &year, &month, &day) != 3 || day < 1) {
     return -1.0;
   }
   double total = 0.0;
   for (int d = 1; d <= day; d++) {
     char buf[16];
     snprintf(buf, sizeof buf, "%04d-%02d-%02d", year, month, d);
-    double used = budget_used_ocpu_for_la_day(&ctx->ledger, buf, NULL);
+    double used = budget_used_ocpu_for_utc_day(&ctx->ledger, buf, NULL);
     if (used < 0.0) {
       return -1.0;
     }
@@ -223,15 +237,15 @@ static int reload_os_caches_unlocked(ControlContext *ctx) {
 }
 
 static int refresh_budget_unlocked(ControlContext *ctx) {
-  char la_day[16];
-  if (budget_la_date_for(NULL, la_day, sizeof la_day) != 0) {
+  char utc_day[16];
+  if (budget_utc_date_for(NULL, utc_day, sizeof utc_day) != 0) {
     return -1;
   }
-  double used = budget_used_ocpu_for_la_day(&ctx->ledger, la_day, NULL);
+  double used = budget_used_ocpu_for_utc_day(&ctx->ledger, utc_day, NULL);
   if (used < 0.0) {
     return -1;
   }
-  memcpy(ctx->state.la_day, la_day, sizeof ctx->state.la_day);
+  memcpy(ctx->state.la_day, utc_day, sizeof ctx->state.la_day);
   ctx->state.used_ocpu_hours = used;
   ctx->state.daily_limit_ocpu_hours = ctx->cfg.daily_ocpu_limit;
   ctx->state.ocpus = ctx->cfg.ocpus;
@@ -745,9 +759,9 @@ int control_set_last_keepalive(ControlContext *ctx, const char *iso) {
   return rc;
 }
 
-static void format_la_reset_iso(char *out, size_t cap) {
-  char la_today[16];
-  if (budget_la_date_for(NULL, la_today, sizeof la_today) != 0) {
+static void format_utc_reset_iso(char *out, size_t cap) {
+  char utc_today[16];
+  if (budget_utc_date_for(NULL, utc_today, sizeof utc_today) != 0) {
     if (cap > 0) {
       out[0] = '\0';
     }
@@ -755,7 +769,7 @@ static void format_la_reset_iso(char *out, size_t cap) {
   }
   long long day_end = 0;
   long long day_start = 0;
-  if (budget_la_day_bounds(la_today, &day_start, &day_end) != 0) {
+  if (budget_utc_day_bounds(utc_today, &day_start, &day_end) != 0) {
     if (cap > 0) {
       out[0] = '\0';
     }
@@ -773,7 +787,7 @@ int control_status_json(const ControlContext *ctx, char *buf, size_t buf_cap) {
   double remaining =
       budget_remaining_ocpu(s->used_ocpu_hours, ctx->cfg.daily_ocpu_limit);
   char reset_at[32];
-  format_la_reset_iso(reset_at, sizeof reset_at);
+  format_utc_reset_iso(reset_at, sizeof reset_at);
   char next_keepalive[32] = "";
   keepalive_next_at_iso(next_keepalive, sizeof next_keepalive);
   JsonBuf jb;

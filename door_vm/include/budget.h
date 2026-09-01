@@ -2,14 +2,12 @@
  *
  * VM2 is the budget authority: it opens an interval when the primary VM (VM1)
  * is started through OCI and closes it when VM1 stops, then charges
- * `(stop - start) x ocpus` against a flat daily cap. Timestamps are always
- * stored in UTC (ISO-8601, `YYYY-MM-DDTHH:MM:SSZ`) while the day boundary is
- * midnight America/Los_Angeles, matching `vm1/ledger.py`.
+ * `(stop - start) x ocpus` against today's UTC allocation. Timestamps are
+ * stored in UTC (ISO-8601, `YYYY-MM-DDTHH:MM:SSZ`). The day boundary is
+ * midnight UTC, matching Manager `UsageMath` and VM1 `ledger.py`.
  *
- * Day bounds are computed from the US federal daylight-saving rules built into
- * budget.c rather than from libc `TZ`, because the target hosts cannot be
- * assumed to carry a tz database (and the MSYS/UCRT runtime used for local
- * builds silently ignores IANA zone names). See `la_offset_seconds`.
+ * America/Los_Angeles helpers remain for historical fixture tests only. The
+ * live wake gate uses the UTC helpers.
  */
 #ifndef VM2_BUDGET_H
 #define VM2_BUDGET_H
@@ -49,10 +47,19 @@ int budget_record_start(BudgetLedger *led, double ocpus, const char *iso_utc_now
  * Returns the number of intervals closed, or -1 on error. */
 int budget_record_stop(BudgetLedger *led, const char *iso_utc_now);
 
-/* OCPU-hours charged to the LA calendar day `la_yyyy_mm_dd` ("2026-08-04").
+/* OCPU-hours charged to the UTC calendar day `yyyy_mm_dd` ("2026-08-04").
  * Open intervals are billed up to `now_utc` (NULL = current wall clock).
  * Returns -1.0 if the ledger or date is unusable; callers enforcing the cap
  * should treat a negative result as "unknown", not as "nothing used". */
+double budget_used_ocpu_for_utc_day(const BudgetLedger *led, const char *yyyy_mm_dd,
+                                    const char *now_utc);
+
+/* Wall-clock hours (ignoring OCPU count) for the same UTC window. */
+double budget_uptime_hours_for_utc_day(const BudgetLedger *led, const char *yyyy_mm_dd,
+                                       const char *now_utc);
+
+/* OCPU-hours charged to the LA calendar day `la_yyyy_mm_dd` ("2026-08-04").
+ * Historical helper for fixture tests; the live door uses UTC. */
 double budget_used_ocpu_for_la_day(const BudgetLedger *led, const char *la_yyyy_mm_dd,
                                    const char *now_utc);
 
@@ -80,6 +87,14 @@ int budget_format_iso(long long epoch, char *out, size_t size);
 
 /* Current UTC instant in the same format. */
 int budget_now_iso(char *out, size_t size);
+
+/* UTC seconds for the half-open window [start, end) covering one UTC calendar
+ * day. Returns 0 or -1 if `yyyy_mm_dd` is not a valid date. */
+int budget_utc_day_bounds(const char *yyyy_mm_dd, long long *start, long long *end);
+
+/* UTC calendar date ("YYYY-MM-DD") for `now_utc` (NULL = current wall clock).
+ * `size` must be >= 11. Returns 0 or -1. */
+int budget_utc_date_for(const char *now_utc, char *out, size_t size);
 
 /* UTC seconds for the half-open window [start, end) covering one LA calendar
  * day. Returns 0 or -1 if `la_yyyy_mm_dd` is not a valid date. */

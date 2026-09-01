@@ -330,10 +330,13 @@ public sealed partial class Vm1ShapeScaleViewModel : ObservableObject
 
         var report = UsageMath.ComputeBudgetReport(
             pull.Value.Ledger,
-            MonthlyOcpuTarget,
-            _lastBudget?.MonthlyGbTarget ?? _config?.Budget.MonthlyGbTarget ?? 8800,
-            _lastBudget?.SoftOcpuCap ?? _config?.Budget.SoftOcpuCap ?? 1375,
-            _lastBudget?.SoftGbCap ?? _config?.Budget.SoftGbCap ?? 8600);
+            _lastBudget ?? new BudgetConfigDocument
+            {
+                MonthlyOcpuTarget = MonthlyOcpuTarget,
+                MonthlyGbTarget = _config?.Budget.MonthlyGbTarget ?? 8800,
+                SoftOcpuCap = _config?.Budget.SoftOcpuCap ?? 1375,
+                SoftGbCap = _config?.Budget.SoftGbCap ?? 8600,
+            });
         _monthOcpuUsed = report.MonthOcpu;
     }
 

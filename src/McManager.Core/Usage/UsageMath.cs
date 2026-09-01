@@ -9,82 +9,114 @@ public static class UsageMath
         double monthlyGbTarget,
         double softOcpuCap,
         double softGbCap,
+        DateTime? nowUtc = null) =>
+        ComputeBudgetReport(
+            ledger,
+            new BudgetConfigDocument
+            {
+                MonthlyOcpuTarget = monthlyOcpuTarget,
+                MonthlyGbTarget = monthlyGbTarget,
+                SoftOcpuCap = softOcpuCap,
+                SoftGbCap = softGbCap,
+            },
+            nowUtc);
+
+    public static BudgetReport ComputeBudgetReport(
+        UsageLedgerDocument ledger,
+        BudgetConfigDocument budget,
         DateTime? nowUtc = null)
     {
+        ArgumentNullException.ThrowIfNull(budget);
+        budget.NormalizeSculptMaps();
         var now = EnsureUtc(nowUtc ?? DateTime.UtcNow);
+        BudgetSculpt.SnapshotClosedDays(budget, now);
+
         var year = now.Year;
         var month = now.Month;
         var daysInMonth = DateTime.DaysInMonth(year, month);
-        var dailyOcpu = monthlyOcpuTarget / daysInMonth;
-        var dailyGb = monthlyGbTarget / daysInMonth;
+        var today = DateOnly.FromDateTime(now);
+        var shape = BudgetSculpt.ShapeOcpus(budget);
+        var todayAlloc = BudgetSculpt.AllocationOcpu(budget, today);
+        var todayAllocGb = BudgetSculpt.GbHoursForAllocation(todayAlloc, budget);
 
-        var rows = MonthDayRows(
-            ledger,
-            year,
-            month,
-            dailyOcpu,
-            dailyGb,
-            now);
+        var usedByDay = UsedByDay(ledger, year, month, daysInMonth, now);
+        var env = BudgetSculpt.ComputeEnvelope(budget, ToOcpuGb(usedByDay), now);
 
-        var monthOcpu = rows.Sum(r => r.OcpuHours);
-        var monthGb = rows.Sum(r => r.GbHours);
-        var monthUptime = rows.Sum(r => r.UptimeHours);
-        double todayOcpu = 0;
-        double todayGb = 0;
-        double todayUptime = 0;
-        if (rows.Count > 0)
+        var calendar = new List<UsageDayRow>(daysInMonth);
+        for (var dayNum = 1; dayNum <= daysInMonth; dayNum++)
         {
-            todayOcpu = rows[^1].OcpuHours;
-            todayGb = rows[^1].GbHours;
-            todayUptime = rows[^1].UptimeHours;
+            var day = new DateOnly(year, month, dayNum);
+            usedByDay.TryGetValue(day, out var used);
+            var isClosed = day < today;
+            var isFuture = day > today;
+            var budgetOcpu = isClosed
+                ? BudgetSculpt.PlannedOcpu(budget, day)
+                : BudgetSculpt.AllocationOcpu(budget, day);
+            calendar.Add(new UsageDayRow
+            {
+                Day = day,
+                UptimeHours = used.Uptime,
+                OcpuHours = used.Ocpu,
+                GbHours = used.Gb,
+                BudgetOcpuHours = budgetOcpu,
+                BudgetWallClockHours = BudgetSculpt.WallClockHours(budgetOcpu, shape),
+                IsClosed = isClosed,
+                IsZeroed = BudgetSculpt.IsZeroed(budget, day),
+                IsSculpted = BudgetSculpt.TryGetExplicit(budget, day, out _),
+                IsFuture = isFuture,
+                StillRunning = !isFuture && DayHasOpenInterval(ledger, day, now),
+            });
         }
-        var leftoverOcpu = rows.Take(Math.Max(0, rows.Count - 1)).Sum(r => r.LeftoverOcpuContrib);
-        var leftoverGb = rows.Take(Math.Max(0, rows.Count - 1)).Sum(r => r.LeftoverGbContrib);
+
+        var throughToday = calendar.Where(r => !r.IsFuture).ToList();
+        var monthOcpu = throughToday.Sum(r => r.OcpuHours);
+        var monthGb = throughToday.Sum(r => r.GbHours);
+        var monthUptime = throughToday.Sum(r => r.UptimeHours);
+        usedByDay.TryGetValue(today, out var todayUsed);
         var dayOfMonth = now.Day;
-        var dayRows = ToUsageDayRows(rows, ledger, now);
 
         return new BudgetReport
         {
             Year = year,
             Month = month,
             DaysInMonth = daysInMonth,
-            DailyOcpuAllowance = dailyOcpu,
-            DailyGbAllowance = dailyGb,
-            MonthlyOcpuTarget = monthlyOcpuTarget,
-            MonthlyGbTarget = monthlyGbTarget,
-            SoftOcpuCap = softOcpuCap,
-            SoftGbCap = softGbCap,
+            DailyOcpuAllowance = todayAlloc,
+            DailyGbAllowance = todayAllocGb,
+            MonthlyOcpuTarget = budget.MonthlyOcpuTarget,
+            MonthlyGbTarget = budget.MonthlyGbTarget,
+            SoftOcpuCap = budget.SoftOcpuCap,
+            SoftGbCap = budget.SoftGbCap,
             MonthOcpu = monthOcpu,
             MonthGb = monthGb,
             MonthUptime = monthUptime,
-            TodayUptimeHours = todayUptime,
-            TodayOcpu = todayOcpu,
-            TodayGb = todayGb,
-            LeftoverOcpu = leftoverOcpu,
-            LeftoverGb = leftoverGb,
-            OcpuOverDaily = todayOcpu > dailyOcpu,
-            GbOverDaily = todayGb > dailyGb,
-            HitSoftCap = monthOcpu >= softOcpuCap || monthGb >= softGbCap,
+            TodayUptimeHours = todayUsed.Uptime,
+            TodayOcpu = todayUsed.Ocpu,
+            TodayGb = todayUsed.Gb,
+            LeftoverOcpu = env.BankOcpu,
+            LeftoverGb = env.BankGb,
+            ReservedOcpu = env.ReservedOcpu,
+            UsedClosedOcpu = env.UsedClosedOcpu,
+            UnbudgetedOcpu = env.UnbudgetedOcpu,
+            RolloverOcpu = env.RolloverOcpu,
+            ClosedUnusedOcpu = env.ClosedUnusedOcpu,
+            EnvelopeFits = env.FitsMonthly,
+            OcpuOverDaily = todayUsed.Ocpu > todayAlloc,
+            GbOverDaily = todayUsed.Gb > todayAllocGb,
+            HitSoftCap = monthOcpu >= budget.SoftOcpuCap || monthGb >= budget.SoftGbCap,
             DayOfMonth = dayOfMonth,
             AvgHoursPerDay = monthUptime / Math.Max(1, dayOfMonth),
-            Days = dayRows,
+            Days = throughToday,
+            CalendarDays = calendar,
         };
     }
 
-    private static List<UsageDayRow> ToUsageDayRows(
-        List<DayRow> rows,
+    public static Dictionary<DateOnly, (double Ocpu, double Gb)> UsedOcpuGbByDay(
         UsageLedgerDocument ledger,
         DateTime nowUtc)
     {
-        var result = new List<UsageDayRow>(rows.Count);
-        foreach (var row in rows)
-            result.Add(new UsageDayRow
-            {
-                Day = row.Day,
-                UptimeHours = row.UptimeHours,
-                StillRunning = DayHasOpenInterval(ledger, row.Day, nowUtc),
-            });
-        return result;
+        var now = EnsureUtc(nowUtc);
+        var dim = DateTime.DaysInMonth(now.Year, now.Month);
+        return ToOcpuGb(UsedByDay(ledger, now.Year, now.Month, dim, now));
     }
 
     private static bool DayHasOpenInterval(
@@ -111,33 +143,31 @@ public static class UsageMath
         return false;
     }
 
-    private static List<DayRow> MonthDayRows(
+    private static Dictionary<DateOnly, (double Uptime, double Ocpu, double Gb)> UsedByDay(
         UsageLedgerDocument ledger,
         int year,
         int month,
-        double dailyOcpu,
-        double dailyGb,
+        int daysInMonth,
         DateTime nowUtc)
     {
-        var lastDay = DateTime.DaysInMonth(year, month);
-        if (year == nowUtc.Year && month == nowUtc.Month)
-            lastDay = nowUtc.Day;
-
-        var rows = new List<DayRow>(lastDay);
-        for (var dayNum = 1; dayNum <= lastDay; dayNum++)
+        var rows = new Dictionary<DateOnly, (double Uptime, double Ocpu, double Gb)>();
+        for (var dayNum = 1; dayNum <= daysInMonth; dayNum++)
         {
             var day = new DateOnly(year, month, dayNum);
             var (tot, _) = DayTotals(ledger, day, nowUtc);
-            rows.Add(new DayRow(
-                day,
-                tot.UptimeHours,
-                tot.OcpuHours,
-                tot.GbHours,
-                Math.Max(0, dailyOcpu - tot.OcpuHours),
-                Math.Max(0, dailyGb - tot.GbHours)));
+            rows[day] = (tot.UptimeHours, tot.OcpuHours, tot.GbHours);
         }
 
         return rows;
+    }
+
+    private static Dictionary<DateOnly, (double Ocpu, double Gb)> ToOcpuGb(
+        Dictionary<DateOnly, (double Uptime, double Ocpu, double Gb)> raw)
+    {
+        var result = new Dictionary<DateOnly, (double Ocpu, double Gb)>(raw.Count);
+        foreach (var kv in raw)
+            result[kv.Key] = (kv.Value.Ocpu, kv.Value.Gb);
+        return result;
     }
 
     private static (UsageTotals Totals, bool IsOverride) DayTotals(
@@ -218,12 +248,4 @@ public static class UsageMath
         };
 
     private readonly record struct UsageTotals(double UptimeHours, double OcpuHours, double GbHours);
-
-    private readonly record struct DayRow(
-        DateOnly Day,
-        double UptimeHours,
-        double OcpuHours,
-        double GbHours,
-        double LeftoverOcpuContrib,
-        double LeftoverGbContrib);
 }

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json.Serialization;
 using McManager.Core.Config;
 
@@ -45,6 +46,19 @@ public sealed class BudgetConfigDocument
     [JsonPropertyName("mode")]
     public string Mode { get; set; } = "always_free";
 
+    /// <summary>
+    /// Working UTC-day allocation in OCPU-hours. Missing key = even-split default;
+    /// <c>0</c> = zeroed (door will not wake).
+    /// </summary>
+    [JsonPropertyName("daily_ocpu")]
+    public Dictionary<string, double> DailyOcpu { get; set; } = NewMap();
+
+    /// <summary>
+    /// Allocation that was in effect when a UTC day closed. Display-only; written once.
+    /// </summary>
+    [JsonPropertyName("daily_ocpu_planned")]
+    public Dictionary<string, double> DailyOcpuPlanned { get; set; } = NewMap();
+
     public static BudgetConfigDocument FromLocal(
         BudgetSettings budget,
         Vm1Settings vm1,
@@ -69,37 +83,61 @@ public sealed class BudgetConfigDocument
     public void StampUpdated(DateTimeOffset? nowUtc = null)
     {
         var now = nowUtc ?? DateTimeOffset.UtcNow;
-        UpdatedAt = now.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'");
+        UpdatedAt = now.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);
         DailyOcpuLimitPhaseA = DeriveDailyOcpuLimit(MonthlyOcpuTarget, now);
     }
 
-    /// <summary>
-    /// Door wake gate daily share — lab uses America/Los_Angeles month length.
-    /// </summary>
+    /// <summary>Door wake-gate fallback: monthly target ÷ UTC days in the current month.</summary>
     public static double DeriveDailyOcpuLimit(double monthlyOcpuTarget, DateTimeOffset? nowUtc = null)
     {
         var now = (nowUtc ?? DateTimeOffset.UtcNow).UtcDateTime;
-        var la = ResolveLosAngeles();
-        var local = TimeZoneInfo.ConvertTimeFromUtc(now, la);
-        var days = DateTime.DaysInMonth(local.Year, local.Month);
+        var days = DateTime.DaysInMonth(now.Year, now.Month);
         if (days <= 0)
             return 45.0;
         return monthlyOcpuTarget / days;
     }
 
-    private static TimeZoneInfo ResolveLosAngeles()
+    public void NormalizeSculptMaps()
     {
-        try
-        {
-            return TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles");
-        }
-        catch (TimeZoneNotFoundException)
-        {
-            return TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time");
-        }
-        catch (InvalidTimeZoneException)
-        {
-            return TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time");
-        }
+        if (DailyOcpu is null || !ReferenceEquals(DailyOcpu.Comparer, StringComparer.Ordinal))
+            DailyOcpu = CopyOrdinal(DailyOcpu);
+        if (DailyOcpuPlanned is null || !ReferenceEquals(DailyOcpuPlanned.Comparer, StringComparer.Ordinal))
+            DailyOcpuPlanned = CopyOrdinal(DailyOcpuPlanned);
+    }
+
+    public void CopySculptMapsTo(BudgetConfigDocument dest)
+    {
+        ArgumentNullException.ThrowIfNull(dest);
+        NormalizeSculptMaps();
+        dest.DailyOcpu = CopyOrdinal(DailyOcpu);
+        dest.DailyOcpuPlanned = CopyOrdinal(DailyOcpuPlanned);
+    }
+
+    public string SculptFingerprint()
+    {
+        NormalizeSculptMaps();
+        return MapFingerprint(DailyOcpu) + "#" + MapFingerprint(DailyOcpuPlanned);
+    }
+
+    private static Dictionary<string, double> NewMap() =>
+        new(StringComparer.Ordinal);
+
+    private static Dictionary<string, double> CopyOrdinal(Dictionary<string, double>? source)
+    {
+        var copy = NewMap();
+        if (source is null)
+            return copy;
+        foreach (var kv in source)
+            copy[kv.Key] = kv.Value;
+        return copy;
+    }
+
+    private static string MapFingerprint(Dictionary<string, double> map)
+    {
+        if (map.Count == 0)
+            return "";
+        var parts = map.OrderBy(kv => kv.Key, StringComparer.Ordinal)
+            .Select(kv => kv.Key + "=" + kv.Value.ToString("G17", CultureInfo.InvariantCulture));
+        return string.Join(",", parts);
     }
 }

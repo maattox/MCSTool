@@ -110,29 +110,29 @@ int mcdoor_load_icons(const char *icons_dir) {
   return 0;
 }
 
-static void format_la_reset_date(char *out, size_t out_cap) {
-  char la_today[16];
-  if (budget_la_date_for(NULL, la_today, sizeof la_today) != 0) {
-    snprintf(out, out_cap, "midnight Pacific Time");
+static void format_utc_reset_date(char *out, size_t out_cap) {
+  char utc_today[16];
+  if (budget_utc_date_for(NULL, utc_today, sizeof utc_today) != 0) {
+    snprintf(out, out_cap, "midnight UTC");
     return;
   }
   long long day_start = 0;
   long long day_end = 0;
-  if (budget_la_day_bounds(la_today, &day_start, &day_end) != 0) {
-    snprintf(out, out_cap, "midnight Pacific Time");
+  if (budget_utc_day_bounds(utc_today, &day_start, &day_end) != 0) {
+    snprintf(out, out_cap, "midnight UTC");
     return;
   }
   char reset_iso[32];
   if (budget_format_iso(day_end, reset_iso, sizeof reset_iso) != 0) {
-    snprintf(out, out_cap, "midnight Pacific Time");
+    snprintf(out, out_cap, "midnight UTC");
     return;
   }
-  char reset_la_day[16];
-  if (budget_la_date_for(reset_iso, reset_la_day, sizeof reset_la_day) != 0) {
-    snprintf(out, out_cap, "midnight Pacific Time");
+  char next_day[16];
+  if (budget_utc_date_for(reset_iso, next_day, sizeof next_day) != 0) {
+    snprintf(out, out_cap, "midnight UTC");
     return;
   }
-  snprintf(out, out_cap, "%s 12:00 AM PT", reset_la_day);
+  snprintf(out, out_cap, "%s 00:00 UTC", next_day);
 }
 
 void mcdoor_build_motd(const ControlState *state, char *out, size_t out_cap) {
@@ -153,7 +153,7 @@ void mcdoor_build_motd(const ControlState *state, char *out, size_t out_cap) {
         remaining = 0.0;
       }
       char reset_when[64];
-      format_la_reset_date(reset_when, sizeof reset_when);
+      format_utc_reset_date(reset_when, sizeof reset_when);
       snprintf(out, out_cap,
                "Server offline. ~%.1f OCPU-h remaining today (resets %s). "
                "Connect to wake the world.",
@@ -166,7 +166,7 @@ void mcdoor_build_motd(const ControlState *state, char *out, size_t out_cap) {
       break;
     case DOOR_BUDGET_EXHAUSTED: {
       char reset_when[64];
-      format_la_reset_date(reset_when, sizeof reset_when);
+      format_utc_reset_date(reset_when, sizeof reset_when);
       snprintf(out, out_cap,
                "DAILY BUDGET FULFILLED FOR THE DAY — COME BACK %s",
                reset_when);
@@ -202,7 +202,7 @@ void mcdoor_build_kick_reason(const ControlState *state, char *out, size_t out_c
       break;
     case DOOR_BUDGET_EXHAUSTED: {
       char reset_when[64];
-      format_la_reset_date(reset_when, sizeof reset_when);
+      format_utc_reset_date(reset_when, sizeof reset_when);
       snprintf(out, out_cap,
                "DAILY BUDGET FULFILLED FOR THE DAY — COME BACK %s",
                reset_when);

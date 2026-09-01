@@ -203,8 +203,22 @@ On the **Server** tab:
 
 
 
+### Usage tab
+
+Days and hour math are **UTC**, not your local calendar. **Hours** shows what you have used. **Edit Budget** is the calendar. **Budget** is the monthly/soft/idle/size form.
+
+- The calendar sets **wall-clock hours** per day, never more than **24** on a single day. Setting a day to **0** parks it. Switching VM size between 2 OCPU / 12 GB and 4 OCPU / 24 GB changes the hours shown; stored CPU-hours stay the same. Hover the info icon next to **Hours plan (UTC)** for that note.
+- Left-click adds or removes days in the selection. Right-click selects one day only.
+- **Unbudgeted** hours are taken off today/future days (below the even-split default) and not yet put on other days. If the plan assigns more than unbudgeted plus rollover can cover, Unbudgeted goes negative (for example **-4.0h**) to show how far over that plan is. **Rollover** is unused hours from **closed** UTC days, minus rollover already spent onto later days.
+- **Distribute** (under those counters) spreads available hours onto days. Choose how many hours (default is all available), whether to **include rollover hours** (starts from the **Use rollover hours** control, but changing it in the menu does not change that control), then remaining days that do not yet have their own value, or only the days you selected.
+- A **zeroed** day: players cannot wake the server from Minecraft. **Start** in MCSTool still can, until the monthly soft cap or the $1 spend brake.
+- **Use rollover hours** (on by default) lets a plan spend rollover onto later days. When it is on, **Minimum rollover buffer** is hours of rollover to keep unassigned; Save refuses a plan that would spend below that buffer, or that exceeds this month’s ~1400 CPU-hour target.
+- Monthly targets stay on the operational ~1400 CPU-hour / ~8800 memory-hour cap (not Oracle’s marketing envelope). The 4 OCPU / 24 GB size averages about **~11.5 hours a day**.
+
+
+
 ### Idle stop and wake
 
 - The game server turns off after **15 minutes** with no players. That is how the app stays inside Oracle’s free-hour allowance. The doorbell stays on and keeps the same play IP.
-- When the server is off, it can be started from MCSTool, or by a player attempting to connect from the Minecraft client. The doorbell then starts the server VM. Wake can take **2–5 minutes**, depending on the pack and world.
+- When the server is off, it can be started from MCSTool, or by a player attempting to connect from the Minecraft client (unless that UTC day is **zeroed** or out of today’s hours). The doorbell then starts the server VM. Wake can take **2–5 minutes**, depending on the pack and world.
 

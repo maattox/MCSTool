@@ -715,7 +715,7 @@ def sync_shape_to_budget(
     """Patch ``shape_ocpus`` / ``shape_memory_gb`` on OS ``budget/config.json``.
 
     Dirties budget flags for manager + door when values change. Leaves other
-    budget fields untouched. Safe no-op when Object Storage is disabled or shape
+    budget fields untouched (including ``daily_ocpu`` / ``daily_ocpu_planned``). Safe no-op when Object Storage is disabled or shape
     already matches.
     """
     ns_bn = _ns_bucket(cfg)

@@ -238,6 +238,38 @@ int budget_la_date_for(const char *now_utc, char *out, size_t size) {
   return (written > 0 && (size_t)written < size) ? 0 : -1;
 }
 
+int budget_utc_day_bounds(const char *yyyy_mm_dd, long long *start, long long *end) {
+  if (yyyy_mm_dd == NULL || start == NULL || end == NULL) {
+    return -1;
+  }
+  int year;
+  unsigned month, day;
+  if (parse_date_parts(yyyy_mm_dd, &year, &month, &day) != 0) {
+    return -1;
+  }
+  if (yyyy_mm_dd[10] != '\0') {
+    return -1;
+  }
+  *start = days_from_civil(year, month, day) * SECONDS_PER_DAY;
+  *end = *start + SECONDS_PER_DAY;
+  return 0;
+}
+
+int budget_utc_date_for(const char *now_utc, char *out, size_t size) {
+  if (out == NULL || size < 11) {
+    return -1;
+  }
+  long long now = 0;
+  if (resolve_now(now_utc, &now) != 0) {
+    return -1;
+  }
+  int year;
+  unsigned month, day;
+  civil_from_days(floor_div(now, SECONDS_PER_DAY), &year, &month, &day);
+  int written = snprintf(out, size, "%04d-%02u-%02u", year, month, day);
+  return (written > 0 && (size_t)written < size) ? 0 : -1;
+}
+
 /* --------------------------------------------------------- ledger memory */
 
 static int copy_field(char *dst, size_t size, const char *src) {
@@ -440,10 +472,9 @@ int budget_record_start(BudgetLedger *led, double ocpus, const char *iso_utc_now
   return 0;
 }
 
-static int day_totals(const BudgetLedger *led, const char *la_yyyy_mm_dd, const char *now_utc,
-                      double *uptime_hours, double *ocpu_hours) {
-  long long window_start = 0, window_end = 0;
-  if (led == NULL || budget_la_day_bounds(la_yyyy_mm_dd, &window_start, &window_end) != 0) {
+static int window_totals(const BudgetLedger *led, long long window_start, long long window_end,
+                         const char *now_utc, double *uptime_hours, double *ocpu_hours) {
+  if (led == NULL) {
     return -1;
   }
   long long now = 0;
@@ -485,10 +516,28 @@ static int day_totals(const BudgetLedger *led, const char *la_yyyy_mm_dd, const 
   return 0;
 }
 
+static int day_totals_la(const BudgetLedger *led, const char *la_yyyy_mm_dd, const char *now_utc,
+                         double *uptime_hours, double *ocpu_hours) {
+  long long window_start = 0, window_end = 0;
+  if (budget_la_day_bounds(la_yyyy_mm_dd, &window_start, &window_end) != 0) {
+    return -1;
+  }
+  return window_totals(led, window_start, window_end, now_utc, uptime_hours, ocpu_hours);
+}
+
+static int day_totals_utc(const BudgetLedger *led, const char *yyyy_mm_dd, const char *now_utc,
+                          double *uptime_hours, double *ocpu_hours) {
+  long long window_start = 0, window_end = 0;
+  if (budget_utc_day_bounds(yyyy_mm_dd, &window_start, &window_end) != 0) {
+    return -1;
+  }
+  return window_totals(led, window_start, window_end, now_utc, uptime_hours, ocpu_hours);
+}
+
 double budget_used_ocpu_for_la_day(const BudgetLedger *led, const char *la_yyyy_mm_dd,
                                    const char *now_utc) {
   double ocpu = 0.0;
-  if (day_totals(led, la_yyyy_mm_dd, now_utc, NULL, &ocpu) != 0) {
+  if (day_totals_la(led, la_yyyy_mm_dd, now_utc, NULL, &ocpu) != 0) {
     return -1.0;
   }
   return ocpu;
@@ -497,7 +546,25 @@ double budget_used_ocpu_for_la_day(const BudgetLedger *led, const char *la_yyyy_
 double budget_uptime_hours_for_la_day(const BudgetLedger *led, const char *la_yyyy_mm_dd,
                                       const char *now_utc) {
   double uptime = 0.0;
-  if (day_totals(led, la_yyyy_mm_dd, now_utc, &uptime, NULL) != 0) {
+  if (day_totals_la(led, la_yyyy_mm_dd, now_utc, &uptime, NULL) != 0) {
+    return -1.0;
+  }
+  return uptime;
+}
+
+double budget_used_ocpu_for_utc_day(const BudgetLedger *led, const char *yyyy_mm_dd,
+                                    const char *now_utc) {
+  double ocpu = 0.0;
+  if (day_totals_utc(led, yyyy_mm_dd, now_utc, NULL, &ocpu) != 0) {
+    return -1.0;
+  }
+  return ocpu;
+}
+
+double budget_uptime_hours_for_utc_day(const BudgetLedger *led, const char *yyyy_mm_dd,
+                                       const char *now_utc) {
+  double uptime = 0.0;
+  if (day_totals_utc(led, yyyy_mm_dd, now_utc, &uptime, NULL) != 0) {
     return -1.0;
   }
   return uptime;
