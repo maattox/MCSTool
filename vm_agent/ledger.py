@@ -706,31 +706,86 @@ def day_totals(ledger: dict[str, Any], d: date, now: datetime | None = None) -> 
     return totals(ledger, ds, de, now)
 
 
+def _shape_ocpus(cfg: dict[str, Any]) -> float:
+    try:
+        o = float(cfg.get("shape_ocpus") or 0)
+    except (TypeError, ValueError):
+        o = 0.0
+    return o if o > 0 else 4.0
+
+
+def _shape_memory_gb(cfg: dict[str, Any]) -> float:
+    try:
+        m = float(cfg.get("shape_memory_gb") or 0)
+    except (TypeError, ValueError):
+        m = 0.0
+    return m if m > 0 else 24.0
+
+
+def _flat_daily(cfg: dict[str, Any], year: int, month: int) -> tuple[float, float]:
+    dim = calendar.monthrange(year, month)[1]
+    ocpu = float(cfg["monthly_ocpu_target"]) / dim
+    gb = float(cfg["monthly_gb_target"]) / dim
+    return ocpu, gb
+
+
+def _allocation_ocpu(cfg: dict[str, Any], d: date, flat_ocpu: float) -> float:
+    raw = cfg.get("daily_ocpu")
+    if isinstance(raw, dict) and d.isoformat() in raw:
+        try:
+            return float(raw[d.isoformat()])
+        except (TypeError, ValueError):
+            return flat_ocpu
+    return flat_ocpu
+
+
+def _allocation_gb(cfg: dict[str, Any], ocpu_hours: float) -> float:
+    shape = _shape_ocpus(cfg)
+    mem = _shape_memory_gb(cfg)
+    return (ocpu_hours / shape) * mem
+
+
 def budget_snapshot(ledger: dict[str, Any], cfg: dict[str, Any]) -> dict[str, Any]:
     now = utc_now()
     year, month = now.year, now.month
     dim = calendar.monthrange(year, month)[1]
-    daily_ocpu = float(cfg["monthly_ocpu_target"]) / dim
-    daily_gb = float(cfg["monthly_gb_target"]) / dim
+    flat_ocpu, _ = _flat_daily(cfg, year, month)
+    today = date(year, month, now.day)
 
     month_ocpu = month_gb = month_uptime = 0.0
-    leftover_ocpu = leftover_gb = 0.0
+    used_closed_ocpu = used_closed_gb = 0.0
+    reserved_ocpu = reserved_gb = 0.0
     today_ocpu = today_gb = 0.0
-    for day_num in range(1, now.day + 1):
+    for day_num in range(1, dim + 1):
         d = date(year, month, day_num)
+        alloc_o = _allocation_ocpu(cfg, d, flat_ocpu)
+        alloc_g = _allocation_gb(cfg, alloc_o)
+        if d > today:
+            reserved_ocpu += alloc_o
+            reserved_gb += alloc_g
+            continue
         u, o, g = day_totals(ledger, d, now)
         month_uptime += u
         month_ocpu += o
         month_gb += g
-        if day_num < now.day:
-            leftover_ocpu += max(0.0, daily_ocpu - o)
-            leftover_gb += max(0.0, daily_gb - g)
+        if d < today:
+            used_closed_ocpu += o
+            used_closed_gb += g
         else:
             today_ocpu, today_gb = o, g
+            reserved_ocpu += alloc_o
+            reserved_gb += alloc_g
+
+    monthly_o = float(cfg["monthly_ocpu_target"])
+    monthly_g = float(cfg["monthly_gb_target"])
+    leftover_ocpu = max(0.0, monthly_o - used_closed_ocpu - reserved_ocpu)
+    leftover_gb = max(0.0, monthly_g - used_closed_gb - reserved_gb)
+    today_alloc_o = _allocation_ocpu(cfg, today, flat_ocpu)
+    today_alloc_g = _allocation_gb(cfg, today_alloc_o)
 
     return {
-        "daily_ocpu": daily_ocpu,
-        "daily_gb": daily_gb,
+        "daily_ocpu": today_alloc_o,
+        "daily_gb": today_alloc_g,
         "today_ocpu": today_ocpu,
         "today_gb": today_gb,
         "month_ocpu": month_ocpu,
@@ -739,8 +794,8 @@ def budget_snapshot(ledger: dict[str, Any], cfg: dict[str, Any]) -> dict[str, An
         "leftover_gb": leftover_gb,
         "soft_ocpu_cap": float(cfg["soft_ocpu_cap"]),
         "soft_gb_cap": float(cfg["soft_gb_cap"]),
-        "over_daily_ocpu": today_ocpu > daily_ocpu,
-        "over_daily_gb": today_gb > daily_gb,
+        "over_daily_ocpu": today_ocpu > today_alloc_o,
+        "over_daily_gb": today_gb > today_alloc_g,
         "hit_soft_cap": month_ocpu >= float(cfg["soft_ocpu_cap"])
         or month_gb >= float(cfg["soft_gb_cap"]),
     }

@@ -1159,12 +1159,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             budget = BudgetConfigDocument.FromLocal(_config.Budget, _config.Vm1);
         }
 
-        var report = UsageMath.ComputeBudgetReport(
-            _pinLedger,
-            budget.MonthlyOcpuTarget,
-            budget.MonthlyGbTarget,
-            budget.SoftOcpuCap,
-            budget.SoftGbCap);
+        var report = UsageMath.ComputeBudgetReport(_pinLedger, budget);
         ApplyPinnedUsage(PinnedUsageSnapshot.FromReport(
             report,
             ResolveShapeOcpus(budget.ShapeOcpus),
@@ -1174,12 +1169,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private PinnedUsageSnapshot BuildLocalFallbackPins()
     {
         var budget = BudgetConfigDocument.FromLocal(_config!.Budget, _config.Vm1);
-        var report = UsageMath.ComputeBudgetReport(
-            _pinLedger,
-            budget.MonthlyOcpuTarget,
-            budget.MonthlyGbTarget,
-            budget.SoftOcpuCap,
-            budget.SoftGbCap);
+        var report = UsageMath.ComputeBudgetReport(_pinLedger, budget);
         return PinnedUsageSnapshot.FromReport(
             report,
             ResolveShapeOcpus(budget.ShapeOcpus),

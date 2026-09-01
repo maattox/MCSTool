@@ -62,6 +62,7 @@ public sealed class UsageBudgetStore
         if (budgetResult.Succeeded && budgetResult.Value is not null)
         {
             budget = budgetResult.Value.Document;
+            budget.NormalizeSculptMaps();
         }
         else if (OciErrorFormatter.IsNotFoundMessage(budgetResult.Error))
         {

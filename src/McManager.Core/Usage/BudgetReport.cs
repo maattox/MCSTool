@@ -19,6 +19,12 @@ public sealed class BudgetReport
     public double TodayGb { get; init; }
     public double LeftoverOcpu { get; init; }
     public double LeftoverGb { get; init; }
+    public double ReservedOcpu { get; init; }
+    public double UsedClosedOcpu { get; init; }
+    public double UnbudgetedOcpu { get; init; }
+    public double RolloverOcpu { get; init; }
+    public double ClosedUnusedOcpu { get; init; }
+    public bool EnvelopeFits { get; init; }
     public bool OcpuOverDaily { get; init; }
     public bool GbOverDaily { get; init; }
     public bool HitSoftCap { get; init; }
@@ -27,6 +33,9 @@ public sealed class BudgetReport
 
     /// <summary>UTC days from the 1st through today in the report month.</summary>
     public IReadOnlyList<UsageDayRow> Days { get; init; } = [];
+
+    /// <summary>Every UTC day in the report month (including future) for the sculpt calendar.</summary>
+    public IReadOnlyList<UsageDayRow> CalendarDays { get; init; } = [];
 
     public string FormatTodayBar() =>
         $"{TodayOcpu:F1}/{DailyOcpuAllowance:F1} OCPU-h";

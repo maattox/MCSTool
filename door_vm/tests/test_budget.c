@@ -307,6 +307,37 @@ static void test_limits(void) {
   budget_free(&bad);
 }
 
+static void test_utc_day_bounds(void) {
+  printf("UTC day bounds\n");
+  long long start = 0, end = 0;
+  CHECK(budget_utc_day_bounds("2026-08-31", &start, &end) == 0, "utc bounds failed");
+  char buf[32];
+  budget_format_iso(start, buf, sizeof buf);
+  CHECK(strcmp(buf, "2026-08-31T00:00:00Z") == 0, "UTC day start was %s", buf);
+  budget_format_iso(end, buf, sizeof buf);
+  CHECK(strcmp(buf, "2026-09-01T00:00:00Z") == 0, "UTC day end was %s", buf);
+  CHECK(end - start == 86400, "UTC day length was %lld", end - start);
+
+  char day[16];
+  CHECK(budget_utc_date_for("2026-08-31T23:59:59Z", day, sizeof day) == 0, "utc_date_for failed");
+  CHECK(strcmp(day, "2026-08-31") == 0, "23:59:59Z mapped to %s", day);
+  CHECK(budget_utc_date_for("2026-09-01T00:00:00Z", day, sizeof day) == 0, "utc_date_for failed");
+  CHECK(strcmp(day, "2026-09-01") == 0, "00:00:00Z mapped to %s", day);
+
+  BudgetLedger spans;
+  memset(&spans, 0, sizeof spans);
+  ledger_append(&spans, "2026-08-31T22:00:00Z", "2026-09-01T02:00:00Z", 4.0);
+  CHECK_NEAR(budget_uptime_hours_for_utc_day(&spans, "2026-08-31", NULL), 2.0,
+             "utc midnight 08-31 uptime");
+  CHECK_NEAR(budget_used_ocpu_for_utc_day(&spans, "2026-08-31", NULL), 8.0,
+             "utc midnight 08-31 ocpu-hours");
+  CHECK_NEAR(budget_uptime_hours_for_utc_day(&spans, "2026-09-01", NULL), 2.0,
+             "utc midnight 09-01 uptime");
+  CHECK_NEAR(budget_used_ocpu_for_utc_day(&spans, "2026-09-01", NULL), 8.0,
+             "utc midnight 09-01 ocpu-hours");
+  budget_free(&spans);
+}
+
 int main(int argc, char **argv) {
   const char *fixture_path = argc > 1 ? argv[1] : DEFAULT_FIXTURE;
   const char *tmp_path = argc > 2 ? argv[2] : "build/test_ledger.json";
@@ -318,6 +349,7 @@ int main(int argc, char **argv) {
   test_iso_round_trip();
   test_record_and_persist(tmp_path);
   test_limits();
+  test_utc_day_bounds();
 
   printf("%s: %d checks, %d failures\n", failures == 0 ? "PASS" : "FAIL", checks, failures);
   return failures == 0 ? 0 : 1;

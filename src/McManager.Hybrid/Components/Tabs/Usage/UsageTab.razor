@@ -2,39 +2,38 @@
 @implements IDisposable
 
 <div class="mcm-usage">
-    <div class="mcm-usage-head">
-        <div>
-            <h2 class="mcm-usage-title">Free hours</h2>
-            <p class="mcm-usage-status">@Vm.StatusMessage</p>
-        </div>
+    <div class="mcm-usage-toolbar">
+        <nav class="mcm-subtabs" role="tablist" aria-label="Usage sections">
+            <button type="button"
+                    role="tab"
+                    class="mcm-subtab @PaneClass("hours")"
+                    aria-selected="@(IsPane("hours") ? "true" : "false")"
+                    @onclick="@(() => SelectPane("hours"))">
+                Hours
+            </button>
+            <button type="button"
+                    role="tab"
+                    class="mcm-subtab @PaneClass("edit-budget")"
+                    aria-selected="@(IsPane("edit-budget") ? "true" : "false")"
+                    @onclick="@(() => SelectPane("edit-budget"))">
+                Edit Budget
+            </button>
+            <button type="button"
+                    role="tab"
+                    class="mcm-subtab @PaneClass("budget")"
+                    aria-selected="@(IsPane("budget") ? "true" : "false")"
+                    @onclick="@(() => SelectPane("budget"))">
+                Budget
+            </button>
+        </nav>
         <button type="button"
+                class="mcm-usage-refresh"
                 disabled="@Vm.IsBusy"
                 title="Reload hours used from shared storage."
                 @onclick="Vm.RefreshAsync">
             Refresh
         </button>
     </div>
-
-    <p class="mcm-usage-lead">
-        @Vm.LeadCopy
-    </p>
-
-    <nav class="mcm-subtabs" role="tablist" aria-label="Usage sections">
-        <button type="button"
-                role="tab"
-                class="mcm-subtab @PaneClass("hours")"
-                aria-selected="@(IsPane("hours") ? "true" : "false")"
-                @onclick="@(() => SelectPane("hours"))">
-            Hours
-        </button>
-        <button type="button"
-                role="tab"
-                class="mcm-subtab @PaneClass("budget")"
-                aria-selected="@(IsPane("budget") ? "true" : "false")"
-                @onclick="@(() => SelectPane("budget"))">
-            Budget
-        </button>
-    </nav>
 
     @if (IsPane("hours"))
     {
@@ -66,14 +65,14 @@
                 </button>
             </div>
             <div class="mcm-usage-metric-value @(Vm.RolloverHoursPositive ? "is-positive" : null)">@Vm.RolloverHoursValue</div>
-            <div class="mcm-usage-metric-hint">Unused hours from earlier days this month</div>
+            <div class="mcm-usage-metric-hint">Unused hours from closed UTC days. Put them on later days in Edit Budget, or leave them for idle overage.</div>
         </div>
     </div>
 
     <details class="mcm-usage-day-details" open="@_detailedUsageOpen" @ontoggle="OnDetailedUsageToggled">
         <summary>
             <span class="mcm-usage-day-details-title">Detailed usage</span>
-            <span class="mcm-usage-day-details-hint">Hours by UTC day this month</span>
+            <span class="mcm-usage-day-details-hint">Budget vs used by UTC day this month</span>
         </summary>
         @if (Vm.DayRows.Count == 0)
         {
@@ -85,7 +84,8 @@
                 <thead>
                     <tr>
                         <th scope="col">Day (UTC)</th>
-                        <th scope="col">Hours on</th>
+                        <th scope="col">Budget</th>
+                        <th scope="col">Used</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -93,8 +93,9 @@
                     {
                         <tr class="@(row.IsToday ? "is-today" : null)">
                             <td>@row.DateLabel</td>
+                            <td>@row.BudgetValue</td>
                             <td>
-                                <span>@row.HoursValue</span>
+                                <span>@row.UsedValue</span>
                                 @if (row.StillRunning)
                                 {
                                     <span class="mcm-usage-still-on">Still on</span>
@@ -159,6 +160,184 @@
         </div>
         <p class="mcm-usage-meta" style="margin-top:12px;">Last refresh: @Vm.LastRefreshDisplay</p>
     </details>
+    </div>
+    }
+    else if (IsPane("edit-budget"))
+    {
+    <div class="mcm-cal-wrap" role="tabpanel">
+        <div class="mcm-cal-head">
+            <div class="mcm-cal-title-row">
+                <div class="mcm-cal-title">Hours plan (UTC)</div>
+                <button type="button"
+                        class="mcm-help"
+                        title="@Vm.ShapeSculptNote">
+                    <i class="ti ti-info-circle" aria-hidden="true"></i>
+                    <span class="sr-only">About wall-clock vs CPU-hours</span>
+                </button>
+            </div>
+            <p class="mcm-cal-hint">@Vm.CalendarClickHint</p>
+        </div>
+        <div class="mcm-cal" role="grid" aria-label="UTC month hours calendar">
+            @foreach (var wd in Vm.CalendarWeekdays)
+            {
+                <div class="mcm-cal-wd" role="columnheader">@wd</div>
+            }
+            @foreach (var cell in Vm.CalendarCells)
+            {
+                @if (cell.IsPad)
+                {
+                    <div class="mcm-cal-cell is-pad" aria-hidden="true"></div>
+                }
+                else
+                {
+                    <button type="button"
+                            class="@cell.CssClass"
+                            style="@cell.HeatStyle"
+                            title="@cell.Title"
+                            disabled="@Vm.IsBusy"
+                            @onclick="@(() => OnCalendarClick(cell))"
+                            @oncontextmenu="@(() => OnCalendarRightClick(cell))"
+                            @oncontextmenu:preventDefault>
+                        <span class="mcm-cal-num">@cell.DayNum</span>
+                        <span class="mcm-cal-hours">@cell.HoursLabel</span>
+                    </button>
+                }
+            }
+        </div>
+        <p class="mcm-cal-selected">@Vm.SelectedDaySummary</p>
+        @if (!string.IsNullOrWhiteSpace(Vm.EnvelopeWarning))
+        {
+            <p class="mcm-cal-warn">@Vm.EnvelopeWarning</p>
+        }
+
+        <div class="mcm-cal-body">
+            <div class="mcm-cal-buckets">
+                <div class="mcm-cal-stat">
+                    <div class="mcm-cal-stat-label">Unbudgeted</div>
+                    <div class="mcm-cal-stat-value @(Vm.UnbudgetedHoursNegative ? "is-warn" : null)">@Vm.UnbudgetedHoursValue</div>
+                </div>
+                <div class="mcm-cal-stat">
+                    <div class="mcm-cal-stat-label">Rollover</div>
+                    <div class="mcm-cal-stat-value">@Vm.SculptRolloverHoursValue</div>
+                </div>
+                <div class="mcm-cal-menu-wrap">
+                    <button type="button"
+                            disabled="@(Vm.IsBusy || !Vm.CanDistribute)"
+                            title="@Vm.DistributeHint"
+                            aria-expanded="@(_distributeOpen ? "true" : "false")"
+                            aria-haspopup="dialog"
+                            @onclick="ToggleDistributeMenu">
+                        Distribute
+                    </button>
+                    @if (_distributeOpen)
+                    {
+                        <div class="mcm-cal-menu-backdrop" @onclick="CloseDistributeMenu"></div>
+                        <div class="mcm-cal-menu" role="dialog" aria-label="Distribute hours" @onclick:stopPropagation="true">
+                            <label class="mcm-cal-field" for="mcm-cal-dist-hours">
+                                <span>Hours to distribute</span>
+                                <input id="mcm-cal-dist-hours"
+                                       type="text"
+                                       class="mcm-num-input"
+                                       disabled="@Vm.IsBusy"
+                                       @bind="_distributeHours"
+                                       @bind:event="oninput" />
+                            </label>
+                            <p class="mcm-cal-menu-available">Available: @DistributeAvailableDisplay</p>
+                            <label class="mcm-cal-menu-choice">
+                                <input type="checkbox"
+                                       disabled="@Vm.IsBusy"
+                                       @bind:get="_distributeIncludeRollover"
+                                       @bind:set="SetDistributeIncludeRollover" />
+                                <span>Include rollover hours</span>
+                            </label>
+                            <label class="mcm-cal-menu-choice">
+                                <input type="radio"
+                                       name="mcm-dist-target"
+                                       disabled="@(!Vm.CanDistributeRemaining)"
+                                       checked="@(!_distributeOntoSelected)"
+                                       @onchange="@(() => _distributeOntoSelected = false)" />
+                                <span>All remaining days</span>
+                            </label>
+                            <label class="mcm-cal-menu-choice">
+                                <input type="radio"
+                                       name="mcm-dist-target"
+                                       disabled="@(!Vm.CanDistributeSelected)"
+                                       checked="@(_distributeOntoSelected)"
+                                       @onchange="@(() => _distributeOntoSelected = true)" />
+                                <span>Selected days only</span>
+                            </label>
+                            <div class="mcm-cal-menu-actions">
+                                <button type="button" @onclick="CloseDistributeMenu">Cancel</button>
+                                <button type="button"
+                                        class="mcm-primary"
+                                        disabled="@(!CanApplyDistribute)"
+                                        @onclick="ApplyDistribute">
+                                    Distribute
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="mcm-cal-controls">
+                <div class="mcm-cal-controls-main">
+                    <div class="mcm-cal-rollover-fields">
+                        <label class="mcm-checkbox-row mcm-cal-check" for="mcm-cal-use-rollover">
+                            <input id="mcm-cal-use-rollover"
+                                   type="checkbox"
+                                   disabled="@Vm.IsBusy"
+                                   @bind="Vm.UseRolloverHours" />
+                            <span>Use rollover hours</span>
+                        </label>
+                        @if (Vm.UseRolloverHours)
+                        {
+                            <label class="mcm-cal-field" for="mcm-cal-buffer">
+                                <span class="mcm-cal-field-label">
+                                    Minimum rollover buffer
+                                    <button type="button"
+                                            class="mcm-help"
+                                            title="@Vm.MinRolloverBufferHelp">
+                                        <i class="ti ti-info-circle" aria-hidden="true"></i>
+                                        <span class="sr-only">About minimum rollover buffer</span>
+                                    </button>
+                                </span>
+                                <input id="mcm-cal-buffer"
+                                       type="text"
+                                       class="mcm-num-input"
+                                       disabled="@Vm.IsBusy"
+                                       @bind="Vm.MinRolloverBufferHours"
+                                       @bind:event="oninput" />
+                            </label>
+                        }
+                    </div>
+
+                    <div class="mcm-cal-actions">
+                        <label class="mcm-cal-field" for="mcm-cal-hours">
+                            <span>Set hours</span>
+                            <input id="mcm-cal-hours"
+                                   type="text"
+                                   class="mcm-num-input"
+                                   disabled="@(Vm.IsBusy || !Vm.CanSetSelected)"
+                                   @bind="Vm.EditDayHours"
+                                   @bind:event="oninput" />
+                        </label>
+                        <button type="button"
+                                class="mcm-cal-set"
+                                disabled="@(Vm.IsBusy || !Vm.CanSetSelected)"
+                                @onclick="Vm.SetSelectedDayHours">
+                            Set
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mcm-cal-controls-footer">
+                    <button type="button" disabled="@Vm.IsBusy" @onclick="Vm.ResetChanges">Reset changes</button>
+                    <button type="button" disabled="@Vm.IsBusy" @onclick="Vm.ResetToDefaults">Reset to defaults</button>
+                    <button type="button" class="mcm-primary" disabled="@(!Vm.CanPublish)" @onclick="Vm.PublishAsync">Save changes</button>
+                </div>
+            </div>
+        </div>
     </div>
     }
     else
@@ -284,12 +463,66 @@
 @code {
     private bool _detailedUsageOpen;
     private string _pane = "hours";
+    private bool _distributeOpen;
+    private string _distributeHours = "";
+    private bool _distributeOntoSelected;
+    private bool _distributeIncludeRollover;
+
+    private string DistributeAvailableDisplay =>
+        Vm.FormatDistributeAvailable(_distributeIncludeRollover);
+
+    private bool CanApplyDistribute =>
+        !Vm.IsBusy
+        && Vm.HasDistributeHours(_distributeIncludeRollover)
+        && (_distributeOntoSelected ? Vm.CanDistributeSelected : Vm.CanDistributeRemaining);
 
     private bool IsPane(string id) => string.Equals(_pane, id, StringComparison.Ordinal);
 
     private string PaneClass(string id) => IsPane(id) ? "is-active" : "";
 
-    private void SelectPane(string pane) => _pane = pane;
+    private void SelectPane(string pane)
+    {
+        _pane = pane;
+        CloseDistributeMenu();
+    }
+
+    private void ToggleDistributeMenu()
+    {
+        if (_distributeOpen)
+        {
+            CloseDistributeMenu();
+            return;
+        }
+
+        if (Vm.IsBusy || !Vm.CanDistribute)
+            return;
+
+        _distributeIncludeRollover = Vm.UseRolloverHours;
+        _distributeHours = Vm.DistributeAvailableInput(_distributeIncludeRollover);
+        _distributeOntoSelected = !Vm.CanDistributeRemaining && Vm.CanDistributeSelected;
+        _distributeOpen = true;
+    }
+
+    private void CloseDistributeMenu() => _distributeOpen = false;
+
+    private void SetDistributeIncludeRollover(bool include)
+    {
+        if (_distributeIncludeRollover == include)
+            return;
+        var previousInput = Vm.DistributeAvailableInput(_distributeIncludeRollover);
+        var hoursWereDefault = string.Equals(_distributeHours.Trim(), previousInput, StringComparison.Ordinal);
+        _distributeIncludeRollover = include;
+        if (hoursWereDefault)
+            _distributeHours = Vm.DistributeAvailableInput(_distributeIncludeRollover);
+    }
+
+    private void ApplyDistribute()
+    {
+        if (!CanApplyDistribute)
+            return;
+        Vm.DistributeHours(_distributeHours, _distributeOntoSelected, _distributeIncludeRollover);
+        CloseDistributeMenu();
+    }
 
     protected override void OnInitialized()
     {
@@ -305,6 +538,18 @@
 
     private void OnVmChanged(object? sender, PropertyChangedEventArgs e) =>
         _ = InvokeAsync(StateHasChanged);
+
+    private void OnCalendarClick(UsageCalendarCell cell)
+    {
+        if (cell.Day is { } day)
+            Vm.ToggleCalendarDay(day);
+    }
+
+    private void OnCalendarRightClick(UsageCalendarCell cell)
+    {
+        if (cell.Day is { } day)
+            Vm.SelectCalendarDayExclusive(day);
+    }
 
     private void OnDetailedUsageToggled() =>
         _detailedUsageOpen = !_detailedUsageOpen;

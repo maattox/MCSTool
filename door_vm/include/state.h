@@ -14,7 +14,7 @@ typedef enum {
   DOOR_IDLE = 0,        /* reserved IP on VM2, mcdoor answers, VM1 stopped */
   DOOR_STARTING,        /* wake in flight, Forge not accepting yet */
   DOOR_PLAYABLE,        /* reserved IP on VM1, players connect directly */
-  DOOR_BUDGET_EXHAUSTED, /* daily cap hit; no wake until LA midnight */
+  DOOR_BUDGET_EXHAUSTED, /* daily cap hit; no wake until UTC midnight */
   DOOR_SPEND_BRAKE,     /* $1 monthly lock flag present; no START VM1 */
   DOOR_DEGRADED         /* VM2 lost track of reality; manual intervention */
 } DoorState;
@@ -25,7 +25,7 @@ typedef struct {
   double daily_limit_ocpu_hours; /* Phase A: 45 */
   double ocpus;                  /* VM1 shape OCPU count used for billing */
   int idle_timeout_minutes;      /* empty-server window enforced by VM1 */
-  char la_day[16];               /* LA date the cached usage figures cover */
+  char la_day[16];               /* UTC date the cached usage figures cover */
   double used_ocpu_hours;        /* cached usage for la_day */
   char session_started_at[32];   /* open session start, empty if none */
   char hard_stop_deadline[32];   /* T-0 sent to VM1 for chat warnings */
