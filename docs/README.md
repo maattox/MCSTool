@@ -76,7 +76,7 @@ Stay on **Always Free–eligible** OCI resources unless you explicitly accept sp
 
 - OCI API: `%USERPROFILE%\.oci\config` + PEM
 - SSH: under `%USERPROFILE%\.ssh\`
-- App seeds (gitignored): `data/config.local.json` and `data/friends.local.json` when running from a checkout; an installed MCSTool writes the same files under `%LOCALAPPDATA%\MCSTool`
+- App seeds (gitignored): `%LOCALAPPDATA%\MCSTool\profiles\<slug>\` (`config.local.json`, `friends.local.json`, wizard, imported packs, tofu state). `app-settings.json` in `%LOCALAPPDATA%\MCSTool` lists this PC’s servers. Repo `data/` is leftover, not the from-source seed. `MCMANAGER_CONFIG_DIR` is a flat QA folder.
 
 From a checkout:
 
@@ -85,7 +85,7 @@ copy config.local.example.json data\config.local.json
 copy friends.local.example.json data\friends.local.json
 ```
 
-Then fill OCIDs from OCI Console / Setup tofu outputs (`%LOCALAPPDATA%\MCSTool\tofu\<stack-id>\`).
+Then fill OCIDs from OCI Console / Setup tofu outputs (`%LOCALAPPDATA%\MCSTool\profiles\<slug>\tofu\<stack-id>\`). From-source with no env override uses that same LocalAppData layout (not repo `data/`).
 
 ## Docs
 

@@ -31,10 +31,21 @@ public sealed class TofuWorkspace
         return new TofuWorkspace(root);
     }
 
+    /// <summary>
+    /// OpenTofu state for the resolved data directory (<c>{dataDir}/tofu</c>).
+    /// The pinned <c>tofu.exe</c> stays under <c>%LOCALAPPDATA%\MCSTool\tofu</c>
+    /// (<see cref="OpenTofuLocator.DefaultInstallDirectory"/>).
+    /// </summary>
     public static string TofuRootDirectory()
     {
-        var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        return Path.Combine(local, AppSettingsStore.ProductFolderName, "tofu");
+        var data = LocalConfigStore.TryFindDataDirectory();
+        if (!string.IsNullOrWhiteSpace(data))
+            return Path.Combine(data, "tofu");
+
+        var installed = LocalConfigStore.GetInstalledDataDirectory();
+        return string.IsNullOrWhiteSpace(installed)
+            ? Path.Combine(Path.GetTempPath(), "mcmgr-tofu-none")
+            : Path.Combine(installed, "tofu");
     }
 
     public bool HasState => File.Exists(StatePath);

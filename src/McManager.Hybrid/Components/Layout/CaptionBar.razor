@@ -1,9 +1,15 @@
 @inject IWindowChromeService WindowChrome
+@inject ChromeViewModel Chrome
 @implements IDisposable
 
 <header class="mcm-caption">
     <div class="mcm-caption-drag"
-         @onpointerdown="OnDragPointerDown"></div>
+         @onpointerdown="OnDragPointerDown">
+        @if (!string.IsNullOrWhiteSpace(Chrome.ActiveServerLabel))
+        {
+            <span class="mcm-caption-server">@Chrome.ActiveServerLabel</span>
+        }
+    </div>
     <div class="mcm-caption-actions">
         @AppActions
         <div class="mcm-caption-win">
@@ -41,11 +47,13 @@
     protected override void OnInitialized()
     {
         WindowChrome.Changed += OnChromeChanged;
+        Chrome.PropertyChanged += OnChromeChanged;
     }
 
     public void Dispose()
     {
         WindowChrome.Changed -= OnChromeChanged;
+        Chrome.PropertyChanged -= OnChromeChanged;
     }
 
     private void OnChromeChanged(object? sender, EventArgs e) =>

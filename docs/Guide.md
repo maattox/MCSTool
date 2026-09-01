@@ -156,7 +156,7 @@ Set the name, description, and icon players see in the Minecraft server list. Yo
 Open and accept the [Minecraft EULA](https://aka.ms/MinecraftEULA).
 
 **Step 7 — Auth Token**  
-Paste the Auth Token you saved in Part 2 and store it.
+Paste the Auth Token you saved in Part 2 and store it. MCSTool keeps **one** token on this PC (Windows Credential Manager). If you later add a second Oracle account, you may need to replace that token during Setup. Day-to-day manage does not need it again.
 
 **Step 8 — VM size and deploy**  
 Pick a size and start deployment.
@@ -180,6 +180,22 @@ The Minecraft server should now be up. Copy the **play IP** from MCSTool and con
 
 - Your public IP is allowlisted during Setup. To allow other players, add each player’s **current public IPv4** on the **Whitelist** tab and click **Save changes**. Home IPs can change; update the list when they do.
 - **Modded:** also give players the **same mod pack file** you chose in Setup.
+
+
+
+### More than one server on this PC
+
+The top of the window shows which server this copy of MCSTool is managing.
+
+On **Advanced → Stack**:
+
+- **Switch server** picks another folder on this PC. Manager reloads that server’s config. It does not open a second window.
+- **Add server** asks for a name, creates an empty folder, and returns to first-run (**Deploy a new stack**, **Find an existing stack**, or **I already have a stack**). **Cancel** on that screen goes back and deletes the new folder.
+- **Rename** / **Save name** changes the label. The folder id stays the same.
+
+Two **4 OCPU / 24 GB** game VMs cannot live in one Oracle tenancy (Always Free Ampere cap). Two servers on this PC are typically two tenancies, or Connect to a second account. Setup of a second Oracle account may need the Auth Token replaced.
+
+**Delete infrastructure** on Advanced → Danger removes **that** server’s cloud stack and its OpenTofu state. Other servers on this PC stay. The player list file in that folder is kept.
 
 
 

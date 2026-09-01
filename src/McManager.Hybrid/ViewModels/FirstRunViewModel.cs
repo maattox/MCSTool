@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using McManager.Core.Config;
 
 namespace McManager.Hybrid.ViewModels;
 
@@ -32,6 +33,29 @@ public sealed partial class FirstRunViewModel : ObservableObject
     }
 
     public LocalConfigHost ConfigHost => _configHost;
+
+    public bool CanCancelAdd => ServerCatalog.CanDiscardCurrentEmptyServer();
+
+    public void CancelAdd()
+    {
+        if (IsBusy || !CanCancelAdd)
+            return;
+
+        var discarded = ServerCatalog.DiscardCurrentEmptyServer();
+        if (!discarded.Succeeded)
+        {
+            StatusMessage = discarded.Error ?? "Could not cancel adding this server.";
+            OnPropertyChanged(nameof(CanCancelAdd));
+            return;
+        }
+
+        _session.ReloadFromDisk();
+        OnPropertyChanged(nameof(CanCancelAdd));
+        if (_configHost.HasManageConfig)
+            _shell.EnterManage();
+        else
+            _shell.EnterFirstRun();
+    }
 
     public void OpenSetup()
     {

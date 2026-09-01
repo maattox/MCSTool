@@ -208,10 +208,23 @@ button.mcm-btn-disabled:hover {
 }
 
 .mcm-caption-drag {
+    display: flex;
+    align-items: center;
     flex: 1 1 auto;
     min-width: 24px;
     cursor: default;
     touch-action: none;
+}
+
+.mcm-caption-server {
+    pointer-events: none;
+    padding: 0 12px;
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 42vw;
 }
 
 .mcm-caption-actions {
@@ -1456,6 +1469,10 @@ button.mcm-btn-disabled:hover {
 .mcm-firstrun-actions button {
     min-width: 300px;
     text-align: left;
+}
+
+.mcm-firstrun-actions button.mcm-firstrun-cancel {
+    color: var(--text-secondary);
 }
 
 .mcm-firstrun-note {

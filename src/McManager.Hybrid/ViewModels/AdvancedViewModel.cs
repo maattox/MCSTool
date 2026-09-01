@@ -33,7 +33,10 @@ public sealed partial class AdvancedViewModel : ObservableObject
     private readonly ManageCloudServices _cloud;
     private readonly ManageSession _session;
     private readonly ActionBanner _banner;
+    private readonly ChromeViewModel _chrome;
+    private readonly DestroyInfrastructureViewModel _destroy;
     private bool _forwardBanner;
+    private bool _suppressServerSwitch;
 
     private BudgetConfigDocument? _lastBudget;
     private InfraMetaDocument? _lastInfra;
@@ -99,6 +102,20 @@ public sealed partial class AdvancedViewModel : ObservableObject
     [ObservableProperty]
     private bool _hasSshKeyChanges;
 
+    [ObservableProperty]
+    private IReadOnlyList<ServerIndexEntry> _servers = [];
+
+    [ObservableProperty]
+    private string _selectedServerId = "";
+
+    [ObservableProperty]
+    private string _newServerName = "";
+
+    [ObservableProperty]
+    private string _renameServerName = "";
+
+    public bool ShowServerSwitcher => !ServerCatalog.HasEnvOverride;
+
     public bool CanApplyIdleTimeout => HasIdleTimeoutChanges && !IsBusy;
 
     public bool CanApplyIdleEnabled => HasIdleEnabledChanges && !IsBusy;
@@ -133,7 +150,9 @@ public sealed partial class AdvancedViewModel : ObservableObject
         MainViewModel main,
         ConnectExistingFlow connectExisting,
         IFilePicker filePicker,
-        ActionBanner banner)
+        ActionBanner banner,
+        ChromeViewModel chrome,
+        DestroyInfrastructureViewModel destroy)
     {
         _configHost = configHost;
         _cloud = cloud;
@@ -144,6 +163,8 @@ public sealed partial class AdvancedViewModel : ObservableObject
         _connectExisting = connectExisting;
         _filePicker = filePicker;
         _banner = banner;
+        _chrome = chrome;
+        _destroy = destroy;
 
         BindFromHost();
         _forwardBanner = true;
@@ -185,6 +206,7 @@ public sealed partial class AdvancedViewModel : ObservableObject
         SeedIdleFromLocal();
         SeedSshKeysFromLocal();
         CaptureInfraSnapshot();
+        RefreshServerSwitcher();
         OnPropertyChanged(nameof(CanPublishInfra));
         OnPropertyChanged(nameof(CanApplyIdleTimeout));
         OnPropertyChanged(nameof(CanApplyIdleEnabled));
@@ -206,6 +228,127 @@ public sealed partial class AdvancedViewModel : ObservableObject
     {
         // Opens the Setup wizard. This button does not tofu apply.
         _shell.OpenSetup();
+    }
+
+    public async Task SwitchServerAsync(string slug)
+    {
+        if (!ShowServerSwitcher || string.IsNullOrWhiteSpace(slug))
+            return;
+        if (string.Equals(slug, ServerCatalog.ActiveSlug(), StringComparison.OrdinalIgnoreCase))
+            return;
+        if (!await CanLeaveCurrentServerAsync().ConfigureAwait(true))
+        {
+            RefreshServerSwitcher();
+            return;
+        }
+
+        var set = ServerCatalog.SetActive(slug);
+        if (!set.Succeeded)
+        {
+            await _dialogs.ShowInfoAsync("Could not switch server", set.Error ?? "Unknown error.");
+            RefreshServerSwitcher();
+            return;
+        }
+
+        ApplyServerFolder();
+    }
+
+    public async Task AddServerAsync()
+    {
+        if (!ShowServerSwitcher || IsBusy)
+            return;
+        if (!await CanLeaveCurrentServerAsync().ConfigureAwait(true))
+            return;
+
+        var name = string.IsNullOrWhiteSpace(NewServerName)
+            ? ServerCatalog.SuggestDisplayName(_configHost.PlayIp)
+            : NewServerName.Trim();
+        var added = ServerCatalog.AddServer(name);
+        if (!added.Succeeded)
+        {
+            await _dialogs.ShowInfoAsync("Could not add server", added.Error ?? "Unknown error.");
+            return;
+        }
+
+        NewServerName = ServerCatalog.DefaultDisplayName;
+        ApplyServerFolder();
+    }
+
+    public async Task RenameServerAsync()
+    {
+        if (!ShowServerSwitcher || IsBusy)
+            return;
+        var slug = ServerCatalog.ActiveSlug();
+        if (string.IsNullOrWhiteSpace(slug))
+            return;
+
+        var renamed = ServerCatalog.Rename(slug, RenameServerName);
+        if (!renamed.Succeeded)
+        {
+            await _dialogs.ShowInfoAsync("Could not rename server", renamed.Error ?? "Unknown error.");
+            return;
+        }
+
+        RefreshServerSwitcher();
+        _chrome.RefreshServerLabel();
+        StatusMessage = "Server name saved.";
+    }
+
+    partial void OnSelectedServerIdChanged(string value)
+    {
+        if (_suppressServerSwitch)
+            return;
+        _ = SwitchServerAsync(value);
+    }
+
+    private async Task<bool> CanLeaveCurrentServerAsync()
+    {
+        if (_destroy.Phase == DestroyInfrastructurePhase.Running)
+        {
+            await _dialogs.ShowInfoAsync(
+                "Deletion still running",
+                "Wait until Delete infrastructure finishes before switching servers.");
+            return false;
+        }
+
+        if (_shell.Page == HybridShell.PageKind.Setup)
+        {
+            await _dialogs.ShowInfoAsync(
+                "Setup is still open",
+                "Finish or close Setup before switching servers.");
+            return false;
+        }
+
+        return true;
+    }
+
+    private void ApplyServerFolder()
+    {
+        _session.ReloadFromDisk();
+        if (_configHost.HasManageConfig)
+            _shell.EnterManage();
+        else
+            _shell.EnterFirstRun();
+        _chrome.RefreshServerLabel();
+        StatusMessage = "Switched server. Manager reloaded this folder.";
+    }
+
+    private void RefreshServerSwitcher()
+    {
+        _suppressServerSwitch = true;
+        try
+        {
+            Servers = ServerCatalog.List();
+            SelectedServerId = ServerCatalog.ActiveSlug() ?? "";
+            RenameServerName = ServerCatalog.ActiveDisplayName() ?? "";
+            if (string.IsNullOrWhiteSpace(NewServerName))
+                NewServerName = ServerCatalog.SuggestDisplayName(_configHost.PlayIp);
+            OnPropertyChanged(nameof(ShowServerSwitcher));
+        }
+        finally
+        {
+            _suppressServerSwitch = false;
+        }
     }
 
     public async Task AutoDetectAsync()

@@ -75,6 +75,67 @@
     {
     <div class="mcm-pane-stack" role="tabpanel">
     <div class="mcm-section-card">
+        <div style="font-size:14px;font-weight:600;margin-bottom:6px;">This PC's servers</div>
+        @if (Vm.ShowServerSwitcher)
+        {
+            <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);">
+                Each server is a separate folder on this PC. Switching reloads Manager from that folder. Add server opens first-run for a new empty folder.
+            </p>
+            <div class="mcm-field">
+                <label for="mcm-adv-server">Switch server</label>
+                <select id="mcm-adv-server"
+                        disabled="@Vm.IsBusy"
+                        @bind="Vm.SelectedServerId"
+                        @bind:event="onchange">
+                    @foreach (var server in Vm.Servers)
+                    {
+                        <option value="@server.Id">@server.DisplayName</option>
+                    }
+                </select>
+            </div>
+            <div class="mcm-field">
+                <label for="mcm-adv-server-rename">Rename</label>
+                <input id="mcm-adv-server-rename"
+                       type="text"
+                       disabled="@Vm.IsBusy"
+                       @bind="Vm.RenameServerName"
+                       @bind:event="oninput" />
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+                <button type="button"
+                        disabled="@Vm.IsBusy"
+                        @onclick="Vm.RenameServerAsync">
+                    Save name
+                </button>
+            </div>
+            <div class="mcm-field">
+                <label for="mcm-adv-server-add">Add server</label>
+                <input id="mcm-adv-server-add"
+                       type="text"
+                       disabled="@Vm.IsBusy"
+                       placeholder="New server"
+                       @bind="Vm.NewServerName"
+                       @bind:event="oninput" />
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px;">
+                <button type="button"
+                        class="mcm-primary"
+                        disabled="@Vm.IsBusy"
+                        title="Creates an empty folder and opens first-run. Does not create Oracle resources until you Deploy."
+                        @onclick="Vm.AddServerAsync">
+                    Add server
+                </button>
+            </div>
+        }
+        else
+        {
+            <p style="margin:0;font-size:13px;color:var(--text-secondary);">
+                Using env override. Server switching is off. OpenTofu state for this process is in this folder, not a sibling server.
+            </p>
+        }
+    </div>
+
+    <div class="mcm-section-card">
         <div style="font-size:14px;font-weight:600;margin-bottom:6px;">Infrastructure setup</div>
         <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);">
             Deploy a new Always Free stack, repair an existing one, or attach this PC to a stack that is already in your tenancy. Auto-detect never runs by itself — only when you click the button.

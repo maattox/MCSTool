@@ -7,7 +7,7 @@
     <div class="mcm-firstrun">
         <h1>Welcome</h1>
         <p class="mcm-firstrun-hint">
-            This PC has no manage config yet. Deploy a new Always Free Minecraft stack, find a stack you already created, or open Manager if you already copied a config file here.
+            This server has no manage config yet. Deploy a new Always Free Minecraft stack, find a stack you already created, or open Manager if you already copied a config file here.
         </p>
 
         <div class="mcm-firstrun-actions">
@@ -29,6 +29,16 @@
                     @onclick="Vm.OpenExistingStack">
                 I already have a stack
             </button>
+            @if (Vm.CanCancelAdd)
+            {
+                <button type="button"
+                        class="mcm-firstrun-cancel"
+                        disabled="@Vm.IsBusy"
+                        title="Go back and delete this new empty server folder. Other servers on this PC are kept."
+                        @onclick="Vm.CancelAdd">
+                    Cancel
+                </button>
+            }
         </div>
 
         <p class="mcm-firstrun-note">
