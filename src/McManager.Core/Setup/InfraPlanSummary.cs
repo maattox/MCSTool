@@ -59,6 +59,7 @@ public static class InfraPlanSummary
             + $"  Budget alert email: {email}\n"
             + $"  SSH: {ssh}\n"
             + $"  Server size: {shape} ({hours})\n"
+            + $"  Minecraft heap: {JvmHeapChoice.Format(state.JvmXmx)} (Xms = Xmx)\n"
             + $"  Game: {flavor} {version} (EULA {(state.EulaAccepted ? "accepted" : "not accepted")})\n"
             + $"  Server list name: {identityName}\n"
             + friendsLine

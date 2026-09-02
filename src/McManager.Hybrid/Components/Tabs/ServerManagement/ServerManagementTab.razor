@@ -396,27 +396,81 @@
                         <i class="ti ti-package" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
                         Change pack
                     </button>
-                    @if (Vm.IsModdedServer)
-                    {
-                        <button type="button"
-                                disabled="@(!Vm.CanDownloadPack)"
-                                title="@Vm.DownloadPackTitle"
-                                @onclick="Vm.DownloadPackAsync">
-                            <i class="ti ti-download" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
-                            Download pack
-                        </button>
-                        <button type="button"
-                                disabled="@Vm.AnyBusy"
-                                title="List server-side mods on the game VM. Requires the VM running."
-                                @onclick="Vm.RefreshLiveModsAsync">
-                            <i class="ti ti-refresh" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
-                            Refresh list
-                        </button>
-                    }
+            @if (Vm.IsModdedServer)
+            {
+                <button type="button"
+                        disabled="@(!Vm.CanDownloadPack)"
+                        title="@Vm.DownloadPackTitle"
+                        @onclick="Vm.DownloadPackAsync">
+                    <i class="ti ti-download" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
+                    Download pack
+                </button>
+                <button type="button"
+                        disabled="@Vm.AnyBusy"
+                        title="List server-side mods on the game VM. Requires the VM running."
+                        @onclick="Vm.RefreshLiveModsAsync">
+                    <i class="ti ti-refresh" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
+                    Refresh list
+                </button>
+            }
+            else if (Vm.IsPaperServer)
+            {
+                <button type="button"
+                        disabled="@(!Vm.CanUploadPlugin)"
+                        title="@Vm.UploadPluginTitle"
+                        @onclick="Vm.UploadPluginAsync">
+                    <i class="ti ti-upload" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
+                    Upload plugin
+                </button>
+                <button type="button"
+                        disabled="@Vm.AnyBusy"
+                        title="List Paper plugins on the game VM. Requires the VM running."
+                        @onclick="Vm.RefreshLivePluginsAsync">
+                    <i class="ti ti-refresh" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
+                    Refresh list
+                </button>
+            }
                 </div>
             </div>
 
-            @if (!Vm.IsModdedServer)
+            @if (Vm.IsPaperServer)
+            {
+                @if (!string.IsNullOrWhiteSpace(Vm.ModdingHint))
+                {
+                    <p style="margin:0 0 8px;font-size:13px;color:var(--text-muted);">@Vm.ModdingHint</p>
+                }
+                else if (Vm.PluginFiles.Count == 0)
+                {
+                    <p style="margin:0 0 8px;font-size:13px;color:var(--text-muted);">@Vm.VanillaEmptyState</p>
+                }
+                <details class="mcm-expander">
+                    <summary>
+                        <span class="mcm-expander-title">@PluginListSummary</span>
+                    </summary>
+                    @if (Vm.PluginFiles.Count > 0)
+                    {
+                        <div class="mcm-mod-list mcm-slim-scroll">
+                            @foreach (var name in Vm.PluginFiles)
+                            {
+                                <div class="mcm-mod-row" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                                    <span>@name</span>
+                                    <button type="button"
+                                            disabled="@(!Vm.CanUploadPlugin)"
+                                            title="Delete this plugin jar and restart Minecraft."
+                                            @onclick="() => Vm.DeletePluginAsync(name)">
+                                        Delete
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="mcm-expander-empty">Refresh list to load Paper plugins. Requires the VM running.</p>
+                    }
+                </details>
+            }
+            else if (!Vm.IsModdedServer)
             {
                 <p style="margin:0;font-size:13px;color:var(--text-muted);">@Vm.VanillaEmptyState</p>
             }
@@ -620,11 +674,24 @@
         }
     }
 
+    private string PluginListSummary
+    {
+        get
+        {
+            if (!string.IsNullOrWhiteSpace(Vm.ModdingSummary))
+                return Vm.ModdingSummary;
+            if (Vm.PluginFiles.Count > 0)
+                return $"{Vm.PluginFiles.Count} plugins";
+            return "Paper plugins";
+        }
+    }
+
     protected override void OnInitialized()
     {
         Vm.PropertyChanged += OnVmChanged;
         Vm.Backups.CollectionChanged += OnBackupsChanged;
         Vm.ModFiles.CollectionChanged += OnModsChanged;
+        Vm.PluginFiles.CollectionChanged += OnPluginsChanged;
         Vm.ChatTemplates.CollectionChanged += OnChatChanged;
     }
 
@@ -641,6 +708,7 @@
         Vm.Backups.CollectionChanged -= OnBackupsChanged;
         Vm.ChatTemplates.CollectionChanged -= OnChatChanged;
         Vm.ModFiles.CollectionChanged -= OnModsChanged;
+        Vm.PluginFiles.CollectionChanged -= OnPluginsChanged;
     }
 
     private async Task OnPackInputAsync(InputFileChangeEventArgs e)
@@ -671,6 +739,9 @@
         _ = InvokeAsync(StateHasChanged);
 
     private void OnModsChanged(object? sender, NotifyCollectionChangedEventArgs e) =>
+        _ = InvokeAsync(StateHasChanged);
+
+    private void OnPluginsChanged(object? sender, NotifyCollectionChangedEventArgs e) =>
         _ = InvokeAsync(StateHasChanged);
 
     private void OnChatChanged(object? sender, NotifyCollectionChangedEventArgs e) =>

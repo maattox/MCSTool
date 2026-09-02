@@ -711,6 +711,7 @@ public sealed class SetupBootstrapService
         }
 
         var state = PackReplacePlanner.ToWizardState(preview);
+        state.JvmXmx = JvmHeapChoice.Normalize(vm1.JvmXmx);
         var dist = SetupPackImport.ToDistribution(state);
         if (!SetupPackImport.IsOnboxDistribution(dist))
         {

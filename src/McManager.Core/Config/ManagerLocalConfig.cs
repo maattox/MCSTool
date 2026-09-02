@@ -118,6 +118,10 @@ public sealed class Vm1Settings
 
     [JsonPropertyName("minecraft_unit")]
     public string MinecraftUnit { get; init; } = "minecraft";
+
+    /// <summary>Minecraft heap preset: 4G, 6G, or 8G. Xms always equals Xmx.</summary>
+    [JsonPropertyName("jvm_xmx")]
+    public string JvmXmx { get; set; } = "4G";
 }
 
 public sealed class DoorSettings

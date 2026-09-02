@@ -106,10 +106,21 @@ def _java_and_flags(version_doc: dict | None) -> tuple[int, list[str]]:
         java_major = int(vmin)
     rec = (java.get("flags") or {}).get("recommended") if isinstance(java.get("flags"), dict) else None
     if isinstance(rec, list) and rec:
-        flags = [str(x) for x in rec if str(x).strip()]
+        flags = strip_heap_tokens([str(x) for x in rec if str(x).strip()])
         if not flags:
             flags = list(DEFAULT_JVM_FLAGS)
     return java_major, flags
+
+
+def strip_heap_tokens(flags: list[str]) -> list[str]:
+    """Product owns -Xms/-Xmx. Fill recommended flags must not include heap tokens."""
+    out: list[str] = []
+    for raw in flags:
+        s = str(raw).strip()
+        if not s or s.startswith("-Xms") or s.startswith("-Xmx"):
+            continue
+        out.append(s)
+    return out
 
 
 def resolve_stable(
@@ -257,6 +268,10 @@ def cmd_self_test(fixtures_dir: str) -> None:
         _fail("expected v2 URL to fail")
     except FillError:
         pass
+
+    stripped = strip_heap_tokens(["-Xms2G", "-XX:+UseG1GC", "-Xmx8G", "  "])
+    if stripped != ["-XX:+UseG1GC"]:
+        _fail(f"strip_heap_tokens failed: {stripped}")
 
     print("paper_fill_v3 self-test: ok", file=sys.stderr)
 

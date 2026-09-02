@@ -19,6 +19,17 @@ public sealed class ModdingPanelLogicTests
         Assert.False(ModdingPanelLogic.CanDownloadPack(isModded: false, hasLocalArchive: true));
     }
 
+    [Fact]
+    public void Paper_is_not_modded_and_has_plugin_copy()
+    {
+        Assert.True(ModdingPanelLogic.IsPaperServerKind("paper"));
+        Assert.True(ModdingPanelLogic.IsPaperServerKind("Paper"));
+        Assert.False(ModdingPanelLogic.IsPaperServerKind("vanilla"));
+        Assert.False(ModdingPanelLogic.IsPaperServerKind("fabric"));
+        Assert.Contains("Paper plugins only", ModdingPanelLogic.PaperEmptyState, StringComparison.Ordinal);
+        Assert.Contains("/reload", ModdingPanelLogic.PaperHelpTitle, StringComparison.OrdinalIgnoreCase);
+    }
+
     [Theory]
     [InlineData("modded")]
     [InlineData("fabric")]

@@ -102,6 +102,9 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     public const string ShapeSmallerHelp =
         "Smaller Always Free size. Vanilla can often stay on all month; less room if you add mods or more players later.";
 
+    public const string HeapHelp =
+        "Minecraft heap (Xms = Xmx), not the VM size. Default 4G. 8G still leaves about 4G for the OS on either Always Free size.";
+
     public const string IdentityHelp =
         "Players see the name, description, and in-game icon in Minecraft’s server list while the game is running. Each box is one list line (59 characters). Select text and apply colors, or paste a motd= string from a generator. Hex colors need Paper/Spigot 1.16+. You can change this later on the Server tab.";
 
@@ -338,6 +341,9 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     private int _vm1MemoryGb = Vm1ShapeChoice.DefaultMemoryGb;
 
     [ObservableProperty]
+    private string _jvmXmx = JvmHeapChoice.Default;
+
+    [ObservableProperty]
     private string _applyStage = SetupApplyStage.NotStarted;
 
     [ObservableProperty]
@@ -532,6 +538,18 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         Vm1Ocpus = Vm1ShapeChoice.SmallerOcpus;
         Vm1MemoryGb = Vm1ShapeChoice.SmallerMemoryGb;
     }
+
+    public bool JvmHeapIs4G => JvmHeapChoice.Normalize(JvmXmx) == JvmHeapChoice.Default;
+
+    public bool JvmHeapIs6G => JvmHeapChoice.Normalize(JvmXmx) == JvmHeapChoice.Medium;
+
+    public bool JvmHeapIs8G => JvmHeapChoice.Normalize(JvmXmx) == JvmHeapChoice.Large;
+
+    public void SelectJvmHeap4G() => JvmXmx = JvmHeapChoice.Default;
+
+    public void SelectJvmHeap6G() => JvmXmx = JvmHeapChoice.Medium;
+
+    public void SelectJvmHeap8G() => JvmXmx = JvmHeapChoice.Large;
 
     public bool VanillaFlavorIsDefault =>
         !SetupVanillaFlavor.IsOptimized(VanillaFlavor);
@@ -1765,6 +1783,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         var shape = Vm1ShapeChoice.Normalize(state.Vm1Ocpus, state.Vm1MemoryGb);
         Vm1Ocpus = shape.Ocpus;
         Vm1MemoryGb = shape.MemoryGb;
+        JvmXmx = JvmHeapChoice.Normalize(state.JvmXmx);
         ApplyStage = string.IsNullOrWhiteSpace(state.ApplyStage)
             ? SetupApplyStage.NotStarted
             : state.ApplyStage;
@@ -1824,6 +1843,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         AdminCidr = AdminCidr,
         Vm1Ocpus = Vm1ShapeChoice.Normalize(Vm1Ocpus, Vm1MemoryGb).Ocpus,
         Vm1MemoryGb = Vm1ShapeChoice.Normalize(Vm1Ocpus, Vm1MemoryGb).MemoryGb,
+        JvmXmx = JvmHeapChoice.Normalize(JvmXmx),
         ApplyStage = ApplyStage,
         FunctionImage = _functionImage,
     };
@@ -2116,6 +2136,9 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             case nameof(CreateResourcesConfirmText):
             case nameof(Vm1ShapeIsDefault):
             case nameof(Vm1ShapeIsSmaller):
+            case nameof(JvmHeapIs4G):
+            case nameof(JvmHeapIs6G):
+            case nameof(JvmHeapIs8G):
             case nameof(VanillaFlavorIsDefault):
             case nameof(VanillaFlavorIsOptimized):
             case nameof(ShowSnapshotToggle):
@@ -2181,6 +2204,9 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         OnPropertyChanged(nameof(CreateResourcesConfirmText));
         OnPropertyChanged(nameof(Vm1ShapeIsDefault));
         OnPropertyChanged(nameof(Vm1ShapeIsSmaller));
+        OnPropertyChanged(nameof(JvmHeapIs4G));
+        OnPropertyChanged(nameof(JvmHeapIs6G));
+        OnPropertyChanged(nameof(JvmHeapIs8G));
         OnPropertyChanged(nameof(VanillaFlavorIsDefault));
         OnPropertyChanged(nameof(VanillaFlavorIsOptimized));
         OnPropertyChanged(nameof(ShowSnapshotToggle));

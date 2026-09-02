@@ -183,6 +183,10 @@ public sealed class SetupWizardState
     [JsonPropertyName("vm1_memory_gb")]
     public int Vm1MemoryGb { get; set; } = Vm1ShapeChoice.DefaultMemoryGb;
 
+    /// <summary>Minecraft heap preset (4G / 6G / 8G). Xms = Xmx. Default 4G.</summary>
+    [JsonPropertyName("jvm_xmx")]
+    public string JvmXmx { get; set; } = JvmHeapChoice.Default;
+
     [JsonPropertyName("apply_stage")]
     public string ApplyStage { get; set; } = SetupApplyStage.NotStarted;
 

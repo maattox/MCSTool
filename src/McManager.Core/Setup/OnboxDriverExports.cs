@@ -30,9 +30,12 @@ internal static class OnboxDriverExports
             ? $" JAVA_MAJOR={j.ToString(System.Globalization.CultureInfo.InvariantCulture)}"
             : "";
 
+        var heap = JvmHeapChoice.Normalize(state.JvmXmx);
+
         return
             $"export EULA_ACCEPTED=true MINECRAFT_VERSION={ShQuote(minecraftVersion)} "
             + $"DISTRIBUTION={ShQuote(dist)}{pinExport}{javaExport} "
+            + $"JVM_XMS={ShQuote(heap)} JVM_XMX={ShQuote(heap)} "
             + "HOME=\"${HOME:-/home/ubuntu}\"";
     }
 

@@ -159,12 +159,13 @@ Open and accept the [Minecraft EULA](https://aka.ms/MinecraftEULA).
 Paste the Auth Token you saved in Part 2 and store it. MCSTool keeps **one** token on this PC (Windows Credential Manager). If you later add a second Oracle account, you may need to replace that token during Setup. Day-to-day manage does not need it again.
 
 **Step 8 — VM size and deploy**  
-Pick a size and start deployment.
+Pick a size, Minecraft memory, and start deployment.
 
 - Deployment often takes **10–25 minutes**, depending on VM size and pack. Leave the app open until it finishes.
 - If Deploy is interrupted after the game VM already exists, that VM may stay on. Finish Setup, or stop it in the OCI Console (especially the 4 OCPU / 24 GB size).
 - The recommended size (**4 OCPU / 24 GB**) can only run about **~11.5 hours a day** on average over a month. MCSTool’s usage stats make that easy to track.
 - The smaller size (**2 OCPU / 12 GB**) can usually stay on all month, with less room for mods and players.
+- Minecraft heap is **4G**, **6G**, or **8G** (default **4G**). Xms always matches Xmx. 8G still leaves about 4G for the OS on either VM size. You can change heap later on Advanced → Danger without stopping the VM.
 
 
 
@@ -197,6 +198,8 @@ Two **4 OCPU / 24 GB** game VMs cannot live in one Oracle tenancy (Always Free A
 
 **Delete infrastructure** on Advanced → Danger removes **that** server’s cloud stack and its OpenTofu state. Other servers on this PC stay. The player list file in that folder is kept.
 
+**Change server size** on Advanced → Danger is 2 OCPU / 12 GB or 4 OCPU / 24 GB only, and the VM must be Stopped. **Minecraft memory (heap)** is next to it: 4G / 6G / 8G. Apply rewrites the launch line and restarts Minecraft while the VM stays up. Paper keeps its Fill/Aikar GC flags. Do not use `/reload`.
+
 
 
 ### Players tab
@@ -216,6 +219,7 @@ On the **Server** tab:
 
 - **Identity** — name, description, and icon in the Minecraft server list.
 - **Settings** — difficulty, default game mode, max players, view distance, simulation distance (Minecraft 1.18+), PvP when that version still has a `pvp` property, spawn protection, hardcore, force game mode, and allow flight. **Save**, then **Restart** (or **Start**) so Minecraft reads the file. Name and MOTD stay on Identity.
+- **Modding** — for a **Paper** (Optimized Vanilla) server: list, upload, and delete plugin jars in `plugins/`. Upload and delete **restart Minecraft**. Do **not** use `/reload`. Vanilla Default has no plugin controls. Modded servers still list `mods/` and Change pack.
 
 
 

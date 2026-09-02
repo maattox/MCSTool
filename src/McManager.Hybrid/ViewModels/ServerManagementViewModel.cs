@@ -23,6 +23,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     private static readonly FileTypeFilter AllFilesFilter = new("All files", ".*");
     private static readonly FileTypeFilter PackFilter = new("Modpack archives", ".mrpack", ".zip");
     private static readonly FileTypeFilter MrpackFilter = new("Modrinth pack", ".mrpack");
+    private static readonly FileTypeFilter JarFilter = new("Java plugin jar", ".jar");
     private static readonly TimeSpan PackElapsedTickPeriod = TimeSpan.FromSeconds(1);
 
     private ManagerLocalConfig? _config;
@@ -68,6 +69,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
     public ObservableCollection<string> ModFiles { get; } = [];
 
+    public ObservableCollection<string> PluginFiles { get; } = [];
+
     public ObservableCollection<QuarantinedFileEntry> QuarantinedMods { get; } = [];
 
     public ObservableCollection<ChatTemplateRow> ChatTemplates { get; } = [];
@@ -101,6 +104,9 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
     [ObservableProperty]
     private bool _isModdedServer;
+
+    [ObservableProperty]
+    private bool _isPaperServer;
 
     [ObservableProperty]
     private bool _hasLocalPackArchive;
@@ -250,11 +256,29 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
             ? "Save a copy of the confirmed pack file (manifest added for jar-root zips when you corrected versions)."
             : ModdingPanelLogic.DownloadDisabledReason(IsModdedServer, HasLocalPackArchive);
 
-    public string VanillaEmptyState => ModdingPanelLogic.VanillaEmptyState;
+    public string VanillaEmptyState => IsPaperServer
+        ? ModdingPanelLogic.PaperEmptyState
+        : ModdingPanelLogic.VanillaEmptyState;
 
     public string MissingArchiveMessage => ModdingPanelLogic.MissingArchiveMessage;
 
-    public string ModdingHelpTitle => ModdingPanelLogic.HelpTitle;
+    public string ModdingHelpTitle => IsPaperServer
+        ? ModdingPanelLogic.PaperHelpTitle
+        : ModdingPanelLogic.HelpTitle;
+
+    public bool CanUploadPlugin =>
+        IsPaperServer && Vm1IsRunning && !AnyBusy;
+
+    public string UploadPluginTitle =>
+        CanUploadPlugin
+            ? "Upload a Paper plugin .jar. Minecraft restarts after install."
+            : (!IsPaperServer
+                ? ModdingPanelLogic.VanillaEmptyState
+                : (!Vm1IsRunning
+                    ? ModdingPanelLogic.PaperVmStoppedHint
+                    : "Wait until the current action finishes."));
+
+    public bool CanDeletePlugin => CanUploadPlugin && PluginFiles.Count > 0;
 
     public const string PaneIdentity = "identity";
     public const string PaneSettings = "settings";
@@ -986,7 +1010,12 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         RefreshSaveCompatibilityWarning();
         await LoadSettingsAsync();
         if (includeLiveMods)
-            await RefreshLiveModsAsync();
+        {
+            if (IsModdedServer)
+                await RefreshLiveModsAsync();
+            else if (IsPaperServer)
+                await RefreshLivePluginsAsync();
+        }
     }
 
     public async Task RefreshLiveModsAsync()
@@ -1131,6 +1160,152 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
         if (ok)
             await RefreshLiveModsAsync();
+    }
+
+    public async Task RefreshLivePluginsAsync()
+    {
+        if (!IsPaperServer)
+            return;
+        if (IsModdingBusy)
+            return;
+        if (_config is null)
+        {
+            ModdingHint = "Local config is missing.";
+            return;
+        }
+
+        var lifeRaw = _main.Vm1Lifecycle ?? "";
+        var life = lifeRaw.ToUpperInvariant();
+        if (life != "RUNNING")
+        {
+            PluginFiles.Clear();
+            ModdingSummary = "";
+            ModdingHint = ModdingPanelLogic.PaperVmStoppedHint;
+            NotifyModdingCommands();
+            return;
+        }
+
+        IsModdingBusy = true;
+        ModdingHint = "Listing Paper plugins on the game VM…";
+        try
+        {
+            var run = await _ssh.RunCommandAsync(
+                SshTarget.FromVm1(_config.Vm1),
+                ServerPluginsInspect.RemoteCommand);
+            if (!run.Succeeded)
+            {
+                PluginFiles.Clear();
+                ModdingSummary = "";
+                ModdingHint = run.Error ?? "Could not list plugins on the game VM.";
+                return;
+            }
+
+            if (!ServerPluginsInspect.TryParse(run.Output, out var inspect, out var parseError))
+            {
+                PluginFiles.Clear();
+                ModdingSummary = "";
+                ModdingHint = parseError ?? "Could not parse the plugin listing.";
+                return;
+            }
+
+            PluginFiles.Clear();
+            foreach (var name in inspect.FileNames)
+                PluginFiles.Add(name);
+            ModdingSummary = inspect.SummaryLine();
+            ModdingHint = inspect.PluginsDirectoryMissing || PluginFiles.Count == 0
+                ? "No plugin jars yet. Upload a Paper .jar — Minecraft restarts after upload or delete. Do not use /reload."
+                : "";
+        }
+        finally
+        {
+            IsModdingBusy = false;
+            NotifyModdingCommands();
+        }
+    }
+
+    public async Task UploadPluginAsync()
+    {
+        if (!CanUploadPlugin || _config is null)
+            return;
+
+        var path = await _filePicker.OpenFileAsync(new FilePickRequest
+        {
+            Title = "Upload Paper plugin",
+            Filters = [JarFilter],
+        });
+        if (string.IsNullOrWhiteSpace(path))
+            return;
+
+        var name = Path.GetFileName(path);
+        if (!ServerPluginsInspect.IsSafeJarName(name))
+        {
+            _banner.Show("That file name is not a safe .jar name.", ActionBannerSeverity.Error);
+            return;
+        }
+
+        var confirmed = await _dialogs.ConfirmAsync(
+            "Upload plugin and restart Minecraft?",
+            "Install "
+            + name
+            + " into plugins/ and restart Minecraft. Do not use /reload. Wrong-loader jars are your problem — Paper plugins only.",
+            confirmButtonText: "Upload and restart");
+        if (!confirmed)
+            return;
+
+        IsModdingBusy = true;
+        try
+        {
+            var result = await _ssh.UploadMinecraftPluginAsync(_config.Vm1, path);
+            if (!result.Succeeded)
+            {
+                _banner.Show(result.Error ?? "Plugin upload failed.", ActionBannerSeverity.Error);
+                return;
+            }
+
+            _banner.Show("Installed " + name + ". Minecraft restarted.", ActionBannerSeverity.Success);
+        }
+        finally
+        {
+            IsModdingBusy = false;
+        }
+
+        await RefreshLivePluginsAsync();
+    }
+
+    public async Task DeletePluginAsync(string fileName)
+    {
+        if (!CanUploadPlugin || _config is null)
+            return;
+        if (!ServerPluginsInspect.IsSafeJarName(fileName))
+            return;
+
+        var confirmed = await _dialogs.ConfirmAsync(
+            "Delete plugin and restart Minecraft?",
+            "Remove "
+            + fileName
+            + " from plugins/ and restart Minecraft. Do not use /reload.",
+            confirmButtonText: "Delete and restart");
+        if (!confirmed)
+            return;
+
+        IsModdingBusy = true;
+        try
+        {
+            var result = await _ssh.DeleteMinecraftPluginAsync(_config.Vm1, fileName);
+            if (!result.Succeeded)
+            {
+                _banner.Show(result.Error ?? "Plugin delete failed.", ActionBannerSeverity.Error);
+                return;
+            }
+
+            _banner.Show("Removed " + fileName + ". Minecraft restarted.", ActionBannerSeverity.Success);
+        }
+        finally
+        {
+            IsModdingBusy = false;
+        }
+
+        await RefreshLivePluginsAsync();
     }
 
     private void BindQuarantined(IReadOnlyList<QuarantinedFileEntry> entries)
@@ -1688,11 +1863,19 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     {
         _currentLoaderOrDistribution = string.IsNullOrWhiteSpace(serverKind) ? null : serverKind.Trim();
         IsModdedServer = ModdingPanelLogic.IsModdedServerKind(serverKind);
+        IsPaperServer = ModdingPanelLogic.IsPaperServerKind(serverKind);
         if (!IsModdedServer)
         {
             ModFiles.Clear();
             QuarantinedMods.Clear();
-            ModdingHint = ModdingPanelLogic.VanillaEmptyState;
+            ModdingHint = IsPaperServer ? "" : ModdingPanelLogic.VanillaEmptyState;
+        }
+
+        if (!IsPaperServer)
+        {
+            PluginFiles.Clear();
+            if (!IsModdedServer)
+                ModdingSummary = "";
         }
 
         NotifyModdingCommands();
@@ -1705,11 +1888,13 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         _currentMinecraftVersion = null;
         _currentLoaderOrDistribution = null;
         IsModdedServer = false;
+        IsPaperServer = false;
         HasLocalPackArchive = false;
         PackIdentityDisplay = "";
         ModdingSummary = "";
         ModdingHint = "";
         ModFiles.Clear();
+        PluginFiles.Clear();
         QuarantinedMods.Clear();
         ClearPackReplaceFields(hidePanel: true);
         NotifyModdingCommands();
@@ -1730,6 +1915,12 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         OnPropertyChanged(nameof(CanClearIcon));
         OnPropertyChanged(nameof(HasQuarantinedMods));
         OnPropertyChanged(nameof(CanActOnQuarantine));
+        OnPropertyChanged(nameof(IsPaperServer));
+        OnPropertyChanged(nameof(CanUploadPlugin));
+        OnPropertyChanged(nameof(UploadPluginTitle));
+        OnPropertyChanged(nameof(CanDeletePlugin));
+        OnPropertyChanged(nameof(ModdingHelpTitle));
+        OnPropertyChanged(nameof(VanillaEmptyState));
         NotifyPackIdentityUi();
         NotifyDock();
     }

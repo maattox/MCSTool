@@ -156,10 +156,25 @@ main() {
         [[ -n "${flag}" ]] && launch_args+=("${flag}")
       done < <("$(mcmgr_python)" -c 'import json,os,sys
 flags=json.loads(os.environ.get("PAPER_JVM_FLAGS_JSON") or "[]")
+flags=[str(x).strip() for x in flags if str(x).strip() and not str(x).startswith("-Xms") and not str(x).startswith("-Xmx")]
 if not flags:
     flags=["-XX:+UseG1GC"]
 sys.stdout.buffer.write(("\n".join(flags) + "\n").encode("utf-8"))
 ')
+      # Persist Fill/Aikar flags (no heap tokens) so day-2 heap apply can re-inject if needed.
+      mkdir -p "${ETC_MCMGR}"
+      "$(mcmgr_python)" -c 'import json,os,sys
+flags=json.loads(os.environ.get("PAPER_JVM_FLAGS_JSON") or "[]")
+flags=[str(x).strip() for x in flags if str(x).strip() and not str(x).startswith("-Xms") and not str(x).startswith("-Xmx")]
+if not flags:
+    flags=["-XX:+UseG1GC"]
+path=os.environ.get("ETC_MCMGR","/etc/mcmgr") + "/paper-jvm-flags.json"
+open(path,"w",encoding="utf-8",newline="\n").write(json.dumps(flags)+"\n")
+'
+      if [[ "${DRY_RUN}" != "1" ]]; then
+        chown root:mcmgr "${ETC_MCMGR}/paper-jvm-flags.json" 2>/dev/null || true
+        chmod 0640 "${ETC_MCMGR}/paper-jvm-flags.json" 2>/dev/null || true
+      fi
       launch_args+=("-jar" "${ARTIFACT_FILENAME}" "--nogui")
     elif [[ "${DISTRIBUTION}" == "fabric" ]]; then
       launch_args+=("-jar" "${ARTIFACT_FILENAME}" "nogui")
@@ -173,6 +188,13 @@ sys.stdout.buffer.write(("\n".join(flags) + "\n").encode("utf-8"))
   LAUNCH_ARGS_JSON="$("$(mcmgr_python)" -c 'import json,sys; print(json.dumps(sys.argv[1:]))' "${launch_args[@]}")"
 
   run_stage unit_written unit_generate "${JAVA_EXECUTABLE}" "${SERVER_DIR}" "${launch_args[@]}"
+
+  mkdir -p "${ETC_MCMGR}"
+  printf 'export JVM_XMS=%s\nexport JVM_XMX=%s\n' "${JVM_XMX}" "${JVM_XMX}" >"${ETC_MCMGR}/jvm.env"
+  if [[ "${DRY_RUN}" != "1" ]]; then
+    chown root:mcmgr "${ETC_MCMGR}/jvm.env" 2>/dev/null || true
+    chmod 0640 "${ETC_MCMGR}/jvm.env" 2>/dev/null || true
+  fi
 
   # Export paths for manifest_write
   export SERVER_DIR WORLD_PATH

@@ -566,6 +566,38 @@
                         </label>
                         <WizardHelp Title="@SetupWizardViewModel.ShapeSmallerHelp" AriaLabel="About 2 OCPU / 12 GB" />
                     </div>
+                    <p class="mcm-wizard-hint" style="margin:8px 0 4px;">Minecraft memory</p>
+                    <div class="mcm-radio-row">
+                        <label class="mcm-check-hit">
+                            <input type="radio"
+                                   name="mcm-setup-jvm-heap"
+                                   disabled="@(!Vm.CanMutateWizard)"
+                                   checked="@Vm.JvmHeapIs4G"
+                                   @onchange="@(() => Vm.SelectJvmHeap4G())" />
+                            <span>4G (default)</span>
+                        </label>
+                        <WizardHelp Title="@SetupWizardViewModel.HeapHelp" AriaLabel="About Minecraft heap" />
+                    </div>
+                    <div class="mcm-radio-row">
+                        <label class="mcm-check-hit">
+                            <input type="radio"
+                                   name="mcm-setup-jvm-heap"
+                                   disabled="@(!Vm.CanMutateWizard)"
+                                   checked="@Vm.JvmHeapIs6G"
+                                   @onchange="@(() => Vm.SelectJvmHeap6G())" />
+                            <span>6G</span>
+                        </label>
+                    </div>
+                    <div class="mcm-radio-row">
+                        <label class="mcm-check-hit">
+                            <input type="radio"
+                                   name="mcm-setup-jvm-heap"
+                                   disabled="@(!Vm.CanMutateWizard)"
+                                   checked="@Vm.JvmHeapIs8G"
+                                   @onchange="@(() => Vm.SelectJvmHeap8G())" />
+                            <span>8G</span>
+                        </label>
+                    </div>
                     <label class="mcm-checkbox-row">
                         <input type="checkbox" @bind="Vm.CreateResourcesConfirmed" />
                         <span>@Vm.CreateResourcesConfirmText</span>

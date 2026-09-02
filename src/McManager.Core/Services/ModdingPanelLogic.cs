@@ -9,12 +9,22 @@ public static class ModdingPanelLogic
     public const string VanillaEmptyState =
         "This is not a modded server. There is no imported pack to download.";
 
+    public const string PaperEmptyState =
+        "Paper plugins only. Upload a .jar to plugins/ on the game VM. Minecraft restarts after upload or delete — do not use /reload.";
+
+    public const string PaperHelpTitle =
+        "Paper plugins on the game VM (plugins/). Upload and delete restart Minecraft. "
+        + "Do not use /reload or a plugin manager. This is not a Hangar or Modrinth catalog.";
+
     public const string MissingArchiveMessage =
         "The original pack file is not on this PC. Manager cannot rebuild a client pack "
         + "from the mods on the server. Use the file you imported during Setup.";
 
     public const string VmStoppedHint =
         "Start the game VM to list the mods currently on the server.";
+
+    public const string PaperVmStoppedHint =
+        "Start the game VM to list Paper plugins.";
 
     public const string HelpTitle =
         "Lists server-side mods on the game VM. Download pack copies the confirmed pack file "
@@ -32,6 +42,12 @@ public static class ModdingPanelLogic
             or "forge"
             or "neoforge"
             or "quilt";
+    }
+
+    public static bool IsPaperServerKind(string? serverKind)
+    {
+        var id = (serverKind ?? "").Trim().ToLowerInvariant();
+        return id is "paper";
     }
 
     public static bool CanDownloadPack(bool isModded, bool hasLocalArchive) =>

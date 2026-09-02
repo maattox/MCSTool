@@ -95,6 +95,7 @@ public partial class App : Application
         services.AddSingleton<TroubleshootingViewModel>();
         services.AddSingleton<AdvancedViewModel>();
         services.AddSingleton<Vm1ShapeScaleViewModel>();
+        services.AddSingleton<JvmHeapViewModel>();
         services.AddSingleton<DestroyInfrastructureViewModel>();
         services.AddTransient<SetupWizardViewModel>();
     }

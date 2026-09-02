@@ -24,6 +24,8 @@ public sealed class OnboxDriverExportsTests
         Assert.Contains("MINECRAFT_VERSION='26.2'", exports, StringComparison.Ordinal);
         Assert.Contains("JAVA_MAJOR=25", exports, StringComparison.Ordinal);
         Assert.Contains("LOADER_VERSION='0.18.0'", exports, StringComparison.Ordinal);
+        Assert.Contains("JVM_XMS='4G'", exports, StringComparison.Ordinal);
+        Assert.Contains("JVM_XMX='4G'", exports, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -88,5 +90,22 @@ public sealed class OnboxDriverExportsTests
         var exports = OnboxDriverExports.Build(state);
 
         Assert.DoesNotContain("JAVA_MAJOR=", exports, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Build_exports_matched_heap_preset()
+    {
+        var state = new SetupWizardState
+        {
+            ServerType = SetupServerType.Vanilla,
+            MinecraftVersion = "1.21.8",
+            JvmXmx = "6G",
+        };
+
+        var exports = OnboxDriverExports.Build(state);
+
+        Assert.Contains("JVM_XMS='6G'", exports, StringComparison.Ordinal);
+        Assert.Contains("JVM_XMX='6G'", exports, StringComparison.Ordinal);
+        Assert.DoesNotContain("JVM_XMS='2G'", exports, StringComparison.Ordinal);
     }
 }

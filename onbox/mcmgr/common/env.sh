@@ -53,8 +53,14 @@ export EULA_ACCEPTED="${EULA_ACCEPTED:-}"
 export MINECRAFT_VERSION="${MINECRAFT_VERSION:-latest.release}"
 export DISTRIBUTION="${DISTRIBUTION:-vanilla}"
 export MCMGR_FIXTURES_DIR="${MCMGR_FIXTURES_DIR:-}"
-export JVM_XMS="${JVM_XMS:-2G}"
+# Day-2 heap lives in /etc/mcmgr/jvm.env. Setup/Change-pack exports win when already set.
+_JVM_ENV="${ETC_MCMGR}/jvm.env"
+if [[ -z "${JVM_XMX:-}" && -f "${_JVM_ENV}" ]]; then
+  # shellcheck disable=SC1090
+  source "${_JVM_ENV}"
+fi
 export JVM_XMX="${JVM_XMX:-4G}"
+export JVM_XMS="${JVM_XMX}"
 export MINECRAFT_UNIT="${MINECRAFT_UNIT:-minecraft}"
 
 # Directory containing this file's parent (onbox/mcmgr)
