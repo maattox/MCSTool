@@ -1055,13 +1055,7 @@ public sealed class SetupBootstrapService
         UploadPackTree(client, localDest, remoteStaging, keepWorld, log);
         Exec(
             client,
-            "sudo bash -c " + ShQuote(
-                "set -euo pipefail; "
-                + "HOME=\"${HOME:-/home/ubuntu}\"; "
-                + "systemctl stop minecraft || true; "
-                + $"cp -a {remoteStaging}/. /opt/mcmgr/server/; "
-                + $"bash {onboxStaging}/repair-permissions.sh; "
-                + "systemctl start minecraft"),
+            "sudo bash -c " + ShQuote(PackCopyRemote.ApplyStagedTreeCommand(remoteStaging, onboxStaging)),
             TimeSpan.FromMinutes(10),
             log);
         log?.Report(
