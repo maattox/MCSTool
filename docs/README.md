@@ -12,11 +12,13 @@ Licensed under the [MIT License](../LICENSE).
 
 ## Solution
 
-| Project | Role |
-|---------|------|
-| [`src/McManager.Hybrid`](../src/McManager.Hybrid) | Manager UI WinExe (WPF + BlazorWebView) |
-| [`src/McManager.Core`](../src/McManager.Core) | Domain / OCI / shared logic |
-| [`src/McManager.slnx`](../src/McManager.slnx) | Solution |
+
+| Project                                           | Role                                    |
+| ------------------------------------------------- | --------------------------------------- |
+| `[src/McManager.Hybrid](../src/McManager.Hybrid)` | Manager UI WinExe (WPF + BlazorWebView) |
+| `[src/McManager.Core](../src/McManager.Core)`     | Domain / OCI / shared logic             |
+| `[src/McManager.slnx](../src/McManager.slnx)`     | Solution                                |
+
 
 On-box source that Setup deploys lives in this repo (`door_vm/`, `vm_agent/`, `functions/`, `onbox/mcmgr/`, `infra/`).
 
@@ -52,7 +54,7 @@ Install [Inno Setup 6](https://jrsoftware.org/isinfo.php), then from the repo ro
 powershell -ExecutionPolicy Bypass -File .\packaging\pack.ps1
 ```
 
-That fails if the Function tar is missing (rebuild recipe: [`functions/shutdown_vm/README.md`](../functions/shutdown_vm/README.md)). The `.exe` lands in `packaging/out/` (gitignored).
+That fails if the Function tar is missing (rebuild recipe: `[functions/shutdown_vm/README.md](../functions/shutdown_vm/README.md)`). The `.exe` lands in `packaging/out/` (gitignored).
 
 ## GitHub Releases
 
@@ -65,6 +67,8 @@ Optional:
 ```powershell
 gh release create v0.9.1 .\packaging\out\MCSTool-Setup-0.9.1.exe --title "MCSTool 0.9.1" --notes "Paste the user-facing notes here."
 ```
+
+
 
 ## Cost
 
@@ -89,9 +93,11 @@ Then fill OCIDs from OCI Console / Setup tofu outputs (`%LOCALAPPDATA%\MCSTool\p
 
 ## Docs
 
-| Doc | Audience |
-|-----|----------|
-| [`../README.md`](../README.md) | Users (GitHub landing page) |
-| [`Guide.md`](Guide.md) | Users (install + Setup + day-to-day) |
-| This file | Developers |
-| `docs/archive/` | Operator / agent notes — **gitignored**, not on the public tree |
+
+| Doc                            | Audience                             |
+| ------------------------------ | ------------------------------------ |
+| `[../README.md](../README.md)` | Users (GitHub landing page)          |
+| `[Guide.md](Guide.md)`         | Users (install + Setup + day-to-day) |
+| This file                      | Developers                           |
+
+

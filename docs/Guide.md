@@ -1,12 +1,12 @@
 # Setup guide
 
-This is the guide for setting up your Minecraft server with **MCSTool**, hosted on Oracle Cloud Infrastructure (OCI) using Always Free resources, and managed from one desktop app.
+This guide explains how to set up your Minecraft server with **MCSTool**, hosted on Oracle Cloud Infrastructure (OCI) using Always Free resources, and managed from one desktop app.
 
-**Windows only.** There is no macOS or Linux MCSTool in this version.
+- **Windows only.** There is no macOS or Linux MCSTool in this version.
+- For modded servers, you must supply the modpack file. Supported formats are **Modrinth** `.mrpack`, **CurseForge Server Files**, and a **zip of** `.jar` **mods**. For a zip of jars, Setup asks you to confirm the loader, Minecraft version, and Java.
+- Always Free *can* work at **$0**, but Oracle **capacity often blocks creating the VMs**. Upgrading the account to **Pay As You Go (PAYG)** raises scheduling priority. You can still stay at $0 if you stay inside Always Free limits.
 
-MCSTool does not include an in-app pack browser. You supply the pack file. Supported formats are **Modrinth** `.mrpack`, **CurseForge Server Files**, and a **zip of** `.jar` **mods**. For a zip of jars, Setup asks you to confirm the loader, Minecraft version, and Java.
 
-Always Free *can* work at **$0**, but Oracle **capacity often blocks creating the VMs**. Upgrading the account to **Pay As You Go (PAYG)** raises scheduling priority. You can still stay at $0 if you stay inside Always Free limits.
 
 ## What you need
 
@@ -49,7 +49,8 @@ Setup also creates a last-resort **$1 monthly budget**. If spend ever reaches $1
 
 1. Under **Pay As You Go**, review your information and click **Upgrade your account**.
 2. Review the confirmation and click **Upgrade account**.
-3. The upgrade can take a day or two. Oracle emails you when it is complete.
+
+- The upgrade can take a day or two. Oracle emails you when it is complete.
 
 > **Credit-card authorization:** when you upgrade to PAYG, your card is authorized for **$100 USD** (or the equivalent in your country). Oracle reverses that authorization immediately on their side. Your bank decides how long the reversal takes to show up.
 
@@ -79,7 +80,10 @@ Setup also creates a last-resort **$1 monthly budget**. If spend ever reaches $1
 ![File Explorer View tab with File name extensions enabled](../assets/guide-images/2.3.png)
 
 1. Download the **private** and **public** keys and move both files into `C:\Users\YourUser\.oci`.
-2. Back in the OCI Console, click **Add**.
+
+- At this point, the `.oci` folder should contain the `config` file you created and both the public and private key you downloaded.
+
+1. Back in the OCI Console, click **Add**.
 
 ![Add API key dialog with Generate API key pair selected and Add highlighted](../assets/guide-images/2.4.png)
 
@@ -121,8 +125,7 @@ Setup also creates a last-resort **$1 monthly budget**. If spend ever reaches $1
 2. Download and run the setup `.exe`.
 
 - The installer is not signed. Windows Defender / SmartScreen may show **Windows protected your PC**. Choose **More info** → **Run anyway**.
-
-1. If MCSTool says a Microsoft component is missing, install [Evergreen WebView2](https://go.microsoft.com/fwlink/p/?LinkId=2124703), then open the app again.
+- If MCSTool says a Microsoft component is missing, install [Evergreen WebView2](https://go.microsoft.com/fwlink/p/?LinkId=2124703), then open the app again.
 
 
 
@@ -185,25 +188,6 @@ The Minecraft server should now be up. Copy the **play IP** from MCSTool and con
 
 
 
-### More than one server on this PC
-
-The top of the window shows which server this copy of MCSTool is managing.
-
-On **Advanced → Stack**:
-
-- **Switch server** picks another folder on this PC. Manager reloads that server’s config. It does not open a second window.
-- **Add server** asks for a name, creates an empty folder, and returns to first-run (**Deploy a new stack**, **Find an existing stack**, or **I already have a stack**). **Cancel** on that screen goes back and deletes the new folder.
-- **Rename** / **Save name** changes the label. The folder id stays the same.
-- **SSH addresses** lists the game VM and doorbell **public ephemeral** IPs (Copy each). Players join Minecraft with the reserved **play IP** in the sidebar. These SSH addresses are for tools such as PuTTY or WinSCP. **Refresh from OCI** updates the saved SSH IPs. It does not move the play IP.
-
-Two **4 OCPU / 24 GB** game VMs cannot live in one Oracle tenancy (Always Free Ampere cap). Two servers on this PC are typically two tenancies, or Connect to a second account. Setup of a second Oracle account may need the Auth Token replaced.
-
-**Delete infrastructure** on Advanced → Danger removes **that** server’s cloud stack and its OpenTofu state. Other servers on this PC stay. The player list file in that folder is kept.
-
-**Change server size** on Advanced → Danger is 2 OCPU / 12 GB or 4 OCPU / 24 GB only, and the VM must be Stopped. **Minecraft memory (heap)** is next to it: 4G / 6G / 8G. Apply rewrites the launch line and restarts Minecraft while the VM stays up. Paper keeps its Fill/Aikar GC flags. **JVM flags** (below heap) edits extra non-heap Java flags. Save asks you to confirm, then restarts Minecraft; the VM stays up. Do not put `-Xms`/`-Xmx` in that box. An empty Paper save restores the Fill/Aikar defaults. Do not use `/reload`.
-
-
-
 ### Players tab
 
 On the **Players** tab:
@@ -220,9 +204,9 @@ On the **Players** tab:
 On the **Server** tab:
 
 - **Identity** — name, description, and icon in the Minecraft server list.
-- **Settings** — difficulty, default game mode, max players, view distance, simulation distance (Minecraft 1.18+), PvP when that version still has a `pvp` property, spawn protection, hardcore, force game mode, and allow flight. **Save**, then **Restart** (or **Start**) so Minecraft reads the file. Name and MOTD stay on Identity. Below that, **Change server type** (Vanilla / Paper / Modded) reinstalls Minecraft on this VM; it is not a cloud Redeploy. Optional wipe (off by default). Modded needs a pack file. Going Modded → Vanilla/Paper can lose mod blocks and items.
-- **World** — cloud backups, **Replace world** from a zip, and **Wipe world**. Wipe asks for confirm, then deletes the live save and starts Minecraft so a new world generates. Optional seed on Wipe (blank = random). Replace from a zip restores that save as-is and does not use the seed field. The server must be Running.
-- **Mods** — drop a new `.mrpack` or server-pack zip to reinstall Minecraft (the world is kept unless you also wipe). Modded servers also list `mods/` and **Download pack**.
+- **Settings** — difficulty, default game mode, max players, view distance, simulation distance, PvP, spawn protection, hardcore, force game mode, and allow flight. **Save**, then **Restart** (or **Start**) so Minecraft reads the file. Below that, **Change server type** (Vanilla / Paper / Modded) reinstalls Minecraft on this VM. Optional wipe (off by default). Modded needs a pack file.
+- **World** — cloud backups, **Replace world** from a zip, and **Wipe world**.
+- **Mods** — drop a new `.mrpack` or server-pack zip to reinstall Minecraft.
 - **Plugins** — only for a **Paper** (Optimized Vanilla) server. List, upload, and delete plugin jars in `plugins/`. Upload and delete **restart Minecraft**. Do **not** use `/reload`. Vanilla Default and modded servers do not show this subtab.
 
 
@@ -231,13 +215,8 @@ On the **Server** tab:
 
 Days and hour math are **UTC**, not your local calendar. **Hours** shows what you have used. **Edit Budget** is the calendar. **Budget** is the monthly/soft/idle/size form.
 
-- The calendar sets **wall-clock hours** per day, never more than **24** on a single day. Setting a day to **0** parks it. Switching VM size between 2 OCPU / 12 GB and 4 OCPU / 24 GB changes the hours shown; stored CPU-hours stay the same. Hover the info icon next to **Hours plan (UTC)** for that note.
-- Left-click adds or removes days in the selection. Right-click selects one day only.
-- **Unbudgeted** hours are taken off today/future days (below the even-split default) and not yet put on other days. If the plan assigns more than unbudgeted plus rollover can cover, Unbudgeted goes negative (for example **-4.0h**) to show how far over that plan is. **Rollover** is unused hours from **closed** UTC days, minus rollover already spent onto later days.
-- **Distribute** (under those counters) spreads available hours onto days. Choose how many hours (default is all available), whether to **include rollover hours** (starts from the **Use rollover hours** control, but changing it in the menu does not change that control), then remaining days that do not yet have their own value, or only the days you selected.
-- A **zeroed** day: players cannot wake the server from Minecraft. **Start** in MCSTool still can, until the monthly soft cap or the $1 spend brake.
-- **Use rollover hours** (on by default) lets a plan spend rollover onto later days. When it is on, **Minimum rollover buffer** is hours of rollover to keep unassigned; Save refuses a plan that would spend below that buffer, or that exceeds this month’s ~1400 CPU-hour target.
-- Monthly targets stay on the operational ~1400 CPU-hour / ~8800 memory-hour cap (not Oracle’s marketing envelope). The 4 OCPU / 24 GB size averages about **~11.5 hours a day**.
+- The calendar sets **wall-clock hours** per day.
+- Monthly targets stay on the operational ~1400 CPU-hour / ~8800 memory-hour cap. The 4 OCPU / 24 GB size averages about **~11.5 hours a day**.
 
 
 
