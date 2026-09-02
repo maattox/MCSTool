@@ -160,13 +160,13 @@
             <span style="font-size:14px;font-weight:600;">SSH addresses</span>
             <button type="button"
                     class="mcm-help"
-                    title="These are the public ephemeral IPs MCSTool uses for SSH (PuTTY, WinSCP). Friends join Minecraft with the reserved play IP in the sidebar. Refresh reads the current primary public IP from OCI and saves it locally.">
+                    title="These are the public ephemeral IPs MCSTool uses for SSH (PuTTY, WinSCP). Players join Minecraft with the reserved play IP in the sidebar. Refresh reads the current primary public IP from OCI and saves it locally.">
                 <i class="ti ti-help" aria-hidden="true"></i>
                 <span class="sr-only">About SSH addresses</span>
             </button>
         </div>
         <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);">
-            Friends use the reserved play IP@(string.IsNullOrWhiteSpace(Vm.PlayReservedIp) ? "" : " (" + Vm.PlayReservedIp + ")"). These addresses are for SSH tools.
+            Players use the reserved play IP@(string.IsNullOrWhiteSpace(Vm.PlayReservedIp) ? "" : " (" + Vm.PlayReservedIp + ")"). These addresses are for SSH tools.
         </p>
         <ul class="mcm-path-list">
             <li class="mcm-path-row">

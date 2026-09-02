@@ -543,7 +543,7 @@ public sealed partial class AdvancedViewModel : ObservableObject
             _session.ReloadFromDisk();
             SeedSshHostsFromLocal();
             StatusMessage = notes.Count == 0
-                ? "Updated SSH IPs from OCI. Friends still join with the reserved play IP."
+                ? "Updated SSH IPs from OCI. Players still join with the reserved play IP."
                 : "SSH IPs refreshed with warnings: " + string.Join("; ", notes);
         }
         finally

@@ -194,7 +194,7 @@ On **Advanced → Stack**:
 - **Switch server** picks another folder on this PC. Manager reloads that server’s config. It does not open a second window.
 - **Add server** asks for a name, creates an empty folder, and returns to first-run (**Deploy a new stack**, **Find an existing stack**, or **I already have a stack**). **Cancel** on that screen goes back and deletes the new folder.
 - **Rename** / **Save name** changes the label. The folder id stays the same.
-- **SSH addresses** lists the game VM and doorbell **public ephemeral** IPs (Copy each). Friends join Minecraft with the reserved **play IP** in the sidebar. These SSH addresses are for tools such as PuTTY or WinSCP. **Refresh from OCI** updates the saved SSH IPs. It does not move the play IP.
+- **SSH addresses** lists the game VM and doorbell **public ephemeral** IPs (Copy each). Players join Minecraft with the reserved **play IP** in the sidebar. These SSH addresses are for tools such as PuTTY or WinSCP. **Refresh from OCI** updates the saved SSH IPs. It does not move the play IP.
 
 Two **4 OCPU / 24 GB** game VMs cannot live in one Oracle tenancy (Always Free Ampere cap). Two servers on this PC are typically two tenancies, or Connect to a second account. Setup of a second Oracle account may need the Auth Token replaced.
 
