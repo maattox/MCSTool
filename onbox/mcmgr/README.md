@@ -83,6 +83,7 @@ DISTRIBUTION=paper MINECRAFT_VERSION=1.21.10 bash dry-run/run-dry-run.sh
 DISTRIBUTION=fabric MINECRAFT_VERSION=1.21.8 bash dry-run/run-dry-run.sh
 DISTRIBUTION=neoforge MINECRAFT_VERSION=1.21.1 bash dry-run/run-dry-run.sh
 DISTRIBUTION=forge MINECRAFT_VERSION=1.12.2 bash dry-run/run-dry-run.sh
+bash dry-run/test-resume.sh           # second driver pass / SETUP-ISSUE-16
 bash dry-run/run-pack-replace-dry.sh   # KEEP_WORLD vs WIPE_WORLD (no driver download)
 ```
 

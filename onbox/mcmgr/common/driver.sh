@@ -32,6 +32,8 @@ source "${COMMON_DIR}/rcon.sh"
 source "${COMMON_DIR}/unit_gen.sh"
 # shellcheck source=manifest_write.sh
 source "${COMMON_DIR}/manifest_write.sh"
+# shellcheck source=manifest_restore.sh
+source "${COMMON_DIR}/manifest_restore.sh"
 # shellcheck source=idle_agent_sync.sh
 source "${COMMON_DIR}/idle_agent_sync.sh"
 
@@ -107,6 +109,23 @@ main() {
     java_major_from_module="${VANILLA_JAVA_MAJOR:-}"
   fi
 
+  # Skip of artifact_placed does not re-export RESOLVED_MC_VERSION / *JAVA_MAJOR.
+  if [[ -z "${RESOLVED_MC_VERSION:-}" ]]; then
+    if [[ -f "${GAME_MANIFEST}" ]] && bootstrap_restore_env_from_manifest; then
+      :
+    else
+      mcmgr_log "resume: re-running artifact resolve (completed stage skip left env unset)"
+      case "${DISTRIBUTION}" in
+        paper) paper_resolve_and_place ;;
+        fabric) fabric_resolve_and_place ;;
+        neoforge) neoforge_resolve_and_place ;;
+        forge) forge_resolve_and_place ;;
+        *) vanilla_resolve_and_place ;;
+      esac
+    fi
+    java_major_from_module="${java_major_from_module:-${FORGE_JAVA_MAJOR:-${NEOFORGE_JAVA_MAJOR:-${FABRIC_JAVA_MAJOR:-${PAPER_JAVA_MAJOR:-${VANILLA_JAVA_MAJOR:-}}}}}}"
+  fi
+
   if [[ -n "${JAVA_MAJOR:-}" ]]; then
     java_major_from_module="${JAVA_MAJOR}"
     mcmgr_log "java: using JAVA_MAJOR=${JAVA_MAJOR} from environment (pack analyze / Manager)"
@@ -114,6 +133,9 @@ main() {
   [[ -n "${java_major_from_module}" ]] || mcmgr_die "could not resolve required Java major for ${DISTRIBUTION} ${MINECRAFT_VERSION}"
 
   run_stage java_resolved java_install "${java_major_from_module}"
+  if [[ -z "${JAVA_EXECUTABLE:-}" ]]; then
+    java_install "${java_major_from_module}"
+  fi
 
   if [[ "${DISTRIBUTION}" == "neoforge" ]]; then
     # --installServer needs the Temurin we just placed (§19.3 / §12.1).
@@ -122,6 +144,9 @@ main() {
     # Vanilla server.jar already placed; --installServer after Java (§20.2 / §20.3).
     run_stage installer_run forge_run_installer
   fi
+
+  [[ -n "${RESOLVED_MC_VERSION:-}" ]] || mcmgr_die "resume: RESOLVED_MC_VERSION still unset"
+  [[ -n "${JAVA_EXECUTABLE:-}" ]] || mcmgr_die "resume: JAVA_EXECUTABLE still unset"
 
   run_stage eula_written eula_write "${RESOLVED_MC_VERSION}"
   run_stage rcon_ready rcon_setup
