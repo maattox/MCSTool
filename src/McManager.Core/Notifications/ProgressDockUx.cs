@@ -41,7 +41,7 @@ public static class ProgressDockUx
     }
 
     /// <summary>
-    /// Overlay dock is visible only on Server → Change pack while a session is open.
+    /// Overlay dock is visible only on Server → Mods while a pack session is open.
     /// Hiding it does not cancel the review.
     /// </summary>
     public static bool ShowChangePackDock(

@@ -262,9 +262,9 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
     public string MissingArchiveMessage => ModdingPanelLogic.MissingArchiveMessage;
 
-    public string ModdingHelpTitle => IsPaperServer
-        ? ModdingPanelLogic.PaperHelpTitle
-        : ModdingPanelLogic.HelpTitle;
+    public string ModdingHelpTitle => ModdingPanelLogic.HelpTitle;
+
+    public string PluginsHelpTitle => ModdingPanelLogic.PaperHelpTitle;
 
     public bool CanUploadPlugin =>
         IsPaperServer && Vm1IsRunning && !AnyBusy;
@@ -283,21 +283,25 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     public const string PaneIdentity = "identity";
     public const string PaneSettings = "settings";
     public const string PaneWorld = "world";
-    public const string PaneModding = "modding";
-    public const string PaneChangePack = "pack";
+    public const string PaneModding = ModdingPanelLogic.PaneModdingId;
+    public const string PanePlugins = ModdingPanelLogic.PanePluginsId;
+    public const string PaneChangePack = ModdingPanelLogic.PaneChangePackId;
+
+    public bool ShowPluginsTab => ModdingPanelLogic.ShowPluginsTab(IsPaperServer);
 
     public bool IsChangePackPane =>
-        string.Equals(ServerPane, PaneChangePack, StringComparison.Ordinal);
+        string.Equals(ServerPane, PaneModding, StringComparison.Ordinal);
 
     public bool IsServerPane(string id) =>
         string.Equals(ServerPane, id, StringComparison.Ordinal);
 
     public void SelectServerPane(string pane)
     {
-        if (string.IsNullOrWhiteSpace(pane)
-            || string.Equals(ServerPane, pane, StringComparison.Ordinal))
+        var next = ModdingPanelLogic.NormalizeServerPane(pane, IsPaperServer);
+        if (string.IsNullOrWhiteSpace(next)
+            || string.Equals(ServerPane, next, StringComparison.Ordinal))
             return;
-        ServerPane = pane;
+        ServerPane = next;
     }
 
     public bool ShowChangePackDock(bool onServerTab) =>
@@ -1396,6 +1400,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         }
 
         ShowChangePackUi = true;
+        SelectServerPane(PaneModding);
     }
 
     public void CancelChangePack()
@@ -1878,6 +1883,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
                 ModdingSummary = "";
         }
 
+        LeavePluginsIfHidden();
         NotifyModdingCommands();
     }
 
@@ -1897,7 +1903,14 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         PluginFiles.Clear();
         QuarantinedMods.Clear();
         ClearPackReplaceFields(hidePanel: true);
+        LeavePluginsIfHidden();
         NotifyModdingCommands();
+    }
+
+    private void LeavePluginsIfHidden()
+    {
+        if (!ShowPluginsTab && IsServerPane(PanePlugins))
+            ServerPane = PaneModding;
     }
 
     private void NotifyModdingCommands()
@@ -1916,6 +1929,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         OnPropertyChanged(nameof(HasQuarantinedMods));
         OnPropertyChanged(nameof(CanActOnQuarantine));
         OnPropertyChanged(nameof(IsPaperServer));
+        OnPropertyChanged(nameof(ShowPluginsTab));
         OnPropertyChanged(nameof(CanUploadPlugin));
         OnPropertyChanged(nameof(UploadPluginTitle));
         OnPropertyChanged(nameof(CanDeletePlugin));

@@ -219,7 +219,8 @@ On the **Server** tab:
 
 - **Identity** — name, description, and icon in the Minecraft server list.
 - **Settings** — difficulty, default game mode, max players, view distance, simulation distance (Minecraft 1.18+), PvP when that version still has a `pvp` property, spawn protection, hardcore, force game mode, and allow flight. **Save**, then **Restart** (or **Start**) so Minecraft reads the file. Name and MOTD stay on Identity.
-- **Modding** — for a **Paper** (Optimized Vanilla) server: list, upload, and delete plugin jars in `plugins/`. Upload and delete **restart Minecraft**. Do **not** use `/reload`. Vanilla Default has no plugin controls. Modded servers still list `mods/` and Change pack.
+- **Mods** — drop a new `.mrpack` or server-pack zip to reinstall Minecraft (the world is kept unless you also wipe). Modded servers also list `mods/` and **Download pack**.
+- **Plugins** — only for a **Paper** (Optimized Vanilla) server. List, upload, and delete plugin jars in `plugins/`. Upload and delete **restart Minecraft**. Do **not** use `/reload`. Vanilla Default and modded servers do not show this subtab.
 
 
 

@@ -37,17 +37,20 @@
                 aria-controls="mcm-server-pane-modding"
                 id="mcm-server-tab-modding"
                 @onclick="@(() => SelectPane("modding"))">
-            Modding
+            Mods
         </button>
-        <button type="button"
-                role="tab"
-                class="mcm-subtab @PaneClass("pack")"
-                aria-selected="@(IsPane("pack") ? "true" : "false")"
-                aria-controls="mcm-server-pane-pack"
-                id="mcm-server-tab-pack"
-                @onclick="@(() => SelectPane("pack"))">
-            Change pack
-        </button>
+        @if (Vm.ShowPluginsTab)
+        {
+            <button type="button"
+                    role="tab"
+                    class="mcm-subtab @PaneClass("plugins")"
+                    aria-selected="@(IsPane("plugins") ? "true" : "false")"
+                    aria-controls="mcm-server-pane-plugins"
+                    id="mcm-server-tab-plugins"
+                    @onclick="@(() => SelectPane("plugins"))">
+                Plugins
+            </button>
+        }
     </nav>
 
     @if (IsPane("identity"))
@@ -374,172 +377,40 @@
     }
     else if (IsPane("modding"))
     {
-        <div class="mcm-section-card"
+        <div class="mcm-section-card mcm-change-pack"
              id="mcm-server-pane-modding"
              role="tabpanel"
              aria-labelledby="mcm-server-tab-modding">
             <div class="mcm-server-pane-head">
                 <div class="mcm-server-pane-title">
-                    <span>Modding</span>
+                    <span>Mods</span>
                     <button type="button"
                             class="mcm-help"
                             title="@Vm.ModdingHelpTitle">
                         <i class="ti ti-help" aria-hidden="true"></i>
-                        <span class="sr-only">About Modding</span>
+                        <span class="sr-only">About Mods</span>
                     </button>
                 </div>
-                <div class="mcm-server-actions">
-                    <button type="button"
-                            disabled="@(!Vm.CanPickPack)"
-                            title="@Vm.ChangePackTitle"
-                            @onclick="OpenChangePack">
-                        <i class="ti ti-package" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
-                        Change pack
-                    </button>
-            @if (Vm.IsModdedServer)
-            {
-                <button type="button"
-                        disabled="@(!Vm.CanDownloadPack)"
-                        title="@Vm.DownloadPackTitle"
-                        @onclick="Vm.DownloadPackAsync">
-                    <i class="ti ti-download" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
-                    Download pack
-                </button>
-                <button type="button"
-                        disabled="@Vm.AnyBusy"
-                        title="List server-side mods on the game VM. Requires the VM running."
-                        @onclick="Vm.RefreshLiveModsAsync">
-                    <i class="ti ti-refresh" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
-                    Refresh list
-                </button>
-            }
-            else if (Vm.IsPaperServer)
-            {
-                <button type="button"
-                        disabled="@(!Vm.CanUploadPlugin)"
-                        title="@Vm.UploadPluginTitle"
-                        @onclick="Vm.UploadPluginAsync">
-                    <i class="ti ti-upload" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
-                    Upload plugin
-                </button>
-                <button type="button"
-                        disabled="@Vm.AnyBusy"
-                        title="List Paper plugins on the game VM. Requires the VM running."
-                        @onclick="Vm.RefreshLivePluginsAsync">
-                    <i class="ti ti-refresh" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
-                    Refresh list
-                </button>
-            }
-                </div>
-            </div>
-
-            @if (Vm.IsPaperServer)
-            {
-                @if (!string.IsNullOrWhiteSpace(Vm.ModdingHint))
+                @if (Vm.IsModdedServer)
                 {
-                    <p style="margin:0 0 8px;font-size:13px;color:var(--text-muted);">@Vm.ModdingHint</p>
-                }
-                else if (Vm.PluginFiles.Count == 0)
-                {
-                    <p style="margin:0 0 8px;font-size:13px;color:var(--text-muted);">@Vm.VanillaEmptyState</p>
-                }
-                <details class="mcm-expander">
-                    <summary>
-                        <span class="mcm-expander-title">@PluginListSummary</span>
-                    </summary>
-                    @if (Vm.PluginFiles.Count > 0)
-                    {
-                        <div class="mcm-mod-list mcm-slim-scroll">
-                            @foreach (var name in Vm.PluginFiles)
-                            {
-                                <div class="mcm-mod-row" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                                    <span>@name</span>
-                                    <button type="button"
-                                            disabled="@(!Vm.CanUploadPlugin)"
-                                            title="Delete this plugin jar and restart Minecraft."
-                                            @onclick="() => Vm.DeletePluginAsync(name)">
-                                        Delete
-                                    </button>
-                                </div>
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        <p class="mcm-expander-empty">Refresh list to load Paper plugins. Requires the VM running.</p>
-                    }
-                </details>
-            }
-            else if (!Vm.IsModdedServer)
-            {
-                <p style="margin:0;font-size:13px;color:var(--text-muted);">@Vm.VanillaEmptyState</p>
-            }
-            else
-            {
-                @if (!string.IsNullOrWhiteSpace(Vm.PackIdentityDisplay))
-                {
-                    <p style="margin:0 0 8px;font-size:13px;">@Vm.PackIdentityDisplay</p>
-                }
-                @if (!Vm.HasLocalPackArchive)
-                {
-                    <p style="margin:0 0 8px;font-size:13px;color:var(--text-muted);">@Vm.MissingArchiveMessage</p>
-                }
-                @if (!string.IsNullOrWhiteSpace(Vm.ModdingHint))
-                {
-                    <p style="margin:0 0 8px;font-size:13px;color:var(--text-muted);">@Vm.ModdingHint</p>
-                }
-                @if (Vm.HasQuarantinedMods)
-                {
-                    <div class="mcm-pack-list-warning" role="status">
-                        <p class="mcm-wizard-kicker">Set aside after a crash</p>
-                        @foreach (var entry in Vm.QuarantinedMods)
-                        {
-                            <p>@Vm.FormatQuarantineCopy(entry)</p>
-                            <div class="mcm-quarantine-actions">
-                                <button type="button"
-                                        class="mcm-primary"
-                                        disabled="@(!Vm.CanActOnQuarantine)"
-                                        title="Skip this mod on future installs of this same pack file."
-                                        @onclick="() => Vm.KeepExcludedAsync(entry)">
-                                    Keep excluded
-                                </button>
-                                <button type="button"
-                                        disabled="@(!Vm.CanActOnQuarantine)"
-                                        title="Move the jar back into mods/ and restart Minecraft."
-                                        @onclick="() => Vm.PutBackAsync(entry)">
-                                    Put back
-                                </button>
-                            </div>
-                        }
+                    <div class="mcm-server-actions">
+                        <button type="button"
+                                disabled="@(!Vm.CanDownloadPack)"
+                                title="@Vm.DownloadPackTitle"
+                                @onclick="Vm.DownloadPackAsync">
+                            <i class="ti ti-download" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
+                            Download pack
+                        </button>
+                        <button type="button"
+                                disabled="@Vm.AnyBusy"
+                                title="List server-side mods on the game VM. Requires the VM running."
+                                @onclick="Vm.RefreshLiveModsAsync">
+                            <i class="ti ti-refresh" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
+                            Refresh list
+                        </button>
                     </div>
                 }
-                <details class="mcm-expander">
-                    <summary>
-                        <span class="mcm-expander-title">@ModListSummary</span>
-                    </summary>
-                    @if (Vm.ModFiles.Count > 0)
-                    {
-                        <div class="mcm-mod-list mcm-slim-scroll">
-                            @foreach (var name in Vm.ModFiles)
-                            {
-                                <div class="mcm-mod-row">@name</div>
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        <p class="mcm-expander-empty">Refresh list to load server-side mods. Requires the VM running.</p>
-                    }
-                </details>
-            }
-        </div>
-    }
-    else
-    {
-        <div class="mcm-section-card mcm-change-pack"
-             id="mcm-server-pane-pack"
-             role="tabpanel"
-             aria-labelledby="mcm-server-tab-pack">
+            </div>
             <p class="mcm-change-pack-friends" role="note">@Vm.FriendsNeedOneLiner</p>
             <div class="mcm-change-pack-ingest">
                 <div class="mcm-pack-drop @(Vm.IsAnalyzingPack ? "is-busy" : "")"
@@ -644,6 +515,135 @@
                     }
                 </div>
             }
+            @if (Vm.IsModdedServer)
+            {
+                <div class="mcm-mods-installed">
+                    @if (!string.IsNullOrWhiteSpace(Vm.PackIdentityDisplay))
+                    {
+                        <p style="margin:0 0 8px;font-size:13px;">@Vm.PackIdentityDisplay</p>
+                    }
+                    @if (!Vm.HasLocalPackArchive)
+                    {
+                        <p style="margin:0 0 8px;font-size:13px;color:var(--text-muted);">@Vm.MissingArchiveMessage</p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Vm.ModdingHint))
+                    {
+                        <p style="margin:0 0 8px;font-size:13px;color:var(--text-muted);">@Vm.ModdingHint</p>
+                    }
+                    @if (Vm.HasQuarantinedMods)
+                    {
+                        <div class="mcm-pack-list-warning" role="status">
+                            <p class="mcm-wizard-kicker">Set aside after a crash</p>
+                            @foreach (var entry in Vm.QuarantinedMods)
+                            {
+                                <p>@Vm.FormatQuarantineCopy(entry)</p>
+                                <div class="mcm-quarantine-actions">
+                                    <button type="button"
+                                            class="mcm-primary"
+                                            disabled="@(!Vm.CanActOnQuarantine)"
+                                            title="Skip this mod on future installs of this same pack file."
+                                            @onclick="() => Vm.KeepExcludedAsync(entry)">
+                                        Keep excluded
+                                    </button>
+                                    <button type="button"
+                                            disabled="@(!Vm.CanActOnQuarantine)"
+                                            title="Move the jar back into mods/ and restart Minecraft."
+                                            @onclick="() => Vm.PutBackAsync(entry)">
+                                        Put back
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    }
+                    <details class="mcm-expander">
+                        <summary>
+                            <span class="mcm-expander-title">@ModListSummary</span>
+                        </summary>
+                        @if (Vm.ModFiles.Count > 0)
+                        {
+                            <div class="mcm-mod-list mcm-slim-scroll">
+                                @foreach (var name in Vm.ModFiles)
+                                {
+                                    <div class="mcm-mod-row">@name</div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="mcm-expander-empty">Refresh list to load server-side mods. Requires the VM running.</p>
+                        }
+                    </details>
+                </div>
+            }
+        </div>
+    }
+    else if (IsPane("plugins") && Vm.ShowPluginsTab)
+    {
+        <div class="mcm-section-card"
+             id="mcm-server-pane-plugins"
+             role="tabpanel"
+             aria-labelledby="mcm-server-tab-plugins">
+            <div class="mcm-server-pane-head">
+                <div class="mcm-server-pane-title">
+                    <span>Plugins</span>
+                    <button type="button"
+                            class="mcm-help"
+                            title="@Vm.PluginsHelpTitle">
+                        <i class="ti ti-help" aria-hidden="true"></i>
+                        <span class="sr-only">About Plugins</span>
+                    </button>
+                </div>
+                <div class="mcm-server-actions">
+                    <button type="button"
+                            disabled="@(!Vm.CanUploadPlugin)"
+                            title="@Vm.UploadPluginTitle"
+                            @onclick="Vm.UploadPluginAsync">
+                        <i class="ti ti-upload" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
+                        Upload plugin
+                    </button>
+                    <button type="button"
+                            disabled="@Vm.AnyBusy"
+                            title="List Paper plugins on the game VM. Requires the VM running."
+                            @onclick="Vm.RefreshLivePluginsAsync">
+                        <i class="ti ti-refresh" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
+                        Refresh list
+                    </button>
+                </div>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Vm.ModdingHint))
+            {
+                <p style="margin:0 0 8px;font-size:13px;color:var(--text-muted);">@Vm.ModdingHint</p>
+            }
+            else if (Vm.PluginFiles.Count == 0)
+            {
+                <p style="margin:0 0 8px;font-size:13px;color:var(--text-muted);">@Vm.VanillaEmptyState</p>
+            }
+            <details class="mcm-expander">
+                <summary>
+                    <span class="mcm-expander-title">@PluginListSummary</span>
+                </summary>
+                @if (Vm.PluginFiles.Count > 0)
+                {
+                    <div class="mcm-mod-list mcm-slim-scroll">
+                        @foreach (var name in Vm.PluginFiles)
+                        {
+                            <div class="mcm-mod-row" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                                <span>@name</span>
+                                <button type="button"
+                                        disabled="@(!Vm.CanUploadPlugin)"
+                                        title="Delete this plugin jar and restart Minecraft."
+                                        @onclick="() => Vm.DeletePluginAsync(name)">
+                                    Delete
+                                </button>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="mcm-expander-empty">Refresh list to load Paper plugins. Requires the VM running.</p>
+                }
+            </details>
         </div>
     }
 </div>
@@ -654,8 +654,6 @@
     private string PaneClass(string id) => IsPane(id) ? "is-active" : "";
 
     private void SelectPane(string pane) => Vm.SelectServerPane(pane);
-
-    private void OpenChangePack() => SelectPane(ServerManagementViewModel.PaneChangePack);
 
     private bool ShowPackSummaryPre =>
         Vm.ShowPackSummary

@@ -37,11 +37,11 @@ public sealed class ProgressDockUxTests
     public void Change_pack_dock_is_tab_scoped(
         bool sessionOpen,
         bool onServerTab,
-        bool onChangePackPane,
+        bool onModsPane,
         bool expected) =>
         Assert.Equal(
             expected,
-            ProgressDockUx.ShowChangePackDock(sessionOpen, onServerTab, onChangePackPane));
+            ProgressDockUx.ShowChangePackDock(sessionOpen, onServerTab, onModsPane));
 
     [Theory]
     [InlineData(true, false, true)]

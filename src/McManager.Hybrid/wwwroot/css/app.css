@@ -2918,6 +2918,21 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     gap: 10px;
 }
 
+.mcm-change-pack .mcm-server-pane-head {
+    margin-bottom: 0;
+}
+
+.mcm-mods-installed {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+.mcm-mods-installed > p {
+    margin: 0 !important;
+}
+
 .mcm-change-pack-friends {
     margin: 0;
     font-size: 13px;
