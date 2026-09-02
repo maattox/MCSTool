@@ -123,6 +123,7 @@ resource "oci_functions_function" "softstop" {
     OS_NAMESPACE   = var.object_storage_namespace
     OS_BUCKET      = var.object_storage_bucket_name
     OS_LOCK_OBJECT = "meta/spend-brake-triggered.json"
+    BUDGET_ID      = oci_budget_budget.one_usd.id
   }
 }
 
