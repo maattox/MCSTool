@@ -38,6 +38,36 @@ public sealed class JvmHeapApplyTests
     }
 
     [Fact]
+    public void Dump_command_does_not_restart()
+    {
+        var cmd = JvmHeapApply.DumpExtrasCommand();
+        Assert.Contains("dump-extras", cmd, StringComparison.Ordinal);
+        Assert.DoesNotContain("daemon-reload", cmd, StringComparison.Ordinal);
+        Assert.Contains("sudo bash -c", cmd, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Set_command_reloads_systemd()
+    {
+        var cmd = JvmHeapApply.SetExtrasCommand();
+        Assert.Contains("set-extras", cmd, StringComparison.Ordinal);
+        Assert.Contains("/tmp/mcmgr-heap/extras.json", cmd, StringComparison.Ordinal);
+        Assert.Contains("systemctl daemon-reload", cmd, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Parses_extras_dump()
+    {
+        Assert.True(
+            JvmHeapApply.TryParseExtrasDump(
+                "OK extras=[\"-XX:+UseG1GC\",\"-XX:G1HeapRegionSize=8M\"]\n",
+                out var flags,
+                out var error),
+            error);
+        Assert.Equal(["-XX:+UseG1GC", "-XX:G1HeapRegionSize=8M"], flags);
+    }
+
+    [Fact]
     public void Rejects_missing_ok()
     {
         Assert.False(JvmHeapApply.TryParseOk("nope", out _, out var error));

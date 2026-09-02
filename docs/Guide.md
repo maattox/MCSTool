@@ -146,8 +146,9 @@ Choose **Vanilla** or **Modded**.
 - Supported pack formats: Modrinth `.mrpack`, CurseForge **Server Files**, or a `.zip` of `.jar` mods (you may need to confirm some details about the pack).
 - Supported loaders: Fabric, Forge, NeoForge.
 - Large packs with heavy mods will lag on this VM. In particular, skip **Distant Horizons** — generating new chunks on this size of VM causes significant lag.
-- You can change the pack later from MCSTool.
+- You can change Vanilla, Optimized Vanilla (Paper), or Modded later from **Server → Settings → Change type**. That reinstalls Minecraft on the existing VM. It is **not** a cloud Redeploy; the stack, doorbell, and play IP stay. Going from Modded back to Vanilla or Paper can strip mod blocks and items from the world unless you wipe.
 - **Modded:** players need **that same exported pack file** on their PCs.
+- Optional **World seed**. Leave it blank for a random world. MCSTool writes that seed when Minecraft generates a new world (first install, and later **Wipe world** on the Server tab). Replacing a world from a zip does not use this field.
 
 **Step 5 — Server identity**  
 Set the name, description, and icon players see in the Minecraft server list. You can change these later.
@@ -193,12 +194,13 @@ On **Advanced → Stack**:
 - **Switch server** picks another folder on this PC. Manager reloads that server’s config. It does not open a second window.
 - **Add server** asks for a name, creates an empty folder, and returns to first-run (**Deploy a new stack**, **Find an existing stack**, or **I already have a stack**). **Cancel** on that screen goes back and deletes the new folder.
 - **Rename** / **Save name** changes the label. The folder id stays the same.
+- **SSH addresses** lists the game VM and doorbell **public ephemeral** IPs (Copy each). Friends join Minecraft with the reserved **play IP** in the sidebar. These SSH addresses are for tools such as PuTTY or WinSCP. **Refresh from OCI** updates the saved SSH IPs. It does not move the play IP.
 
 Two **4 OCPU / 24 GB** game VMs cannot live in one Oracle tenancy (Always Free Ampere cap). Two servers on this PC are typically two tenancies, or Connect to a second account. Setup of a second Oracle account may need the Auth Token replaced.
 
 **Delete infrastructure** on Advanced → Danger removes **that** server’s cloud stack and its OpenTofu state. Other servers on this PC stay. The player list file in that folder is kept.
 
-**Change server size** on Advanced → Danger is 2 OCPU / 12 GB or 4 OCPU / 24 GB only, and the VM must be Stopped. **Minecraft memory (heap)** is next to it: 4G / 6G / 8G. Apply rewrites the launch line and restarts Minecraft while the VM stays up. Paper keeps its Fill/Aikar GC flags. Do not use `/reload`.
+**Change server size** on Advanced → Danger is 2 OCPU / 12 GB or 4 OCPU / 24 GB only, and the VM must be Stopped. **Minecraft memory (heap)** is next to it: 4G / 6G / 8G. Apply rewrites the launch line and restarts Minecraft while the VM stays up. Paper keeps its Fill/Aikar GC flags. **JVM flags** (below heap) edits extra non-heap Java flags. Save asks you to confirm, then restarts Minecraft; the VM stays up. Do not put `-Xms`/`-Xmx` in that box. An empty Paper save restores the Fill/Aikar defaults. Do not use `/reload`.
 
 
 
@@ -218,7 +220,8 @@ On the **Players** tab:
 On the **Server** tab:
 
 - **Identity** — name, description, and icon in the Minecraft server list.
-- **Settings** — difficulty, default game mode, max players, view distance, simulation distance (Minecraft 1.18+), PvP when that version still has a `pvp` property, spawn protection, hardcore, force game mode, and allow flight. **Save**, then **Restart** (or **Start**) so Minecraft reads the file. Name and MOTD stay on Identity.
+- **Settings** — difficulty, default game mode, max players, view distance, simulation distance (Minecraft 1.18+), PvP when that version still has a `pvp` property, spawn protection, hardcore, force game mode, and allow flight. **Save**, then **Restart** (or **Start**) so Minecraft reads the file. Name and MOTD stay on Identity. Below that, **Change server type** (Vanilla / Paper / Modded) reinstalls Minecraft on this VM; it is not a cloud Redeploy. Optional wipe (off by default). Modded needs a pack file. Going Modded → Vanilla/Paper can lose mod blocks and items.
+- **World** — cloud backups, **Replace world** from a zip, and **Wipe world**. Wipe asks for confirm, then deletes the live save and starts Minecraft so a new world generates. Optional seed on Wipe (blank = random). Replace from a zip restores that save as-is and does not use the seed field. The server must be Running.
 - **Mods** — drop a new `.mrpack` or server-pack zip to reinstall Minecraft (the world is kept unless you also wipe). Modded servers also list `mods/` and **Download pack**.
 - **Plugins** — only for a **Paper** (Optimized Vanilla) server. List, upload, and delete plugin jars in `plugins/`. Upload and delete **restart Minecraft**. Do **not** use `/reload`. Vanilla Default and modded servers do not show this subtab.
 

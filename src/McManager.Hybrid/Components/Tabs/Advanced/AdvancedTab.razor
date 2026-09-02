@@ -157,6 +157,64 @@
 
     <div class="mcm-section-card">
         <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
+            <span style="font-size:14px;font-weight:600;">SSH addresses</span>
+            <button type="button"
+                    class="mcm-help"
+                    title="These are the public ephemeral IPs MCSTool uses for SSH (PuTTY, WinSCP). Friends join Minecraft with the reserved play IP in the sidebar. Refresh reads the current primary public IP from OCI and saves it locally.">
+                <i class="ti ti-help" aria-hidden="true"></i>
+                <span class="sr-only">About SSH addresses</span>
+            </button>
+        </div>
+        <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);">
+            Friends use the reserved play IP@(string.IsNullOrWhiteSpace(Vm.PlayReservedIp) ? "" : " (" + Vm.PlayReservedIp + ")"). These addresses are for SSH tools.
+        </p>
+        <ul class="mcm-path-list">
+            <li class="mcm-path-row">
+                <div class="mcm-path-copy">
+                    <span class="mcm-path-label">Game VM</span>
+                    <span class="mcm-path-hint">Public ephemeral IP for SSH to the Minecraft VM.</span>
+                    <code class="mcm-path-value">@Vm.Vm1SshHostDisplay</code>
+                </div>
+                <div class="mcm-path-actions">
+                    <button type="button"
+                            class="mcm-copy-inline"
+                            disabled="@(!Vm.HasVm1SshHost)"
+                            title="Copy game VM SSH IP"
+                            aria-label="Copy game VM SSH IP"
+                            @onclick="Vm.CopyVm1SshHostAsync">
+                        <i class="ti ti-copy" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </li>
+            <li class="mcm-path-row">
+                <div class="mcm-path-copy">
+                    <span class="mcm-path-label">Doorbell</span>
+                    <span class="mcm-path-hint">Public ephemeral IP for SSH to the door VM.</span>
+                    <code class="mcm-path-value">@Vm.DoorSshHostDisplay</code>
+                </div>
+                <div class="mcm-path-actions">
+                    <button type="button"
+                            class="mcm-copy-inline"
+                            disabled="@(!Vm.HasDoorSshHost)"
+                            title="Copy doorbell SSH IP"
+                            aria-label="Copy doorbell SSH IP"
+                            @onclick="Vm.CopyDoorSshHostAsync">
+                        <i class="ti ti-copy" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </li>
+        </ul>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">
+            <button type="button"
+                    disabled="@(!Vm.CanRefreshSshHosts)"
+                    @onclick="Vm.RefreshSshHostsFromOciAsync">
+                Refresh from OCI
+            </button>
+        </div>
+    </div>
+
+    <div class="mcm-section-card">
+        <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
             <span style="font-size:14px;font-weight:600;">SSH keys (this PC)</span>
             <button type="button"
                     class="mcm-help"

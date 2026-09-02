@@ -225,6 +225,9 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     private string _minecraftVersion = "";
 
     [ObservableProperty]
+    private string _worldSeed = "";
+
+    [ObservableProperty]
     private string _versionCatalogNotes = "Loading Minecraft versions…";
 
     [ObservableProperty]
@@ -1755,6 +1758,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         IncludeSnapshots = state.IncludeSnapshots;
         MinecraftVersion = state.MinecraftVersion;
         _resumeMinecraftVersion = state.MinecraftVersion;
+        WorldSeed = McManager.Core.Setup.WorldSeed.Normalize(state.WorldSeed);
         PackPath = state.PackPath;
         PackKind = state.PackKind;
         PackName = state.PackName;
@@ -1821,6 +1825,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         MinecraftVersion = string.IsNullOrWhiteSpace(MinecraftVersion)
             ? _resumeMinecraftVersion
             : MinecraftVersion,
+        WorldSeed = McManager.Core.Setup.WorldSeed.Normalize(WorldSeed),
         PackPath = PackPath,
         PackKind = PackKind,
         PackName = PackName,

@@ -317,6 +317,20 @@
                         </div>
                     </div>
 
+                    <div class="mcm-field">
+                        <label for="mcm-setup-world-seed">World seed (optional)</label>
+                        <input id="mcm-setup-world-seed"
+                               type="text"
+                               maxlength="256"
+                               spellcheck="false"
+                               autocomplete="off"
+                               placeholder="Leave blank for a random world"
+                               disabled="@(!Vm.CanMutateWizard)"
+                               @bind="Vm.WorldSeed"
+                               @bind:event="oninput" />
+                    </div>
+                    <p class="mcm-wizard-hint">Used when Minecraft generates a new world. Leave blank for a random seed.</p>
+
                     @if (Vm.ShowModdedGameOptions)
                     {
                         <div class="mcm-wizard-game-follow">

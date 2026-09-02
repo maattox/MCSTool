@@ -105,7 +105,7 @@ public sealed class Vm1Settings
     public string SecondaryPrivateIpId { get; init; } = "";
 
     [JsonPropertyName("ssh_host")]
-    public string SshHost { get; init; } = "";
+    public string SshHost { get; set; } = "";
 
     [JsonPropertyName("ssh_user")]
     public string SshUser { get; init; } = "ubuntu";
@@ -142,7 +142,7 @@ public sealed class DoorSettings
     public string SecondaryPrivateIpId { get; init; } = "";
 
     [JsonPropertyName("ssh_host")]
-    public string SshHost { get; init; } = "";
+    public string SshHost { get; set; } = "";
 
     [JsonPropertyName("ssh_user")]
     public string SshUser { get; init; } = "ubuntu";

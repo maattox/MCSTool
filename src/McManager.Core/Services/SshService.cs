@@ -20,6 +20,7 @@ public interface ISshService
 
     Task<ServiceResult> WipeWorldAsync(
         Vm1Settings vm1,
+        string? levelSeed = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -76,6 +77,23 @@ public interface ISshService
         string heap,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Read non-heap JVM flags from the guest (Paper JSON or user extras).
+    /// Does not restart Minecraft.
+    /// </summary>
+    Task<ServiceResult<IReadOnlyList<string>>> DumpJvmExtraFlagsAsync(
+        Vm1Settings vm1,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Write non-heap JVM flags, daemon-reload, then restart Minecraft.
+    /// Empty Paper list restores Fill/Aikar (or G1 fallback). Does not change heap.
+    /// </summary>
+    Task<ServiceResult> ApplyJvmExtraFlagsAsync(
+        Vm1Settings vm1,
+        IReadOnlyList<string> flags,
+        CancellationToken cancellationToken = default);
+
     Task<ServiceResult> UploadMinecraftPluginAsync(
         Vm1Settings vm1,
         string localJarPath,
@@ -114,8 +132,9 @@ public sealed class SshService : ISshService
 
     public Task<ServiceResult> WipeWorldAsync(
         Vm1Settings vm1,
+        string? levelSeed = null,
         CancellationToken cancellationToken = default) =>
-        Task.Run(() => WipeWorld(vm1), cancellationToken);
+        Task.Run(() => WipeWorld(vm1, levelSeed), cancellationToken);
 
     public Task<ServiceResult> DownloadLiveWorldZipAsync(
         Vm1Settings vm1,
@@ -170,6 +189,17 @@ public sealed class SshService : ISshService
         CancellationToken cancellationToken = default) =>
         Task.Run(() => ApplyJvmHeap(vm1, heap), cancellationToken);
 
+    public Task<ServiceResult<IReadOnlyList<string>>> DumpJvmExtraFlagsAsync(
+        Vm1Settings vm1,
+        CancellationToken cancellationToken = default) =>
+        Task.Run(() => DumpJvmExtraFlags(vm1), cancellationToken);
+
+    public Task<ServiceResult> ApplyJvmExtraFlagsAsync(
+        Vm1Settings vm1,
+        IReadOnlyList<string> flags,
+        CancellationToken cancellationToken = default) =>
+        Task.Run(() => ApplyJvmExtraFlags(vm1, flags), cancellationToken);
+
     public Task<ServiceResult> UploadMinecraftPluginAsync(
         Vm1Settings vm1,
         string localJarPath,
@@ -220,6 +250,69 @@ public sealed class SshService : ISshService
     private static ServiceResult ApplyJvmHeap(Vm1Settings vm1, string heap)
     {
         var token = JvmHeapChoice.Normalize(heap);
+        return WithHeapScript(
+            vm1,
+            restartMinecraft: true,
+            extraUploads: null,
+            JvmHeapApply.RunCommand(token),
+            combined =>
+            {
+                if (!JvmHeapApply.TryParseOk(combined, out _, out var parseError))
+                    return ServiceResult.Fail(parseError ?? "Heap apply did not confirm OK.");
+                return ServiceResult.Ok();
+            });
+    }
+
+    private static ServiceResult<IReadOnlyList<string>> DumpJvmExtraFlags(Vm1Settings vm1)
+    {
+        IReadOnlyList<string>? flags = null;
+        string? fail = null;
+        var ran = WithHeapScript(
+            vm1,
+            restartMinecraft: false,
+            extraUploads: null,
+            JvmHeapApply.DumpExtrasCommand(),
+            combined =>
+            {
+                if (!JvmHeapApply.TryParseExtrasDump(combined, out var parsed, out var parseError))
+                {
+                    fail = parseError;
+                    return ServiceResult.Fail(parseError ?? "Flag dump did not confirm OK.");
+                }
+
+                flags = parsed;
+                return ServiceResult.Ok();
+            });
+        if (!ran.Succeeded)
+            return ServiceResult<IReadOnlyList<string>>.Fail(fail ?? ran.Error ?? "Flag dump failed.");
+        return ServiceResult<IReadOnlyList<string>>.Ok(flags ?? []);
+    }
+
+    private static ServiceResult ApplyJvmExtraFlags(Vm1Settings vm1, IReadOnlyList<string> flags)
+    {
+        ArgumentNullException.ThrowIfNull(flags);
+        var cleaned = JvmExtraFlags.Parse(string.Join('\n', flags));
+        var json = JsonSerializer.Serialize(cleaned);
+        return WithHeapScript(
+            vm1,
+            restartMinecraft: true,
+            extraUploads: new (string Text, string RemotePath)[] { (json, JvmHeapApply.RemoteExtrasJsonPath) },
+            JvmHeapApply.SetExtrasCommand(),
+            combined =>
+            {
+                if (!JvmHeapApply.TryParseExtrasSet(combined, out var parseError))
+                    return ServiceResult.Fail(parseError ?? "Flag apply did not confirm OK.");
+                return ServiceResult.Ok();
+            });
+    }
+
+    private static ServiceResult WithHeapScript(
+        Vm1Settings vm1,
+        bool restartMinecraft,
+        IReadOnlyList<(string Text, string RemotePath)>? extraUploads,
+        string runCommand,
+        Func<string, ServiceResult> parseStdout)
+    {
         var local = JvmHeapApply.FindLocalScript();
         if (local is null)
             return ServiceResult.Fail("Product onbox/mcmgr/common/apply-jvm-heap.py was not found.");
@@ -242,8 +335,17 @@ public sealed class SshService : ISshService
                 {
                     sftp.Connect();
                     var text = File.ReadAllText(local).Replace("\r\n", "\n").Replace("\r", "\n");
-                    using var ms = new MemoryStream(Encoding.UTF8.GetBytes(text));
-                    sftp.UploadFile(ms, JvmHeapApply.RemoteScriptPath, canOverride: true);
+                    using (var ms = new MemoryStream(Encoding.UTF8.GetBytes(text)))
+                        sftp.UploadFile(ms, JvmHeapApply.RemoteScriptPath, canOverride: true);
+                    if (extraUploads is not null)
+                    {
+                        foreach (var (payload, remote) in extraUploads)
+                        {
+                            var lf = payload.Replace("\r\n", "\n").Replace("\r", "\n");
+                            using var extra = new MemoryStream(Encoding.UTF8.GetBytes(lf));
+                            sftp.UploadFile(extra, remote, canOverride: true);
+                        }
+                    }
                 }
 
                 var strip = client.RunCommand(
@@ -254,16 +356,20 @@ public sealed class SshService : ISshService
                     return ServiceResult.Fail("Could not strip CR from heap script: " + err.Trim());
                 }
 
-                var apply = client.RunCommand(JvmHeapApply.RunCommand(token));
+                var apply = client.RunCommand(runCommand);
                 var combined = CombineOutput(apply.Result, apply.Error);
                 if (apply.ExitStatus != 0)
                 {
                     return ServiceResult.Fail(
-                        $"Heap apply failed (exit {apply.ExitStatus}): {combined.Trim()}");
+                        $"Heap script failed (exit {apply.ExitStatus}): {combined.Trim()}");
                 }
 
-                if (!JvmHeapApply.TryParseOk(combined, out _, out var parseError))
-                    return ServiceResult.Fail(parseError ?? "Heap apply did not confirm OK.");
+                var parsed = parseStdout(combined);
+                if (!parsed.Succeeded)
+                    return parsed;
+
+                if (!restartMinecraft)
+                    return ServiceResult.Ok();
 
                 var restart = RestartMinecraftWithClient(client, unit);
                 return restart.Succeeded
@@ -272,7 +378,7 @@ public sealed class SshService : ISshService
             }
             catch (Exception ex)
             {
-                return ServiceResult.Fail($"SSH heap apply failed: {ex.Message}");
+                return ServiceResult.Fail($"SSH heap script failed: {ex.Message}");
             }
         }
     }
@@ -469,7 +575,7 @@ public sealed class SshService : ISshService
         }
     }
 
-    private static ServiceResult WipeWorld(Vm1Settings vm1)
+    private static ServiceResult WipeWorld(Vm1Settings vm1, string? levelSeed)
     {
         if (!WorldWipe.TryCreate(vm1.WorldPath, out var plan, out var pathError))
             return ServiceResult.Fail(pathError ?? "vm1.world_path is invalid.");
@@ -491,6 +597,17 @@ public sealed class SshService : ISshService
                 }
 
                 stopped = true;
+
+                var seedPatch = client.RunCommand(
+                    $"sudo bash -c {EscapeShellArg(WorldSeedPatch.BuildRemoteScript(levelSeed))}");
+                if (seedPatch.ExitStatus != 0)
+                {
+                    var err = string.IsNullOrWhiteSpace(seedPatch.Error) ? seedPatch.Result : seedPatch.Error;
+                    TryStartUnit(client, unit);
+                    return ServiceResult.Fail(
+                        $"Could not update level-seed (exit {seedPatch.ExitStatus}): {err.Trim()}. "
+                        + "Attempted to start Minecraft again.");
+                }
 
                 var wipe = client.RunCommand($"sudo bash -c {EscapeShellArg(plan.RemoteScript)}");
                 if (wipe.ExitStatus != 0)

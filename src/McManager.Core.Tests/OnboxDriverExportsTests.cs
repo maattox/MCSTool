@@ -107,5 +107,36 @@ public sealed class OnboxDriverExportsTests
         Assert.Contains("JVM_XMS='6G'", exports, StringComparison.Ordinal);
         Assert.Contains("JVM_XMX='6G'", exports, StringComparison.Ordinal);
         Assert.DoesNotContain("JVM_XMS='2G'", exports, StringComparison.Ordinal);
+        Assert.DoesNotContain("LEVEL_SEED=", exports, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Build_omits_level_seed_when_blank()
+    {
+        var state = new SetupWizardState
+        {
+            ServerType = SetupServerType.Vanilla,
+            MinecraftVersion = "1.21.8",
+            WorldSeed = "   ",
+        };
+
+        var exports = OnboxDriverExports.Build(state);
+
+        Assert.DoesNotContain("LEVEL_SEED=", exports, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Build_exports_trimmed_level_seed()
+    {
+        var state = new SetupWizardState
+        {
+            ServerType = SetupServerType.Vanilla,
+            MinecraftVersion = "1.21.8",
+            WorldSeed = "  MySeed  ",
+        };
+
+        var exports = OnboxDriverExports.Build(state);
+
+        Assert.Contains("LEVEL_SEED='MySeed'", exports, StringComparison.Ordinal);
     }
 }

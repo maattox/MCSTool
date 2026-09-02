@@ -46,6 +46,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     private readonly SetupBootstrapService _bootstrap;
     private readonly IUiClock _clock;
     private readonly IUiDispatcher _dispatcher;
+    public ChangeServerTypeViewModel ChangeType { get; }
     private bool _forwardBanner;
     private string? _currentMinecraftVersion;
     private string? _currentLoaderOrDistribution;
@@ -100,6 +101,9 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     private string _lastBackupDisplay = "—";
 
     [ObservableProperty]
+    private string _wipeWorldSeed = "";
+
+    [ObservableProperty]
     private string _backupStorageDisplay = "—";
 
     [ObservableProperty]
@@ -133,7 +137,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
     public bool HasObjectStorage => _backups is not null;
 
-    public bool AnyBusy => IsBusy || IsModdingBusy || IsAnalyzingPack;
+    public bool AnyBusy =>
+        IsBusy || IsModdingBusy || IsAnalyzingPack || ChangeType.IsBusy || ChangeType.IsAnalyzingPack;
 
     public bool Vm1IsRunning => ManagePowerUx.IsVm1Running(_main.Vm1Lifecycle);
 
@@ -360,6 +365,12 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     public string MotdPreview =>
         ServerIdentityUx.BuildMotd(IdentityName, IdentityDescription);
 
+    public string? CurrentServerKind => _currentLoaderOrDistribution;
+
+    public string? CurrentMinecraftVersion => _currentMinecraftVersion;
+
+    public string ServerKindDisplay => ChangeServerTypeUx.KindLabel(_currentLoaderOrDistribution);
+
     public string SettingsHelpTitle =>
         "Gameplay settings are stored in the cloud and written to server.properties the next time Minecraft starts. Save, then Restart (or Start). Name, icon, and MOTD stay on Identity. PvP and simulation distance hide when this Minecraft version does not have those keys.";
 
@@ -547,6 +558,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         NotificationCenter notices,
         ActionBanner banner,
         SetupBootstrapService bootstrap,
+        ChangeServerTypeViewModel changeType,
         IUiClock clock,
         IUiDispatcher dispatcher)
     {
@@ -559,6 +571,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         _notices = notices;
         _banner = banner;
         _bootstrap = bootstrap;
+        ChangeType = changeType;
         _clock = clock;
         _dispatcher = dispatcher;
 
@@ -566,6 +579,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         _forwardBanner = true;
         _session.Reloaded += OnSessionReloaded;
         _main.PropertyChanged += OnMainPropertyChanged;
+        ChangeType.PropertyChanged += OnChangeTypePropertyChanged;
+        ChangeType.Completed += OnChangeTypeCompleted;
     }
 
     partial void OnStatusMessageChanged(string value)
@@ -953,12 +968,18 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
             ? "There is no shared backup storage configured, so this cannot be undone from Manager."
             : "Cloud backups (Download World Save) are kept. Download one first if you might want this world back.";
 
+        var seed = McManager.Core.Setup.WorldSeed.Normalize(WipeWorldSeed);
+        var seedNote = seed.Length == 0
+            ? "The new world will use a random seed (level-seed is cleared)."
+            : "The new world will use seed \"" + seed + "\".";
+
         var confirmed = await _dialogs.ConfirmAsync(
             "Wipe the live world?",
             "This deletes the current world on the server at "
             + $"{plan.WorldPath}. Minecraft will be stopped, that folder removed, and Minecraft started again "
             + "so a new world generates. This cannot be undone except by restoring a backup. "
-            + "Mods, loader files, and server.properties are not deleted. "
+            + "Mods, loader files, and server.properties stay (except the seed). "
+            + seedNote + " "
             + backupHint,
             "Wipe world");
         if (!confirmed)
@@ -973,7 +994,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
         try
         {
-            var result = await _ssh.WipeWorldAsync(_config.Vm1);
+            var result = await _ssh.WipeWorldAsync(_config.Vm1, seed);
             StatusMessage = result.Succeeded
                 ? $"Live world wiped at {plan.WorldPath}. Minecraft start requested. "
                   + "Cloud backups were not deleted."
@@ -1930,6 +1951,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         OnPropertyChanged(nameof(CanActOnQuarantine));
         OnPropertyChanged(nameof(IsPaperServer));
         OnPropertyChanged(nameof(ShowPluginsTab));
+        OnPropertyChanged(nameof(ServerKindDisplay));
         OnPropertyChanged(nameof(CanUploadPlugin));
         OnPropertyChanged(nameof(UploadPluginTitle));
         OnPropertyChanged(nameof(CanDeletePlugin));
@@ -2078,6 +2100,29 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         StopPackElapsedTicker();
         _session.Reloaded -= OnSessionReloaded;
         _main.PropertyChanged -= OnMainPropertyChanged;
+        ChangeType.PropertyChanged -= OnChangeTypePropertyChanged;
+        ChangeType.Completed -= OnChangeTypeCompleted;
+    }
+
+    private void OnChangeTypePropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(ChangeServerTypeViewModel.IsBusy)
+            or nameof(ChangeServerTypeViewModel.IsAnalyzingPack)
+            or nameof(ChangeServerTypeViewModel.ModalOpen)
+            or null)
+            NotifyModdingCommands();
+    }
+
+    private void OnChangeTypeCompleted(object? sender, EventArgs e) =>
+        _ = RefreshMinecraftVersionAsync();
+
+    public async Task HandoffChangePackAsync(string? packPath, bool wipeWorld)
+    {
+        WipeWorld = wipeWorld;
+        ShowChangePackUi = true;
+        SelectServerPane(PaneModding);
+        if (!string.IsNullOrWhiteSpace(packPath) && File.Exists(packPath))
+            await AnalyzePackPathAsync(packPath);
     }
 
     partial void OnIsBusyChanged(bool value) => NotifyModdingCommands();

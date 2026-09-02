@@ -151,10 +151,11 @@
     }
     else if (IsPane("settings"))
     {
-        <div class="mcm-section-card"
+        <div class="mcm-pane-stack"
              id="mcm-server-pane-settings"
              role="tabpanel"
              aria-labelledby="mcm-server-tab-settings">
+        <div class="mcm-section-card">
             <div class="mcm-server-pane-head">
                 <div class="mcm-server-pane-title">
                     <span>Gameplay settings</span>
@@ -286,6 +287,29 @@
                 <p style="margin:8px 0 0;font-size:13px;color:var(--text-secondary);white-space:pre-wrap;">@Vm.SettingsStatus</p>
             }
         </div>
+        <div class="mcm-section-card">
+            <div class="mcm-server-pane-head">
+                <div class="mcm-server-pane-title">
+                    <span>@ChangeServerTypeUx.SectionTitle</span>
+                    <button type="button"
+                            class="mcm-help"
+                            title="@ChangeServerTypeUx.SectionHelp">
+                        <i class="ti ti-help" aria-hidden="true"></i>
+                        <span class="sr-only">About changing server type</span>
+                    </button>
+                </div>
+                <button type="button"
+                        disabled="@Vm.AnyBusy"
+                        title="Opens a dialog to reinstall Vanilla, Paper, or a mod pack on this existing VM."
+                        @onclick="OpenChangeTypeAsync">
+                    @ChangeServerTypeUx.OpenButton
+                </button>
+            </div>
+            <p class="mcm-server-facts">
+                Now @Vm.ServerKindDisplay · Minecraft @Vm.MinecraftVersionDisplay. Reinstalls Minecraft on this VM. The cloud stack, doorbell, and play IP stay. This is not a Redeploy.
+            </p>
+        </div>
+    </div>
     }
     else if (IsPane("world"))
     {
@@ -332,6 +356,19 @@
                         Replace world
                     </button>
                 </div>
+            </div>
+            <div class="mcm-field" style="max-width:28rem;margin:0 0 12px;">
+                <label for="mcm-world-wipe-seed">World seed (Wipe world)</label>
+                <input id="mcm-world-wipe-seed"
+                       type="text"
+                       maxlength="256"
+                       spellcheck="false"
+                       autocomplete="off"
+                       placeholder="Leave blank for a random world"
+                       disabled="@Vm.AnyBusy"
+                       @bind="Vm.WipeWorldSeed"
+                       @bind:event="oninput" />
+                <p class="mcm-wizard-hint">Leave blank for a random seed. Used only when you Wipe world — not Replace.</p>
             </div>
             <p class="mcm-server-facts">
                 Last backup @Vm.LastBackupDisplay · Backup storage @Vm.BackupStorageDisplay
@@ -648,6 +685,181 @@
     }
 </div>
 
+@if (Vm.ChangeType.ModalOpen)
+{
+    <div class="mcm-modal-overlay open"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="mcm-change-type-title"
+         tabindex="-1"
+         @onclick="OnChangeTypeOverlayClick"
+         @onkeydown="OnChangeTypeKeyDown">
+        <div class="mcm-modal-card is-wide mcm-change-type-card" @onclick:stopPropagation="true">
+            <h2 id="mcm-change-type-title" class="mcm-modal-title">@ChangeServerTypeUx.ModalTitle</h2>
+            <p class="mcm-settings-note">
+                Now @Vm.ChangeType.CurrentKindLabel · Minecraft @Vm.ChangeType.CurrentVersionLabel.
+            </p>
+            <fieldset class="mcm-wizard-fieldset" style="margin:10px 0 8px;border:0;padding:0;">
+                <legend class="sr-only">Server type</legend>
+                <div class="mcm-radio-row @(Vm.ChangeType.TargetChoice == ChangeServerTypeUx.ChoiceDefaultVanilla ? "is-selected" : null)">
+                    <label class="mcm-check-hit">
+                        <input type="radio"
+                               name="mcm-change-type"
+                               disabled="@Vm.ChangeType.IsBusy"
+                               checked="@(Vm.ChangeType.TargetChoice == ChangeServerTypeUx.ChoiceDefaultVanilla)"
+                               @onchange="@(() => Vm.ChangeType.TargetChoice = ChangeServerTypeUx.ChoiceDefaultVanilla)" />
+                        <span>@ChangeServerTypeUx.LabelDefaultVanilla</span>
+                    </label>
+                    <WizardHelp Title="@Vm.ChangeType.DefaultVanillaHelp" AriaLabel="About Default Vanilla" />
+                </div>
+                <div class="mcm-radio-row @(Vm.ChangeType.IsPaperTarget ? "is-selected" : null)">
+                    <label class="mcm-check-hit">
+                        <input type="radio"
+                               name="mcm-change-type"
+                               disabled="@Vm.ChangeType.IsBusy"
+                               checked="@Vm.ChangeType.IsPaperTarget"
+                               @onchange="@(() => Vm.ChangeType.TargetChoice = ChangeServerTypeUx.ChoicePaper)" />
+                        <span>@ChangeServerTypeUx.LabelPaper</span>
+                    </label>
+                    <WizardHelp Title="@Vm.ChangeType.PaperHelp" AriaLabel="About Paper" />
+                </div>
+                <div class="mcm-radio-row @(Vm.ChangeType.IsModdedTarget ? "is-selected" : null)">
+                    <label class="mcm-check-hit">
+                        <input type="radio"
+                               name="mcm-change-type"
+                               disabled="@Vm.ChangeType.IsBusy"
+                               checked="@Vm.ChangeType.IsModdedTarget"
+                               @onchange="@(() => Vm.ChangeType.TargetChoice = ChangeServerTypeUx.ChoiceModded)" />
+                        <span>@ChangeServerTypeUx.LabelModded</span>
+                    </label>
+                    <WizardHelp Title="@Vm.ChangeType.ModdedHelp" AriaLabel="About Modded" />
+                </div>
+            </fieldset>
+            @if (Vm.ChangeType.ShowVersionDropdown)
+            {
+                @if (Vm.ChangeType.ShowSnapshotToggle)
+                {
+                    <label class="mcm-checkbox-row">
+                        <input type="checkbox"
+                               disabled="@Vm.ChangeType.IsBusy"
+                               @bind="Vm.ChangeType.IncludeSnapshots" />
+                        <span>Advanced: include snapshots</span>
+                    </label>
+                }
+                <div class="mcm-field">
+                    <label for="mcm-change-type-version">Minecraft version</label>
+                    <select id="mcm-change-type-version"
+                            disabled="@(Vm.ChangeType.IsBusy || Vm.ChangeType.VersionIds.Count == 0)"
+                            @bind="Vm.ChangeType.MinecraftVersion">
+                        @if (!string.IsNullOrWhiteSpace(Vm.ChangeType.MinecraftVersion)
+                             && !Vm.ChangeType.VersionIds.Contains(Vm.ChangeType.MinecraftVersion))
+                        {
+                            <option value="@Vm.ChangeType.MinecraftVersion">@Vm.ChangeType.MinecraftVersion</option>
+                        }
+                        @foreach (var id in Vm.ChangeType.VersionIds)
+                        {
+                            <option value="@id">@id</option>
+                        }
+                    </select>
+                </div>
+                <p class="mcm-wizard-hint">@Vm.ChangeType.VersionCatalogNotes</p>
+            }
+            @if (Vm.ChangeType.ShowPackDrop)
+            {
+                <p class="mcm-wizard-hint">Minecraft version comes from the pack. Players need that same file to join.</p>
+                <div class="mcm-pack-drop @(Vm.ChangeType.IsAnalyzingPack ? "is-busy" : "")"
+                     aria-label="@PackReplaceUx.DropTitle">
+                    <InputFile class="mcm-pack-drop-input"
+                               OnChange="OnChangeTypePackInputAsync"
+                               accept=".mrpack,.zip"
+                               disabled="@(Vm.ChangeType.IsBusy || Vm.ChangeType.IsAnalyzingPack)" />
+                    <i class="ti ti-file-zip" aria-hidden="true"></i>
+                    <p class="mcm-pack-drop-title">@PackReplaceUx.DropTitle</p>
+                    <p class="mcm-change-pack-drop-sub">@PackReplaceUx.DropFormats</p>
+                </div>
+                <div class="mcm-wizard-actions" style="margin:8px 0;">
+                    <button type="button"
+                            disabled="@(Vm.ChangeType.IsBusy || Vm.ChangeType.IsAnalyzingPack)"
+                            @onclick="Vm.ChangeType.PickPackAsync">
+                        Choose pack file…
+                    </button>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(Vm.ChangeType.PackBlockReason))
+                {
+                    <p class="mcm-settings-error">@Vm.ChangeType.PackBlockReason</p>
+                }
+                @if (Vm.ChangeType.ShowPackChecks)
+                {
+                    <pre class="mcm-wizard-log mcm-wizard-mono mcm-slim-scroll mcm-pack-summary">@Vm.ChangeType.PackSummary</pre>
+                    <label class="mcm-checkbox-row">
+                        <input type="checkbox"
+                               disabled="@Vm.ChangeType.IsBusy"
+                               @bind="Vm.ChangeType.PackConfirmed" />
+                        <span>@Vm.ChangeType.PackConfirmLabel</span>
+                    </label>
+                    <label class="mcm-checkbox-row">
+                        <input type="checkbox"
+                               disabled="@Vm.ChangeType.IsBusy"
+                               @bind="Vm.ChangeType.ClientPackAcknowledged" />
+                        <span>@Vm.ChangeType.ClientPackAckLabel</span>
+                    </label>
+                }
+                @if (Vm.ChangeType.ShowReviewOnMods)
+                {
+                    <p class="mcm-prefix-warn">@ChangeServerTypeUx.PackNeedsReview</p>
+                    <button type="button"
+                            disabled="@Vm.ChangeType.IsBusy"
+                            @onclick="ReviewPackOnModsAsync">
+                        Review on Mods
+                    </button>
+                }
+            }
+            <label class="mcm-checkbox-row">
+                <input type="checkbox"
+                       disabled="@Vm.ChangeType.IsBusy"
+                       @bind="Vm.ChangeType.WipeWorld" />
+                <span>@Vm.ChangeType.WipeWorldLabel</span>
+            </label>
+            @if (Vm.ChangeType.ShowDirectionWarning || Vm.ChangeType.ShowSaveCompatibilityWarning)
+            {
+                <div class="mcm-change-pack-warnings">
+                    @if (Vm.ChangeType.ShowDirectionWarning)
+                    {
+                        <aside class="mcm-pack-list-warning" role="status">
+                            <p>@Vm.ChangeType.DirectionWarning</p>
+                        </aside>
+                    }
+                    @if (Vm.ChangeType.ShowSaveCompatibilityWarning)
+                    {
+                        <aside class="mcm-pack-list-warning" role="status">
+                            <p>@Vm.ChangeType.SaveCompatibilityWarning</p>
+                        </aside>
+                    }
+                </div>
+            }
+            <p class="mcm-settings-note">@Vm.ChangeType.ConfirmHint</p>
+            @if (!string.IsNullOrWhiteSpace(Vm.ChangeType.StatusMessage))
+            {
+                <p style="margin:8px 0 0;font-size:13px;color:var(--text-secondary);white-space:pre-wrap;">@Vm.ChangeType.StatusMessage</p>
+            }
+            <div class="mcm-modal-actions">
+                <button type="button"
+                        disabled="@Vm.ChangeType.IsBusy"
+                        @onclick="Vm.ChangeType.CloseModal">
+                    Cancel
+                </button>
+                <button type="button"
+                        class="mcm-primary"
+                        disabled="@(!Vm.ChangeType.CanSubmit)"
+                        title="@(Vm.ChangeType.CanSubmit ? Vm.ChangeType.ConfirmHint : Vm.ChangeType.SubmitDisabledReason)"
+                        @onclick="Vm.ChangeType.ApplyAsync">
+                    @ChangeServerTypeUx.PrimaryAction
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private bool IsPane(string id) => Vm.IsServerPane(id);
 
@@ -687,6 +899,7 @@
     protected override void OnInitialized()
     {
         Vm.PropertyChanged += OnVmChanged;
+        Vm.ChangeType.PropertyChanged += OnVmChanged;
         Vm.Backups.CollectionChanged += OnBackupsChanged;
         Vm.ModFiles.CollectionChanged += OnModsChanged;
         Vm.PluginFiles.CollectionChanged += OnPluginsChanged;
@@ -703,10 +916,55 @@
     public void Dispose()
     {
         Vm.PropertyChanged -= OnVmChanged;
+        Vm.ChangeType.PropertyChanged -= OnVmChanged;
         Vm.Backups.CollectionChanged -= OnBackupsChanged;
         Vm.ChatTemplates.CollectionChanged -= OnChatChanged;
         Vm.ModFiles.CollectionChanged -= OnModsChanged;
         Vm.PluginFiles.CollectionChanged -= OnPluginsChanged;
+    }
+
+    private Task OpenChangeTypeAsync() =>
+        Vm.ChangeType.OpenAsync(Vm.CurrentServerKind, Vm.CurrentMinecraftVersion);
+
+    private async Task ReviewPackOnModsAsync()
+    {
+        var path = Vm.ChangeType.PackPath;
+        var wipe = Vm.ChangeType.WipeWorld;
+        Vm.ChangeType.CloseModal();
+        await Vm.HandoffChangePackAsync(path, wipe);
+    }
+
+    private void OnChangeTypeOverlayClick()
+    {
+        if (!Vm.ChangeType.IsBusy)
+            Vm.ChangeType.CloseModal();
+    }
+
+    private void OnChangeTypeKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape" && !Vm.ChangeType.IsBusy)
+            Vm.ChangeType.CloseModal();
+    }
+
+    private async Task OnChangeTypePackInputAsync(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file is null)
+            return;
+
+        try
+        {
+            await using var stream = file.OpenReadStream(PackReplaceUx.PackDropMaxBytes);
+            await Vm.ChangeType.ImportDroppedPackAsync(file.Name, stream);
+        }
+        catch (IOException ex)
+        {
+            Vm.ChangeType.StatusMessage = "Could not read the dropped file. Use Choose pack file. " + ex.Message;
+        }
+        catch (InvalidOperationException ex)
+        {
+            Vm.ChangeType.StatusMessage = "Drop failed. Use Choose pack file. " + ex.Message;
+        }
     }
 
     private async Task OnPackInputAsync(InputFileChangeEventArgs e)

@@ -110,6 +110,12 @@ public sealed class SetupWizardState
     [JsonPropertyName("minecraft_version")]
     public string MinecraftVersion { get; set; } = "";
 
+    /// <summary>
+    /// Optional world seed for first world generation. Blank = Minecraft random.
+    /// </summary>
+    [JsonPropertyName("world_seed")]
+    public string WorldSeed { get; set; } = "";
+
     /// <summary>Local path of the imported pack archive (Modded branch). Not a secret.</summary>
     [JsonPropertyName("pack_path")]
     public string PackPath { get; set; } = "";

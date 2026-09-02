@@ -168,12 +168,14 @@ flags=json.loads(os.environ.get("PAPER_JVM_FLAGS_JSON") or "[]")
 flags=[str(x).strip() for x in flags if str(x).strip() and not str(x).startswith("-Xms") and not str(x).startswith("-Xmx")]
 if not flags:
     flags=["-XX:+UseG1GC"]
-path=os.environ.get("ETC_MCMGR","/etc/mcmgr") + "/paper-jvm-flags.json"
-open(path,"w",encoding="utf-8",newline="\n").write(json.dumps(flags)+"\n")
+etc=os.environ.get("ETC_MCMGR","/etc/mcmgr")
+payload=json.dumps(flags)+"\n"
+open(etc+"/paper-jvm-flags.json","w",encoding="utf-8",newline="\n").write(payload)
+open(etc+"/paper-jvm-flags.default.json","w",encoding="utf-8",newline="\n").write(payload)
 '
       if [[ "${DRY_RUN}" != "1" ]]; then
-        chown root:mcmgr "${ETC_MCMGR}/paper-jvm-flags.json" 2>/dev/null || true
-        chmod 0640 "${ETC_MCMGR}/paper-jvm-flags.json" 2>/dev/null || true
+        chown root:mcmgr "${ETC_MCMGR}/paper-jvm-flags.json" "${ETC_MCMGR}/paper-jvm-flags.default.json" 2>/dev/null || true
+        chmod 0640 "${ETC_MCMGR}/paper-jvm-flags.json" "${ETC_MCMGR}/paper-jvm-flags.default.json" 2>/dev/null || true
       fi
       launch_args+=("-jar" "${ARTIFACT_FILENAME}" "--nogui")
     elif [[ "${DISTRIBUTION}" == "fabric" ]]; then
