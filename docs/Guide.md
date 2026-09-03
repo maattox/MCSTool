@@ -47,8 +47,8 @@ Setup also creates a last-resort **$1 monthly budget**. If spend ever reaches $1
 
 ![OCI Console search results for Upgrade and Manage Payment](../assets/guide-images/1.2.png)
 
-1. Under **Pay As You Go**, review your information and click **Upgrade your account**.
-2. Review the confirmation and click **Upgrade account**.
+3. Under **Pay As You Go**, review your information and click **Upgrade your account**.
+4. Review the confirmation and click **Upgrade account**.
 
 - The upgrade can take a day or two. Oracle emails you when it is complete.
 
@@ -69,34 +69,34 @@ Setup also creates a last-resort **$1 monthly budget**. If spend ever reaches $1
 
 ![OCI Console profile menu with User settings highlighted](../assets/guide-images/2.1.png)
 
-1. Open the **Tokens and keys** tab and click **Add API key**.
+3. Open the **Tokens and keys** tab and click **Add API key**.
 
 ![User settings Tokens and keys tab with Add API key highlighted](../assets/guide-images/2.2.png)
 
-1. Select **Generate API key pair**.
-2. On your PC, create a folder named `.oci` at `C:\Users\YourUser` (use your Windows user name).
-3. In that folder, create a file named `config` with **no file extension**. To do that, enable **File name extensions** in File Explorer, then create and rename a text file and remove `.txt`.
+4. Select **Generate API key pair**.
+5. On your PC, create a folder named `.oci` at `C:\Users\YourUser` (use your Windows user name).
+6. In that folder, create a file named `config` with **no file extension**. To do that, enable **File name extensions** in File Explorer, then create and rename a text file and remove `.txt`.
 
 ![File Explorer View tab with File name extensions enabled](../assets/guide-images/2.3.png)
 
-1. Download the **private** and **public** keys and move both files into `C:\Users\YourUser\.oci`.
+7. Download the **private** and **public** keys and move both files into `C:\Users\YourUser\.oci`.
 
 - At this point, the `.oci` folder should contain the `config` file you created and both the public and private key you downloaded.
 
-1. Back in the OCI Console, click **Add**.
+8. Back in the OCI Console, click **Add**.
 
 ![Add API key dialog with Generate API key pair selected and Add highlighted](../assets/guide-images/2.4.png)
 
-1. Copy the configuration file preview.
+9. Copy the configuration file preview.
 
 ![Configuration file preview with the Copy button highlighted](../assets/guide-images/2.5.png)
 
-1. Open the `config` file in a text editor and paste the snippet.
-2. Set the `key_file` line to the full path of the **private** key in your `.oci` folder. Your file name will be different from the example.
+10. Open the `config` file in a text editor and paste the snippet.
+11. Set the `key_file` line to the full path of the **private** key in your `.oci` folder. Your file name will be different from the example.
 
 ![Notepad config file with key_file path filled in](../assets/guide-images/2.6.png)
 
-1. Save the file.
+12. Save the file.
 
 
 
@@ -106,8 +106,8 @@ Setup also creates a last-resort **$1 monthly budget**. If spend ever reaches $1
 
 ![Auth tokens section with Generate token highlighted](../assets/guide-images/2.7.png)
 
-1. Enter any description and click **Generate token**.
-2. **Copy the token immediately** and save it somewhere safe. You will paste it into the Setup wizard later. Oracle will not show it again.
+2. Enter any description and click **Generate token**.
+3. **Copy the token immediately** and save it somewhere safe. You will paste it into the Setup wizard later. Oracle will not show it again.
 
 ![Generate token dialog with Copy highlighted](../assets/guide-images/2.8.png)
 
@@ -131,8 +131,8 @@ Setup also creates a last-resort **$1 monthly budget**. If spend ever reaches $1
 
 ### Walk through the wizard
 
-1. Open **MCSTool**. On first launch, select **Deploy a new stack**.
-2. Work through the pages:
+3. Open **MCSTool**. On first launch, select **Deploy a new stack**.
+4. Work through the pages:
 
 **Step 1 — Disclaimers**  
 Read them and confirm you understand them. This includes Always Free limits and the $1 last-resort budget.
