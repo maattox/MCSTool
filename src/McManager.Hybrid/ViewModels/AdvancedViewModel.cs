@@ -371,6 +371,7 @@ public sealed partial class AdvancedViewModel : ObservableObject
             if (string.IsNullOrWhiteSpace(NewServerName))
                 NewServerName = ServerCatalog.SuggestDisplayName(_configHost.PlayIp);
             OnPropertyChanged(nameof(ShowServerSwitcher));
+            _chrome.RefreshServerLabel();
         }
         finally
         {

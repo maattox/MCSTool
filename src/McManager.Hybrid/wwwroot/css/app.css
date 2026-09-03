@@ -227,6 +227,35 @@ button.mcm-btn-disabled:hover {
     max-width: 42vw;
 }
 
+.mcm-caption-server-select {
+    pointer-events: auto;
+    flex: 0 1 auto;
+    width: auto;
+    max-width: min(220px, 36vw);
+    height: 24px;
+    margin: 0 8px;
+    padding: 0 8px;
+    border: 0.5px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface-1);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-family: inherit;
+    line-height: 22px;
+    cursor: pointer;
+}
+
+.mcm-caption-server-select:hover:not(:disabled),
+.mcm-caption-server-select:focus-visible {
+    color: var(--text-secondary);
+    border-color: var(--border-strong);
+}
+
+.mcm-caption-server-select:focus-visible {
+    outline: 2px solid var(--fill-accent);
+    outline-offset: 1px;
+}
+
 .mcm-caption-actions {
     display: flex;
     align-items: stretch;
@@ -2935,6 +2964,36 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 
 .mcm-mods-installed > p {
     margin: 0 !important;
+}
+
+.mcm-mods-advanced {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+    margin-top: 4px;
+    padding-top: 12px;
+    border-top: 0.5px solid var(--border);
+}
+
+.mcm-mods-advanced-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.mcm-mods-advanced-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.mcm-mods-advanced .mcm-expander {
+    margin-top: 0;
+    border-top: 0;
+    padding-top: 0;
 }
 
 .mcm-change-pack-friends {

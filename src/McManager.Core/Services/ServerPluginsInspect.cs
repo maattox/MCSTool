@@ -65,12 +65,8 @@ public static class ServerPluginsInspect
         return true;
     }
 
-    public static bool IsSafeJarName(string name)
-    {
-        if (!ServerModsInspect.IsSafeFileName(name))
-            return false;
-        return name.EndsWith(".jar", StringComparison.OrdinalIgnoreCase);
-    }
+    public static bool IsSafeJarName(string name) =>
+        ServerModsInspect.IsSafeJarName(name);
 
     public static string StagingRemotePath(string fileName) =>
         "/tmp/mcmgr-plugin-upload/" + fileName;

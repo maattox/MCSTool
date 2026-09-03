@@ -206,8 +206,9 @@ On the **Server** tab:
 - **Identity** — name, description, and icon in the Minecraft server list.
 - **Settings** — difficulty, default game mode, max players, view distance, simulation distance, PvP, spawn protection, hardcore, force game mode, and allow flight. **Save**, then **Restart** (or **Start**) so Minecraft reads the file. Below that, **Change server type** (Vanilla / Paper / Modded) reinstalls Minecraft on this VM. Optional wipe (off by default). Modded needs a pack file.
 - **World** — cloud backups, **Replace world** from a zip, and **Wipe world**.
-- **Mods** — drop a new `.mrpack` or server-pack zip to reinstall Minecraft.
+- **Mods** — drop a new `.mrpack` or server-pack zip to change the modpack. At the bottom of this menu, you can add or delete a single `.jar` in `mods/`.
 - **Plugins** — only for a **Paper** (Optimized Vanilla) server. List, upload, and delete plugin jars in `plugins/`. Upload and delete **restart Minecraft**. Do **not** use `/reload`. Vanilla Default and modded servers do not show this subtab.
+
 
 
 

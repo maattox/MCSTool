@@ -24,6 +24,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     private static readonly FileTypeFilter PackFilter = new("Modpack archives", ".mrpack", ".zip");
     private static readonly FileTypeFilter MrpackFilter = new("Modrinth pack", ".mrpack");
     private static readonly FileTypeFilter JarFilter = new("Java plugin jar", ".jar");
+    private static readonly FileTypeFilter ModJarFilter = new("Java mod jar", ".jar");
     private static readonly TimeSpan PackElapsedTickPeriod = TimeSpan.FromSeconds(1);
 
     private ManagerLocalConfig? _config;
@@ -284,6 +285,26 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
                     : "Wait until the current action finishes."));
 
     public bool CanDeletePlugin => CanUploadPlugin && PluginFiles.Count > 0;
+
+    public bool CanUploadMod =>
+        IsModdedServer && Vm1IsRunning && !AnyBusy;
+
+    public string UploadModTitle =>
+        CanUploadMod
+            ? "Add a .jar to mods/. Bypasses pack checks. Minecraft restarts after install."
+            : (!IsModdedServer
+                ? ModdingPanelLogic.VanillaEmptyState
+                : (!Vm1IsRunning
+                    ? ModdingPanelLogic.VmStoppedHint
+                    : "Wait until the current action finishes."));
+
+    public string AdvancedJarWarning => ModdingPanelLogic.AdvancedJarWarning;
+
+    public bool CanDeleteModFile(string fileName) =>
+        CanUploadMod && ServerModsInspect.IsSafeJarName(fileName);
+
+    public bool IsSafeModJarName(string fileName) =>
+        ServerModsInspect.IsSafeJarName(fileName);
 
     public const string PaneIdentity = "identity";
     public const string PaneSettings = "settings";
@@ -1333,6 +1354,90 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         await RefreshLivePluginsAsync();
     }
 
+    public async Task UploadModAsync()
+    {
+        if (!CanUploadMod || _config is null)
+            return;
+
+        var path = await _filePicker.OpenFileAsync(new FilePickRequest
+        {
+            Title = "Add mod jar",
+            Filters = [ModJarFilter],
+        });
+        if (string.IsNullOrWhiteSpace(path))
+            return;
+
+        var name = Path.GetFileName(path);
+        if (!ServerModsInspect.IsSafeJarName(name))
+        {
+            _banner.Show("That file name is not a safe .jar name.", ActionBannerSeverity.Error);
+            return;
+        }
+
+        var confirmed = await _dialogs.ConfirmAsync(
+            "Add mod jar and restart Minecraft?",
+            "Install "
+            + name
+            + " into mods/ and restart Minecraft. This bypasses automatic pack checks. "
+            + "Players still need matching client mods.",
+            confirmButtonText: "Add and restart");
+        if (!confirmed)
+            return;
+
+        IsModdingBusy = true;
+        try
+        {
+            var result = await _ssh.UploadMinecraftModAsync(_config.Vm1, path);
+            if (!result.Succeeded)
+            {
+                _banner.Show(result.Error ?? "Mod upload failed.", ActionBannerSeverity.Error);
+                return;
+            }
+
+            _banner.Show("Installed " + name + ". Minecraft restarted.", ActionBannerSeverity.Success);
+        }
+        finally
+        {
+            IsModdingBusy = false;
+        }
+
+        await RefreshLiveModsAsync();
+    }
+
+    public async Task DeleteModAsync(string fileName)
+    {
+        if (!CanDeleteModFile(fileName) || _config is null)
+            return;
+
+        var confirmed = await _dialogs.ConfirmAsync(
+            "Delete mod jar and restart Minecraft?",
+            "Remove "
+            + fileName
+            + " from mods/ and restart Minecraft. This bypasses automatic pack checks.",
+            confirmButtonText: "Delete and restart");
+        if (!confirmed)
+            return;
+
+        IsModdingBusy = true;
+        try
+        {
+            var result = await _ssh.DeleteMinecraftModAsync(_config.Vm1, fileName);
+            if (!result.Succeeded)
+            {
+                _banner.Show(result.Error ?? "Mod delete failed.", ActionBannerSeverity.Error);
+                return;
+            }
+
+            _banner.Show("Removed " + fileName + ". Minecraft restarted.", ActionBannerSeverity.Success);
+        }
+        finally
+        {
+            IsModdingBusy = false;
+        }
+
+        await RefreshLiveModsAsync();
+    }
+
     private void BindQuarantined(IReadOnlyList<QuarantinedFileEntry> entries)
     {
         QuarantinedMods.Clear();
@@ -1955,6 +2060,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         OnPropertyChanged(nameof(CanUploadPlugin));
         OnPropertyChanged(nameof(UploadPluginTitle));
         OnPropertyChanged(nameof(CanDeletePlugin));
+        OnPropertyChanged(nameof(CanUploadMod));
+        OnPropertyChanged(nameof(UploadModTitle));
         OnPropertyChanged(nameof(ModdingHelpTitle));
         OnPropertyChanged(nameof(VanillaEmptyState));
         NotifyPackIdentityUi();

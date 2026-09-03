@@ -68,9 +68,12 @@ public sealed partial class ChromeViewModel : ObservableObject
 
     public string ActiveServerLabel => ServerCatalog.CaptionLabel(_configHost.PlayIp);
 
+    public bool ShowCaptionServerSelect => ServerCatalog.ShowCaptionSwitcher;
+
     public void RefreshServerLabel()
     {
         OnPropertyChanged(nameof(ActiveServerLabel));
+        OnPropertyChanged(nameof(ShowCaptionServerSelect));
         RefreshPaths();
     }
 

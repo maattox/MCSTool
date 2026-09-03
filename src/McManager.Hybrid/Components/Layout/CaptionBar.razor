@@ -1,13 +1,24 @@
 @inject IWindowChromeService WindowChrome
 @inject ChromeViewModel Chrome
+@inject AdvancedViewModel Advanced
 @implements IDisposable
 
 <header class="mcm-caption">
     <div class="mcm-caption-drag"
          @onpointerdown="OnDragPointerDown">
-        @if (!string.IsNullOrWhiteSpace(Chrome.ActiveServerLabel))
+        @if (Chrome.ShowCaptionServerSelect)
         {
-            <span class="mcm-caption-server">@Chrome.ActiveServerLabel</span>
+            <select class="mcm-caption-server-select"
+                    aria-label="Server"
+                    disabled="@Advanced.IsBusy"
+                    @bind="Advanced.SelectedServerId"
+                    @bind:event="onchange"
+                    @onpointerdown:stopPropagation="true">
+                @foreach (var server in Advanced.Servers)
+                {
+                    <option value="@server.Id">@CaptionName(server)</option>
+                }
+            </select>
         }
     </div>
     <div class="mcm-caption-actions">
@@ -48,12 +59,14 @@
     {
         WindowChrome.Changed += OnChromeChanged;
         Chrome.PropertyChanged += OnChromeChanged;
+        Advanced.PropertyChanged += OnChromeChanged;
     }
 
     public void Dispose()
     {
         WindowChrome.Changed -= OnChromeChanged;
         Chrome.PropertyChanged -= OnChromeChanged;
+        Advanced.PropertyChanged -= OnChromeChanged;
     }
 
     private void OnChromeChanged(object? sender, EventArgs e) =>
@@ -64,5 +77,11 @@
         if (e.Button != 0)
             return;
         WindowChrome.DragMove();
+    }
+
+    private static string CaptionName(ServerIndexEntry server)
+    {
+        var name = (server.DisplayName ?? "").Trim();
+        return name.Length > 0 ? name : server.Id;
     }
 }

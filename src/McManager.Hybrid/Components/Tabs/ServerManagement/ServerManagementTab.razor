@@ -438,13 +438,6 @@
                             <i class="ti ti-download" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
                             Download pack
                         </button>
-                        <button type="button"
-                                disabled="@Vm.AnyBusy"
-                                title="List server-side mods on the game VM. Requires the VM running."
-                                @onclick="Vm.RefreshLiveModsAsync">
-                            <i class="ti ti-refresh" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
-                            Refresh list
-                        </button>
                     </div>
                 }
             </div>
@@ -592,24 +585,59 @@
                             }
                         </div>
                     }
-                    <details class="mcm-expander">
-                        <summary>
-                            <span class="mcm-expander-title">@ModListSummary</span>
-                        </summary>
-                        @if (Vm.ModFiles.Count > 0)
-                        {
-                            <div class="mcm-mod-list mcm-slim-scroll">
-                                @foreach (var name in Vm.ModFiles)
-                                {
-                                    <div class="mcm-mod-row">@name</div>
-                                }
+                    <div class="mcm-mods-advanced">
+                        <div class="mcm-mods-advanced-head">
+                            <span class="mcm-mods-advanced-title">Advanced</span>
+                            <div class="mcm-server-actions">
+                                <button type="button"
+                                        disabled="@(!Vm.CanUploadMod)"
+                                        title="@Vm.UploadModTitle"
+                                        @onclick="Vm.UploadModAsync">
+                                    <i class="ti ti-upload" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
+                                    Add jar
+                                </button>
+                                <button type="button"
+                                        disabled="@Vm.AnyBusy"
+                                        title="List server-side mods on the game VM. Requires the VM running."
+                                        @onclick="Vm.RefreshLiveModsAsync">
+                                    <i class="ti ti-refresh" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
+                                    Refresh list
+                                </button>
                             </div>
-                        }
-                        else
-                        {
-                            <p class="mcm-expander-empty">Refresh list to load server-side mods. Requires the VM running.</p>
-                        }
-                    </details>
+                        </div>
+                        <aside class="mcm-pack-list-warning" role="note">
+                            <p>@Vm.AdvancedJarWarning</p>
+                        </aside>
+                        <details class="mcm-expander">
+                            <summary>
+                                <span class="mcm-expander-title">@ModListSummary</span>
+                            </summary>
+                            @if (Vm.ModFiles.Count > 0)
+                            {
+                                <div class="mcm-mod-list mcm-slim-scroll">
+                                    @foreach (var name in Vm.ModFiles)
+                                    {
+                                        <div class="mcm-mod-row" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                                            <span>@name</span>
+                                            @if (Vm.IsSafeModJarName(name))
+                                            {
+                                                <button type="button"
+                                                        disabled="@(!Vm.CanUploadMod)"
+                                                        title="Delete this mod jar and restart Minecraft."
+                                                        @onclick="() => Vm.DeleteModAsync(name)">
+                                                    Delete
+                                                </button>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <p class="mcm-expander-empty">Refresh list to load server-side mods. Requires the VM running.</p>
+                            }
+                        </details>
+                    </div>
                 </div>
             }
         </div>

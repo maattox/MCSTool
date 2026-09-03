@@ -5,13 +5,14 @@ namespace McManager.Core.Services;
 
 /// <summary>
 /// SSH inspect of VM1 <c>/opt/mcmgr/server/mods</c> plus a few game-manifest fields.
-/// Listing only — never zips that folder.
+/// Listing never zips that folder. Advanced add/delete copies a single jar and restarts Minecraft.
 /// </summary>
 public static class ServerModsInspect
 {
     public const string ModsDir = "/opt/mcmgr/server/mods";
     public const string ManifestPath = "/etc/mcmgr/game-manifest.json";
     public const int MaxListedFiles = 400;
+    public const long MaxUploadBytes = ServerPluginsInspect.MaxUploadBytes;
 
     public const string MarkerManifest = "---MANIFEST---";
     public const string MarkerMods = "---MODS---";
@@ -114,6 +115,48 @@ public static class ServerModsInspect
         if (name.IndexOfAny(['\0', ';', '|', '&', '$', '`', '\n', '\r']) >= 0)
             return false;
         return true;
+    }
+
+    public static bool IsSafeJarName(string name)
+    {
+        if (!IsSafeFileName(name))
+            return false;
+        return name.EndsWith(".jar", StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static string StagingRemotePath(string fileName) =>
+        "/tmp/mcmgr-mod-upload/" + fileName;
+
+    public static string InstallScript(string fileName)
+    {
+        var destName = fileName.Trim();
+        var src = StagingRemotePath(destName);
+        var inner =
+            "set -euo pipefail; "
+            + "HOME=\"${HOME:-/home/ubuntu}\"; "
+            + $"DIR={SshShell.Quote(ModsDir)}; "
+            + $"SRC={SshShell.Quote(src)}; "
+            + $"NAME={SshShell.Quote(destName)}; "
+            + "mkdir -p \"$DIR\"; "
+            + "chown mcmgr:mcmgr \"$DIR\"; "
+            + "chmod 0750 \"$DIR\"; "
+            + "install -o mcmgr -g mcmgr -m 0640 \"$SRC\" \"$DIR/$NAME\"; "
+            + "rm -f \"$SRC\"; "
+            + "echo OK";
+        return "sudo bash -c " + SshShell.Quote(inner);
+    }
+
+    public static string DeleteScript(string fileName)
+    {
+        var destName = fileName.Trim();
+        var inner =
+            "set -euo pipefail; "
+            + "HOME=\"${HOME:-/home/ubuntu}\"; "
+            + $"DIR={SshShell.Quote(ModsDir)}; "
+            + $"NAME={SshShell.Quote(destName)}; "
+            + "rm -f \"$DIR/$NAME\"; "
+            + "echo OK";
+        return "sudo bash -c " + SshShell.Quote(inner);
     }
 
     private static void TryReadManifestFields(

@@ -33,7 +33,12 @@ public static class ModdingPanelLogic
         + "manifest added for jar-root zips when you corrected versions). That is not a zip of "
         + "the server mods folder — Setup strips client-only files, so a server-side zip would "
         + "not work for players. If a crash blamed exactly one mod, it is listed here so you "
-        + "can keep it excluded or put it back.";
+        + "can keep it excluded or put it back. Advanced can add or delete a single .jar without "
+        + "pack review; that bypasses automatic pack checks and restarts Minecraft.";
+
+    public const string AdvancedJarWarning =
+        "Adding or deleting a .jar here bypasses automatic checks. "
+        + "Minecraft restarts after add or delete.";
 
     public const string PaneModdingId = "modding";
     public const string PanePluginsId = "plugins";
