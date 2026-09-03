@@ -22,8 +22,13 @@ public static class AppSettingsStore
 
     public static string DefaultFilePath()
     {
-        var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        return Path.Combine(local, ProductFolderName, FileName);
+        var dir = LocalConfigStore.GetInstalledDataDirectory();
+        return string.IsNullOrWhiteSpace(dir)
+            ? Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                ProductFolderName,
+                FileName)
+            : Path.Combine(dir, FileName);
     }
 
     public static AppSettingsDocument Load(string? filePath = null)
@@ -35,8 +40,10 @@ public static class AppSettingsStore
         try
         {
             var json = File.ReadAllText(path);
-            var doc = JsonSerializer.Deserialize<AppSettingsDocument>(json, JsonOptions);
-            return doc ?? AppSettingsDocument.Default();
+            var doc = JsonSerializer.Deserialize<AppSettingsDocument>(json, JsonOptions)
+                ?? AppSettingsDocument.Default();
+            doc.Servers ??= [];
+            return doc;
         }
         catch (Exception)
         {
@@ -55,6 +62,7 @@ public static class AppSettingsStore
                 Directory.CreateDirectory(dir);
 
             document.Version = AppSettingsDocument.DocumentVersion;
+            document.Servers ??= [];
             var json = JsonSerializer.Serialize(document, JsonOptions);
             File.WriteAllText(path, json);
             return ServiceResult.Ok();

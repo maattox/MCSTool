@@ -3,7 +3,7 @@ using McManager.Core.Config;
 namespace McManager.Core.Setup;
 
 /// <summary>
-/// Environment exports for <c>onbox/mcmgr/common/driver.sh</c> (Setup bootstrap and Change pack).
+/// Environment exports for <c>onbox/mcmgr/common/driver.sh</c> (Setup, Change pack, Change server type).
 /// </summary>
 internal static class OnboxDriverExports
 {
@@ -30,9 +30,14 @@ internal static class OnboxDriverExports
             ? $" JAVA_MAJOR={j.ToString(System.Globalization.CultureInfo.InvariantCulture)}"
             : "";
 
+        var heap = JvmHeapChoice.Normalize(state.JvmXmx);
+        var seed = WorldSeed.Normalize(state.WorldSeed);
+        var seedExport = seed.Length == 0 ? "" : $" LEVEL_SEED={ShQuote(seed)}";
+
         return
             $"export EULA_ACCEPTED=true MINECRAFT_VERSION={ShQuote(minecraftVersion)} "
             + $"DISTRIBUTION={ShQuote(dist)}{pinExport}{javaExport} "
+            + $"JVM_XMS={ShQuote(heap)} JVM_XMX={ShQuote(heap)}{seedExport} "
             + "HOME=\"${HOME:-/home/ubuntu}\"";
     }
 

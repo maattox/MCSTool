@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using McManager.Core.Config;
+using McManager.Core.Setup;
 
 namespace McManager.Core.Usage;
 
@@ -316,6 +317,7 @@ public sealed class InfraMetaDocument
                 MinecraftUnit = string.IsNullOrWhiteSpace(Vm1.MinecraftUnit)
                     ? "minecraft"
                     : Vm1.MinecraftUnit.Trim(),
+                JvmXmx = JvmHeapChoice.Normalize(preserveLocal?.Vm1.JvmXmx),
             },
             Door = new DoorSettings
             {

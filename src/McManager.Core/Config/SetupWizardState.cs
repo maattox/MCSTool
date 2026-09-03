@@ -110,6 +110,12 @@ public sealed class SetupWizardState
     [JsonPropertyName("minecraft_version")]
     public string MinecraftVersion { get; set; } = "";
 
+    /// <summary>
+    /// Optional world seed for first world generation. Blank = Minecraft random.
+    /// </summary>
+    [JsonPropertyName("world_seed")]
+    public string WorldSeed { get; set; } = "";
+
     /// <summary>Local path of the imported pack archive (Modded branch). Not a secret.</summary>
     [JsonPropertyName("pack_path")]
     public string PackPath { get; set; } = "";
@@ -182,6 +188,10 @@ public sealed class SetupWizardState
     /// <summary>VM1 A1 Flex memory in GB. Setup picker: 12 (with 2 OCPU) or 24 (with 4). Default 24.</summary>
     [JsonPropertyName("vm1_memory_gb")]
     public int Vm1MemoryGb { get; set; } = Vm1ShapeChoice.DefaultMemoryGb;
+
+    /// <summary>Minecraft heap preset (4G / 6G / 8G). Xms = Xmx. Default 4G.</summary>
+    [JsonPropertyName("jvm_xmx")]
+    public string JvmXmx { get; set; } = JvmHeapChoice.Default;
 
     [JsonPropertyName("apply_stage")]
     public string ApplyStage { get; set; } = SetupApplyStage.NotStarted;

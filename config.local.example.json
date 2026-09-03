@@ -28,7 +28,8 @@
     "ssh_user": "ubuntu",
     "ssh_key_path": "%USERPROFILE%\\.ssh\\REPLACE_ME.key",
     "world_path": "/home/ubuntu/minecraft/server/world",
-    "minecraft_unit": "minecraft"
+    "minecraft_unit": "minecraft",
+    "jvm_xmx": "4G"
   },
   "door": {
     "instance_id": "ocid1.instance.oc1.us-sanjose-1.REPLACE_ME",

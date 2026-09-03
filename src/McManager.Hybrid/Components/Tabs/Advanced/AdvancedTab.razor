@@ -75,6 +75,67 @@
     {
     <div class="mcm-pane-stack" role="tabpanel">
     <div class="mcm-section-card">
+        <div style="font-size:14px;font-weight:600;margin-bottom:6px;">This PC's servers</div>
+        @if (Vm.ShowServerSwitcher)
+        {
+            <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);">
+                Each server is a separate folder on this PC. Switching reloads Manager from that folder. Add server opens first-run for a new empty folder.
+            </p>
+            <div class="mcm-field">
+                <label for="mcm-adv-server">Switch server</label>
+                <select id="mcm-adv-server"
+                        disabled="@Vm.IsBusy"
+                        @bind="Vm.SelectedServerId"
+                        @bind:event="onchange">
+                    @foreach (var server in Vm.Servers)
+                    {
+                        <option value="@server.Id">@server.DisplayName</option>
+                    }
+                </select>
+            </div>
+            <div class="mcm-field">
+                <label for="mcm-adv-server-rename">Rename</label>
+                <input id="mcm-adv-server-rename"
+                       type="text"
+                       disabled="@Vm.IsBusy"
+                       @bind="Vm.RenameServerName"
+                       @bind:event="oninput" />
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+                <button type="button"
+                        disabled="@Vm.IsBusy"
+                        @onclick="Vm.RenameServerAsync">
+                    Save name
+                </button>
+            </div>
+            <div class="mcm-field">
+                <label for="mcm-adv-server-add">Add server</label>
+                <input id="mcm-adv-server-add"
+                       type="text"
+                       disabled="@Vm.IsBusy"
+                       placeholder="New server"
+                       @bind="Vm.NewServerName"
+                       @bind:event="oninput" />
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px;">
+                <button type="button"
+                        class="mcm-primary"
+                        disabled="@Vm.IsBusy"
+                        title="Creates an empty folder and opens first-run. Does not create Oracle resources until you Deploy."
+                        @onclick="Vm.AddServerAsync">
+                    Add server
+                </button>
+            </div>
+        }
+        else
+        {
+            <p style="margin:0;font-size:13px;color:var(--text-secondary);">
+                Using env override. Server switching is off. OpenTofu state for this process is in this folder, not a sibling server.
+            </p>
+        }
+    </div>
+
+    <div class="mcm-section-card">
         <div style="font-size:14px;font-weight:600;margin-bottom:6px;">Infrastructure setup</div>
         <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);">
             Deploy a new Always Free stack, repair an existing one, or attach this PC to a stack that is already in your tenancy. Auto-detect never runs by itself — only when you click the button.
@@ -90,6 +151,64 @@
                     title="Looks for a product compartment and shared storage, then asks before writing local config."
                     @onclick="Vm.AutoDetectAsync">
                 Auto-detect infrastructure
+            </button>
+        </div>
+    </div>
+
+    <div class="mcm-section-card">
+        <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
+            <span style="font-size:14px;font-weight:600;">SSH addresses</span>
+            <button type="button"
+                    class="mcm-help"
+                    title="These are the public ephemeral IPs MCSTool uses for SSH (PuTTY, WinSCP). Players join Minecraft with the reserved play IP in the sidebar. Refresh reads the current primary public IP from OCI and saves it locally.">
+                <i class="ti ti-help" aria-hidden="true"></i>
+                <span class="sr-only">About SSH addresses</span>
+            </button>
+        </div>
+        <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);">
+            Players use the reserved play IP@(string.IsNullOrWhiteSpace(Vm.PlayReservedIp) ? "" : " (" + Vm.PlayReservedIp + ")"). These addresses are for SSH tools.
+        </p>
+        <ul class="mcm-path-list">
+            <li class="mcm-path-row">
+                <div class="mcm-path-copy">
+                    <span class="mcm-path-label">Game VM</span>
+                    <span class="mcm-path-hint">Public ephemeral IP for SSH to the Minecraft VM.</span>
+                    <code class="mcm-path-value">@Vm.Vm1SshHostDisplay</code>
+                </div>
+                <div class="mcm-path-actions">
+                    <button type="button"
+                            class="mcm-copy-inline"
+                            disabled="@(!Vm.HasVm1SshHost)"
+                            title="Copy game VM SSH IP"
+                            aria-label="Copy game VM SSH IP"
+                            @onclick="Vm.CopyVm1SshHostAsync">
+                        <i class="ti ti-copy" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </li>
+            <li class="mcm-path-row">
+                <div class="mcm-path-copy">
+                    <span class="mcm-path-label">Doorbell</span>
+                    <span class="mcm-path-hint">Public ephemeral IP for SSH to the door VM.</span>
+                    <code class="mcm-path-value">@Vm.DoorSshHostDisplay</code>
+                </div>
+                <div class="mcm-path-actions">
+                    <button type="button"
+                            class="mcm-copy-inline"
+                            disabled="@(!Vm.HasDoorSshHost)"
+                            title="Copy doorbell SSH IP"
+                            aria-label="Copy doorbell SSH IP"
+                            @onclick="Vm.CopyDoorSshHostAsync">
+                        <i class="ti ti-copy" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </li>
+        </ul>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">
+            <button type="button"
+                    disabled="@(!Vm.CanRefreshSshHosts)"
+                    @onclick="Vm.RefreshSshHostsFromOciAsync">
+                Refresh from OCI
             </button>
         </div>
     </div>

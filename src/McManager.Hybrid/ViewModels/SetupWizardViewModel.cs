@@ -102,6 +102,9 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     public const string ShapeSmallerHelp =
         "Smaller Always Free size. Vanilla can often stay on all month; less room if you add mods or more players later.";
 
+    public const string HeapHelp =
+        "Minecraft heap (Xms = Xmx), not the VM size. Default 4G. 8G still leaves about 4G for the OS on either Always Free size.";
+
     public const string IdentityHelp =
         "Players see the name, description, and in-game icon in Minecraft’s server list while the game is running. Each box is one list line (59 characters). Select text and apply colors, or paste a motd= string from a generator. Hex colors need Paper/Spigot 1.16+. You can change this later on the Server tab.";
 
@@ -140,6 +143,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     private string _functionImage = "";
     private string _resumeMinecraftVersion = "";
     private bool _navReady;
+    private bool _initializing;
     private bool _applyingIdentityDefault;
 
     public IReadOnlyList<OciConfigProfile> Profiles => _profiles;
@@ -220,6 +224,9 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     [ObservableProperty]
     private string _minecraftVersion = "";
+
+    [ObservableProperty]
+    private string _worldSeed = "";
 
     [ObservableProperty]
     private string _versionCatalogNotes = "Loading Minecraft versions…";
@@ -338,6 +345,9 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     private int _vm1MemoryGb = Vm1ShapeChoice.DefaultMemoryGb;
 
     [ObservableProperty]
+    private string _jvmXmx = JvmHeapChoice.Default;
+
+    [ObservableProperty]
     private string _applyStage = SetupApplyStage.NotStarted;
 
     [ObservableProperty]
@@ -393,6 +403,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         _catalogs = catalogs;
         LoadFrom(SetupWizardStore.LoadOrNew());
         LoadProfiles();
+        PrimeVersionCatalogFixtures();
         AuthTokenStored = WindowsCredentialStore.Exists();
         HasExistingManageConfig = LocalConfigStore.HasManageConfig();
         _navReady = true;
@@ -533,6 +544,18 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         Vm1MemoryGb = Vm1ShapeChoice.SmallerMemoryGb;
     }
 
+    public bool JvmHeapIs4G => JvmHeapChoice.Normalize(JvmXmx) == JvmHeapChoice.Default;
+
+    public bool JvmHeapIs6G => JvmHeapChoice.Normalize(JvmXmx) == JvmHeapChoice.Medium;
+
+    public bool JvmHeapIs8G => JvmHeapChoice.Normalize(JvmXmx) == JvmHeapChoice.Large;
+
+    public void SelectJvmHeap4G() => JvmXmx = JvmHeapChoice.Default;
+
+    public void SelectJvmHeap6G() => JvmXmx = JvmHeapChoice.Medium;
+
+    public void SelectJvmHeap8G() => JvmXmx = JvmHeapChoice.Large;
+
     public bool VanillaFlavorIsDefault =>
         !SetupVanillaFlavor.IsOptimized(VanillaFlavor);
 
@@ -671,16 +694,34 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     public async Task InitializeAsync()
     {
-        await LoadVersionsAsync().ConfigureAwait(true);
-        await DetectAdminIpAsync().ConfigureAwait(true);
-        if (ServerTypeIsModded && !string.IsNullOrWhiteSpace(PackPath) && File.Exists(PackPath))
-            await AnalyzePackPathAsync(PackPath, keepConfirm: true).ConfigureAwait(true);
-        else if (ServerTypeIsModded && !string.IsNullOrWhiteSpace(PackPath) && !File.Exists(PackPath))
+        _initializing = true;
+        try
         {
-            PackBlockReason = "The pack file is missing. Choose it again.";
-            PackCanContinue = false;
-            PackConfirmed = false;
+            await LoadVersionsAsync().ConfigureAwait(true);
+            await DetectAdminIpAsync().ConfigureAwait(true);
+            if (ServerTypeIsModded && !string.IsNullOrWhiteSpace(PackPath) && File.Exists(PackPath))
+                await AnalyzePackPathAsync(PackPath, keepConfirm: true).ConfigureAwait(true);
+            else if (ServerTypeIsModded && !string.IsNullOrWhiteSpace(PackPath) && !File.Exists(PackPath))
+            {
+                PackBlockReason = "The pack file is missing. Choose it again.";
+                PackCanContinue = false;
+                PackConfirmed = false;
+            }
         }
+        finally
+        {
+            _initializing = false;
+            OnPropertyChanged(nameof(CanGoNext));
+            OnPropertyChanged(nameof(VersionIds));
+            OnPropertyChanged(nameof(VersionCatalogNotes));
+        }
+    }
+
+    public void ApplyMinecraftVersionFromPicker(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return;
+        MinecraftVersion = value.Trim();
     }
 
     public void Back()
@@ -1583,6 +1624,22 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         StatusMessage = "Auth Token stored in Windows Credential Manager (McManager/ocir). Not written to wizard JSON.";
     }
 
+    private void PrimeVersionCatalogFixtures()
+    {
+        try
+        {
+            _manifest ??= MojangVersionCatalog.LoadEmbeddedFixture();
+            _paperProject ??= PaperFillV3Client.LoadEmbeddedProjectFixture();
+            if (string.IsNullOrWhiteSpace(_mojangCatalogNotes))
+                _mojangCatalogNotes = "Loading Minecraft versions…";
+            RebuildVersionList(keepSelection: true);
+        }
+        catch (Exception)
+        {
+            // Live catalogs in InitializeAsync still fill the picker.
+        }
+    }
+
     private async Task LoadVersionsAsync()
     {
         try
@@ -1595,6 +1652,9 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         {
             _mojangCatalogNotes = $"Version catalog failed: {ex.Message}";
         }
+
+        if (!VanillaFlavorIsOptimized)
+            RebuildVersionList(keepSelection: true);
 
         try
         {
@@ -1671,7 +1731,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         MinecraftVersion = target ?? "";
         if (!string.IsNullOrWhiteSpace(MinecraftVersion))
             _resumeMinecraftVersion = MinecraftVersion;
-        if (_navReady)
+        if (_navReady && !_initializing)
             Persist();
     }
 
@@ -1737,6 +1797,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         IncludeSnapshots = state.IncludeSnapshots;
         MinecraftVersion = state.MinecraftVersion;
         _resumeMinecraftVersion = state.MinecraftVersion;
+        WorldSeed = McManager.Core.Setup.WorldSeed.Normalize(state.WorldSeed);
         PackPath = state.PackPath;
         PackKind = state.PackKind;
         PackName = state.PackName;
@@ -1765,6 +1826,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         var shape = Vm1ShapeChoice.Normalize(state.Vm1Ocpus, state.Vm1MemoryGb);
         Vm1Ocpus = shape.Ocpus;
         Vm1MemoryGb = shape.MemoryGb;
+        JvmXmx = JvmHeapChoice.Normalize(state.JvmXmx);
         ApplyStage = string.IsNullOrWhiteSpace(state.ApplyStage)
             ? SetupApplyStage.NotStarted
             : state.ApplyStage;
@@ -1802,6 +1864,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         MinecraftVersion = string.IsNullOrWhiteSpace(MinecraftVersion)
             ? _resumeMinecraftVersion
             : MinecraftVersion,
+        WorldSeed = McManager.Core.Setup.WorldSeed.Normalize(WorldSeed),
         PackPath = PackPath,
         PackKind = PackKind,
         PackName = PackName,
@@ -1824,6 +1887,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         AdminCidr = AdminCidr,
         Vm1Ocpus = Vm1ShapeChoice.Normalize(Vm1Ocpus, Vm1MemoryGb).Ocpus,
         Vm1MemoryGb = Vm1ShapeChoice.Normalize(Vm1Ocpus, Vm1MemoryGb).MemoryGb,
+        JvmXmx = JvmHeapChoice.Normalize(JvmXmx),
         ApplyStage = ApplyStage,
         FunctionImage = _functionImage,
     };
@@ -2116,6 +2180,9 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             case nameof(CreateResourcesConfirmText):
             case nameof(Vm1ShapeIsDefault):
             case nameof(Vm1ShapeIsSmaller):
+            case nameof(JvmHeapIs4G):
+            case nameof(JvmHeapIs6G):
+            case nameof(JvmHeapIs8G):
             case nameof(VanillaFlavorIsDefault):
             case nameof(VanillaFlavorIsOptimized):
             case nameof(ShowSnapshotToggle):
@@ -2142,10 +2209,11 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             case nameof(Profiles):
             case nameof(VersionIds):
             case nameof(CapacityDialogOpen):
+            case nameof(WorldSeed):
                 return;
         }
 
-        if (!_navReady)
+        if (!_navReady || _initializing)
             return;
 
         OnPropertyChanged(nameof(CanGoNext));
@@ -2181,6 +2249,9 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         OnPropertyChanged(nameof(CreateResourcesConfirmText));
         OnPropertyChanged(nameof(Vm1ShapeIsDefault));
         OnPropertyChanged(nameof(Vm1ShapeIsSmaller));
+        OnPropertyChanged(nameof(JvmHeapIs4G));
+        OnPropertyChanged(nameof(JvmHeapIs6G));
+        OnPropertyChanged(nameof(JvmHeapIs8G));
         OnPropertyChanged(nameof(VanillaFlavorIsDefault));
         OnPropertyChanged(nameof(VanillaFlavorIsOptimized));
         OnPropertyChanged(nameof(ShowSnapshotToggle));

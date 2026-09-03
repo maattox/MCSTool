@@ -143,6 +143,9 @@ public sealed class ExcludeIncludeMatcherTests
         Assert.Contains(overlay.GlobalExcludes, s => s.Equals("konkrete", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(overlay.GlobalExcludes, s => s.Equals("titlebar", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(overlay.GlobalExcludes, s => s.Equals("flatlaf", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(overlay.GlobalExcludes, s => s.Equals("entity-texture-features", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(overlay.GlobalExcludes, s => s.Equals("ImmediatelyFast", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(overlay.GlobalExcludes, s => s.Equals("PresenceFootsteps", StringComparison.OrdinalIgnoreCase));
         Assert.Empty(overlay.GlobalForceIncludes);
         Assert.Empty(overlay.Modpacks);
 
@@ -153,6 +156,27 @@ public sealed class ExcludeIncludeMatcherTests
             bundled.Match(null, "mods/example-loading-screen-1.0.jar").Decision);
         Assert.Equal(ExcludeIncludeDecision.Exclude, bundled.Match(null, "mods/konkrete-1.9.9.jar").Decision);
         Assert.Equal(ExcludeIncludeDecision.NoMatch, bundled.Match(null, "mods/lithium-fabric.jar").Decision);
+    }
+
+    [Fact]
+    public void Product_overlay_skips_client_leaning_jars_missed_by_cf_list()
+    {
+        var cf = ExcludeIncludeMatcher.ForCurseForge();
+        Assert.Equal(
+            ExcludeIncludeDecision.Exclude,
+            cf.Match(null, "mods/entity_texture_features_1.20.1-forge-7.1.jar").Decision);
+        Assert.Equal(
+            ExcludeIncludeDecision.Exclude,
+            cf.Match(null, "mods/ImmediatelyFast-Forge-1.5.5+1.20.4.jar").Decision);
+        Assert.Equal(
+            ExcludeIncludeDecision.Exclude,
+            cf.Match(null, "mods/PresenceFootsteps-1.20.1-1.9.1-beta.1.jar").Decision);
+        Assert.Equal(
+            ExcludeIncludeDecision.NoMatch,
+            cf.Match(null, "mods/aether-1.20.1-1.5.2-neoforge.jar").Decision);
+        Assert.Equal(
+            ExcludeIncludeDecision.NoMatch,
+            cf.Match(null, "mods/Connector-1.0.0-beta.49+1.20.1.jar").Decision);
     }
 
     [Fact]

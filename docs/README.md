@@ -6,17 +6,19 @@ The app is a .NET 8 **Blazor Hybrid** app (WPF + WebView2): one WinExe, `McManag
 
 ## Status
 
-**Open beta 0.9.1** is published on [GitHub Releases](https://github.com/maattox/MCSTool/releases). Users install the Windows installer from there. Pushing `master` does **not** cut a new Release — only a new tag + Release does.
+**1.0.0** is published on [GitHub Releases](https://github.com/maattox/MCSTool/releases). Users install the Windows installer from there. Pushing `master` does **not** cut a new Release — only a new tag + Release does.
 
 Licensed under the [MIT License](../LICENSE).
 
 ## Solution
 
-| Project | Role |
-|---------|------|
-| [`src/McManager.Hybrid`](../src/McManager.Hybrid) | Manager UI WinExe (WPF + BlazorWebView) |
-| [`src/McManager.Core`](../src/McManager.Core) | Domain / OCI / shared logic |
-| [`src/McManager.slnx`](../src/McManager.slnx) | Solution |
+
+| Project                                           | Role                                    |
+| ------------------------------------------------- | --------------------------------------- |
+| `[src/McManager.Hybrid](../src/McManager.Hybrid)` | Manager UI WinExe (WPF + BlazorWebView) |
+| `[src/McManager.Core](../src/McManager.Core)`     | Domain / OCI / shared logic             |
+| `[src/McManager.slnx](../src/McManager.slnx)`     | Solution                                |
+
 
 On-box source that Setup deploys lives in this repo (`door_vm/`, `vm_agent/`, `functions/`, `onbox/mcmgr/`, `infra/`).
 
@@ -52,7 +54,7 @@ Install [Inno Setup 6](https://jrsoftware.org/isinfo.php), then from the repo ro
 powershell -ExecutionPolicy Bypass -File .\packaging\pack.ps1
 ```
 
-That fails if the Function tar is missing (rebuild recipe: [`functions/shutdown_vm/README.md`](../functions/shutdown_vm/README.md)). The `.exe` lands in `packaging/out/` (gitignored).
+That fails if the Function tar is missing (rebuild recipe: `[functions/shutdown_vm/README.md](../functions/shutdown_vm/README.md)`). The `.exe` lands in `packaging/out/` (gitignored).
 
 ## GitHub Releases
 
@@ -63,8 +65,10 @@ When you mean to ship a newer installer: bump Hybrid `<Version>`, pack with `pac
 Optional:
 
 ```powershell
-gh release create v0.9.1 .\packaging\out\MCSTool-Setup-0.9.1.exe --title "MCSTool 0.9.1" --notes "Paste the user-facing notes here."
+gh release create v1.0.0 .\packaging\out\MCSTool-Setup-1.0.0.exe --title "MCSTool 1.0.0" --notes "Paste the user-facing notes here."
 ```
+
+
 
 ## Cost
 
@@ -76,7 +80,7 @@ Stay on **Always Free–eligible** OCI resources unless you explicitly accept sp
 
 - OCI API: `%USERPROFILE%\.oci\config` + PEM
 - SSH: under `%USERPROFILE%\.ssh\`
-- App seeds (gitignored): `data/config.local.json` and `data/friends.local.json` when running from a checkout; an installed MCSTool writes the same files under `%LOCALAPPDATA%\MCSTool`
+- App seeds (gitignored): `%LOCALAPPDATA%\MCSTool\profiles\<slug>\` (`config.local.json`, `friends.local.json`, wizard, imported packs, tofu state). `app-settings.json` in `%LOCALAPPDATA%\MCSTool` lists this PC’s servers. Repo `data/` is leftover, not the from-source seed. `MCMANAGER_CONFIG_DIR` is a flat QA folder.
 
 From a checkout:
 
@@ -85,13 +89,15 @@ copy config.local.example.json data\config.local.json
 copy friends.local.example.json data\friends.local.json
 ```
 
-Then fill OCIDs from OCI Console / Setup tofu outputs (`%LOCALAPPDATA%\MCSTool\tofu\<stack-id>\`).
+Then fill OCIDs from OCI Console / Setup tofu outputs (`%LOCALAPPDATA%\MCSTool\profiles\<slug>\tofu\<stack-id>\`). From-source with no env override uses that same LocalAppData layout (not repo `data/`).
 
 ## Docs
 
-| Doc | Audience |
-|-----|----------|
-| [`../README.md`](../README.md) | Users (GitHub landing page) |
-| [`Guide.md`](Guide.md) | Users (install + Setup + day-to-day) |
-| This file | Developers |
-| `docs/archive/` | Operator / agent notes — **gitignored**, not on the public tree |
+
+| Doc                            | Audience                             |
+| ------------------------------ | ------------------------------------ |
+| `[../README.md](../README.md)` | Users (GitHub landing page)          |
+| `[Guide.md](Guide.md)`         | Users (install + Setup + day-to-day) |
+| This file                      | Developers                           |
+
+

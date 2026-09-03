@@ -5,8 +5,9 @@ namespace McManager.Core.Config;
 
 /// <summary>
 /// Loads gitignored operator seeds (<c>config.local.json</c>, <c>friends.local.json</c>).
-/// From-source uses repo <c>data/</c>; an installed Manager uses
-/// <c>%LOCALAPPDATA%\McManager</c>; <c>MCMANAGER_CONFIG_DIR</c> still wins.
+/// Default layout is <c>%LOCALAPPDATA%\MCSTool\profiles\&lt;slug&gt;</c>.
+/// <c>MCMANAGER_CONFIG_DIR</c> still wins as one flat folder (QA / pack-test).
+/// Does not walk up to a repo <c>data/</c> folder.
 /// </summary>
 public static class LocalConfigStore
 {
@@ -28,7 +29,7 @@ public static class LocalConfigStore
 
     public static string? TryFindDataDirectory()
     {
-        var overrideDir = Environment.GetEnvironmentVariable(ConfigDirEnvVar);
+        var overrideDir = ReadConfigDirEnv();
         if (!string.IsNullOrWhiteSpace(overrideDir))
         {
             var dataUnderOverride = Path.Combine(overrideDir, "data");
@@ -38,55 +39,22 @@ public static class LocalConfigStore
                 return overrideDir;
         }
 
-        // Prefer an existing data/config.local.json while walking up from the binary / cwd.
-        // McManager.slnx lives under src/ — do not treat that as the repo root or we create
-        // src/data/ and miss the canonical repo-root data/ folder.
-        string? solutionDataFallback = null;
-
-        foreach (var start in CandidateStarts())
-        {
-            var dir = new DirectoryInfo(start);
-            while (dir is not null)
-            {
-                var data = Path.Combine(dir.FullName, "data");
-                var configPath = Path.Combine(data, ConfigFileName);
-                if (File.Exists(configPath))
-                    return data;
-
-                // Product repo root (example configs). Prefer over src/ with only the .slnx.
-                if (File.Exists(Path.Combine(dir.FullName, "config.local.example.json")))
-                {
-                    Directory.CreateDirectory(data);
-                    return data;
-                }
-
-                if (solutionDataFallback is null
-                    && File.Exists(Path.Combine(dir.FullName, "McManager.slnx")))
-                {
-                    solutionDataFallback = data;
-                }
-
-                dir = dir.Parent;
-            }
-        }
-
-        if (solutionDataFallback is not null)
-        {
-            Directory.CreateDirectory(solutionDataFallback);
-            return solutionDataFallback;
-        }
-
-        var installed = GetInstalledDataDirectory();
-        if (string.IsNullOrWhiteSpace(installed))
-            return null;
-
-        Directory.CreateDirectory(installed);
-        return installed;
+        return ServerCatalog.TryResolveProfileDirectory();
     }
 
     /// <summary>
-    /// Installed Manager settings folder (same directory as <c>app-settings.json</c>).
-    /// Not a <c>data/</c> subfolder under the install dir.
+    /// Test hook: replace <c>MCMANAGER_CONFIG_DIR</c>. Empty string means unset.
+    /// Null means read the process environment. Thread-local so parallel tests stay isolated.
+    /// </summary>
+    [ThreadStatic]
+    internal static string? ConfigDirEnvOverride;
+
+    internal static string? ReadConfigDirEnv() =>
+        ConfigDirEnvOverride ?? Environment.GetEnvironmentVariable(ConfigDirEnvVar);
+
+    /// <summary>
+    /// Product folder for this PC (<c>app-settings.json</c>, avatars, OpenTofu binary).
+    /// Not a per-server profile. Not a <c>data/</c> subfolder under the install dir.
     /// </summary>
     public static string GetInstalledDataDirectory()
     {
@@ -154,7 +122,7 @@ public static class LocalConfigStore
     }
 
     /// <summary>
-    /// True when <c>data/config.local.json</c> exists and parses. Used to skip the first-run
+    /// True when <c>config.local.json</c> exists and parses. Used to skip the first-run
     /// Setup chooser so an existing manage stack is not hijacked on every launch.
     /// </summary>
     public static bool HasManageConfig()
@@ -216,31 +184,15 @@ public static class LocalConfigStore
         }
     }
 
-    /// <summary>Test hook: replace binary/cwd walk. Thread-local so parallel tests stay isolated.</summary>
-    [ThreadStatic]
-    internal static Func<IEnumerable<string>>? CandidateStartsOverride;
-
     /// <summary>
-    /// Test hook: replace <c>%LOCALAPPDATA%\McManager</c>. Empty string disables the installed fallback.
+    /// Test hook: replace <c>%LOCALAPPDATA%\MCSTool</c>. Empty string disables the installed fallback.
     /// Thread-local so parallel tests stay isolated.
     /// </summary>
     [ThreadStatic]
     internal static string? InstalledDataDirectoryOverride;
 
-    private static IEnumerable<string> CandidateStarts()
+    public static string ExpandPath(string path)
     {
-        if (CandidateStartsOverride is not null)
-        {
-            foreach (var start in CandidateStartsOverride())
-                yield return start;
-            yield break;
-        }
-
-        yield return AppContext.BaseDirectory;
-        yield return Directory.GetCurrentDirectory();
-    }
-
-    public static string ExpandPath(string path)    {
         if (string.IsNullOrWhiteSpace(path))
             return path;
         var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);

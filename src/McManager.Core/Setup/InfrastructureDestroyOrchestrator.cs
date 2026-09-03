@@ -169,7 +169,8 @@ public sealed class InfrastructureDestroyOrchestrator
         Report(progress, 100, "Deletion finished");
         return InfrastructureDestroyResult.Ok(
             "Product cloud infrastructure is gone. This did not close your Oracle account. "
-            + "Close Manager fully, reopen it, then run Setup to deploy a fresh stack.");
+            + "Other servers on this PC were not deleted. If this was the only server with a stack, "
+            + "run Setup again to deploy a fresh one.");
     }
 
     internal static TofuWorkspace? ResolveWorkspace(IProgress<string>? log)

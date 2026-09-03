@@ -1,12 +1,13 @@
 """$1 budget emergency Function (product v1 source).
 
-On a real threshold alert (not RESET): SoftStop VM1, then PUT
-``meta/spend-brake-triggered.json``. Do not SoftStop the Always Free door Micro.
-Do not DELETE the lock (Manager is the only clearer).
+SoftStop VM1 and PUT ``meta/spend-brake-triggered.json`` only when the
+compartment has actually reached the $1 threshold. Monthly RESET (and
+FORECAST) Events use the same ``createtriggeredalert`` type and must be
+ignored. Do not SoftStop the Always Free door Micro. Do not DELETE the
+lock (Manager is the only clearer).
 
 Tracked placeholders only — live OCIDs stay in Function config / the private file.
-Do not ``fn push`` unless the operator authorizes it (and preferably after door
-honor of this flag — V1 Step 2.3).
+Do not ``fn push`` unless the operator authorizes it.
 """
 
 from __future__ import annotations
@@ -28,24 +29,87 @@ LOCK_SOURCE = "budget_function"
 LOCK_REASON = "compartment_budget_threshold"
 LOCK_VERSION = 1
 
+SKIP_ALERT_TYPES = frozenset({"RESET", "FORECAST"})
+ACT_ALERT_TYPES = frozenset({"ACTUAL"})
+ALERT_TYPE_KEYS = ("triggeredAlertType", "triggered_alert_type")
+BUDGET_ID_KEYS = ("budgetId", "budget_id")
+
+
+def _iter_dicts(node):
+    if isinstance(node, dict):
+        yield node
+        for value in node.values():
+            yield from _iter_dicts(value)
+    elif isinstance(node, list):
+        for item in node:
+            yield from _iter_dicts(item)
+
+
+def parse_event(raw_bytes):
+    """Pull alert type and budget OCID from any Events / FDK envelope."""
+    if not raw_bytes:
+        return {"alert_type": None, "budget_id": None}
+    body = json.loads(raw_bytes)
+    if not isinstance(body, dict):
+        return {"alert_type": None, "budget_id": None}
+
+    alert_type = None
+    budget_id = None
+    for item in _iter_dicts(body):
+        if alert_type is None:
+            for key in ALERT_TYPE_KEYS:
+                value = item.get(key)
+                if value:
+                    alert_type = str(value).strip().upper()
+                    break
+        if budget_id is None:
+            for key in BUDGET_ID_KEYS:
+                value = item.get(key)
+                if isinstance(value, str) and "ocid1.budget." in value:
+                    budget_id = value.strip()
+                    break
+        if alert_type and budget_id:
+            break
+    return {"alert_type": alert_type, "budget_id": budget_id}
+
 
 def parse_triggered_alert_type(raw_bytes):
     """Return Events ``triggeredAlertType`` or None if missing/unparseable."""
-    if not raw_bytes:
-        return None
-    body = json.loads(raw_bytes)
-    if not isinstance(body, dict):
-        return None
-    return (
-        body.get("data", {})
-        .get("stateChange", {})
-        .get("current", {})
-        .get("triggeredAlertType")
-    )
+    return parse_event(raw_bytes).get("alert_type")
 
 
 def is_reset_alert(alert_type):
-    return alert_type == "RESET"
+    return (alert_type or "").strip().upper() == "RESET"
+
+
+def spend_reached_threshold(actual_spend, amount, threshold=None):
+    """True / False when both values parse; None when spend is unknown."""
+    limit = threshold if threshold is not None else amount
+    if actual_spend is None or limit is None:
+        return None
+    try:
+        return float(actual_spend) + 1e-9 >= float(limit)
+    except (TypeError, ValueError):
+        return None
+
+
+def decide_spend_brake_action(alert_type, spend_reached):
+    """Allowlist a confirmed $1 ACTUAL. Skip RESET / FORECAST / unconfirmed.
+
+    ``spend_reached`` is True, False, or None (budget GET missing/failed).
+    Official CreateTriggeredAlert JSON has no alert type, so the spend
+    gate is the primary signal.
+    """
+    kind = (alert_type or "").strip().upper() or None
+    if kind in SKIP_ALERT_TYPES:
+        return "SKIP", "alert_type=%s" % kind
+    if spend_reached is True:
+        return "ACT", "actual_spend_reached_threshold"
+    if spend_reached is False:
+        return "SKIP", "actual_spend_below_threshold"
+    if kind in ACT_ALERT_TYPES:
+        return "ACT", "actual_alert_spend_unknown"
+    return "SKIP", "unconfirmed_alert"
 
 
 def format_utc(now_utc=None):
@@ -101,6 +165,16 @@ def resolve_os_config(env=None):
     if not object_name or object_name.startswith("<"):
         object_name = LOCK_OBJECT_DEFAULT
     return namespace, bucket, object_name
+
+
+def resolve_budget_id(env=None, parsed_id=None):
+    env = os.environ if env is None else env
+    if parsed_id and str(parsed_id).strip().startswith("ocid1.budget."):
+        return str(parsed_id).strip()
+    raw = (env.get("BUDGET_ID") or "").strip()
+    if raw and not raw.startswith("<"):
+        return raw
+    return ""
 
 
 def _softstop(compute_client, instance_id, logger):
@@ -180,6 +254,42 @@ def _put_lock(os_client, namespace, bucket, object_name, alert_type, logger, now
         return {"object": object_name, "status": "ERROR", "message": str(ex)}
 
 
+def _read_budget_spend(budget_client, budget_id, logger):
+    """Return (actual_spend, amount) or (None, None) on failure."""
+    if not budget_id:
+        return None, None
+    try:
+        resp = budget_client.get_budget(budget_id)
+        data = getattr(resp, "data", None)
+        if data is None:
+            return None, None
+        actual = getattr(data, "actual_spend", None)
+        amount = getattr(data, "amount", None)
+        logger.info(
+            "Budget %s actual_spend=%s amount=%s",
+            budget_id,
+            actual,
+            amount,
+        )
+        return actual, amount
+    except Exception as ex:
+        logger.warning("get_budget failed for %s: %s", budget_id, ex)
+        return None, None
+
+
+def _skip_response(ctx, reason, alert_type=None, extra=None):
+    from fdk import response
+
+    payload = {"status": "SKIPPED", "reason": reason, "alertType": alert_type}
+    if extra:
+        payload.update(extra)
+    return response.Response(
+        ctx,
+        response_data=json.dumps(payload),
+        headers={"Content-Type": "application/json"},
+    )
+
+
 def handler(ctx, data: io.BytesIO = None):
     from fdk import response
     import oci
@@ -188,33 +298,56 @@ def handler(ctx, data: io.BytesIO = None):
     logger.info("Budget alert function invoked.")
 
     alert_type = None
+    parsed_budget_id = None
     try:
         raw = data.getvalue() if data is not None else None
-        alert_type = parse_triggered_alert_type(raw)
-        logger.info("Parsed triggeredAlertType: %s", alert_type)
-    except Exception as parse_err:
-        logger.warning(
-            "Could not parse event JSON (proceeding with caution): %s",
-            parse_err,
+        parsed = parse_event(raw)
+        alert_type = parsed.get("alert_type")
+        parsed_budget_id = parsed.get("budget_id")
+        logger.info(
+            "Parsed alert_type=%s budget_id_set=%s",
+            alert_type,
+            bool(parsed_budget_id),
         )
+    except Exception as parse_err:
+        logger.warning("Could not parse event JSON: %s", parse_err)
 
     if is_reset_alert(alert_type):
-        logger.info(
-            "Received monthly budget RESET event. Skipping SoftStop and lock PUT."
-        )
-        return response.Response(
-            ctx,
-            response_data=json.dumps(
-                {"status": "SKIPPED", "reason": "Monthly budget reset event"}
-            ),
-            headers={"Content-Type": "application/json"},
-        )
+        logger.info("Skipping: monthly budget RESET event.")
+        return _skip_response(ctx, "Monthly budget reset event", alert_type)
+
+    kind = (alert_type or "").strip().upper() or None
+    if kind in SKIP_ALERT_TYPES:
+        logger.info("Skipping: alert_type=%s", kind)
+        return _skip_response(ctx, "alert_type=%s" % kind, alert_type)
 
     instance_ids = resolve_instance_ocids()
     namespace, bucket, lock_object = resolve_os_config()
+    budget_id = resolve_budget_id(parsed_id=parsed_budget_id)
 
     try:
         signer = oci.auth.signers.get_resource_principals_signer()
+        budget_client = oci.budget.BudgetClient(config={}, signer=signer)
+        budget_client.base_client.retry_strategy = oci.retry.DEFAULT_RETRY_STRATEGY
+        actual_spend, amount = _read_budget_spend(budget_client, budget_id, logger)
+        spend_reached = spend_reached_threshold(actual_spend, amount)
+        decision, reason = decide_spend_brake_action(alert_type, spend_reached)
+        logger.info(
+            "Decision=%s reason=%s spend_reached=%s actual=%s amount=%s",
+            decision,
+            reason,
+            spend_reached,
+            actual_spend,
+            amount,
+        )
+        if decision == "SKIP":
+            return _skip_response(
+                ctx,
+                reason,
+                alert_type,
+                extra={"actualSpend": actual_spend, "amount": amount},
+            )
+
         compute_client = oci.core.ComputeClient(config={}, signer=signer)
         compute_client.base_client.retry_strategy = oci.retry.DEFAULT_RETRY_STRATEGY
 
@@ -264,6 +397,8 @@ def handler(ctx, data: io.BytesIO = None):
                     "status": overall,
                     "action": "SOFTSTOP",
                     "alertType": alert_type,
+                    "decisionReason": reason,
+                    "actualSpend": actual_spend,
                     "results": results,
                     "lock": lock_result,
                 }
