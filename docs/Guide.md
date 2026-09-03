@@ -224,5 +224,5 @@ Days and hour math are **UTC**, not your local calendar. **Hours** shows what yo
 ### Idle stop and wake
 
 - The game server turns off after **15 minutes** with no players. That is how the app stays inside Oracle’s free-hour allowance. The doorbell stays on and keeps the same play IP.
-- When the server is off, it can be started from MCSTool, or by a player attempting to connect from the Minecraft client (unless that UTC day is **zeroed** or out of today’s hours). The doorbell then starts the server VM. Wake can take **2–5 minutes**, depending on the pack and world.
+- When the server is off, it can be started from MCSTool, or by a player attempting to connect from the Minecraft client (unless that UTC day is **zeroed** or out of today’s hours). The doorbell then starts the server VM. Wake can take **2–5 minutes**, depending on the pack and world. On a 4 OCPU world the Minecraft server list shows about how many **clock hours** are left today (not CPU-hours); a 2 OCPU world omits that number. Minecraft may cache the list text — refresh or reconnect if it looks stale.
 

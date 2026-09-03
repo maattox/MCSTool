@@ -57,16 +57,24 @@ static void test_motd_by_door_state(void) {
   char motd[512];
 
   state.door = DOOR_IDLE;
-  state.used_ocpu_hours = 10.0;
+  state.used_ocpu_hours = 8.0;
+  state.daily_limit_ocpu_hours = 48.0;
   state.ocpus = 4.0;
   mcdoor_build_motd(&state, motd, sizeof motd);
-  CHECK(strstr(motd, "OCPU-h remaining") != NULL, "idle MOTD missing budget hint: %s", motd);
+  CHECK(strstr(motd, "~10.0h remaining today") != NULL,
+        "idle MOTD missing wall-clock remaining: %s", motd);
+  CHECK(strstr(motd, "OCPU-h") == NULL, "idle MOTD must not say OCPU-h: %s", motd);
 
   state.ocpus = 2.0;
   mcdoor_build_motd(&state, motd, sizeof motd);
-  CHECK(strstr(motd, "OCPU-h remaining") == NULL,
+  CHECK(strstr(motd, "remaining today") == NULL,
         "2-OCPU idle MOTD must not nag remaining hours: %s", motd);
   CHECK(strstr(motd, "Connect to wake") != NULL, "2-OCPU idle MOTD missing wake hint: %s",
+        motd);
+
+  state.ocpus = 0.0;
+  mcdoor_build_motd(&state, motd, sizeof motd);
+  CHECK(strstr(motd, "remaining today") == NULL, "0-OCPU idle MOTD must omit remaining: %s",
         motd);
 
   state.door = DOOR_STARTING;

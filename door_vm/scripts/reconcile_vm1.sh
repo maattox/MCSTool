@@ -9,6 +9,8 @@
 # Object Storage policy (minimize GETs/PUTs):
 # - Do NOT pull budget/ledger on every tick — wake (`do_wake` / pull_os_budget.sh)
 #   owns budget freshness.
+# - GET /api/status reloads the local OS cache files and recomputes used hours
+#   (UTC day roll) so idle MOTD can refresh without a wake or OS GET.
 # - Ledger heal runs at most once per "VM1 down" episode, tracked by a local flag
 #   file under OS_CACHE_DIR. Cleared when VM1 is RUNNING again (and by ip_to_vm1).
 #

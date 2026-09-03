@@ -237,6 +237,7 @@ static void handle_api(socket_t fd, const HttpMiniConfig *cfg, const HttpRequest
   char json[4096];
 
   if (strcmp(req->path, "/api/status") == 0 && strcmp(req->method, "GET") == 0) {
+    control_on_status_refresh(ctl);
     if (control_status_json(ctl, json, sizeof json) < 0) {
       respond_json(fd, 500, "{\"ok\":false,\"error\":\"status failed\"}");
       return;
