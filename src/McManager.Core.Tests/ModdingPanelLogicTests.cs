@@ -19,6 +19,36 @@ public sealed class ModdingPanelLogicTests
         Assert.False(ModdingPanelLogic.CanDownloadPack(isModded: false, hasLocalArchive: true));
     }
 
+    [Fact]
+    public void Paper_is_not_modded_and_has_plugin_copy()
+    {
+        Assert.True(ModdingPanelLogic.IsPaperServerKind("paper"));
+        Assert.True(ModdingPanelLogic.IsPaperServerKind("Paper"));
+        Assert.False(ModdingPanelLogic.IsPaperServerKind("vanilla"));
+        Assert.False(ModdingPanelLogic.IsPaperServerKind("fabric"));
+        Assert.Contains("Paper plugins only", ModdingPanelLogic.PaperEmptyState, StringComparison.Ordinal);
+        Assert.Contains("/reload", ModdingPanelLogic.PaperHelpTitle, StringComparison.OrdinalIgnoreCase);
+        Assert.True(ModdingPanelLogic.ShowPluginsTab(isPaperServer: true));
+        Assert.False(ModdingPanelLogic.ShowPluginsTab(isPaperServer: false));
+    }
+
+    [Theory]
+    [InlineData("pack", false, "modding")]
+    [InlineData("pack", true, "modding")]
+    [InlineData("plugins", false, "modding")]
+    [InlineData("plugins", true, "plugins")]
+    [InlineData("modding", true, "modding")]
+    [InlineData("identity", false, "identity")]
+    [InlineData("", true, "")]
+    [InlineData(null, false, "")]
+    public void Normalize_server_pane_hides_plugins_unless_paper(
+        string? pane,
+        bool isPaper,
+        string expected)
+    {
+        Assert.Equal(expected, ModdingPanelLogic.NormalizeServerPane(pane, isPaper));
+    }
+
     [Theory]
     [InlineData("modded")]
     [InlineData("fabric")]

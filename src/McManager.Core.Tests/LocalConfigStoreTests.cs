@@ -7,90 +7,102 @@ namespace McManager.Core.Tests;
 public sealed class LocalConfigStoreTests
 {
     [Fact]
-    public void Installed_layout_saves_and_loads_without_repo_markers()
+    public void Installed_layout_saves_under_profiles_not_product_root()
     {
-        var walk = NewTempDir("mcmgr-cfg-walk-");
         var installed = NewTempDir("mcmgr-cfg-installed-");
-        using (Isolate(configDirEnv: null, candidateStarts: [walk], installed: installed))
+        using (Isolate(configDirEnv: null, installed: installed))
         {
             var saved = LocalConfigStore.SaveConfig(new ManagerLocalConfig { AdminName = "Pat" });
             Assert.True(saved.Succeeded, saved.Error);
 
-            var configPath = Path.Combine(installed, LocalConfigStore.ConfigFileName);
-            Assert.True(File.Exists(configPath));
+            var dataDir = LocalConfigStore.TryFindDataDirectory();
+            Assert.NotNull(dataDir);
+            Assert.Equal(
+                Path.Combine(installed, ServerCatalog.ProfilesFolderName),
+                Path.GetDirectoryName(dataDir));
+            Assert.True(File.Exists(Path.Combine(dataDir!, LocalConfigStore.ConfigFileName)));
+            Assert.False(File.Exists(Path.Combine(installed, LocalConfigStore.ConfigFileName)));
             Assert.False(Directory.Exists(Path.Combine(installed, "data")));
-            Assert.False(File.Exists(Path.Combine(walk, "data", LocalConfigStore.ConfigFileName)));
 
             var loaded = LocalConfigStore.Load();
             Assert.True(loaded.Succeeded, loaded.Error);
             Assert.Equal("Pat", loaded.Config!.AdminName);
-            Assert.Equal(installed, loaded.DataDirectory);
+            Assert.Equal(dataDir, loaded.DataDirectory);
             Assert.True(LocalConfigStore.HasManageConfig());
 
             var wizard = SetupWizardStore.Save(new SetupWizardState { CurrentStep = 1 });
             Assert.True(wizard.Succeeded, wizard.Error);
-            Assert.True(File.Exists(Path.Combine(installed, LocalConfigStore.WizardStateFileName)));
+            Assert.True(File.Exists(Path.Combine(dataDir!, LocalConfigStore.WizardStateFileName)));
 
             var friends = LocalConfigStore.SaveFriends(new FriendsLocalFile
             {
                 Friends = [new FriendEntry { Id = "a", Name = "Ada", Ip = "203.0.113.10", IsAdmin = true }],
             });
             Assert.True(friends.Succeeded, friends.Error);
-            Assert.True(File.Exists(Path.Combine(installed, LocalConfigStore.FriendsFileName)));
+            Assert.True(File.Exists(Path.Combine(dataDir!, LocalConfigStore.FriendsFileName)));
+
+            Assert.Equal(Path.Combine(dataDir!, "tofu"), TofuWorkspace.TofuRootDirectory());
+            Assert.NotEqual(Path.Combine(installed, "tofu"), TofuWorkspace.TofuRootDirectory());
+
+            var settings = AppSettingsStore.Load();
+            Assert.NotEmpty(settings.Servers);
+            Assert.False(string.IsNullOrWhiteSpace(settings.ActiveServer));
         }
     }
 
     [Fact]
-    public void Env_override_wins_over_repo_and_installed()
+    public void Env_override_wins_over_profiles_and_is_flat()
     {
         var overrideDir = NewTempDir("mcmgr-cfg-env-");
-        var repo = NewTempDir("mcmgr-cfg-repo-");
-        File.WriteAllText(Path.Combine(repo, "config.local.example.json"), "{}");
         var installed = NewTempDir("mcmgr-cfg-inst-");
-        using (Isolate(configDirEnv: overrideDir, candidateStarts: [repo], installed: installed))
+        using (Isolate(configDirEnv: overrideDir, installed: installed))
         {
             var saved = LocalConfigStore.SaveConfig(new ManagerLocalConfig { AdminName = "Env" });
             Assert.True(saved.Succeeded, saved.Error);
             Assert.True(File.Exists(Path.Combine(overrideDir, LocalConfigStore.ConfigFileName)));
             Assert.False(File.Exists(Path.Combine(installed, LocalConfigStore.ConfigFileName)));
-            Assert.False(File.Exists(Path.Combine(repo, "data", LocalConfigStore.ConfigFileName)));
+            Assert.False(Directory.Exists(Path.Combine(installed, ServerCatalog.ProfilesFolderName)));
 
             var loaded = LocalConfigStore.Load();
             Assert.True(loaded.Succeeded, loaded.Error);
             Assert.Equal("Env", loaded.Config!.AdminName);
             Assert.Equal(overrideDir, loaded.DataDirectory);
+
+            Assert.Equal(
+                Path.Combine(overrideDir, "tofu"),
+                TofuWorkspace.TofuRootDirectory());
         }
     }
 
     [Fact]
-    public void Repo_root_markers_use_data_subdirectory()
+    public void Repo_root_markers_are_ignored()
     {
         var repo = NewTempDir("mcmgr-cfg-example-");
         File.WriteAllText(Path.Combine(repo, "config.local.example.json"), "{}");
+        Directory.CreateDirectory(Path.Combine(repo, "data"));
+        File.WriteAllText(Path.Combine(repo, "data", LocalConfigStore.ConfigFileName), """{"admin_name":"Repo"}""");
         var installed = NewTempDir("mcmgr-cfg-inst-");
-        using (Isolate(configDirEnv: null, candidateStarts: [repo], installed: installed))
+        using (Isolate(configDirEnv: null, installed: installed))
         {
             var found = LocalConfigStore.TryFindDataDirectory();
-            var expected = Path.Combine(repo, "data");
-            Assert.Equal(expected, found);
-            Assert.True(Directory.Exists(expected));
+            Assert.NotNull(found);
+            Assert.StartsWith(
+                Path.Combine(installed, ServerCatalog.ProfilesFolderName),
+                found,
+                StringComparison.OrdinalIgnoreCase);
+            Assert.NotEqual(Path.Combine(repo, "data"), found);
 
-            var saved = LocalConfigStore.SaveConfig(new ManagerLocalConfig { AdminName = "Repo" });
+            var saved = LocalConfigStore.SaveConfig(new ManagerLocalConfig { AdminName = "Installed" });
             Assert.True(saved.Succeeded, saved.Error);
-            Assert.True(File.Exists(Path.Combine(expected, LocalConfigStore.ConfigFileName)));
-            Assert.False(File.Exists(Path.Combine(installed, LocalConfigStore.ConfigFileName)));
-
-            var loaded = LocalConfigStore.Load();
-            Assert.True(loaded.Succeeded, loaded.Error);
-            Assert.Equal("Repo", loaded.Config!.AdminName);
+            Assert.True(File.Exists(Path.Combine(found!, LocalConfigStore.ConfigFileName)));
+            Assert.Contains("\"admin_name\":\"Repo\"", File.ReadAllText(Path.Combine(repo, "data", LocalConfigStore.ConfigFileName)));
         }
     }
 
     [Fact]
     public void Save_failure_does_not_mention_developer_env()
     {
-        var walk = NewTempDir("mcmgr-cfg-none-");
-        using (Isolate(configDirEnv: null, candidateStarts: [walk], installed: ""))
+        using (Isolate(configDirEnv: null, installed: ""))
         {
             var saved = LocalConfigStore.SaveConfig(new ManagerLocalConfig());
             Assert.False(saved.Succeeded);
@@ -124,11 +136,8 @@ public sealed class LocalConfigStoreTests
             StringComparison.OrdinalIgnoreCase);
     }
 
-    private static IsolatedFinder Isolate(
-        string? configDirEnv,
-        IEnumerable<string> candidateStarts,
-        string? installed) =>
-        new(configDirEnv, candidateStarts, installed);
+    private static IsolatedFinder Isolate(string? configDirEnv, string? installed) =>
+        new(configDirEnv, installed);
 
     private static string NewTempDir(string prefix)
     {
@@ -153,29 +162,22 @@ public sealed class LocalConfigStoreTests
     private sealed class IsolatedFinder : IDisposable
     {
         private readonly string? _previousEnv;
-        private readonly List<string> _dirs;
+        private readonly List<string> _dirs = [];
 
-        public IsolatedFinder(
-            string? configDirEnv,
-            IEnumerable<string> candidateStarts,
-            string? installed)
+        public IsolatedFinder(string? configDirEnv, string? installed)
         {
-            _dirs = candidateStarts.ToList();
             if (!string.IsNullOrWhiteSpace(configDirEnv))
                 _dirs.Add(configDirEnv);
             if (installed is { Length: > 0 })
                 _dirs.Add(installed);
-            _previousEnv = Environment.GetEnvironmentVariable(LocalConfigStore.ConfigDirEnvVar);
-            Environment.SetEnvironmentVariable(LocalConfigStore.ConfigDirEnvVar, configDirEnv);
-            var starts = candidateStarts.ToArray();
-            LocalConfigStore.CandidateStartsOverride = () => starts;
+            _previousEnv = LocalConfigStore.ConfigDirEnvOverride;
+            LocalConfigStore.ConfigDirEnvOverride = configDirEnv ?? "";
             LocalConfigStore.InstalledDataDirectoryOverride = installed;
         }
 
         public void Dispose()
         {
-            Environment.SetEnvironmentVariable(LocalConfigStore.ConfigDirEnvVar, _previousEnv);
-            LocalConfigStore.CandidateStartsOverride = null;
+            LocalConfigStore.ConfigDirEnvOverride = _previousEnv;
             LocalConfigStore.InstalledDataDirectoryOverride = null;
             foreach (var dir in _dirs.Distinct(StringComparer.OrdinalIgnoreCase))
                 TryDeleteDir(dir);

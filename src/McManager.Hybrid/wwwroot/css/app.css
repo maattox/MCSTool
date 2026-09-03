@@ -208,10 +208,23 @@ button.mcm-btn-disabled:hover {
 }
 
 .mcm-caption-drag {
+    display: flex;
+    align-items: center;
     flex: 1 1 auto;
     min-width: 24px;
     cursor: default;
     touch-action: none;
+}
+
+.mcm-caption-server {
+    pointer-events: none;
+    padding: 0 12px;
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 42vw;
 }
 
 .mcm-caption-actions {
@@ -1458,6 +1471,10 @@ button.mcm-btn-disabled:hover {
     text-align: left;
 }
 
+.mcm-firstrun-actions button.mcm-firstrun-cancel {
+    color: var(--text-secondary);
+}
+
 .mcm-firstrun-note {
     margin: 0;
     font-size: 12px;
@@ -1798,6 +1815,10 @@ button.mcm-btn-disabled:hover {
     margin: 8px 0 0;
     font-size: 12px;
     color: var(--text-danger);
+}
+
+.mcm-modal-card.mcm-change-type-card {
+    width: 520px;
 }
 
 .mcm-path-list {
@@ -2899,6 +2920,21 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     display: flex;
     flex-direction: column;
     gap: 10px;
+}
+
+.mcm-change-pack .mcm-server-pane-head {
+    margin-bottom: 0;
+}
+
+.mcm-mods-installed {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+.mcm-mods-installed > p {
+    margin: 0 !important;
 }
 
 .mcm-change-pack-friends {

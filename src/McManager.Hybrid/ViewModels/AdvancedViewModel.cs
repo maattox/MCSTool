@@ -29,11 +29,15 @@ public sealed partial class AdvancedViewModel : ObservableObject
     private readonly MainViewModel _main;
     private readonly ConnectExistingFlow _connectExisting;
     private readonly IFilePicker _filePicker;
+    private readonly IClipboard _clipboard;
     private readonly LocalConfigHost _configHost;
     private readonly ManageCloudServices _cloud;
     private readonly ManageSession _session;
     private readonly ActionBanner _banner;
+    private readonly ChromeViewModel _chrome;
+    private readonly DestroyInfrastructureViewModel _destroy;
     private bool _forwardBanner;
+    private bool _suppressServerSwitch;
 
     private BudgetConfigDocument? _lastBudget;
     private InfraMetaDocument? _lastInfra;
@@ -99,6 +103,29 @@ public sealed partial class AdvancedViewModel : ObservableObject
     [ObservableProperty]
     private bool _hasSshKeyChanges;
 
+    [ObservableProperty]
+    private string _vm1SshHost = "";
+
+    [ObservableProperty]
+    private string _doorSshHost = "";
+
+    [ObservableProperty]
+    private string _playReservedIp = "";
+
+    [ObservableProperty]
+    private IReadOnlyList<ServerIndexEntry> _servers = [];
+
+    [ObservableProperty]
+    private string _selectedServerId = "";
+
+    [ObservableProperty]
+    private string _newServerName = "";
+
+    [ObservableProperty]
+    private string _renameServerName = "";
+
+    public bool ShowServerSwitcher => !ServerCatalog.HasEnvOverride;
+
     public bool CanApplyIdleTimeout => HasIdleTimeoutChanges && !IsBusy;
 
     public bool CanApplyIdleEnabled => HasIdleEnabledChanges && !IsBusy;
@@ -124,6 +151,17 @@ public sealed partial class AdvancedViewModel : ObservableObject
 
     public string SshKeyHelp => SshKeyPathUx.HelpText;
 
+    public bool HasVm1SshHost => !string.IsNullOrWhiteSpace(Vm1SshHost);
+
+    public bool HasDoorSshHost => !string.IsNullOrWhiteSpace(DoorSshHost);
+
+    public string Vm1SshHostDisplay => HasVm1SshHost ? Vm1SshHost : "—";
+
+    public string DoorSshHostDisplay => HasDoorSshHost ? DoorSshHost : "—";
+
+    public bool CanRefreshSshHosts =>
+        !IsBusy && _config is not null && _compute is not null;
+
     public AdvancedViewModel(
         LocalConfigHost configHost,
         ManageCloudServices cloud,
@@ -133,7 +171,10 @@ public sealed partial class AdvancedViewModel : ObservableObject
         MainViewModel main,
         ConnectExistingFlow connectExisting,
         IFilePicker filePicker,
-        ActionBanner banner)
+        IClipboard clipboard,
+        ActionBanner banner,
+        ChromeViewModel chrome,
+        DestroyInfrastructureViewModel destroy)
     {
         _configHost = configHost;
         _cloud = cloud;
@@ -143,7 +184,10 @@ public sealed partial class AdvancedViewModel : ObservableObject
         _main = main;
         _connectExisting = connectExisting;
         _filePicker = filePicker;
+        _clipboard = clipboard;
         _banner = banner;
+        _chrome = chrome;
+        _destroy = destroy;
 
         BindFromHost();
         _forwardBanner = true;
@@ -158,6 +202,8 @@ public sealed partial class AdvancedViewModel : ObservableObject
             return;
         _banner.ShowInferred(value);
     }
+
+    partial void OnIsBusyChanged(bool value) => NotifySshHostDerived();
 
     private void OnSessionReloaded(object? sender, EventArgs e) => BindFromHost();
 
@@ -184,11 +230,14 @@ public sealed partial class AdvancedViewModel : ObservableObject
 
         SeedIdleFromLocal();
         SeedSshKeysFromLocal();
+        SeedSshHostsFromLocal();
         CaptureInfraSnapshot();
+        RefreshServerSwitcher();
         OnPropertyChanged(nameof(CanPublishInfra));
         OnPropertyChanged(nameof(CanApplyIdleTimeout));
         OnPropertyChanged(nameof(CanApplyIdleEnabled));
         NotifySshKeyDerived();
+        NotifySshHostDerived();
     }
 
     /// <summary>Call when the Advanced tab component is created (tab selected).</summary>
@@ -206,6 +255,127 @@ public sealed partial class AdvancedViewModel : ObservableObject
     {
         // Opens the Setup wizard. This button does not tofu apply.
         _shell.OpenSetup();
+    }
+
+    public async Task SwitchServerAsync(string slug)
+    {
+        if (!ShowServerSwitcher || string.IsNullOrWhiteSpace(slug))
+            return;
+        if (string.Equals(slug, ServerCatalog.ActiveSlug(), StringComparison.OrdinalIgnoreCase))
+            return;
+        if (!await CanLeaveCurrentServerAsync().ConfigureAwait(true))
+        {
+            RefreshServerSwitcher();
+            return;
+        }
+
+        var set = ServerCatalog.SetActive(slug);
+        if (!set.Succeeded)
+        {
+            await _dialogs.ShowInfoAsync("Could not switch server", set.Error ?? "Unknown error.");
+            RefreshServerSwitcher();
+            return;
+        }
+
+        ApplyServerFolder();
+    }
+
+    public async Task AddServerAsync()
+    {
+        if (!ShowServerSwitcher || IsBusy)
+            return;
+        if (!await CanLeaveCurrentServerAsync().ConfigureAwait(true))
+            return;
+
+        var name = string.IsNullOrWhiteSpace(NewServerName)
+            ? ServerCatalog.SuggestDisplayName(_configHost.PlayIp)
+            : NewServerName.Trim();
+        var added = ServerCatalog.AddServer(name);
+        if (!added.Succeeded)
+        {
+            await _dialogs.ShowInfoAsync("Could not add server", added.Error ?? "Unknown error.");
+            return;
+        }
+
+        NewServerName = ServerCatalog.DefaultDisplayName;
+        ApplyServerFolder();
+    }
+
+    public async Task RenameServerAsync()
+    {
+        if (!ShowServerSwitcher || IsBusy)
+            return;
+        var slug = ServerCatalog.ActiveSlug();
+        if (string.IsNullOrWhiteSpace(slug))
+            return;
+
+        var renamed = ServerCatalog.Rename(slug, RenameServerName);
+        if (!renamed.Succeeded)
+        {
+            await _dialogs.ShowInfoAsync("Could not rename server", renamed.Error ?? "Unknown error.");
+            return;
+        }
+
+        RefreshServerSwitcher();
+        _chrome.RefreshServerLabel();
+        StatusMessage = "Server name saved.";
+    }
+
+    partial void OnSelectedServerIdChanged(string value)
+    {
+        if (_suppressServerSwitch)
+            return;
+        _ = SwitchServerAsync(value);
+    }
+
+    private async Task<bool> CanLeaveCurrentServerAsync()
+    {
+        if (_destroy.Phase == DestroyInfrastructurePhase.Running)
+        {
+            await _dialogs.ShowInfoAsync(
+                "Deletion still running",
+                "Wait until Delete infrastructure finishes before switching servers.");
+            return false;
+        }
+
+        if (_shell.Page == HybridShell.PageKind.Setup)
+        {
+            await _dialogs.ShowInfoAsync(
+                "Setup is still open",
+                "Finish or close Setup before switching servers.");
+            return false;
+        }
+
+        return true;
+    }
+
+    private void ApplyServerFolder()
+    {
+        _session.ReloadFromDisk();
+        if (_configHost.HasManageConfig)
+            _shell.EnterManage();
+        else
+            _shell.EnterFirstRun();
+        _chrome.RefreshServerLabel();
+        StatusMessage = "Switched server. Manager reloaded this folder.";
+    }
+
+    private void RefreshServerSwitcher()
+    {
+        _suppressServerSwitch = true;
+        try
+        {
+            Servers = ServerCatalog.List();
+            SelectedServerId = ServerCatalog.ActiveSlug() ?? "";
+            RenameServerName = ServerCatalog.ActiveDisplayName() ?? "";
+            if (string.IsNullOrWhiteSpace(NewServerName))
+                NewServerName = ServerCatalog.SuggestDisplayName(_configHost.PlayIp);
+            OnPropertyChanged(nameof(ShowServerSwitcher));
+        }
+        finally
+        {
+            _suppressServerSwitch = false;
+        }
     }
 
     public async Task AutoDetectAsync()
@@ -302,6 +472,85 @@ public sealed partial class AdvancedViewModel : ObservableObject
         }
 
         return Task.CompletedTask;
+    }
+
+    public async Task CopyVm1SshHostAsync()
+    {
+        if (!HasVm1SshHost)
+            return;
+        await _clipboard.SetTextAsync(Vm1SshHost);
+        StatusMessage = "Copied game VM SSH IP.";
+    }
+
+    public async Task CopyDoorSshHostAsync()
+    {
+        if (!HasDoorSshHost)
+            return;
+        await _clipboard.SetTextAsync(DoorSshHost);
+        StatusMessage = "Copied doorbell SSH IP.";
+    }
+
+    public async Task RefreshSshHostsFromOciAsync()
+    {
+        if (!CanRefreshSshHosts || _config is null || _compute is null)
+        {
+            StatusMessage = _compute is null
+                ? "OCI session is not ready."
+                : "Cannot refresh SSH IPs yet.";
+            return;
+        }
+
+        var compartment = _config.Oci.CompartmentId;
+        if (string.IsNullOrWhiteSpace(compartment))
+        {
+            StatusMessage = "Local config is missing compartment_id.";
+            return;
+        }
+
+        IsBusy = true;
+        StatusMessage = "Refreshing SSH IPs from OCI…";
+        NotifySshHostDerived();
+        try
+        {
+            var notes = new List<string>();
+            if (!string.IsNullOrWhiteSpace(_config.Vm1.InstanceId))
+            {
+                var ip = await _compute.TryGetPrimaryPublicIpAsync(
+                    compartment, _config.Vm1.InstanceId);
+                if (ip.Succeeded && !string.IsNullOrWhiteSpace(ip.Value))
+                    _config.Vm1.SshHost = ip.Value.Trim();
+                else
+                    notes.Add("Game VM: " + (ip.Error ?? "no public IP"));
+            }
+
+            if (!string.IsNullOrWhiteSpace(_config.Door.InstanceId))
+            {
+                var ip = await _compute.TryGetPrimaryPublicIpAsync(
+                    compartment, _config.Door.InstanceId);
+                if (ip.Succeeded && !string.IsNullOrWhiteSpace(ip.Value))
+                    _config.Door.SshHost = ip.Value.Trim();
+                else
+                    notes.Add("Door: " + (ip.Error ?? "no public IP"));
+            }
+
+            var saved = LocalConfigStore.SaveConfig(_config);
+            if (!saved.Succeeded)
+            {
+                StatusMessage = saved.Error ?? "Failed to save config.local.json.";
+                return;
+            }
+
+            _session.ReloadFromDisk();
+            SeedSshHostsFromLocal();
+            StatusMessage = notes.Count == 0
+                ? "Updated SSH IPs from OCI. Players still join with the reserved play IP."
+                : "SSH IPs refreshed with warnings: " + string.Join("; ", notes);
+        }
+        finally
+        {
+            IsBusy = false;
+            NotifySshHostDerived();
+        }
     }
 
     public Task TestVm1SshAsync() => TestSshAsync(forVm1: true);
@@ -777,6 +1026,23 @@ public sealed partial class AdvancedViewModel : ObservableObject
         {
             _suppressDirty = false;
         }
+    }
+
+    private void SeedSshHostsFromLocal()
+    {
+        Vm1SshHost = _config?.Vm1.SshHost ?? "";
+        DoorSshHost = _config?.Door.SshHost ?? "";
+        PlayReservedIp = _config?.Play.ReservedPublicIp ?? "";
+        NotifySshHostDerived();
+    }
+
+    private void NotifySshHostDerived()
+    {
+        OnPropertyChanged(nameof(HasVm1SshHost));
+        OnPropertyChanged(nameof(HasDoorSshHost));
+        OnPropertyChanged(nameof(Vm1SshHostDisplay));
+        OnPropertyChanged(nameof(DoorSshHostDisplay));
+        OnPropertyChanged(nameof(CanRefreshSshHosts));
     }
 
     private void CaptureSshKeySnapshot()

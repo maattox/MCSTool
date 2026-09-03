@@ -41,8 +41,10 @@ public static class ProgramPaths
             rows,
             "tofu",
             "OpenTofu workspaces",
-            "Setup state for this PC — not the repo terraform.tfvars.",
-            TofuWorkspace.TofuRootDirectory());
+            "Setup state for this server — not the repo terraform.tfvars.",
+            string.IsNullOrWhiteSpace(dataDirectory)
+                ? TofuWorkspace.TofuRootDirectory()
+                : Path.Combine(dataDirectory, "tofu"));
 
         var oci = ResolveOciConfigPath(ociConfigFile);
         Add(
@@ -64,8 +66,7 @@ public static class ProgramPaths
         return Path.Combine(home, ".oci", "config");
     }
 
-    public static string? ConfigDirOverride =>
-        Environment.GetEnvironmentVariable(LocalConfigStore.ConfigDirEnvVar);
+    public static string? ConfigDirOverride => LocalConfigStore.ReadConfigDirEnv();
 
     private static void Add(
         List<ProgramPathItem> rows,

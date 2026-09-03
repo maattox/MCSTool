@@ -23,6 +23,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     private static readonly FileTypeFilter AllFilesFilter = new("All files", ".*");
     private static readonly FileTypeFilter PackFilter = new("Modpack archives", ".mrpack", ".zip");
     private static readonly FileTypeFilter MrpackFilter = new("Modrinth pack", ".mrpack");
+    private static readonly FileTypeFilter JarFilter = new("Java plugin jar", ".jar");
     private static readonly TimeSpan PackElapsedTickPeriod = TimeSpan.FromSeconds(1);
 
     private ManagerLocalConfig? _config;
@@ -45,6 +46,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     private readonly SetupBootstrapService _bootstrap;
     private readonly IUiClock _clock;
     private readonly IUiDispatcher _dispatcher;
+    public ChangeServerTypeViewModel ChangeType { get; }
     private bool _forwardBanner;
     private string? _currentMinecraftVersion;
     private string? _currentLoaderOrDistribution;
@@ -67,6 +69,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     public ObservableCollection<WorldBackupInfo> Backups { get; } = [];
 
     public ObservableCollection<string> ModFiles { get; } = [];
+
+    public ObservableCollection<string> PluginFiles { get; } = [];
 
     public ObservableCollection<QuarantinedFileEntry> QuarantinedMods { get; } = [];
 
@@ -97,10 +101,16 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     private string _lastBackupDisplay = "—";
 
     [ObservableProperty]
+    private string _wipeWorldSeed = "";
+
+    [ObservableProperty]
     private string _backupStorageDisplay = "—";
 
     [ObservableProperty]
     private bool _isModdedServer;
+
+    [ObservableProperty]
+    private bool _isPaperServer;
 
     [ObservableProperty]
     private bool _hasLocalPackArchive;
@@ -127,7 +137,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
     public bool HasObjectStorage => _backups is not null;
 
-    public bool AnyBusy => IsBusy || IsModdingBusy || IsAnalyzingPack;
+    public bool AnyBusy =>
+        IsBusy || IsModdingBusy || IsAnalyzingPack || ChangeType.IsBusy || ChangeType.IsAnalyzingPack;
 
     public bool Vm1IsRunning => ManagePowerUx.IsVm1Running(_main.Vm1Lifecycle);
 
@@ -250,30 +261,52 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
             ? "Save a copy of the confirmed pack file (manifest added for jar-root zips when you corrected versions)."
             : ModdingPanelLogic.DownloadDisabledReason(IsModdedServer, HasLocalPackArchive);
 
-    public string VanillaEmptyState => ModdingPanelLogic.VanillaEmptyState;
+    public string VanillaEmptyState => IsPaperServer
+        ? ModdingPanelLogic.PaperEmptyState
+        : ModdingPanelLogic.VanillaEmptyState;
 
     public string MissingArchiveMessage => ModdingPanelLogic.MissingArchiveMessage;
 
     public string ModdingHelpTitle => ModdingPanelLogic.HelpTitle;
 
+    public string PluginsHelpTitle => ModdingPanelLogic.PaperHelpTitle;
+
+    public bool CanUploadPlugin =>
+        IsPaperServer && Vm1IsRunning && !AnyBusy;
+
+    public string UploadPluginTitle =>
+        CanUploadPlugin
+            ? "Upload a Paper plugin .jar. Minecraft restarts after install."
+            : (!IsPaperServer
+                ? ModdingPanelLogic.VanillaEmptyState
+                : (!Vm1IsRunning
+                    ? ModdingPanelLogic.PaperVmStoppedHint
+                    : "Wait until the current action finishes."));
+
+    public bool CanDeletePlugin => CanUploadPlugin && PluginFiles.Count > 0;
+
     public const string PaneIdentity = "identity";
     public const string PaneSettings = "settings";
     public const string PaneWorld = "world";
-    public const string PaneModding = "modding";
-    public const string PaneChangePack = "pack";
+    public const string PaneModding = ModdingPanelLogic.PaneModdingId;
+    public const string PanePlugins = ModdingPanelLogic.PanePluginsId;
+    public const string PaneChangePack = ModdingPanelLogic.PaneChangePackId;
+
+    public bool ShowPluginsTab => ModdingPanelLogic.ShowPluginsTab(IsPaperServer);
 
     public bool IsChangePackPane =>
-        string.Equals(ServerPane, PaneChangePack, StringComparison.Ordinal);
+        string.Equals(ServerPane, PaneModding, StringComparison.Ordinal);
 
     public bool IsServerPane(string id) =>
         string.Equals(ServerPane, id, StringComparison.Ordinal);
 
     public void SelectServerPane(string pane)
     {
-        if (string.IsNullOrWhiteSpace(pane)
-            || string.Equals(ServerPane, pane, StringComparison.Ordinal))
+        var next = ModdingPanelLogic.NormalizeServerPane(pane, IsPaperServer);
+        if (string.IsNullOrWhiteSpace(next)
+            || string.Equals(ServerPane, next, StringComparison.Ordinal))
             return;
-        ServerPane = pane;
+        ServerPane = next;
     }
 
     public bool ShowChangePackDock(bool onServerTab) =>
@@ -331,6 +364,12 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
     public string MotdPreview =>
         ServerIdentityUx.BuildMotd(IdentityName, IdentityDescription);
+
+    public string? CurrentServerKind => _currentLoaderOrDistribution;
+
+    public string? CurrentMinecraftVersion => _currentMinecraftVersion;
+
+    public string ServerKindDisplay => ChangeServerTypeUx.KindLabel(_currentLoaderOrDistribution);
 
     public string SettingsHelpTitle =>
         "Gameplay settings are stored in the cloud and written to server.properties the next time Minecraft starts. Save, then Restart (or Start). Name, icon, and MOTD stay on Identity. PvP and simulation distance hide when this Minecraft version does not have those keys.";
@@ -519,6 +558,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         NotificationCenter notices,
         ActionBanner banner,
         SetupBootstrapService bootstrap,
+        ChangeServerTypeViewModel changeType,
         IUiClock clock,
         IUiDispatcher dispatcher)
     {
@@ -531,6 +571,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         _notices = notices;
         _banner = banner;
         _bootstrap = bootstrap;
+        ChangeType = changeType;
         _clock = clock;
         _dispatcher = dispatcher;
 
@@ -538,6 +579,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         _forwardBanner = true;
         _session.Reloaded += OnSessionReloaded;
         _main.PropertyChanged += OnMainPropertyChanged;
+        ChangeType.PropertyChanged += OnChangeTypePropertyChanged;
+        ChangeType.Completed += OnChangeTypeCompleted;
     }
 
     partial void OnStatusMessageChanged(string value)
@@ -925,12 +968,18 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
             ? "There is no shared backup storage configured, so this cannot be undone from Manager."
             : "Cloud backups (Download World Save) are kept. Download one first if you might want this world back.";
 
+        var seed = McManager.Core.Setup.WorldSeed.Normalize(WipeWorldSeed);
+        var seedNote = seed.Length == 0
+            ? "The new world will use a random seed (level-seed is cleared)."
+            : "The new world will use seed \"" + seed + "\".";
+
         var confirmed = await _dialogs.ConfirmAsync(
             "Wipe the live world?",
             "This deletes the current world on the server at "
             + $"{plan.WorldPath}. Minecraft will be stopped, that folder removed, and Minecraft started again "
             + "so a new world generates. This cannot be undone except by restoring a backup. "
-            + "Mods, loader files, and server.properties are not deleted. "
+            + "Mods, loader files, and server.properties stay (except the seed). "
+            + seedNote + " "
             + backupHint,
             "Wipe world");
         if (!confirmed)
@@ -945,7 +994,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
         try
         {
-            var result = await _ssh.WipeWorldAsync(_config.Vm1);
+            var result = await _ssh.WipeWorldAsync(_config.Vm1, seed);
             StatusMessage = result.Succeeded
                 ? $"Live world wiped at {plan.WorldPath}. Minecraft start requested. "
                   + "Cloud backups were not deleted."
@@ -986,7 +1035,12 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         RefreshSaveCompatibilityWarning();
         await LoadSettingsAsync();
         if (includeLiveMods)
-            await RefreshLiveModsAsync();
+        {
+            if (IsModdedServer)
+                await RefreshLiveModsAsync();
+            else if (IsPaperServer)
+                await RefreshLivePluginsAsync();
+        }
     }
 
     public async Task RefreshLiveModsAsync()
@@ -1133,6 +1187,152 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
             await RefreshLiveModsAsync();
     }
 
+    public async Task RefreshLivePluginsAsync()
+    {
+        if (!IsPaperServer)
+            return;
+        if (IsModdingBusy)
+            return;
+        if (_config is null)
+        {
+            ModdingHint = "Local config is missing.";
+            return;
+        }
+
+        var lifeRaw = _main.Vm1Lifecycle ?? "";
+        var life = lifeRaw.ToUpperInvariant();
+        if (life != "RUNNING")
+        {
+            PluginFiles.Clear();
+            ModdingSummary = "";
+            ModdingHint = ModdingPanelLogic.PaperVmStoppedHint;
+            NotifyModdingCommands();
+            return;
+        }
+
+        IsModdingBusy = true;
+        ModdingHint = "Listing Paper plugins on the game VM…";
+        try
+        {
+            var run = await _ssh.RunCommandAsync(
+                SshTarget.FromVm1(_config.Vm1),
+                ServerPluginsInspect.RemoteCommand);
+            if (!run.Succeeded)
+            {
+                PluginFiles.Clear();
+                ModdingSummary = "";
+                ModdingHint = run.Error ?? "Could not list plugins on the game VM.";
+                return;
+            }
+
+            if (!ServerPluginsInspect.TryParse(run.Output, out var inspect, out var parseError))
+            {
+                PluginFiles.Clear();
+                ModdingSummary = "";
+                ModdingHint = parseError ?? "Could not parse the plugin listing.";
+                return;
+            }
+
+            PluginFiles.Clear();
+            foreach (var name in inspect.FileNames)
+                PluginFiles.Add(name);
+            ModdingSummary = inspect.SummaryLine();
+            ModdingHint = inspect.PluginsDirectoryMissing || PluginFiles.Count == 0
+                ? "No plugin jars yet. Upload a Paper .jar — Minecraft restarts after upload or delete. Do not use /reload."
+                : "";
+        }
+        finally
+        {
+            IsModdingBusy = false;
+            NotifyModdingCommands();
+        }
+    }
+
+    public async Task UploadPluginAsync()
+    {
+        if (!CanUploadPlugin || _config is null)
+            return;
+
+        var path = await _filePicker.OpenFileAsync(new FilePickRequest
+        {
+            Title = "Upload Paper plugin",
+            Filters = [JarFilter],
+        });
+        if (string.IsNullOrWhiteSpace(path))
+            return;
+
+        var name = Path.GetFileName(path);
+        if (!ServerPluginsInspect.IsSafeJarName(name))
+        {
+            _banner.Show("That file name is not a safe .jar name.", ActionBannerSeverity.Error);
+            return;
+        }
+
+        var confirmed = await _dialogs.ConfirmAsync(
+            "Upload plugin and restart Minecraft?",
+            "Install "
+            + name
+            + " into plugins/ and restart Minecraft. Do not use /reload. Wrong-loader jars are your problem — Paper plugins only.",
+            confirmButtonText: "Upload and restart");
+        if (!confirmed)
+            return;
+
+        IsModdingBusy = true;
+        try
+        {
+            var result = await _ssh.UploadMinecraftPluginAsync(_config.Vm1, path);
+            if (!result.Succeeded)
+            {
+                _banner.Show(result.Error ?? "Plugin upload failed.", ActionBannerSeverity.Error);
+                return;
+            }
+
+            _banner.Show("Installed " + name + ". Minecraft restarted.", ActionBannerSeverity.Success);
+        }
+        finally
+        {
+            IsModdingBusy = false;
+        }
+
+        await RefreshLivePluginsAsync();
+    }
+
+    public async Task DeletePluginAsync(string fileName)
+    {
+        if (!CanUploadPlugin || _config is null)
+            return;
+        if (!ServerPluginsInspect.IsSafeJarName(fileName))
+            return;
+
+        var confirmed = await _dialogs.ConfirmAsync(
+            "Delete plugin and restart Minecraft?",
+            "Remove "
+            + fileName
+            + " from plugins/ and restart Minecraft. Do not use /reload.",
+            confirmButtonText: "Delete and restart");
+        if (!confirmed)
+            return;
+
+        IsModdingBusy = true;
+        try
+        {
+            var result = await _ssh.DeleteMinecraftPluginAsync(_config.Vm1, fileName);
+            if (!result.Succeeded)
+            {
+                _banner.Show(result.Error ?? "Plugin delete failed.", ActionBannerSeverity.Error);
+                return;
+            }
+
+            _banner.Show("Removed " + fileName + ". Minecraft restarted.", ActionBannerSeverity.Success);
+        }
+        finally
+        {
+            IsModdingBusy = false;
+        }
+
+        await RefreshLivePluginsAsync();
+    }
+
     private void BindQuarantined(IReadOnlyList<QuarantinedFileEntry> entries)
     {
         QuarantinedMods.Clear();
@@ -1221,6 +1421,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         }
 
         ShowChangePackUi = true;
+        SelectServerPane(PaneModding);
     }
 
     public void CancelChangePack()
@@ -1688,13 +1889,22 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     {
         _currentLoaderOrDistribution = string.IsNullOrWhiteSpace(serverKind) ? null : serverKind.Trim();
         IsModdedServer = ModdingPanelLogic.IsModdedServerKind(serverKind);
+        IsPaperServer = ModdingPanelLogic.IsPaperServerKind(serverKind);
         if (!IsModdedServer)
         {
             ModFiles.Clear();
             QuarantinedMods.Clear();
-            ModdingHint = ModdingPanelLogic.VanillaEmptyState;
+            ModdingHint = IsPaperServer ? "" : ModdingPanelLogic.VanillaEmptyState;
         }
 
+        if (!IsPaperServer)
+        {
+            PluginFiles.Clear();
+            if (!IsModdedServer)
+                ModdingSummary = "";
+        }
+
+        LeavePluginsIfHidden();
         NotifyModdingCommands();
     }
 
@@ -1705,14 +1915,23 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         _currentMinecraftVersion = null;
         _currentLoaderOrDistribution = null;
         IsModdedServer = false;
+        IsPaperServer = false;
         HasLocalPackArchive = false;
         PackIdentityDisplay = "";
         ModdingSummary = "";
         ModdingHint = "";
         ModFiles.Clear();
+        PluginFiles.Clear();
         QuarantinedMods.Clear();
         ClearPackReplaceFields(hidePanel: true);
+        LeavePluginsIfHidden();
         NotifyModdingCommands();
+    }
+
+    private void LeavePluginsIfHidden()
+    {
+        if (!ShowPluginsTab && IsServerPane(PanePlugins))
+            ServerPane = PaneModding;
     }
 
     private void NotifyModdingCommands()
@@ -1730,6 +1949,14 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         OnPropertyChanged(nameof(CanClearIcon));
         OnPropertyChanged(nameof(HasQuarantinedMods));
         OnPropertyChanged(nameof(CanActOnQuarantine));
+        OnPropertyChanged(nameof(IsPaperServer));
+        OnPropertyChanged(nameof(ShowPluginsTab));
+        OnPropertyChanged(nameof(ServerKindDisplay));
+        OnPropertyChanged(nameof(CanUploadPlugin));
+        OnPropertyChanged(nameof(UploadPluginTitle));
+        OnPropertyChanged(nameof(CanDeletePlugin));
+        OnPropertyChanged(nameof(ModdingHelpTitle));
+        OnPropertyChanged(nameof(VanillaEmptyState));
         NotifyPackIdentityUi();
         NotifyDock();
     }
@@ -1873,6 +2100,29 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         StopPackElapsedTicker();
         _session.Reloaded -= OnSessionReloaded;
         _main.PropertyChanged -= OnMainPropertyChanged;
+        ChangeType.PropertyChanged -= OnChangeTypePropertyChanged;
+        ChangeType.Completed -= OnChangeTypeCompleted;
+    }
+
+    private void OnChangeTypePropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(ChangeServerTypeViewModel.IsBusy)
+            or nameof(ChangeServerTypeViewModel.IsAnalyzingPack)
+            or nameof(ChangeServerTypeViewModel.ModalOpen)
+            or null)
+            NotifyModdingCommands();
+    }
+
+    private void OnChangeTypeCompleted(object? sender, EventArgs e) =>
+        _ = RefreshMinecraftVersionAsync();
+
+    public async Task HandoffChangePackAsync(string? packPath, bool wipeWorld)
+    {
+        WipeWorld = wipeWorld;
+        ShowChangePackUi = true;
+        SelectServerPane(PaneModding);
+        if (!string.IsNullOrWhiteSpace(packPath) && File.Exists(packPath))
+            await AnalyzePackPathAsync(packPath);
     }
 
     partial void OnIsBusyChanged(bool value) => NotifyModdingCommands();

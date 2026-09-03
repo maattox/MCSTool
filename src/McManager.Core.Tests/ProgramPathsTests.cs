@@ -1,5 +1,4 @@
 using McManager.Core.Config;
-using McManager.Core.Setup;
 using Xunit;
 
 namespace McManager.Core.Tests;
@@ -28,7 +27,7 @@ public sealed class ProgramPathsTests
             Assert.True(config.Exists);
 
             var tofu = rows.Single(r => r.Id == "tofu");
-            Assert.Equal(TofuWorkspace.TofuRootDirectory(), tofu.Path);
+            Assert.Equal(Path.Combine(data, "tofu"), tofu.Path);
 
             var api = rows.Single(r => r.Id == "oci");
             Assert.Equal(oci, api.Path);
@@ -43,13 +42,27 @@ public sealed class ProgramPathsTests
     [Fact]
     public void Describe_without_data_dir_still_lists_tofu_and_default_oci()
     {
-        var rows = ProgramPaths.Describe(null, ociConfigFile: null);
-        Assert.Equal("", rows.Single(r => r.Id == "data").Path);
-        Assert.False(rows.Single(r => r.Id == "data").Exists);
-        Assert.Equal("", rows.Single(r => r.Id == "config").Path);
+        var installed = Path.Combine(Path.GetTempPath(), "mcmgr-programpaths-none-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(installed);
+        var previousEnv = LocalConfigStore.ConfigDirEnvOverride;
+        LocalConfigStore.InstalledDataDirectoryOverride = installed;
+        LocalConfigStore.ConfigDirEnvOverride = "";
+        try
+        {
+            var rows = ProgramPaths.Describe(null, ociConfigFile: null);
+            Assert.Equal("", rows.Single(r => r.Id == "data").Path);
+            Assert.False(rows.Single(r => r.Id == "data").Exists);
+            Assert.Equal("", rows.Single(r => r.Id == "config").Path);
 
-        var oci = rows.Single(r => r.Id == "oci");
-        Assert.EndsWith(Path.Combine(".oci", "config"), oci.Path, StringComparison.OrdinalIgnoreCase);
+            var oci = rows.Single(r => r.Id == "oci");
+            Assert.EndsWith(Path.Combine(".oci", "config"), oci.Path, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            LocalConfigStore.ConfigDirEnvOverride = previousEnv;
+            LocalConfigStore.InstalledDataDirectoryOverride = null;
+            TryDeleteDir(installed);
+        }
     }
 
     [Fact]

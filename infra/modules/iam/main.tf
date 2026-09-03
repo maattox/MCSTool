@@ -82,6 +82,19 @@ resource "oci_identity_policy" "door_ip" {
   depends_on = [oci_identity_dynamic_group.door]
 }
 
+# Budgets live in the tenancy. get_budget is required so RESET
+# CreateTriggeredAlert events (no triggeredAlertType in the payload) can
+# be ignored when actual spend is still below $1.
+resource "oci_identity_policy" "fn_budget_read" {
+  compartment_id = var.tenancy_ocid
+  name           = "mcmgr-fn-budget-read"
+  description    = "Spend-brake Function reads actual spend before SoftStop"
+  statements = [
+    "Allow dynamic-group ${oci_identity_dynamic_group.fn.name} to read usage-budgets in tenancy",
+  ]
+  depends_on = [oci_identity_dynamic_group.fn]
+}
+
 output "dg_instances_id" {
   value = oci_identity_dynamic_group.instances.id
 }
@@ -100,4 +113,8 @@ output "policy_id" {
 
 output "door_ip_policy_id" {
   value = oci_identity_policy.door_ip.id
+}
+
+output "fn_budget_read_policy_id" {
+  value = oci_identity_policy.fn_budget_read.id
 }

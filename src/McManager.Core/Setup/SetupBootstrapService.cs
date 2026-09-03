@@ -148,6 +148,34 @@ public sealed class SetupBootstrapService
     }
 
     /// <summary>
+    /// Day-2 Vanilla / Paper / Modded switch (blueprint §12.3). Same prepare + <c>driver.sh</c>
+    /// as Change pack. No tofu. Vanilla/Paper skip pack copy. Keeps the world unless wipe.
+    /// </summary>
+    public Task<ServiceResult<ChangeServerTypeResult>> ChangeServerTypeAsync(
+        Vm1Settings vm1,
+        ChangeServerTypeRequest request,
+        IProgress<string>? log,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(vm1);
+        ArgumentNullException.ThrowIfNull(request);
+        return Task.Run(
+            () =>
+            {
+                try
+                {
+                    return ChangeServerType(vm1, request, log);
+                }
+                catch (Exception ex)
+                {
+                    return ServiceResult<ChangeServerTypeResult>.Fail(
+                        "Change server type failed: " + ex.Message);
+                }
+            },
+            cancellationToken);
+    }
+
+    /// <summary>
     /// Idempotent post-bootstrap: secondary play netplan, door oci.env Object Storage vars,
     /// managed server.properties (in-game whitelist off), reserved play IP on VM1 + PLAYABLE.
     /// Safe to re-run when apply_stage is already vm1.
@@ -711,6 +739,7 @@ public sealed class SetupBootstrapService
         }
 
         var state = PackReplacePlanner.ToWizardState(preview);
+        state.JvmXmx = JvmHeapChoice.Normalize(vm1.JvmXmx);
         var dist = SetupPackImport.ToDistribution(state);
         if (!SetupPackImport.IsOnboxDistribution(dist))
         {
@@ -730,43 +759,19 @@ public sealed class SetupBootstrapService
         if (!string.IsNullOrWhiteSpace(warning))
             log?.Report(warning);
 
-        const string onboxStaging = "/tmp/mcmgr-onbox";
         log?.Report(
             $"Pack replace: {preview.PackName} DISTRIBUTION={dist} "
             + $"MINECRAFT_VERSION={preview.MinecraftVersion} wipe_world={request.WipeWorld}");
-        Exec(client, $"rm -rf {onboxStaging} && mkdir -p {onboxStaging}", TimeSpan.FromSeconds(30), log);
-        UploadTree(client, onbox, onboxStaging, log);
-
-        var keep = request.WipeWorld ? "0" : "1";
-        var wipe = request.WipeWorld ? "1" : "0";
-        Exec(
+        var health = ReinstallMinecraft(
             client,
-            "sudo bash -c " + ShQuote(
-                "set -euo pipefail; "
-                + "HOME=\"${HOME:-/home/ubuntu}\"; "
-                + $"KEEP_WORLD={keep} WIPE_WORLD={wipe} "
-                + $"bash {onboxStaging}/prepare-pack-replace.sh"),
-            TimeSpan.FromMinutes(3),
-            log);
-
-        RunOnboxDriver(client, onboxStaging, state, preview.JavaMajor, log);
-
-        var pack = InstallModdedPack(
-            client,
-            onboxStaging,
+            onbox,
             state,
-            keepWorld: !request.WipeWorld,
-            log,
-            request.DataDirectory);
-        if (!pack.Succeeded)
-            return ServiceResult<PackReplaceResult>.Fail(pack.Error ?? "Pack copy failed.");
-
-        var health = WaitRcon(client, log);
+            request.WipeWorld,
+            preview.JavaMajor,
+            request.DataDirectory,
+            log);
         if (!health.Succeeded)
-            return ServiceResult<PackReplaceResult>.Fail(health.Error ?? "RCON health check failed.");
-
-        if (!string.IsNullOrWhiteSpace(health.Warning))
-            log?.Report(health.Warning);
+            return ServiceResult<PackReplaceResult>.Fail(health.Error ?? "Pack replace failed.");
 
         log?.Report("Pack replace finished.");
         return ServiceResult<PackReplaceResult>.Ok(
@@ -777,6 +782,139 @@ public sealed class SetupBootstrapService
                 request.WipeWorld,
                 warning,
                 health.Warning));
+    }
+
+    private static ServiceResult<ChangeServerTypeResult> ChangeServerType(
+        Vm1Settings vm1,
+        ChangeServerTypeRequest request,
+        IProgress<string>? log)
+    {
+        var onbox = ProductPaths.FindOnboxDirectory();
+        if (onbox is null)
+            return ServiceResult<ChangeServerTypeResult>.Fail("Product onbox/mcmgr/ not found.");
+
+        if (string.IsNullOrWhiteSpace(vm1.SshHost))
+            return ServiceResult<ChangeServerTypeResult>.Fail("VM1 SSH host is missing.");
+
+        var user = string.IsNullOrWhiteSpace(vm1.SshUser) ? "ubuntu" : vm1.SshUser.Trim();
+        var local = ChangeServerTypePlanner.TryCreate(
+            request.TargetChoice,
+            request.MinecraftVersion,
+            request.PackPath,
+            request.WipeWorld,
+            currentMinecraftVersion: null,
+            currentLoaderOrDistribution: null);
+        if (!local.Succeeded)
+            return ServiceResult<ChangeServerTypeResult>.Fail(
+                local.Error ?? "Could not plan this server type change.");
+
+        using var client = Connect(vm1.SshHost, user, vm1.SshKeyPath);
+        TryReadCurrentGame(client, out var currentMc, out var currentLoader);
+
+        var plan = ChangeServerTypePlanner.TryCreate(
+            request.TargetChoice,
+            request.MinecraftVersion,
+            request.PackPath,
+            request.WipeWorld,
+            currentMc,
+            currentLoader);
+        if (!plan.Succeeded || plan.Value is null)
+            return ServiceResult<ChangeServerTypeResult>.Fail(
+                plan.Error ?? "Could not plan this server type change.");
+
+        var state = ChangeServerTypePlanner.ToWizardState(plan.Value);
+        state.JvmXmx = JvmHeapChoice.Normalize(vm1.JvmXmx);
+        var dist = SetupPackImport.ToDistribution(state);
+        if (!SetupPackImport.IsOnboxDistribution(dist))
+        {
+            return ServiceResult<ChangeServerTypeResult>.Fail(
+                ChangeServerTypeUx.IsModdedChoice(plan.Value.TargetChoice)
+                    ? "Change type needs a Fabric, Forge, or NeoForge pack."
+                    : "Change type needs Default Vanilla, Paper, or a supported pack.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(plan.Value.SaveCompatibilityWarning))
+            log?.Report(plan.Value.SaveCompatibilityWarning);
+
+        var health = ReinstallMinecraft(
+            client,
+            onbox,
+            state,
+            request.WipeWorld,
+            plan.Value.Preview?.JavaMajor,
+            request.DataDirectory,
+            log);
+        if (!health.Succeeded)
+            return ServiceResult<ChangeServerTypeResult>.Fail(
+                health.Error ?? "Change server type failed.");
+
+        log?.Report("Change server type finished.");
+        var kind = ChangeServerTypeUx.ServerKindForMeta(
+            plan.Value.TargetChoice,
+            plan.Value.Preview?.Loader);
+        return ServiceResult<ChangeServerTypeResult>.Ok(
+            new ChangeServerTypeResult(
+                kind,
+                plan.Value.MinecraftVersion,
+                request.WipeWorld,
+                plan.Value.Preview?.PackName,
+                plan.Value.Preview?.Loader,
+                plan.Value.SaveCompatibilityWarning,
+                health.Warning));
+    }
+
+    private static ServiceResult ReinstallMinecraft(
+        SshClient client,
+        string onbox,
+        SetupWizardState state,
+        bool wipeWorld,
+        int? analyzedJavaMajor,
+        string? dataDirectory,
+        IProgress<string>? log)
+    {
+        const string onboxStaging = "/tmp/mcmgr-onbox";
+        var dist = SetupPackImport.ToDistribution(state);
+        log?.Report(
+            $"Reinstall Minecraft: DISTRIBUTION={dist} "
+            + $"MINECRAFT_VERSION={state.MinecraftVersion} wipe_world={wipeWorld}");
+        Exec(client, $"rm -rf {onboxStaging} && mkdir -p {onboxStaging}", TimeSpan.FromSeconds(30), log);
+        UploadTree(client, onbox, onboxStaging, log);
+
+        var keep = wipeWorld ? "0" : "1";
+        var wipe = wipeWorld ? "1" : "0";
+        Exec(
+            client,
+            "sudo bash -c " + ShQuote(
+                "set -euo pipefail; "
+                + "HOME=\"${HOME:-/home/ubuntu}\"; "
+                + $"KEEP_WORLD={keep} WIPE_WORLD={wipe} "
+                + $"bash {onboxStaging}/prepare-pack-replace.sh"),
+            TimeSpan.FromMinutes(3),
+            log);
+
+        RunOnboxDriver(client, onboxStaging, state, analyzedJavaMajor, log);
+
+        if (SetupServerType.IsModded(state.ServerType))
+        {
+            var pack = InstallModdedPack(
+                client,
+                onboxStaging,
+                state,
+                keepWorld: !wipeWorld,
+                log,
+                dataDirectory);
+            if (!pack.Succeeded)
+                return ServiceResult.Fail(pack.Error ?? "Pack copy failed.");
+        }
+
+        var health = WaitRcon(client, log);
+        if (!health.Succeeded)
+            return ServiceResult.Fail(health.Error ?? "RCON health check failed.");
+
+        if (!string.IsNullOrWhiteSpace(health.Warning))
+            log?.Report(health.Warning);
+
+        return health;
     }
 
     private static void RunOnboxDriver(
@@ -917,13 +1055,7 @@ public sealed class SetupBootstrapService
         UploadPackTree(client, localDest, remoteStaging, keepWorld, log);
         Exec(
             client,
-            "sudo bash -c " + ShQuote(
-                "set -euo pipefail; "
-                + "HOME=\"${HOME:-/home/ubuntu}\"; "
-                + "systemctl stop minecraft || true; "
-                + $"cp -a {remoteStaging}/. /opt/mcmgr/server/; "
-                + $"bash {onboxStaging}/repair-permissions.sh; "
-                + "systemctl start minecraft"),
+            "sudo bash -c " + ShQuote(PackCopyRemote.ApplyStagedTreeCommand(remoteStaging, onboxStaging)),
             TimeSpan.FromMinutes(10),
             log);
         log?.Report(

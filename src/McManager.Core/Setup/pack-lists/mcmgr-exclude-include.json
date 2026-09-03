@@ -3,7 +3,10 @@
     "loading-screen",
     "konkrete",
     "titlebar",
-    "flatlaf"
+    "flatlaf",
+    "entity-texture-features",
+    "ImmediatelyFast",
+    "PresenceFootsteps"
   ],
   "globalForceIncludes": [],
   "modpacks": {}

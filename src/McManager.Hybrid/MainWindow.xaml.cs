@@ -94,5 +94,8 @@ public partial class MainWindow : Window
             return;
 
         core.Settings.IsZoomControlEnabled = false;
+        // Autofill on first text-field focus can freeze WebView2 + custom WindowChrome for a beat.
+        core.Settings.IsGeneralAutofillEnabled = false;
+        core.Settings.IsPasswordAutosaveEnabled = false;
     }
 }

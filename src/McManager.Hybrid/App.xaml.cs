@@ -90,11 +90,14 @@ public partial class App : Application
         services.AddSingleton<UsageViewModel>();
         services.AddSingleton<PackIdentityCatalogCache>();
         services.AddSingleton<SetupBootstrapService>();
+        services.AddSingleton<ChangeServerTypeViewModel>();
         services.AddSingleton<ServerManagementViewModel>();
         services.AddSingleton<ConsoleViewModel>();
         services.AddSingleton<TroubleshootingViewModel>();
         services.AddSingleton<AdvancedViewModel>();
         services.AddSingleton<Vm1ShapeScaleViewModel>();
+        services.AddSingleton<JvmHeapViewModel>();
+        services.AddSingleton<JvmExtraFlagsViewModel>();
         services.AddSingleton<DestroyInfrastructureViewModel>();
         services.AddTransient<SetupWizardViewModel>();
     }

@@ -62,7 +62,7 @@ Tofu writes **structural** ingress only:
 
 Descriptions match Manager ownership (`"{name} SSH access"`, name, `"{name} door access"`).
 
-`lifecycle { ignore_changes = [ingress_security_rules] }` so day-2 Avalonia whitelist sync does not fight state. Friend `/32`s are **not** tofu resources. RCON 25575 is never opened. No `0.0.0.0/0` on 22 / 25565 / 8080.
+`lifecycle { ignore_changes = [ingress_security_rules] }` so day-2 Avalonia whitelist sync does not fight state. Player `/32`s are **not** tofu resources. RCON 25575 is never opened. No `0.0.0.0/0` on 22 / 25565 / 8080.
 
 ---
 

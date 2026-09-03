@@ -1,5 +1,6 @@
 using System.Text;
 using CommunityToolkit.Mvvm.ComponentModel;
+using McManager.Core.Config;
 using McManager.Core.Setup;
 using McManager.Hybrid.Ui;
 
@@ -88,7 +89,7 @@ public sealed partial class DestroyInfrastructureViewModel : ObservableObject
     };
 
     public string CloseButtonText => Phase == DestroyInfrastructurePhase.Succeeded
-        ? "Close Manager and continue"
+        ? "Continue"
         : "Close";
 
     public string ProgressPercentDisplay => $"{(int)Math.Round(ProgressPercent)}%";
@@ -135,8 +136,20 @@ public sealed partial class DestroyInfrastructureViewModel : ObservableObject
         if (Phase == DestroyInfrastructurePhase.Succeeded)
         {
             _main.StopChrome();
-            _session.ReloadFromDisk();
-            _shell.EnterFirstRun();
+            var current = ServerCatalog.ActiveSlug();
+            var other = ServerCatalog.TryFindOtherServerWithManageConfig(current);
+            if (!string.IsNullOrWhiteSpace(other)
+                && ServerCatalog.SetActive(other).Succeeded)
+            {
+                _session.ReloadFromDisk();
+                _shell.EnterManage();
+                _main.StartChrome();
+            }
+            else
+            {
+                _session.ReloadFromDisk();
+                _shell.EnterFirstRun();
+            }
         }
     }
 

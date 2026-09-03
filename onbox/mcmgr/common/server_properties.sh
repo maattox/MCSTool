@@ -14,6 +14,7 @@ server_properties_apply() {
   local py
   py="$(mcmgr_python)"
   "${py}" - "${props}" "${rcon_password}" <<'PY'
+import os
 import sys
 path, password = sys.argv[1:3]
 managed = {
@@ -34,6 +35,12 @@ if_missing = {
 }
 # Intentionally never allow online-mode false via this writer.
 assert managed["online-mode"] == "true"
+
+# First-install seed only. Blank/unset leaves any existing level-seed alone
+# (Change pack / repair must not force a random world).
+_level_seed = (os.environ.get("LEVEL_SEED") or "").strip()
+if _level_seed:
+    managed["level-seed"] = _level_seed
 
 lines = []
 seen = set()

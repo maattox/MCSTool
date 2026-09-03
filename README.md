@@ -5,17 +5,17 @@ Create a vanilla or modded Minecraft server using OCI Always Free resources.
 ### Setup guide: [docs/Guide.md](docs/Guide.md)
 
 - Always Free *can* work at **$0**, but Oracle **capacity often blocks creating the VMs**. Upgrading the account to **Pay As You Go (PAYG)** raises scheduling priority. You can still stay at $0 if you stay inside Always Free limits.
-- A Windows app for a **private Minecraft server** (modded or vanilla) for you and other players, hosted on [Oracle Cloud](https://www.oracle.com/cloud/). Built to run on Oracle’s Always Free resources.
-- For modded servers, you supply the mod pack. Supported formats are **Modrinth** `.mrpack`, **CurseForge Server Files**, and a **zip of** `.jar` **mods**. For a zip of jars, Setup asks you to confirm the loader, Minecraft version, and Java.
+- For modded servers, supported modpack formats are **Modrinth** `.mrpack`, **CurseForge Server Files**, and a **zip of** `.jar` **mods**. For a zip of jars, Setup asks you to confirm the loader, Minecraft version, and Java.
+- At the recommended VM size (4 OCPUs), the server is only able to be running for about 12 hours a day over the course of a month. This is to stay within Oracle's Always Free resource limits. There are systems in place to automatically manage your server's uptime and resource usage to ensure you do not exceed Oracle's monthly free resources.
 
-**Open beta 0.9.1** — download it from [Releases](https://github.com/maattox/MCSTool/releases).
+**1.0.0** — download it from [Releases](https://github.com/maattox/MCSTool/releases).
 
 ![MCSTool](assets/sample-image.png)
 
 ## What you get
 
+- Easily create a modded, Paper, or vanilla Minecraft server for free
 - One app to create the server and manage it afterward
-- Vanilla or modded server
 - Players always join the same address
 - When nobody is playing, the game server sleeps. A small always-on “doorbell” still answers Minecraft and can wake the server
 - Only players whose IP you add in the app can connect
@@ -32,9 +32,9 @@ Oracle often requires a **Pay As You Go** account so the server can be created. 
 ## Get started
 
 1. You need **Windows 10 or 11**, an [Oracle Cloud](https://cloud.oracle.com) account, and **Minecraft Java Edition**.
-2. Download **MCSTool-Setup-0.9.1.exe** from [Releases](https://github.com/maattox/MCSTool/releases).
-3. Windows may say the publisher is unknown. That is expected for this beta. Choose **More info** → **Run anyway** only if you downloaded the file from this project’s Releases.
-4. Open **MCSTool** and follow Setup. The app will tell you if a Microsoft component is missing.
+2. Download **MCSTool-Setup-1.0.0.exe** from [Releases](https://github.com/maattox/MCSTool/releases).
+3. Windows may say the publisher is unknown. That is expected for this installer. Choose **More info** → **Run anyway** only if you downloaded the file from this project’s Releases.
+4. Open **MCSTool** and follow Setup.
 
 Step-by-step: [docs/Guide.md](docs/Guide.md).
 

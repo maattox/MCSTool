@@ -63,7 +63,7 @@ public sealed class ConnectExistingFlow
             await _dialogs.ShowInfoAsync(
                 "No existing stack found",
                 "Auto-detect did not find a product compartment (name mcmgr / mcmgr-2 or tag mcmgr-domain=mc-server-compartment) "
-                + "with meta/infra.json.\n\nUse Setup to deploy a new stack, or seed data/config.local.json by hand."
+                + "with meta/infra.json.\n\nUse Setup to deploy a new stack, or seed this server's config.local.json by hand."
                 + extra,
                 cancellationToken);
             return ConnectExistingOutcome.NoneFound;
@@ -106,7 +106,7 @@ public sealed class ConnectExistingFlow
         var confirmed = await _dialogs.ConfirmAsync(
             "Existing infrastructure detected. Connect?",
             chosen.ConfirmSummary
-            + "\n\nThis writes data/config.local.json from meta/infra.json. "
+            + "\n\nThis writes this server's config.local.json from meta/infra.json. "
             + "SSH private key path and RCON stay on this PC (not Object Storage).",
             confirmButtonText: "Connect",
             cancellationToken: cancellationToken);
@@ -121,9 +121,8 @@ public sealed class ConnectExistingFlow
         {
             var overwrite = await _dialogs.ConfirmAsync(
                 "Replace local manage config?",
-                "data/config.local.json already exists. Connecting will overwrite OCIDs from the detected stack.\n\n"
-                + "Existing SSH key path and RCON password on this PC will be kept unless you pick a new key.\n\n"
-                + "To avoid clobbering a working seed, set MCMANAGER_CONFIG_DIR to a new empty folder.",
+                "config.local.json already exists for this server. Connecting will overwrite OCIDs from the detected stack.\n\n"
+                + "Existing SSH key path and RCON password on this PC will be kept unless you pick a new key.",
                 confirmButtonText: "Overwrite",
                 cancellationToken: cancellationToken);
             if (!overwrite)
@@ -168,7 +167,7 @@ public sealed class ConnectExistingFlow
             progress?.Report(saved.Error ?? "Failed to save config.local.json.");
             await _dialogs.ShowInfoAsync(
                 "Connect failed",
-                saved.Error ?? "Could not write data/config.local.json. Existing file was not deleted.",
+                saved.Error ?? "Could not write config.local.json for this server. Existing file was not deleted.",
                 cancellationToken);
             return ConnectExistingOutcome.Failed;
         }

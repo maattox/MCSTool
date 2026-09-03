@@ -15,21 +15,27 @@ public sealed partial class ChromeViewModel : ObservableObject
     private readonly LocalConfigHost _configHost;
     private readonly IClipboard _clipboard;
     private readonly IShell _shell;
-    private readonly AppSettingsDocument _settings;
+    private readonly ManageSession _session;
     private readonly string _settingsPath;
     private bool _loading = true;
     private CancellationTokenSource? _copyCts;
 
-    public ChromeViewModel(LocalConfigHost configHost, IClipboard clipboard, IShell shell)
+    public ChromeViewModel(
+        LocalConfigHost configHost,
+        IClipboard clipboard,
+        IShell shell,
+        ManageSession session)
     {
         _configHost = configHost;
         _clipboard = clipboard;
         _shell = shell;
+        _session = session;
         _settingsPath = AppSettingsStore.DefaultFilePath();
-        _settings = AppSettingsStore.Load(_settingsPath);
-        CheckForUpdates = _settings.CheckForUpdates;
+        var settings = AppSettingsStore.Load(_settingsPath);
+        CheckForUpdates = settings.CheckForUpdates;
         AppVersion = ReadAppVersion();
         RefreshPaths();
+        _session.Reloaded += OnSessionReloaded;
         _loading = false;
     }
 
@@ -59,6 +65,16 @@ public sealed partial class ChromeViewModel : ObservableObject
     public string? ConfigDirOverride => ProgramPaths.ConfigDirOverride;
 
     public bool HasConfigDirOverride => !string.IsNullOrWhiteSpace(ConfigDirOverride);
+
+    public string ActiveServerLabel => ServerCatalog.CaptionLabel(_configHost.PlayIp);
+
+    public void RefreshServerLabel()
+    {
+        OnPropertyChanged(nameof(ActiveServerLabel));
+        RefreshPaths();
+    }
+
+    private void OnSessionReloaded(object? sender, EventArgs e) => RefreshServerLabel();
 
     public void OpenSettings()
     {
@@ -109,8 +125,9 @@ public sealed partial class ChromeViewModel : ObservableObject
         if (_loading)
             return;
 
-        _settings.CheckForUpdates = value;
-        var result = AppSettingsStore.Save(_settings, _settingsPath);
+        var doc = AppSettingsStore.Load(_settingsPath);
+        doc.CheckForUpdates = value;
+        var result = AppSettingsStore.Save(doc, _settingsPath);
         SaveError = result.Succeeded ? "" : (result.Error ?? "Could not save program settings.");
     }
 
@@ -131,6 +148,6 @@ public sealed partial class ChromeViewModel : ObservableObject
             return plus > 0 ? informational[..plus] : informational;
         }
 
-        return asm.GetName().Version?.ToString(3) ?? "0.9.1";
+        return asm.GetName().Version?.ToString(3) ?? "1.0.0";
     }
 }

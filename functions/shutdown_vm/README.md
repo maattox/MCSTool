@@ -1,7 +1,7 @@
 # `shutdown_vm` — $1 budget emergency Function
 
-**Status:** Product **v1** source (V1 Step **2.2**). `func.yaml` version **0.0.12**.  
-**TESTING (2026-08-20 P12):** Pass 2 Setup skipped the image (Docker daemon down). P12 pushed product `linux/arm64` to OCIR `mcmgr-fn/softstop:setup` and created `mcmgr-fn-softstop` + Events via OCI CLI (no `tofu apply`; tfvars `function_image` still empty). Synthetic RESET skip + ACTUAL SoftStop **VM1** + lock PUT; door stays up. Live **Forge lab** may still be **0.0.11** (SoftStop both VMs, no lock PUT). TESTING agents **may** `fn build` / `fn push` / invoke this tree without asking — stay at **$0**, do **not** fire a real $1 budget alert, **do not SoftStop the door**. Never `DEFAULT` / live Forge lab.
+**Status:** Product **v1** source (V1 Step **2.2**). `func.yaml` version **0.0.13**.  
+**0.0.13 (2026-09-02):** SoftStop only on a confirmed **$1 actual-spend** breach. Official Events `CreateTriggeredAlert` JSON has **no** `triggeredAlertType` (monthly RESET uses the same event type). The Function GETs the budget and **skips** when `actual_spend` is below the amount; also skips parsed `RESET` / `FORECAST`. Unconfirmed envelopes (no type, spend unknown) skip instead of fail-closed. **Forge lab / DEFAULT** image is `budget-repo/shutdown_vm:0.0.13`. Stay at **$0**, do **not** fire a real $1 budget alert, **do not SoftStop the door**.
 
 **Product path (required before official release — V1 Step 8.6.1):** developer pre-builds `linux/arm64` with Docker Desktop; Setup **copies** the tarball into the user’s OCIR. **Users** do not install Docker Desktop, `fn`, or use Cloud Shell. GitHub Actions is not required. Cloud Shell / Code Editor remain lab break-glass only (`oci fn` never builds an image). Later code fixes: rebuild the tar, ship with a new Manager / installer; Deploy / repair converges digest. Function **config** (VM1 OCID, bucket, lock key) stays tofu-owned — no rebuild.
 
@@ -20,11 +20,14 @@ Override only if a future Always Free change makes Micro billable, or if the ope
 
 ## What it does
 
-Triggered by the compartment **$1 actual-spend** budget alert (Events: `Budgets: TriggeredAlert - Create`).
+Triggered by the compartment **$1 actual-spend** budget alert (Events: `Budgets: TriggeredAlert - Create`). Monthly RESET uses the **same** event type.
 
-1. Parse the event JSON for `data.stateChange.current.triggeredAlertType`.  
-2. If that type is **`RESET`** (monthly budget reset): **do nothing** — no SoftStop, **no lock PUT**, **no lock DELETE**. Return `SKIPPED`. Manager is the only clearer of the lock.  
-3. Otherwise (including unparseable bodies, treated as a real alert to fail closed): using a **resource-principals** signer:  
+1. Parse the event JSON for an alert type (any `triggeredAlertType` / `triggered_alert_type`) and a budget OCID (`additionalDetails.budgetId`, else Function config `BUDGET_ID`).  
+2. **Skip** (no SoftStop, **no lock PUT**, **no lock DELETE**) when:  
+   - the parsed type is **`RESET`** or **`FORECAST`**, or  
+   - `get_budget` shows `actual_spend` below the budget amount, or  
+   - the envelope is unconfirmed (no type and spend unknown).  
+3. **Act** only when spend has reached the amount, or when the parsed type is **`ACTUAL`** and spend could not be read: using a **resource-principals** signer:  
    - `SOFTSTOP` every OCID in `INSTANCE_OCIDS` (product default: **VM1 only**). Already STOPPED / STOPPING is success (`SKIPPED`).  
    - **PUT** Object Storage **`meta/spend-brake-triggered.json`** (v1 JSON: `version`, `triggered_at`, `updated_at`, `source=budget_function`, optional `alert_type`, `reason=compartment_budget_threshold`). Idempotent replace.  
 4. Overall `ERROR` if any SoftStop **or** the lock PUT fails (so OCI can retry). SoftStop still runs if the lock PUT will fail, and the lock is still written if SoftStop failed.
@@ -44,8 +47,9 @@ It does **not**:
 | `OS_NAMESPACE` | yes | Object Storage namespace (for the lock PUT). |
 | `OS_BUCKET` | yes | Shared bucket (product `mcmgr-shared-data`). |
 | `OS_LOCK_OBJECT` | no | Default `meta/spend-brake-triggered.json`. |
+| `BUDGET_ID` | yes | Budget OCID for `get_budget` when the Events payload omits `budgetId`. Product HCL passes `oci_budget_budget.one_usd.id`. |
 
-IAM: Functions dynamic group needs `use instance-family` (SoftStop) and **object write on the product bucket** (lock PUT). Product tofu already grants both.
+IAM: Functions dynamic group needs `use instance-family` (SoftStop), **object write on the product bucket** (lock PUT), and **`read usage-budgets` in tenancy** (`get_budget` spend gate). Product tofu grants all three.
 
 ## Files
 
