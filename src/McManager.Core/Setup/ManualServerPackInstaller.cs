@@ -40,6 +40,7 @@ public static class ManualServerPackInstaller
         "client-overrides/",
         "__macosx/",
         ".fabric/",
+        ".connector/",
     ];
 
     private static readonly HashSet<string> RootFiles = new(StringComparer.OrdinalIgnoreCase)

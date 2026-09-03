@@ -47,6 +47,118 @@ public sealed class ManualServerPackInstallerTests
         }
     }
 
+    [Theory]
+    [InlineData(".connector/remapped.jar")]
+    [InlineData("mods/.connector/remapped.jar")]
+    [InlineData("Pack Name/.connector/remapped.jar.input")]
+    [InlineData(".CONNECTOR/x")]
+    public void Ignores_sinytra_connector_cache_paths(string path)
+    {
+        Assert.True(ManualServerPackAnalyzer.ShouldIgnoreEntry(path));
+    }
+
+    [Theory]
+    [InlineData("connector-1.2.3.jar")]
+    [InlineData("mods/sinytra-connector.jar")]
+    [InlineData("mods/dummy-server.jar")]
+    public void Does_not_ignore_connector_mod_jars(string path)
+    {
+        Assert.False(ManualServerPackAnalyzer.ShouldIgnoreEntry(path));
+    }
+
+    [Fact]
+    public void Jar_root_zip_ignores_connector_cache_and_installs_root_jars()
+    {
+        var serverJar = Encoding.UTF8.GetBytes("server-bytes");
+        var connectorMod = Encoding.UTF8.GetBytes("connector-mod");
+        using var zip = MakeZipBytes(
+            ("dummy-server.jar", serverJar),
+            ("connector-dummy.jar", connectorMod),
+            (".connector/remapped.jar", Encoding.UTF8.GetBytes("cache-jar")),
+            (".connector/remapped.jar.input", Encoding.UTF8.GetBytes("cache-hash")));
+        var path = WriteTemp("jar-root-connector.zip", zip);
+        var dest = NewTempDir();
+        try
+        {
+            var analysis = ManualServerPackAnalyzer.AnalyzeFile(path);
+            Assert.True(analysis.Succeeded, analysis.Error);
+            var a = analysis.Value!;
+            Assert.True(a.CanInstall);
+            Assert.Equal(ManualServerPackKind.UnstructuredServer, a.Kind);
+            Assert.True(a.MapRootJarsToMods);
+            Assert.Contains("dummy-server.jar", a.ServerSidePaths);
+            Assert.Contains("connector-dummy.jar", a.ServerSidePaths);
+            Assert.DoesNotContain(a.ServerSidePaths, p => p.Contains(".connector", StringComparison.OrdinalIgnoreCase));
+            Assert.DoesNotContain(a.UnclearSidePaths, p => p.Contains(".connector", StringComparison.OrdinalIgnoreCase));
+
+            var result = ManualServerPackInstaller.Install(path, dest, retainDataDirectory: null);
+            Assert.True(result.Succeeded, result.Error);
+            Assert.True(File.Exists(Path.Combine(dest, "mods", "dummy-server.jar")));
+            Assert.True(File.Exists(Path.Combine(dest, "mods", "connector-dummy.jar")));
+            Assert.False(File.Exists(Path.Combine(dest, "mods", "remapped.jar")));
+            Assert.False(Directory.Exists(Path.Combine(dest, ".connector")));
+            Assert.False(Directory.Exists(Path.Combine(dest, "mods", ".connector")));
+        }
+        finally
+        {
+            TryDelete(path);
+            TryDeleteDir(dest);
+        }
+    }
+
+    [Fact]
+    public void Mods_folder_zip_does_not_install_nested_connector_jars()
+    {
+        using var zip = MakeZipBytes(
+            ("mods/content.jar", Encoding.UTF8.GetBytes("mod")),
+            ("mods/.connector/cached.jar", Encoding.UTF8.GetBytes("cache")),
+            ("mods/.connector/cached.jar.input", Encoding.UTF8.GetBytes("hash")));
+        var path = WriteTemp("mods-connector.zip", zip);
+        var dest = NewTempDir();
+        try
+        {
+            var analysis = ManualServerPackAnalyzer.AnalyzeFile(path);
+            Assert.True(analysis.Succeeded, analysis.Error);
+            var a = analysis.Value!;
+            Assert.True(a.CanInstall);
+            Assert.Equal(ManualServerPackKind.UnstructuredServer, a.Kind);
+            Assert.Contains("mods/content.jar", a.ServerSidePaths);
+            Assert.DoesNotContain(a.ServerSidePaths, p => p.Contains(".connector", StringComparison.OrdinalIgnoreCase));
+
+            var result = ManualServerPackInstaller.Install(path, dest, retainDataDirectory: null);
+            Assert.True(result.Succeeded, result.Error);
+            Assert.True(File.Exists(Path.Combine(dest, "mods", "content.jar")));
+            Assert.False(File.Exists(Path.Combine(dest, "mods", ".connector", "cached.jar")));
+            Assert.False(Directory.Exists(Path.Combine(dest, "mods", ".connector")));
+        }
+        finally
+        {
+            TryDelete(path);
+            TryDeleteDir(dest);
+        }
+    }
+
+    [Fact]
+    public void Connector_cache_only_zip_is_refused()
+    {
+        using var zip = MakeZipBytes(
+            (".connector/remapped.jar", Encoding.UTF8.GetBytes("cache")),
+            (".connector/remapped.jar.input", Encoding.UTF8.GetBytes("hash")));
+        var path = WriteTemp("connector-only.zip", zip);
+        try
+        {
+            var analysis = ManualServerPackAnalyzer.AnalyzeFile(path);
+            Assert.True(analysis.Succeeded, analysis.Error);
+            Assert.Equal(ManualServerPackKind.Unknown, analysis.Value!.Kind);
+            Assert.False(analysis.Value.CanInstall);
+            Assert.Equal(ManualServerPackAnalyzer.UnknownRefusal, analysis.Value.RefusalReason);
+        }
+        finally
+        {
+            TryDelete(path);
+        }
+    }
+
     [Fact]
     public void Tracked_jar_root_fixture_installs_into_mods_and_skips_exclude_list()
     {

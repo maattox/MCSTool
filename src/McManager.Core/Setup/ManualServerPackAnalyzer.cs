@@ -452,13 +452,25 @@ public static class ManualServerPackAnalyzer
         }
     }
 
+    /// <summary>
+    /// Drop zip junk and regenerable runtime caches. Sinytra Connector writes remapped
+    /// Fabric jars under <c>.connector/</c> (often inside <c>mods/</c>); those are not pack
+    /// content and must not count as mod jars or disqualify a jar-root zip.
+    /// </summary>
     internal static bool ShouldIgnoreEntry(string normalizedPath)
     {
         if (normalizedPath.StartsWith("__MACOSX/", StringComparison.OrdinalIgnoreCase)
             || string.Equals(normalizedPath, "__MACOSX", StringComparison.OrdinalIgnoreCase))
             return true;
-        var leaf = normalizedPath.Split('/')[^1];
-        return string.Equals(leaf, ".DS_Store", StringComparison.OrdinalIgnoreCase);
+
+        foreach (var part in normalizedPath.Split('/', StringSplitOptions.RemoveEmptyEntries))
+        {
+            if (string.Equals(part, ".DS_Store", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(part, ".connector", StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        return false;
     }
 
     internal static string? DetectWrapperPrefix(IReadOnlyList<string> names)

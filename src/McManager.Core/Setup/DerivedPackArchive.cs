@@ -47,6 +47,7 @@ public static class DerivedPackArchive
         "client-overrides/",
         "__macosx/",
         ".fabric/",
+        ".connector/",
     ];
 
     public static ServiceResult<string> Build(

@@ -141,6 +141,37 @@ public sealed class DerivedPackArchiveTests
     }
 
     [Fact]
+    public void Derived_zip_omits_connector_cache()
+    {
+        using var zip = MakeZipBytes(
+            ("dummy-server.jar", Encoding.UTF8.GetBytes("server-bytes")),
+            (".connector/remapped.jar", Encoding.UTF8.GetBytes("cache")),
+            (".connector/remapped.jar.input", Encoding.UTF8.GetBytes("hash")));
+        var path = WriteTemp("jar-root-connector.zip", zip);
+        try
+        {
+            var analysis = ManualServerPackAnalyzer.AnalyzeFile(path);
+            Assert.True(analysis.Succeeded, analysis.Error);
+            Assert.True(analysis.Value!.MapRootJarsToMods);
+
+            var dest = Path.Combine(NewTempDir(), "derived.zip");
+            var fields = new DerivedPackFields("1.21.1", MrpackAnalyzer.LoaderForge, "47.3.0", 21);
+            var build = DerivedPackArchive.Build(path, analysis.Value, fields, dest, "jar-root-connector.zip");
+            Assert.True(build.Succeeded, build.Error);
+
+            using var derived = new ZipArchive(File.OpenRead(dest), ZipArchiveMode.Read);
+            Assert.NotNull(derived.GetEntry("overrides/mods/dummy-server.jar"));
+            Assert.Null(derived.GetEntry("overrides/mods/remapped.jar"));
+            Assert.DoesNotContain(derived.Entries, e =>
+                e.FullName.Replace('\\', '/').Contains(".connector", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            TryDelete(path);
+        }
+    }
+
+    [Fact]
     public void ShouldUseManualInstaller_true_for_sidecar_zip()
     {
         var path = FixturePath("jar-root.zip");
