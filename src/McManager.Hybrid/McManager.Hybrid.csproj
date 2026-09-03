@@ -8,7 +8,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
-    <Version>0.9.1</Version>
+    <Version>1.0.0</Version>
     <Product>MCSTool</Product>
     <!-- Same grass-block mark as the default Minecraft list icon (assets/server-icons/default-icon.png). -->
     <ApplicationIcon>..\..\assets\server-icons\default-icon.ico</ApplicationIcon>

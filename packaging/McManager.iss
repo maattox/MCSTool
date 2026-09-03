@@ -3,7 +3,7 @@
 ; published into packaging\out\publish\ (including the Function tar).
 
 #ifndef MyAppVersion
-  #define MyAppVersion "0.9.1"
+  #define MyAppVersion "1.0.0"
 #endif
 
 #define MyAppName "MCSTool"
@@ -39,7 +39,7 @@ SetupLogging=no
 CloseApplications=yes
 CloseApplicationsFilter={#MyAppExeName}
 MinVersion=10.0
-; Unsigned is expected for closed beta (code-signing cert is deferred).
+; Unsigned is expected (code-signing cert is deferred).
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
