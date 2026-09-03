@@ -148,10 +148,10 @@ Choose **Vanilla** or **Modded**.
 
 - Supported pack formats: Modrinth `.mrpack`, CurseForge **Server Files**, or a `.zip` of `.jar` mods (you may need to confirm some details about the pack).
 - Supported loaders: Fabric, Forge, NeoForge.
-- Large packs with heavy mods will lag on this VM. In particular, skip **Distant Horizons** — generating new chunks on this size of VM causes significant lag.
-- You can change Vanilla, Optimized Vanilla (Paper), or Modded later from **Server → Settings → Change type**. That reinstalls Minecraft on the existing VM. It is **not** a cloud Redeploy; the stack, doorbell, and play IP stay. Going from Modded back to Vanilla or Paper can strip mod blocks and items from the world unless you wipe.
+- Large packs with heavy mods will lag on this VM. In particular, skip **Distant Horizons** (generating new chunks on this size of VM causes significant lag).
+- You can change Vanilla, Optimized Vanilla (Paper), or Modded later from **Server → Settings → Change type**.
 - **Modded:** players need **that same exported pack file** on their PCs.
-- Optional **World seed**. Leave it blank for a random world. MCSTool writes that seed when Minecraft generates a new world (first install, and later **Wipe world** on the Server tab). Replacing a world from a zip does not use this field.
+- Optional **World seed**. Leave it blank for a random world.
 
 **Step 5 — Server identity**  
 Set the name, description, and icon players see in the Minecraft server list. You can change these later.
@@ -169,7 +169,7 @@ Pick a size, Minecraft memory, and start deployment.
 - If Deploy is interrupted after the game VM already exists, that VM may stay on. Finish Setup, or stop it in the OCI Console (especially the 4 OCPU / 24 GB size).
 - The recommended size (**4 OCPU / 24 GB**) can only run about **~11.5 hours a day** on average over a month. MCSTool’s usage stats make that easy to track.
 - The smaller size (**2 OCPU / 12 GB**) can usually stay on all month, with less room for mods and players.
-- Minecraft heap is **4G**, **6G**, or **8G** (default **4G**). Xms always matches Xmx. 8G still leaves about 4G for the OS on either VM size. You can change heap later on Advanced → Danger without stopping the VM.
+- Minecraft heap is **4G**, **6G**, or **8G** (default **4G**). Xms always matches Xmx. You can change heap later on Advanced → Danger.
 
 
 
