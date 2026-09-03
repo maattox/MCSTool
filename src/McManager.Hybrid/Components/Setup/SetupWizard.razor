@@ -257,7 +257,8 @@
                                     <label for="mcm-setup-mc-version">Minecraft version</label>
                                     <select id="mcm-setup-mc-version"
                                             disabled="@(!Vm.CanMutateWizard || Vm.VersionIds.Count == 0)"
-                                            @bind="Vm.MinecraftVersion">
+                                            value="@Vm.MinecraftVersion"
+                                            @onchange="OnMinecraftVersionPicked">
                                         @if (!string.IsNullOrWhiteSpace(Vm.MinecraftVersion)
                                              && !Vm.VersionIds.Contains(Vm.MinecraftVersion))
                                         {
@@ -320,10 +321,14 @@
                     <div class="mcm-field">
                         <label for="mcm-setup-world-seed">World seed (optional)</label>
                         <input id="mcm-setup-world-seed"
+                               @key="@("mcm-setup-world-seed")"
                                type="text"
+                               name="mc-world-seed"
                                maxlength="256"
                                spellcheck="false"
                                autocomplete="off"
+                               autocorrect="off"
+                               autocapitalize="off"
                                placeholder="Leave blank for a random world"
                                disabled="@(!Vm.CanMutateWizard)"
                                @bind="Vm.WorldSeed"
@@ -750,6 +755,7 @@
         {
             _initialized = true;
             await Vm.InitializeAsync();
+            StateHasChanged();
         }
 
         if (Vm.IsStepSummary)
@@ -771,6 +777,9 @@
         Vm.PropertyChanged -= OnVmChanged;
         Vm.PrepareToClose();
     }
+
+    private void OnMinecraftVersionPicked(ChangeEventArgs e) =>
+        Vm.ApplyMinecraftVersionFromPicker(e.Value?.ToString());
 
     private async Task OnPackInputAsync(InputFileChangeEventArgs e)
     {

@@ -143,6 +143,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     private string _functionImage = "";
     private string _resumeMinecraftVersion = "";
     private bool _navReady;
+    private bool _initializing;
     private bool _applyingIdentityDefault;
 
     public IReadOnlyList<OciConfigProfile> Profiles => _profiles;
@@ -402,6 +403,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         _catalogs = catalogs;
         LoadFrom(SetupWizardStore.LoadOrNew());
         LoadProfiles();
+        PrimeVersionCatalogFixtures();
         AuthTokenStored = WindowsCredentialStore.Exists();
         HasExistingManageConfig = LocalConfigStore.HasManageConfig();
         _navReady = true;
@@ -692,16 +694,34 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     public async Task InitializeAsync()
     {
-        await LoadVersionsAsync().ConfigureAwait(true);
-        await DetectAdminIpAsync().ConfigureAwait(true);
-        if (ServerTypeIsModded && !string.IsNullOrWhiteSpace(PackPath) && File.Exists(PackPath))
-            await AnalyzePackPathAsync(PackPath, keepConfirm: true).ConfigureAwait(true);
-        else if (ServerTypeIsModded && !string.IsNullOrWhiteSpace(PackPath) && !File.Exists(PackPath))
+        _initializing = true;
+        try
         {
-            PackBlockReason = "The pack file is missing. Choose it again.";
-            PackCanContinue = false;
-            PackConfirmed = false;
+            await LoadVersionsAsync().ConfigureAwait(true);
+            await DetectAdminIpAsync().ConfigureAwait(true);
+            if (ServerTypeIsModded && !string.IsNullOrWhiteSpace(PackPath) && File.Exists(PackPath))
+                await AnalyzePackPathAsync(PackPath, keepConfirm: true).ConfigureAwait(true);
+            else if (ServerTypeIsModded && !string.IsNullOrWhiteSpace(PackPath) && !File.Exists(PackPath))
+            {
+                PackBlockReason = "The pack file is missing. Choose it again.";
+                PackCanContinue = false;
+                PackConfirmed = false;
+            }
         }
+        finally
+        {
+            _initializing = false;
+            OnPropertyChanged(nameof(CanGoNext));
+            OnPropertyChanged(nameof(VersionIds));
+            OnPropertyChanged(nameof(VersionCatalogNotes));
+        }
+    }
+
+    public void ApplyMinecraftVersionFromPicker(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return;
+        MinecraftVersion = value.Trim();
     }
 
     public void Back()
@@ -1604,6 +1624,22 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         StatusMessage = "Auth Token stored in Windows Credential Manager (McManager/ocir). Not written to wizard JSON.";
     }
 
+    private void PrimeVersionCatalogFixtures()
+    {
+        try
+        {
+            _manifest ??= MojangVersionCatalog.LoadEmbeddedFixture();
+            _paperProject ??= PaperFillV3Client.LoadEmbeddedProjectFixture();
+            if (string.IsNullOrWhiteSpace(_mojangCatalogNotes))
+                _mojangCatalogNotes = "Loading Minecraft versions…";
+            RebuildVersionList(keepSelection: true);
+        }
+        catch (Exception)
+        {
+            // Live catalogs in InitializeAsync still fill the picker.
+        }
+    }
+
     private async Task LoadVersionsAsync()
     {
         try
@@ -1616,6 +1652,9 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         {
             _mojangCatalogNotes = $"Version catalog failed: {ex.Message}";
         }
+
+        if (!VanillaFlavorIsOptimized)
+            RebuildVersionList(keepSelection: true);
 
         try
         {
@@ -1692,7 +1731,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         MinecraftVersion = target ?? "";
         if (!string.IsNullOrWhiteSpace(MinecraftVersion))
             _resumeMinecraftVersion = MinecraftVersion;
-        if (_navReady)
+        if (_navReady && !_initializing)
             Persist();
     }
 
@@ -2170,10 +2209,11 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             case nameof(Profiles):
             case nameof(VersionIds):
             case nameof(CapacityDialogOpen):
+            case nameof(WorldSeed):
                 return;
         }
 
-        if (!_navReady)
+        if (!_navReady || _initializing)
             return;
 
         OnPropertyChanged(nameof(CanGoNext));
