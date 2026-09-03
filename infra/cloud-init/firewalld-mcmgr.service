@@ -1,4 +1,4 @@
-# McManager override: do not order firewalld before network-pre.target.
+# MCSTool override: do not order firewalld before network-pre.target.
 # Distro /lib/systemd/system/firewalld.service has Before= + Wants= network-pre
 # and After=dbus.service. That races cloud-init (Debian #1025618): systemd may
 # delete dbus.socket/dbus.service to break the cycle. Guest then has no dbus;

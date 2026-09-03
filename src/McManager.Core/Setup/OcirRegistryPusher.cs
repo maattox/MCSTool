@@ -33,7 +33,7 @@ public static class OcirRegistryPusher
             Timeout = TimeSpan.FromMinutes(15),
             BaseAddress = new Uri("https://" + registryHost.TrimEnd('/') + "/"),
         };
-        client.DefaultRequestHeaders.UserAgent.ParseAdd("McManager-Setup");
+        client.DefaultRequestHeaders.UserAgent.ParseAdd("MCSTool-Setup");
 
         var auth = await AuthenticateAsync(
             client,
@@ -96,7 +96,7 @@ public static class OcirRegistryPusher
             Timeout = TimeSpan.FromMinutes(2),
             BaseAddress = new Uri("https://" + registryHost.TrimEnd('/') + "/"),
         };
-        client.DefaultRequestHeaders.UserAgent.ParseAdd("McManager-Setup");
+        client.DefaultRequestHeaders.UserAgent.ParseAdd("MCSTool-Setup");
 
         var auth = await AuthenticateAsync(
             client,

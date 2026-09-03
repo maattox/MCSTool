@@ -9,7 +9,7 @@
 #define MyAppName "MCSTool"
 #define MyAppPublisher "maattox"
 #define MyAppURL "https://github.com/maattox/MCSTool"
-#define MyAppExeName "McManager.Hybrid.exe"
+#define MyAppExeName "MCSTool.exe"
 
 [Setup]
 AppId={{D2F7A6ED-DBA3-4D2E-B67B-DE983C7C82C4}

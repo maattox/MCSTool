@@ -175,7 +175,7 @@ public sealed class FunctionImageConvergeTests
     public async Task Skipped_push_does_not_rewrite_or_apply()
     {
         var tofu = new RecordingOpenTofuRunner();
-        var publisher = new FakePublisher(error: "No Auth Token in Windows Credential Manager (McManager/ocir). Function/Events stay skipped.");
+        var publisher = new FakePublisher(error: "No Auth Token in Windows Credential Manager (MCSTool/ocir). Function/Events stay skipped.");
         var dir = Path.Combine(Path.GetTempPath(), "mcmgr-fn-skip-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(dir);
         try

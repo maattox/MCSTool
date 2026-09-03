@@ -63,7 +63,7 @@ public static class InfraPlanSummary
             + $"  Game: {flavor} {version} (EULA {(state.EulaAccepted ? "accepted" : "not accepted")})\n"
             + $"  Server list name: {identityName}\n"
             + friendsLine
-            + $"  OCIR Auth Token stored: {(state.AuthTokenStored ? "yes (Windows Credential Manager McManager/ocir)" : "no — required for the spend-brake Function")}\n\n"
+            + $"  OCIR Auth Token stored: {(state.AuthTokenStored ? $"yes (Windows Credential Manager {WindowsCredentialStore.OcirTarget})" : "no — required for the spend-brake Function")}\n\n"
             + "OpenTofu will create (on confirmed Deploy)\n"
             + $"  • Compartment {name}\n"
             + "  • VCN mcmgr-vcn (10.0.0.0/16), IGW, public route table\n"

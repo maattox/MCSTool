@@ -12,7 +12,7 @@ namespace McManager.Core.Setup;
 public sealed class FabricMetaClient
 {
     public const string MetaBase = "https://meta.fabricmc.net";
-    public const string UserAgent = "McManager/0.1 (https://github.com/maattox/MCSTool)";
+    public const string UserAgent = "MCSTool/0.1 (https://github.com/maattox/MCSTool)";
     public const string HashAlgorithm = "none_published";
     public const string ArtifactKind = "launcher_jar";
     public const string LoaderId = "fabric";

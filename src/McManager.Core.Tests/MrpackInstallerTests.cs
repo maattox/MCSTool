@@ -85,7 +85,7 @@ public sealed class MrpackInstallerTests
             Assert.All(handler.Requests, r =>
             {
                 Assert.Equal("cdn.modrinth.com", r.Host);
-                Assert.Contains("McManager", handler.LastUserAgent, StringComparison.Ordinal);
+                Assert.Contains("MCSTool/", handler.LastUserAgent, StringComparison.Ordinal);
             });
 
             Assert.NotNull(value.RetainedArchivePath);

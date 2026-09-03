@@ -23,7 +23,7 @@ public sealed class MojangVersionCatalog
     {
         _http = http ?? new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
         if (!_http.DefaultRequestHeaders.UserAgent.Any())
-            _http.DefaultRequestHeaders.UserAgent.ParseAdd("McManager/0.1 (Setup version picker)");
+            _http.DefaultRequestHeaders.UserAgent.ParseAdd("MCSTool/0.1 (Setup version picker)");
     }
 
     public async Task<MojangCatalogResult> LoadAsync(CancellationToken cancellationToken = default)

@@ -82,7 +82,7 @@ public sealed class GitHubLatestReleaseClientTests
 
         var request = Assert.Single(handler.Requests);
         Assert.Equal(GitHubLatestReleaseClient.LatestUrl, request.RequestUri.ToString());
-        Assert.Contains("McManager", request.UserAgent, StringComparison.Ordinal);
+        Assert.Contains("MCSTool/", request.UserAgent, StringComparison.Ordinal);
         Assert.Contains("github.com/maattox/MCSTool", request.UserAgent, StringComparison.Ordinal);
         Assert.Contains("application/vnd.github+json", request.Accept, StringComparison.Ordinal);
         Assert.Null(request.Authorization);

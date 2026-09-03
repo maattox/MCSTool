@@ -386,7 +386,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     public string AuthTokenStoredDisplay =>
         AuthTokenStored
-            ? "Stored in Credential Manager: yes (McManager/ocir)"
+            ? $"Stored in Credential Manager: yes ({WindowsCredentialStore.OcirTarget})"
             : "Stored in Credential Manager: no";
 
     public SetupWizardViewModel(
@@ -1182,7 +1182,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         AuthTokenInput = "";
         AuthTokenStored = WindowsCredentialStore.Exists();
         StatusMessage = deleted.Succeeded
-            ? "Removed McManager/ocir from Credential Manager."
+            ? $"Removed {WindowsCredentialStore.OcirTarget} from Credential Manager."
             : deleted.Error ?? "Could not delete stored token.";
         Persist();
     }
@@ -1621,7 +1621,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
         AuthTokenInput = "";
         AuthTokenStored = true;
-        StatusMessage = "Auth Token stored in Windows Credential Manager (McManager/ocir). Not written to wizard JSON.";
+        StatusMessage = $"Auth Token stored in Windows Credential Manager ({WindowsCredentialStore.OcirTarget}). Not written to wizard JSON.";
     }
 
     private void PrimeVersionCatalogFixtures()

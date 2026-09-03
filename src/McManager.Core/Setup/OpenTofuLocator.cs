@@ -23,7 +23,7 @@ public sealed record OpenTofuDownloadPin(string Version, string ZipUrl, string S
 /// </summary>
 public static class OpenTofuLocator
 {
-    public const string UserAgent = "McManager/0.1 (https://github.com/maattox/MCSTool)";
+    public const string UserAgent = "MCSTool/0.1 (https://github.com/maattox/MCSTool)";
     public const string SourceUrl = "https://github.com/opentofu/opentofu";
     public const string MplLicenseUrl = "https://www.mozilla.org/MPL/2.0/";
     public const string ExeFileName = "tofu.exe";

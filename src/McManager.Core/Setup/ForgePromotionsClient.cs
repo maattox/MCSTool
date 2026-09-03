@@ -17,7 +17,7 @@ public sealed class ForgePromotionsClient
     public const string PromotionsUrl =
         "https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json";
     public const string MavenBase = "https://maven.minecraftforge.net/net/minecraftforge/forge";
-    public const string UserAgent = "McManager/0.1 (https://github.com/maattox/MCSTool)";
+    public const string UserAgent = "MCSTool/0.1 (https://github.com/maattox/MCSTool)";
     public const string HashAlgorithm = "none_published";
     public const string LoaderId = "forge";
     public const string ArtifactKindArgfile = "argfile_tree";

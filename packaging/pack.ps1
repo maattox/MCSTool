@@ -116,7 +116,7 @@ if (-not (Test-Path -LiteralPath $publishedTar)) {
     throw "Function tar was not copied into the publish folder: $publishedTar"
 }
 
-$exe = Join-Path $publishDir 'McManager.Hybrid.exe'
+$exe = Join-Path $publishDir 'MCSTool.exe'
 $infra = Join-Path $publishDir 'infra\main.tf'
 if (-not (Test-Path -LiteralPath $exe)) {
     throw "Published exe missing: $exe"

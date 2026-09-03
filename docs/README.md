@@ -2,7 +2,7 @@
 
 Users start at the [root README](../README.md) and the [guide](Guide.md). This file is for people building, packing, or changing MCSTool.
 
-The app is a .NET 8 **Blazor Hybrid** app (WPF + WebView2): one WinExe, `McManager.Hybrid`. Setup is inside that same app.
+The app is a .NET 8 **Blazor Hybrid** app (WPF + WebView2): one WinExe, `MCSTool.exe` (project `McManager.Hybrid`). Setup is inside that same app.
 
 ## Status
 
@@ -32,9 +32,9 @@ dotnet build src\McManager.slnx
 dotnet run --project src\McManager.Hybrid
 ```
 
-Or open `src/McManager.slnx` in Visual Studio and run **McManager.Hybrid**.
+Or open `src/McManager.slnx` in Visual Studio and run the **McManager.Hybrid** project (output exe is `MCSTool.exe`).
 
-`McManager.Hybrid` is a native WPF window (Evergreen WebView2; not a browser / not localhost). If WebView2 is missing, the app shows a MessageBox with the [Evergreen installer](https://go.microsoft.com/fwlink/p/?LinkId=2124703).
+MCSTool is a native WPF window (Evergreen WebView2; not a browser / not localhost). If WebView2 is missing, the app shows a MessageBox with the [Evergreen installer](https://go.microsoft.com/fwlink/p/?LinkId=2124703).
 
 Folder publish (no installer):
 

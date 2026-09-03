@@ -153,7 +153,7 @@ public sealed class ForgePromotionsClientTests
         {
             Assert.Equal("files.minecraftforge.net", r.RequestUri!.Host);
             Assert.EndsWith("/promotions_slim.json", r.RequestUri.AbsolutePath, StringComparison.Ordinal);
-            Assert.Contains("McManager", r.UserAgent, StringComparison.Ordinal);
+            Assert.Contains("MCSTool/", r.UserAgent, StringComparison.Ordinal);
             Assert.Contains("github.com/maattox/MCSTool", r.UserAgent, StringComparison.Ordinal);
         });
     }

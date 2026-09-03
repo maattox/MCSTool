@@ -58,7 +58,7 @@ public sealed class OcirFunctionPublisher : IFunctionImagePublisher
             || string.IsNullOrWhiteSpace(token))
         {
             return ServiceResult<FunctionImagePublishResult>.Fail(
-                "No Auth Token in Windows Credential Manager (McManager/ocir). Function/Events stay skipped.");
+                $"No Auth Token in Windows Credential Manager ({WindowsCredentialStore.OcirTarget}). Function/Events stay skipped.");
         }
 
         var region = string.IsNullOrWhiteSpace(outputs.Region) ? state.OciRegion : outputs.Region;

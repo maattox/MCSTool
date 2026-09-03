@@ -5,12 +5,12 @@ using McManager.Core.Services;
 namespace McManager.Core.Setup;
 
 /// <summary>
-/// Stores the optional OCIR Auth Token in Windows Credential Manager (target <c>McManager/ocir</c>).
+/// Stores the optional OCIR Auth Token in Windows Credential Manager (target <c>MCSTool/ocir</c>).
 /// Never writes the token to wizard JSON.
 /// </summary>
 public static class WindowsCredentialStore
 {
-    public const string OcirTarget = "McManager/ocir";
+    public const string OcirTarget = "MCSTool/ocir";
 
     public static bool IsSupported => OperatingSystem.IsWindows();
 
@@ -80,7 +80,7 @@ public static class WindowsCredentialStore
                 Flags = 0,
                 Type = CredTypeGeneric,
                 TargetName = target,
-                Comment = "OCI MC Server OCIR Auth Token",
+                Comment = "MCSTool OCIR Auth Token",
                 CredentialBlobSize = (uint)blob.Length,
                 CredentialBlob = blobPtr,
                 Persist = CredPersistLocalMachine,

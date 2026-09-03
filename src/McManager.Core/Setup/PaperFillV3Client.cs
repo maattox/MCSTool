@@ -12,7 +12,7 @@ public sealed class PaperFillV3Client
 {
     public const string ProjectUrl = "https://fill.papermc.io/v3/projects/paper";
     public const string EmbeddedProjectFixtureName = "McManager.Core.Setup.paper-fill-v3-project.json";
-    public const string UserAgent = "McManager/0.1 (https://github.com/maattox/MCSTool)";
+    public const string UserAgent = "MCSTool/0.1 (https://github.com/maattox/MCSTool)";
     public const string StableChannel = "STABLE";
     public const string ServerDefaultDownloadKey = "server:default";
     public const string HashAlgorithm = "sha256";
