@@ -56,8 +56,8 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     public const string AlwaysFreeCapacityHelp =
         "If A1 Flex is out of capacity, the deployment may stall. You can either try deployment again, start an auto-retry every 5 minutes, or resume later. If you close the setup wizard during deployment, your progress is saved and you are able to begin deployment again later.";
 
-    public const string AlwaysFreeBodyCopy =
-        "This product utilizes Oracle Cloud Infrastructure and its Always Free resources to host and manage a Minecraft server for free. Oracle's Free Resource policies are subject to change, so it is recommended that you open the `Always Free compute` documentation and confirm that OCI tenancies still get the first 1,500 OCPU hours and 9,000 GB hours per month for free for VM instances using the VM.Standard.A1.Flex shape. The target is $0, and there are several mechanisms in place to ensure your account is not charged. A $1 monthly budget is the last-resort spend brake, but Oracle may still bill about $1–$2 that month if it fires. All cost control mechanisms are automatically activated upon deployment, so you don't have to do any additional work outside of this setup wizard.";
+    public const string AlwaysFreeLeadCopy =
+        "MCSTool uses Oracle Always Free so the target is $0. Cost controls turn on at deploy. Oracle’s free-tier limits can change; confirm tenancies still get 1,500 OCPU hours and 9,000 GB-hours per month for A1 Flex.";
 
     public const string OciProfileHelp =
         "Region and account details come from ~/.oci/config on this PC. Prefer the tenancy home region so Always Free A1 and Micro eligibility apply.";
@@ -94,10 +94,10 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         "Needed to push the spend-brake Function image. Paste it and choose Store token. Saved in Windows Credential Manager, not in the Setup resume file.";
 
     public const string AdminCidrHelp =
-        "Oracle’s cloud firewall allowlist. Players you add later also need their public IPv4 as /32.";
+        "Oracle’s cloud firewall allowlist.";
 
     public const string ShapeDefaultHelp =
-        "More room for players and later mods. Uses Always Free hours faster while the server is on. Chosen once at deploy — not a later resize.";
+        "More room for players and later mods. Uses Always Free hours faster while the server is on.";
 
     public const string ShapeSmallerHelp =
         "Smaller Always Free size. Vanilla can often stay on all month; less room if you add mods or more players later.";

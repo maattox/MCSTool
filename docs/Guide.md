@@ -131,11 +131,11 @@ Setup also creates a last-resort **$1 monthly budget**. If spend ever reaches $1
 
 ### Walk through the wizard
 
-3. Open **MCSTool**. On first launch, select **Deploy a new stack**.
+3. Open **MCSTool**. Select **Deploy a new stack**.
 4. Work through the pages:
 
 **Step 1 — Disclaimers**  
-Read them and confirm you understand them. This includes Always Free limits and the $1 last-resort budget.
+Read disclaimers and confirm you understand them (stay on Always Free–eligible compute, the $1 last-resort budget, and capacity wait)
 
 **Step 2 — OCI profile and email**  
 Select your OCI profile and enter an email. The profile should be detected automatically if you finished Part 2. The email is only used to alert you if the $1 budget is triggered.
