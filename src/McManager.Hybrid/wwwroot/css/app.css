@@ -2629,8 +2629,7 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     overflow: auto;
 }
 
-.mcm-wizard-body.is-deploying .mcm-wizard-review-split,
-.mcm-wizard-body.is-deploying .mcm-client-pack-notice {
+.mcm-wizard-body.is-deploying .mcm-wizard-review-split {
     display: none;
 }
 
@@ -3066,18 +3065,6 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     margin-bottom: 0 !important;
 }
 
-.mcm-wizard-game-note {
-    align-items: baseline;
-    gap: 6px;
-    margin: 0 0 8px;
-    font-size: 12px;
-    color: var(--text-secondary);
-}
-
-.mcm-wizard-game-note .mcm-wizard-kicker {
-    margin: 0 !important;
-}
-
 .mcm-wizard-game-ingest {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
@@ -3198,29 +3185,6 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 @keyframes mcm-progress-slide {
     0% { transform: translateX(-120%); }
     100% { transform: translateX(280%); }
-}
-
-.mcm-client-pack-notice {
-    border: 1px solid var(--text-accent);
-    background: var(--surface-2);
-    border-radius: var(--radius);
-    padding: 8px 12px;
-    margin: 0 0 10px;
-}
-
-.mcm-client-pack-notice .mcm-wizard-kicker {
-    margin: 0 0 6px !important;
-}
-
-.mcm-client-pack-notice > p {
-    margin: 0 0 8px !important;
-    font-size: 13px;
-    color: var(--text-primary);
-    line-height: 1.45;
-}
-
-.mcm-client-pack-notice > p:last-child {
-    margin-bottom: 0 !important;
 }
 
 .mcm-pack-list-warning {
@@ -3410,13 +3374,6 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
     margin-top: 0;
     border-top: 0;
     padding-top: 0;
-}
-
-.mcm-change-pack-friends {
-    margin: 0;
-    font-size: 13px;
-    color: var(--text-secondary);
-    line-height: 1.4;
 }
 
 .mcm-change-pack-ingest {

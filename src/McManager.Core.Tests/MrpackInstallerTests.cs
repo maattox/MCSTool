@@ -96,7 +96,7 @@ public sealed class MrpackInstallerTests
             Assert.True(File.Exists(Path.Combine(
                 Path.GetDirectoryName(value.RetainedArchivePath!)!,
                 ImportedPackArchiveStore.SidecarFileName)));
-            Assert.Contains(MrpackInstallResult.ClientPackReminder, value.Summary, StringComparison.Ordinal);
+            Assert.Contains("Original archive retained:", value.Summary, StringComparison.Ordinal);
             Assert.Contains("mods/client-only.jar", value.SkippedClientOnlyPaths);
             Assert.Contains("mods/server-required.jar", value.InstalledRelativePaths);
             Assert.Contains("mods/server-optional.jar", value.InstalledRelativePaths);

@@ -250,7 +250,6 @@ public static class ManualServerPackInstaller
             sb.Append("  In-jar metadata: ").AppendLine(analysis.InJarMetadataSkipCount.ToString());
         if (!string.IsNullOrEmpty(retainedArchivePath))
             sb.Append("Original archive retained: ").AppendLine(retainedArchivePath);
-        sb.AppendLine(MrpackInstallResult.ClientPackReminder);
         if (warnings.Count > 0)
         {
             sb.AppendLine("Warnings:");

@@ -247,10 +247,6 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     public bool ShowSaveCompatibilityWarning =>
         ShowPackConfirmChecks && !string.IsNullOrWhiteSpace(SaveCompatibilityWarning);
 
-    public string FriendsNeedOneLiner => PackReplaceUx.FriendsNeedOneLiner;
-
-    public string ClientPackAckLabel => PackReplaceUx.ClientPackAckLabel;
-
     public string PackConfirmLabel => PackReplaceUx.PackConfirmLabel;
 
     public string WipeWorldLabel => PackReplaceUx.WipeWorldLabel;
@@ -645,6 +641,12 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     }
 
     partial void OnWipeWorldChanged(bool value) => RefreshSaveCompatibilityWarning();
+
+    partial void OnPackConfirmedChanged(bool value)
+    {
+        if (ClientPackAcknowledged != value)
+            ClientPackAcknowledged = value;
+    }
 
     partial void OnIsAnalyzingPackChanged(bool value) => NotifyModdingCommands();
 
@@ -1378,8 +1380,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
             "Add mod jar and restart Minecraft?",
             "Install "
             + name
-            + " into mods/ and restart Minecraft. This bypasses automatic pack checks. "
-            + "Players still need matching client mods.",
+            + " into mods/ and restart Minecraft. This bypasses automatic pack checks.",
             confirmButtonText: "Add and restart");
         if (!confirmed)
             return;

@@ -441,7 +441,6 @@
                     </div>
                 }
             </div>
-            <p class="mcm-change-pack-friends" role="note">@Vm.FriendsNeedOneLiner</p>
             <div class="mcm-change-pack-ingest">
                 <div class="mcm-pack-drop @(Vm.IsAnalyzingPack ? "is-busy" : "")"
                      aria-label="@PackReplaceUx.DropTitle">
@@ -528,12 +527,6 @@
                                        disabled="@Vm.AnyBusy"
                                        @bind="Vm.PackConfirmed" />
                                 <span>@Vm.PackConfirmLabel</span>
-                            </label>
-                            <label class="mcm-checkbox-row">
-                                <input type="checkbox"
-                                       disabled="@Vm.AnyBusy"
-                                       @bind="Vm.ClientPackAcknowledged" />
-                                <span>@Vm.ClientPackAckLabel</span>
                             </label>
                             <label class="mcm-checkbox-row">
                                 <input type="checkbox"
@@ -794,7 +787,7 @@
             }
             @if (Vm.ChangeType.ShowPackDrop)
             {
-                <p class="mcm-wizard-hint">Minecraft version comes from the pack. Players need that same file to join.</p>
+                <p class="mcm-wizard-hint">Minecraft version comes from the pack.</p>
                 <div class="mcm-pack-drop @(Vm.ChangeType.IsAnalyzingPack ? "is-busy" : "")"
                      aria-label="@PackReplaceUx.DropTitle">
                     <InputFile class="mcm-pack-drop-input"
@@ -824,12 +817,6 @@
                                disabled="@Vm.ChangeType.IsBusy"
                                @bind="Vm.ChangeType.PackConfirmed" />
                         <span>@Vm.ChangeType.PackConfirmLabel</span>
-                    </label>
-                    <label class="mcm-checkbox-row">
-                        <input type="checkbox"
-                               disabled="@Vm.ChangeType.IsBusy"
-                               @bind="Vm.ChangeType.ClientPackAcknowledged" />
-                        <span>@Vm.ChangeType.ClientPackAckLabel</span>
                     </label>
                 }
                 @if (Vm.ChangeType.ShowReviewOnMods)

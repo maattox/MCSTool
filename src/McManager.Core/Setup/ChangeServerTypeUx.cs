@@ -50,8 +50,7 @@ public static class ChangeServerTypeUx
         + "Some Paper-only settings may reset.";
 
     public const string AnyToModdedNote =
-        "Players will need this pack to join. After mods run, going back to Vanilla or Paper "
-        + "can lose mod blocks and items.";
+        "After mods run, going back to Vanilla or Paper can lose mod blocks and items.";
 
     public const string ModdedToVanillaStrong =
         "Blocks and items from the old mods will be missing from the world. "

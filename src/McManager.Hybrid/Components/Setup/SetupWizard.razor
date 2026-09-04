@@ -288,11 +288,6 @@
 
                             @if (Vm.ShowModdedGameOptions)
                             {
-                                <p class="mcm-wizard-inline-help mcm-wizard-game-note">
-                                    <span class="mcm-wizard-kicker">@Vm.ClientPackTitle</span>
-                                    <WizardHelp Title="@SetupWizardViewModel.ClientPackHelp" AriaLabel="About the client pack" />
-                                    <span>Players must install this same pack. Vanilla Minecraft cannot join.</span>
-                                </p>
                                 <div class="mcm-wizard-game-ingest">
                                     <div class="mcm-pack-drop @(Vm.IsAnalyzingPack ? "is-busy" : "")"
                                          aria-label="Drop a modpack file">
@@ -405,23 +400,28 @@
                             }
                             @if (Vm.ShowPackConfirmChecks)
                             {
-                                <label class="mcm-wizard-ack mcm-wizard-ack-sm">
-                                    <input type="checkbox"
-                                           disabled="@(!Vm.CanMutateWizard)"
-                                           @bind="Vm.PackConfirmed" />
-                                    <span class="mcm-wizard-ack-text">
-                                        <span class="mcm-wizard-ack-title">Use this pack on the server (server-side mods only; client-only files are skipped).</span>
-                                    </span>
-                                </label>
-                                <label class="mcm-wizard-ack mcm-wizard-ack-sm">
-                                    <input type="checkbox"
-                                           disabled="@(!Vm.CanMutateWizard)"
-                                           @bind="Vm.ClientPackAcknowledged" />
-                                    <span class="mcm-wizard-ack-text">
-                                        <span class="mcm-wizard-ack-title">@Vm.ClientPackAckLabel</span>
-                                        <span class="mcm-wizard-ack-copy">@Vm.ClientPackFriendsNeed</span>
-                                    </span>
-                                </label>
+                                @if (Vm.PackNeedsIdentityConfirm)
+                                {
+                                    <label class="mcm-wizard-ack mcm-wizard-ack-sm">
+                                        <input type="checkbox"
+                                               disabled="@(!Vm.CanMutateWizard)"
+                                               @bind="Vm.PackConfirmed" />
+                                        <span class="mcm-wizard-ack-text">
+                                            <span class="mcm-wizard-ack-title">@Vm.ClientOnlyMarksConfirmLabel</span>
+                                        </span>
+                                    </label>
+                                }
+                                else
+                                {
+                                    <label class="mcm-wizard-ack mcm-wizard-ack-sm">
+                                        <input type="checkbox"
+                                               disabled="@(!Vm.CanMutateWizard)"
+                                               @bind="Vm.PackConfirmed" />
+                                        <span class="mcm-wizard-ack-text">
+                                            <span class="mcm-wizard-ack-title">Use this pack on the server (server-side mods only; client-only files are skipped).</span>
+                                        </span>
+                                    </label>
+                                }
                             }
                         </div>
                     }
@@ -557,16 +557,6 @@
                 }
                 else
                 {
-                @if (Vm.ServerTypeIsModded)
-                {
-                    <aside class="mcm-client-pack-notice" role="note">
-                        <p class="mcm-wizard-inline-help">
-                            <span class="mcm-wizard-kicker">@Vm.ClientPackTitle</span>
-                            <WizardHelp Title="@SetupWizardViewModel.ClientPackHelp" AriaLabel="About the client pack" />
-                        </p>
-                        <p>@Vm.ClientPackFriendsNeed</p>
-                    </aside>
-                }
                 <div class="mcm-wizard-review-split">
                 <div class="mcm-wizard-review-form">
                 <fieldset class="mcm-wizard-fieldset" disabled="@(!Vm.CanMutateWizard)">

@@ -41,11 +41,6 @@ public static class InfraPlanSummary
         var identityName = string.IsNullOrWhiteSpace(state.IdentityName)
             ? ServerIdentityUx.DefaultServerName(state.ServerType, state.VanillaFlavor)
             : state.IdentityName.Trim();
-        var friendsLine = SetupServerType.IsModded(state.ServerType)
-            ? "  Players: same exported pack required to join (vanilla Minecraft is not enough; "
-              + "cannot rebuild a client pack from server mods)\n"
-            : "";
-
         return
             "OpenTofu apply from this window creates Always Free resources (state under %LOCALAPPDATA%\\"
             + AppSettingsStore.ProductFolderName
@@ -62,7 +57,6 @@ public static class InfraPlanSummary
             + $"  Minecraft heap: {JvmHeapChoice.Format(state.JvmXmx)} (Xms = Xmx)\n"
             + $"  Game: {flavor} {version} (EULA {(state.EulaAccepted ? "accepted" : "not accepted")})\n"
             + $"  Server list name: {identityName}\n"
-            + friendsLine
             + $"  OCIR Auth Token stored: {(state.AuthTokenStored ? $"yes (Windows Credential Manager {WindowsCredentialStore.OcirTarget})" : "no — required for the spend-brake Function")}\n\n"
             + "OpenTofu will create (on confirmed Deploy)\n"
             + $"  • Compartment {name}\n"

@@ -9,10 +9,6 @@ public static class PackReplaceUx
 
     public const string ConfirmTitle = "Reinstall Minecraft from this pack?";
 
-    /// <summary>Manage Change pack only. Setup keeps <see cref="SetupPackImport.ClientPackCopy"/>.</summary>
-    public const string FriendsNeedOneLiner =
-        "Players need this mod pack to join the server";
-
     public const string DropTitle = "Drop a mod pack here";
 
     public const string DropFormats =
@@ -36,10 +32,6 @@ public static class PackReplaceUx
     public const string PackConfirmLabel =
         "Use this pack on the server. Client-only mods are skipped.";
 
-    /// <summary>Manage Change pack only. Setup keeps <see cref="SetupPackImport.ClientPackAckLabel"/>.</summary>
-    public const string ClientPackAckLabel =
-        "Players will get this same exported pack. They cannot join without it.";
-
     public const string WipeWorldLabel =
         "Also wipe the world (irreversible). Cloud backups stay. Leave unchecked to keep the current world.";
 
@@ -49,7 +41,7 @@ public static class PackReplaceUx
     public const string ConfirmKeepWorld =
         "Reinstalls Minecraft from the chosen file. "
         + "If the game VM is stopped, it is started first. "
-        + "The world is kept unless wipe is checked. Players need the new exported pack.";
+        + "The world is kept unless wipe is checked.";
 
     public const string ConfirmWipeWorld =
         "Reinstalls Minecraft from the chosen file. "
@@ -80,10 +72,10 @@ public static class PackReplaceUx
         string? freezeBlockReason = null)
     {
         _ = vm1Running;
+        _ = clientPackAcknowledged;
         return !busy
             && canContinue
             && packConfirmed
-            && clientPackAcknowledged
             && identityComplete
             && FreezeAllowsContinue(freezeBlockReason);
     }
@@ -106,6 +98,7 @@ public static class PackReplaceUx
         string? freezeBlockReason = null)
     {
         _ = vm1Running;
+        _ = clientPackAcknowledged;
         if (busy)
             return "Wait until the current action finishes.";
         if (!canContinue)
@@ -114,8 +107,8 @@ public static class PackReplaceUx
             return freezeBlockReason!.Trim();
         if (!identityComplete)
             return DerivedPackIdentity.IdentityIncompleteReason;
-        if (!packConfirmed || !clientPackAcknowledged)
-            return "Confirm the pack and that players will get the same file.";
+        if (!packConfirmed)
+            return "Confirm the pack.";
         return "";
     }
 

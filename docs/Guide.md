@@ -146,11 +146,10 @@ Generate a new key, or import an existing one. This is **not** the API key from 
 **Step 4 — Server type**  
 Choose **Vanilla** or **Modded**.
 
-- Supported pack formats: Modrinth `.mrpack`, CurseForge **Server Files**, or a `.zip` of `.jar` mods (you may need to confirm some details about the pack).
+- Supported pack formats: Modrinth `.mrpack`, CurseForge **Server Files**, or a `.zip` of `.jar` mods (confirm loader, versions, and that client-only mods are marked correctly).
 - Supported loaders: Fabric, Forge, NeoForge.
 - Large packs with heavy mods will lag on this VM. In particular, skip **Distant Horizons** (generating new chunks on this size of VM causes significant lag).
 - You can change Vanilla, Optimized Vanilla (Paper), or Modded later from **Server → Settings → Change type**.
-- **Modded:** players need **that same exported pack file** on their PCs.
 - Optional **World seed**. Leave it blank for a random world.
 
 **Step 5 — Server identity**  
@@ -184,7 +183,6 @@ Pick a size, Minecraft memory, and start deployment.
 The Minecraft server should now be up. Copy the **play IP** from MCSTool and connect from Minecraft Java Edition.
 
 - Your public IP is allowlisted during Setup. To allow other players, add each player’s **current public IPv4** on the **Whitelist** tab and click **Save changes**. Home IPs can change; update the list when they do.
-- **Modded:** also give players the **same mod pack file** you chose in Setup.
 
 
 

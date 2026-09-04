@@ -37,7 +37,7 @@ public sealed class ManualServerPackInstallerTests
             Assert.True(File.Exists(Path.Combine(
                 Path.GetDirectoryName(result.Value.RetainedArchivePath!)!,
                 ImportedPackArchiveStore.SidecarFileName)));
-            Assert.Contains(MrpackInstallResult.ClientPackReminder, result.Value.Summary, StringComparison.Ordinal);
+            Assert.Contains("Original archive retained:", result.Value.Summary, StringComparison.Ordinal);
             Assert.Contains("mods/dummy-client.jar", result.Value.SkippedClientOnlyPaths);
         }
         finally

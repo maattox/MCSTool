@@ -156,8 +156,6 @@ public sealed partial class ChangeServerTypeViewModel : ObservableObject
 
     public string PackConfirmLabel => PackReplaceUx.PackConfirmLabel;
 
-    public string ClientPackAckLabel => PackReplaceUx.ClientPackAckLabel;
-
     public string DefaultVanillaHelp => SetupWizardViewModel.DefaultVanillaHelp;
 
     public string PaperHelp => SetupWizardViewModel.OptimizedVanillaHelp;
@@ -174,7 +172,6 @@ public sealed partial class ChangeServerTypeViewModel : ObservableObject
             {
                 return PackCanContinue
                     && PackConfirmed
-                    && ClientPackAcknowledged
                     && !PackNeedsReview
                     && !string.IsNullOrWhiteSpace(PackPath);
             }
@@ -199,8 +196,8 @@ public sealed partial class ChangeServerTypeViewModel : ObservableObject
                         : PackBlockReason;
                 if (PackNeedsReview)
                     return ChangeServerTypeUx.PackNeedsReview;
-                if (!PackConfirmed || !ClientPackAcknowledged)
-                    return "Confirm the pack and that players will get the same file.";
+                if (!PackConfirmed)
+                    return "Confirm the pack.";
                 return "";
             }
 
@@ -422,6 +419,12 @@ public sealed partial class ChangeServerTypeViewModel : ObservableObject
     partial void OnIncludeSnapshotsChanged(bool value) => RebuildVersionList(keepSelection: true);
 
     partial void OnWipeWorldChanged(bool value) => NotifyWarnings();
+
+    partial void OnPackConfirmedChanged(bool value)
+    {
+        if (ClientPackAcknowledged != value)
+            ClientPackAcknowledged = value;
+    }
 
     partial void OnMinecraftVersionChanged(string value) => NotifyWarnings();
 
