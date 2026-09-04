@@ -149,7 +149,7 @@ Choose **Vanilla** or **Modded**.
 - Supported pack formats: Modrinth `.mrpack`, CurseForge **Server Files**, or a `.zip` of `.jar` mods (confirm loader, versions, and that client-only mods are marked correctly).
 - Supported loaders: Fabric, Forge, NeoForge.
 - Large packs with heavy mods will lag on this VM. In particular, skip **Distant Horizons** (generating new chunks on this size of VM causes significant lag).
-- You can change Vanilla, Optimized Vanilla (Paper), or Modded later from **Server → Settings → Change type**.
+- You can change Vanilla, Paper, or Modded later from **Server → Settings → Change type**.
 - Optional **World seed**. Leave it blank for a random world.
 
 **Step 5 — Server identity**  
@@ -205,7 +205,7 @@ On the **Server** tab:
 - **Settings** — difficulty, default game mode, max players, view distance, simulation distance, PvP, spawn protection, hardcore, force game mode, and allow flight. **Save**, then **Restart** (or **Start**) so Minecraft reads the file. Below that, **Change server type** (Vanilla / Paper / Modded) reinstalls Minecraft on this VM. Optional wipe (off by default). Modded needs a pack file.
 - **World** — cloud backups, **Replace world** from a zip, and **Wipe world**.
 - **Mods** — drop a new `.mrpack` or server-pack zip to change the modpack. At the bottom of this menu, you can add or delete a single `.jar` in `mods/`.
-- **Plugins** — only for a **Paper** (Optimized Vanilla) server. List, upload, and delete plugin jars in `plugins/`. Upload and delete **restart Minecraft**. Do **not** use `/reload`. Vanilla Default and modded servers do not show this subtab.
+- **Plugins** — only for a **Paper** server. List, upload, and delete plugin jars in `plugins/`. Upload and delete **restart Minecraft**. Do **not** use `/reload`.
 
 
 

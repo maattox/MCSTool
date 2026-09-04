@@ -372,6 +372,15 @@
             </div>
             <p class="mcm-server-facts">
                 Last backup @Vm.LastBackupDisplay · Backup storage @Vm.BackupStorageDisplay
+                · <span title="@Vm.LiveWorldSizeHelpTitle">Live world @Vm.LiveWorldSizeDisplay</span>
+                <button type="button"
+                        class="mcm-help mcm-world-size-refresh"
+                        disabled="@(!Vm.CanRefreshLiveWorldSize)"
+                        title="@Vm.RefreshLiveWorldSizeTitle"
+                        @onclick="Vm.RefreshLiveWorldSizeAsync">
+                    <i class="ti ti-refresh" aria-hidden="true"></i>
+                    <span class="sr-only">Refresh live world size</span>
+                </button>
             </p>
 
             @if (!string.IsNullOrWhiteSpace(Vm.OversizedBanner))

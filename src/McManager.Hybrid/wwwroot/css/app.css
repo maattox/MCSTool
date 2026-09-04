@@ -1237,6 +1237,16 @@ button.mcm-btn-disabled:hover {
     line-height: 1.4;
 }
 
+.mcm-world-size-refresh {
+    vertical-align: -4px;
+    margin-left: 2px;
+}
+
+.mcm-world-size-refresh:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
 .mcm-server-actions {
     display: flex;
     gap: 8px;

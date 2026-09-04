@@ -66,6 +66,12 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     private bool _opened;
     private bool _openInFlight;
     private bool _identityLoaded;
+    private bool _liveWorldSizeAutoAttempted;
+    private bool _liveWorldSizeBusy;
+    private int _liveWorldSizeEpoch;
+    private long? _liveWorldSizeBytes;
+    private DateTimeOffset? _liveWorldSizeLastAttemptUtc;
+    private CancellationTokenSource? _liveWorldSizeCooldownCts;
 
     public ObservableCollection<WorldBackupInfo> Backups { get; } = [];
 
@@ -135,6 +141,33 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
     [ObservableProperty]
     private string _oversizedBanner = "";
+
+    public string LiveWorldSizeDisplay =>
+        LiveWorldSizeProbe.FormatDisplay(_liveWorldSizeBytes, Vm1IsRunning, _liveWorldSizeBusy);
+
+    public bool CanRefreshLiveWorldSize =>
+        !AnyBusy
+        && LiveWorldSizeProbe.CanRefresh(
+            Vm1IsRunning,
+            _liveWorldSizeBusy,
+            _clock.UtcNow,
+            _liveWorldSizeLastAttemptUtc);
+
+    public string RefreshLiveWorldSizeTitle
+    {
+        get
+        {
+            if (AnyBusy && !_liveWorldSizeBusy)
+                return "Wait until the current action finishes.";
+            return LiveWorldSizeProbe.RefreshTitle(
+                Vm1IsRunning,
+                _liveWorldSizeBusy,
+                _clock.UtcNow,
+                _liveWorldSizeLastAttemptUtc);
+        }
+    }
+
+    public string LiveWorldSizeHelpTitle => LiveWorldSizeProbe.DisplayTitle;
 
     public bool HasObjectStorage => _backups is not null;
 
@@ -695,6 +728,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         _currentBackupBytes = 0;
         _opened = false;
         _identityLoaded = false;
+        ResetLiveWorldSizeState();
         ResetModdingState();
 
         if (_config is not null)
@@ -727,9 +761,19 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         OnPropertyChanged(nameof(CanClearIcon));
         BindLocalPack();
         FillDefaultChatRows();
+        NotifyLiveWorldSizeUi();
+        if (IsServerPane(PaneWorld))
+            EnsureLiveWorldSizeForPane();
     }
 
     public Task RefreshAsync() => RefreshCatalogAsync(setBusy: true);
+
+    public Task RefreshLiveWorldSizeAsync()
+    {
+        if (!CanRefreshLiveWorldSize)
+            return Task.CompletedTask;
+        return ProbeLiveWorldSizeAsync(isManual: true);
+    }
 
     public async Task EnsureOpenedAsync()
     {
@@ -2067,6 +2111,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         OnPropertyChanged(nameof(VanillaEmptyState));
         NotifyPackIdentityUi();
         NotifyDock();
+        NotifyLiveWorldSizeUi();
     }
 
     private void NotifyPackIdentityUi()
@@ -2119,7 +2164,11 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         NotifyPackIdentityUi();
     }
 
-    partial void OnServerPaneChanged(string value) => NotifyDock();
+    partial void OnServerPaneChanged(string value)
+    {
+        NotifyDock();
+        EnsureLiveWorldSizeForPane();
+    }
 
     partial void OnShowChangePackUiChanged(bool value) => NotifyDock();
 
@@ -2132,6 +2181,139 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         OnPropertyChanged(nameof(ShowPackElapsed));
         OnPropertyChanged(nameof(PackElapsedDisplay));
         OnPropertyChanged(nameof(DockStatus));
+    }
+
+    private void EnsureLiveWorldSizeForPane()
+    {
+        if (!IsServerPane(PaneWorld) || _liveWorldSizeAutoAttempted)
+            return;
+        _liveWorldSizeAutoAttempted = true;
+        _ = ProbeLiveWorldSizeAsync(isManual: false);
+    }
+
+    private void ResetLiveWorldSizeState()
+    {
+        _liveWorldSizeEpoch++;
+        CancelLiveWorldSizeCooldown();
+        _liveWorldSizeAutoAttempted = false;
+        _liveWorldSizeBusy = false;
+        _liveWorldSizeBytes = null;
+        _liveWorldSizeLastAttemptUtc = null;
+    }
+
+    private void CancelLiveWorldSizeCooldown()
+    {
+        _liveWorldSizeCooldownCts?.Cancel();
+        _liveWorldSizeCooldownCts?.Dispose();
+        _liveWorldSizeCooldownCts = null;
+    }
+
+    private void NotifyLiveWorldSizeUi()
+    {
+        OnPropertyChanged(nameof(LiveWorldSizeDisplay));
+        OnPropertyChanged(nameof(CanRefreshLiveWorldSize));
+        OnPropertyChanged(nameof(RefreshLiveWorldSizeTitle));
+    }
+
+    private async Task ProbeLiveWorldSizeAsync(bool isManual)
+    {
+        if (_liveWorldSizeBusy)
+            return;
+
+        if (_config is null)
+        {
+            if (isManual)
+                StatusMessage = "Local config is missing.";
+            NotifyLiveWorldSizeUi();
+            return;
+        }
+
+        if (!Vm1IsRunning)
+        {
+            NotifyLiveWorldSizeUi();
+            return;
+        }
+
+        if (!LiveWorldSizeProbe.TryCreateCommand(_config.Vm1.WorldPath, out var command, out var pathError))
+        {
+            if (isManual)
+                StatusMessage = pathError ?? "vm1.world_path is not a safe world directory.";
+            NotifyLiveWorldSizeUi();
+            return;
+        }
+
+        var epoch = _liveWorldSizeEpoch;
+        _liveWorldSizeBusy = true;
+        NotifyLiveWorldSizeUi();
+        try
+        {
+            var run = await _ssh.RunCommandAsync(
+                SshTarget.FromVm1(_config.Vm1),
+                command,
+                LiveWorldSizeProbe.CommandTimeout).ConfigureAwait(false);
+            if (epoch != _liveWorldSizeEpoch)
+                return;
+
+            _liveWorldSizeLastAttemptUtc = _clock.UtcNow;
+            StartLiveWorldSizeCooldownWatcher();
+
+            if (LiveWorldSizeProbe.TryParse(run.Output, out var bytes, out var parseError))
+            {
+                _liveWorldSizeBytes = bytes;
+                return;
+            }
+
+            if (!isManual)
+                return;
+
+            StatusMessage = run.Succeeded
+                ? (parseError ?? "Could not parse the live world size.")
+                : (run.Error ?? parseError ?? "Could not measure the live world folder.");
+        }
+        catch (Exception ex)
+        {
+            if (epoch != _liveWorldSizeEpoch)
+                return;
+            _liveWorldSizeLastAttemptUtc = _clock.UtcNow;
+            StartLiveWorldSizeCooldownWatcher();
+            if (isManual)
+                StatusMessage = "Could not measure the live world folder: " + ex.Message;
+        }
+        finally
+        {
+            if (epoch == _liveWorldSizeEpoch)
+            {
+                _liveWorldSizeBusy = false;
+                NotifyLiveWorldSizeUi();
+            }
+        }
+    }
+
+    private void StartLiveWorldSizeCooldownWatcher()
+    {
+        CancelLiveWorldSizeCooldown();
+        var remaining = LiveWorldSizeProbe.CooldownRemaining(_clock.UtcNow, _liveWorldSizeLastAttemptUtc);
+        if (remaining <= TimeSpan.Zero)
+        {
+            NotifyLiveWorldSizeUi();
+            return;
+        }
+
+        var cts = new CancellationTokenSource();
+        _liveWorldSizeCooldownCts = cts;
+        _ = WatchLiveWorldSizeCooldownAsync(remaining, cts.Token);
+    }
+
+    private async Task WatchLiveWorldSizeCooldownAsync(TimeSpan delay, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _clock.Delay(delay, cancellationToken).ConfigureAwait(false);
+            await _dispatcher.InvokeAsync(NotifyLiveWorldSizeUi, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+        }
     }
 
     private void BeginPackElapsed()
@@ -2206,6 +2388,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     public void Dispose()
     {
         StopPackElapsedTicker();
+        CancelLiveWorldSizeCooldown();
         _session.Reloaded -= OnSessionReloaded;
         _main.PropertyChanged -= OnMainPropertyChanged;
         ChangeType.PropertyChanged -= OnChangeTypePropertyChanged;
