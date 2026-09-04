@@ -59,6 +59,12 @@ public static class ServerCatalog
         return string.IsNullOrWhiteSpace(name) ? null : name.Trim();
     }
 
+    /// <summary>
+    /// Caption-left server switcher: two or more indexed servers and no env override.
+    /// </summary>
+    public static bool ShowCaptionSwitcher =>
+        !HasEnvOverride && List().Count >= 2;
+
     /// <summary>Caption-bar label: display name, else play IP, else <see cref="DefaultDisplayName"/>.</summary>
     public static string CaptionLabel(string? playIpFallback)
     {

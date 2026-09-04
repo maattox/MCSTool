@@ -131,11 +131,11 @@ Setup also creates a last-resort **$1 monthly budget**. If spend ever reaches $1
 
 ### Walk through the wizard
 
-3. Open **MCSTool**. On first launch, select **Deploy a new stack**.
+3. Open **MCSTool**. Select **Deploy a new stack**.
 4. Work through the pages:
 
 **Step 1 — Disclaimers**  
-Read them and confirm you understand them. This includes Always Free limits and the $1 last-resort budget.
+Read disclaimers and confirm you understand them (stay on Always Free–eligible compute, the $1 last-resort budget, and capacity wait)
 
 **Step 2 — OCI profile and email**  
 Select your OCI profile and enter an email. The profile should be detected automatically if you finished Part 2. The email is only used to alert you if the $1 budget is triggered.
@@ -146,11 +146,10 @@ Generate a new key, or import an existing one. This is **not** the API key from 
 **Step 4 — Server type**  
 Choose **Vanilla** or **Modded**.
 
-- Supported pack formats: Modrinth `.mrpack`, CurseForge **Server Files**, or a `.zip` of `.jar` mods (you may need to confirm some details about the pack).
+- Supported pack formats: Modrinth `.mrpack`, CurseForge **Server Files**, or a `.zip` of `.jar` mods (confirm loader, versions, and that client-only mods are marked correctly).
 - Supported loaders: Fabric, Forge, NeoForge.
 - Large packs with heavy mods will lag on this VM. In particular, skip **Distant Horizons** (generating new chunks on this size of VM causes significant lag).
-- You can change Vanilla, Optimized Vanilla (Paper), or Modded later from **Server → Settings → Change type**.
-- **Modded:** players need **that same exported pack file** on their PCs.
+- You can change Vanilla, Paper, or Modded later from **Server → Settings → Change type**.
 - Optional **World seed**. Leave it blank for a random world.
 
 **Step 5 — Server identity**  
@@ -184,7 +183,6 @@ Pick a size, Minecraft memory, and start deployment.
 The Minecraft server should now be up. Copy the **play IP** from MCSTool and connect from Minecraft Java Edition.
 
 - Your public IP is allowlisted during Setup. To allow other players, add each player’s **current public IPv4** on the **Whitelist** tab and click **Save changes**. Home IPs can change; update the list when they do.
-- **Modded:** also give players the **same mod pack file** you chose in Setup.
 
 
 
@@ -206,8 +204,9 @@ On the **Server** tab:
 - **Identity** — name, description, and icon in the Minecraft server list.
 - **Settings** — difficulty, default game mode, max players, view distance, simulation distance, PvP, spawn protection, hardcore, force game mode, and allow flight. **Save**, then **Restart** (or **Start**) so Minecraft reads the file. Below that, **Change server type** (Vanilla / Paper / Modded) reinstalls Minecraft on this VM. Optional wipe (off by default). Modded needs a pack file.
 - **World** — cloud backups, **Replace world** from a zip, and **Wipe world**.
-- **Mods** — drop a new `.mrpack` or server-pack zip to reinstall Minecraft.
-- **Plugins** — only for a **Paper** (Optimized Vanilla) server. List, upload, and delete plugin jars in `plugins/`. Upload and delete **restart Minecraft**. Do **not** use `/reload`. Vanilla Default and modded servers do not show this subtab.
+- **Mods** — drop a new `.mrpack` or server-pack zip to change the modpack. At the bottom of this menu, you can add or delete a single `.jar` in `mods/`.
+- **Plugins** — only for a **Paper** server. List, upload, and delete plugin jars in `plugins/`. Upload and delete **restart Minecraft**. Do **not** use `/reload`.
+
 
 
 
@@ -223,5 +222,5 @@ Days and hour math are **UTC**, not your local calendar. **Hours** shows what yo
 ### Idle stop and wake
 
 - The game server turns off after **15 minutes** with no players. That is how the app stays inside Oracle’s free-hour allowance. The doorbell stays on and keeps the same play IP.
-- When the server is off, it can be started from MCSTool, or by a player attempting to connect from the Minecraft client (unless that UTC day is **zeroed** or out of today’s hours). The doorbell then starts the server VM. Wake can take **2–5 minutes**, depending on the pack and world.
+- When the server is off, it can be started from MCSTool, or by a player attempting to connect from the Minecraft client (unless that UTC day is **zeroed** or out of today’s hours). The doorbell then starts the server VM. Wake can take **2–5 minutes**, depending on the pack and world. On a 4 OCPU world the Minecraft server list shows about how many **clock hours** are left today (not CPU-hours); a 2 OCPU world omits that number. Minecraft may cache the list text — refresh or reconnect if it looks stale.
 

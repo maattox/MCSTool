@@ -70,6 +70,8 @@ public sealed class ModdingPanelLogicTests
             ModdingPanelLogic.DownloadDisabledReason(isModded: true, hasLocalArchive: false));
         Assert.Contains("cannot rebuild a client pack", ModdingPanelLogic.MissingArchiveMessage, StringComparison.Ordinal);
         Assert.DoesNotContain("zip of", ModdingPanelLogic.MissingArchiveMessage, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("bypasses automatic checks", ModdingPanelLogic.AdvancedJarWarning, StringComparison.Ordinal);
+        Assert.DoesNotContain("friend", ModdingPanelLogic.AdvancedJarWarning, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

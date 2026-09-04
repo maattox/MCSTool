@@ -24,17 +24,11 @@ public static class SetupPackImport
     public const string LoaderRefusal =
         "Setup can install Fabric, Forge, or NeoForge packs. This pack's loader is not supported.";
 
-    public const string ClientPackTitle = "Players need this pack to play";
-
-    /// <summary>Dedicated wizard/Guide copy (blueprint §25). Novice wording; no VM1 jargon.</summary>
-    public const string ClientPackCopy =
-        "This server is not playable for players until they install the same exported pack "
-        + "on their PCs. Vanilla Minecraft is not enough. Keep the file you upload — Manager "
-        + "also saves a copy so you can share it later. This app cannot rebuild a client pack "
-        + "from the mods folder on the server.";
-
-    public const string ClientPackAckLabel =
-        "I will give players this same exported pack. They cannot join until they have it.";
+    /// <summary>
+    /// Setup Game step: unstructured / jar-root zip confirm (replaces the two structured-pack acks).
+    /// </summary>
+    public const string ClientOnlyMarksConfirmLabel =
+        "Confirm all client-only mods are correctly marked";
 
     /// <summary>
     /// Confirmable-summary warning when the override list skips mods the pack treated as
@@ -89,33 +83,6 @@ public static class SetupPackImport
     public const double UnclearSideHighFractionThreshold = 0.5;
 
     public const int OverrideListExampleCap = 6;
-
-    /// <summary>Shareable identity from the analyzed pack (file import; no catalog URL).</summary>
-    public static string FriendsNeedLine(
-        string? packName,
-        string? minecraftVersion,
-        string? loader,
-        string? loaderVersion)
-    {
-        var name = string.IsNullOrWhiteSpace(packName) ? "this pack" : packName.Trim();
-        var mc = string.IsNullOrWhiteSpace(minecraftVersion)
-            ? ""
-            : "Minecraft " + minecraftVersion.Trim();
-        var loaderLabel = DisplayLoader(loader);
-        if (!string.IsNullOrWhiteSpace(loaderLabel) && !string.IsNullOrWhiteSpace(loaderVersion))
-            loaderLabel += " " + loaderVersion.Trim();
-        string identity;
-        if (string.IsNullOrWhiteSpace(mc) && string.IsNullOrWhiteSpace(loaderLabel))
-            identity = name;
-        else if (string.IsNullOrWhiteSpace(loaderLabel))
-            identity = $"{name} — {mc}";
-        else if (string.IsNullOrWhiteSpace(mc))
-            identity = $"{name} — {loaderLabel}";
-        else
-            identity = $"{name} — {mc} with {loaderLabel}";
-        return "Share " + identity
-            + ". Give players the same file you uploaded (not a zip of the server mods folder).";
-    }
 
     public static string DisplayLoader(string? loader)
     {

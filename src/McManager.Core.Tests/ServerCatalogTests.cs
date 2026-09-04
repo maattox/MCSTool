@@ -38,6 +38,20 @@ public sealed class ServerCatalogTests
             Assert.True(ServerCatalog.Rename(first!, "Home").Succeeded);
             Assert.Equal("Home", ServerCatalog.ActiveDisplayName());
             Assert.Equal("Home", ServerCatalog.CaptionLabel(playIpFallback: "203.0.113.9"));
+            Assert.True(ServerCatalog.ShowCaptionSwitcher);
+        }
+    }
+
+    [Fact]
+    public void Caption_switcher_needs_two_servers()
+    {
+        var installed = NewTempDir("mcmgr-cap-");
+        using (Isolate(installed))
+        {
+            Assert.True(ServerCatalog.EnsureDefaultServer().Succeeded);
+            Assert.False(ServerCatalog.ShowCaptionSwitcher);
+            Assert.True(ServerCatalog.AddServer("Lab two").Succeeded);
+            Assert.True(ServerCatalog.ShowCaptionSwitcher);
         }
     }
 
@@ -77,6 +91,7 @@ public sealed class ServerCatalogTests
         {
             Assert.True(ServerCatalog.HasEnvOverride);
             Assert.Equal(ServerCatalog.EnvOverrideLabel, ServerCatalog.CaptionLabel("1.2.3.4"));
+            Assert.False(ServerCatalog.ShowCaptionSwitcher);
             var add = ServerCatalog.AddServer("Nope");
             Assert.False(add.Succeeded);
             Assert.Empty(ServerCatalog.List());

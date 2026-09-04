@@ -17,12 +17,12 @@ public sealed class PackReplaceUxTests
     }
 
     [Fact]
-    public void Install_requires_both_setup_checkboxes()
+    public void Install_requires_pack_confirm()
     {
         Assert.True(PackReplaceUx.CanPick(vm1Running: true, busy: false));
         Assert.False(PackReplaceUx.CanInstall(
             vm1Running: true, busy: false, canContinue: true, packConfirmed: false, clientPackAcknowledged: true));
-        Assert.False(PackReplaceUx.CanInstall(
+        Assert.True(PackReplaceUx.CanInstall(
             vm1Running: true, busy: false, canContinue: true, packConfirmed: true, clientPackAcknowledged: false));
         Assert.True(PackReplaceUx.CanInstall(
             vm1Running: true, busy: false, canContinue: true, packConfirmed: true, clientPackAcknowledged: true));
@@ -30,6 +30,9 @@ public sealed class PackReplaceUxTests
             "Confirm the pack",
             PackReplaceUx.InstallDisabledReason(true, false, true, false, true),
             StringComparison.Ordinal);
+        Assert.Equal(
+            "",
+            PackReplaceUx.InstallDisabledReason(true, false, true, true, false));
     }
 
     [Fact]
@@ -93,7 +96,6 @@ public sealed class PackReplaceUxTests
     [Fact]
     public void Change_pack_copy_is_locked_and_pronoun_free()
     {
-        Assert.Equal("Players need this mod pack to join the server", PackReplaceUx.FriendsNeedOneLiner);
         Assert.Equal("Drop a mod pack here", PackReplaceUx.DropTitle);
         Assert.Contains("Modrinth .mrpack", PackReplaceUx.DropFormats, StringComparison.Ordinal);
         Assert.Contains("CurseForge Server Pack .zip", PackReplaceUx.DropFormats, StringComparison.Ordinal);
@@ -107,14 +109,12 @@ public sealed class PackReplaceUxTests
 
         var paneCopy = string.Join(
             " ",
-            PackReplaceUx.FriendsNeedOneLiner,
             PackReplaceUx.DropTitle,
             PackReplaceUx.DropFormats,
             PackReplaceUx.DropLargeHint,
             PackReplaceUx.SkipWarningBody,
             PackReplaceUx.ChangePackPickHint,
             PackReplaceUx.PackConfirmLabel,
-            PackReplaceUx.ClientPackAckLabel,
             PackReplaceUx.WipeWorldLabel,
             PackReplaceUx.ConfirmKeepWorld,
             PackReplaceUx.ConfirmWipeWorld);

@@ -143,21 +143,22 @@ void mcdoor_build_motd(const ControlState *state, char *out, size_t out_cap) {
 
   switch (state->door) {
     case DOOR_IDLE: {
-      if (budget_shape_always_on_capable(state->ocpus)) {
+      if (budget_shape_always_on_capable(state->ocpus) || state->ocpus <= 0.0) {
         snprintf(out, out_cap, "Server offline. Connect to wake the world.");
         break;
       }
-      double remaining =
+      double remaining_ocpu =
           budget_remaining_ocpu(state->used_ocpu_hours, state->daily_limit_ocpu_hours);
-      if (remaining < 0.0) {
-        remaining = 0.0;
+      if (remaining_ocpu < 0.0) {
+        remaining_ocpu = 0.0;
       }
+      double remaining_wall = remaining_ocpu / state->ocpus;
       char reset_when[64];
       format_utc_reset_date(reset_when, sizeof reset_when);
       snprintf(out, out_cap,
-               "Server offline. ~%.1f OCPU-h remaining today (resets %s). "
+               "Server offline. ~%.1fh remaining today (resets %s). "
                "Connect to wake the world.",
-               remaining, reset_when);
+               remaining_wall, reset_when);
       break;
     }
     case DOOR_STARTING:
@@ -284,6 +285,9 @@ static int send_packet(int fd, const uint8_t *body, size_t body_len) {
 }
 
 static int send_status_response(int fd, const McdoorConfig *cfg) {
+  if (cfg->on_status_refresh != NULL) {
+    cfg->on_status_refresh(cfg->wake_userdata);
+  }
   char motd[512];
   mcdoor_build_motd(cfg->state, motd, sizeof motd);
   const char *icon = mcdoor_icon_for_state(cfg->state->door, cfg);

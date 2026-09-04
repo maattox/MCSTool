@@ -25,10 +25,12 @@ public static class OversizedWorldBackupUx
         + "limit is resolved.";
 
     public const string HelpTitle =
-        "Cloud backups of the world zip. When a single save is too large for the free cap, "
-        + "automatic uploads stop and Download latest world save copies the live world over "
-        + "SSH instead (game VM must be running). That copy is not uploaded to cloud storage. "
-        + "Replace copies a zip onto the live server. Wipe world deletes only the live save.";
+        "Cloud backups of the world zip. Live world is the uncompressed folder on the game VM "
+        + "(measured when you open World; Refresh waits two minutes). When a single save is "
+        + "too large for the free cap, automatic uploads stop and Download latest world save "
+        + "copies the live world over SSH instead (game VM must be running). That copy is not "
+        + "uploaded to cloud storage. Replace copies a zip onto the live server. Wipe world "
+        + "deletes only the live save.";
 
     /// <summary>
     /// Observed presence is the block. Transport errors are not treated as blocked

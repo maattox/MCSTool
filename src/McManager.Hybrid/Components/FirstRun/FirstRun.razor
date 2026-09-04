@@ -5,46 +5,49 @@
     <CaptionBar />
 
     <div class="mcm-firstrun">
-        <h1>Welcome</h1>
-        <p class="mcm-firstrun-hint">
-            This server has no manage config yet. Deploy a new Always Free Minecraft stack, find a stack you already created, or open Manager if you already copied a config file here.
-        </p>
+        <header class="mcm-firstrun-intro">
+            <h1>Welcome</h1>
+            <p class="mcm-firstrun-lead">
+                MCSTool creates a vanilla, Paper, or modded Minecraft server on Oracle Always Free,
+                then lets you manage it from this app. Players join one address. When nobody is playing,
+                the game server sleeps; a small always-on doorbell can still wake it.
+            </p>
+        </header>
 
         <div class="mcm-firstrun-actions">
             <button type="button"
+                    class="mcm-firstrun-choice mcm-firstrun-choice-primary"
                     disabled="@Vm.IsBusy"
-                    title="Walk through Always Free confirmation, then create the cloud computers and install Minecraft."
                     @onclick="Vm.OpenSetup">
-                Deploy a new stack
+                <span class="mcm-firstrun-choice-title">Deploy a new stack</span>
+                <span class="mcm-firstrun-choice-copy">Walk through setup and create the cloud computers.</span>
             </button>
             <button type="button"
+                    class="mcm-firstrun-choice"
                     disabled="@Vm.IsBusy"
-                    title="Looks at saved cloud logins and shared storage, then asks before saving local config. Never runs on launch."
                     @onclick="Vm.DetectAsync">
-                Find an existing stack
+                <span class="mcm-firstrun-choice-title">Find an existing stack</span>
+                <span class="mcm-firstrun-choice-copy">Reads your saved cloud logins, finds the product compartment, and fills this app from shared storage after you confirm.</span>
             </button>
             <button type="button"
+                    class="mcm-firstrun-choice"
                     disabled="@Vm.IsBusy"
-                    title="Opens Manager without scanning the cloud. Use this if you already placed config.local.json by hand."
                     @onclick="Vm.OpenExistingStack">
-                I already have a stack
+                <span class="mcm-firstrun-choice-title">I already have a stack</span>
+                <span class="mcm-firstrun-choice-copy">Opens Manager without scanning the cloud. Use this if you already copied a config file onto this PC.</span>
             </button>
-            @if (Vm.CanCancelAdd)
-            {
-                <button type="button"
-                        class="mcm-firstrun-cancel"
-                        disabled="@Vm.IsBusy"
-                        title="Go back and delete this new empty server folder. Other servers on this PC are kept."
-                        @onclick="Vm.CancelAdd">
-                    Cancel
-                </button>
-            }
         </div>
 
-        <p class="mcm-firstrun-note">
-            “I already have a stack” skips the cloud scan. Find an existing stack reads your saved logins, finds the product compartment, and fills config from shared storage after you confirm.
-        </p>
-        <p class="mcm-firstrun-note">Always Free — this product does not offer a paid mode.</p>
+        @if (Vm.CanCancelAdd)
+        {
+            <button type="button"
+                    class="mcm-firstrun-cancel"
+                    disabled="@Vm.IsBusy"
+                    title="Go back and delete this new empty server folder. Other servers on this PC are kept."
+                    @onclick="Vm.CancelAdd">
+                Cancel
+            </button>
+        }
 
         @if (!string.IsNullOrWhiteSpace(Vm.StatusMessage))
         {
@@ -54,10 +57,6 @@
         @if (Vm.ConfigHost.LoadFailed)
         {
             <p class="mcm-firstrun-error">@Vm.ConfigHost.LoadResult.Error</p>
-        }
-        else if (!string.IsNullOrWhiteSpace(Vm.ConfigHost.LoadResult.Error))
-        {
-            <p class="mcm-firstrun-note">@Vm.ConfigHost.LoadResult.Error</p>
         }
     </div>
 </div>

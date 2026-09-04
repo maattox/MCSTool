@@ -3,7 +3,7 @@
 @inject PackIdentityCatalogCache Catalogs
 @implements IDisposable
 
-<div class="mcm-pack-identity">
+<div class="mcm-pack-identity" aria-busy="@IdentityCatalogsPending">
     <p class="mcm-wizard-inline-help">
         Confirm pack versions before install.
         <WizardHelp Title="@DerivedPackIdentity.IdentityHelp" AriaLabel="About pack versions" />
@@ -17,7 +17,20 @@
     <div class="mcm-pack-identity-fields">
         <div class="mcm-field">
             <label for="@McInputId">@DerivedPackIdentity.MinecraftVersionLabel</label>
-            @if (UseMinecraftSelect)
+            @if (IdentityCatalogsPending)
+            {
+                <select id="@McInputId" disabled>
+                    @if (!string.IsNullOrWhiteSpace(MinecraftVersion))
+                    {
+                        <option value="@MinecraftVersion">@MinecraftVersion</option>
+                    }
+                    else
+                    {
+                        <option value="">Loading…</option>
+                    }
+                </select>
+            }
+            else if (UseMinecraftSelect)
             {
                 <select id="@McInputId"
                         disabled="@Disabled"
@@ -46,7 +59,7 @@
         <div class="mcm-field">
             <label for="@LoaderInputId">@DerivedPackIdentity.LoaderLabel</label>
             <select id="@LoaderInputId"
-                    disabled="@Disabled"
+                    disabled="@(Disabled || IdentityCatalogsPending)"
                     value="@Loader"
                     @onchange="OnLoaderChange">
                 <option value="@MrpackAnalyzer.LoaderFabric">Fabric</option>
@@ -56,7 +69,20 @@
         </div>
         <div class="mcm-field">
             <label for="@LoaderVerInputId">@DerivedPackIdentity.LoaderVersionLabel</label>
-            @if (UseLoaderVersionSelect)
+            @if (IdentityCatalogsPending)
+            {
+                <select id="@LoaderVerInputId" disabled>
+                    @if (!string.IsNullOrWhiteSpace(LoaderVersion))
+                    {
+                        <option value="@LoaderVersion">@LoaderVersion</option>
+                    }
+                    else
+                    {
+                        <option value="">Loading…</option>
+                    }
+                </select>
+            }
+            else if (UseLoaderVersionSelect)
             {
                 <select id="@LoaderVerInputId"
                         disabled="@Disabled"
@@ -87,7 +113,7 @@
             @if (UseJavaSelect)
             {
                 <select id="@JavaInputId"
-                        disabled="@Disabled"
+                        disabled="@(Disabled || IdentityCatalogsPending)"
                         value="@JavaMajorText"
                         @onchange="OnJavaChange">
                     @if (string.IsNullOrWhiteSpace(JavaMajorText))
@@ -106,7 +132,7 @@
                        type="text"
                        inputmode="numeric"
                        autocomplete="off"
-                       disabled="@Disabled"
+                       disabled="@(Disabled || IdentityCatalogsPending)"
                        value="@JavaMajorText"
                        @oninput="OnJavaInput" />
             }
@@ -135,6 +161,8 @@
     private IReadOnlyList<string> _javaMajors = [];
     private bool _minecraftCatalogOk;
     private bool _loaderCatalogOk;
+    private bool _minecraftCatalogAttempted;
+    private bool _loaderCatalogAttempted;
     private string _boundMinecraft = "\u0000";
     private string _boundLoader = "\u0000";
 
@@ -146,28 +174,42 @@
     private bool UseMinecraftSelect => _minecraftCatalogOk && _minecraftIds.Count > 0;
     private bool UseLoaderVersionSelect => _loaderCatalogOk && _loaderVersions.Count > 0;
     private bool UseJavaSelect => _javaMajors.Count > 0;
+    private bool IdentityCatalogsPending => !_minecraftCatalogAttempted || !_loaderCatalogAttempted;
+
+    protected override void OnInitialized()
+    {
+        RebuildJavaOptions();
+        ApplyCachedMojang();
+        ApplyCachedLoaderVersions();
+    }
 
     protected override async Task OnInitializedAsync()
     {
-        try
+        if (!_minecraftCatalogAttempted)
         {
-            var mojang = await Catalogs.GetMojangAsync(_cts.Token);
-            _manifest = mojang.Manifest;
-            _minecraftCatalogOk = _manifest.Versions.Count > 0;
-        }
-        catch (OperationCanceledException)
-        {
-            return;
-        }
-        catch
-        {
-            _minecraftCatalogOk = false;
-            _manifest = null;
+            try
+            {
+                var mojang = await Catalogs.GetMojangAsync(_cts.Token);
+                _manifest = mojang.Manifest;
+                _minecraftCatalogOk = _manifest.Versions.Count > 0;
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+            catch
+            {
+                _minecraftCatalogOk = false;
+                _manifest = null;
+            }
+
+            _minecraftCatalogAttempted = true;
+            RebuildMinecraftOptions();
         }
 
-        RebuildMinecraftOptions();
         RebuildJavaOptions();
-        await RefreshLoaderVersionsAsync();
+        if (!_loaderCatalogAttempted)
+            await RefreshLoaderVersionsAsync();
     }
 
     protected override async Task OnParametersSetAsync()
@@ -178,13 +220,69 @@
             return;
         _boundMinecraft = MinecraftVersion;
         _boundLoader = Loader;
-        await RefreshLoaderVersionsAsync();
+        if (!ApplyCachedLoaderVersions())
+            await RefreshLoaderVersionsAsync();
     }
 
     public void Dispose()
     {
         _cts.Cancel();
         _cts.Dispose();
+    }
+
+    private void ApplyCachedMojang()
+    {
+        if (!Catalogs.TryGetMojang(out var mojang))
+            return;
+        _manifest = mojang.Manifest;
+        _minecraftCatalogOk = _manifest.Versions.Count > 0;
+        _minecraftCatalogAttempted = true;
+        RebuildMinecraftOptions();
+    }
+
+    private bool ApplyCachedLoaderVersions()
+    {
+        var kind = (Loader ?? "").Trim().ToLowerInvariant();
+        IReadOnlyList<FabricGameLoaderEntry>? fabric = null;
+        IReadOnlyDictionary<string, string>? forge = null;
+        IReadOnlyList<string>? neo = null;
+        var have = false;
+        var loaderOk = true;
+        if (kind == MrpackAnalyzer.LoaderFabric)
+        {
+            have = Catalogs.TryGetFabricLoaders(MinecraftVersion, out fabric);
+            loaderOk = fabric is not null;
+        }
+        else if (kind == MrpackAnalyzer.LoaderForge)
+        {
+            have = Catalogs.TryGetForgePromos(out forge);
+            loaderOk = forge is not null;
+        }
+        else if (kind == MrpackAnalyzer.LoaderNeoForge)
+        {
+            have = Catalogs.TryGetNeoForgeVersions(out neo);
+            loaderOk = neo is not null;
+        }
+        else
+        {
+            return false;
+        }
+
+        if (!have)
+            return false;
+
+        _loaderVersions = PackIdentityVersionOptions.LoaderVersions(
+            Loader ?? "",
+            MinecraftVersion,
+            LoaderVersion,
+            fabric,
+            forge,
+            neo);
+        _loaderCatalogOk = loaderOk && _loaderVersions.Count > 0;
+        _loaderCatalogAttempted = true;
+        _boundMinecraft = MinecraftVersion;
+        _boundLoader = Loader;
+        return true;
     }
 
     private void RebuildMinecraftOptions()
@@ -239,6 +337,7 @@
             forge,
             neo);
         _loaderCatalogOk = loaderOk && _loaderVersions.Count > 0;
+        _loaderCatalogAttempted = true;
     }
 
     private async Task OnMinecraftChange(ChangeEventArgs e)

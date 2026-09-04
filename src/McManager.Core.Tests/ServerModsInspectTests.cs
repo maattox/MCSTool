@@ -100,6 +100,27 @@ public sealed class ServerModsInspectTests
         Assert.False(ServerModsInspect.IsSafeFileName("../x"));
         Assert.False(ServerModsInspect.IsSafeFileName("a/b"));
         Assert.True(ServerModsInspect.IsSafeFileName("sodium-extra-0.1.jar"));
+        Assert.True(ServerModsInspect.IsSafeJarName("sodium-extra-0.1.jar"));
+        Assert.False(ServerModsInspect.IsSafeJarName("notes.txt"));
+        Assert.Equal(ServerPluginsInspect.MaxUploadBytes, ServerModsInspect.MaxUploadBytes);
+    }
+
+    [Fact]
+    public void Install_and_delete_are_elevated_mcmgr_install()
+    {
+        var install = ServerModsInspect.InstallScript("lithium.jar");
+        Assert.Contains("sudo bash -c", install, StringComparison.Ordinal);
+        Assert.Contains("install -o mcmgr -g mcmgr -m 0640", install, StringComparison.Ordinal);
+        Assert.Contains("/tmp/mcmgr-mod-upload/lithium.jar", install, StringComparison.Ordinal);
+        Assert.Contains("/opt/mcmgr/server/mods", install, StringComparison.Ordinal);
+        Assert.DoesNotContain("prepare-pack-replace", install, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("/reload", install, StringComparison.OrdinalIgnoreCase);
+
+        var del = ServerModsInspect.DeleteScript("lithium.jar");
+        Assert.Contains("sudo bash -c", del, StringComparison.Ordinal);
+        Assert.Contains("rm -f", del, StringComparison.Ordinal);
+        Assert.Contains("/opt/mcmgr/server/mods", del, StringComparison.Ordinal);
+        Assert.DoesNotContain("rm -rf", del, StringComparison.Ordinal);
     }
 
     [Fact]

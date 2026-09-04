@@ -86,4 +86,8 @@ int control_status_json(const ControlContext *ctx, char *buf, size_t buf_cap);
 /* mcdoor wake-on-join hook: player path — control_wake(ctx, 1, 0). */
 void control_on_login_wake(void *userdata);
 
+/* Idle MOTD / GET /api/status: reload local OS cache files (no Object Storage
+ * GET) and recompute used hours / UTC day. No-op while PLAYABLE/STARTING. */
+void control_on_status_refresh(void *userdata);
+
 #endif /* VM2_CONTROL_H */

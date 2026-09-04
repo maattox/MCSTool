@@ -27,12 +27,14 @@ typedef struct {
   const char *version_name;
   int protocol;
   McdoorWakeCallback on_wake_request;
+  McdoorWakeCallback on_status_refresh;
   void *wake_userdata;
 } McdoorConfig;
 
 /* Fill `out` with the MOTD text for `state->door`. Idle MOTD includes remaining
- * daily OCPU-h on scarce shapes (4 OCPU); always-on-capable shapes (2 OCPU)
- * omit that scare figure. Exhausted / spend-brake copy is unchanged. */
+ * wall-clock hours (remaining OCPU-h / ocpus) on scarce shapes (4 OCPU);
+ * always-on-capable shapes (2 OCPU) omit that scare figure. Exhausted /
+ * spend-brake copy is unchanged. */
 void mcdoor_build_motd(const ControlState *state, char *out, size_t out_cap);
 
 /* Kick reason shown on login (next_state=2). */

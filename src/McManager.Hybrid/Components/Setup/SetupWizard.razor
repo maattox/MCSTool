@@ -13,185 +13,194 @@
             <p>@Vm.StepSubtitle</p>
         </header>
 
-        <div class="mcm-wizard-body mcm-slim-scroll @(Vm.IsStepSummary && Vm.ShowDeployProgress ? "is-deploying" : null)">
+        <div class="mcm-wizard-body mcm-slim-scroll @(Vm.IsStepAlwaysFree || Vm.IsStepOci || Vm.IsStepSsh || Vm.IsStepEula || Vm.IsStepAuthToken ? "is-sparse" : null) @(Vm.IsStepAlwaysFree ? "is-alwaysfree" : null) @(Vm.IsStepSummary && Vm.ShowDeployProgress ? "is-deploying" : null)">
             @if (Vm.IsStepAlwaysFree)
             {
-                <p class="mcm-wizard-explainer">@SetupWizardViewModel.AlwaysFreeBodyCopy</p>
-                <div class="mcm-wizard-actions">
-                    <button type="button" @onclick="Vm.OpenAlwaysFreeDocs">Open Always Free compute docs</button>
+                <div class="mcm-wizard-alwaysfree">
+                    <p class="mcm-wizard-alwaysfree-lead">@SetupWizardViewModel.AlwaysFreeLeadCopy</p>
+                    <button type="button"
+                            class="mcm-wizard-text-link"
+                            @onclick="Vm.OpenAlwaysFreeDocs">
+                        Always Free compute docs
+                    </button>
+                    <div class="mcm-wizard-alwaysfree-acks">
+                        <label class="mcm-wizard-ack">
+                            <input type="checkbox"
+                                   disabled="@(!Vm.CanMutateWizard)"
+                                   @bind="Vm.AlwaysFreeConfirmed" />
+                            <span class="mcm-wizard-ack-text">
+                                <span class="mcm-wizard-ack-title">Stay on Always Free–eligible compute</span>
+                                <span class="mcm-wizard-ack-copy">@SetupWizardViewModel.AlwaysFreeStayHelp</span>
+                            </span>
+                        </label>
+                        <label class="mcm-wizard-ack">
+                            <input type="checkbox"
+                                   disabled="@(!Vm.CanMutateWizard)"
+                                   @bind="Vm.ResidualChargeDisclosed" />
+                            <span class="mcm-wizard-ack-text">
+                                <span class="mcm-wizard-ack-title">I understand the $1 brake and a possible ~$1–$2 residual</span>
+                                <span class="mcm-wizard-ack-copy">@SetupWizardViewModel.AlwaysFreeResidualHelp</span>
+                            </span>
+                        </label>
+                        <label class="mcm-wizard-ack">
+                            <input type="checkbox"
+                                   disabled="@(!Vm.CanMutateWizard)"
+                                   @bind="Vm.CapacityWaitConsent" />
+                            <span class="mcm-wizard-ack-text">
+                                <span class="mcm-wizard-ack-title">I understand capacity wait</span>
+                                <span class="mcm-wizard-ack-copy">@SetupWizardViewModel.AlwaysFreeCapacityHelp</span>
+                            </span>
+                        </label>
+                    </div>
+                    @if (Vm.IsTofuDryRun)
+                    {
+                        <p class="mcm-wizard-hint">This session has MCMANAGER_TOFU_DRY_RUN set. Deploy will not create Oracle resources.</p>
+                    }
                 </div>
-                <div class="mcm-checkbox-row">
-                    <label class="mcm-check-hit">
-                        <input type="checkbox"
-                               disabled="@(!Vm.CanMutateWizard)"
-                               @bind="Vm.AlwaysFreeConfirmed" />
-                        <span>Stay on Always Free–eligible compute.</span>
-                    </label>
-                    <WizardHelp Title="@SetupWizardViewModel.AlwaysFreeStayHelp" AriaLabel="About Always Free limits" />
-                </div>
-                <div class="mcm-checkbox-row">
-                    <label class="mcm-check-hit">
-                        <input type="checkbox"
-                               disabled="@(!Vm.CanMutateWizard)"
-                               @bind="Vm.ResidualChargeDisclosed" />
-                        <span>I understand the $1 brake and a possible ~$1–$2 residual.</span>
-                    </label>
-                    <WizardHelp Title="@SetupWizardViewModel.AlwaysFreeResidualHelp" AriaLabel="About the $1 brake" />
-                </div>
-                <div class="mcm-checkbox-row">
-                    <label class="mcm-check-hit">
-                        <input type="checkbox"
-                               disabled="@(!Vm.CanMutateWizard)"
-                               @bind="Vm.CapacityWaitConsent" />
-                        <span>I understand capacity wait.</span>
-                    </label>
-                    <WizardHelp Title="@SetupWizardViewModel.AlwaysFreeCapacityHelp" AriaLabel="About capacity wait" />
-                </div>
-                @if (Vm.IsTofuDryRun)
-                {
-                    <p class="mcm-wizard-hint">This session has MCMANAGER_TOFU_DRY_RUN set. Deploy will not create Oracle resources.</p>
-                }
             }
             else if (Vm.IsStepOci)
             {
-                <div class="mcm-wizard-oci">
-                    <div class="mcm-field">
-                        <label for="mcm-setup-profile" class="mcm-field-head">
-                            OCI profile
-                            <WizardHelp Title="@SetupWizardViewModel.OciProfileHelp" AriaLabel="About the OCI profile" />
-                        </label>
-                        <select id="mcm-setup-profile"
-                                disabled="@(!Vm.CanMutateWizard)"
-                                @bind="Vm.OciProfile">
-                            @foreach (var profile in Vm.Profiles)
-                            {
-                                <option value="@profile.Name">@profile</option>
-                            }
-                        </select>
-                    </div>
-                    <div class="mcm-field">
-                        <label for="mcm-setup-profile-details">From ~/.oci/config</label>
+                <div class="mcm-wizard-pane">
+                    <p class="mcm-wizard-pane-lead">Region and account come from ~/.oci/config on this PC. Prefer the tenancy home region.</p>
+                    <div class="mcm-wizard-card">
+                        <div class="mcm-field mcm-field-short">
+                            <label for="mcm-setup-profile" class="mcm-wizard-ack-title">OCI profile</label>
+                            <select id="mcm-setup-profile"
+                                    disabled="@(!Vm.CanMutateWizard)"
+                                    @bind="Vm.OciProfile">
+                                @foreach (var profile in Vm.Profiles)
+                                {
+                                    <option value="@profile.Name">@profile</option>
+                                }
+                            </select>
+                        </div>
+                        <span class="mcm-wizard-ack-copy">@SetupWizardViewModel.OciProfileHelp</span>
                         <pre id="mcm-setup-profile-details"
                              class="mcm-wizard-mono mcm-wizard-profile-pre">@Vm.ProfileDetailsText</pre>
                     </div>
-                    <div class="mcm-field">
-                        <label for="mcm-setup-email" class="mcm-field-head">
-                            Budget alert email
-                            <WizardHelp Title="@SetupWizardViewModel.AlertEmailHelp" AriaLabel="About the budget alert email" />
-                        </label>
-                        <input id="mcm-setup-email"
-                               type="email"
-                               name="alert-email"
-                               autocomplete="email"
-                               placeholder="you@example.com"
-                               disabled="@(!Vm.CanMutateWizard)"
-                               @bind="Vm.AlertEmail"
-                               @bind:event="oninput" />
+                    <div class="mcm-wizard-card">
+                        <div class="mcm-field mcm-field-short">
+                            <label for="mcm-setup-email" class="mcm-wizard-ack-title">Budget alert email</label>
+                            <input id="mcm-setup-email"
+                                   type="email"
+                                   name="alert-email"
+                                   autocomplete="email"
+                                   placeholder="you@example.com"
+                                   disabled="@(!Vm.CanMutateWizard)"
+                                   @bind="Vm.AlertEmail"
+                                   @bind:event="oninput" />
+                        </div>
+                        <span class="mcm-wizard-ack-copy">@SetupWizardViewModel.AlertEmailHelp</span>
                     </div>
                 </div>
             }
             else if (Vm.IsStepSsh)
             {
-                <p class="mcm-wizard-inline-help">
-                    Generate a new key, or import a .pub. Both VMs use this key unless you pick a different one for the door.
-                    <WizardHelp Title="@SetupWizardViewModel.SshKeyHelp" AriaLabel="About the SSH key" />
-                </p>
-                <label class="mcm-radio-row">
-                    <input type="radio"
-                           name="mcm-setup-ssh"
-                           disabled="@(!Vm.CanMutateWizard)"
-                           checked="@Vm.SshGenerateMode"
-                           @onchange="@(() => Vm.SshGenerateMode = true)" />
-                    <span>Generate a new key</span>
-                </label>
-                <label class="mcm-radio-row">
-                    <input type="radio"
-                           name="mcm-setup-ssh"
-                           disabled="@(!Vm.CanMutateWizard)"
-                           checked="@Vm.SshImportMode"
-                           @onchange="@(() => Vm.SshGenerateMode = false)" />
-                    <span>Import an existing .pub</span>
-                </label>
-                <div class="mcm-wizard-actions">
-                    <button type="button"
-                            disabled="@(!Vm.CanMutateWizard)"
-                            @onclick="Vm.GenerateSshKeyAsync">
-                        Generate key
-                    </button>
-                    <button type="button"
-                            disabled="@(!Vm.CanMutateWizard)"
-                            @onclick="Vm.ImportSshKeyAsync">
-                        Import .pub…
-                    </button>
-                </div>
-                <div class="mcm-field">
-                    <label for="mcm-setup-ssh-pub">Game VM (VM1) public key</label>
-                    <textarea id="mcm-setup-ssh-pub"
-                              class="mcm-wizard-mono"
-                              name="ssh-public-key"
-                              autocomplete="off"
-                              spellcheck="false"
-                              rows="3"
-                              disabled="@(!Vm.CanMutateWizard)"
-                              @bind="Vm.SshPublicKey"
-                              @bind:event="oninput"></textarea>
-                </div>
-                @if (!string.IsNullOrWhiteSpace(Vm.SshPublicKeyPath))
-                {
-                    <p class="mcm-wizard-hint mcm-wizard-mono">@Vm.SshPublicKeyPath</p>
-                }
-                @if (!string.IsNullOrWhiteSpace(Vm.SshFingerprint))
-                {
-                    <p class="mcm-wizard-hint mcm-wizard-mono">@Vm.SshFingerprint</p>
-                }
-                <div class="mcm-checkbox-row">
-                    <label class="mcm-check-hit">
-                        <input type="checkbox"
+                <div class="mcm-wizard-pane">
+                    <p class="mcm-wizard-pane-lead">Generate a new key, or import a .pub. Both VMs use this key unless you pick a different one for the door.</p>
+                    <label class="mcm-wizard-ack">
+                        <input type="radio"
+                               name="mcm-setup-ssh"
                                disabled="@(!Vm.CanMutateWizard)"
-                               @bind="Vm.SshSplitDoorKey" />
-                        <span>Use a different key for the door VM</span>
+                               checked="@Vm.SshGenerateMode"
+                               @onchange="@(() => Vm.SshGenerateMode = true)" />
+                        <span class="mcm-wizard-ack-text">
+                            <span class="mcm-wizard-ack-title">Generate a new key</span>
+                            <span class="mcm-wizard-ack-copy">Creates a new key on this PC. The private key stays on disk and is not saved in Setup’s resume file.</span>
+                        </span>
                     </label>
-                    <WizardHelp Title="@SetupWizardViewModel.DoorSshHelp" AriaLabel="About a separate door SSH key" />
-                </div>
-                @if (Vm.SshSplitDoorKey)
-                {
+                    <label class="mcm-wizard-ack">
+                        <input type="radio"
+                               name="mcm-setup-ssh"
+                               disabled="@(!Vm.CanMutateWizard)"
+                               checked="@Vm.SshImportMode"
+                               @onchange="@(() => Vm.SshGenerateMode = false)" />
+                        <span class="mcm-wizard-ack-text">
+                            <span class="mcm-wizard-ack-title">Import an existing .pub</span>
+                            <span class="mcm-wizard-ack-copy">Use an existing public key. This is not the Oracle API key.</span>
+                        </span>
+                    </label>
                     <div class="mcm-wizard-actions">
                         <button type="button"
                                 disabled="@(!Vm.CanMutateWizard)"
-                                @onclick="Vm.GenerateDoorSshKeyAsync">
-                            Generate door key
+                                @onclick="Vm.GenerateSshKeyAsync">
+                            Generate key
                         </button>
                         <button type="button"
                                 disabled="@(!Vm.CanMutateWizard)"
-                                @onclick="Vm.ImportDoorSshKeyAsync">
-                            Import door .pub…
+                                @onclick="Vm.ImportSshKeyAsync">
+                            Import .pub…
                         </button>
                     </div>
                     <div class="mcm-field">
-                        <label for="mcm-setup-door-ssh-pub">Door VM public key</label>
-                        <textarea id="mcm-setup-door-ssh-pub"
+                        <label for="mcm-setup-ssh-pub">Game VM (VM1) public key</label>
+                        <textarea id="mcm-setup-ssh-pub"
                                   class="mcm-wizard-mono"
-                                  name="door-ssh-public-key"
+                                  name="ssh-public-key"
                                   autocomplete="off"
                                   spellcheck="false"
                                   rows="3"
                                   disabled="@(!Vm.CanMutateWizard)"
-                                  @bind="Vm.DoorSshPublicKey"
+                                  @bind="Vm.SshPublicKey"
                                   @bind:event="oninput"></textarea>
+                        @if (!string.IsNullOrWhiteSpace(Vm.SshPublicKeyPath))
+                        {
+                            <p class="mcm-wizard-hint mcm-wizard-mono">@Vm.SshPublicKeyPath</p>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Vm.SshFingerprint))
+                        {
+                            <p class="mcm-wizard-hint mcm-wizard-mono">@Vm.SshFingerprint</p>
+                        }
                     </div>
-                    @if (!string.IsNullOrWhiteSpace(Vm.DoorSshPublicKeyPath))
+                    <label class="mcm-wizard-ack">
+                        <input type="checkbox"
+                               disabled="@(!Vm.CanMutateWizard)"
+                               @bind="Vm.SshSplitDoorKey" />
+                        <span class="mcm-wizard-ack-text">
+                            <span class="mcm-wizard-ack-title">Use a different key for the door VM</span>
+                            <span class="mcm-wizard-ack-copy">@SetupWizardViewModel.DoorSshHelp</span>
+                        </span>
+                    </label>
+                    @if (Vm.SshSplitDoorKey)
                     {
-                        <p class="mcm-wizard-hint mcm-wizard-mono">@Vm.DoorSshPublicKeyPath</p>
+                        <div class="mcm-wizard-actions">
+                            <button type="button"
+                                    disabled="@(!Vm.CanMutateWizard)"
+                                    @onclick="Vm.GenerateDoorSshKeyAsync">
+                                Generate door key
+                            </button>
+                            <button type="button"
+                                    disabled="@(!Vm.CanMutateWizard)"
+                                    @onclick="Vm.ImportDoorSshKeyAsync">
+                                Import door .pub…
+                            </button>
+                        </div>
+                        <div class="mcm-field">
+                            <label for="mcm-setup-door-ssh-pub">Door VM public key</label>
+                            <textarea id="mcm-setup-door-ssh-pub"
+                                      class="mcm-wizard-mono"
+                                      name="door-ssh-public-key"
+                                      autocomplete="off"
+                                      spellcheck="false"
+                                      rows="3"
+                                      disabled="@(!Vm.CanMutateWizard)"
+                                      @bind="Vm.DoorSshPublicKey"
+                                      @bind:event="oninput"></textarea>
+                            @if (!string.IsNullOrWhiteSpace(Vm.DoorSshPublicKeyPath))
+                            {
+                                <p class="mcm-wizard-hint mcm-wizard-mono">@Vm.DoorSshPublicKeyPath</p>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Vm.DoorSshFingerprint))
+                            {
+                                <p class="mcm-wizard-hint mcm-wizard-mono">@Vm.DoorSshFingerprint</p>
+                            }
+                        </div>
                     }
-                    @if (!string.IsNullOrWhiteSpace(Vm.DoorSshFingerprint))
-                    {
-                        <p class="mcm-wizard-hint mcm-wizard-mono">@Vm.DoorSshFingerprint</p>
-                    }
-                }
+                </div>
             }
             else if (Vm.IsStepGame)
             {
-                <div class="mcm-wizard-game">
+                <div class="mcm-wizard-game @(Vm.ShowModdedGameOptions ? "is-modded" : null)">
                     <div class="mcm-wizard-game-layout">
                         <fieldset class="mcm-wizard-fieldset mcm-wizard-game-kind">
                             <legend class="sr-only">Server type</legend>
@@ -202,9 +211,11 @@
                                            disabled="@(!Vm.CanMutateWizard)"
                                            checked="@Vm.ServerTypeIsVanilla"
                                            @onchange="@(() => Vm.SelectVanillaServer())" />
-                                    <span>Vanilla</span>
+                                    <span>
+                                        <span class="mcm-wizard-game-kind-title">Vanilla</span>
+                                        <span class="mcm-wizard-game-kind-copy">@SetupWizardViewModel.VanillaHelp</span>
+                                    </span>
                                 </label>
-                                <WizardHelp Title="@SetupWizardViewModel.VanillaHelp" AriaLabel="About Vanilla" />
                             </div>
                             <div class="mcm-radio-row mcm-wizard-game-kind-hit @(Vm.ServerTypeIsModded ? "is-selected" : null)">
                                 <label class="mcm-check-hit">
@@ -213,37 +224,39 @@
                                            disabled="@(!Vm.CanMutateWizard)"
                                            checked="@Vm.ServerTypeIsModded"
                                            @onchange="@(() => Vm.SelectModdedServer())" />
-                                    <span>Modded</span>
+                                    <span>
+                                        <span class="mcm-wizard-game-kind-title">Modded</span>
+                                        <span class="mcm-wizard-game-kind-copy">@SetupWizardViewModel.ModdedHelp</span>
+                                    </span>
                                 </label>
-                                <WizardHelp Title="@SetupWizardViewModel.ModdedHelp" AriaLabel="About Modded" />
                             </div>
                         </fieldset>
 
                         <div class="mcm-wizard-game-options">
                             @if (Vm.ShowVanillaGameOptions)
                             {
-                                <div class="mcm-radio-row">
-                                    <label class="mcm-check-hit">
-                                        <input type="radio"
-                                               name="mcm-setup-vanilla-flavor"
-                                               disabled="@(!Vm.CanMutateWizard)"
-                                               checked="@Vm.VanillaFlavorIsDefault"
-                                               @onchange="@(() => Vm.SelectDefaultVanilla())" />
-                                        <span>Default Vanilla</span>
-                                    </label>
-                                    <WizardHelp Title="@SetupWizardViewModel.DefaultVanillaHelp" AriaLabel="About Default Vanilla" />
-                                </div>
-                                <div class="mcm-radio-row">
-                                    <label class="mcm-check-hit">
-                                        <input type="radio"
-                                               name="mcm-setup-vanilla-flavor"
-                                               disabled="@(!Vm.CanMutateWizard)"
-                                               checked="@Vm.VanillaFlavorIsOptimized"
-                                               @onchange="@(() => Vm.SelectOptimizedVanilla())" />
-                                        <span>Optimized Vanilla (Paper)</span>
-                                    </label>
-                                    <WizardHelp Title="@SetupWizardViewModel.OptimizedVanillaHelp" AriaLabel="About Paper" />
-                                </div>
+                                <label class="mcm-wizard-ack mcm-wizard-ack-sm">
+                                    <input type="radio"
+                                           name="mcm-setup-vanilla-flavor"
+                                           disabled="@(!Vm.CanMutateWizard)"
+                                           checked="@Vm.VanillaFlavorIsDefault"
+                                           @onchange="@(() => Vm.SelectDefaultVanilla())" />
+                                    <span class="mcm-wizard-ack-text">
+                                        <span class="mcm-wizard-ack-title">Default Vanilla</span>
+                                        <span class="mcm-wizard-ack-copy">@SetupWizardViewModel.DefaultVanillaHelp</span>
+                                    </span>
+                                </label>
+                                <label class="mcm-wizard-ack mcm-wizard-ack-sm">
+                                    <input type="radio"
+                                           name="mcm-setup-vanilla-flavor"
+                                           disabled="@(!Vm.CanMutateWizard)"
+                                           checked="@Vm.VanillaFlavorIsOptimized"
+                                           @onchange="@(() => Vm.SelectOptimizedVanilla())" />
+                                    <span class="mcm-wizard-ack-text">
+                                        <span class="mcm-wizard-ack-title">Optimized Vanilla (Paper)</span>
+                                        <span class="mcm-wizard-ack-copy">@SetupWizardViewModel.OptimizedVanillaHelp</span>
+                                    </span>
+                                </label>
                                 @if (Vm.ShowSnapshotToggle)
                                 {
                                     <label class="mcm-checkbox-row">
@@ -275,11 +288,6 @@
 
                             @if (Vm.ShowModdedGameOptions)
                             {
-                                <p class="mcm-wizard-inline-help mcm-wizard-game-note">
-                                    <span class="mcm-wizard-kicker">@Vm.ClientPackTitle</span>
-                                    <WizardHelp Title="@SetupWizardViewModel.ClientPackHelp" AriaLabel="About the client pack" />
-                                    <span>Players must install this same pack. Vanilla Minecraft cannot join.</span>
-                                </p>
                                 <div class="mcm-wizard-game-ingest">
                                     <div class="mcm-pack-drop @(Vm.IsAnalyzingPack ? "is-busy" : "")"
                                          aria-label="Drop a modpack file">
@@ -297,7 +305,6 @@
                                                     @onclick="Vm.PickPackAsync">
                                                 Choose pack file…
                                             </button>
-                                            <WizardHelp Title="@SetupWizardViewModel.PackFileHelp" AriaLabel="About pack files" />
                                         </div>
                                         @if (!string.IsNullOrWhiteSpace(Vm.PackPath))
                                         {
@@ -313,12 +320,13 @@
                                         <p class="mcm-wizard-hint mcm-wizard-mono mcm-wizard-game-file"
                                            title="@Vm.PackFileNameDisplay">@Vm.PackFileNameDisplay</p>
                                     }
+                                    <p class="mcm-wizard-hint mcm-wizard-game-pack-help">@SetupWizardViewModel.PackFileHelp</p>
                                 </div>
                             }
                         </div>
                     </div>
 
-                    <div class="mcm-field">
+                    <div class="mcm-field mcm-field-short">
                         <label for="mcm-setup-world-seed">World seed (optional)</label>
                         <input id="mcm-setup-world-seed"
                                @key="@("mcm-setup-world-seed")"
@@ -333,8 +341,8 @@
                                disabled="@(!Vm.CanMutateWizard)"
                                @bind="Vm.WorldSeed"
                                @bind:event="oninput" />
+                        <p class="mcm-wizard-hint">Used when Minecraft generates a new world. Leave blank for a random seed.</p>
                     </div>
-                    <p class="mcm-wizard-hint">Used when Minecraft generates a new world. Leave blank for a random seed.</p>
 
                     @if (Vm.ShowModdedGameOptions)
                     {
@@ -392,19 +400,28 @@
                             }
                             @if (Vm.ShowPackConfirmChecks)
                             {
-                                <label class="mcm-checkbox-row">
-                                    <input type="checkbox"
-                                           disabled="@(!Vm.CanMutateWizard)"
-                                           @bind="Vm.PackConfirmed" />
-                                    <span>Use this pack on the server (server-side mods only; client-only files are skipped).</span>
-                                </label>
-                                <label class="mcm-checkbox-row">
-                                    <input type="checkbox"
-                                           disabled="@(!Vm.CanMutateWizard)"
-                                           @bind="Vm.ClientPackAcknowledged" />
-                                    <span>@Vm.ClientPackAckLabel</span>
-                                </label>
-                                <p class="mcm-wizard-hint">@Vm.ClientPackFriendsNeed</p>
+                                @if (Vm.PackNeedsIdentityConfirm)
+                                {
+                                    <label class="mcm-wizard-ack mcm-wizard-ack-sm">
+                                        <input type="checkbox"
+                                               disabled="@(!Vm.CanMutateWizard)"
+                                               @bind="Vm.PackConfirmed" />
+                                        <span class="mcm-wizard-ack-text">
+                                            <span class="mcm-wizard-ack-title">@Vm.ClientOnlyMarksConfirmLabel</span>
+                                        </span>
+                                    </label>
+                                }
+                                else
+                                {
+                                    <label class="mcm-wizard-ack mcm-wizard-ack-sm">
+                                        <input type="checkbox"
+                                               disabled="@(!Vm.CanMutateWizard)"
+                                               @bind="Vm.PackConfirmed" />
+                                        <span class="mcm-wizard-ack-text">
+                                            <span class="mcm-wizard-ack-title">Use this pack on the server (server-side mods only; client-only files are skipped).</span>
+                                        </span>
+                                    </label>
+                                }
                             }
                         </div>
                     }
@@ -417,34 +434,31 @@
                         Players see this in Minecraft’s server list.
                         <WizardHelp Title="@SetupWizardViewModel.IdentityHelp" AriaLabel="About the server name and icon" />
                     </p>
+                    <p class="mcm-wizard-hint mcm-wizard-motd-tip">Highlight some text and click the effect buttons to style your server’s MOTD</p>
                     <div class="mcm-identity-grid">
-                        <div>
-                            <MotdEditor IdPrefix="mcm-setup-server"
-                                        Disabled="@(!Vm.CanMutateWizard)"
-                                        @bind-ServerName="Vm.IdentityName"
-                                        @bind-Description="Vm.IdentityDescription" />
-                        </div>
-                        <div>
-                            <div>
-                                <ServerIconPreviewStrip ColorUrl="@Vm.IconPreviewDataUrl"
-                                                        IdleUrl="@Vm.IdleIconPreviewDataUrl"
-                                                        StartingUrl="@Vm.StartingIconPreviewDataUrl"
-                                                        ExhaustedUrl="@Vm.ExhaustedIconPreviewDataUrl" />
-                                <div class="mcm-wizard-actions">
-                                    <button type="button"
-                                            disabled="@(!Vm.CanMutateWizard)"
-                                            title="Any PNG. Manager fits it to 64×64."
-                                            @onclick="Vm.PickIdentityIconAsync">
-                                        Choose PNG
-                                    </button>
-                                    <button type="button"
-                                            disabled="@(!Vm.CanMutateWizard || !Vm.CanClearIdentityIcon)"
-                                            @onclick="Vm.ClearIdentityIcon">
-                                        Use default
-                                    </button>
-                                    <WizardHelp Title="@SetupWizardViewModel.IconStatesHelp" AriaLabel="About doorbell list icons" />
-                                </div>
-                                <p class="mcm-wizard-hint">Optional PNG — default if you skip</p>
+                        <MotdEditor IdPrefix="mcm-setup-server"
+                                    Disabled="@(!Vm.CanMutateWizard)"
+                                    @bind-ServerName="Vm.IdentityName"
+                                    @bind-Description="Vm.IdentityDescription" />
+                        <div class="mcm-wizard-identity-icon">
+                            <ServerIconPreviewStrip ColorUrl="@Vm.IconPreviewDataUrl"
+                                                    IdleUrl="@Vm.IdleIconPreviewDataUrl"
+                                                    StartingUrl="@Vm.StartingIconPreviewDataUrl"
+                                                    ExhaustedUrl="@Vm.ExhaustedIconPreviewDataUrl" />
+                            <div class="mcm-wizard-actions">
+                                <button type="button"
+                                        disabled="@(!Vm.CanMutateWizard)"
+                                        title="Any PNG. Manager fits it to 64×64."
+                                        @onclick="Vm.PickIdentityIconAsync">
+                                    Choose PNG
+                                </button>
+                                <button type="button"
+                                        disabled="@(!Vm.CanMutateWizard || !Vm.CanClearIdentityIcon)"
+                                        @onclick="Vm.ClearIdentityIcon">
+                                    Use default
+                                </button>
+                                <span class="mcm-wizard-hint">Optional PNG — default if you skip</span>
+                                <WizardHelp Title="@SetupWizardViewModel.IconStatesHelp" AriaLabel="About doorbell list icons" />
                             </div>
                         </div>
                     </div>
@@ -456,42 +470,48 @@
             }
             else if (Vm.IsStepEula)
             {
-                <p class="mcm-wizard-inline-help">
-                    You must accept Mojang’s Minecraft EULA.
-                    <WizardHelp Title="@SetupWizardViewModel.EulaHelp" AriaLabel="About the Minecraft EULA" />
-                </p>
-                <p>
-                    <button type="button" @onclick="Vm.OpenEula">Open Minecraft EULA</button>
-                </p>
-                <label class="mcm-checkbox-row">
-                    <input type="checkbox"
-                           disabled="@(!Vm.CanMutateWizard)"
-                           @bind="Vm.EulaAccepted" />
-                    <span>I accept the Minecraft EULA.</span>
-                </label>
+                <div class="mcm-wizard-pane">
+                    <p class="mcm-wizard-pane-lead">You must accept Mojang’s Minecraft EULA.</p>
+                    <button type="button"
+                            class="mcm-wizard-text-link"
+                            @onclick="Vm.OpenEula">
+                        Open Minecraft EULA
+                    </button>
+                    <label class="mcm-wizard-ack">
+                        <input type="checkbox"
+                               disabled="@(!Vm.CanMutateWizard)"
+                               @bind="Vm.EulaAccepted" />
+                        <span class="mcm-wizard-ack-text">
+                            <span class="mcm-wizard-ack-title">I accept the Minecraft EULA</span>
+                            <span class="mcm-wizard-ack-copy">@SetupWizardViewModel.EulaHelp</span>
+                        </span>
+                    </label>
+                </div>
             }
             else if (Vm.IsStepAuthToken)
             {
-                <div class="mcm-field">
-                    <label for="mcm-setup-token" class="mcm-field-head">
-                        Auth Token
-                        <WizardHelp Title="@SetupWizardViewModel.AuthTokenHelp" AriaLabel="About the Auth Token" />
-                    </label>
-                    <input id="mcm-setup-token"
-                           type="password"
-                           name="ocir-auth-token"
-                           autocomplete="off"
-                           spellcheck="false"
-                           placeholder="Paste token…"
-                           disabled="@(!Vm.CanMutateWizard)"
-                           @bind="Vm.AuthTokenInput"
-                           @bind:event="oninput" />
+                <div class="mcm-wizard-pane">
+                    <div class="mcm-wizard-card">
+                        <div class="mcm-field mcm-field-short">
+                            <label for="mcm-setup-token" class="mcm-wizard-ack-title">Auth Token</label>
+                            <input id="mcm-setup-token"
+                                   type="password"
+                                   name="ocir-auth-token"
+                                   autocomplete="off"
+                                   spellcheck="false"
+                                   placeholder="Paste token…"
+                                   disabled="@(!Vm.CanMutateWizard)"
+                                   @bind="Vm.AuthTokenInput"
+                                   @bind:event="oninput" />
+                        </div>
+                        <span class="mcm-wizard-ack-copy">@SetupWizardViewModel.AuthTokenHelp</span>
+                    </div>
+                    <div class="mcm-wizard-actions">
+                        <button type="button" class="mcm-primary" @onclick="Vm.StoreAuthToken">Store token</button>
+                        <button type="button" class="mcm-wizard-text-link" @onclick="Vm.ClearAuthToken">Clear stored token</button>
+                    </div>
+                    <p class="mcm-wizard-hint">@Vm.AuthTokenStoredDisplay</p>
                 </div>
-                <div class="mcm-wizard-actions">
-                    <button type="button" @onclick="Vm.StoreAuthToken">Store token</button>
-                    <button type="button" @onclick="Vm.ClearAuthToken">Clear stored token</button>
-                </div>
-                <p class="mcm-wizard-hint">@Vm.AuthTokenStoredDisplay</p>
             }
             else if (Vm.IsStepSummary)
             {
@@ -537,85 +557,74 @@
                 }
                 else
                 {
+                <div class="mcm-wizard-review-split">
                 <div class="mcm-wizard-review-form">
-                @if (Vm.ServerTypeIsModded)
-                {
-                    <aside class="mcm-client-pack-notice" role="note">
-                        <p class="mcm-wizard-inline-help">
-                            <span class="mcm-wizard-kicker">@Vm.ClientPackTitle</span>
-                            <WizardHelp Title="@SetupWizardViewModel.ClientPackHelp" AriaLabel="About the client pack" />
-                        </p>
-                        <p>@Vm.ClientPackFriendsNeed</p>
-                    </aside>
-                }
                 <fieldset class="mcm-wizard-fieldset" disabled="@(!Vm.CanMutateWizard)">
-                    <div class="mcm-field">
-                        <label for="mcm-setup-admin-cidr" class="mcm-field-head">
-                            Your public IP
-                            <WizardHelp Title="@SetupWizardViewModel.AdminCidrHelp" AriaLabel="About the cloud firewall allowlist" />
-                        </label>
-                        <input id="mcm-setup-admin-cidr"
-                               type="text"
-                               name="admin-cidr"
-                               autocomplete="off"
-                               spellcheck="false"
-                               placeholder="203.0.113.10/32"
-                               @bind="Vm.AdminCidr"
-                               @bind:event="oninput" />
+                    <div class="mcm-wizard-card mcm-wizard-card-sm">
+                        <div class="mcm-field mcm-field-short">
+                            <label for="mcm-setup-admin-cidr" class="mcm-wizard-ack-title">Your public IP</label>
+                            <input id="mcm-setup-admin-cidr"
+                                   type="text"
+                                   name="admin-cidr"
+                                   autocomplete="off"
+                                   spellcheck="false"
+                                   placeholder="203.0.113.10/32"
+                                   @bind="Vm.AdminCidr"
+                                   @bind:event="oninput" />
+                        </div>
+                        <span class="mcm-wizard-ack-copy">@SetupWizardViewModel.AdminCidrHelp</span>
                     </div>
-                    <div class="mcm-radio-row">
-                        <label class="mcm-check-hit">
-                            <input type="radio"
-                                   name="mcm-setup-vm1-shape"
-                                   disabled="@(!Vm.CanMutateWizard)"
-                                   checked="@Vm.Vm1ShapeIsDefault"
-                                   @onchange="@(() => Vm.SelectDefaultVm1Shape())" />
-                            <span>4 OCPU / 24 GB (recommended)</span>
-                        </label>
-                        <WizardHelp Title="@SetupWizardViewModel.ShapeDefaultHelp" AriaLabel="About 4 OCPU / 24 GB" />
-                    </div>
-                    <div class="mcm-radio-row">
-                        <label class="mcm-check-hit">
-                            <input type="radio"
-                                   name="mcm-setup-vm1-shape"
-                                   disabled="@(!Vm.CanMutateWizard)"
-                                   checked="@Vm.Vm1ShapeIsSmaller"
-                                   @onchange="@(() => Vm.SelectSmallerVm1Shape())" />
-                            <span>2 OCPU / 12 GB</span>
-                        </label>
-                        <WizardHelp Title="@SetupWizardViewModel.ShapeSmallerHelp" AriaLabel="About 2 OCPU / 12 GB" />
-                    </div>
-                    <p class="mcm-wizard-hint" style="margin:8px 0 4px;">Minecraft memory</p>
-                    <div class="mcm-radio-row">
-                        <label class="mcm-check-hit">
-                            <input type="radio"
-                                   name="mcm-setup-jvm-heap"
-                                   disabled="@(!Vm.CanMutateWizard)"
-                                   checked="@Vm.JvmHeapIs4G"
-                                   @onchange="@(() => Vm.SelectJvmHeap4G())" />
-                            <span>4G (default)</span>
-                        </label>
-                        <WizardHelp Title="@SetupWizardViewModel.HeapHelp" AriaLabel="About Minecraft heap" />
-                    </div>
-                    <div class="mcm-radio-row">
-                        <label class="mcm-check-hit">
-                            <input type="radio"
-                                   name="mcm-setup-jvm-heap"
-                                   disabled="@(!Vm.CanMutateWizard)"
-                                   checked="@Vm.JvmHeapIs6G"
-                                   @onchange="@(() => Vm.SelectJvmHeap6G())" />
-                            <span>6G</span>
-                        </label>
-                    </div>
-                    <div class="mcm-radio-row">
-                        <label class="mcm-check-hit">
-                            <input type="radio"
-                                   name="mcm-setup-jvm-heap"
-                                   disabled="@(!Vm.CanMutateWizard)"
-                                   checked="@Vm.JvmHeapIs8G"
-                                   @onchange="@(() => Vm.SelectJvmHeap8G())" />
-                            <span>8G</span>
-                        </label>
+                    <label class="mcm-wizard-ack mcm-wizard-ack-sm">
+                        <input type="radio"
+                               name="mcm-setup-vm1-shape"
+                               disabled="@(!Vm.CanMutateWizard)"
+                               checked="@Vm.Vm1ShapeIsDefault"
+                               @onchange="@(() => Vm.SelectDefaultVm1Shape())" />
+                        <span class="mcm-wizard-ack-text">
+                            <span class="mcm-wizard-ack-title">4 OCPU / 24 GB (recommended)</span>
+                            <span class="mcm-wizard-ack-copy">@SetupWizardViewModel.ShapeDefaultHelp</span>
+                        </span>
+                    </label>
+                    <label class="mcm-wizard-ack mcm-wizard-ack-sm">
+                        <input type="radio"
+                               name="mcm-setup-vm1-shape"
+                               disabled="@(!Vm.CanMutateWizard)"
+                               checked="@Vm.Vm1ShapeIsSmaller"
+                               @onchange="@(() => Vm.SelectSmallerVm1Shape())" />
+                        <span class="mcm-wizard-ack-text">
+                            <span class="mcm-wizard-ack-title">2 OCPU / 12 GB</span>
+                            <span class="mcm-wizard-ack-copy">@SetupWizardViewModel.ShapeSmallerHelp</span>
+                        </span>
+                    </label>
+                    <div class="mcm-wizard-card mcm-wizard-card-sm">
+                        <span class="mcm-wizard-ack-title">Minecraft memory</span>
+                        <span class="mcm-wizard-ack-copy">@SetupWizardViewModel.HeapHelp</span>
+                        <div class="mcm-wizard-review-heap">
+                            <label class="mcm-radio-row">
+                                <input type="radio"
+                                       name="mcm-setup-jvm-heap"
+                                       disabled="@(!Vm.CanMutateWizard)"
+                                       checked="@Vm.JvmHeapIs4G"
+                                       @onchange="@(() => Vm.SelectJvmHeap4G())" />
+                                <span>4G (default)</span>
+                            </label>
+                            <label class="mcm-radio-row">
+                                <input type="radio"
+                                       name="mcm-setup-jvm-heap"
+                                       disabled="@(!Vm.CanMutateWizard)"
+                                       checked="@Vm.JvmHeapIs6G"
+                                       @onchange="@(() => Vm.SelectJvmHeap6G())" />
+                                <span>6G</span>
+                            </label>
+                            <label class="mcm-radio-row">
+                                <input type="radio"
+                                       name="mcm-setup-jvm-heap"
+                                       disabled="@(!Vm.CanMutateWizard)"
+                                       checked="@Vm.JvmHeapIs8G"
+                                       @onchange="@(() => Vm.SelectJvmHeap8G())" />
+                                <span>8G</span>
+                            </label>
+                        </div>
                     </div>
                     <label class="mcm-checkbox-row">
                         <input type="checkbox" @bind="Vm.CreateResourcesConfirmed" />
@@ -638,24 +647,27 @@
                 <p class="mcm-wizard-duration">@SetupWizardViewModel.DeployDurationHint</p>
                 </div>
 
-                <div class="mcm-wizard-log-stack">
-                    <details class="mcm-wizard-log-details mcm-wizard-plan-details">
-                        <summary>Plan summary</summary>
-                        <div class="mcm-wizard-log-label">
-                            <span></span>
-                            <button type="button" title="Copy plan summary" @onclick="Vm.CopyPlanSummaryAsync">Copy</button>
-                        </div>
-                        <pre class="mcm-wizard-log mcm-wizard-mono mcm-slim-scroll">@Vm.PlanSummaryText</pre>
-                    </details>
-
-                    <div class="mcm-wizard-log-block mcm-wizard-log-grow">
-                        <div class="mcm-wizard-log-label">
-                            <span>Deploy log</span>
-                            <button type="button" title="Copy deploy log" @onclick="Vm.CopyDeployLogAsync">Copy</button>
-                        </div>
-                        <pre id="mcm-deploy-log" class="mcm-wizard-log mcm-wizard-mono mcm-slim-scroll">@Vm.DeployLog</pre>
+                <div class="mcm-wizard-review-plan">
+                    <div class="mcm-wizard-log-label">
+                        <span>Plan summary</span>
+                        <button type="button" title="Copy plan summary" @onclick="Vm.CopyPlanSummaryAsync">Copy</button>
                     </div>
+                    <pre class="mcm-wizard-log mcm-wizard-mono mcm-slim-scroll">@Vm.PlanSummaryText</pre>
                 </div>
+                </div>
+
+                @if (Vm.ShowDeployProgress)
+                {
+                    <div class="mcm-wizard-log-stack">
+                        <div class="mcm-wizard-log-block mcm-wizard-log-grow">
+                            <div class="mcm-wizard-log-label">
+                                <span>Deploy log</span>
+                                <button type="button" title="Copy deploy log" @onclick="Vm.CopyDeployLogAsync">Copy</button>
+                            </div>
+                            <pre id="mcm-deploy-log" class="mcm-wizard-log mcm-wizard-mono mcm-slim-scroll">@Vm.DeployLog</pre>
+                        </div>
+                    </div>
+                }
                 }
             }
         </div>

@@ -56,8 +56,8 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     public const string AlwaysFreeCapacityHelp =
         "If A1 Flex is out of capacity, the deployment may stall. You can either try deployment again, start an auto-retry every 5 minutes, or resume later. If you close the setup wizard during deployment, your progress is saved and you are able to begin deployment again later.";
 
-    public const string AlwaysFreeBodyCopy =
-        "This product utilizes Oracle Cloud Infrastructure and its Always Free resources to host and manage a Minecraft server for free. Oracle's Free Resource policies are subject to change, so it is recommended that you open the `Always Free compute` documentation and confirm that OCI tenancies still get the first 1,500 OCPU hours and 9,000 GB hours per month for free for VM instances using the VM.Standard.A1.Flex shape. The target is $0, and there are several mechanisms in place to ensure your account is not charged. A $1 monthly budget is the last-resort spend brake, but Oracle may still bill about $1–$2 that month if it fires. All cost control mechanisms are automatically activated upon deployment, so you don't have to do any additional work outside of this setup wizard.";
+    public const string AlwaysFreeLeadCopy =
+        "MCSTool uses Oracle Always Free so the target is $0. Cost controls turn on at deploy. Oracle’s free-tier limits can change; confirm tenancies still get 1,500 OCPU hours and 9,000 GB-hours per month for A1 Flex.";
 
     public const string OciProfileHelp =
         "Region and account details come from ~/.oci/config on this PC. Prefer the tenancy home region so Always Free A1 and Micro eligibility apply.";
@@ -75,7 +75,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         "Official Mojang jar, or Optimized Vanilla (Paper) for better multiplayer.";
 
     public const string ModdedHelp =
-        "Choose a local .mrpack or server-pack zip you already exported. There is no pack search. Players need that same pack to join.";
+        "Choose a local .mrpack or server-pack zip you already exported. There is no pack search.";
 
     public const string DefaultVanillaHelp =
         "Official Mojang server jar. Same path as before.";
@@ -85,8 +85,6 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     public const string PackFileHelp = SetupPackImport.PackFileNoviceHelp;
 
-    public const string ClientPackHelp = SetupPackImport.ClientPackCopy;
-
     public const string EulaHelp =
         "The installer writes eula.txt only if this is checked. This product will not auto-accept the EULA for you.";
 
@@ -94,10 +92,10 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         "Needed to push the spend-brake Function image. Paste it and choose Store token. Saved in Windows Credential Manager, not in the Setup resume file.";
 
     public const string AdminCidrHelp =
-        "Oracle’s cloud firewall allowlist. Players you add later also need their public IPv4 as /32.";
+        "Oracle’s cloud firewall allowlist.";
 
     public const string ShapeDefaultHelp =
-        "More room for players and later mods. Uses Always Free hours faster while the server is on. Chosen once at deploy — not a later resize.";
+        "More room for players and later mods. Uses Always Free hours faster while the server is on.";
 
     public const string ShapeSmallerHelp =
         "Smaller Always Free size. Vanilla can often stay on all month; less room if you add mods or more players later.";
@@ -277,6 +275,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     private bool _javaMajorCustomized;
     private bool _applyingJavaFloor;
+    private bool _syncingPackAcks;
 
     [ObservableProperty]
     private string _packSummary = "";
@@ -649,14 +648,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     public bool IsOperatorSkipped(string path) =>
         PackAssistedReviewActions.IsSkipped(_operatorSkipTerms, path);
 
-    public string ClientPackTitle => SetupPackImport.ClientPackTitle;
-
-    public string ClientPackCopy => SetupPackImport.ClientPackCopy;
-
-    public string ClientPackAckLabel => SetupPackImport.ClientPackAckLabel;
-
-    public string ClientPackFriendsNeed =>
-        SetupPackImport.FriendsNeedLine(PackName, MinecraftVersion, PackLoader, PackLoaderVersion);
+    public string ClientOnlyMarksConfirmLabel => SetupPackImport.ClientOnlyMarksConfirmLabel;
 
     public string MotdPreview =>
         ServerIdentityUx.BuildMotd(IdentityName, IdentityDescription);
@@ -670,7 +662,11 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     public void SelectVanillaServer() => ServerType = SetupServerType.Vanilla;
 
-    public void SelectModdedServer() => ServerType = SetupServerType.Modded;
+    public void SelectModdedServer()
+    {
+        ServerType = SetupServerType.Modded;
+        _ = PrefetchModdedCatalogsAsync();
+    }
 
     public string StepTitle => CurrentStep switch
     {
@@ -698,6 +694,8 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         try
         {
             await LoadVersionsAsync().ConfigureAwait(true);
+            if (ServerTypeIsModded)
+                _ = PrefetchModdedCatalogsAsync();
             await DetectAdminIpAsync().ConfigureAwait(true);
             if (ServerTypeIsModded && !string.IsNullOrWhiteSpace(PackPath) && File.Exists(PackPath))
                 await AnalyzePackPathAsync(PackPath, keepConfirm: true).ConfigureAwait(true);
@@ -961,6 +959,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             }
 
             ApplyPackPreview(result.Value, keepConfirm);
+            await PrefetchIdentityCatalogsAsync(result.Value).ConfigureAwait(true);
             StatusMessage = result.Value.CanContinue
                 ? (result.Value.NeedsAssistedReview
                     ? "Review unknown jars, then confirm before continuing."
@@ -1054,6 +1053,34 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         PackSummary = preview.ConfirmableSummary;
         PackOverrideListWarning = preview.OverrideListWarning ?? "";
         NotifyAssistedReviewUi();
+    }
+
+    private async Task PrefetchModdedCatalogsAsync()
+    {
+        try
+        {
+            await _catalogs.PrefetchModdedLoaderCatalogsAsync().ConfigureAwait(true);
+        }
+        catch (OperationCanceledException)
+        {
+            // Wizard closing.
+        }
+        catch (Exception)
+        {
+            // Identity fields fall back to text if catalogs fail.
+        }
+    }
+
+    private async Task PrefetchIdentityCatalogsAsync(SetupPackPreview preview)
+    {
+        if (!preview.CanContinue || !preview.NeedsIdentityConfirm)
+            return;
+
+        PackAnalyzeCaption = "Loading version lists…";
+        var mc = string.Equals(preview.MinecraftVersion, "(unknown)", StringComparison.OrdinalIgnoreCase)
+            ? ""
+            : preview.MinecraftVersion;
+        await _catalogs.PrefetchForIdentityAsync(preview.Loader, mc).ConfigureAwait(true);
     }
 
     private void ApplyPackPreview(SetupPackPreview preview, bool keepConfirm)
@@ -1902,7 +1929,6 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             && (!SshSplitDoorKey || SshKeyHelper.LooksLikePublicKey(DoorSshPublicKey)),
         SetupWizardState.StepGame => SetupServerType.IsModded(ServerType)
             ? PackConfirmed
-                && ClientPackAcknowledged
                 && PackCanContinue
                 && PackIdentityComplete
                 && PackReplaceUx.FreezeAllowsContinue(PackFreezeBlockReason)
@@ -1991,13 +2017,27 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     partial void OnPackConfirmedChanged(bool value)
     {
-        if (value && ClientPackAcknowledged)
+        if (!_syncingPackAcks && ClientPackAcknowledged != value)
+        {
+            _syncingPackAcks = true;
+            ClientPackAcknowledged = value;
+            _syncingPackAcks = false;
+        }
+
+        if (!_syncingPackAcks && value && ClientPackAcknowledged)
             RetainCurrentPack();
     }
 
     partial void OnClientPackAcknowledgedChanged(bool value)
     {
-        if (value && PackConfirmed)
+        if (!_syncingPackAcks && PackConfirmed != value)
+        {
+            _syncingPackAcks = true;
+            PackConfirmed = value;
+            _syncingPackAcks = false;
+        }
+
+        if (!_syncingPackAcks && value && PackConfirmed)
             RetainCurrentPack();
     }
 
@@ -2007,7 +2047,6 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         OnPropertyChanged(nameof(ShowPackIdentityFields));
         OnPropertyChanged(nameof(ShowDetectionMismatch));
         OnPropertyChanged(nameof(DetectionMismatchWarning));
-        OnPropertyChanged(nameof(ClientPackFriendsNeed));
         OnPropertyChanged(nameof(ShowPackConfirmChecks));
         OnPropertyChanged(nameof(ShowPackAssistedReview));
         OnPropertyChanged(nameof(ShowSkipListWarning));
@@ -2195,10 +2234,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             case nameof(ShowPackConfirmChecks):
             case nameof(ShowOverrideListWarning):
             case nameof(ShowSkipListWarning):
-            case nameof(ClientPackTitle):
-            case nameof(ClientPackCopy):
-            case nameof(ClientPackAckLabel):
-            case nameof(ClientPackFriendsNeed):
+            case nameof(ClientOnlyMarksConfirmLabel):
             case nameof(MotdPreview):
             case nameof(CanClearIdentityIcon):
             case nameof(IdentityHint):
@@ -2265,7 +2301,6 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         OnPropertyChanged(nameof(ShowOverrideListWarning));
         OnPropertyChanged(nameof(ShowSkipListWarning));
         OnPropertyChanged(nameof(NextButtonTitle));
-        OnPropertyChanged(nameof(ClientPackFriendsNeed));
         OnPropertyChanged(nameof(MotdPreview));
         OnPropertyChanged(nameof(CanClearIdentityIcon));
         OnPropertyChanged(nameof(SshImportMode));

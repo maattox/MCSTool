@@ -43,9 +43,4 @@ public sealed class MrpackInstallResult
     public IReadOnlyList<string> SkippedPackDeclaredPaths { get; }
     public IReadOnlyList<string> SkippedOverrideListPaths { get; }
     public IReadOnlyList<string> SkippedInJarMetadataPaths { get; }
-
-    public const string ClientPackReminder =
-        "Players cannot join until they install the same exported pack you imported. "
-        + "Keep that file (Manager saved a copy). This app cannot rebuild a client pack "
-        + "from the server mods folder.";
 }

@@ -44,6 +44,7 @@ static void *mcdoor_thread_main(void *arg) {
       .version_name = MCDOOR_DEFAULT_VERSION,
       .protocol = MCDOOR_DEFAULT_PROTOCOL,
       .on_wake_request = control_on_login_wake,
+      .on_status_refresh = control_on_status_refresh,
       .wake_userdata = app->control,
   };
 

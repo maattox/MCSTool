@@ -236,6 +236,14 @@ static int reload_os_caches_unlocked(ControlContext *ctx) {
   return 0;
 }
 
+static int nearly_equal(double a, double b) {
+  double d = a - b;
+  if (d < 0.0) {
+    d = -d;
+  }
+  return d < 1e-9;
+}
+
 static int refresh_budget_unlocked(ControlContext *ctx) {
   char utc_day[16];
   if (budget_utc_date_for(NULL, utc_day, sizeof utc_day) != 0) {
@@ -245,6 +253,12 @@ static int refresh_budget_unlocked(ControlContext *ctx) {
   if (used < 0.0) {
     return -1;
   }
+  char old_day[16];
+  memcpy(old_day, ctx->state.la_day, sizeof old_day);
+  double old_used = ctx->state.used_ocpu_hours;
+  double old_limit = ctx->state.daily_limit_ocpu_hours;
+  double old_ocpus = ctx->state.ocpus;
+  DoorState old_door = ctx->state.door;
   memcpy(ctx->state.la_day, utc_day, sizeof ctx->state.la_day);
   ctx->state.used_ocpu_hours = used;
   ctx->state.daily_limit_ocpu_hours = ctx->cfg.daily_ocpu_limit;
@@ -261,6 +275,11 @@ static int refresh_budget_unlocked(ControlContext *ctx) {
                ctx->state.door == DOOR_SPEND_BRAKE) {
       ctx->state.door = DOOR_IDLE;
     }
+  }
+  if (old_door == ctx->state.door && strcmp(old_day, utc_day) == 0 &&
+      nearly_equal(old_used, used) && nearly_equal(old_limit, ctx->cfg.daily_ocpu_limit) &&
+      nearly_equal(old_ocpus, ctx->cfg.ocpus)) {
+    return 0;
   }
   touch_updated(&ctx->state);
   return persist(ctx);
@@ -853,6 +872,24 @@ void control_on_login_wake(void *userdata) {
   control_wake(ctx, 1, 0);
 }
 
+void control_on_status_refresh(void *userdata) {
+  ControlContext *ctx = (ControlContext *)userdata;
+  if (ctx == NULL) {
+    return;
+  }
+  lock_ctx(ctx);
+  DoorState door = ctx->state.door;
+  if (door == DOOR_PLAYABLE || door == DOOR_STARTING) {
+    unlock_ctx(ctx);
+    return;
+  }
+  if (ctx->cfg.object_storage_enabled) {
+    (void)reload_os_caches_unlocked(ctx);
+  }
+  (void)refresh_budget_unlocked(ctx);
+  unlock_ctx(ctx);
+}
+
 static void config_default(ControlConfig *cfg) {
   memset(cfg, 0, sizeof *cfg);
   snprintf(cfg->state_path, sizeof cfg->state_path, "/var/lib/mccontrol/state.json");
@@ -966,6 +1003,9 @@ ControlContext *control_init(const ControlConfig *cfg) {
   if (budget_load(&ctx->ledger, cfg->ledger_path) != 0) {
     control_free(ctx);
     return NULL;
+  }
+  if (ctx->cfg.object_storage_enabled) {
+    (void)reload_os_caches_unlocked(ctx);
   }
   control_refresh_budget(ctx);
   return ctx;

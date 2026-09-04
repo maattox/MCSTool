@@ -103,6 +103,16 @@ public interface ISshService
         Vm1Settings vm1,
         string fileName,
         CancellationToken cancellationToken = default);
+
+    Task<ServiceResult> UploadMinecraftModAsync(
+        Vm1Settings vm1,
+        string localJarPath,
+        CancellationToken cancellationToken = default);
+
+    Task<ServiceResult> DeleteMinecraftModAsync(
+        Vm1Settings vm1,
+        string fileName,
+        CancellationToken cancellationToken = default);
 }
 
 public sealed class SshService : ISshService
@@ -211,6 +221,18 @@ public sealed class SshService : ISshService
         string fileName,
         CancellationToken cancellationToken = default) =>
         Task.Run(() => DeleteMinecraftPlugin(vm1, fileName), cancellationToken);
+
+    public Task<ServiceResult> UploadMinecraftModAsync(
+        Vm1Settings vm1,
+        string localJarPath,
+        CancellationToken cancellationToken = default) =>
+        Task.Run(() => UploadMinecraftMod(vm1, localJarPath), cancellationToken);
+
+    public Task<ServiceResult> DeleteMinecraftModAsync(
+        Vm1Settings vm1,
+        string fileName,
+        CancellationToken cancellationToken = default) =>
+        Task.Run(() => DeleteMinecraftMod(vm1, fileName), cancellationToken);
 
     private static ServiceResult RestartMinecraft(Vm1Settings vm1)
     {
@@ -463,6 +485,90 @@ public sealed class SshService : ISshService
             catch (Exception ex)
             {
                 return ServiceResult.Fail($"SSH plugin delete failed: {ex.Message}");
+            }
+        }
+    }
+
+    private static ServiceResult UploadMinecraftMod(Vm1Settings vm1, string localJarPath)
+    {
+        if (string.IsNullOrWhiteSpace(localJarPath) || !File.Exists(localJarPath))
+            return ServiceResult.Fail("Mod jar not found on this PC.");
+
+        var name = Path.GetFileName(localJarPath);
+        if (!ServerModsInspect.IsSafeJarName(name))
+            return ServiceResult.Fail("Mod file name is not a safe .jar name.");
+
+        var info = new FileInfo(localJarPath);
+        if (info.Length <= 0)
+            return ServiceResult.Fail("Mod jar is empty.");
+        if (info.Length > ServerModsInspect.MaxUploadBytes)
+            return ServiceResult.Fail("Mod jar is larger than 64 MB.");
+
+        if (!TryOpenSsh(vm1, out var client, out var unit, out var error))
+            return ServiceResult.Fail(error!);
+
+        using (client)
+        {
+            try
+            {
+                var remote = ServerModsInspect.StagingRemotePath(name);
+                var parent = RemoteParent(remote);
+                var mkdir = client.RunCommand("mkdir -p " + SshShell.Quote(parent));
+                if (mkdir.ExitStatus != 0)
+                {
+                    var err = string.IsNullOrWhiteSpace(mkdir.Error) ? mkdir.Result : mkdir.Error;
+                    return ServiceResult.Fail("Could not create mod staging dir: " + err.Trim());
+                }
+
+                using (var sftp = new SftpClient(client.ConnectionInfo))
+                {
+                    sftp.Connect();
+                    using var local = File.OpenRead(localJarPath);
+                    sftp.UploadFile(local, remote, canOverride: true);
+                }
+
+                var install = client.RunCommand(ServerModsInspect.InstallScript(name));
+                if (install.ExitStatus != 0)
+                {
+                    var err = string.IsNullOrWhiteSpace(install.Error) ? install.Result : install.Error;
+                    return ServiceResult.Fail(
+                        $"Mod install failed (exit {install.ExitStatus}): {err.Trim()}");
+                }
+
+                return RestartMinecraftWithClient(client, unit);
+            }
+            catch (Exception ex)
+            {
+                return ServiceResult.Fail($"SSH mod upload failed: {ex.Message}");
+            }
+        }
+    }
+
+    private static ServiceResult DeleteMinecraftMod(Vm1Settings vm1, string fileName)
+    {
+        if (!ServerModsInspect.IsSafeJarName(fileName))
+            return ServiceResult.Fail("Mod file name is not a safe .jar name.");
+
+        if (!TryOpenSsh(vm1, out var client, out var unit, out var error))
+            return ServiceResult.Fail(error!);
+
+        using (client)
+        {
+            try
+            {
+                var del = client.RunCommand(ServerModsInspect.DeleteScript(fileName));
+                if (del.ExitStatus != 0)
+                {
+                    var err = string.IsNullOrWhiteSpace(del.Error) ? del.Result : del.Error;
+                    return ServiceResult.Fail(
+                        $"Mod delete failed (exit {del.ExitStatus}): {err.Trim()}");
+                }
+
+                return RestartMinecraftWithClient(client, unit);
+            }
+            catch (Exception ex)
+            {
+                return ServiceResult.Fail($"SSH mod delete failed: {ex.Message}");
             }
         }
     }
