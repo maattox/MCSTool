@@ -56,7 +56,6 @@ public sealed class ServerIconComposerTests
                      "example-offline.png",
                      "example-starting.png",
                      "example-unavailable.png",
-                     "example-user-input.png",
                  })
         {
             var path = Path.Combine(root, name);

@@ -61,9 +61,9 @@ public sealed class ServerCatalogTests
         var installed = NewTempDir("mcmgr-slug-");
         using (Isolate(installed))
         {
-            Assert.True(ServerCatalog.AddServer("New server").Succeeded);
+            Assert.True(ServerCatalog.AddServer("My Server").Succeeded);
             var a = ServerCatalog.ActiveSlug();
-            Assert.True(ServerCatalog.AddServer("New server").Succeeded);
+            Assert.True(ServerCatalog.AddServer("My Server").Succeeded);
             var b = ServerCatalog.ActiveSlug();
             Assert.NotEqual(a, b, StringComparer.OrdinalIgnoreCase);
             Assert.Equal(2, ServerCatalog.List().Count);
@@ -71,11 +71,36 @@ public sealed class ServerCatalogTests
     }
 
     [Fact]
-    public void Suggest_display_name_prefers_play_ip()
+    public void First_server_is_my_server()
     {
-        Assert.Equal("203.0.113.10", ServerCatalog.SuggestDisplayName("203.0.113.10"));
-        Assert.Equal(ServerCatalog.DefaultDisplayName, ServerCatalog.SuggestDisplayName(""));
-        Assert.Equal(ServerCatalog.DefaultDisplayName, ServerCatalog.SuggestDisplayName("—"));
+        var installed = NewTempDir("mcmgr-first-");
+        using (Isolate(installed))
+        {
+            Assert.True(ServerCatalog.EnsureDefaultServer().Succeeded);
+            Assert.Equal(ServerCatalog.DefaultDisplayName, ServerCatalog.ActiveDisplayName());
+            Assert.Equal("My Server", ServerCatalog.CaptionLabel(playIpFallback: "203.0.113.10"));
+        }
+    }
+
+    [Fact]
+    public void Suggest_display_name_is_unique_my_server_not_play_ip()
+    {
+        Assert.Equal("My Server", ServerCatalog.NextUniqueDisplayName("My Server", []));
+        Assert.Equal("My Server 1", ServerCatalog.NextUniqueDisplayName("My Server", ["My Server"]));
+        Assert.Equal("My Server 2", ServerCatalog.NextUniqueDisplayName("My Server", ["My Server", "My Server 1"]));
+
+        var installed = NewTempDir("mcmgr-suggest-");
+        using (Isolate(installed))
+        {
+            Assert.True(ServerCatalog.EnsureDefaultServer().Succeeded);
+            Assert.Equal("My Server", ServerCatalog.ActiveDisplayName());
+            Assert.Equal("My Server 1", ServerCatalog.SuggestDisplayName());
+            Assert.True(ServerCatalog.AddServer("").Succeeded);
+            Assert.Equal("My Server 1", ServerCatalog.ActiveDisplayName());
+            Assert.Equal("My Server 2", ServerCatalog.SuggestDisplayName());
+            Assert.True(ServerCatalog.AddServer("").Succeeded);
+            Assert.Equal("My Server 2", ServerCatalog.ActiveDisplayName());
+        }
     }
 
     [Fact]

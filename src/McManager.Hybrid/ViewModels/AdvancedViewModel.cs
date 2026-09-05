@@ -288,7 +288,7 @@ public sealed partial class AdvancedViewModel : ObservableObject
             return;
 
         var name = string.IsNullOrWhiteSpace(NewServerName)
-            ? ServerCatalog.SuggestDisplayName(_configHost.PlayIp)
+            ? ServerCatalog.SuggestDisplayName()
             : NewServerName.Trim();
         var added = ServerCatalog.AddServer(name);
         if (!added.Succeeded)
@@ -297,7 +297,7 @@ public sealed partial class AdvancedViewModel : ObservableObject
             return;
         }
 
-        NewServerName = ServerCatalog.DefaultDisplayName;
+        NewServerName = ServerCatalog.SuggestDisplayName();
         ApplyServerFolder();
     }
 
@@ -369,7 +369,7 @@ public sealed partial class AdvancedViewModel : ObservableObject
             SelectedServerId = ServerCatalog.ActiveSlug() ?? "";
             RenameServerName = ServerCatalog.ActiveDisplayName() ?? "";
             if (string.IsNullOrWhiteSpace(NewServerName))
-                NewServerName = ServerCatalog.SuggestDisplayName(_configHost.PlayIp);
+                NewServerName = ServerCatalog.SuggestDisplayName();
             OnPropertyChanged(nameof(ShowServerSwitcher));
             _chrome.RefreshServerLabel();
         }

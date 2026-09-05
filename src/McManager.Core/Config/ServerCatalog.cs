@@ -10,7 +10,8 @@ namespace McManager.Core.Config;
 public static class ServerCatalog
 {
     public const string ProfilesFolderName = "profiles";
-    public const string DefaultDisplayName = "New server";
+    /// <summary>Default catalog name for the first server and for Add server.</summary>
+    public const string DefaultDisplayName = "My Server";
     public const string EnvOverrideLabel = "Env override";
 
     public static bool HasEnvOverride =>
@@ -82,12 +83,35 @@ public static class ServerCatalog
         return DefaultDisplayName;
     }
 
-    public static string SuggestDisplayName(string? playIp)
+    /// <summary>
+    /// Next unused catalog name: <see cref="DefaultDisplayName"/>, then
+    /// “My Server 1”, “My Server 2”, … Existing display names are matched
+    /// case-insensitively. Play IP is never used.
+    /// </summary>
+    public static string SuggestDisplayName()
     {
-        var ip = (playIp ?? "").Trim();
-        if (ip.Length > 0 && ip != "—" && !ip.StartsWith("ocid1.", StringComparison.OrdinalIgnoreCase))
-            return ip;
-        return DefaultDisplayName;
+        return NextUniqueDisplayName(DefaultDisplayName, List().Select(s => s.DisplayName));
+    }
+
+    public static string NextUniqueDisplayName(string baseName, IEnumerable<string?> existingDisplayNames)
+    {
+        var source = string.IsNullOrWhiteSpace(baseName) ? DefaultDisplayName : baseName.Trim();
+        var taken = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var name in existingDisplayNames)
+        {
+            if (!string.IsNullOrWhiteSpace(name))
+                taken.Add(name.Trim());
+        }
+
+        if (!taken.Contains(source))
+            return source;
+
+        for (var n = 1; ; n++)
+        {
+            var candidate = source + " " + n.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            if (!taken.Contains(candidate))
+                return candidate;
+        }
     }
 
     public static string AllocateSlug(string displayName, IReadOnlyCollection<string>? existingIds = null)
@@ -108,7 +132,7 @@ public static class ServerCatalog
     }
 
     /// <summary>
-    /// Creates the first <c>New server</c> folder when the index is empty.
+    /// Creates the first <c>My Server</c> folder when the index is empty.
     /// No-op when <c>MCMANAGER_CONFIG_DIR</c> is set.
     /// </summary>
     public static ServiceResult EnsureDefaultServer()
@@ -172,7 +196,7 @@ public static class ServerCatalog
         if (HasEnvOverride)
             return ServiceResult.Fail("Server switching is off while MCMANAGER_CONFIG_DIR is set.");
 
-        var name = string.IsNullOrWhiteSpace(displayName) ? DefaultDisplayName : displayName.Trim();
+        var name = string.IsNullOrWhiteSpace(displayName) ? SuggestDisplayName() : displayName.Trim();
         var doc = AppSettingsStore.Load();
         doc.Servers ??= [];
         var slug = AllocateSlug(name, doc.Servers.Select(s => s.Id).ToList());

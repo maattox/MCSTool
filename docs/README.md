@@ -6,7 +6,7 @@ The app is a .NET 8 **Blazor Hybrid** app (WPF + WebView2): one WinExe, `MCSTool
 
 ## Status
 
-**1.1.0** is published on [GitHub Releases](https://github.com/maattox/MCSTool/releases). Users install the Windows installer from there. Pushing `master` does **not** cut a new Release — only a new tag + Release does.
+**1.1.1** is published on [GitHub Releases](https://github.com/maattox/MCSTool/releases).
 
 Licensed under the [MIT License](../LICENSE).
 
@@ -65,7 +65,7 @@ When you mean to ship a newer installer: bump Hybrid `<Version>`, pack with `pac
 Optional:
 
 ```powershell
-gh release create v1.1.0 .\packaging\out\MCSTool-Setup-1.1.0.exe --title "MCSTool 1.1.0" --notes "Paste the user-facing notes here."
+gh release create v1.1.1 .\packaging\out\MCSTool-Setup-1.1.1.exe --title "MCSTool 1.1.1" --notes "Paste the user-facing notes here."
 ```
 
 

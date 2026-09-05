@@ -2119,7 +2119,7 @@ button.mcm-btn-disabled:hover {
     width: 48px;
     height: 48px;
     flex: 0 0 48px;
-    border-radius: 8px;
+    border-radius: 0;
     image-rendering: pixelated;
 }
 
@@ -4738,16 +4738,12 @@ button.mcm-advanced-toggle:hover:not(:disabled) {
 .mcm-server-icon {
     width: 64px;
     height: 64px;
-    border-radius: 8px;
+    border-radius: 0;
     border: 0.5px solid var(--border);
     image-rendering: pixelated;
     background: var(--surface-1);
     flex: 0 0 64px;
     object-fit: contain;
-}
-
-.mcm-wizard-identity .mcm-server-icon {
-    border-radius: 0;
 }
 
 .mcm-server-icon-empty {
