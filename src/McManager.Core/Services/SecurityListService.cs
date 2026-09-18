@@ -33,6 +33,40 @@ public sealed class SecurityListService : ISecurityListService
         }
     }
 
+    public async Task<ServiceResult<SecurityListAllowlistSnapshot>> ReadAllowlistAsync(
+        string securityListId,
+        int minecraftPort,
+        int sshPort,
+        int doorHttpPort,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(securityListId))
+            return ServiceResult<SecurityListAllowlistSnapshot>.Fail("network.security_list_id is empty.");
+
+        try
+        {
+            var response = await _session.VirtualNetwork.GetSecurityList(
+                new GetSecurityListRequest { SecurityListId = securityListId },
+                cancellationToken: cancellationToken);
+
+            var ingress = response.SecurityList.IngressSecurityRules ?? [];
+            return ServiceResult<SecurityListAllowlistSnapshot>.Ok(new SecurityListAllowlistSnapshot
+            {
+                Friends = SecurityListIngressPlanner.ExtractFriends(
+                    ingress,
+                    minecraftPort,
+                    sshPort,
+                    doorHttpPort),
+                Ingress = ingress,
+            });
+        }
+        catch (Exception ex)
+        {
+            return ServiceResult<SecurityListAllowlistSnapshot>.Fail(
+                ComputeService.FormatOciError("GetSecurityList", ex));
+        }
+    }
+
     public async Task<ServiceResult<SecurityListApplyResult>> ApplyFriendsAsync(
         IReadOnlyList<FriendEntry> friends,
         string securityListId,

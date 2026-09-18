@@ -202,6 +202,129 @@ public sealed class SecurityListIngressPlanTests
         Assert.Contains("wrote 6", result.Summary, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Extract_round_trips_named_host_and_admin_and_cidr()
+    {
+        var plan = SecurityListIngressPlanner.Build(
+            [IcmpRule(), WaitForgeTcpRule()],
+            [Alice, Admin, CidrFriend],
+            McPort,
+            SshPort,
+            DoorPort,
+            adminName: "Admin");
+
+        var extracted = SecurityListIngressPlanner.ExtractFriends(
+            plan.Ingress,
+            McPort,
+            SshPort,
+            DoorPort);
+
+        Assert.True(FriendAllowlistMerger.SameAllowlist([Alice, Admin, CidrFriend], extracted));
+        Assert.DoesNotContain(extracted, f => f.Ip == "10.0.0.0/24");
+    }
+
+    [Fact]
+    public void Extract_skips_world_open_minecraft()
+    {
+        var extracted = SecurityListIngressPlanner.ExtractFriends(
+            [
+                SecurityListIngressPlanner.MakeTcpRule("0.0.0.0/0", McPort, "public"),
+                SecurityListIngressPlanner.MakeUdpRule("0.0.0.0/0", McPort, "public"),
+                SecurityListIngressPlanner.MakeTcpRule("203.0.113.10/32", McPort, "Alice"),
+                SecurityListIngressPlanner.MakeUdpRule("203.0.113.10/32", McPort, "Alice"),
+            ],
+            McPort,
+            SshPort,
+            DoorPort);
+
+        var row = Assert.Single(extracted);
+        Assert.Equal("Alice", row.Name);
+        Assert.Equal("203.0.113.10", row.Ip);
+        Assert.False(row.IsAdmin);
+    }
+
+    [Fact]
+    public void Extract_orphan_ssh_becomes_admin_row()
+    {
+        var extracted = SecurityListIngressPlanner.ExtractFriends(
+            [
+                SecurityListIngressPlanner.MakeTcpRule(
+                    "198.51.100.7/32",
+                    SshPort,
+                    FriendRules.SshDescription("Admin")),
+            ],
+            McPort,
+            SshPort,
+            DoorPort);
+
+        var row = Assert.Single(extracted);
+        Assert.Equal("Admin", row.Name);
+        Assert.Equal("198.51.100.7", row.Ip);
+        Assert.True(row.IsAdmin);
+    }
+
+    [Fact]
+    public void Extract_strips_legacy_mc_whitelist_prefix()
+    {
+        var extracted = SecurityListIngressPlanner.ExtractFriends(
+            [
+                SecurityListIngressPlanner.MakeTcpRule(
+                    "203.0.113.10/32",
+                    McPort,
+                    FriendRules.McTagPrefix + "Alice"),
+                SecurityListIngressPlanner.MakeUdpRule(
+                    "203.0.113.10/32",
+                    McPort,
+                    FriendRules.McTagPrefix + "Alice"),
+            ],
+            McPort,
+            SshPort,
+            DoorPort);
+
+        Assert.Equal("Alice", Assert.Single(extracted).Name);
+    }
+
+    [Fact]
+    public void NeedsRewrite_is_false_for_matching_owned_set()
+    {
+        var existing = SecurityListIngressPlanner.Build(
+            [IcmpRule(), WaitForgeTcpRule()],
+            [Alice, Admin],
+            McPort,
+            SshPort,
+            DoorPort,
+            adminName: "Admin").Ingress;
+
+        Assert.False(SecurityListIngressPlanner.NeedsRewrite(
+            existing,
+            [Alice, Admin],
+            McPort,
+            SshPort,
+            DoorPort,
+            adminName: "Admin"));
+    }
+
+    [Fact]
+    public void NeedsRewrite_true_when_world_open_leftover_even_if_friends_match()
+    {
+        var matching = SecurityListIngressPlanner.Build(
+            [IcmpRule()],
+            [Alice],
+            McPort,
+            SshPort,
+            DoorPort,
+            adminName: null).Ingress.ToList();
+        matching.Add(SecurityListIngressPlanner.MakeTcpRule("0.0.0.0/0", McPort, "public"));
+
+        Assert.True(SecurityListIngressPlanner.NeedsRewrite(
+            matching,
+            [Alice],
+            McPort,
+            SshPort,
+            DoorPort,
+            adminName: null));
+    }
+
     private static IngressSecurityRule IcmpRule() =>
         new()
         {

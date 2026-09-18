@@ -58,6 +58,171 @@ public static class SecurityListIngressPlanner
         };
     }
 
+    /// <summary>
+    /// True when applying <paramref name="friends"/> would change ingress
+    /// (membership, names, leftover world-open / prefix rules, or owned ports).
+    /// </summary>
+    public static bool NeedsRewrite(
+        IEnumerable<IngressSecurityRule> existing,
+        IReadOnlyList<FriendEntry> friends,
+        int minecraftPort,
+        int sshPort,
+        int doorHttpPort,
+        string? adminName)
+    {
+        var existingList = existing as IReadOnlyList<IngressSecurityRule> ?? existing.ToList();
+        var plan = Build(existingList, friends, minecraftPort, sshPort, doorHttpPort, adminName);
+        var existingKeys = existingList.Select(RuleKey).ToHashSet(StringComparer.Ordinal);
+        var desiredKeys = plan.Ingress.Select(RuleKey).ToHashSet(StringComparer.Ordinal);
+        return !existingKeys.SetEquals(desiredKeys);
+    }
+
+    /// <summary>
+    /// Reconstruct allowlist rows from live ingress. Skips world-open Minecraft
+    /// and door <c>wait_forge</c> (TCP-only prefix with no UDP pair). SSH/door
+    /// sources without Minecraft still become admin rows so they are not dropped.
+    /// </summary>
+    public static IReadOnlyList<FriendEntry> ExtractFriends(
+        IEnumerable<IngressSecurityRule> existing,
+        int minecraftPort,
+        int sshPort,
+        int doorHttpPort)
+    {
+        var existingList = existing as IReadOnlyList<IngressSecurityRule> ?? existing.ToList();
+        var bySource = new Dictionary<string, ExtractedFriend>(StringComparer.Ordinal);
+
+        foreach (var rule in existingList)
+        {
+            if (FriendRules.IsWorldOpenCidr(rule.Source))
+                continue;
+            if (!FriendRules.TryNormalizeAllowlistSource(rule.Source ?? "", out var source, out _))
+                continue;
+
+            var proto = rule.Protocol ?? "";
+            var isMc = IsMinecraftPort(rule, proto, minecraftPort);
+            if (isMc && IsWaitForgeTcp(rule, proto, minecraftPort, existingList))
+                continue;
+
+            var isSsh = proto == ProtocolTcp
+                && rule.TcpOptions?.DestinationPortRange?.Min == sshPort;
+            var isDoor = proto == ProtocolTcp
+                && rule.TcpOptions?.DestinationPortRange?.Min == doorHttpPort;
+            if (!isMc && !isSsh && !isDoor)
+                continue;
+
+            if (!bySource.TryGetValue(source.Stored, out var acc))
+            {
+                acc = new ExtractedFriend { Stored = source.Stored };
+                bySource[source.Stored] = acc;
+            }
+
+            if (isMc)
+            {
+                var name = DisplayNameFromDescription(rule.Description, source.Stored);
+                if (acc.Name.Length == 0 && name.Length > 0)
+                    acc.Name = name;
+            }
+
+            if (isSsh || isDoor)
+            {
+                acc.IsAdmin = true;
+                var name = DisplayNameFromAdminDescription(rule.Description);
+                if (acc.Name.Length == 0 && name.Length > 0)
+                    acc.Name = name;
+            }
+        }
+
+        return bySource.Values
+            .Select(a => new FriendEntry
+            {
+                Id = "",
+                Name = a.Name,
+                Ip = a.Stored,
+                IsAdmin = a.IsAdmin,
+            })
+            .ToList();
+    }
+
+    private static bool IsWaitForgeTcp(
+        IngressSecurityRule rule,
+        string proto,
+        int minecraftPort,
+        IReadOnlyList<IngressSecurityRule> existing)
+    {
+        if (proto != ProtocolTcp || !IsMinecraftPort(rule, proto, minecraftPort))
+            return false;
+        if (!IsAllowlistPrefixSource(rule.Source))
+            return false;
+        return !existing.Any(other =>
+            other.Protocol == ProtocolUdp
+            && string.Equals(other.Source, rule.Source, StringComparison.Ordinal)
+            && other.UdpOptions?.DestinationPortRange?.Min == minecraftPort);
+    }
+
+    private static string DisplayNameFromDescription(string? description, string stored)
+    {
+        var desc = (description ?? "").Trim();
+        if (desc.StartsWith(FriendRules.McTagPrefix, StringComparison.Ordinal))
+            desc = desc[FriendRules.McTagPrefix.Length..].Trim();
+        desc = StripAdminSuffix(desc);
+        if (desc.Length == 0)
+            return "";
+        if (string.Equals(desc, stored, StringComparison.OrdinalIgnoreCase))
+            return "";
+        if (FriendRules.TryNormalizeAllowlistSource(desc, out var parsed, out _)
+            && string.Equals(parsed.Stored, stored, StringComparison.OrdinalIgnoreCase))
+        {
+            return "";
+        }
+
+        return desc;
+    }
+
+    private static string DisplayNameFromAdminDescription(string? description)
+    {
+        var desc = StripAdminSuffix((description ?? "").Trim());
+        if (desc.Length == 0 || desc == FriendRules.SshTagLegacy)
+            return "";
+        if (FriendRules.TryNormalizeAllowlistSource(desc, out _, out _))
+            return "";
+        return desc;
+    }
+
+    private static string StripAdminSuffix(string description)
+    {
+        if (description.EndsWith(FriendRules.SshAccessSuffix, StringComparison.Ordinal))
+            return description[..^FriendRules.SshAccessSuffix.Length].Trim();
+        if (description.EndsWith(FriendRules.DoorAccessSuffix, StringComparison.Ordinal))
+            return description[..^FriendRules.DoorAccessSuffix.Length].Trim();
+        return description;
+    }
+
+    private static string RuleKey(IngressSecurityRule rule)
+    {
+        var proto = rule.Protocol ?? "";
+        int? port = null;
+        if (proto == ProtocolTcp)
+            port = rule.TcpOptions?.DestinationPortRange?.Min;
+        else if (proto == ProtocolUdp)
+            port = rule.UdpOptions?.DestinationPortRange?.Min;
+
+        return string.Concat(
+            proto,
+            "|",
+            rule.Source ?? "",
+            "|",
+            port?.ToString() ?? "",
+            "|",
+            (rule.Description ?? "").Trim());
+    }
+
+    private sealed class ExtractedFriend
+    {
+        public string Stored { get; init; } = "";
+        public string Name { get; set; } = "";
+        public bool IsAdmin { get; set; }
+    }
+
     internal static bool IsManagedRule(
         IngressSecurityRule rule,
         int minecraftPort,

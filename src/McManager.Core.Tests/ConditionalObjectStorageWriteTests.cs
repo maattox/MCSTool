@@ -66,6 +66,49 @@ public sealed class ConditionalObjectStorageWriteTests
     }
 
     [Fact]
+    public async Task Allowlist_missing_object_is_created_when_requested()
+    {
+        var storage = new EtagMemoryStorage();
+        var store = new AllowlistStore(storage, Prefixes);
+        var result = await store.PublishAsync(
+            [new FriendEntry { Id = "a", Name = "Ada", Ip = "203.0.113.10", IsAdmin = true }],
+            createIfMissing: true);
+
+        Assert.True(result.Succeeded, result.Error);
+        Assert.False(result.Value!.SkippedMissing);
+        Assert.True(result.Value.Created);
+        var json = Encoding.UTF8.GetString(storage.Content("ip/allowlist.json"));
+        Assert.Contains("Ada", json, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Allowlist_try_read_missing_is_not_an_error()
+    {
+        var store = new AllowlistStore(new EtagMemoryStorage(), Prefixes);
+        var result = await store.TryReadAsync();
+        Assert.True(result.Succeeded, result.Error);
+        Assert.False(result.Value!.Present);
+        Assert.Empty(result.Value.Entries);
+    }
+
+    [Fact]
+    public async Task Allowlist_try_read_returns_entries()
+    {
+        var original = Encoding.UTF8.GetBytes(
+            """{"version":1,"updated_at":"2026-08-18T00:00:00Z","entries":[{"id":"a","name":"Ada","ip":"203.0.113.10","is_admin":true}]}""" + "\n");
+        var storage = new EtagMemoryStorage();
+        storage.Seed("ip/allowlist.json", original, "etag-1");
+        var store = new AllowlistStore(storage, Prefixes);
+
+        var result = await store.TryReadAsync();
+        Assert.True(result.Succeeded, result.Error);
+        Assert.True(result.Value!.Present);
+        var row = Assert.Single(result.Value.Entries);
+        Assert.Equal("Ada", row.Name);
+        Assert.True(row.IsAdmin);
+    }
+
+    [Fact]
     public async Task Allowlist_missing_etag_refuses_overwrite()
     {
         var original = Encoding.UTF8.GetBytes("""{"version":1,"entries":[]}""" + "\n");

@@ -10,6 +10,8 @@ namespace McManager.Hybrid.ViewModels;
 
 /// <summary>
 /// Whitelist tab: local friends CRUD + Security List apply (private allowlist + CIDR).
+/// On manage open (and first Whitelist visit) merges local, Security List, and
+/// Object Storage copies so none is treated as the sole source of truth.
 /// Dialogs for add/update stay in Razor. Does not touch manage-chrome power-in-flight.
 /// </summary>
 public sealed partial class WhitelistViewModel : ObservableObject
@@ -19,12 +21,16 @@ public sealed partial class WhitelistViewModel : ObservableObject
     private readonly ManageCloudServices _cloud;
     private readonly ManageSession _session;
     private readonly ActionBanner _banner;
+    private readonly SemaphoreSlim _mutateLock = new(1, 1);
     private bool _forwardBanner;
     private string _dataDirectory = "";
     private ISecurityListService? _securityList;
     private AllowlistStore? _allowlistStore;
     private string? _sessionError;
     private string _savedFingerprint = "";
+    private Task? _reconcileTask;
+    private bool _reconcileSucceeded;
+    private CancellationTokenSource? _reconcileCts;
 
     public ObservableCollection<FriendRowViewModel> Friends { get; } = [];
 
@@ -59,6 +65,22 @@ public sealed partial class WhitelistViewModel : ObservableObject
         _session.Reloaded += OnSessionReloaded;
     }
 
+    /// <summary>
+    /// Merge local / Security List / Object Storage allowlists once per manage
+    /// session (retries until a check succeeds). Safe to call from app open and
+    /// from the first Whitelist visit.
+    /// </summary>
+    public Task EnsureReconciledAsync()
+    {
+        if (_reconcileSucceeded)
+            return Task.CompletedTask;
+        if (_reconcileTask is { IsCompleted: false })
+            return _reconcileTask;
+
+        _reconcileTask = ReconcileAllowlistsAsync();
+        return _reconcileTask;
+    }
+
     partial void OnStatusMessageChanged(string value)
     {
         if (!_forwardBanner)
@@ -66,7 +88,16 @@ public sealed partial class WhitelistViewModel : ObservableObject
         _banner.ShowInferred(value);
     }
 
-    private void OnSessionReloaded(object? sender, EventArgs e) => BindFromHost();
+    private void OnSessionReloaded(object? sender, EventArgs e)
+    {
+        _reconcileCts?.Cancel();
+        _reconcileCts?.Dispose();
+        _reconcileCts = null;
+        _reconcileSucceeded = false;
+        _reconcileTask = null;
+        BindFromHost();
+        _ = EnsureReconciledAsync();
+    }
 
     private void BindFromHost()
     {
@@ -163,14 +194,26 @@ public sealed partial class WhitelistViewModel : ObservableObject
         if (IsBusy || !HasPendingChanges)
             return;
 
-        if (!SaveFriendsLocal())
-            return;
+        await _mutateLock.WaitAsync();
+        try
+        {
+            if (IsBusy || !HasPendingChanges)
+                return;
 
-        await SyncToOciAsync();
-        if (StatusMessage.Contains("failed", StringComparison.OrdinalIgnoreCase))
-            return;
+            if (!SaveFriendsLocal())
+                return;
 
-        CaptureSavedFingerprint();
+            await SyncToOciAsync();
+            if (StatusMessage.Contains("failed", StringComparison.OrdinalIgnoreCase))
+                return;
+
+            CaptureSavedFingerprint();
+            _reconcileSucceeded = true;
+        }
+        finally
+        {
+            _mutateLock.Release();
+        }
     }
 
     public async Task DetectPublicIpAsync()
@@ -268,17 +311,17 @@ public sealed partial class WhitelistViewModel : ObservableObject
             var friends = Friends.Select(f => f.ToEntry()).ToList();
             if (_allowlistStore is not null)
             {
-                var os = await _allowlistStore.PublishIfPresentAsync(friends);
-                if (!os.Succeeded)
-                {
-                    StatusMessage = summary
-                        + "\nObject Storage allowlist update failed: "
-                        + (os.Error ?? "unknown");
-                    return;
-                }
+            var os = await _allowlistStore.PublishAsync(friends, createIfMissing: true);
+            if (!os.Succeeded)
+            {
+                StatusMessage = summary
+                    + "\nObject Storage allowlist update failed: "
+                    + (os.Error ?? "unknown");
+                return;
+            }
 
-                if (os.Value is { SkippedMissing: false })
-                    summary += "\n" + os.Value.Message;
+            if (os.Value is { SkippedMissing: false })
+                summary += "\n" + os.Value.Message;
             }
 
             StatusMessage = summary;
@@ -321,6 +364,138 @@ public sealed partial class WhitelistViewModel : ObservableObject
         }
 
         return result.Value;
+    }
+
+    private async Task ReconcileAllowlistsAsync()
+    {
+        await _mutateLock.WaitAsync();
+        try
+        {
+            if (_reconcileSucceeded || HasPendingChanges || IsBusy)
+                return;
+            if (_config is null || _securityList is null)
+                return;
+
+            _reconcileCts?.Dispose();
+            _reconcileCts = new CancellationTokenSource();
+            var cancellationToken = _reconcileCts.Token;
+
+            IsBusy = true;
+            try
+            {
+                var slTask = _securityList.ReadAllowlistAsync(
+                    _config.Network.SecurityListId,
+                    _config.Network.MinecraftPort,
+                    _config.Network.SshPort,
+                    _config.Door.HttpPort,
+                    cancellationToken);
+                var osTask = _allowlistStore is null
+                    ? Task.FromResult(ServiceResult<AllowlistReadResult>.Ok(new AllowlistReadResult
+                    {
+                        Present = false,
+                        Entries = [],
+                    }))
+                    : _allowlistStore.TryReadAsync(cancellationToken);
+
+                await Task.WhenAll(slTask, osTask);
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var sl = await slTask;
+                if (!sl.Succeeded || sl.Value is null)
+                {
+                    StatusMessage = sl.Error ?? "Could not read Security List allowlist.";
+                    return;
+                }
+
+                var os = await osTask;
+                if (!os.Succeeded || os.Value is null)
+                {
+                    StatusMessage = os.Error ?? "Could not read Object Storage allowlist.";
+                    return;
+                }
+
+                var local = Friends.Select(f => f.ToEntry()).ToList();
+                var merged = FriendAllowlistMerger.Merge(
+                    local,
+                    sl.Value.Friends,
+                    os.Value.Entries,
+                    objectStoragePresent: os.Value.Present && _allowlistStore is not null);
+
+                var rewriteSl = sl.Value.NeedsRewrite(
+                    merged.Merged,
+                    _config.Network.MinecraftPort,
+                    _config.Network.SshPort,
+                    _config.Door.HttpPort,
+                    _config.AdminName);
+                var writeOs = merged.ObjectStorageDiffers && _allowlistStore is not null;
+                if (!merged.LocalDiffers && !rewriteSl && !writeOs)
+                {
+                    _reconcileSucceeded = true;
+                    return;
+                }
+
+                if (merged.LocalDiffers)
+                {
+                    ReplaceFriends(merged.Merged);
+                    if (!SaveFriendsLocal())
+                        return;
+                    CaptureSavedFingerprint();
+                }
+
+                var parts = new List<string>();
+                if (rewriteSl)
+                {
+                    var applied = await ApplySecurityListUnlockedAsync();
+                    if (applied is null)
+                        return;
+                    parts.Add(applied.Summary);
+                }
+
+                if (writeOs && _allowlistStore is not null)
+                {
+                    var published = await _allowlistStore.PublishAsync(
+                        merged.Merged,
+                        createIfMissing: true,
+                        cancellationToken);
+                    if (!published.Succeeded)
+                    {
+                        StatusMessage = (parts.Count == 0 ? "" : string.Join("\n", parts) + "\n")
+                            + "Object Storage allowlist update failed: "
+                            + (published.Error ?? "unknown");
+                        return;
+                    }
+
+                    if (published.Value is { SkippedMissing: false })
+                        parts.Add(published.Value.Message);
+                }
+
+                CaptureSavedFingerprint();
+                _reconcileSucceeded = true;
+                StatusMessage = parts.Count == 0
+                    ? "Allowlist updated on this PC to match the combined cloud lists."
+                    : "Allowlist combined from this PC, the Security List, and Object Storage.\n"
+                      + string.Join("\n", parts);
+            }
+            catch (OperationCanceledException)
+            {
+                // Reloaded or a newer reconcile replaced this run.
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+        finally
+        {
+            _mutateLock.Release();
+        }
+    }
+
+    private void ReplaceFriends(IReadOnlyList<FriendEntry> entries)
+    {
+        Friends.Clear();
+        foreach (var entry in entries)
+            Friends.Add(FriendRowViewModel.FromEntry(entry));
     }
 
     private FriendRowViewModel? FindAdminFriend()
