@@ -5,8 +5,9 @@ using McManager.Core.Config;
 namespace McManager.Core.Services;
 
 /// <summary>
-/// Reads/writes Object Storage <c>ip/allowlist.json</c> when that object already exists.
-/// Does not create the object (Setup / bucket seed owns first write).
+/// Reads/writes Object Storage <c>ip/allowlist.json</c>. Existing objects use
+/// If-Match. Reconcile may create the object so local, Security List, and the
+/// bucket copy can match.
 /// </summary>
 public sealed class AllowlistStore
 {
@@ -30,11 +31,10 @@ public sealed class AllowlistStore
     public string ObjectName => _objectName;
 
     /// <summary>
-    /// PUT updated entries only if <c>ip/allowlist.json</c> is already in the bucket.
-    /// Missing object → skipped (not an error). Existing object uses If-Match.
+    /// GET <c>ip/allowlist.json</c>. Missing object is success with
+    /// <see cref="AllowlistReadResult.Present"/> false (not an error).
     /// </summary>
-    public async Task<ServiceResult<AllowlistPublishResult>> PublishIfPresentAsync(
-        IReadOnlyList<FriendEntry> friends,
+    public async Task<ServiceResult<AllowlistReadResult>> TryReadAsync(
         CancellationToken cancellationToken = default)
     {
         var got = await _objectStorage.GetObjectAsync(_objectName, cancellationToken);
@@ -42,11 +42,75 @@ public sealed class AllowlistStore
         {
             if (OciErrorFormatter.IsNotFoundMessage(got.Error))
             {
-                return ServiceResult<AllowlistPublishResult>.Ok(new AllowlistPublishResult
+                return ServiceResult<AllowlistReadResult>.Ok(new AllowlistReadResult
                 {
-                    SkippedMissing = true,
-                    Message = $"{_objectName} is not in the bucket yet; Security List is the live allowlist.",
+                    Present = false,
+                    Entries = [],
                 });
+            }
+
+            return ServiceResult<AllowlistReadResult>.Fail(
+                got.Error ?? $"Get {_objectName} failed.");
+        }
+
+        IpAllowlistDocument doc;
+        try
+        {
+            doc = JsonSerializer.Deserialize<IpAllowlistDocument>(got.Value.Content, JsonOptions)
+                  ?? new IpAllowlistDocument();
+        }
+        catch (JsonException ex)
+        {
+            return ServiceResult<AllowlistReadResult>.Fail(
+                $"{_objectName} JSON parse failed: {ex.Message}");
+        }
+
+        return ServiceResult<AllowlistReadResult>.Ok(new AllowlistReadResult
+        {
+            Present = true,
+            Entries = doc.Entries ?? [],
+            Etag = got.Value.Etag,
+        });
+    }
+
+    /// <summary>
+    /// PUT updated entries only if <c>ip/allowlist.json</c> is already in the bucket.
+    /// Missing object → skipped (not an error). Existing object uses If-Match.
+    /// </summary>
+    public Task<ServiceResult<AllowlistPublishResult>> PublishIfPresentAsync(
+        IReadOnlyList<FriendEntry> friends,
+        CancellationToken cancellationToken = default)
+        => PublishAsync(friends, createIfMissing: false, cancellationToken);
+
+    /// <summary>
+    /// PUT merged entries. Existing object uses If-Match. Missing object is
+    /// created when <paramref name="createIfMissing"/> is true.
+    /// </summary>
+    public async Task<ServiceResult<AllowlistPublishResult>> PublishAsync(
+        IReadOnlyList<FriendEntry> friends,
+        bool createIfMissing,
+        CancellationToken cancellationToken = default)
+    {
+        var got = await _objectStorage.GetObjectAsync(_objectName, cancellationToken);
+        if (!got.Succeeded || got.Value is null)
+        {
+            if (OciErrorFormatter.IsNotFoundMessage(got.Error))
+            {
+                if (!createIfMissing)
+                {
+                    return ServiceResult<AllowlistPublishResult>.Ok(new AllowlistPublishResult
+                    {
+                        SkippedMissing = true,
+                        Message = $"{_objectName} is not in the bucket yet; Security List is the live allowlist.",
+                    });
+                }
+
+                return await PutDocumentAsync(
+                    new IpAllowlistDocument(),
+                    friends,
+                    ifMatch: null,
+                    created: true,
+                    cancellationToken);
             }
 
             return ServiceResult<AllowlistPublishResult>.Fail(
@@ -71,6 +135,21 @@ public sealed class AllowlistStore
                 $"{_objectName} JSON parse failed: {ex.Message}");
         }
 
+        return await PutDocumentAsync(
+            doc,
+            friends,
+            got.Value.Etag,
+            created: false,
+            cancellationToken);
+    }
+
+    private async Task<ServiceResult<AllowlistPublishResult>> PutDocumentAsync(
+        IpAllowlistDocument doc,
+        IReadOnlyList<FriendEntry> friends,
+        string? ifMatch,
+        bool created,
+        CancellationToken cancellationToken)
+    {
         doc.Version = doc.Version <= 0 ? 1 : doc.Version;
         if (string.IsNullOrWhiteSpace(doc.ModeNote)
             || doc.ModeNote.Contains("MVP uses private", StringComparison.OrdinalIgnoreCase)
@@ -88,7 +167,7 @@ public sealed class AllowlistStore
             _objectName,
             putBytes,
             "application/json",
-            got.Value.Etag,
+            ifMatch,
             cancellationToken);
         if (!put.Succeeded)
             return ServiceResult<AllowlistPublishResult>.Fail(put.Error ?? $"Put {_objectName} failed.");
@@ -96,7 +175,10 @@ public sealed class AllowlistStore
         return ServiceResult<AllowlistPublishResult>.Ok(new AllowlistPublishResult
         {
             SkippedMissing = false,
-            Message = $"Updated {_objectName} ({doc.Entries.Count} entries).",
+            Created = created,
+            Message = created
+                ? $"Created {_objectName} ({doc.Entries.Count} entries)."
+                : $"Updated {_objectName} ({doc.Entries.Count} entries).",
         });
     }
 
@@ -108,8 +190,16 @@ public sealed class AllowlistStore
     }
 }
 
+public sealed class AllowlistReadResult
+{
+    public bool Present { get; init; }
+    public IReadOnlyList<FriendEntry> Entries { get; init; } = [];
+    public string? Etag { get; init; }
+}
+
 public sealed class AllowlistPublishResult
 {
     public bool SkippedMissing { get; init; }
+    public bool Created { get; init; }
     public string Message { get; init; } = "";
 }

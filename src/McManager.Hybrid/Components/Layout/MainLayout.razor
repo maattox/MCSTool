@@ -11,6 +11,7 @@
 @inject NotificationCenterViewModel Notices
 @inject ActionBannerViewModel Banner
 @inject ServerManagementViewModel Server
+@inject WhitelistViewModel Whitelist
 @inject IJSRuntime JS
 @implements IDisposable
 
@@ -495,6 +496,7 @@
         Banner.PropertyChanged += OnVmChanged;
         Server.PropertyChanged += OnVmChanged;
         Vm.StartChrome();
+        _ = Whitelist.EnsureReconciledAsync();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

@@ -59,10 +59,11 @@ public partial class App : Application
 
     /// <summary>
     /// Startup branch: <see cref="LocalConfigStore.HasManageConfig"/> → manage vs first-run.
-    /// File I/O + lazy client construction only — no OCI List/Get until a button (Auto-detect)
-    /// or MainViewModel poll. After Setup / Connect-existing writes <c>config.local.json</c>,
-    /// call <see cref="ManageSession.ReloadFromDisk"/> so singleton clients and ViewModels
-    /// rebind without restarting the process.
+    /// File I/O + lazy client construction only at process start. After Setup / Connect-existing
+    /// writes <c>config.local.json</c>, call <see cref="ManageSession.ReloadFromDisk"/> so
+    /// singleton clients and ViewModels rebind without restarting the process.
+    /// Manage chrome then GETs Security List + optional <c>ip/allowlist.json</c> once to
+    /// merge player IPs into local <c>friends.local.json</c> (see <see cref="WhitelistViewModel.EnsureReconciledAsync"/>).
     /// </summary>
     private static void RegisterManageServices(IServiceCollection services)
     {

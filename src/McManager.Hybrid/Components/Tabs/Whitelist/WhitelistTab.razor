@@ -13,7 +13,7 @@
             </button>
         </div>
         <p style="margin:4px 0 0;font-size:13px;color:var(--text-secondary);">
-            Players need an entry here before they can connect. Save changes writes the list on this PC and pushes it so the server uses it.
+            Players need an entry here before they can connect. Opening MCSTool (or this tab the first time) combines this PC's list with the cloud Security List and Object Storage copy. Save changes writes all of them so they match.
         </p>
     </div>
 
@@ -176,10 +176,11 @@
     private string? CidrWidthWarning =>
         _cidrMode ? Vm.PrefixWidthWarning(_draftCidr) : null;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         Vm.PropertyChanged += OnVmChanged;
         Vm.Friends.CollectionChanged += OnFriendsChanged;
+        await Vm.EnsureReconciledAsync();
     }
 
     public void Dispose()
