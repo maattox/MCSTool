@@ -40,13 +40,17 @@ function Get-ProductVersion {
 }
 
 function Get-IsccPath {
-    $candidates = @(
-        (Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'),
-        (Join-Path $env:ProgramFiles 'Inno Setup 6\ISCC.exe'),
-        (Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 6\ISCC.exe')
+    $bases = @(
+        [Environment]::GetEnvironmentVariable('ProgramFiles(x86)'),
+        $env:ProgramFiles,
+        (Join-Path $env:LOCALAPPDATA 'Programs')
     )
-    foreach ($path in $candidates) {
-        if ($path -and (Test-Path -LiteralPath $path)) {
+    foreach ($base in $bases) {
+        if ([string]::IsNullOrWhiteSpace($base)) {
+            continue
+        }
+        $path = Join-Path $base 'Inno Setup 6\ISCC.exe'
+        if (Test-Path -LiteralPath $path) {
             return $path
         }
     }
