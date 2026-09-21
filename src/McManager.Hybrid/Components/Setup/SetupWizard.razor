@@ -566,7 +566,7 @@
                         </span>
                     </label>
                     <div class="mcm-wizard-card mcm-wizard-card-sm">
-                        <span class="mcm-wizard-ack-title">Minecraft memory</span>
+                        <span class="mcm-wizard-ack-title">Server memory</span>
                         <span class="mcm-wizard-ack-copy">@SetupWizardViewModel.HeapHelp</span>
                         <div class="mcm-wizard-review-heap">
                             <label class="mcm-radio-row">
@@ -593,6 +593,31 @@
                                        @onchange="@(() => Vm.SelectJvmHeap8G())" />
                                 <span>8G</span>
                             </label>
+                            @if (Vm.ShowJvmHeapExtraPresets)
+                            {
+                                <label class="mcm-radio-row">
+                                    <input type="radio"
+                                           name="mcm-setup-jvm-heap"
+                                           disabled="@(!Vm.CanMutateWizard)"
+                                           checked="@Vm.JvmHeapIs10G"
+                                           @onchange="@(() => Vm.SelectJvmHeap10G())" />
+                                    <span>
+                                        10G
+                                        <span class="mcm-radio-note">Extra RAM for heavier packs.</span>
+                                    </span>
+                                </label>
+                                <label class="mcm-radio-row">
+                                    <input type="radio"
+                                           name="mcm-setup-jvm-heap"
+                                           disabled="@(!Vm.CanMutateWizard)"
+                                           checked="@Vm.JvmHeapIs12G"
+                                           @onchange="@(() => Vm.SelectJvmHeap12G())" />
+                                    <span>
+                                        12G
+                                        <span class="mcm-radio-note">Extra RAM for heavier packs.</span>
+                                    </span>
+                                </label>
+                            }
                         </div>
                     </div>
                     <label class="mcm-checkbox-row">

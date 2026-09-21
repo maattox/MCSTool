@@ -83,6 +83,8 @@ public static class SetupWizardStore
         if (state.CurrentStep < 0 || state.CurrentStep >= SetupWizardState.StepCount)
             state.CurrentStep = 0;
 
+        state.JvmXmx = JvmHeapChoice.ClampToHost(state.JvmXmx, state.Vm1MemoryGb);
+
         return state;
     }
 

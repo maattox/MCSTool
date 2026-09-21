@@ -161,7 +161,9 @@ public sealed class TofuApplyOutputs
                 SshKeyPath = vm1Key,
                 WorldPath = WorldPath,
                 MinecraftUnit = MinecraftUnit,
-                JvmXmx = JvmHeapChoice.Normalize(state.JvmXmx),
+                JvmXmx = JvmHeapChoice.ClampToHost(
+                    state.JvmXmx,
+                    JvmHeapChoice.ResolvedHostMemoryGb(Vm1MemoryGb)),
             },
             Door = new DoorSettings
             {

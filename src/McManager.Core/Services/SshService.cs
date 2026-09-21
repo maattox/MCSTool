@@ -271,7 +271,7 @@ public sealed class SshService : ISshService
 
     private static ServiceResult ApplyJvmHeap(Vm1Settings vm1, string heap)
     {
-        var token = JvmHeapChoice.Normalize(heap);
+        var token = JvmHeapChoice.ClampToHost(heap, JvmHeapChoice.ResolvedHostMemoryGb(vm1.ShapeMemoryGb));
         return WithHeapScript(
             vm1,
             restartMinecraft: true,

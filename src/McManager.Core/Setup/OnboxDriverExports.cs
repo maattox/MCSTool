@@ -30,7 +30,7 @@ internal static class OnboxDriverExports
             ? $" JAVA_MAJOR={j.ToString(System.Globalization.CultureInfo.InvariantCulture)}"
             : "";
 
-        var heap = JvmHeapChoice.Normalize(state.JvmXmx);
+        var heap = JvmHeapChoice.ClampToHost(state.JvmXmx, state.Vm1MemoryGb);
         var seed = WorldSeed.Normalize(state.WorldSeed);
         var seedExport = seed.Length == 0 ? "" : $" LEVEL_SEED={ShQuote(seed)}";
 

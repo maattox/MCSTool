@@ -28,7 +28,7 @@ public sealed partial class JvmExtraFlagsViewModel : ObservableObject
 
     [ObservableProperty]
     private string _statusMessage =
-        "Extra JVM flags (not heap). Save restarts Minecraft; the VM stays up. Paper empty save restores Fill/Aikar flags.";
+        "Extra JVM flags (not server memory). Save restarts Minecraft; the VM stays up. Paper empty save restores Fill/Aikar flags.";
 
     [ObservableProperty]
     private string _flagsText = "";
@@ -96,7 +96,7 @@ public sealed partial class JvmExtraFlagsViewModel : ObservableObject
             }
 
             FlagsText = JvmExtraFlags.Format(result.Value ?? []);
-            StatusMessage = "Loaded current extra flags. Heap stays on the card above.";
+            StatusMessage = "Loaded current extra flags. Server memory stays on the card above.";
         }
         finally
         {
@@ -114,7 +114,7 @@ public sealed partial class JvmExtraFlagsViewModel : ObservableObject
         var flags = JvmExtraFlags.Parse(FlagsText);
         var body =
             "Changing JVM flags can stop Minecraft from starting. This rewrites the launch extras, "
-            + "restarts Minecraft, and leaves the VM up. Do not use /reload. Heap (-Xms/-Xmx) stays on the card above.";
+            + "restarts Minecraft, and leaves the VM up. Do not use /reload. Server memory (-Xms/-Xmx) stays on the card above.";
         if (strippedHeap)
             body += " Any -Xms/-Xmx in the box will be ignored.";
 

@@ -86,6 +86,44 @@ def main() -> int:
         assert "-Xms8G" in unit_after and "-Xmx8G" in unit_after, unit_after
         assert "-XX:CustomFlag=1" in unit_after, unit_after
         assert "-XX:+UseG1GC" in unit_after, unit_after
+        r12 = subprocess.run(
+            [sys.executable, str(SCRIPT), "12G"],
+            env=env,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        if r12.returncode != 0:
+            print(r12.stdout, r12.stderr)
+            return r12.returncode
+        unit_12 = unit.read_text(encoding="utf-8")
+        env_12 = jvm_env.read_text(encoding="utf-8")
+        args_12 = user_args.read_text(encoding="utf-8")
+        assert "OK heap=12G" in r12.stdout, r12.stdout
+        assert "-Xms12G" in unit_12 and "-Xmx12G" in unit_12, unit_12
+        assert "-XX:CustomFlag=1" in unit_12, unit_12
+        assert "export JVM_XMS=12G" in env_12 and "export JVM_XMX=12G" in env_12, env_12
+        assert "-Xms12G" in args_12 and "-Xmx12G" in args_12, args_12
+        r_bad = subprocess.run(
+            [sys.executable, str(SCRIPT), "16G"],
+            env=env,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        assert r_bad.returncode != 0, r_bad.stdout
+        assert "10G" in r_bad.stderr or "12G" in r_bad.stderr, r_bad.stderr
+        r10 = subprocess.run(
+            [sys.executable, str(SCRIPT), "10G"],
+            env=env,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        if r10.returncode != 0:
+            print(r10.stdout, r10.stderr)
+            return r10.returncode
+        assert "OK heap=10G" in r10.stdout, r10.stdout
         r4 = subprocess.run(
             [sys.executable, str(SCRIPT), "dump-extras"],
             env=env,

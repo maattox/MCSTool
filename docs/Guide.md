@@ -162,13 +162,13 @@ Open and accept the [Minecraft EULA](https://aka.ms/MinecraftEULA).
 Paste the Auth Token you saved in Part 2 and store it. MCSTool keeps **one** token on this PC (Windows Credential Manager). If you later add a second Oracle account, you may need to replace that token during Setup. Day-to-day manage does not need it again.
 
 **Step 8 — VM size and deploy**  
-Pick a size, Minecraft memory, and start deployment.
+Pick a size, server memory, and start deployment.
 
 - Deployment often takes **10–25 minutes**, depending on VM size and pack. Leave the app open until it finishes.
 - If Deploy is interrupted after the game VM already exists, that VM may stay on. Finish Setup, or stop it in the OCI Console (especially the 4 OCPU / 24 GB size).
 - The recommended size (**4 OCPU / 24 GB**) can only run about **~11.5 hours a day** on average over a month. MCSTool’s usage stats make that easy to track.
 - The smaller size (**2 OCPU / 12 GB**) can usually stay on all month, with less room for mods and players.
-- Minecraft heap is **4G**, **6G**, or **8G** (default **4G**). Xms always matches Xmx. You can change heap later on Advanced → Danger.
+- **Server memory** is RAM allocated to the Minecraft server, not the VM size. Sizes are **4G**, **6G**, and **8G** (default **4G** for vanilla). On the **24 GB** VM you can also pick **10G** or **12G** for heavier packs. You can change this later on Advanced → Danger (restarts Minecraft).
 
 
 

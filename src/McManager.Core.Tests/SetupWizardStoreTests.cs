@@ -156,4 +156,30 @@ public sealed class SetupWizardStoreTests
         });
         Assert.Equal(0, state.CurrentStep);
     }
+
+    [Fact]
+    public void Normalize_clamps_12G_heap_on_12GB_host()
+    {
+        var state = SetupWizardStore.Normalize(new SetupWizardState
+        {
+            SchemaVersion = 4,
+            Vm1Ocpus = 2,
+            Vm1MemoryGb = 12,
+            JvmXmx = "12G",
+        });
+        Assert.Equal("8G", state.JvmXmx);
+    }
+
+    [Fact]
+    public void Normalize_keeps_12G_heap_on_24GB_host()
+    {
+        var state = SetupWizardStore.Normalize(new SetupWizardState
+        {
+            SchemaVersion = 4,
+            Vm1Ocpus = 4,
+            Vm1MemoryGb = 24,
+            JvmXmx = "12G",
+        });
+        Assert.Equal("12G", state.JvmXmx);
+    }
 }

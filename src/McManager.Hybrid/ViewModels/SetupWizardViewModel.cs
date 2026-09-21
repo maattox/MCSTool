@@ -98,7 +98,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         "Smaller Always Free size. Vanilla (Paper) can often stay on all month; less room if you add mods or more players later.";
 
     public const string HeapHelp =
-        "Minecraft heap (Xms = Xmx), not the VM size. Default 4G. 8G still leaves about 4G for the OS on either Always Free size.";
+        "RAM allocated to the Minecraft server, not the VM size. Default 4G for vanilla. 8G still leaves about 4 GB for the OS. On the 24 GB size you can also pick 10G or 12G for heavier packs.";
 
     public const string IdentityHelp =
         "Players see the name, description, and in-game icon in Minecraft’s server list while the game is running. Each box is one list line (59 characters). Select text and apply colors, or paste a motd= string from a generator. Hex colors need Paper/Spigot 1.16+. You can change this later on the Server tab.";
@@ -546,11 +546,23 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     public bool JvmHeapIs8G => JvmHeapChoice.Normalize(JvmXmx) == JvmHeapChoice.Large;
 
+    public bool JvmHeapIs10G => JvmHeapChoice.Normalize(JvmXmx) == JvmHeapChoice.Extra;
+
+    public bool JvmHeapIs12G => JvmHeapChoice.Normalize(JvmXmx) == JvmHeapChoice.ExtraLarge;
+
+    public bool ShowJvmHeapExtraPresets => JvmHeapChoice.OffersExtraPresets(Vm1MemoryGb);
+
     public void SelectJvmHeap4G() => JvmXmx = JvmHeapChoice.Default;
 
     public void SelectJvmHeap6G() => JvmXmx = JvmHeapChoice.Medium;
 
     public void SelectJvmHeap8G() => JvmXmx = JvmHeapChoice.Large;
+
+    public void SelectJvmHeap10G() =>
+        JvmXmx = JvmHeapChoice.ClampToHost(JvmHeapChoice.Extra, Vm1MemoryGb);
+
+    public void SelectJvmHeap12G() =>
+        JvmXmx = JvmHeapChoice.ClampToHost(JvmHeapChoice.ExtraLarge, Vm1MemoryGb);
 
     public bool ServerTypeIsVanilla => SetupServerType.IsVanilla(ServerType);
 
@@ -1816,7 +1828,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         var shape = Vm1ShapeChoice.Normalize(state.Vm1Ocpus, state.Vm1MemoryGb);
         Vm1Ocpus = shape.Ocpus;
         Vm1MemoryGb = shape.MemoryGb;
-        JvmXmx = JvmHeapChoice.Normalize(state.JvmXmx);
+        JvmXmx = JvmHeapChoice.ClampToHost(state.JvmXmx, Vm1MemoryGb);
         ApplyStage = string.IsNullOrWhiteSpace(state.ApplyStage)
             ? SetupApplyStage.NotStarted
             : state.ApplyStage;
@@ -1877,7 +1889,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         AdminCidr = AdminCidr,
         Vm1Ocpus = Vm1ShapeChoice.Normalize(Vm1Ocpus, Vm1MemoryGb).Ocpus,
         Vm1MemoryGb = Vm1ShapeChoice.Normalize(Vm1Ocpus, Vm1MemoryGb).MemoryGb,
-        JvmXmx = JvmHeapChoice.Normalize(JvmXmx),
+        JvmXmx = JvmHeapChoice.ClampToHost(JvmXmx, Vm1MemoryGb),
         ApplyStage = ApplyStage,
         FunctionImage = _functionImage,
     };
@@ -1916,6 +1928,9 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     }
 
     partial void OnSshGenerateModeChanged(bool value) => OnPropertyChanged(nameof(SshImportMode));
+
+    partial void OnVm1MemoryGbChanged(int value) =>
+        JvmXmx = JvmHeapChoice.ClampToHost(JvmXmx, value);
 
     partial void OnAuthTokenStoredChanged(bool value)
     {
@@ -2181,6 +2196,9 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             case nameof(JvmHeapIs4G):
             case nameof(JvmHeapIs6G):
             case nameof(JvmHeapIs8G):
+            case nameof(JvmHeapIs10G):
+            case nameof(JvmHeapIs12G):
+            case nameof(ShowJvmHeapExtraPresets):
             case nameof(ServerTypeIsVanilla):
             case nameof(ServerTypeIsModded):
             case nameof(ShowVanillaGameOptions):
@@ -2244,6 +2262,9 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         OnPropertyChanged(nameof(JvmHeapIs4G));
         OnPropertyChanged(nameof(JvmHeapIs6G));
         OnPropertyChanged(nameof(JvmHeapIs8G));
+        OnPropertyChanged(nameof(JvmHeapIs10G));
+        OnPropertyChanged(nameof(JvmHeapIs12G));
+        OnPropertyChanged(nameof(ShowJvmHeapExtraPresets));
         OnPropertyChanged(nameof(ServerTypeIsVanilla));
         OnPropertyChanged(nameof(ServerTypeIsModded));
         OnPropertyChanged(nameof(ShowVanillaGameOptions));

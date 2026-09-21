@@ -189,7 +189,7 @@ public sealed class SetupWizardState
     [JsonPropertyName("vm1_memory_gb")]
     public int Vm1MemoryGb { get; set; } = Vm1ShapeChoice.DefaultMemoryGb;
 
-    /// <summary>Minecraft heap preset (4G / 6G / 8G). Xms = Xmx. Default 4G.</summary>
+    /// <summary>Minecraft heap preset (4G / 6G / 8G / 10G / 12G). Xms = Xmx. Default 4G. 10G/12G only on 24 GB hosts.</summary>
     [JsonPropertyName("jvm_xmx")]
     public string JvmXmx { get; set; } = JvmHeapChoice.Default;
 

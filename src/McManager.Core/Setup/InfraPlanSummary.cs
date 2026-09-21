@@ -54,7 +54,7 @@ public static class InfraPlanSummary
             + $"  Budget alert email: {email}\n"
             + $"  SSH: {ssh}\n"
             + $"  Server size: {shape} ({hours})\n"
-            + $"  Minecraft heap: {JvmHeapChoice.Format(state.JvmXmx)} (Xms = Xmx)\n"
+            + $"  Server memory: {JvmHeapChoice.Format(JvmHeapChoice.ClampToHost(state.JvmXmx, state.Vm1MemoryGb))}\n"
             + $"  Game: {flavor} {version} (EULA {(state.EulaAccepted ? "accepted" : "not accepted")})\n"
             + $"  Server list name: {identityName}\n"
             + $"  OCIR Auth Token stored: {(state.AuthTokenStored ? $"yes (Windows Credential Manager {WindowsCredentialStore.OcirTarget})" : "no — required for the spend-brake Function")}\n\n"

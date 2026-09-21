@@ -9,7 +9,7 @@
     <div>
         <h2 id="mcm-danger-zone-title" class="mcm-danger-zone-title">Danger Zone</h2>
         <p class="mcm-danger-zone-lede">
-            Idle shutdown, server size, Minecraft heap, extra JVM flags, and deleting the cloud stack. These can turn off Always Free brakes or tear the stack down. Break-glass VM power is on Advanced → Status. Everyday Start / Stop stay in the left sidebar.
+            Idle shutdown, server size, server memory, extra JVM flags, and deleting the cloud stack. These can turn off Always Free brakes or tear the stack down. Break-glass VM power is on Advanced → Status. Everyday Start / Stop stay in the left sidebar.
         </p>
     </div>
 
@@ -138,16 +138,16 @@
 
     <div class="mcm-danger-card">
         <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
-            <span class="mcm-danger-card-title">Minecraft memory (heap)</span>
+            <span class="mcm-danger-card-title">Server memory</span>
             <button type="button"
                     class="mcm-help"
-                    title="Minecraft Xms and Xmx, always matched. 4G default. 8G still leaves about 4G for the OS. Paper keeps Fill/Aikar GC flags. Apply restarts Minecraft; the VM stays up. Do not use /reload.">
+                    title="RAM allocated to the Minecraft server, not the VM size. Default 4G for vanilla. 8G still leaves about 4 GB for the OS. On the 24 GB size you can also pick 10G or 12G for heavier packs. Technical: -Xms always matches -Xmx. Paper keeps Fill/Aikar GC flags. Apply restarts Minecraft; the VM stays up. Do not use /reload.">
                 <i class="ti ti-help" aria-hidden="true"></i>
-                <span class="sr-only">About Minecraft heap</span>
+                <span class="sr-only">About server memory</span>
             </button>
         </div>
         <p style="margin:0 0 12px;font-size:13px;">
-            Current heap: <strong>@Heap.CurrentHeapDisplay</strong>
+            Current server memory: <strong>@Heap.CurrentHeapDisplay</strong>
         </p>
         <p style="margin:0 0 10px;font-size:13px;">
             Apply is disabled until the server is Running. This does not change VM size.
@@ -182,9 +182,34 @@
                    @onchange="@(() => Heap.Select8G())" />
             <span>
                 8G
-                <span class="mcm-radio-note">Still leaves about 4G for the OS on 12 GB or 24 GB VMs.</span>
+                <span class="mcm-radio-note">Still leaves about 4 GB for the OS on the 12 GB size.</span>
             </span>
         </label>
+        @if (Heap.ShowExtraPresets)
+        {
+            <label class="mcm-radio-row">
+                <input type="radio"
+                       name="mcm-dz-jvm-heap"
+                       disabled="@Heap.IsBusy"
+                       checked="@Heap.TargetIs10G"
+                       @onchange="@(() => Heap.Select10G())" />
+                <span>
+                    10G
+                    <span class="mcm-radio-note">Extra RAM for heavier packs.</span>
+                </span>
+            </label>
+            <label class="mcm-radio-row">
+                <input type="radio"
+                       name="mcm-dz-jvm-heap"
+                       disabled="@Heap.IsBusy"
+                       checked="@Heap.TargetIs12G"
+                       @onchange="@(() => Heap.Select12G())" />
+                <span>
+                    12G
+                    <span class="mcm-radio-note">Extra RAM for heavier packs.</span>
+                </span>
+            </label>
+        }
         @if (!Heap.CanApply && !string.IsNullOrWhiteSpace(Heap.BlockedReason))
         {
             <p style="margin:0 0 12px;font-size:13px;color:var(--text-danger);">@Heap.BlockedReason</p>
@@ -194,7 +219,7 @@
                     class="mcm-danger-btn"
                     disabled="@(!Heap.CanApply)"
                     @onclick="Heap.ApplyAsync">
-                Apply heap
+                Apply server memory
             </button>
         </div>
         <p style="margin:10px 0 0;font-size:13px;opacity:0.9;">@Heap.StatusMessage</p>
@@ -205,7 +230,7 @@
             <span class="mcm-danger-card-title">JVM flags</span>
             <button type="button"
                     class="mcm-help"
-                    title="Non-heap Java flags only. Heap stays on the card above. Paper loads Fill/Aikar flags; an empty save restores those. Paper and modded extras go in user_jvm_args or the unit. Save asks for confirm, then restarts Minecraft. Do not use /reload.">
+                    title="Do not put -Xms or -Xmx here; server memory stays on the card above. Paper loads Fill/Aikar flags; an empty save restores those. Paper and modded extras go in user_jvm_args or the unit. Save asks for confirm, then restarts Minecraft. Do not use /reload.">
                 <i class="ti ti-help" aria-hidden="true"></i>
                 <span class="sr-only">About JVM flags</span>
             </button>
