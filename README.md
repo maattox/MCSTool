@@ -1,6 +1,6 @@
 # MCSTool
 
-Create a vanilla or modded Minecraft server using OCI Always Free resources.
+Create a Vanilla (Paper) or modded Minecraft server using OCI Always Free resources.
 
 ### Setup guide: [docs/Guide.md](docs/Guide.md)
 
@@ -14,7 +14,7 @@ Create a vanilla or modded Minecraft server using OCI Always Free resources.
 
 ## What you get
 
-- Easily create a modded, Paper, or vanilla Minecraft server for free
+- Easily create a Vanilla (Paper) or modded Minecraft server for free
 - One app to create the server and manage it afterward
 - Players always join the same address
 - When nobody is playing, the game server sleeps. A small always-on “doorbell” still answers Minecraft and can wake the server

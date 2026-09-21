@@ -21,7 +21,7 @@ public enum CapacityWaitChoice
 
 /// <summary>
 /// Eight-step Setup wizard (Always Free → OCI+email → SSH →
-/// game (Vanilla Default/Paper or Modded pack file) → name/icon → EULA → Auth Token → summary).
+/// game (Vanilla (Paper) or Modded pack file) → name/icon → EULA → Auth Token → summary).
 /// Compartment is auto-named <c>mcmgr</c> / <c>mcmgr-2</c> at Deploy. No Window Host —
 /// pickers/clipboard/dialogs/clock via B3 interfaces. Does not tofu apply unless the
 /// operator clicks Deploy; set <c>MCMANAGER_TOFU_DRY_RUN=1</c> for a dry run.
@@ -72,16 +72,13 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         "Game VM and door can use different keys. The door public key is installed at deploy. Advanced can still change local paths later without installing a new key on the VM.";
 
     public const string VanillaHelp =
-        "Official Mojang jar, or Optimized Vanilla (Paper) for better multiplayer.";
+        "Paper is the vanilla-like server (better multiplayer).";
 
     public const string ModdedHelp =
         "Choose a local .mrpack or server-pack zip you already exported. There is no pack search.";
 
-    public const string DefaultVanillaHelp =
-        "Official Mojang server jar. Same path as before.";
-
-    public const string OptimizedVanillaHelp =
-        "Better multiplayer performance. Paper is a faster vanilla-compatible server.";
+    public const string PaperHelp =
+        "Paper is the vanilla-like server (better multiplayer).";
 
     public const string PackFileHelp = SetupPackImport.PackFileNoviceHelp;
 
@@ -98,7 +95,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         "More room for players and later mods. Uses Always Free hours faster while the server is on.";
 
     public const string ShapeSmallerHelp =
-        "Smaller Always Free size. Vanilla can often stay on all month; less room if you add mods or more players later.";
+        "Smaller Always Free size. Vanilla (Paper) can often stay on all month; less room if you add mods or more players later.";
 
     public const string HeapHelp =
         "Minecraft heap (Xms = Xmx), not the VM size. Default 4G. 8G still leaves about 4G for the OS on either Always Free size.";
@@ -215,7 +212,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     private string _serverType = SetupServerType.Vanilla;
 
     [ObservableProperty]
-    private string _vanillaFlavor = SetupVanillaFlavor.Default;
+    private string _vanillaFlavor = SetupVanillaFlavor.Optimized;
 
     [ObservableProperty]
     private bool _includeSnapshots;
@@ -555,12 +552,6 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     public void SelectJvmHeap8G() => JvmXmx = JvmHeapChoice.Large;
 
-    public bool VanillaFlavorIsDefault =>
-        !SetupVanillaFlavor.IsOptimized(VanillaFlavor);
-
-    public bool VanillaFlavorIsOptimized =>
-        SetupVanillaFlavor.IsOptimized(VanillaFlavor);
-
     public bool ServerTypeIsVanilla => SetupServerType.IsVanilla(ServerType);
 
     public bool ServerTypeIsModded => SetupServerType.IsModded(ServerType);
@@ -568,8 +559,6 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     public bool ShowVanillaGameOptions => ServerTypeIsVanilla;
 
     public bool ShowModdedGameOptions => ServerTypeIsModded;
-
-    public bool ShowSnapshotToggle => ServerTypeIsVanilla && VanillaFlavorIsDefault;
 
     public string PackFileNameDisplay =>
         string.IsNullOrWhiteSpace(PackPath) ? "" : Path.GetFileName(PackPath);
@@ -656,11 +645,11 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     public bool CanClearIdentityIcon =>
         !string.IsNullOrWhiteSpace(IdentityIconPath);
 
-    public void SelectDefaultVanilla() => VanillaFlavor = SetupVanillaFlavor.Default;
-
-    public void SelectOptimizedVanilla() => VanillaFlavor = SetupVanillaFlavor.Optimized;
-
-    public void SelectVanillaServer() => ServerType = SetupServerType.Vanilla;
+    public void SelectVanillaServer()
+    {
+        ServerType = SetupServerType.Vanilla;
+        VanillaFlavor = SetupVanillaFlavor.Optimized;
+    }
 
     public void SelectModdedServer()
     {
@@ -1680,9 +1669,6 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             _mojangCatalogNotes = $"Version catalog failed: {ex.Message}";
         }
 
-        if (!VanillaFlavorIsOptimized)
-            RebuildVersionList(keepSelection: true);
-
         try
         {
             var paper = await _paperCatalog.LoadProjectCatalogAsync().ConfigureAwait(true);
@@ -1711,45 +1697,22 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             : "";
         _versionIds.Clear();
 
-        if (VanillaFlavorIsOptimized)
+        VersionCatalogNotes = string.IsNullOrWhiteSpace(_paperCatalogNotes)
+            ? "Paper versions (vanilla-like)."
+            : _paperCatalogNotes;
+        if (_paperProject is null)
         {
-            VersionCatalogNotes = string.IsNullOrWhiteSpace(_paperCatalogNotes)
-                ? "Paper versions (Optimized Vanilla)."
-                : _paperCatalogNotes;
-            if (_paperProject is null)
-            {
-                OnPropertyChanged(nameof(VersionIds));
-                return;
-            }
-
-            foreach (var id in PaperFillV3Client.FlattenVersionIds(_paperProject))
-                _versionIds.Add(id);
-
-            var target = !string.IsNullOrWhiteSpace(previous) && _versionIds.Contains(previous)
-                ? previous
-                : PaperFillV3Client.DefaultVersionId(_paperProject);
-            ApplyVersionSelection(target);
-            return;
-        }
-
-        if (_manifest is null)
-        {
-            VersionCatalogNotes = string.IsNullOrWhiteSpace(_mojangCatalogNotes)
-                ? "Loading Minecraft versions…"
-                : _mojangCatalogNotes;
             OnPropertyChanged(nameof(VersionIds));
             return;
         }
 
-        VersionCatalogNotes = _mojangCatalogNotes;
-        var filtered = MojangVersionCatalog.Filter(_manifest, IncludeSnapshots);
-        foreach (var v in filtered)
-            _versionIds.Add(v.Id);
+        foreach (var id in PaperFillV3Client.FlattenVersionIds(_paperProject))
+            _versionIds.Add(id);
 
-        var mojangTarget = !string.IsNullOrWhiteSpace(previous) && _versionIds.Contains(previous)
+        var target = !string.IsNullOrWhiteSpace(previous) && _versionIds.Contains(previous)
             ? previous
-            : MojangVersionCatalog.DefaultVersionId(_manifest);
-        ApplyVersionSelection(mojangTarget);
+            : PaperFillV3Client.DefaultVersionId(_paperProject);
+        ApplyVersionSelection(target);
     }
 
     private void ApplyVersionSelection(string? target)
@@ -1991,9 +1954,6 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     partial void OnVanillaFlavorChanged(string value)
     {
         VanillaConfirmed = true;
-        OnPropertyChanged(nameof(VanillaFlavorIsDefault));
-        OnPropertyChanged(nameof(VanillaFlavorIsOptimized));
-        OnPropertyChanged(nameof(ShowSnapshotToggle));
         if (_navReady && ServerTypeIsVanilla)
             RebuildVersionList(keepSelection: true);
         if (_navReady)
@@ -2006,7 +1966,6 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         OnPropertyChanged(nameof(ServerTypeIsModded));
         OnPropertyChanged(nameof(ShowVanillaGameOptions));
         OnPropertyChanged(nameof(ShowModdedGameOptions));
-        OnPropertyChanged(nameof(ShowSnapshotToggle));
         OnPropertyChanged(nameof(ShowPackSummary));
         OnPropertyChanged(nameof(ShowPackConfirmChecks));
         if (_navReady && ServerTypeIsVanilla)
@@ -2222,9 +2181,6 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             case nameof(JvmHeapIs4G):
             case nameof(JvmHeapIs6G):
             case nameof(JvmHeapIs8G):
-            case nameof(VanillaFlavorIsDefault):
-            case nameof(VanillaFlavorIsOptimized):
-            case nameof(ShowSnapshotToggle):
             case nameof(ServerTypeIsVanilla):
             case nameof(ServerTypeIsModded):
             case nameof(ShowVanillaGameOptions):
@@ -2288,9 +2244,6 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         OnPropertyChanged(nameof(JvmHeapIs4G));
         OnPropertyChanged(nameof(JvmHeapIs6G));
         OnPropertyChanged(nameof(JvmHeapIs8G));
-        OnPropertyChanged(nameof(VanillaFlavorIsDefault));
-        OnPropertyChanged(nameof(VanillaFlavorIsOptimized));
-        OnPropertyChanged(nameof(ShowSnapshotToggle));
         OnPropertyChanged(nameof(ServerTypeIsVanilla));
         OnPropertyChanged(nameof(ServerTypeIsModded));
         OnPropertyChanged(nameof(ShowVanillaGameOptions));

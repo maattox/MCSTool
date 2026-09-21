@@ -1,7 +1,7 @@
 namespace McManager.Core.Services;
 
 /// <summary>
-/// Server tab Mods / Plugins panes: Modded vs Vanilla/Paper, Change pack help, and download-pack copy.
+/// Server tab Mods / Plugins panes: Modded vs Vanilla (Paper), Change pack help, and download-pack copy.
 /// Inspect-only in v1 — never treat a zip of VM1 <c>mods/</c> as the client pack.
 /// </summary>
 public static class ModdingPanelLogic

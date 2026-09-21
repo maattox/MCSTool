@@ -7,7 +7,6 @@ namespace McManager.Core.Setup;
 /// </summary>
 public static class ChangeServerTypeUx
 {
-    public const string ChoiceDefaultVanilla = "default";
     public const string ChoicePaper = "optimized";
     public const string ChoiceModded = "modded";
 
@@ -16,9 +15,9 @@ public static class ChangeServerTypeUx
     public const string OpenButton = "Change type…";
 
     public const string SectionHelp =
-        "Reinstalls Minecraft as Default Vanilla, Paper, or Modded on this existing VM. "
+        "Reinstalls Minecraft as Vanilla (Paper) or Modded on this existing VM. "
         + "The cloud stack, doorbell, and play IP stay. This is not a cloud Redeploy. "
-        + "The world is kept unless you check wipe. Going from Modded back to Vanilla or Paper "
+        + "The world is kept unless you check wipe. Going from Modded back to Vanilla (Paper) "
         + "can lose mod blocks and items.";
 
     public const string ModalTitle = "Change server type";
@@ -29,9 +28,7 @@ public static class ChangeServerTypeUx
 
     public const string ConfirmButton = "Reinstall";
 
-    public const string LabelDefaultVanilla = "Default Vanilla";
-
-    public const string LabelPaper = "Optimized Vanilla (Paper)";
+    public const string LabelPaper = SetupVanillaFlavor.PlanLabelPaper;
 
     public const string LabelModded = "Modded";
 
@@ -45,12 +42,8 @@ public static class ChangeServerTypeUx
     public const string PackNeedsReview =
         "This pack needs review on Mods → Change pack (unknown jars or version fields).";
 
-    public const string VanillaPaperMild =
-        "Switching between Default Vanilla and Paper usually keeps the world. "
-        + "Some Paper-only settings may reset.";
-
     public const string AnyToModdedNote =
-        "After mods run, going back to Vanilla or Paper can lose mod blocks and items.";
+        "After mods run, going back to Vanilla (Paper) can lose mod blocks and items.";
 
     public const string ModdedToVanillaStrong =
         "Blocks and items from the old mods will be missing from the world. "
@@ -71,11 +64,9 @@ public static class ChangeServerTypeUx
     public static string NormalizeChoice(string? value)
     {
         var id = (value ?? "").Trim().ToLowerInvariant();
-        if (id is ChoicePaper or "paper")
-            return ChoicePaper;
         if (id is ChoiceModded)
             return ChoiceModded;
-        return ChoiceDefaultVanilla;
+        return ChoicePaper;
     }
 
     public static bool IsModdedChoice(string? value) =>
@@ -87,30 +78,25 @@ public static class ChangeServerTypeUx
     public static string ChoiceLabel(string? value) =>
         NormalizeChoice(value) switch
         {
-            ChoicePaper => LabelPaper,
             ChoiceModded => LabelModded,
-            _ => LabelDefaultVanilla,
+            _ => LabelPaper,
         };
 
     /// <summary>Novice label for the live <c>game.server_kind</c>.</summary>
     public static string KindLabel(string? serverKind)
     {
-        if (ModdingPanelLogic.IsPaperServerKind(serverKind))
-            return LabelPaper;
         if (ModdingPanelLogic.IsModdedServerKind(serverKind))
             return LabelModded;
         if (string.IsNullOrWhiteSpace(serverKind))
             return "—";
-        return LabelDefaultVanilla;
+        return LabelPaper;
     }
 
     public static string ChoiceFromServerKind(string? serverKind)
     {
-        if (ModdingPanelLogic.IsPaperServerKind(serverKind))
-            return ChoicePaper;
         if (ModdingPanelLogic.IsModdedServerKind(serverKind))
             return ChoiceModded;
-        return ChoiceDefaultVanilla;
+        return ChoicePaper;
     }
 
     public static string ServerKindForMeta(string? targetChoice, string? packLoader)
@@ -118,8 +104,7 @@ public static class ChangeServerTypeUx
         var choice = NormalizeChoice(targetChoice);
         if (choice == ChoiceModded)
             return PackReplaceUx.ServerKindForMeta(packLoader);
-        return SetupVanillaFlavor.ToDistribution(
-            choice == ChoicePaper ? SetupVanillaFlavor.Optimized : SetupVanillaFlavor.Default);
+        return SetupVanillaFlavor.DistributionPaper;
     }
 
     /// <summary>
@@ -135,7 +120,7 @@ public static class ChangeServerTypeUx
             return AnyToModdedNote;
         if (from == "modded")
             return ModdedToVanillaStrong;
-        return VanillaPaperMild;
+        return null;
     }
 
     public static string SuccessMessage(ChangeServerTypeResult result)
@@ -155,21 +140,17 @@ public static class ChangeServerTypeUx
 
     private static string KindGroup(string? serverKind)
     {
-        if (ModdingPanelLogic.IsPaperServerKind(serverKind))
-            return "paper";
         if (ModdingPanelLogic.IsModdedServerKind(serverKind))
             return "modded";
-        var id = (serverKind ?? "").Trim().ToLowerInvariant();
-        if (id.Length == 0)
+        if (string.IsNullOrWhiteSpace(serverKind))
             return "";
-        return "vanilla";
+        return "paper";
     }
 
     private static string KindGroupFromChoice(string? targetChoice) =>
         NormalizeChoice(targetChoice) switch
         {
-            ChoicePaper => "paper",
             ChoiceModded => "modded",
-            _ => "vanilla",
+            _ => "paper",
         };
 }

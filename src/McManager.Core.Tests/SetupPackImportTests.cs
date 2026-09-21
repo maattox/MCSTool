@@ -469,7 +469,7 @@ public sealed class SetupPackImportTests
             PackConfirmed = true,
         };
 
-        Assert.Equal("vanilla", SetupPackImport.ToDistribution(vanilla));
+        Assert.Equal("paper", SetupPackImport.ToDistribution(vanilla));
         Assert.Equal("paper", SetupPackImport.ToDistribution(paper));
         Assert.Equal("neoforge", SetupPackImport.ToDistribution(modded));
         Assert.True(SetupPackImport.IsOnboxDistribution("fabric"));

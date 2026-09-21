@@ -98,11 +98,11 @@ public sealed class SetupWizardState
     public string ServerType { get; set; } = SetupServerType.Vanilla;
 
     /// <summary>
-    /// Vanilla branch: <c>default</c> (Mojang) or <c>optimized</c> (Paper).
-    /// Missing/unknown values normalize to default.
+    /// Vanilla branch flavor. Setup always installs Paper; resume JSON may still
+    /// contain <c>default</c> and is normalized to Paper.
     /// </summary>
     [JsonPropertyName("vanilla_flavor")]
-    public string VanillaFlavor { get; set; } = SetupVanillaFlavor.Default;
+    public string VanillaFlavor { get; set; } = SetupVanillaFlavor.Optimized;
 
     [JsonPropertyName("include_snapshots")]
     public bool IncludeSnapshots { get; set; }

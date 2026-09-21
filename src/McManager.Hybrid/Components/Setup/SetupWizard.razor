@@ -212,7 +212,7 @@
                                            checked="@Vm.ServerTypeIsVanilla"
                                            @onchange="@(() => Vm.SelectVanillaServer())" />
                                     <span>
-                                        <span class="mcm-wizard-game-kind-title">Vanilla</span>
+                                        <span class="mcm-wizard-game-kind-title">Vanilla (Paper)</span>
                                         <span class="mcm-wizard-game-kind-copy">@SetupWizardViewModel.VanillaHelp</span>
                                     </span>
                                 </label>
@@ -235,37 +235,6 @@
                         <div class="mcm-wizard-game-options">
                             @if (Vm.ShowVanillaGameOptions)
                             {
-                                <label class="mcm-wizard-ack mcm-wizard-ack-sm">
-                                    <input type="radio"
-                                           name="mcm-setup-vanilla-flavor"
-                                           disabled="@(!Vm.CanMutateWizard)"
-                                           checked="@Vm.VanillaFlavorIsDefault"
-                                           @onchange="@(() => Vm.SelectDefaultVanilla())" />
-                                    <span class="mcm-wizard-ack-text">
-                                        <span class="mcm-wizard-ack-title">Default Vanilla</span>
-                                        <span class="mcm-wizard-ack-copy">@SetupWizardViewModel.DefaultVanillaHelp</span>
-                                    </span>
-                                </label>
-                                <label class="mcm-wizard-ack mcm-wizard-ack-sm">
-                                    <input type="radio"
-                                           name="mcm-setup-vanilla-flavor"
-                                           disabled="@(!Vm.CanMutateWizard)"
-                                           checked="@Vm.VanillaFlavorIsOptimized"
-                                           @onchange="@(() => Vm.SelectOptimizedVanilla())" />
-                                    <span class="mcm-wizard-ack-text">
-                                        <span class="mcm-wizard-ack-title">Optimized Vanilla (Paper)</span>
-                                        <span class="mcm-wizard-ack-copy">@SetupWizardViewModel.OptimizedVanillaHelp</span>
-                                    </span>
-                                </label>
-                                @if (Vm.ShowSnapshotToggle)
-                                {
-                                    <label class="mcm-checkbox-row">
-                                        <input type="checkbox"
-                                               disabled="@(!Vm.CanMutateWizard)"
-                                               @bind="Vm.IncludeSnapshots" />
-                                        <span>Advanced: include snapshots</span>
-                                    </label>
-                                }
                                 <div class="mcm-field">
                                     <label for="mcm-setup-mc-version">Minecraft version</label>
                                     <select id="mcm-setup-mc-version"

@@ -4,7 +4,7 @@ using McManager.Core.Services;
 namespace McManager.Core.Setup;
 
 /// <summary>
-/// Day-2 Vanilla / Paper / Modded switch on an existing VM (blueprint §12.3 / §28.1).
+/// Day-2 Vanilla (Paper) / Modded switch on an existing VM (blueprint §12.3 / §28.1).
 /// No tofu. SSH install is <see cref="SetupBootstrapService.ChangeServerTypeAsync"/>.
 /// </summary>
 public static class ChangeServerTypePlanner
@@ -46,9 +46,7 @@ public static class ChangeServerTypePlanner
         if (version.Length == 0)
             return ServiceResult<ChangeServerTypePlan>.Fail(ChangeServerTypeUx.MissingVersionError);
 
-        var newLoader = choice == ChangeServerTypeUx.ChoicePaper
-            ? SetupVanillaFlavor.DistributionPaper
-            : SetupVanillaFlavor.DistributionVanilla;
+        var newLoader = SetupVanillaFlavor.DistributionPaper;
         var warning = wipeWorld
             ? null
             : PackReplaceSaveCompatibility.Warn(
@@ -70,9 +68,7 @@ public static class ChangeServerTypePlanner
         return new SetupWizardState
         {
             ServerType = SetupServerType.Vanilla,
-            VanillaFlavor = plan.TargetChoice == ChangeServerTypeUx.ChoicePaper
-                ? SetupVanillaFlavor.Optimized
-                : SetupVanillaFlavor.Default,
+            VanillaFlavor = SetupVanillaFlavor.Optimized,
             EulaAccepted = true,
             MinecraftVersion = plan.MinecraftVersion,
             PackConfirmed = true,

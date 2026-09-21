@@ -9,7 +9,7 @@ using McManager.Hybrid.Ui;
 namespace McManager.Hybrid.ViewModels;
 
 /// <summary>
-/// Server → Settings change-type modal. No tofu. Vanilla/Paper reinstall via driver.sh;
+/// Server → Settings change-type modal. No tofu. Paper reinstall via driver.sh;
 /// Modded reuses pack analyze + the same prepare path.
 /// </summary>
 public sealed partial class ChangeServerTypeViewModel : ObservableObject
@@ -55,11 +55,10 @@ public sealed partial class ChangeServerTypeViewModel : ObservableObject
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsModdedTarget))]
     [NotifyPropertyChangedFor(nameof(IsVanillaTarget))]
-    [NotifyPropertyChangedFor(nameof(ShowSnapshotToggle))]
     [NotifyPropertyChangedFor(nameof(ShowVersionDropdown))]
     [NotifyPropertyChangedFor(nameof(ShowPackDrop))]
     [NotifyPropertyChangedFor(nameof(DirectionWarning))]
-    private string _targetChoice = ChangeServerTypeUx.ChoiceDefaultVanilla;
+    private string _targetChoice = ChangeServerTypeUx.ChoicePaper;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanSubmit))]
@@ -118,9 +117,6 @@ public sealed partial class ChangeServerTypeViewModel : ObservableObject
 
     public bool IsPaperTarget => ChangeServerTypeUx.IsPaperChoice(TargetChoice);
 
-    public bool ShowSnapshotToggle =>
-        string.Equals(ChangeServerTypeUx.NormalizeChoice(TargetChoice), ChangeServerTypeUx.ChoiceDefaultVanilla, StringComparison.Ordinal);
-
     public bool ShowVersionDropdown => IsVanillaTarget;
 
     public bool ShowPackDrop => IsModdedTarget;
@@ -156,9 +152,7 @@ public sealed partial class ChangeServerTypeViewModel : ObservableObject
 
     public string PackConfirmLabel => PackReplaceUx.PackConfirmLabel;
 
-    public string DefaultVanillaHelp => SetupWizardViewModel.DefaultVanillaHelp;
-
-    public string PaperHelp => SetupWizardViewModel.OptimizedVanillaHelp;
+    public string PaperHelp => SetupWizardViewModel.PaperHelp;
 
     public string ModdedHelp => SetupWizardViewModel.ModdedHelp;
 
@@ -485,45 +479,23 @@ public sealed partial class ChangeServerTypeViewModel : ObservableObject
             previous = _currentMinecraftVersion ?? "";
         _versionIds.Clear();
 
-        if (IsPaperTarget)
+        VersionCatalogNotes = string.IsNullOrWhiteSpace(_paperCatalogNotes)
+            ? "Paper versions (vanilla-like)."
+            : _paperCatalogNotes;
+        if (_paperProject is not null)
         {
-            VersionCatalogNotes = string.IsNullOrWhiteSpace(_paperCatalogNotes)
-                ? "Paper versions (Optimized Vanilla)."
-                : _paperCatalogNotes;
-            if (_paperProject is not null)
-            {
-                foreach (var id in PaperFillV3Client.FlattenVersionIds(_paperProject))
-                    _versionIds.Add(id);
-            }
-
-            var target = !string.IsNullOrWhiteSpace(previous) && _versionIds.Contains(previous)
-                ? previous
-                : (_paperProject is null
-                    ? previous
-                    : PaperFillV3Client.DefaultVersionId(_paperProject));
-            if (string.IsNullOrWhiteSpace(target) && _versionIds.Count > 0)
-                target = _versionIds[0];
-            MinecraftVersion = target;
-            OnPropertyChanged(nameof(VersionIds));
-            return;
+            foreach (var id in PaperFillV3Client.FlattenVersionIds(_paperProject))
+                _versionIds.Add(id);
         }
 
-        if (_manifest is null)
-        {
-            VersionCatalogNotes = string.IsNullOrWhiteSpace(_mojangCatalogNotes)
-                ? "Loading Minecraft versions…"
-                : _mojangCatalogNotes;
-            OnPropertyChanged(nameof(VersionIds));
-            return;
-        }
-
-        VersionCatalogNotes = _mojangCatalogNotes;
-        foreach (var v in MojangVersionCatalog.Filter(_manifest, IncludeSnapshots))
-            _versionIds.Add(v.Id);
-        var mojangTarget = !string.IsNullOrWhiteSpace(previous) && _versionIds.Contains(previous)
+        var target = !string.IsNullOrWhiteSpace(previous) && _versionIds.Contains(previous)
             ? previous
-            : MojangVersionCatalog.DefaultVersionId(_manifest);
-        MinecraftVersion = mojangTarget;
+            : (_paperProject is null
+                ? previous
+                : PaperFillV3Client.DefaultVersionId(_paperProject));
+        if (string.IsNullOrWhiteSpace(target) && _versionIds.Count > 0)
+            target = _versionIds[0];
+        MinecraftVersion = target;
         OnPropertyChanged(nameof(VersionIds));
     }
 

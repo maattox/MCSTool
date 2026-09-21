@@ -1,7 +1,7 @@
 namespace McManager.Core.Setup;
 
 /// <summary>
-/// Setup server-type branch: Vanilla (Default / Optimized Paper) vs Modded (local pack file).
+/// Setup server-type branch: Vanilla (always Paper) vs Modded (local pack file).
 /// Not a public/private toggle. Quilt is detect-only — not a Setup radio.
 /// </summary>
 public static class SetupServerType

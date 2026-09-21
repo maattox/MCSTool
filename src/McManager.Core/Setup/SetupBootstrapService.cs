@@ -148,8 +148,8 @@ public sealed class SetupBootstrapService
     }
 
     /// <summary>
-    /// Day-2 Vanilla / Paper / Modded switch (blueprint §12.3). Same prepare + <c>driver.sh</c>
-    /// as Change pack. No tofu. Vanilla/Paper skip pack copy. Keeps the world unless wipe.
+    /// Day-2 Vanilla (Paper) / Modded switch (blueprint §12.3). Same prepare + <c>driver.sh</c>
+    /// as Change pack. No tofu. Paper skips pack copy. Keeps the world unless wipe.
     /// </summary>
     public Task<ServiceResult<ChangeServerTypeResult>> ChangeServerTypeAsync(
         Vm1Settings vm1,
@@ -660,7 +660,7 @@ public sealed class SetupBootstrapService
         if (!SetupPackImport.IsOnboxDistribution(dist))
         {
             return ServiceResult.Fail(
-                "Setup cannot bootstrap this game type (need Vanilla, Paper, Fabric, Forge, or NeoForge).");
+                "Setup cannot bootstrap this game type (need Paper, Fabric, Forge, or NeoForge).");
         }
 
         if (SetupServerType.IsModded(state.ServerType)
@@ -830,7 +830,7 @@ public sealed class SetupBootstrapService
             return ServiceResult<ChangeServerTypeResult>.Fail(
                 ChangeServerTypeUx.IsModdedChoice(plan.Value.TargetChoice)
                     ? "Change type needs a Fabric, Forge, or NeoForge pack."
-                    : "Change type needs Default Vanilla, Paper, or a supported pack.");
+                    : "Change type needs Vanilla (Paper) or a supported pack.");
         }
 
         if (!string.IsNullOrWhiteSpace(plan.Value.SaveCompatibilityWarning))

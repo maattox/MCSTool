@@ -93,7 +93,7 @@ public static class ServerIdentityUx
     }
 
     /// <summary>
-    /// Setup default list name. Same branded MOTD for Vanilla, Paper, and Modded.
+    /// Setup default list name. Same branded MOTD for Vanilla (Paper) and Modded.
     /// No Oracle trademark wording.
     /// </summary>
     public static string DefaultServerName(string? serverType, string? vanillaFlavor)

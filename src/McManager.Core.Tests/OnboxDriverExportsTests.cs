@@ -89,6 +89,8 @@ public sealed class OnboxDriverExportsTests
 
         var exports = OnboxDriverExports.Build(state);
 
+        Assert.Contains("DISTRIBUTION='paper'", exports, StringComparison.Ordinal);
+        Assert.DoesNotContain("DISTRIBUTION='vanilla'", exports, StringComparison.Ordinal);
         Assert.DoesNotContain("JAVA_MAJOR=", exports, StringComparison.Ordinal);
     }
 
@@ -104,6 +106,8 @@ public sealed class OnboxDriverExportsTests
 
         var exports = OnboxDriverExports.Build(state);
 
+        Assert.Contains("DISTRIBUTION='paper'", exports, StringComparison.Ordinal);
+        Assert.DoesNotContain("DISTRIBUTION='vanilla'", exports, StringComparison.Ordinal);
         Assert.Contains("JVM_XMS='6G'", exports, StringComparison.Ordinal);
         Assert.Contains("JVM_XMX='6G'", exports, StringComparison.Ordinal);
         Assert.DoesNotContain("JVM_XMS='2G'", exports, StringComparison.Ordinal);
