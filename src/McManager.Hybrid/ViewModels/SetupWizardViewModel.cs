@@ -98,7 +98,10 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         "Smaller Always Free size. Vanilla (Paper) can often stay on all month; less room if you add mods or more players later.";
 
     public const string HeapHelp =
-        "RAM allocated to the Minecraft server, not the VM size. Default 4G for vanilla. 8G still leaves about 4 GB for the OS. On the 24 GB size you can also pick 10G or 12G for heavier packs.";
+        "RAM allocated to the Minecraft server, not the VM size. MCSTool estimates a size from this server; you can change it. 8G still leaves about 4 GB for the OS. On the 24 GB size you can also pick 10G or 12G for heavier packs.";
+
+    public const string HeapGuessCapNote =
+        "The 12 GB size is tight for this pack.";
 
     public const string IdentityHelp =
         "Players see the name, description, and in-game icon in Minecraft’s server list while the game is running. Each box is one list line (59 characters). Select text and apply colors, or paste a motd= string from a generator. Hex colors need Paper/Spigot 1.16+. You can change this later on the Server tab.";
@@ -138,6 +141,8 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     private string _functionImage = "";
     private string _resumeMinecraftVersion = "";
     private bool _navReady;
+    private bool _skipHeapGuessApply;
+    private bool _applyingHeapGuess;
     private bool _initializing;
     private bool _applyingIdentityDefault;
 
@@ -552,6 +557,54 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     public bool ShowJvmHeapExtraPresets => JvmHeapChoice.OffersExtraPresets(Vm1MemoryGb);
 
+    public string SuggestedJvmXmx =>
+        JvmHeapGuess.Suggest(ServerTypeIsModded, _packPreview?.ServerSideCount ?? 0, Vm1MemoryGb);
+
+    public bool JvmHeapIsSuggested4G => SuggestedJvmXmx == JvmHeapChoice.Default;
+
+    public bool JvmHeapIsSuggested6G => SuggestedJvmXmx == JvmHeapChoice.Medium;
+
+    public bool JvmHeapIsSuggested8G => SuggestedJvmXmx == JvmHeapChoice.Large;
+
+    public bool JvmHeapIsSuggested10G => SuggestedJvmXmx == JvmHeapChoice.Extra;
+
+    public bool ShowHeapGuessCapNote =>
+        JvmHeapGuess.IsCappedByHost(ServerTypeIsModded, _packPreview?.ServerSideCount ?? 0, Vm1MemoryGb);
+
+    public string JvmHeapRadioLabel(string token)
+    {
+        var n = JvmHeapChoice.Normalize(token);
+        return n == SuggestedJvmXmx ? $"{n} (suggested)" : n;
+    }
+
+    private void ApplySuggestedJvmHeap()
+    {
+        if (_applyingHeapGuess)
+            return;
+
+        _applyingHeapGuess = true;
+        try
+        {
+            if (!_skipHeapGuessApply)
+                JvmXmx = SuggestedJvmXmx;
+            NotifyHeapGuessUi();
+        }
+        finally
+        {
+            _applyingHeapGuess = false;
+        }
+    }
+
+    private void NotifyHeapGuessUi()
+    {
+        OnPropertyChanged(nameof(SuggestedJvmXmx));
+        OnPropertyChanged(nameof(JvmHeapIsSuggested4G));
+        OnPropertyChanged(nameof(JvmHeapIsSuggested6G));
+        OnPropertyChanged(nameof(JvmHeapIsSuggested8G));
+        OnPropertyChanged(nameof(JvmHeapIsSuggested10G));
+        OnPropertyChanged(nameof(ShowHeapGuessCapNote));
+    }
+
     public void SelectJvmHeap4G() => JvmXmx = JvmHeapChoice.Default;
 
     public void SelectJvmHeap6G() => JvmXmx = JvmHeapChoice.Medium;
@@ -699,7 +752,18 @@ public sealed partial class SetupWizardViewModel : ObservableObject
                 _ = PrefetchModdedCatalogsAsync();
             await DetectAdminIpAsync().ConfigureAwait(true);
             if (ServerTypeIsModded && !string.IsNullOrWhiteSpace(PackPath) && File.Exists(PackPath))
-                await AnalyzePackPathAsync(PackPath, keepConfirm: true).ConfigureAwait(true);
+            {
+                _skipHeapGuessApply = true;
+                try
+                {
+                    await AnalyzePackPathAsync(PackPath, keepConfirm: true).ConfigureAwait(true);
+                }
+                finally
+                {
+                    _skipHeapGuessApply = false;
+                    NotifyHeapGuessUi();
+                }
+            }
             else if (ServerTypeIsModded && !string.IsNullOrWhiteSpace(PackPath) && !File.Exists(PackPath))
             {
                 PackBlockReason = "The pack file is missing. Choose it again.";
@@ -921,6 +985,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         _operatorKeepTerms = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         _packLooksLikeLauncherInstance = false;
         StatusMessage = "Pack cleared. Choose a .mrpack or server-pack zip.";
+        ApplySuggestedJvmHeap();
         Persist();
     }
 
@@ -1044,6 +1109,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         }
 
         ApplyReviewPreview(result.Preview);
+        ApplySuggestedJvmHeap();
         if (!PackReplaceUx.FreezeAllowsContinue(result.Preview.FreezeBlockReason))
             StatusMessage = result.Preview.FreezeBlockReason ?? "";
     }
@@ -1116,6 +1182,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             ClientPackAcknowledged = false;
             NotifyPackIdentityUi();
             NotifyAssistedReviewUi();
+            ApplySuggestedJvmHeap();
             return;
         }
 
@@ -1135,6 +1202,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         }
         NotifyPackIdentityUi();
         NotifyAssistedReviewUi();
+        ApplySuggestedJvmHeap();
     }
 
     private void RetainCurrentPack()
@@ -1929,8 +1997,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     partial void OnSshGenerateModeChanged(bool value) => OnPropertyChanged(nameof(SshImportMode));
 
-    partial void OnVm1MemoryGbChanged(int value) =>
-        JvmXmx = JvmHeapChoice.ClampToHost(JvmXmx, value);
+    partial void OnVm1MemoryGbChanged(int value) => ApplySuggestedJvmHeap();
 
     partial void OnAuthTokenStoredChanged(bool value)
     {
@@ -1987,6 +2054,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             RebuildVersionList(keepSelection: true);
         if (_navReady)
             ApplyIdentityDefaultsIfUntouched();
+        ApplySuggestedJvmHeap();
     }
 
     partial void OnPackConfirmedChanged(bool value)
@@ -2199,6 +2267,12 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             case nameof(JvmHeapIs10G):
             case nameof(JvmHeapIs12G):
             case nameof(ShowJvmHeapExtraPresets):
+            case nameof(SuggestedJvmXmx):
+            case nameof(JvmHeapIsSuggested4G):
+            case nameof(JvmHeapIsSuggested6G):
+            case nameof(JvmHeapIsSuggested8G):
+            case nameof(JvmHeapIsSuggested10G):
+            case nameof(ShowHeapGuessCapNote):
             case nameof(ServerTypeIsVanilla):
             case nameof(ServerTypeIsModded):
             case nameof(ShowVanillaGameOptions):
@@ -2265,6 +2339,12 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         OnPropertyChanged(nameof(JvmHeapIs10G));
         OnPropertyChanged(nameof(JvmHeapIs12G));
         OnPropertyChanged(nameof(ShowJvmHeapExtraPresets));
+        OnPropertyChanged(nameof(SuggestedJvmXmx));
+        OnPropertyChanged(nameof(JvmHeapIsSuggested4G));
+        OnPropertyChanged(nameof(JvmHeapIsSuggested6G));
+        OnPropertyChanged(nameof(JvmHeapIsSuggested8G));
+        OnPropertyChanged(nameof(JvmHeapIsSuggested10G));
+        OnPropertyChanged(nameof(ShowHeapGuessCapNote));
         OnPropertyChanged(nameof(ServerTypeIsVanilla));
         OnPropertyChanged(nameof(ServerTypeIsModded));
         OnPropertyChanged(nameof(ShowVanillaGameOptions));

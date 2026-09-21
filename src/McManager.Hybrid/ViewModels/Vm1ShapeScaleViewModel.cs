@@ -65,7 +65,8 @@ public sealed partial class Vm1ShapeScaleViewModel : ObservableObject
             TargetOcpus,
             TargetMemoryGb,
             MonthlyOcpuTarget,
-            _monthOcpuUsed);
+            _monthOcpuUsed,
+            _config?.Vm1.JvmXmx);
 
     public string BlockedReason =>
         Vm1ShapeScaleUx.ApplyBlockedReason(
@@ -189,7 +190,8 @@ public sealed partial class Vm1ShapeScaleViewModel : ObservableObject
                 targetO,
                 targetM,
                 MonthlyOcpuTarget,
-                _monthOcpuUsed),
+                _monthOcpuUsed,
+                _config.Vm1.JvmXmx),
             confirmButtonText: "Apply size change");
         if (!confirmed)
         {
@@ -241,6 +243,9 @@ public sealed partial class Vm1ShapeScaleViewModel : ObservableObject
 
             _config.Vm1.ShapeOcpus = targetO;
             _config.Vm1.ShapeMemoryGb = targetM;
+            var previousHeap = _config.Vm1.JvmXmx;
+            var clampedHeap = Vm1ShapeScaleUx.ServerMemoryAfterResize(previousHeap, targetM);
+            _config.Vm1.JvmXmx = clampedHeap;
             var saved = LocalConfigStore.SaveConfig(_config);
             if (!saved.Succeeded)
             {
@@ -251,7 +256,7 @@ public sealed partial class Vm1ShapeScaleViewModel : ObservableObject
                 return;
             }
 
-            var published = await PublishSharedShapeAsync(targetO, targetM);
+            var published = await PublishSharedShapeAsync(targetO, targetM, previousHeap, clampedHeap);
             _session.ReloadFromDisk();
             SeedTargetFromCurrent();
             StatusMessage = published;
@@ -263,13 +268,23 @@ public sealed partial class Vm1ShapeScaleViewModel : ObservableObject
         }
     }
 
-    private async Task<string> PublishSharedShapeAsync(int ocpus, int memoryGb)
+    private async Task<string> PublishSharedShapeAsync(
+        int ocpus,
+        int memoryGb,
+        string previousHeap,
+        string clampedHeap)
     {
         var notes = new List<string>
         {
             $"Oracle size is {Vm1ShapeScaleUx.FormatExact(ocpus, memoryGb)}.",
             "config.local.json updated.",
         };
+        if (Vm1ShapeScaleUx.ServerMemoryWillClamp(previousHeap, memoryGb))
+        {
+            notes.Add(
+                $"Server memory in config is now {clampedHeap} "
+                + "(applied when Minecraft next starts).");
+        }
 
         if (_budgetStore is not null)
         {

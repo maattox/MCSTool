@@ -168,7 +168,7 @@ Pick a size, server memory, and start deployment.
 - If Deploy is interrupted after the game VM already exists, that VM may stay on. Finish Setup, or stop it in the OCI Console (especially the 4 OCPU / 24 GB size).
 - The recommended size (**4 OCPU / 24 GB**) can only run about **~11.5 hours a day** on average over a month. MCSTool’s usage stats make that easy to track.
 - The smaller size (**2 OCPU / 12 GB**) can usually stay on all month, with less room for mods and players.
-- **Server memory** is RAM allocated to the Minecraft server, not the VM size. Sizes are **4G**, **6G**, and **8G** (default **4G** for vanilla). On the **24 GB** VM you can also pick **10G** or **12G** for heavier packs. You can change this later on Advanced → Danger (restarts Minecraft).
+- **Server memory** is RAM allocated to the Minecraft server, not the VM size. Setup pre-selects a size from the server type and pack; you can change it. Sizes are **4G**, **6G**, and **8G**. On the **24 GB** VM you can also pick **10G** or **12G** for heavier packs. You can change this later on Advanced → Danger (restarts Minecraft). Changing the VM from **24 GB** to **12 GB** on Advanced → Danger sets **server memory** above 8G to **8G** (applied when Minecraft next starts). MCSTool can warn when the server is short on memory; it does not raise the size by itself.
 
 
 
@@ -180,9 +180,11 @@ Pick a size, server memory, and start deployment.
 
 ## Start playing
 
-The Minecraft server should now be up. Copy the **play IP** from MCSTool and connect from Minecraft Java Edition.
+The Minecraft server should now be up. Copy the **play IP** from MCSTool (Overview or the sidebar) and connect from Minecraft Java Edition.
 
-- Your public IP is allowlisted during Setup. To allow other players, add each player’s **current public IPv4** on the **Whitelist** tab and click **Save changes**. Home IPs can change; update the list when they do.
+Players can open a **2D map** in a browser. Copy **Player map** from Overview (or **Advanced → Stack**). That URL is the doorbell address, **not** the play IP. It shows chunks the server has already generated and still works when the game VM is off.
+
+- Your public IP is allowlisted during Setup for Minecraft **and** the map page. To allow other players, add each player’s **current public IPv4** on the **Whitelist** tab and click **Save changes**. The same list is required for the map website. Home IPs can change; update the list when they do.
 
 
 

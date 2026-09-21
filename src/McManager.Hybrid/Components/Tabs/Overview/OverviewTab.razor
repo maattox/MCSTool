@@ -35,6 +35,27 @@
                 <span class="mcm-sval @(IsPlaceholder(Vm.PlayersDisplay) ? "is-placeholder" : null)">@Vm.PlayersDisplay</span>
             </div>
         </div>
+        <ul class="mcm-path-list mcm-overview-map">
+            <li class="mcm-path-row">
+                <div class="mcm-path-copy">
+                    <span class="mcm-path-label">Player map</span>
+                    <span class="mcm-path-hint">Last explored terrain. The game VM does not need to be on. Not the play IP.</span>
+                    <code class="mcm-path-value @(Vm.HasPlayerMapUrl ? null : "is-missing")">
+                        @(Vm.HasPlayerMapUrl ? Vm.PlayerMapUrl : "—")
+                    </code>
+                </div>
+                <div class="mcm-path-actions">
+                    <button type="button"
+                            class="mcm-copy-inline"
+                            disabled="@(!Vm.HasPlayerMapUrl)"
+                            title="@CopyPlayerMapUrlTitle"
+                            aria-label="@CopyPlayerMapUrlTitle"
+                            @onclick="Vm.CopyPlayerMapUrlAsync">
+                        <i class="ti ti-copy" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </li>
+        </ul>
     </section>
 
     <section class="mcm-section-card mcm-overview-identity" aria-label="Server identity">
@@ -217,6 +238,13 @@
             : string.Equals(Vm.CopyPlayIpLabel, "copied", StringComparison.Ordinal)
                 ? "Play IP copied"
                 : "Copy play IP";
+
+    private string CopyPlayerMapUrlTitle =>
+        !Vm.HasPlayerMapUrl
+            ? "No player map URL to copy."
+            : string.Equals(Vm.CopyPlayerMapUrlLabel, "copied", StringComparison.Ordinal)
+                ? "Player map URL copied"
+                : "Copy player map URL";
 
     private static bool IsPlaceholder(string value) =>
         string.IsNullOrWhiteSpace(value) || value == MainViewModel.Placeholder;

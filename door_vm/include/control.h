@@ -24,13 +24,16 @@ typedef struct {
   char oci_env_file[512];
   char vm1_private_ip[64];
   char bind_host[64];
+  char player_map_root[512];
   uint16_t http_port;
+  uint16_t player_http_port;
   uint16_t mc_port;
   double daily_ocpu_limit;
   double soft_ocpu_cap; /* monthly soft brake from Object Storage budget SoT */
   double ocpus;
   int enable_mcdoor;
   int enable_http;
+  int enable_player_http;
   int keepalive_enabled;
   int keepalive_interval_sec;
   int keepalive_burst_sec;

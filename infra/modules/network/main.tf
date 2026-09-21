@@ -103,6 +103,20 @@ resource "oci_core_security_list" "mcmgr" {
     }
   }
 
+  # Door player-map tile pull (subnet → VM1 private HTTP; never public play path)
+  ingress_security_rules {
+    description = "Door player-map tile pull"
+    protocol    = "6"
+    source      = var.subnet_cidr
+    source_type = "CIDR_BLOCK"
+    stateless   = false
+
+    tcp_options {
+      min = 8765
+      max = 8765
+    }
+  }
+
   # Admin SSH — Manager description convention
   ingress_security_rules {
     description = "${var.admin_name} SSH access"
@@ -156,6 +170,20 @@ resource "oci_core_security_list" "mcmgr" {
     tcp_options {
       min = 8080
       max = 8080
+    }
+  }
+
+  # Admin player map HTTP (same CIDR as Minecraft; never 0.0.0.0/0)
+  ingress_security_rules {
+    description = "${var.admin_name} map access"
+    protocol    = "6"
+    source      = var.admin_cidr
+    source_type = "CIDR_BLOCK"
+    stateless   = false
+
+    tcp_options {
+      min = 80
+      max = 80
     }
   }
 

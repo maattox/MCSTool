@@ -568,6 +568,10 @@
                     <div class="mcm-wizard-card mcm-wizard-card-sm">
                         <span class="mcm-wizard-ack-title">Server memory</span>
                         <span class="mcm-wizard-ack-copy">@SetupWizardViewModel.HeapHelp</span>
+                        @if (Vm.ShowHeapGuessCapNote)
+                        {
+                            <span class="mcm-wizard-ack-copy">@SetupWizardViewModel.HeapGuessCapNote</span>
+                        }
                         <div class="mcm-wizard-review-heap">
                             <label class="mcm-radio-row">
                                 <input type="radio"
@@ -575,7 +579,7 @@
                                        disabled="@(!Vm.CanMutateWizard)"
                                        checked="@Vm.JvmHeapIs4G"
                                        @onchange="@(() => Vm.SelectJvmHeap4G())" />
-                                <span>4G (default)</span>
+                                <span>@Vm.JvmHeapRadioLabel("4G")</span>
                             </label>
                             <label class="mcm-radio-row">
                                 <input type="radio"
@@ -583,7 +587,7 @@
                                        disabled="@(!Vm.CanMutateWizard)"
                                        checked="@Vm.JvmHeapIs6G"
                                        @onchange="@(() => Vm.SelectJvmHeap6G())" />
-                                <span>6G</span>
+                                <span>@Vm.JvmHeapRadioLabel("6G")</span>
                             </label>
                             <label class="mcm-radio-row">
                                 <input type="radio"
@@ -591,7 +595,7 @@
                                        disabled="@(!Vm.CanMutateWizard)"
                                        checked="@Vm.JvmHeapIs8G"
                                        @onchange="@(() => Vm.SelectJvmHeap8G())" />
-                                <span>8G</span>
+                                <span>@Vm.JvmHeapRadioLabel("8G")</span>
                             </label>
                             @if (Vm.ShowJvmHeapExtraPresets)
                             {
@@ -602,8 +606,11 @@
                                            checked="@Vm.JvmHeapIs10G"
                                            @onchange="@(() => Vm.SelectJvmHeap10G())" />
                                     <span>
-                                        10G
-                                        <span class="mcm-radio-note">Extra RAM for heavier packs.</span>
+                                        @Vm.JvmHeapRadioLabel("10G")
+                                        @if (!Vm.JvmHeapIsSuggested10G)
+                                        {
+                                            <span class="mcm-radio-note">Extra RAM for heavier packs.</span>
+                                        }
                                     </span>
                                 </label>
                                 <label class="mcm-radio-row">
@@ -613,7 +620,7 @@
                                            checked="@Vm.JvmHeapIs12G"
                                            @onchange="@(() => Vm.SelectJvmHeap12G())" />
                                     <span>
-                                        12G
+                                        @Vm.JvmHeapRadioLabel("12G")
                                         <span class="mcm-radio-note">Extra RAM for heavier packs.</span>
                                     </span>
                                 </label>

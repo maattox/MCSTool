@@ -45,7 +45,7 @@ variable "door_ssh_public_key" {
 
 variable "admin_cidr" {
   type        = string
-  description = "Admin public IPv4 as /32. Used for SSH, Minecraft, and door :8080 on the Security List."
+  description = "Admin public IPv4 as /32. Used for SSH, Minecraft, door :8080, and player map :80 on the Security List."
 
   validation {
     condition     = can(cidrhost(var.admin_cidr, 0)) && endswith(var.admin_cidr, "/32")

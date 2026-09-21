@@ -72,6 +72,7 @@ runcmd:
   - firewall-cmd --permanent --add-service=ssh
   - firewall-cmd --permanent --add-port=25565/tcp
   - firewall-cmd --permanent --add-port=25565/udp
+  - firewall-cmd --permanent --add-rich-rule='rule family=ipv4 source address=${subnet_cidr} port port=8765 protocol=tcp accept'
   - firewall-cmd --reload
   # Marker last. /etc/mcmgr is 0750 root:mcmgr (blueprint §5) — ubuntu cannot test -f
   # this path. Setup WaitCloudInitAsync uses sudo -n (SETUP-ISSUE-5). Do not chmod 0755.

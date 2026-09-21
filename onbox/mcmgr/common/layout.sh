@@ -69,6 +69,7 @@ _layout_install_repair_helpers() {
   _layout_cp_unless_same "${src_common}/rcon-graceful-stop.sh" "${BIN_DIR}/rcon-graceful-stop.sh"
   _layout_cp_unless_same "${src_common}/quarantine_mod.py" "${OPT_MCMGR}/lib/quarantine_mod.py"
   _layout_cp_unless_same "${src_common}/quarantine_mod.sh" "${BIN_DIR}/quarantine_mod.sh"
+  _layout_cp_unless_same "${src_common}/apply-jvm-heap.py" "${OPT_MCMGR}/lib/apply-jvm-heap.py"
   if _layout_is_live; then
     chown root:mcmgr "${OPT_MCMGR}/lib" "${OPT_MCMGR}/lib/env.sh" "${OPT_MCMGR}/lib/layout.sh" "${OPT_MCMGR}/lib/server_properties.sh" 2>/dev/null || true
     chmod 0750 "${OPT_MCMGR}/lib"
@@ -93,6 +94,10 @@ _layout_install_repair_helpers() {
       chown root:mcmgr "${OPT_MCMGR}/lib/quarantine_mod.py"
       chmod 0640 "${OPT_MCMGR}/lib/quarantine_mod.py"
     fi
+    if [[ -f "${OPT_MCMGR}/lib/apply-jvm-heap.py" ]]; then
+      chown root:mcmgr "${OPT_MCMGR}/lib/apply-jvm-heap.py"
+      chmod 0755 "${OPT_MCMGR}/lib/apply-jvm-heap.py"
+    fi
     if [[ -f "${BIN_DIR}/quarantine_mod.sh" ]]; then
       chown root:mcmgr "${BIN_DIR}/quarantine_mod.sh"
       chmod 0755 "${BIN_DIR}/quarantine_mod.sh"
@@ -103,6 +108,7 @@ _layout_install_repair_helpers() {
     chmod 0755 "${BIN_DIR}/prepare-pack-replace.sh" 2>/dev/null || true
     chmod 0755 "${BIN_DIR}/rcon-graceful-stop.sh" 2>/dev/null || true
     chmod 0644 "${OPT_MCMGR}/lib/quarantine_mod.py" 2>/dev/null || true
+    chmod 0755 "${OPT_MCMGR}/lib/apply-jvm-heap.py" 2>/dev/null || true
     chmod 0755 "${BIN_DIR}/quarantine_mod.sh" 2>/dev/null || true
   fi
 }

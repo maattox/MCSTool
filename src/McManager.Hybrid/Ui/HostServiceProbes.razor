@@ -21,6 +21,8 @@
     <button type="button" @onclick="PutSpendBrakeAsync">Put spend-brake fixture</button>
     <button type="button" @onclick="PutOversizedWorldAsync">Put oversized-world fixture</button>
     <button type="button" @onclick="ClearOversizedWorldAsync">Clear oversized-world flag</button>
+    <button type="button" @onclick="PutHeapPressureAsync">Put heap-pressure fixture</button>
+    <button type="button" @onclick="ClearHeapPressureAsync">Clear heap-pressure flag</button>
     <button type="button" @onclick="PostFakeNotice">Post fake notification</button>
     <span class="mcm-host-probes-status">@_status</span>
     <span class="mcm-host-probes-clock" title="IUiClock">@Clock.UtcNow.ToString("HH:mm:ss") UTC</span>
@@ -265,6 +267,18 @@
         await Main.DebugClearOversizedWorldAsync();
         await ServerManagement.RefreshOversizedFlagAsync();
         _status = "Oversized-world: flag deleted";
+    }
+
+    private async Task PutHeapPressureAsync()
+    {
+        await Main.DebugPutHeapPressureFixtureAsync();
+        _status = "Heap-pressure: fixture PUT (bell if Object Storage succeeded)";
+    }
+
+    private async Task ClearHeapPressureAsync()
+    {
+        await Main.DebugClearHeapPressureAsync();
+        _status = "Heap-pressure: flag deleted";
     }
 
     private void PostFakeNotice()

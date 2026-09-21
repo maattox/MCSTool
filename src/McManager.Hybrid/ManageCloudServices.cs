@@ -21,6 +21,7 @@ public sealed class ManageCloudServices : IDisposable
     public UsageBudgetStore? UsageStore { get; private set; }
     public SpendBrakeLockStore? SpendBrakeLock { get; private set; }
     public OversizedWorldBackupStore? OversizedWorldBackup { get; private set; }
+    public HeapPressureStore? HeapPressure { get; private set; }
     public SshService Ssh { get; private set; } = new();
 
     public string? SessionError { get; private set; }
@@ -61,6 +62,7 @@ public sealed class ManageCloudServices : IDisposable
             UsageStore = new UsageBudgetStore(os, config.ObjectStorage.Prefixes);
             SpendBrakeLock = new SpendBrakeLockStore(os, config.ObjectStorage.Prefixes);
             OversizedWorldBackup = new OversizedWorldBackupStore(os, config.ObjectStorage.Prefixes);
+            HeapPressure = new HeapPressureStore(os, config.ObjectStorage.Prefixes);
         }
 
         try
@@ -91,5 +93,6 @@ public sealed class ManageCloudServices : IDisposable
         UsageStore = null;
         SpendBrakeLock = null;
         OversizedWorldBackup = null;
+        HeapPressure = null;
     }
 }

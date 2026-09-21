@@ -95,6 +95,12 @@ case "$door_state" in
         echo
         ;;
       RUNNING)
+        PULL="${PULL_PLAYER_MAP:-/opt/mccontrol/oci/pull_player_map.sh}"
+        if [[ -x "$PULL" ]]; then
+          echo "reconcile: VM1 RUNNING → player-map pull"
+          bash -- "$PULL" || \
+            echo "reconcile: warning: player-map pull failed" >&2
+        fi
         case "$door_state" in
           PLAYABLE|DOOR_PLAYABLE)
             ;;

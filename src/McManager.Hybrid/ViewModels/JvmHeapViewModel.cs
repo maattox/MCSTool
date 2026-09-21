@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using McManager.Core.Config;
 using McManager.Core.Services;
 using McManager.Core.Setup;
+using McManager.Core.Usage;
 using McManager.Hybrid.Ui;
 
 namespace McManager.Hybrid.ViewModels;
@@ -142,12 +143,40 @@ public sealed partial class JvmHeapViewModel : ObservableObject
             _session.ReloadFromDisk();
             CurrentHeap = heap;
             TargetHeap = heap;
+            await ClearHeapPressureAfterApplyAsync(heap);
             StatusMessage = $"Server memory is {heap}. Minecraft was restarted.";
         }
         finally
         {
             IsBusy = false;
             NotifyDerived();
+        }
+    }
+
+    private async Task ClearHeapPressureAfterApplyAsync(string appliedHeap)
+    {
+        try
+        {
+            var store = _cloud.HeapPressure;
+            if (store is null)
+                return;
+
+            var got = await store.GetAsync();
+            if (!got.Succeeded || got.Value is null)
+                return;
+
+            if (HeapPressureUx.ShouldClearOnApply(got.Value, appliedHeap))
+            {
+                var cleared = await store.ClearAsync();
+                if (!cleared.Succeeded)
+                    return;
+            }
+
+            await _main.RefreshHeapPressureFlagAsync();
+        }
+        catch (Exception)
+        {
+            // Apply already succeeded on the guest; flag clear is best-effort.
         }
     }
 

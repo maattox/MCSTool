@@ -106,7 +106,8 @@ public static class Vm1ShapeScaleUx
         int targetOcpus,
         int targetMemoryGb,
         double monthlyOcpuTarget,
-        double monthOcpuUsed)
+        double monthOcpuUsed,
+        string? currentJvmXmx = null)
     {
         var remaining = RemainingOcpuHours(monthlyOcpuTarget, monthOcpuUsed);
         var currentHours = RemainingPlayHours(remaining, currentOcpus);
@@ -117,12 +118,14 @@ public static class Vm1ShapeScaleUx
                 ? "more wall-clock uptime (hours burn slower)"
                 : "the same wall-clock uptime";
 
-        return
+        var body =
             $"Current: {FormatExact(currentOcpus, currentMemoryGb)} — about {currentHours:0.0} h left this month.\n"
             + $"New: {FormatExact(targetOcpus, targetMemoryGb)} — about {targetHours:0.0} h left this month ({direction}).\n"
             + $"Always Free envelope is about {AlwaysFreeOcpuHourEnvelope:0} OCPU-h/month; "
             + $"this stack’s budget target is {monthlyOcpuTarget:0} OCPU-h. "
             + "Past usage intervals keep the size they were recorded at.";
+        var clamp = ServerMemoryClampSentence(targetMemoryGb, currentJvmXmx);
+        return string.IsNullOrEmpty(clamp) ? body : body + "\n" + clamp;
     }
 
     public static string ConfirmMessage(
@@ -131,7 +134,8 @@ public static class Vm1ShapeScaleUx
         int targetOcpus,
         int targetMemoryGb,
         double monthlyOcpuTarget,
-        double monthOcpuUsed)
+        double monthOcpuUsed,
+        string? currentJvmXmx = null)
     {
         return
             "This changes how fast Always Free Ampere hours burn while the server is on.\n\n"
@@ -141,9 +145,34 @@ public static class Vm1ShapeScaleUx
                 targetOcpus,
                 targetMemoryGb,
                 monthlyOcpuTarget,
-                monthOcpuUsed)
+                monthOcpuUsed,
+                currentJvmXmx)
             + "\n\nThe server and Minecraft must stay Stopped during the Oracle resize. "
             + "Larger than 4 OCPU / 24 GB is not offered until the Always Free envelope is confirmed.\n\n"
             + "Apply this size in Oracle and update shared budget/meta?";
+    }
+
+    /// <summary>
+    /// Token to persist after a size change. Downsize 24→12 GB clamps 10G/12G to 8G.
+    /// Upsize never raises server memory.
+    /// </summary>
+    public static string ServerMemoryAfterResize(string? currentJvmXmx, int targetMemoryGb) =>
+        JvmHeapChoice.ClampToHost(currentJvmXmx, targetMemoryGb);
+
+    public static bool ServerMemoryWillClamp(string? currentJvmXmx, int targetMemoryGb)
+    {
+        var current = JvmHeapChoice.Normalize(currentJvmXmx);
+        return !string.Equals(
+            current,
+            ServerMemoryAfterResize(current, targetMemoryGb),
+            StringComparison.Ordinal);
+    }
+
+    public static string? ServerMemoryClampSentence(int targetMemoryGb, string? currentJvmXmx)
+    {
+        if (!ServerMemoryWillClamp(currentJvmXmx, targetMemoryGb))
+            return null;
+        var cap = ServerMemoryAfterResize(currentJvmXmx, targetMemoryGb);
+        return $"Server memory will be set to {cap} so it fits this size.";
     }
 }

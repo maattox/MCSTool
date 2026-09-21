@@ -32,6 +32,8 @@ public sealed class LocalConfigHost
 
     public bool HasPlayIp { get; private set; }
 
+    public string DoorSshHost { get; private set; } = "";
+
     public LocalConfigHost()
     {
         Reload();
@@ -53,5 +55,6 @@ public sealed class LocalConfigHost
         var ip = Config?.Play.ReservedPublicIp;
         HasPlayIp = !string.IsNullOrWhiteSpace(ip);
         PlayIp = HasPlayIp ? ip! : Placeholder;
+        DoorSshHost = Config?.Door.SshHost?.Trim() ?? "";
     }
 }

@@ -60,4 +60,16 @@ public sealed class JvmHeapChoiceTests
         Assert.False(JvmHeapChoice.IsAllowed("16G"));
         Assert.False(JvmHeapChoice.IsAllowed("24G"));
     }
+
+    [Theory]
+    [InlineData("4G", 24, "6G")]
+    [InlineData("6G", 24, "8G")]
+    [InlineData("8G", 24, "10G")]
+    [InlineData("10G", 24, "12G")]
+    [InlineData("8G", 12, null)]
+    [InlineData("12G", 24, null)]
+    public void NextLarger_skips_sizes_that_do_not_fit(string current, int hostGb, string? expected)
+    {
+        Assert.Equal(expected, JvmHeapChoice.NextLarger(current, hostGb));
+    }
 }

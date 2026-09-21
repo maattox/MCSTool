@@ -591,6 +591,11 @@ public sealed class SetupBootstrapService
                 + "firewall-cmd --permanent --add-service=ssh; "
                 + "firewall-cmd --permanent --add-port=25565/tcp; "
                 + "firewall-cmd --permanent --add-port=25565/udp; "
+                + "firewall-cmd --permanent --add-rich-rule=\"rule family=ipv4 source address="
+                + PlayerMapSync.DefaultSubnetCidr
+                + " port port="
+                + PlayerMapSync.TilePort
+                + " protocol=tcp accept\" || true; "
                 + "firewall-cmd --reload; "
                 + "mkdir -p /etc/mcmgr; "
                 + "if [ ! -f /etc/mcmgr/cloud-init-done ]; then date -u +%Y-%m-%dT%H:%M:%SZ > /etc/mcmgr/cloud-init-done; fi"),
@@ -676,7 +681,7 @@ public sealed class SetupBootstrapService
         const string agentStaging = "/tmp/mc-manager-deploy";
         log?.Report($"Idle agent src: {agent}");
         Exec(client, $"rm -rf {agentStaging} && mkdir -p {agentStaging}", TimeSpan.FromSeconds(30), log);
-        UploadAgentFiles(client, agent, agentStaging, log);
+        UploadAgentFiles(client, agent, agentStaging, log, onbox);
         Exec(
             client,
             "sudo bash -c " + ShQuote(
@@ -1124,6 +1129,7 @@ public sealed class SetupBootstrapService
             + "  \"object_storage_soft_cap_gb\": 9.5,\n"
             + "  \"backup_enabled\": true,\n"
             + "  \"backup_prefix\": \"backups/\",\n"
+            + $"  \"vm1_private_ip\": {JsonString(o.Vm1PrimaryPrivateIp)},\n"
             + "  \"world_path\": \"/opt/mcmgr/server/world\"\n"
             + "}\n";
         UploadText(client, "/tmp/mc-manager-config.json", json);
@@ -1276,13 +1282,20 @@ public sealed class SetupBootstrapService
         return parsed.Ok ? parsed.CrashReport : null;
     }
 
-    private static void UploadAgentFiles(SshClient client, string agent, string staging, IProgress<string>? log)
+    private static void UploadAgentFiles(
+        SshClient client,
+        string agent,
+        string staging,
+        IProgress<string>? log,
+        string? onbox = null)
     {
         string[] files =
         [
             "idle_watch.py", "ledger.py", "lease.py", "shape_detect.py", "rcon_client.py",
-            "os_publish.py", "world_backup.py", "graceful_stop.sh", "record_boot.py",
-            "install.sh", "config.example.json",
+            "os_publish.py", "world_backup.py", "heap_clamp.py", "heap_pressure.py",
+            "player_map.py", "map_http.py",
+            "graceful_stop.sh",
+            "record_boot.py", "install.sh", "config.example.json",
         ];
         foreach (var name in files)
         {
@@ -1291,7 +1304,28 @@ public sealed class SetupBootstrapService
                 UploadFile(client, local, staging + "/" + Path.GetFileName(name), log);
         }
 
-        foreach (var unit in new[] { "mc-idle-watch.service", "mc-idle-watch.timer", "mc-boot-ledger.service" })
+        foreach (var rel in new[]
+                 {
+                     Path.Combine("vendor", "minedmap-aarch64"),
+                     Path.Combine("vendor", "MinedMap-2.8.0-viewer.zip"),
+                 })
+        {
+            var local = Path.Combine(agent, rel);
+            if (File.Exists(local))
+                UploadFile(client, local, staging + "/" + rel.Replace('\\', '/'), log);
+        }
+
+        var heapScript = onbox is null
+            ? Path.Combine(agent, "apply-jvm-heap.py")
+            : Path.Combine(onbox, "common", "apply-jvm-heap.py");
+        if (File.Exists(heapScript))
+            UploadFile(client, heapScript, staging + "/apply-jvm-heap.py", log);
+
+        foreach (var unit in new[]
+                 {
+                     "mc-idle-watch.service", "mc-idle-watch.timer", "mc-boot-ledger.service",
+                     "mc-player-map.service", "mc-player-map.timer", "mc-map-http.service",
+                 })
         {
             var local = Path.Combine(agent, "systemd", unit);
             if (File.Exists(local))

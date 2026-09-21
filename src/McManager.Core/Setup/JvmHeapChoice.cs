@@ -91,4 +91,21 @@ public static class JvmHeapChoice
             : Vm1ShapeChoice.DefaultMemoryGb;
 
     public static string Format(string? token) => Normalize(token);
+
+    /// <summary>
+    /// Next larger offered preset that still fits the host, or null when already at the cap.
+    /// </summary>
+    public static string? NextLarger(string? token, int hostMemoryGb)
+    {
+        var currentGb = Gigabytes(token);
+        var capGb = Gigabytes(MaxForHostMemoryGb(hostMemoryGb));
+        foreach (var p in Presets)
+        {
+            var gb = Gigabytes(p);
+            if (gb > currentGb && gb <= capGb)
+                return p;
+        }
+
+        return null;
+    }
 }

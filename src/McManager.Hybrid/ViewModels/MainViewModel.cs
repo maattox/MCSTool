@@ -35,6 +35,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private UsageBudgetStore? _usageStore;
     private SpendBrakeLockStore? _spendBrake;
     private OversizedWorldBackupStore? _oversizedWorld;
+    private HeapPressureStore? _heapPressure;
     private TroubleshootingService? _troubleshooting;
     private SshService _ssh = null!;
     private bool _resumeChromeAfterReload;
@@ -79,6 +80,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     private string _copyPlayIpLabel = "copy";
+
+    [ObservableProperty]
+    private string _playerMapUrl = Placeholder;
+
+    [ObservableProperty]
+    private string _copyPlayerMapUrlLabel = "copy";
 
     [ObservableProperty]
     private string _vm1Lifecycle = Placeholder;
@@ -197,6 +204,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     public bool HasPlayIp =>
         !string.IsNullOrWhiteSpace(PlayIp) && PlayIp != Placeholder;
+
+    public bool HasPlayerMapUrl =>
+        !string.IsNullOrWhiteSpace(PlayerMapUrl) && PlayerMapUrl != Placeholder;
 
     public string StartButtonLabel =>
         _powerAction == PowerActionKind.Start ? "Starting…" : "Start";
@@ -356,11 +366,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _usageStore = _cloud.UsageStore;
         _spendBrake = _cloud.SpendBrakeLock;
         _oversizedWorld = _cloud.OversizedWorldBackup;
+        _heapPressure = _cloud.HeapPressure;
         _ssh = _cloud.Ssh;
         _troubleshooting = _config is not null
             ? new TroubleshootingService(_config, _ssh, _compute, _door)
             : null;
         PlayIp = _configHost.PlayIp;
+        PlayerMapUrl = PlayerMapPublicUrl.TryFormat(_configHost.DoorSshHost) ?? Placeholder;
         ConfigLoaded = _configHost.HasManageConfig && _config is not null;
         _hasInitialStatus = false;
         _pinLedger = UsageLedgerDocument.Empty();
@@ -422,6 +434,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _ = RefreshPinsAsync();
         _ = RefreshSpendBrakeLockAsync();
         _ = RefreshOversizedWorldFlagAsync();
+        _ = RefreshHeapPressureFlagAsync();
     }
 
     /// <summary>
@@ -685,6 +698,49 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         await RefreshOversizedWorldFlagAsync();
     }
 
+    public async Task RefreshHeapPressureFlagAsync()
+    {
+        if (_heapPressure is null)
+            return;
+
+        var got = await _heapPressure.GetAsync();
+        if (!got.Succeeded || got.Value is null)
+            return;
+
+        HeapPressureUx.SyncBell(_notices, got.Value);
+    }
+
+    public async Task DebugPutHeapPressureFixtureAsync()
+    {
+        if (!UiHostProbes.Enabled || _heapPressure is null)
+            return;
+        var put = await _heapPressure.PutAsync(
+            HeapPressureDocument.CreatePressure("8G", 24, HeapPressureDocument.ReasonOom));
+        if (!put.Succeeded)
+        {
+            ShowToast(put.Error ?? "DEBUG: could not PUT heap-pressure fixture.", isError: true);
+            return;
+        }
+
+        ShowToast("DEBUG: heap-pressure flag fixture written.", isError: false);
+        await RefreshHeapPressureFlagAsync();
+    }
+
+    public async Task DebugClearHeapPressureAsync()
+    {
+        if (!UiHostProbes.Enabled || _heapPressure is null)
+            return;
+        var cleared = await _heapPressure.ClearAsync();
+        if (!cleared.Succeeded)
+        {
+            ShowToast(cleared.Error ?? "DEBUG: could not DELETE heap-pressure flag.", isError: true);
+            return;
+        }
+
+        ShowToast("DEBUG: heap-pressure flag deleted.", isError: false);
+        await RefreshHeapPressureFlagAsync();
+    }
+
     private async Task<bool> WakeGameServerAsync()
     {
         if (_door is null)
@@ -802,6 +858,26 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         ShowToast("Copied play IP.", isError: false);
     }
 
+    public async Task CopyPlayerMapUrlAsync()
+    {
+        if (!HasPlayerMapUrl)
+        {
+            ActionFeedback = "No player map URL to copy.";
+            ShowToast(ActionFeedback, isError: true);
+            return;
+        }
+
+        await _clipboard.SetTextAsync(PlayerMapUrl);
+        CopyPlayerMapUrlLabel = "copied";
+        _copyLabelCts?.Cancel();
+        _copyLabelCts?.Dispose();
+        var cts = new CancellationTokenSource();
+        _copyLabelCts = cts;
+        _ = RestoreCopyLabelAsync(cts.Token);
+        ActionFeedback = $"Copied player map URL: {PlayerMapUrl}";
+        ShowToast("Copied player map URL.", isError: false);
+    }
+
     public void Dispose()
     {
         if (_disposed)
@@ -820,6 +896,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     partial void OnCanStopChanged(bool value) => NotifyPowerTooltips();
     partial void OnCanRestartChanged(bool value) => NotifyPowerTooltips();
     partial void OnPlayIpChanged(string value) => OnPropertyChanged(nameof(HasPlayIp));
+    partial void OnPlayerMapUrlChanged(string value) => OnPropertyChanged(nameof(HasPlayerMapUrl));
 
     private void OnWindowFocusChanged(bool focused) =>
         _ = _dispatcher.InvokeAsync(() => SetWindowFocused(focused));
@@ -1233,6 +1310,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         {
             await _clock.Delay(TimeSpan.FromMilliseconds(1200), cancellationToken).ConfigureAwait(false);
             CopyPlayIpLabel = "copy";
+            CopyPlayerMapUrlLabel = "copy";
         }
         catch (OperationCanceledException)
         {

@@ -898,13 +898,16 @@ static void config_default(ControlConfig *cfg) {
   snprintf(cfg->web_root, sizeof cfg->web_root, "/opt/mccontrol/web/static");
   snprintf(cfg->icons_dir, sizeof cfg->icons_dir, "assets/icons");
   snprintf(cfg->bind_host, sizeof cfg->bind_host, "0.0.0.0");
+  snprintf(cfg->player_map_root, sizeof cfg->player_map_root, "/var/lib/mc-player-map");
   cfg->http_port = 8080;
+  cfg->player_http_port = 80;
   cfg->mc_port = 25565;
   cfg->daily_ocpu_limit = BUDGET_DAILY_LIMIT_OCPU_HOURS;
   cfg->soft_ocpu_cap = 0.0;
   cfg->ocpus = 4.0;
   cfg->enable_mcdoor = 1;
   cfg->enable_http = 1;
+  cfg->enable_player_http = 1;
   cfg->keepalive_enabled = 1;
   cfg->keepalive_interval_sec = 7200;
   cfg->keepalive_burst_sec = 750;
@@ -948,14 +951,19 @@ int control_load_config(const char *path, ControlConfig *out) {
   LOAD_STR(oci_env_file, "oci_env_file");
   LOAD_STR(vm1_private_ip, "vm1_private_ip");
   LOAD_STR(bind_host, "bind_host");
+  LOAD_STR(player_map_root, "player_map_root");
 #undef LOAD_STR
   out->http_port = (uint16_t)json_as_number(json_object_get(root, "http_port"), out->http_port);
+  out->player_http_port =
+      (uint16_t)json_as_number(json_object_get(root, "player_http_port"), out->player_http_port);
   out->mc_port = (uint16_t)json_as_number(json_object_get(root, "mc_port"), out->mc_port);
   out->daily_ocpu_limit =
       json_as_number(json_object_get(root, "daily_ocpu_limit"), out->daily_ocpu_limit);
   out->ocpus = json_as_number(json_object_get(root, "ocpus"), out->ocpus);
   out->enable_mcdoor = json_as_bool(json_object_get(root, "enable_mcdoor"), out->enable_mcdoor);
   out->enable_http = json_as_bool(json_object_get(root, "enable_http"), out->enable_http);
+  out->enable_player_http =
+      json_as_bool(json_object_get(root, "enable_player_http"), out->enable_player_http);
   out->keepalive_enabled =
       json_as_bool(json_object_get(root, "keepalive_enabled"), out->keepalive_enabled);
   out->keepalive_interval_sec =

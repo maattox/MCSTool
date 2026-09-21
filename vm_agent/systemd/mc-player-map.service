@@ -1,0 +1,12 @@
+[Unit]
+Description=Niced MinedMap render for the player map
+After=network-online.target minecraft.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+Environment=MC_MANAGER_CONFIG=/etc/mc-manager/config.json
+Environment=PYTHONPATH=/opt/mc-manager/lib
+ExecStart=/opt/mc-manager/venv/bin/python /opt/mc-manager/bin/player_map.py
+User=root
+Nice=19

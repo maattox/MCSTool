@@ -1,0 +1,16 @@
+[Unit]
+Description=Player-map tile tar HTTP (VCN / primary private IP only)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+Environment=MC_MANAGER_CONFIG=/etc/mc-manager/config.json
+Environment=PYTHONPATH=/opt/mc-manager/lib
+ExecStart=/opt/mc-manager/venv/bin/python /opt/mc-manager/bin/map_http.py
+User=root
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

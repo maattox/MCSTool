@@ -159,6 +159,12 @@ public sealed partial class AdvancedViewModel : ObservableObject
 
     public string DoorSshHostDisplay => HasDoorSshHost ? DoorSshHost : "—";
 
+    public string? PlayerMapUrl => PlayerMapPublicUrl.TryFormat(DoorSshHost);
+
+    public bool HasPlayerMapUrl => !string.IsNullOrWhiteSpace(PlayerMapUrl);
+
+    public string PlayerMapUrlDisplay => HasPlayerMapUrl ? PlayerMapUrl! : "—";
+
     public bool CanRefreshSshHosts =>
         !IsBusy && _config is not null && _compute is not null;
 
@@ -489,6 +495,14 @@ public sealed partial class AdvancedViewModel : ObservableObject
             return;
         await _clipboard.SetTextAsync(DoorSshHost);
         StatusMessage = "Copied doorbell SSH IP.";
+    }
+
+    public async Task CopyPlayerMapUrlAsync()
+    {
+        if (!HasPlayerMapUrl)
+            return;
+        await _clipboard.SetTextAsync(PlayerMapUrl!);
+        StatusMessage = "Copied player map URL.";
     }
 
     public async Task RefreshSshHostsFromOciAsync()
@@ -1043,6 +1057,9 @@ public sealed partial class AdvancedViewModel : ObservableObject
         OnPropertyChanged(nameof(HasDoorSshHost));
         OnPropertyChanged(nameof(Vm1SshHostDisplay));
         OnPropertyChanged(nameof(DoorSshHostDisplay));
+        OnPropertyChanged(nameof(PlayerMapUrl));
+        OnPropertyChanged(nameof(HasPlayerMapUrl));
+        OnPropertyChanged(nameof(PlayerMapUrlDisplay));
         OnPropertyChanged(nameof(CanRefreshSshHosts));
     }
 

@@ -215,6 +215,40 @@
 
     <div class="mcm-section-card">
         <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
+            <span style="font-size:14px;font-weight:600;">Player map</span>
+            <button type="button"
+                    class="mcm-help"
+                    title="Players open this URL in a browser. It is the doorbell ephemeral IP on port 80, not the reserved play IP. Refresh from OCI above updates the address if it changed.">
+                <i class="ti ti-help" aria-hidden="true"></i>
+                <span class="sr-only">About the player map URL</span>
+            </button>
+        </div>
+        <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);">
+            Last explored terrain. The game VM does not need to be on.
+        </p>
+        <ul class="mcm-path-list">
+            <li class="mcm-path-row">
+                <div class="mcm-path-copy">
+                    <span class="mcm-path-label">Map URL</span>
+                    <span class="mcm-path-hint">Door ephemeral HTTP. Players need the same allowlisted IP as Minecraft.</span>
+                    <code class="mcm-path-value">@Vm.PlayerMapUrlDisplay</code>
+                </div>
+                <div class="mcm-path-actions">
+                    <button type="button"
+                            class="mcm-copy-inline"
+                            disabled="@(!Vm.HasPlayerMapUrl)"
+                            title="Copy player map URL"
+                            aria-label="Copy player map URL"
+                            @onclick="Vm.CopyPlayerMapUrlAsync">
+                        <i class="ti ti-copy" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </li>
+        </ul>
+    </div>
+
+    <div class="mcm-section-card">
+        <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
             <span style="font-size:14px;font-weight:600;">SSH keys (this PC)</span>
             <button type="button"
                     class="mcm-help"

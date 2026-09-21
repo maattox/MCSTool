@@ -28,6 +28,7 @@ public static class FriendRules
     public const string SshTagLegacy = "mc-ssh-admin";
     public const string SshAccessSuffix = " SSH access";
     public const string DoorAccessSuffix = " door access";
+    public const string MapAccessSuffix = " map access";
 
     /// <summary>Minecraft CIDR floor: reject /0 through /8 (inclusive).</summary>
     public const int MinMinecraftPrefixLength = 9;
@@ -177,6 +178,9 @@ public static class FriendRules
     public static string DoorDescription(string name) =>
         $"{name.Trim()}{DoorAccessSuffix}";
 
+    public static string MapDescription(string name) =>
+        $"{name.Trim()}{MapAccessSuffix}";
+
     public static bool IsSshOwnedDescription(string? description)
     {
         if (string.IsNullOrWhiteSpace(description))
@@ -194,6 +198,14 @@ public static class FriendRules
         return description.Trim().EndsWith(DoorAccessSuffix, StringComparison.Ordinal);
     }
 
+    public static bool IsMapOwnedDescription(string? description)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+            return false;
+
+        return description.Trim().EndsWith(MapAccessSuffix, StringComparison.Ordinal);
+    }
+
     public static bool IsOwnedDescription(string? description, IReadOnlySet<string>? friendNames = null)
     {
         if (string.IsNullOrWhiteSpace(description))
@@ -202,7 +214,8 @@ public static class FriendRules
         var desc = description.Trim();
         if (desc.StartsWith(McTagPrefix, StringComparison.Ordinal)
             || IsSshOwnedDescription(desc)
-            || IsDoorOwnedDescription(desc))
+            || IsDoorOwnedDescription(desc)
+            || IsMapOwnedDescription(desc))
         {
             return true;
         }

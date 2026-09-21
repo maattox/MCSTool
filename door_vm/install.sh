@@ -89,8 +89,10 @@ stage_build() {
 
 stage_install_files() {
   log "==> Installing files to /opt/mccontrol and unit"
-  sudo mkdir -p /opt/mccontrol/build /opt/mccontrol/scripts /etc/mccontrol /var/lib/mccontrol
-  sudo cp "$REPO_VM2/build/mccontrol" /opt/mccontrol/build/mccontrol
+  sudo mkdir -p /opt/mccontrol/build /opt/mccontrol/scripts /etc/mccontrol /var/lib/mccontrol /var/lib/mc-player-map
+  sudo systemctl stop mccontrol 2>/dev/null || true
+  sudo cp "$REPO_VM2/build/mccontrol" /opt/mccontrol/build/mccontrol.new
+  sudo mv /opt/mccontrol/build/mccontrol.new /opt/mccontrol/build/mccontrol
   sudo cp -a "$REPO_VM2/oci" /opt/mccontrol/
   sudo cp -a "$REPO_VM2/scripts/." /opt/mccontrol/scripts/
   sudo cp -a "$REPO_VM2/web" /opt/mccontrol/
@@ -123,6 +125,16 @@ PY
     sudo cp "$REPO_VM2/systemd/mccontrol-reconcile.service" /etc/systemd/system/mccontrol-reconcile.service
     sudo cp "$REPO_VM2/systemd/mccontrol-reconcile.timer" /etc/systemd/system/mccontrol-reconcile.timer
   fi
+  if [[ ! -f /var/lib/mc-player-map/index.html ]]; then
+    if [[ -f "$REPO_VM2/player-map/index.html" ]]; then
+      sudo cp "$REPO_VM2/player-map/index.html" /var/lib/mc-player-map/index.html
+    else
+      printf '%s\n' '<!DOCTYPE html><title>Map</title><p>Player map is not ready yet.</p>' |
+        sudo tee /var/lib/mc-player-map/index.html >/dev/null
+    fi
+  fi
+  sudo chmod 0755 /var/lib/mc-player-map
+  sudo chmod 0644 /var/lib/mc-player-map/index.html 2>/dev/null || true
 }
 REQUIRED_OCI_KEYS=(INSTANCE_ID RESERVED_PUBLIC_IP_ID VM1_PRIVATE_IP_ID VM2_PRIVATE_IP_ID VM1_PRIVATE_IP)
 
@@ -130,7 +142,12 @@ get_env_val() {
   local key="$1" file="$2"
   [[ -f "$file" ]] || return 1
   local line
-  line="$(grep -E "^[[:space:]]*${key}=" "$file" | tail -1 || true)"
+  # /etc/mccontrol/oci.env is 600 root; ubuntu grep fails (Agent-Deploy-Pitfalls #10).
+  if [[ -r "$file" ]]; then
+    line="$(grep -E "^[[:space:]]*${key}=" "$file" | tail -1 || true)"
+  else
+    line="$(sudo grep -E "^[[:space:]]*${key}=" "$file" | tail -1 || true)"
+  fi
   [[ -n "$line" ]] || return 1
   printf '%s\n' "${line#*=}"
 }
@@ -267,10 +284,11 @@ stage_firewall() {
     log "==> Skipping firewall (--skip-firewall)"
     return 0
   fi
-  log "==> Host firewall: allow tcp 22, 25565, 8080 (no firewalld)"
+  log "==> Host firewall: allow tcp 22, 25565, 8080, 80 (no firewalld)"
   ensure_iptables_accept 22
   ensure_iptables_accept 25565
   ensure_iptables_accept 8080
+  ensure_iptables_accept 80
   if command -v netfilter-persistent >/dev/null 2>&1; then
     sudo netfilter-persistent save
   elif [[ -d /etc/iptables ]]; then
@@ -305,13 +323,27 @@ stage_smoke() {
   log "==> Smoke: GET http://127.0.0.1:8080/api/status"
   if curl -sf http://127.0.0.1:8080/api/status; then
     echo
-    log "Smoke OK"
+    log "Admin smoke OK"
+  else
+    echo
+    log "WARN: admin smoke failed — check: journalctl -u mccontrol -n 50 --no-pager"
+    if [[ "$YES" -eq 1 ]]; then
+      die "smoke failed in --yes mode"
+    fi
     return 0
   fi
-  echo
-  log "WARN: smoke failed — check: journalctl -u mccontrol -n 50 --no-pager"
+  log "==> Smoke: GET http://127.0.0.1:80/"
+  if curl -sf http://127.0.0.1:80/ >/dev/null; then
+    log "Player map smoke OK (:80)"
+    return 0
+  fi
+  if curl -sf http://127.0.0.1:8081/ >/dev/null; then
+    log "WARN: player map bound :8081 (could not bind :80)"
+    return 0
+  fi
+  log "WARN: player map smoke failed — check: journalctl -u mccontrol -n 50 --no-pager"
   if [[ "$YES" -eq 1 ]]; then
-    die "smoke failed in --yes mode"
+    die "player map smoke failed in --yes mode"
   fi
 }
 
@@ -335,9 +367,9 @@ stage_checklist() {
        oci compute instance get --instance-id "$INSTANCE_ID" --auth instance_principal
 
 3) Security List (IP allowlist; no firewalld)
-   - Friend /32s → TCP 25565
+   - Player CIDRs → TCP+UDP 25565 and TCP 80 (player map)
    - Admin /32s → TCP 8080 (and SSH 22 as today)
-   - Do not open Minecraft/SSH/admin UI to 0.0.0.0/0
+   - Do not open Minecraft/SSH/admin UI/player map to 0.0.0.0/0
 
 4) After IAM + reserved IP are real
    - Re-run: bash vm2/install.sh --yes

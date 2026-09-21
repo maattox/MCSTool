@@ -6,10 +6,11 @@ namespace McManager.Core.Services;
 /// <summary>
 /// Builds the full Security List ingress set for one rewrite.
 /// <see cref="Oci.CoreService.Requests.UpdateSecurityListRequest"/> replaces the entire
-/// ingress list — preserve ICMP and other non-owned rules; never emit SSH/door from
-/// <c>0.0.0.0/0</c>. Minecraft is private allowlist only (CIDR or <c>/32</c>).
-/// Leftover world-open Minecraft rules and leftover friend Minecraft prefixes
-/// (TCP+UDP, <c>/9</c>–<c>/31</c>) are treated as managed and stripped.
+/// ingress list — preserve ICMP and other non-owned rules; never emit SSH/door/map
+/// HTTP from <c>0.0.0.0/0</c>. Minecraft and player map HTTP are private allowlist
+/// only (CIDR or <c>/32</c>). Leftover world-open Minecraft, leftover world-open
+/// player HTTP, leftover friend Minecraft prefixes (TCP+UDP, <c>/9</c>–<c>/31</c>),
+/// and leftover player-map TCP 80 on those prefixes are treated as managed and stripped.
 /// Door <c>wait_forge</c> is TCP-only from the subnet CIDR and must stay.
 /// </summary>
 public static class SecurityListIngressPlanner
@@ -17,13 +18,17 @@ public static class SecurityListIngressPlanner
     public const string ProtocolTcp = "6";
     public const string ProtocolUdp = "17";
 
+    /// <summary>Player map static HTTP. Separate from admin door <c>:8080</c>.</summary>
+    public const int PlayerHttpPort = 80;
+
     public static SecurityListIngressPlan Build(
         IEnumerable<IngressSecurityRule> existing,
         IReadOnlyList<FriendEntry> friends,
         int minecraftPort,
         int sshPort,
         int doorHttpPort,
-        string? adminName)
+        string? adminName,
+        int playerHttpPort = PlayerHttpPort)
     {
         var existingList = existing as IReadOnlyList<IngressSecurityRule> ?? existing.ToList();
         var ownedDescriptions = friends
@@ -38,7 +43,7 @@ public static class SecurityListIngressPlanner
             if (FriendRules.IsOwnedDescription(desc, ownedDescriptions))
                 continue;
 
-            if (IsManagedRule(rule, minecraftPort, sshPort, doorHttpPort, existingList))
+            if (IsManagedRule(rule, minecraftPort, sshPort, doorHttpPort, existingList, playerHttpPort))
                 continue;
 
             preserved.Add(rule);
@@ -49,7 +54,8 @@ public static class SecurityListIngressPlanner
             minecraftPort,
             sshPort,
             doorHttpPort,
-            adminName);
+            adminName,
+            playerHttpPort);
 
         return new SecurityListIngressPlan
         {
@@ -68,10 +74,18 @@ public static class SecurityListIngressPlanner
         int minecraftPort,
         int sshPort,
         int doorHttpPort,
-        string? adminName)
+        string? adminName,
+        int playerHttpPort = PlayerHttpPort)
     {
         var existingList = existing as IReadOnlyList<IngressSecurityRule> ?? existing.ToList();
-        var plan = Build(existingList, friends, minecraftPort, sshPort, doorHttpPort, adminName);
+        var plan = Build(
+            existingList,
+            friends,
+            minecraftPort,
+            sshPort,
+            doorHttpPort,
+            adminName,
+            playerHttpPort);
         var existingKeys = existingList.Select(RuleKey).ToHashSet(StringComparer.Ordinal);
         var desiredKeys = plan.Ingress.Select(RuleKey).ToHashSet(StringComparer.Ordinal);
         return !existingKeys.SetEquals(desiredKeys);
@@ -194,6 +208,8 @@ public static class SecurityListIngressPlanner
             return description[..^FriendRules.SshAccessSuffix.Length].Trim();
         if (description.EndsWith(FriendRules.DoorAccessSuffix, StringComparison.Ordinal))
             return description[..^FriendRules.DoorAccessSuffix.Length].Trim();
+        if (description.EndsWith(FriendRules.MapAccessSuffix, StringComparison.Ordinal))
+            return description[..^FriendRules.MapAccessSuffix.Length].Trim();
         return description;
     }
 
@@ -228,7 +244,8 @@ public static class SecurityListIngressPlanner
         int minecraftPort,
         int sshPort,
         int doorHttpPort,
-        IReadOnlyList<IngressSecurityRule>? existing = null)
+        IReadOnlyList<IngressSecurityRule>? existing = null,
+        int playerHttpPort = PlayerHttpPort)
     {
         var desc = rule.Description ?? "";
         if (FriendRules.IsOwnedDescription(desc))
@@ -241,7 +258,16 @@ public static class SecurityListIngressPlanner
             return true;
         }
 
+        if (IsPlayerHttpPort(rule, proto, playerHttpPort)
+            && FriendRules.IsWorldOpenCidr(rule.Source))
+        {
+            return true;
+        }
+
         if (IsLeftoverMinecraftPrefix(rule, proto, minecraftPort, existing))
+            return true;
+
+        if (IsLeftoverPlayerHttpPrefix(rule, proto, playerHttpPort))
             return true;
 
         if (!FriendRules.IsSingleHostCidr(rule.Source))
@@ -255,6 +281,8 @@ public static class SecurityListIngressPlanner
             if (port == sshPort && !FriendRules.IsWorldOpenCidr(rule.Source))
                 return true;
             if (port == doorHttpPort)
+                return true;
+            if (port == playerHttpPort)
                 return true;
         }
 
@@ -309,12 +337,25 @@ public static class SecurityListIngressPlanner
         return false;
     }
 
+    private static bool IsPlayerHttpPort(IngressSecurityRule rule, string proto, int playerHttpPort) =>
+        proto == ProtocolTcp && rule.TcpOptions?.DestinationPortRange?.Min == playerHttpPort;
+
+    /// <summary>
+    /// Stale player-map TCP 80 on a friend prefix (TCP-only; not wait_forge).
+    /// </summary>
+    private static bool IsLeftoverPlayerHttpPrefix(
+        IngressSecurityRule rule,
+        string proto,
+        int playerHttpPort) =>
+        IsPlayerHttpPort(rule, proto, playerHttpPort) && IsAllowlistPrefixSource(rule.Source);
+
     private static List<IngressSecurityRule> BuildOwnedRules(
         IReadOnlyList<FriendEntry> friends,
         int minecraftPort,
         int sshPort,
         int doorHttpPort,
-        string? adminName)
+        string? adminName,
+        int playerHttpPort = PlayerHttpPort)
     {
         var owned = new List<IngressSecurityRule>();
         foreach (var friend in friends)
@@ -327,6 +368,9 @@ public static class SecurityListIngressPlanner
             var mcDesc = FriendRules.McDescription(friend.Name, source.Stored);
             owned.Add(MakeTcpRule(source.Cidr, minecraftPort, mcDesc));
             owned.Add(MakeUdpRule(source.Cidr, minecraftPort, mcDesc));
+
+            var mapLabel = string.IsNullOrWhiteSpace(friend.Name) ? source.Stored : friend.Name.Trim();
+            owned.Add(MakeTcpRule(source.Cidr, playerHttpPort, FriendRules.MapDescription(mapLabel)));
 
             if (!friend.IsAdmin)
                 continue;

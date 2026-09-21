@@ -81,7 +81,7 @@
             <span class="mcm-danger-card-title">Change server size</span>
             <button type="button"
                     class="mcm-help"
-                    title="Ampere A1 Flex OCPU and memory. Changing size changes how fast Always Free hours burn. The server and Minecraft must be Stopped. Past usage rows keep the size they were recorded at. Sizes above 4 OCPU / 24 GB are not offered yet.">
+                    title="Ampere A1 Flex OCPU and memory. Changing size changes how fast Always Free hours burn. Shrinking to 12 GB sets server memory to 8G if it was larger. The server and Minecraft must be Stopped. Past usage rows keep the size they were recorded at. Sizes above 4 OCPU / 24 GB are not offered yet.">
                 <i class="ti ti-help" aria-hidden="true"></i>
                 <span class="sr-only">About changing server size</span>
             </button>
@@ -112,7 +112,7 @@
                    @onchange="@(() => Scale.SelectSmallerShape())" />
             <span>
                 2 OCPU / 12 GB
-                <span class="mcm-radio-note">Smaller Always Free size. More wall-clock hours from the same OCPU-hour budget; less room if you add mods or more players.</span>
+                <span class="mcm-radio-note">Smaller Always Free size. More wall-clock hours from the same OCPU-hour budget; less room if you add mods or more players. Server memory above 8G becomes 8G.</span>
             </span>
         </label>
         <div class="mcm-shape-preview">@Scale.PreviewText</div>

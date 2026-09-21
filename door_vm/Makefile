@@ -24,7 +24,7 @@ LDLIBS += -pthread
 endif
 
 BUILD = build
-LIB_SRC = src/budget.c src/state.c src/jsonmin.c src/mc_proto.c src/mcdoor.c src/control.c src/httpmini.c src/keepalive.c
+LIB_SRC = src/budget.c src/state.c src/jsonmin.c src/mc_proto.c src/mcdoor.c src/control.c src/httpmini.c src/keepalive.c src/playermap.c
 OBJ = $(patsubst src/%.c,$(BUILD)/%.o,$(LIB_SRC))
 LIB = $(BUILD)/libmcdoor.a
 
