@@ -3,6 +3,7 @@ using McManager.Hybrid.Ui;
 using McManager.Hybrid.Ui.Wpf;
 using Microsoft.AspNetCore.Components.WebView;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Web.WebView2.Core;
 
 namespace McManager.Hybrid;
 
@@ -97,5 +98,19 @@ public partial class MainWindow : Window
         // Autofill on first text-field focus can freeze WebView2 + custom WindowChrome for a beat.
         core.Settings.IsGeneralAutofillEnabled = false;
         core.Settings.IsPasswordAutosaveEnabled = false;
+        // Overview shows http://<door ephemeral>/. A click that WebView2 treats as
+        // navigation would replace the Blazor app with the map page.
+        core.NavigationStarting += OnBlazorNavigationStarting;
+    }
+
+    private static void OnBlazorNavigationStarting(
+        object? sender,
+        CoreWebView2NavigationStartingEventArgs e)
+    {
+        if (!Uri.TryCreate(e.Uri, UriKind.Absolute, out var uri))
+            return;
+        if (uri.Host is "0.0.0.0" or "127.0.0.1" or "localhost")
+            return;
+        e.Cancel = true;
     }
 }

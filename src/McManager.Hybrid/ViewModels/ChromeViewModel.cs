@@ -98,7 +98,12 @@ public sealed partial class ChromeViewModel : ObservableObject
         if (row is null || string.IsNullOrWhiteSpace(row.Path))
             return;
 
-        await _clipboard.SetTextAsync(row.Path);
+        if (!await ClipboardUx.TrySetTextAsync(_clipboard, row.Path).ConfigureAwait(true))
+        {
+            CopyFeedback = "Clipboard unavailable. Try copy again.";
+            return;
+        }
+
         CopyFeedback = "Copied " + row.Label.ToLowerInvariant() + ".";
         _copyCts?.Cancel();
         _copyCts = new CancellationTokenSource();

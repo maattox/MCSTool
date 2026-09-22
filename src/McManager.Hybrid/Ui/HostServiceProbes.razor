@@ -71,11 +71,18 @@
     private async Task ProveClipboardAsync()
     {
         const string payload = "mc-manager-host-probe";
-        await Clipboard.SetTextAsync(payload);
-        var roundTrip = await Clipboard.GetTextAsync();
-        _status = string.Equals(roundTrip, payload, StringComparison.Ordinal)
-            ? "Clipboard: copied mc-manager-host-probe"
-            : "Clipboard: wrote text (read-back differed)";
+        try
+        {
+            await Clipboard.SetTextAsync(payload);
+            var roundTrip = await Clipboard.GetTextAsync();
+            _status = string.Equals(roundTrip, payload, StringComparison.Ordinal)
+                ? "Clipboard: copied mc-manager-host-probe"
+                : "Clipboard: wrote text (read-back differed)";
+        }
+        catch (Exception)
+        {
+            _status = "Clipboard: unavailable (try again)";
+        }
     }
 
     private async Task ProvePickerAsync()

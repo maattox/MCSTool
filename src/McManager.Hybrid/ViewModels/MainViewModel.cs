@@ -591,7 +591,14 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     public async Task CopySpendBrakeConfirmationAsync()
     {
-        await _clipboard.SetTextAsync(SpendBrakeLockUx.ConfirmationSentence);
+        if (!await ClipboardUx.TrySetTextAsync(_clipboard, SpendBrakeLockUx.ConfirmationSentence)
+            .ConfigureAwait(true))
+        {
+            SpendBrakeUnlockStatus = "Clipboard unavailable. Try copy again.";
+            ShowToast(SpendBrakeUnlockStatus, isError: true);
+            return;
+        }
+
         SpendBrakeUnlockStatus = "Copied the confirmation sentence.";
         ShowToast(SpendBrakeUnlockStatus, isError: false);
     }
@@ -847,7 +854,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             return;
         }
 
-        await _clipboard.SetTextAsync(PlayIp);
+        if (!await ClipboardUx.TrySetTextAsync(_clipboard, PlayIp).ConfigureAwait(true))
+        {
+            ActionFeedback = "Clipboard unavailable. Try copy again.";
+            ShowToast(ActionFeedback, isError: true);
+            return;
+        }
+
         CopyPlayIpLabel = "copied";
         _copyLabelCts?.Cancel();
         _copyLabelCts?.Dispose();
@@ -867,7 +880,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             return;
         }
 
-        await _clipboard.SetTextAsync(PlayerMapUrl);
+        if (!await ClipboardUx.TrySetTextAsync(_clipboard, PlayerMapUrl).ConfigureAwait(true))
+        {
+            ActionFeedback = "Clipboard unavailable. Try copy again.";
+            ShowToast(ActionFeedback, isError: true);
+            return;
+        }
+
         CopyPlayerMapUrlLabel = "copied";
         _copyLabelCts?.Cancel();
         _copyLabelCts?.Dispose();

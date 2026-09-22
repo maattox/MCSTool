@@ -485,7 +485,12 @@ public sealed partial class AdvancedViewModel : ObservableObject
     {
         if (!HasVm1SshHost)
             return;
-        await _clipboard.SetTextAsync(Vm1SshHost);
+        if (!await ClipboardUx.TrySetTextAsync(_clipboard, Vm1SshHost).ConfigureAwait(true))
+        {
+            StatusMessage = "Clipboard unavailable. Try copy again.";
+            return;
+        }
+
         StatusMessage = "Copied game VM SSH IP.";
     }
 
@@ -493,7 +498,12 @@ public sealed partial class AdvancedViewModel : ObservableObject
     {
         if (!HasDoorSshHost)
             return;
-        await _clipboard.SetTextAsync(DoorSshHost);
+        if (!await ClipboardUx.TrySetTextAsync(_clipboard, DoorSshHost).ConfigureAwait(true))
+        {
+            StatusMessage = "Clipboard unavailable. Try copy again.";
+            return;
+        }
+
         StatusMessage = "Copied doorbell SSH IP.";
     }
 
@@ -501,7 +511,12 @@ public sealed partial class AdvancedViewModel : ObservableObject
     {
         if (!HasPlayerMapUrl)
             return;
-        await _clipboard.SetTextAsync(PlayerMapUrl!);
+        if (!await ClipboardUx.TrySetTextAsync(_clipboard, PlayerMapUrl!).ConfigureAwait(true))
+        {
+            StatusMessage = "Clipboard unavailable. Try copy again.";
+            return;
+        }
+
         StatusMessage = "Copied player map URL.";
     }
 

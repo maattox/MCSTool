@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.Windows;
 
 namespace McManager.Hybrid.Ui.Wpf;
 
@@ -11,35 +12,58 @@ public sealed class WpfClipboard : IClipboard
         _dispatcher = dispatcher;
     }
 
-    public Task SetTextAsync(string text, CancellationToken cancellationToken = default)
+    public async Task SetTextAsync(string text, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(text);
-        return _dispatcher.InvokeAsync(() => SetTextWithRetry(text), cancellationToken);
-    }
 
-    public Task<string?> GetTextAsync(CancellationToken cancellationToken = default)
-    {
-        return _dispatcher.InvokeAsync(
-            () => System.Windows.Clipboard.ContainsText()
-                ? System.Windows.Clipboard.GetText()
-                : null,
-            cancellationToken);
-    }
+        // Blazor click handlers run on the WPF dispatcher. SetText inline then
+        // CLIPBRD_E_CANT_OPEN because WebView2 still holds the clipboard.
+        await Task.Yield();
 
-    private static void SetTextWithRetry(string text)
-    {
-        const int tries = 5;
-        for (var i = 0; i < tries; i++)
+        ExternalException? last = null;
+        for (var i = 0; i < 6; i++)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (i > 0)
+                await Task.Delay(50 * i, cancellationToken).ConfigureAwait(false);
+
             try
             {
-                System.Windows.Clipboard.SetText(text);
+                await _dispatcher.InvokeAsync(() => SetTextCore(text), cancellationToken)
+                    .ConfigureAwait(false);
                 return;
             }
-            catch (COMException) when (i < tries - 1)
+            catch (ExternalException ex)
             {
-                Thread.Sleep(50);
+                last = ex;
             }
         }
+
+        if (last is not null)
+            throw last;
+        throw new InvalidOperationException("Clipboard unavailable.");
     }
+
+    public async Task<string?> GetTextAsync(CancellationToken cancellationToken = default)
+    {
+        await Task.Yield();
+        try
+        {
+            return await _dispatcher.InvokeAsync(GetTextCore, cancellationToken).ConfigureAwait(false);
+        }
+        catch (ExternalException)
+        {
+            return null;
+        }
+    }
+
+    private static void SetTextCore(string text)
+    {
+        var data = new DataObject();
+        data.SetText(text, TextDataFormat.UnicodeText);
+        Clipboard.SetDataObject(data, copy: true);
+    }
+
+    private static string? GetTextCore() =>
+        Clipboard.ContainsText() ? Clipboard.GetText() : null;
 }

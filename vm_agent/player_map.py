@@ -33,30 +33,260 @@ DEFAULT_MAP_ROOT = "/var/lib/mcmgr-map"
 CAP_BYTES = 2 * 1024 * 1024 * 1024
 RENDER_TIMEOUT_SEC = 15 * 60
 DIMS = ("overworld", "nether", "end")
+DIM_LABELS = {"overworld": "Overworld", "nether": "Nether", "end": "End"}
 SKIP_PUBLISH_NAMES = {"processed"}
 
-SWITCHER_HTML = """<!DOCTYPE html>
+# P1 visual lock: oak night + binding bar; hotbar-slot tabs; system UI fonts.
+CHROME_CSS = """:root {
+  --void: #161310;
+  --binding: #2A2218;
+  --item: #E8DCC0;
+  --quiet: #9A8E78;
+  --grass: #4A7A36;
+  --netherrack: #A34B40;
+  --end-stone: #C9C07A;
+  --well: #1A1510;
+  --bevel-dark: #0A0907;
+  --bevel-light: #5C4E3C;
+  --font: ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { color-scheme: dark; height: 100%; }
+body {
+  margin: 0;
+  height: 100%;
+  height: 100dvh;
+  background: var(--void);
+  color: var(--item);
+  font-family: var(--font);
+}
+::selection { background: var(--grass); color: var(--item); }
+.skip {
+  position: absolute;
+  left: 12px;
+  top: 8px;
+  z-index: 2;
+  padding: 6px 10px;
+  background: var(--binding);
+  color: var(--item);
+  text-decoration: none;
+  transform: translateY(-120%);
+}
+.skip:focus { transform: none; }
+.shell {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100%;
+}
+.bar {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: "title tabs note";
+  align-items: center;
+  gap: 10px 16px;
+  padding: 8px 14px;
+  padding-top: max(8px, env(safe-area-inset-top));
+  padding-left: max(14px, env(safe-area-inset-left));
+  padding-right: max(14px, env(safe-area-inset-right));
+  background: var(--binding);
+  border-bottom: 1px solid var(--bevel-dark);
+  box-shadow: inset 0 1px 0 #3D3428;
+}
+.brand {
+  grid-area: title;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--item);
+  text-wrap: balance;
+}
+.dims {
+  grid-area: tabs;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 4px;
+  min-width: 0;
+}
+.note {
+  grid-area: note;
+  margin: 0;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.35;
+  color: var(--quiet);
+  text-align: right;
+  min-width: 0;
+}
+.slot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 0 14px;
+  height: 32px;
+  border-radius: 0;
+  background: var(--well);
+  color: var(--quiet);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  text-decoration: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow:
+    inset 2px 2px 0 var(--bevel-dark),
+    inset -2px -2px 0 var(--bevel-light);
+}
+.slot:hover { color: var(--item); background: #211A14; }
+.slot:focus { outline: none; }
+.slot:focus-visible {
+  outline: 2px solid var(--item);
+  outline-offset: 2px;
+}
+.slot[data-dim="overworld"][aria-current="page"] { --slot-ink: var(--grass); }
+.slot[data-dim="nether"][aria-current="page"] { --slot-ink: var(--netherrack); }
+.slot[data-dim="end"][aria-current="page"] { --slot-ink: var(--end-stone); }
+.slot[aria-current="page"] {
+  color: var(--item);
+  box-shadow:
+    inset 0 0 0 3px var(--slot-ink),
+    inset -2px -2px 0 var(--bevel-dark),
+    inset 2px 2px 0 var(--bevel-light);
+}
+.slot[aria-disabled="true"] {
+  pointer-events: none;
+  opacity: 0.55;
+}
+.stage { min-height: 0; background: var(--void); }
+.map-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: var(--void);
+}
+@media (max-width: 639px) {
+  .bar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "title note"
+      "tabs tabs";
+  }
+  .note { text-align: left; }
+  .dims {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+  .slot { height: 44px; min-height: 44px; padding: 0 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .slot { transition: none; }
+}
+"""
+
+CHROME_JS = """(function () {
+  var nav = document.querySelector("[data-map-nav]");
+  var frame = document.getElementById("map-frame");
+  if (!nav || !frame) return;
+
+  function applyLink(a) {
+    if (!a) return;
+    var src = a.getAttribute("data-map");
+    var label = a.textContent.trim();
+    if (src) frame.src = src;
+    frame.title = label + " map";
+    nav.querySelectorAll("a[data-dim]").forEach(function (el) {
+      if (el === a) el.setAttribute("aria-current", "page");
+      else el.removeAttribute("aria-current");
+    });
+  }
+
+  function linkForPath() {
+    var path = (location.pathname || "/").replace(/\\/+$/, "") || "/";
+    var links = Array.prototype.slice.call(nav.querySelectorAll("a[data-dim]"));
+    var match = links.find(function (a) {
+      try {
+        var p = new URL(a.href, location.href).pathname.replace(/\\/+$/, "") || "/";
+        return p === path;
+      } catch (e) {
+        return false;
+      }
+    });
+    if (match) return match;
+    var dim = /\\/nether$/.test(path) ? "nether" : /\\/end$/.test(path) ? "end" : "overworld";
+    return nav.querySelector('a[data-dim="' + dim + '"]');
+  }
+
+  nav.addEventListener("click", function (e) {
+    var a = e.target.closest("a[data-dim]");
+    if (!a || e.defaultPrevented) return;
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+    e.preventDefault();
+    applyLink(a);
+    var href = a.getAttribute("href");
+    if (href && history.pushState) history.pushState({ dim: a.getAttribute("data-dim") }, "", href);
+  });
+
+  window.addEventListener("popstate", function () {
+    applyLink(linkForPath());
+  });
+})();
+"""
+
+
+def _chrome_hrefs() -> dict[str, tuple[str, str]]:
+    """dim -> (page href, map.html src). Root-relative so in-page tab switches stay valid."""
+    return {
+        "overworld": ("/", "/overworld/map.html"),
+        "nether": ("/nether/", "/nether/map.html"),
+        "end": ("/end/", "/end/map.html"),
+    }
+
+
+def chrome_html(dim: str, *, at_root: bool = False) -> str:
+    _ = at_root  # same root-relative assets on / and /overworld/
+    hrefs = _chrome_hrefs()
+    css = "/chrome.css"
+    js = "/chrome.js"
+    iframe_src, iframe_title = hrefs[dim][1], f"{DIM_LABELS[dim]} map"
+    slots = []
+    for name in DIMS:
+        page_href, map_src = hrefs[name]
+        current = ' aria-current="page"' if name == dim else ""
+        slots.append(
+            f'<a class="slot" data-dim="{name}" data-map="{map_src}" '
+            f'href="{page_href}"{current}>{DIM_LABELS[name]}</a>'
+        )
+    slot_markup = "\n        ".join(slots)
+    return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#161310">
   <title>Map</title>
-  <style>
-    body { font-family: sans-serif; background: #222; color: #eee; margin: 1.5rem; }
-    a { color: #8cf; margin-right: 1.25rem; }
-    p { max-width: 40rem; line-height: 1.45; }
-  </style>
+  <link rel="stylesheet" href="{css}">
 </head>
 <body>
-  <p>
-    <a href="overworld/">Overworld</a>
-    <a href="nether/">Nether</a>
-    <a href="end/">End</a>
-  </p>
-  <p>Explored terrain only. The last render stays available when the game server is stopped.</p>
+  <a class="skip" href="#map-frame">Skip to map</a>
+  <div class="shell">
+    <header class="bar">
+      <h1 class="brand">Map</h1>
+      <nav class="dims" data-map-nav aria-label="Dimension">
+        {slot_markup}
+      </nav>
+      <p class="note">Explored terrain only</p>
+    </header>
+    <main class="stage">
+      <iframe class="map-frame" id="map-frame" title="{iframe_title}" src="{iframe_src}"></iframe>
+    </main>
+  </div>
+  <script src="{js}"></script>
 </body>
 </html>
 """
+
 
 
 def utc_iso() -> str:
@@ -212,8 +442,21 @@ def copy_tiles_without_processed(src: Path, dest_data: Path) -> None:
             shutil.copy2(item, target)
 
 
+def install_chrome(dest: Path, dim: str, *, at_root: bool = False) -> None:
+    """Wrap a copied MinedMap viewer: keep stock page as map.html, write product chrome."""
+    dest.mkdir(parents=True, exist_ok=True)
+    if not at_root:
+        stock = dest / "index.html"
+        if stock.is_file():
+            stock.replace(dest / "map.html")
+    (dest / "index.html").write_text(chrome_html(dim, at_root=at_root), encoding="utf-8")
+
+
 def write_switcher(publish: Path) -> None:
-    (publish / "index.html").write_text(SWITCHER_HTML, encoding="utf-8")
+    publish.mkdir(parents=True, exist_ok=True)
+    (publish / "chrome.css").write_text(CHROME_CSS, encoding="utf-8")
+    (publish / "chrome.js").write_text(CHROME_JS, encoding="utf-8")
+    install_chrome(publish, "overworld", at_root=True)
 
 
 def sha256_file(path: Path) -> str:
@@ -306,6 +549,7 @@ def publish_from_render(root: Path) -> None:
     write_switcher(staging)
     for dim in DIMS:
         copy_viewer_into(staging / dim, viewer)
+        install_chrome(staging / dim, dim, at_root=False)
         copy_tiles_without_processed(render / dim, staging / dim / "data")
     if publish.exists():
         shutil.rmtree(publish)

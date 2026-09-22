@@ -182,7 +182,7 @@ Pick a size, server memory, and start deployment.
 
 The Minecraft server should now be up. Copy the **play IP** from MCSTool (Overview or the sidebar) and connect from Minecraft Java Edition.
 
-Players can open a **2D map** in a browser. Copy **Player map** from Overview (or **Advanced → Stack**). That URL is the doorbell address, **not** the play IP. It shows chunks the server has already generated and still works when the game VM is off.
+Players can open a **2D map** in a browser. Copy **Player map** from Overview (or **Advanced → Stack**). That URL is the doorbell address, **not** the play IP. It opens on the Overworld; switch Overworld / Nether / End on the page. It shows chunks the server has already generated and still works when the game VM is off.
 
 - Your public IP is allowlisted during Setup for Minecraft **and** the map page. To allow other players, add each player’s **current public IPv4** on the **Whitelist** tab and click **Save changes**. The same list is required for the map website. Home IPs can change; update the list when they do.
 
