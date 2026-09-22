@@ -162,9 +162,15 @@ class CapAndPublishTests(unittest.TestCase):
             self.assertIn("class=\"slot\"", root_html)
             self.assertTrue((root / "publish" / "chrome.css").is_file())
             self.assertTrue((root / "publish" / "chrome.js").is_file())
+            self.assertTrue((root / "publish" / "markers.css").is_file())
+            self.assertTrue((root / "publish" / "markers.js").is_file())
             self.assertTrue((root / "publish" / "overworld" / "index.html").is_file())
             self.assertTrue((root / "publish" / "overworld" / "map.html").is_file())
             self.assertIn("<html>v</html>", (root / "publish" / "overworld" / "map.html").read_text(encoding="utf-8"))
+            for dim in pm.DIMS:
+                map_html = (root / "publish" / dim / "map.html").read_text(encoding="utf-8")
+                self.assertIn('href="/markers.css"', map_html)
+                self.assertIn('src="/markers.js"', map_html)
             self.assertIn('data-dim="nether"', ow_html)
             self.assertIn('href="/nether/"', ow_html)
             self.assertIn("/nether/map.html", ow_html)
@@ -177,8 +183,55 @@ class CapAndPublishTests(unittest.TestCase):
                     self.assertIn("<title>Map</title>", text)
             css = (root / "publish" / "chrome.css").read_text(encoding="utf-8")
             js = (root / "publish" / "chrome.js").read_text(encoding="utf-8")
+            markers_js = (root / "publish" / "markers.js").read_text(encoding="utf-8")
+            markers_css = (root / "publish" / "markers.css").read_text(encoding="utf-8")
             self.assertNotIn("friend", css)
             self.assertNotIn("friend", js)
+            self.assertNotIn("friend", markers_js)
+            self.assertNotIn("friend", markers_css)
+            self.assertNotIn("innerHTML", markers_js)
+            self.assertIn("textContent", markers_js)
+            self.assertIn("doubleClickZoom", markers_js)
+            self.assertIn("/markers", markers_js)
+            self.assertIn("closeOnClick: true", markers_js)
+            self.assertIn("mc-panel-close", markers_js)
+            self.assertIn("aria-label", markers_js)
+            self.assertIn("box-sizing: border-box", markers_css)
+            self.assertIn(".mc-panel-close", markers_css)
+            self.assertIn("min-width: 12rem", markers_css)
+            self.assertIn("max-width: 100%", markers_css)
+            self.assertIn(".mc-popup .leaflet-popup-content {\n  margin: 10px 12px;\n  min-width: 12rem;\n}", markers_css)
+            self.assertNotIn("closeOnClick: false", markers_js)
+            edit_idx = markers_js.find("function openEdit")
+            popupclose_idx = markers_js.find('map.on("popupclose"')
+            self.assertGreater(edit_idx, 0)
+            self.assertGreater(popupclose_idx, edit_idx)
+            self.assertNotIn("onInput", markers_js[edit_idx:popupclose_idx])
+            self.assertIn("mc-cursor-xz", markers_js)
+            self.assertIn("mc-cursor-xz", markers_css)
+            self.assertIn("mousemove", markers_js)
+            self.assertIn('"X: "', markers_js)
+
+    def test_hook_map_html_before_create_map(self) -> None:
+        stock = (
+            "<html><head>"
+            '<script src="leaflet-1.9.4/leaflet.js"></script>'
+            '<script src="MinedMap.js"></script>'
+            "</head><body><div id=\"map\"></div>"
+            "<script type=\"text/javascript\">\n      createMap();\n    </script>"
+            "</body></html>"
+        )
+        with tempfile.TemporaryDirectory() as raw:
+            path = Path(raw) / "map.html"
+            path.write_text(stock, encoding="utf-8")
+            pm.hook_map_html(path)
+            pm.hook_map_html(path)
+            text = path.read_text(encoding="utf-8")
+            self.assertEqual(1, text.count('src="/markers.js"'))
+            self.assertIn('href="/markers.css"', text)
+            self.assertLess(text.index("leaflet"), text.index("/markers.js"))
+            self.assertLess(text.index("/markers.js"), text.index("createMap"))
+            self.assertNotIn("friend", text)
 
     def test_door_stub_matches_chrome_voice(self) -> None:
         stub = Path(_HERE).resolve().parent / "door_vm" / "player-map" / "index.html"

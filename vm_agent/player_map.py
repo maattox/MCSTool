@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -234,6 +235,776 @@ CHROME_JS = """(function () {
 })();
 """
 
+# Shared pins: oak night tokens (same as chrome). Runs inside the map.html iframe.
+MARKERS_CSS = """:root {
+  --void: #161310;
+  --binding: #2A2218;
+  --item: #E8DCC0;
+  --quiet: #9A8E78;
+  --grass: #4A7A36;
+  --netherrack: #A34B40;
+  --end-stone: #C9C07A;
+  --well: #1A1510;
+  --bevel-dark: #0A0907;
+  --bevel-light: #5C4E3C;
+  --font: ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+}
+.leaflet-div-icon.mc-pin-icon {
+  background: transparent;
+  border: none;
+  width: auto !important;
+  height: auto !important;
+  overflow: visible !important;
+}
+.mc-pin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font);
+  pointer-events: auto;
+}
+.mc-pin-slot {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 0;
+  background: var(--well);
+  box-shadow:
+    inset 2px 2px 0 var(--bevel-dark),
+    inset -2px -2px 0 var(--bevel-light),
+    inset 0 0 0 3px var(--pin-ink, var(--grass));
+}
+.mc-pin--overworld { --pin-ink: var(--grass); }
+.mc-pin--nether { --pin-ink: var(--netherrack); }
+.mc-pin--end { --pin-ink: var(--end-stone); }
+.mc-pin-name {
+  color: var(--item);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  text-shadow: 0 1px 2px var(--void);
+  white-space: nowrap;
+  max-width: 12em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mc-popup .leaflet-popup-content-wrapper,
+.mc-popup .leaflet-popup-tip {
+  background: var(--binding);
+  color: var(--item);
+  border-radius: 0;
+  box-shadow: inset 0 1px 0 #3D3428, 0 8px 20px var(--bevel-dark);
+}
+.mc-popup .leaflet-popup-content {
+  margin: 10px 12px;
+  min-width: 12rem;
+}
+.mc-popup,
+.mc-popup *,
+.mc-panel,
+.mc-panel * {
+  box-sizing: border-box;
+}
+.mc-panel {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  min-width: 12rem;
+  max-width: 100%;
+  font-family: var(--font);
+  color: var(--item);
+}
+.mc-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+.mc-panel-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--quiet);
+}
+.mc-panel-close {
+  appearance: none;
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--quiet);
+  font: 500 18px/1 var(--font);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.mc-panel-close:hover { color: var(--item); }
+.mc-panel-close:focus { outline: none; }
+.mc-panel-close:focus-visible {
+  outline: 2px solid var(--item);
+  outline-offset: 2px;
+}
+.mc-panel-label {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--quiet);
+}
+.mc-panel-input {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  height: 32px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 0;
+  background: var(--well);
+  color: var(--item);
+  font: 500 13px/1.2 var(--font);
+  caret-color: var(--item);
+  box-shadow:
+    inset 2px 2px 0 var(--bevel-dark),
+    inset -2px -2px 0 var(--bevel-light);
+}
+.mc-panel-input:focus { outline: none; }
+.mc-panel-input:focus-visible {
+  outline: 2px solid var(--item);
+  outline-offset: 2px;
+}
+.mc-panel-input::selection { background: var(--grass); color: var(--item); }
+.mc-panel-err {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--netherrack);
+}
+.mc-panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+.mc-action {
+  appearance: none;
+  margin: 0;
+  padding: 0 4px;
+  min-height: 32px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--item);
+  font: 500 13px/1.2 var(--font);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.mc-action:hover { color: #fff; }
+.mc-action:focus { outline: none; }
+.mc-action:focus-visible {
+  outline: 2px solid var(--item);
+  outline-offset: 2px;
+}
+.mc-action:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.mc-action-quiet { color: var(--quiet); }
+.mc-action-quiet:hover { color: var(--item); }
+.mc-action-danger { color: var(--netherrack); }
+.mc-action-danger:hover { color: #c96a5e; }
+@media (max-width: 639px) {
+  .mc-action { min-height: 44px; min-width: 44px; padding: 0 8px; }
+  .mc-panel-close { width: 44px; height: 44px; }
+  .mc-panel-input { height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mc-action, .mc-panel-input { transition: none; }
+}
+.mc-cursor-xz {
+  position: absolute;
+  z-index: 650;
+  pointer-events: none;
+  padding: 2px 7px;
+  background: var(--binding);
+  color: var(--item);
+  font: 500 12px/1.2 var(--font);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  box-shadow: inset 0 1px 0 #3D3428, 0 2px 8px var(--bevel-dark);
+}
+@media (pointer: coarse) {
+  .mc-cursor-xz { display: none; }
+}
+"""
+
+MARKERS_JS = """(function () {
+  var POLL_MS = 5000;
+  var LONG_MS = 500;
+  var NAME_MAX = 48;
+  var NAME_BYTES = 192;
+  var COORD_MAX = 30000000;
+  var CAP = 200;
+  var MOVE_PX = 12;
+
+  function currentDim() {
+    var parts = (location.pathname || "").split("/").filter(Boolean);
+    var i = parts.indexOf("map.html");
+    var folder = i > 0 ? parts[i - 1] : (parts[0] || "");
+    if (folder === "nether" || folder === "end" || folder === "overworld") return folder;
+    return "overworld";
+  }
+
+  function codePoints(s) {
+    return Array.from(s).length;
+  }
+
+  function utf8Len(s) {
+    if (window.TextEncoder) return new TextEncoder().encode(s).length;
+    return encodeURIComponent(s).replace(/%../g, "x").length;
+  }
+
+  function validateName(raw) {
+    var name = String(raw || "").trim();
+    if (!name) return { ok: false, name: name, err: "Enter a name." };
+    if (/[\\x00-\\x1F]/.test(name)) {
+      return { ok: false, name: name, err: "Name cannot include control characters." };
+    }
+    if (codePoints(name) > NAME_MAX || utf8Len(name) > NAME_BYTES) {
+      return { ok: false, name: name, err: "Name is too long." };
+    }
+    return { ok: true, name: name, err: "" };
+  }
+
+  function isCoarsePointer(ev) {
+    if (ev && (ev.pointerType === "touch" || ev.pointerType === "pen")) return true;
+    return !!(window.matchMedia && window.matchMedia("(pointer: coarse)").matches);
+  }
+
+  function skipTarget(node) {
+    return !!(node && node.closest && node.closest(".mc-pin, .mc-popup, .mc-panel, .leaflet-control"));
+  }
+
+  function whenLeaflet(cb) {
+    function hook() {
+      if (!window.L || !L.map) return false;
+      if (L.map.__mcMarkersHook) return true;
+      L.map.__mcMarkersHook = true;
+      var orig = L.map;
+      L.map = function () {
+        var m = orig.apply(this, arguments);
+        cb(m);
+        return m;
+      };
+      if (L.Map && L.Map.addInitHook) {
+        L.Map.addInitHook(function () { cb(this); });
+      }
+      return true;
+    }
+    if (hook()) return;
+    var n = 0;
+    var t = setInterval(function () {
+      n += 1;
+      if (hook() || n > 200) clearInterval(t);
+    }, 50);
+  }
+
+  function start(map) {
+    if (!map || map.__mcMarkersStarted) return;
+    map.__mcMarkersStarted = true;
+    if (map.doubleClickZoom) map.doubleClickZoom.disable();
+
+    var dim = currentDim();
+    var layer = L.layerGroup().addTo(map);
+    var byId = {};
+    var cached = [];
+    var draft = null;
+    var openPopup = null;
+    var lpTimer = null;
+    var lpOrigin = null;
+    var suppressUntil = 0;
+
+    function mcFromLatlng(ll) {
+      return { x: Math.round(ll.lng), z: Math.round(-ll.lat) };
+    }
+
+    function latlngFromMc(x, z) {
+      return L.latLng(-z, x);
+    }
+
+    function pinIcon() {
+      return L.divIcon({
+        className: "mc-pin-icon",
+        html:
+          '<div class="mc-pin mc-pin--' + dim + '">' +
+            '<span class="mc-pin-slot" aria-hidden="true"></span>' +
+            '<span class="mc-pin-name"></span>' +
+          "</div>",
+        iconSize: [14, 14],
+        iconAnchor: [7, 7],
+        popupAnchor: [0, -12]
+      });
+    }
+
+    function setPinName(marker, name) {
+      var el = marker.getElement();
+      if (!el) return;
+      var label = el.querySelector(".mc-pin-name");
+      if (label) label.textContent = name || "";
+      el.setAttribute("role", "button");
+      el.setAttribute("tabindex", "0");
+      el.setAttribute("aria-label", name || "New pin");
+    }
+
+    function closeOpen() {
+      var p = openPopup;
+      openPopup = null;
+      if (p && map.closePopup) map.closePopup();
+    }
+
+    function clearDraft() {
+      if (!draft) return;
+      var m = draft.marker;
+      draft = null;
+      closeOpen();
+      if (m) layer.removeLayer(m);
+    }
+
+    function setErr(node, msg) {
+      if (!node) return;
+      node.hidden = !msg;
+      node.textContent = msg || "";
+    }
+
+    function fieldPanel(opts) {
+      var form = document.createElement("form");
+      form.className = "mc-panel";
+      form.setAttribute("novalidate", "");
+
+      var head = document.createElement("div");
+      head.className = "mc-panel-head";
+      var title = document.createElement("span");
+      title.className = "mc-panel-title";
+      title.textContent = "Name";
+      var closeBtn = document.createElement("button");
+      closeBtn.type = "button";
+      closeBtn.className = "mc-panel-close";
+      closeBtn.setAttribute("aria-label", "Close");
+      closeBtn.textContent = "\\u00d7";
+      head.appendChild(title);
+      head.appendChild(closeBtn);
+
+      var lab = document.createElement("label");
+      lab.className = "mc-panel-label";
+      var input = document.createElement("input");
+      input.type = "text";
+      input.className = "mc-panel-input";
+      input.maxLength = NAME_MAX;
+      input.autocomplete = "off";
+      input.spellcheck = false;
+      input.value = opts.value || "";
+      input.setAttribute("aria-required", "true");
+      input.setAttribute("aria-label", "Name");
+      lab.appendChild(input);
+
+      var err = document.createElement("p");
+      err.className = "mc-panel-err";
+      err.hidden = true;
+
+      var actions = document.createElement("div");
+      actions.className = "mc-panel-actions";
+      var primary = document.createElement("button");
+      primary.type = "submit";
+      primary.className = "mc-action";
+      primary.textContent = opts.primary;
+      var secondary = document.createElement("button");
+      secondary.type = "button";
+      secondary.className = "mc-action" + (opts.secondaryClass ? " " + opts.secondaryClass : " mc-action-quiet");
+      secondary.textContent = opts.secondary;
+      actions.appendChild(primary);
+      actions.appendChild(secondary);
+
+      form.appendChild(head);
+      form.appendChild(lab);
+      form.appendChild(err);
+      form.appendChild(actions);
+
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var v = validateName(input.value);
+        if (!v.ok) {
+          setErr(err, v.err);
+          input.focus();
+          return;
+        }
+        setErr(err, "");
+        opts.onPrimary(v.name, err, primary, secondary);
+      });
+      secondary.addEventListener("click", function () {
+        opts.onSecondary(err, primary, secondary);
+      });
+      closeBtn.addEventListener("click", function () {
+        opts.onCancel();
+      });
+      input.addEventListener("input", function () {
+        if (opts.onInput) opts.onInput(input.value);
+      });
+      form.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          opts.onCancel();
+        }
+      });
+      return { form: form, input: input, err: err };
+    }
+
+    function busy(a, b, on) {
+      a.disabled = on;
+      b.disabled = on;
+    }
+
+    function postOp(body) {
+      return fetch("/markers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      }).then(function (r) {
+        return r.text().then(function (text) {
+          var data = null;
+          if (text) {
+            try { data = JSON.parse(text); } catch (e) { data = null; }
+          }
+          return { status: r.status, data: data };
+        });
+      });
+    }
+
+    function applyList(doc) {
+      cached = (doc && doc.markers) || [];
+      var seen = {};
+      cached.forEach(function (rec) {
+        if (!rec || rec.dim !== dim || !rec.id) return;
+        seen[rec.id] = true;
+        if (byId[rec.id]) {
+          var m = byId[rec.id];
+          m.__mcRec = rec;
+          m.setLatLng(latlngFromMc(rec.x, rec.z));
+          setPinName(m, rec.name);
+        } else {
+          byId[rec.id] = addPin(rec);
+        }
+      });
+      Object.keys(byId).forEach(function (id) {
+        if (seen[id]) return;
+        layer.removeLayer(byId[id]);
+        delete byId[id];
+      });
+    }
+
+    function addPin(rec) {
+      var marker = L.marker(latlngFromMc(rec.x, rec.z), {
+        icon: pinIcon(),
+        keyboard: true,
+        zIndexOffset: 600
+      });
+      marker.__mcRec = rec;
+      marker.on("add", function () {
+        setPinName(marker, rec.name);
+        var el = marker.getElement();
+        if (!el || el.__mcKey) return;
+        el.__mcKey = true;
+        el.addEventListener("keydown", function (ev) {
+          if (ev.key === "Enter" || ev.key === " ") {
+            ev.preventDefault();
+            openEdit(marker);
+          }
+        });
+      });
+      marker.addTo(layer);
+      setPinName(marker, rec.name);
+      marker.on("click", function (e) {
+        if (L.DomEvent) L.DomEvent.stop(e);
+        openEdit(marker);
+      });
+      marker.on("dblclick", function (e) {
+        if (L.DomEvent) L.DomEvent.stop(e);
+      });
+      return marker;
+    }
+
+    function statusMessage(status) {
+      if (status === 409) return "The map already has 200 pins.";
+      if (status === 404) return "That pin is gone.";
+      return "Could not save. Try again.";
+    }
+
+    function bindPanel(marker, ui, selectName) {
+      if (map.options) map.options.closePopupOnClick = true;
+      var popup = L.popup({
+        className: "mc-popup",
+        closeButton: false,
+        autoClose: true,
+        closeOnClick: true,
+        closeOnEscapeKey: true,
+        maxWidth: 280
+      }).setContent(ui.form);
+      marker.unbindPopup();
+      marker.bindPopup(popup).openPopup();
+      openPopup = popup;
+      setTimeout(function () {
+        ui.input.focus();
+        if (selectName) ui.input.select();
+      }, 0);
+    }
+
+    function openCreate(latlng) {
+      clearDraft();
+      var xz = mcFromLatlng(latlng);
+      if (Math.abs(xz.x) > COORD_MAX || Math.abs(xz.z) > COORD_MAX) return;
+      var marker = L.marker(latlng, { icon: pinIcon(), zIndexOffset: 700, keyboard: false });
+      marker.on("add", function () { setPinName(marker, ""); });
+      marker.addTo(layer);
+      var ui = fieldPanel({
+        value: "",
+        primary: "Add",
+        secondary: "Cancel",
+        onInput: function (raw) { setPinName(marker, String(raw || "").trim()); },
+        onPrimary: function (name, err, primary, secondary) {
+          if (cached.length >= CAP) {
+            setErr(err, "The map already has 200 pins.");
+            return;
+          }
+          busy(primary, secondary, true);
+          postOp({ op: "add", dim: dim, x: xz.x, z: xz.z, name: name }).then(function (res) {
+            busy(primary, secondary, false);
+            if (res.status === 201 && res.data) {
+              clearDraft();
+              applyList(res.data);
+              return;
+            }
+            setErr(err, statusMessage(res.status));
+          }).catch(function () {
+            busy(primary, secondary, false);
+            setErr(err, "Could not save. Try again.");
+          });
+        },
+        onSecondary: function () { clearDraft(); },
+        onCancel: function () { clearDraft(); }
+      });
+      bindPanel(marker, ui);
+      draft = { marker: marker };
+    }
+
+    function openEdit(marker) {
+      var rec = marker.__mcRec;
+      if (!rec) return;
+      clearDraft();
+      var ui = fieldPanel({
+        value: rec.name || "",
+        primary: "Rename",
+        secondary: "Delete",
+        secondaryClass: "mc-action-danger",
+        onPrimary: function (name, err, primary, secondary) {
+          busy(primary, secondary, true);
+          postOp({ op: "rename", id: rec.id, name: name }).then(function (res) {
+            busy(primary, secondary, false);
+            if (res.status === 200 && res.data) {
+              closeOpen();
+              applyList(res.data);
+              return;
+            }
+            setErr(err, statusMessage(res.status));
+          }).catch(function () {
+            busy(primary, secondary, false);
+            setErr(err, "Could not save. Try again.");
+          });
+        },
+        onSecondary: function (err, primary, secondary) {
+          busy(primary, secondary, true);
+          postOp({ op: "delete", id: rec.id }).then(function (res) {
+            busy(primary, secondary, false);
+            if (res.status === 200 && res.data) {
+              closeOpen();
+              applyList(res.data);
+              return;
+            }
+            setErr(err, statusMessage(res.status));
+          }).catch(function () {
+            busy(primary, secondary, false);
+            setErr(err, "Could not save. Try again.");
+          });
+        },
+        onCancel: function () { closeOpen(); }
+      });
+      bindPanel(marker, ui, true);
+    }
+
+    map.on("popupclose", function () {
+      openPopup = null;
+      if (!draft) return;
+      var m = draft.marker;
+      draft = null;
+      if (m) layer.removeLayer(m);
+    });
+
+    map.on("dblclick", function (e) {
+      var t = e.originalEvent && e.originalEvent.target;
+      if (skipTarget(t)) return;
+      if (Date.now() < suppressUntil) return;
+      openCreate(e.latlng);
+    });
+
+    var container = map.getContainer();
+    var hud = document.createElement("div");
+    hud.className = "mc-cursor-xz";
+    hud.hidden = true;
+    hud.setAttribute("aria-hidden", "true");
+    container.appendChild(hud);
+
+    function hideHud() {
+      hud.hidden = true;
+    }
+    function finePointer() {
+      return !(window.matchMedia && window.matchMedia("(pointer: coarse)").matches);
+    }
+    map.on("mousemove", function (e) {
+      if (!finePointer() || openPopup || draft || !e.latlng) {
+        hideHud();
+        return;
+      }
+      var t = e.originalEvent && e.originalEvent.target;
+      if (skipTarget(t)) {
+        hideHud();
+        return;
+      }
+      var xz = mcFromLatlng(e.latlng);
+      hud.textContent = "X: " + xz.x + "   Z: " + xz.z;
+      hud.hidden = false;
+      var oe = e.originalEvent;
+      var rect = container.getBoundingClientRect();
+      var left = oe.clientX - rect.left + 14;
+      var top = oe.clientY - rect.top + 18;
+      var pad = 8;
+      if (left + hud.offsetWidth > rect.width - pad) {
+        left = oe.clientX - rect.left - hud.offsetWidth - 12;
+      }
+      if (top + hud.offsetHeight > rect.height - pad) {
+        top = oe.clientY - rect.top - hud.offsetHeight - 12;
+      }
+      if (left < pad) left = pad;
+      if (top < pad) top = pad;
+      hud.style.left = left + "px";
+      hud.style.top = top + "px";
+    });
+    container.addEventListener("mouseleave", hideHud);
+    map.on("popupopen", hideHud);
+
+    function clearLp() {
+      if (lpTimer) {
+        clearTimeout(lpTimer);
+        lpTimer = null;
+      }
+      lpOrigin = null;
+    }
+    function onPointerDown(ev) {
+      if (!isCoarsePointer(ev)) return;
+      if (ev.button != null && ev.button !== 0) return;
+      if (skipTarget(ev.target)) return;
+      clearLp();
+      lpOrigin = { x: ev.clientX, y: ev.clientY };
+      var pt = map.mouseEventToLatLng(ev);
+      lpTimer = setTimeout(function () {
+        lpTimer = null;
+        suppressUntil = Date.now() + 800;
+        if (pt) openCreate(pt);
+      }, LONG_MS);
+    }
+    function onPointerMove(ev) {
+      if (!lpOrigin) return;
+      var dx = ev.clientX - lpOrigin.x;
+      var dy = ev.clientY - lpOrigin.y;
+      if ((dx * dx + dy * dy) > (MOVE_PX * MOVE_PX)) clearLp();
+    }
+    container.addEventListener("pointerdown", onPointerDown);
+    container.addEventListener("pointermove", onPointerMove);
+    container.addEventListener("pointerup", clearLp);
+    container.addEventListener("pointercancel", clearLp);
+    container.addEventListener("contextmenu", function (ev) {
+      if (Date.now() < suppressUntil) ev.preventDefault();
+    });
+
+    function poll() {
+      if (document.visibilityState && document.visibilityState !== "visible") return;
+      fetch("/markers", { cache: "no-store" })
+        .then(function (r) { return r.json(); })
+        .then(applyList)
+        .catch(function () {});
+    }
+    poll();
+    setInterval(poll, POLL_MS);
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "visible") poll();
+    });
+  }
+
+  whenLeaflet(start);
+})();
+"""
+
+_MARKERS_LINK = '<link rel="stylesheet" href="/markers.css">'
+_MARKERS_SCRIPT = '<script src="/markers.js"></script>'
+_LEAFLET_SCRIPT_RE = re.compile(
+    r'<script\b[^>]*\bsrc=["\'][^"\']*leaflet[^"\']*["\'][^>]*>\s*</script>',
+    re.IGNORECASE,
+)
+_CREATE_MAP_RE = re.compile(
+    r'<script\b[^>]*>\s*createMap\s*\(\s*\)\s*;?\s*</script>',
+    re.IGNORECASE,
+)
+_HEAD_CLOSE_RE = re.compile(r"</head>", re.IGNORECASE)
+_BODY_CLOSE_RE = re.compile(r"</body>", re.IGNORECASE)
+
+
+def hook_map_html(path: Path) -> None:
+    """Append markers assets onto stock map.html after Leaflet, before createMap.
+
+    createMap() fetches info.json then calls L.map. Loading markers.js before that
+    call lets us wrap L.map without forking MinedMap.js.
+    """
+    text = path.read_text(encoding="utf-8")
+    if 'src="/markers.js"' in text:
+        return
+    hook = f"{_MARKERS_LINK}\n{_MARKERS_SCRIPT}\n"
+    found = _LEAFLET_SCRIPT_RE.search(text)
+    if found:
+        text = text[: found.end()] + "\n" + hook + text[found.end() :]
+    else:
+        created = _CREATE_MAP_RE.search(text)
+        if created:
+            text = text[: created.start()] + hook + text[created.start() :]
+        else:
+            head = _HEAD_CLOSE_RE.search(text)
+            if head:
+                text = text[: head.start()] + hook + text[head.start() :]
+            else:
+                body = _BODY_CLOSE_RE.search(text)
+                if body:
+                    text = text[: body.start()] + hook + text[body.start() :]
+                else:
+                    if text and not text.endswith("\n"):
+                        text += "\n"
+                    text += hook
+    path.write_text(text, encoding="utf-8")
+
+
 
 def _chrome_hrefs() -> dict[str, tuple[str, str]]:
     """dim -> (page href, map.html src). Root-relative so in-page tab switches stay valid."""
@@ -449,6 +1220,9 @@ def install_chrome(dest: Path, dim: str, *, at_root: bool = False) -> None:
         stock = dest / "index.html"
         if stock.is_file():
             stock.replace(dest / "map.html")
+        map_html = dest / "map.html"
+        if map_html.is_file():
+            hook_map_html(map_html)
     (dest / "index.html").write_text(chrome_html(dim, at_root=at_root), encoding="utf-8")
 
 
@@ -456,6 +1230,8 @@ def write_switcher(publish: Path) -> None:
     publish.mkdir(parents=True, exist_ok=True)
     (publish / "chrome.css").write_text(CHROME_CSS, encoding="utf-8")
     (publish / "chrome.js").write_text(CHROME_JS, encoding="utf-8")
+    (publish / "markers.css").write_text(MARKERS_CSS, encoding="utf-8")
+    (publish / "markers.js").write_text(MARKERS_JS, encoding="utf-8")
     install_chrome(publish, "overworld", at_root=True)
 
 
