@@ -13,6 +13,9 @@ VM1_TILE_PORT="${VM1_TILE_PORT//$'\r'/}"
 MAP_ROOT="${PLAYER_MAP_ROOT:-/var/lib/mc-player-map}"
 MAP_ROOT="${MAP_ROOT//$'\r'/}"
 STAMP_DIR="${PLAYER_MAP_STAMP_DIR:-/var/lib/mccontrol}"
+# Shared map pins live at $STAMP_DIR/player-map-markers.json (next to the sha
+# stamp). Never move or delete that file with MAP_ROOT — tile replace below
+# only swaps /var/lib/mc-player-map/.
 CAP_BYTES=$((2 * 1024 * 1024 * 1024))
 
 : "${VM1_PRIVATE_IP:?VM1_PRIVATE_IP must be set}"

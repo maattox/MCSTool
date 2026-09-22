@@ -1,10 +1,12 @@
-/* playermap.c - static HTTP for player map tiles (TCP 80). */
+/* playermap.c - static HTTP for player map tiles (TCP 80) + /markers. */
 #include "playermap.h"
 
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "markers.h"
 
 #ifdef _WIN32
 #include <winsock2.h>
@@ -37,6 +39,8 @@ typedef int socket_t;
 #define PATH_MAX_REL 512
 #define FALLBACK_PORT 8081
 #define SEND_CHUNK 65536
+#define PARSE_OK 0
+#define PARSE_FAIL -1
 #ifndef PATH_MAX
 #define PATH_MAX 4096
 #endif
@@ -87,6 +91,114 @@ static void respond_text(socket_t fd, int status, const char *status_text, const
   if (body_len > 0) {
     send_all(fd, body, body_len);
   }
+}
+
+static void respond_json(socket_t fd, int status, const char *status_text, const char *body) {
+  char header[320];
+  size_t body_len = body != NULL ? strlen(body) : 0;
+  int hlen = snprintf(header, sizeof header,
+                      "HTTP/1.1 %d %s\r\n"
+                      "Content-Type: application/json; charset=utf-8\r\n"
+                      "Content-Length: %zu\r\n"
+                      "Cache-Control: no-store\r\n"
+                      "Connection: close\r\n"
+                      "\r\n",
+                      status, status_text, body_len);
+  if (hlen > 0) {
+    send_all(fd, header, (size_t)hlen);
+  }
+  if (body_len > 0) {
+    send_all(fd, body, body_len);
+  }
+}
+
+static const char *http_phrase(int status) {
+  switch (status) {
+    case 200:
+      return "OK";
+    case 201:
+      return "Created";
+    case 400:
+      return "Bad Request";
+    case 404:
+      return "Not Found";
+    case 405:
+      return "Method Not Allowed";
+    case 409:
+      return "Conflict";
+    case 413:
+      return "Payload Too Large";
+    default:
+      return "Internal Server Error";
+  }
+}
+
+static int header_is_content_length(const char *line) {
+  return strncmp(line, "Content-Length:", 15) == 0 ||
+         strncmp(line, "content-length:", 15) == 0 ||
+         strncmp(line, "CONTENT-LENGTH:", 15) == 0;
+}
+
+static const char *markers_file(const PlayerMapConfig *cfg) {
+  if (cfg != NULL && cfg->markers_path != NULL && cfg->markers_path[0] != '\0') {
+    return cfg->markers_path;
+  }
+  return MARKERS_DEFAULT_PATH;
+}
+
+static void handle_markers(socket_t fd, const char *method, const char *body, int too_large,
+                           const PlayerMapConfig *cfg) {
+  if (too_large) {
+    respond_text(fd, 413, http_phrase(413), "too large");
+    return;
+  }
+  const char *path = markers_file(cfg);
+  if (strcmp(method, "GET") == 0) {
+    MarkerList list;
+    if (markers_load(&list, path) != 0) {
+      respond_text(fd, 500, http_phrase(500), "error");
+      return;
+    }
+    char *json = markers_to_json(&list);
+    if (json == NULL) {
+      respond_text(fd, 500, http_phrase(500), "error");
+      return;
+    }
+    respond_json(fd, 200, http_phrase(200), json);
+    free(json);
+    return;
+  }
+  if (strcmp(method, "POST") == 0) {
+    MarkerList list;
+    if (markers_load(&list, path) != 0) {
+      respond_text(fd, 500, http_phrase(500), "error");
+      return;
+    }
+    int status = 400;
+    if (markers_apply_post(&list, body != NULL ? body : "", &status) != 0) {
+      const char *msg = "bad request";
+      if (status == 409) {
+        msg = "full";
+      } else if (status == 404) {
+        msg = "not found";
+      }
+      respond_text(fd, status, http_phrase(status), msg);
+      return;
+    }
+    if (markers_save(&list, path) != 0) {
+      respond_text(fd, 500, http_phrase(500), "error");
+      return;
+    }
+    char *json = markers_to_json(&list);
+    if (json == NULL) {
+      respond_text(fd, 500, http_phrase(500), "error");
+      return;
+    }
+    respond_json(fd, status, http_phrase(status), json);
+    free(json);
+    return;
+  }
+  respond_text(fd, 405, http_phrase(405), "method not allowed");
 }
 
 static int hex_nibble(char c) {
@@ -282,9 +394,18 @@ static void serve_file(socket_t fd, const char *full, const char *rel, int head_
 }
 
 static int parse_request(socket_t fd, char *method, size_t method_cap, char *path,
-                         size_t path_cap) {
+                         size_t path_cap, char **body_out, size_t *body_len_out,
+                         int *too_large) {
   char buf[REQ_BUF];
   size_t total = 0;
+  *body_out = NULL;
+  *body_len_out = 0;
+  *too_large = 0;
+  (void)method_cap;
+  (void)path_cap;
+
+  char *hdr_end = NULL;
+  size_t sep = 4;
   while (total < sizeof buf - 1) {
 #ifdef _WIN32
     int n = recv(fd, buf + total, (int)(sizeof buf - 1 - total), 0);
@@ -292,36 +413,127 @@ static int parse_request(socket_t fd, char *method, size_t method_cap, char *pat
     ssize_t n = recv(fd, buf + total, sizeof buf - 1 - total, 0);
 #endif
     if (n <= 0) {
-      return -1;
+      return PARSE_FAIL;
     }
     total += (size_t)n;
     buf[total] = '\0';
-    if (strstr(buf, "\r\n\r\n") != NULL || strstr(buf, "\n\n") != NULL) {
+    hdr_end = strstr(buf, "\r\n\r\n");
+    if (hdr_end != NULL) {
+      sep = 4;
+      break;
+    }
+    hdr_end = strstr(buf, "\n\n");
+    if (hdr_end != NULL) {
+      sep = 2;
       break;
     }
   }
+  if (hdr_end == NULL) {
+    return PARSE_FAIL;
+  }
+
   char *line_end = strstr(buf, "\r\n");
-  if (line_end == NULL) {
+  if (line_end == NULL || line_end > hdr_end) {
     line_end = strchr(buf, '\n');
   }
-  if (line_end == NULL) {
-    return -1;
+  if (line_end == NULL || line_end > hdr_end) {
+    return PARSE_FAIL;
   }
+  char saved = *line_end;
   *line_end = '\0';
   if (sscanf(buf, "%15s %511s", method, path) != 2) {
-    return -1;
+    return PARSE_FAIL;
   }
-  (void)method_cap;
-  (void)path_cap;
-  return 0;
+  *line_end = saved;
+
+  size_t content_length = 0;
+  const char *h = line_end + (saved == '\r' ? 2 : 1);
+  while (h < hdr_end) {
+    if (header_is_content_length(h)) {
+      content_length = (size_t)strtoul(h + 15, NULL, 10);
+      break;
+    }
+    const char *nl = memchr(h, '\n', (size_t)(hdr_end - h));
+    if (nl == NULL) {
+      break;
+    }
+    h = nl + 1;
+  }
+
+  if (strcmp(method, "POST") != 0) {
+    return PARSE_OK;
+  }
+  if (content_length > MARKERS_BODY_MAX) {
+    *too_large = 1;
+    return PARSE_OK;
+  }
+  if (content_length == 0) {
+    return PARSE_OK;
+  }
+
+  char *body = malloc(content_length + 1);
+  if (body == NULL) {
+    return PARSE_FAIL;
+  }
+  size_t body_start = (size_t)(hdr_end - buf) + sep;
+  size_t have = total > body_start ? total - body_start : 0;
+  if (have > content_length) {
+    have = content_length;
+  }
+  if (have > 0) {
+    memcpy(body, buf + body_start, have);
+  }
+  while (have < content_length) {
+#ifdef _WIN32
+    int m = recv(fd, body + have, (int)(content_length - have), 0);
+#else
+    ssize_t m = recv(fd, body + have, content_length - have, 0);
+#endif
+    if (m <= 0) {
+      free(body);
+      return PARSE_FAIL;
+    }
+    have += (size_t)m;
+  }
+  body[content_length] = '\0';
+  *body_out = body;
+  *body_len_out = content_length;
+  return PARSE_OK;
 }
 
 static void handle_connection(socket_t fd, const PlayerMapConfig *cfg) {
   char method[16];
   char raw_path[PATH_MAX_REL];
+  char *body = NULL;
+  size_t body_len = 0;
+  int too_large = 0;
   memset(method, 0, sizeof method);
   memset(raw_path, 0, sizeof raw_path);
-  if (parse_request(fd, method, sizeof method, raw_path, sizeof raw_path) != 0) {
+  if (parse_request(fd, method, sizeof method, raw_path, sizeof raw_path, &body, &body_len,
+                    &too_large) != PARSE_OK) {
+    return;
+  }
+  (void)body_len;
+
+  char *q = strchr(raw_path, '?');
+  if (q != NULL) {
+    *q = '\0';
+  }
+  if (percent_decode(raw_path) != 0) {
+    respond_text(fd, 400, "Bad Request", "bad path");
+    free(body);
+    return;
+  }
+
+  if (strncmp(raw_path, "/api", 4) == 0 && (raw_path[4] == '\0' || raw_path[4] == '/')) {
+    respond_text(fd, 404, "Not Found", "not found");
+    free(body);
+    return;
+  }
+
+  if (strcmp(raw_path, "/markers") == 0) {
+    handle_markers(fd, method, body, too_large, cfg);
+    free(body);
     return;
   }
 
@@ -330,20 +542,7 @@ static void handle_connection(socket_t fd, const PlayerMapConfig *cfg) {
     head_only = 1;
   } else if (strcmp(method, "GET") != 0) {
     respond_text(fd, 405, "Method Not Allowed", "method not allowed");
-    return;
-  }
-
-  char *q = strchr(raw_path, '?');
-  if (q != NULL) {
-    *q = '\0';
-  }
-  if (percent_decode(raw_path) != 0) {
-    respond_text(fd, 400, "Bad Request", "bad path");
-    return;
-  }
-
-  if (strncmp(raw_path, "/api", 4) == 0 && (raw_path[4] == '\0' || raw_path[4] == '/')) {
-    respond_text(fd, 404, "Not Found", "not found");
+    free(body);
     return;
   }
 
@@ -360,6 +559,7 @@ static void handle_connection(socket_t fd, const PlayerMapConfig *cfg) {
     if (rlen > 0 && rel[rlen - 1] == '/') {
       if (rlen + 10 >= sizeof relbuf) {
         respond_text(fd, 414, "URI Too Long", "too long");
+        free(body);
         return;
       }
       memcpy(relbuf, rel, rlen);
@@ -367,6 +567,7 @@ static void handle_connection(socket_t fd, const PlayerMapConfig *cfg) {
     } else {
       if (rlen >= sizeof relbuf) {
         respond_text(fd, 414, "URI Too Long", "too long");
+        free(body);
         return;
       }
       memcpy(relbuf, rel, rlen + 1);
@@ -375,6 +576,7 @@ static void handle_connection(socket_t fd, const PlayerMapConfig *cfg) {
   rel = relbuf;
   if (!path_is_safe(rel)) {
     respond_text(fd, 403, "Forbidden", "forbidden");
+    free(body);
     return;
   }
 
@@ -383,6 +585,7 @@ static void handle_connection(socket_t fd, const PlayerMapConfig *cfg) {
   int n = snprintf(full, sizeof full, "%s/%s", root, rel);
   if (n < 0 || n >= (int)sizeof full) {
     respond_text(fd, 414, "URI Too Long", "too long");
+    free(body);
     return;
   }
 
@@ -393,6 +596,7 @@ static void handle_connection(socket_t fd, const PlayerMapConfig *cfg) {
       size_t rlen = strlen(relbuf);
       if (rlen + 12 >= sizeof relbuf) {
         respond_text(fd, 414, "URI Too Long", "too long");
+        free(body);
         return;
       }
       if (rlen == 0 || relbuf[rlen - 1] != '/') {
@@ -404,6 +608,7 @@ static void handle_connection(socket_t fd, const PlayerMapConfig *cfg) {
       n = snprintf(full, sizeof full, "%s/%s", root, relbuf);
       if (n < 0 || n >= (int)sizeof full) {
         respond_text(fd, 414, "URI Too Long", "too long");
+        free(body);
         return;
       }
     }
@@ -412,20 +617,24 @@ static void handle_connection(socket_t fd, const PlayerMapConfig *cfg) {
   char full_real[PATH_MAX];
   if (realpath(root, root_real) == NULL) {
     respond_text(fd, 404, "Not Found", "not found");
+    free(body);
     return;
   }
   if (realpath(full, full_real) == NULL) {
     respond_text(fd, 404, "Not Found", "not found");
+    free(body);
     return;
   }
   if (!under_root(root_real, full_real)) {
     respond_text(fd, 403, "Forbidden", "forbidden");
+    free(body);
     return;
   }
   serve_file(fd, full_real, rel, head_only);
 #else
   serve_file(fd, full, rel, head_only);
 #endif
+  free(body);
 }
 
 static int bind_listen(const char *bind_host, uint16_t port, socket_t *out) {
