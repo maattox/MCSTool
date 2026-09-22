@@ -11,6 +11,11 @@
 
 #define MARKERS_MAX 200
 #define MARKER_ID_LEN 16
+/* dim: overworld|nether|end, or ns/path extras (63-byte max). Buffer is 64 + NUL. */
+#define MARKER_DIM_BYTES 64
+#define MARKER_DIM_NS_MAX 32
+#define MARKER_DIM_PATH_MAX 48
+#define MARKER_DIM_TOTAL_MAX 63
 #define MARKER_NAME_BYTES 192
 #define MARKER_NAME_CODEPOINTS 48
 #define MARKER_COORD_ABS_MAX 30000000.0
@@ -19,7 +24,7 @@
 
 typedef struct {
   char id[MARKER_ID_LEN + 1];
-  char dim[16];
+  char dim[MARKER_DIM_BYTES + 1];
   double x;
   double z;
   char name[MARKER_NAME_BYTES + 1];

@@ -23,9 +23,70 @@ void markers_clear(MarkerList *list) {
   memset(list, 0, sizeof *list);
 }
 
+static int dim_seg_char(unsigned char c) {
+  return (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_' || c == '.' || c == '-';
+}
+
+static int dim_segment_ok(const char *s, size_t n) {
+  if (s == NULL || n == 0) {
+    return 0;
+  }
+  if (n == 2 && s[0] == '.' && s[1] == '.') {
+    return 0;
+  }
+  for (size_t i = 0; i < n; i++) {
+    if (!dim_seg_char((unsigned char)s[i])) {
+      return 0;
+    }
+  }
+  return 1;
+}
+
 static int dim_ok(const char *dim) {
-  return dim != NULL && (strcmp(dim, "overworld") == 0 || strcmp(dim, "nether") == 0 ||
-                         strcmp(dim, "end") == 0);
+  if (dim == NULL) {
+    return 0;
+  }
+  if (strcmp(dim, "overworld") == 0 || strcmp(dim, "nether") == 0 || strcmp(dim, "end") == 0) {
+    return 1;
+  }
+  /* Vanilla folder / protocol aliases are not product ids. */
+  if (strcmp(dim, "the_nether") == 0 || strcmp(dim, "minecraft/overworld") == 0 ||
+      strcmp(dim, "minecraft/the_nether") == 0 || strcmp(dim, "minecraft/the_end") == 0) {
+    return 0;
+  }
+  size_t len = strlen(dim);
+  if (len == 0 || len > MARKER_DIM_TOTAL_MAX) {
+    return 0;
+  }
+  if (strchr(dim, ':') != NULL || dim[0] == '/' || dim[len - 1] == '/') {
+    return 0;
+  }
+  const char *slash = strchr(dim, '/');
+  if (slash == NULL) {
+    return 0;
+  }
+  size_t ns_len = (size_t)(slash - dim);
+  if (ns_len < 1 || ns_len > MARKER_DIM_NS_MAX || !dim_segment_ok(dim, ns_len)) {
+    return 0;
+  }
+  const char *path = slash + 1;
+  size_t path_len = strlen(path);
+  if (path_len < 1 || path_len > MARKER_DIM_PATH_MAX) {
+    return 0;
+  }
+  const char *p = path;
+  while (*p != '\0') {
+    const char *next = strchr(p, '/');
+    size_t seg = next == NULL ? strlen(p) : (size_t)(next - p);
+    if (!dim_segment_ok(p, seg)) {
+      return 0;
+    }
+    if (next == NULL) {
+      break;
+    }
+    p = next + 1;
+  }
+  return 1;
 }
 
 static int id_ok(const char *id) {

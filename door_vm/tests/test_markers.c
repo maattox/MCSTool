@@ -113,6 +113,71 @@ static void test_cap(void) {
   CHECK(list.count == MARKERS_MAX, "cap overflow mutated count");
 }
 
+static void test_namespaced_dim(const char *path) {
+  printf("namespaced dim (%s)\n", path);
+  MarkerList list;
+  markers_clear(&list);
+  int status = 0;
+
+  CHECK(markers_add(&list, "twilightforest/twilight_forest", 10.0, 20.0, "Lodge", NULL, &status) ==
+                0 &&
+            status == 201,
+        "tf dim rejected (%d)", status);
+  CHECK(list.count == 1 && strcmp(list.items[0].dim, "twilightforest/twilight_forest") == 0,
+        "tf dim stored");
+
+  CHECK(markers_add(&list, "aether/the_aether", 3.0, 4.0, "Portal", NULL, &status) == 0 &&
+            status == 201,
+        "aether dim rejected (%d)", status);
+  CHECK(list.count == 2 && strcmp(list.items[1].dim, "aether/the_aether") == 0, "aether dim stored");
+
+  CHECK(markers_add(&list, "the_nether", 0, 0, "X", NULL, &status) != 0 && status == 400,
+        "the_nether accepted");
+  CHECK(markers_add(&list, "../x", 0, 0, "X", NULL, &status) != 0 && status == 400, "../x accepted");
+  CHECK(markers_add(&list, "foo/../bar", 0, 0, "X", NULL, &status) != 0 && status == 400,
+        "path .. accepted");
+  CHECK(markers_add(&list, "", 0, 0, "X", NULL, &status) != 0 && status == 400, "empty dim accepted");
+  CHECK(markers_add(&list, "Minecraft/foo", 0, 0, "X", NULL, &status) != 0 && status == 400,
+        "capital ns accepted");
+  CHECK(markers_add(&list, "minecraft/overworld", 0, 0, "X", NULL, &status) != 0 && status == 400,
+        "minecraft/overworld accepted");
+  CHECK(markers_add(&list, "minecraft/the_nether", 0, 0, "X", NULL, &status) != 0 && status == 400,
+        "minecraft/the_nether accepted");
+  CHECK(markers_add(&list, "/aether/the_aether", 0, 0, "X", NULL, &status) != 0 && status == 400,
+        "leading slash accepted");
+  CHECK(markers_add(&list, "aether/the_aether/", 0, 0, "X", NULL, &status) != 0 && status == 400,
+        "trailing slash accepted");
+  CHECK(markers_add(&list, "aether:the_aether", 0, 0, "X", NULL, &status) != 0 && status == 400,
+        "colon dim accepted");
+  CHECK(list.count == 2, "rejects mutated namespaced list");
+
+  char too_long[MARKER_DIM_TOTAL_MAX + 2];
+  memset(too_long, 'a', MARKER_DIM_NS_MAX);
+  too_long[MARKER_DIM_NS_MAX] = '/';
+  memset(too_long + MARKER_DIM_NS_MAX + 1, 'b', MARKER_DIM_TOTAL_MAX - MARKER_DIM_NS_MAX);
+  too_long[MARKER_DIM_TOTAL_MAX + 1] = '\0';
+  CHECK(strlen(too_long) == MARKER_DIM_TOTAL_MAX + 1, "too-long fixture %zu", strlen(too_long));
+  CHECK(markers_add(&list, too_long, 0, 0, "X", NULL, &status) != 0 && status == 400,
+        "64-byte dim accepted");
+
+  char ok63[MARKER_DIM_TOTAL_MAX + 1];
+  memset(ok63, 'a', MARKER_DIM_NS_MAX);
+  ok63[MARKER_DIM_NS_MAX] = '/';
+  memset(ok63 + MARKER_DIM_NS_MAX + 1, 'c', MARKER_DIM_TOTAL_MAX - MARKER_DIM_NS_MAX - 1);
+  ok63[MARKER_DIM_TOTAL_MAX] = '\0';
+  CHECK(strlen(ok63) == MARKER_DIM_TOTAL_MAX, "63-byte fixture %zu", strlen(ok63));
+  CHECK(markers_add(&list, ok63, 5.0, 6.0, "Long", NULL, &status) == 0 && status == 201,
+        "63-byte dim rejected (%d)", status);
+
+  CHECK(markers_save(&list, path) == 0, "ns save failed");
+  MarkerList loaded;
+  CHECK(markers_load(&loaded, path) == 0, "ns load failed");
+  CHECK(loaded.count == 3, "ns loaded count %zu", loaded.count);
+  CHECK(strcmp(loaded.items[0].dim, "twilightforest/twilight_forest") == 0, "tf round trip");
+  CHECK(strcmp(loaded.items[1].dim, "aether/the_aether") == 0, "aether round trip");
+  CHECK(strcmp(loaded.items[2].dim, ok63) == 0, "63-byte round trip");
+}
+
 static void test_round_trip(const char *path) {
   printf("file round trip (%s)\n", path);
   MarkerList list;
@@ -179,6 +244,7 @@ int main(int argc, char **argv) {
   const char *path = argc > 1 ? argv[1] : "build/test_markers.json";
   test_add_rename_delete();
   test_rejects();
+  test_namespaced_dim(path);
   test_cap();
   test_round_trip(path);
   test_apply_post();
