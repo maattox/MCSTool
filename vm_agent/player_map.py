@@ -1,8 +1,8 @@
 """Niced MinedMap render + publish tree for the door VCN pull.
 
 Sibling of idle_watch. Invoked by mc-player-map.timer (not dumped into idle_watch).
-Explored chunks only. Overworld / Nether / End. Extra dimensions/ namespaces are
-detected and skipped (no extra product UI).
+Explored chunks only. Overworld / Nether / End first, then extra namespaced
+dimensions (cap 12, shim, shape-not-palette).
 """
 
 from __future__ import annotations
@@ -14,6 +14,7 @@ import re
 import shutil
 import subprocess
 import sys
+import html
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
@@ -35,7 +36,9 @@ CAP_BYTES = 2 * 1024 * 1024 * 1024
 RENDER_TIMEOUT_SEC = 15 * 60
 DIMS = ("overworld", "nether", "end")
 DIM_LABELS = {"overworld": "Overworld", "nether": "Nether", "end": "End"}
+EXTRA_DIM_CAP = 12
 SKIP_PUBLISH_NAMES = {"processed"}
+_VANILLA_DIM_FOLDERS = {("minecraft", "overworld"), ("minecraft", "the_nether"), ("minecraft", "the_end")}
 
 # P1 visual lock: oak night + binding bar; hotbar-slot tabs; system UI fonts.
 CHROME_CSS = """:root {
@@ -108,7 +111,16 @@ body {
   flex-wrap: nowrap;
   gap: 4px;
   min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--bevel-light) var(--well);
 }
+.dims::-webkit-scrollbar { height: 6px; }
+.dims::-webkit-scrollbar-track { background: var(--well); }
+.dims::-webkit-scrollbar-thumb { background: var(--bevel-light); }
 .note {
   grid-area: note;
   margin: 0;
@@ -121,11 +133,13 @@ body {
 }
 .slot {
   display: inline-flex;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: center;
   min-width: 0;
   padding: 0 14px;
   height: 32px;
+  white-space: nowrap;
   border-radius: 0;
   background: var(--well);
   color: var(--quiet);
@@ -145,16 +159,17 @@ body {
   outline: 2px solid var(--item);
   outline-offset: 2px;
 }
-.slot[data-dim="overworld"][aria-current="page"] { --slot-ink: var(--grass); }
-.slot[data-dim="nether"][aria-current="page"] { --slot-ink: var(--netherrack); }
-.slot[data-dim="end"][aria-current="page"] { --slot-ink: var(--end-stone); }
 .slot[aria-current="page"] {
+  --slot-ink: var(--item);
   color: var(--item);
   box-shadow:
     inset 0 0 0 3px var(--slot-ink),
     inset -2px -2px 0 var(--bevel-dark),
     inset 2px 2px 0 var(--bevel-light);
 }
+.slot[data-dim="overworld"][aria-current="page"] { --slot-ink: var(--grass); }
+.slot[data-dim="nether"][aria-current="page"] { --slot-ink: var(--netherrack); }
+.slot[data-dim="end"][aria-current="page"] { --slot-ink: var(--end-stone); }
 .slot[aria-disabled="true"] {
   pointer-events: none;
   opacity: 0.55;
@@ -175,10 +190,8 @@ body {
       "tabs tabs";
   }
   .note { text-align: left; }
-  .dims {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-  }
+}
+@media (pointer: coarse) {
   .slot { height: 44px; min-height: 44px; padding: 0 8px; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -263,6 +276,7 @@ MARKERS_CSS = """:root {
   gap: 4px;
   font-family: var(--font);
   pointer-events: auto;
+  --pin-ink: var(--item);
 }
 .mc-pin-slot {
   display: block;
@@ -273,7 +287,7 @@ MARKERS_CSS = """:root {
   box-shadow:
     inset 2px 2px 0 var(--bevel-dark),
     inset -2px -2px 0 var(--bevel-light),
-    inset 0 0 0 3px var(--pin-ink, var(--grass));
+    inset 0 0 0 3px var(--pin-ink);
 }
 .mc-pin--overworld { --pin-ink: var(--grass); }
 .mc-pin--nether { --pin-ink: var(--netherrack); }
@@ -456,6 +470,10 @@ MARKERS_JS = """(function () {
   var MOVE_PX = 12;
 
   function currentDim() {
+    var fromDoc = document.documentElement.getAttribute("data-mc-dim");
+    if (fromDoc) return fromDoc;
+    var body = document.body && document.body.getAttribute("data-mc-dim");
+    if (body) return body;
     var parts = (location.pathname || "").split("/").filter(Boolean);
     var i = parts.indexOf("map.html");
     var folder = i > 0 ? parts[i - 1] : (parts[0] || "");
@@ -541,10 +559,13 @@ MARKERS_JS = """(function () {
     }
 
     function pinIcon() {
+      var pinClass = (dim === "overworld" || dim === "nether" || dim === "end")
+        ? ("mc-pin mc-pin--" + dim)
+        : "mc-pin";
       return L.divIcon({
         className: "mc-pin-icon",
         html:
-          '<div class="mc-pin mc-pin--' + dim + '">' +
+          '<div class="' + pinClass + '">' +
             '<span class="mc-pin-slot" aria-hidden="true"></span>' +
             '<span class="mc-pin-name"></span>' +
           "</div>",
@@ -971,63 +992,106 @@ _CREATE_MAP_RE = re.compile(
 )
 _HEAD_CLOSE_RE = re.compile(r"</head>", re.IGNORECASE)
 _BODY_CLOSE_RE = re.compile(r"</body>", re.IGNORECASE)
+_HTML_OPEN_RE = re.compile(r"<html\b[^>]*>", re.IGNORECASE)
+_MC_DIM_ATTR_RE = re.compile(r'\s*data-mc-dim="[^"]*"')
 
 
-def hook_map_html(path: Path) -> None:
+def _ensure_mc_dim(text: str, dim: str) -> str:
+    attr = f'data-mc-dim="{html.escape(dim, quote=True)}"'
+    found = _HTML_OPEN_RE.search(text)
+    if not found:
+        return text
+    tag = found.group(0)
+    if _MC_DIM_ATTR_RE.search(tag):
+        new_tag = _MC_DIM_ATTR_RE.sub(" " + attr, tag, count=1)
+    else:
+        new_tag = tag[:-1] + f" {attr}>"
+    return text[: found.start()] + new_tag + text[found.end() :]
+
+
+def hook_map_html(path: Path, dim: str = "overworld") -> None:
     """Append markers assets onto stock map.html after Leaflet, before createMap.
 
     createMap() fetches info.json then calls L.map. Loading markers.js before that
-    call lets us wrap L.map without forking MinedMap.js.
+    call lets us wrap L.map without forking MinedMap.js. Sets data-mc-dim on <html>
+    so pins use the product dim id (including nested ns/path extras).
     """
     text = path.read_text(encoding="utf-8")
-    if 'src="/markers.js"' in text:
-        return
-    hook = f"{_MARKERS_LINK}\n{_MARKERS_SCRIPT}\n"
-    found = _LEAFLET_SCRIPT_RE.search(text)
-    if found:
-        text = text[: found.end()] + "\n" + hook + text[found.end() :]
-    else:
-        created = _CREATE_MAP_RE.search(text)
-        if created:
-            text = text[: created.start()] + hook + text[created.start() :]
+    if 'src="/markers.js"' not in text:
+        hook = f"{_MARKERS_LINK}\n{_MARKERS_SCRIPT}\n"
+        found = _LEAFLET_SCRIPT_RE.search(text)
+        if found:
+            text = text[: found.end()] + "\n" + hook + text[found.end() :]
         else:
-            head = _HEAD_CLOSE_RE.search(text)
-            if head:
-                text = text[: head.start()] + hook + text[head.start() :]
+            created = _CREATE_MAP_RE.search(text)
+            if created:
+                text = text[: created.start()] + hook + text[created.start() :]
             else:
-                body = _BODY_CLOSE_RE.search(text)
-                if body:
-                    text = text[: body.start()] + hook + text[body.start() :]
+                head = _HEAD_CLOSE_RE.search(text)
+                if head:
+                    text = text[: head.start()] + hook + text[head.start() :]
                 else:
-                    if text and not text.endswith("\n"):
-                        text += "\n"
-                    text += hook
-    path.write_text(text, encoding="utf-8")
+                    body = _BODY_CLOSE_RE.search(text)
+                    if body:
+                        text = text[: body.start()] + hook + text[body.start() :]
+                    else:
+                        if text and not text.endswith("\n"):
+                            text += "\n"
+                        text += hook
+    path.write_text(_ensure_mc_dim(text, dim), encoding="utf-8")
 
 
+def extra_tab_label(dim_id: str, extra_ids: list[str]) -> str:
+    """Title-case the last path segment; prefix ns when that label is shared."""
+    last = dim_id.rsplit("/", 1)[-1]
+    pretty = " ".join(part.capitalize() for part in last.split("_"))
+    lasts = [item.rsplit("/", 1)[-1] for item in extra_ids]
+    if lasts.count(last) > 1:
+        ns = dim_id.split("/", 1)[0]
+        return f"{ns} {pretty}"
+    return pretty
 
-def _chrome_hrefs() -> dict[str, tuple[str, str]]:
+
+def tab_label(dim: str, live: list[str]) -> str:
+    if dim in DIM_LABELS:
+        return DIM_LABELS[dim]
+    extras = [item for item in live if item not in DIM_LABELS]
+    return extra_tab_label(dim, extras)
+
+
+def _chrome_hrefs(dims: list[str] | None = None) -> dict[str, tuple[str, str]]:
     """dim -> (page href, map.html src). Root-relative so in-page tab switches stay valid."""
-    return {
+    hrefs: dict[str, tuple[str, str]] = {
         "overworld": ("/", "/overworld/map.html"),
         "nether": ("/nether/", "/nether/map.html"),
         "end": ("/end/", "/end/map.html"),
     }
+    for dim in dims or []:
+        if dim in hrefs:
+            continue
+        hrefs[dim] = (f"/{dim}/", f"/{dim}/map.html")
+    return hrefs
 
 
-def chrome_html(dim: str, *, at_root: bool = False) -> str:
+def chrome_html(dim: str, *, at_root: bool = False, dims: list[str] | None = None) -> str:
     _ = at_root  # same root-relative assets on / and /overworld/
-    hrefs = _chrome_hrefs()
+    live = list(dims) if dims is not None else list(DIMS)
+    hrefs = _chrome_hrefs(live)
     css = "/chrome.css"
     js = "/chrome.js"
-    iframe_src, iframe_title = hrefs[dim][1], f"{DIM_LABELS[dim]} map"
+    iframe_src = hrefs.get(dim, hrefs["overworld"])[1]
+    iframe_title = html.escape(f"{tab_label(dim, live)} map")
     slots = []
-    for name in DIMS:
+    for name in live:
         page_href, map_src = hrefs[name]
         current = ' aria-current="page"' if name == dim else ""
+        title_attr = ""
+        if name not in DIM_LABELS:
+            title_attr = f' title="{html.escape(name, quote=True)}"'
         slots.append(
-            f'<a class="slot" data-dim="{name}" data-map="{map_src}" '
-            f'href="{page_href}"{current}>{DIM_LABELS[name]}</a>'
+            f'<a class="slot" data-dim="{html.escape(name, quote=True)}" data-map="{html.escape(map_src, quote=True)}" '
+            f'href="{html.escape(page_href, quote=True)}"{current}{title_attr}>'
+            f"{html.escape(tab_label(name, live))}</a>"
         )
     slot_markup = "\n        ".join(slots)
     return f"""<!DOCTYPE html>
@@ -1127,6 +1191,9 @@ def detect_region_dir(world: Path, dim: str) -> Path | None:
             world.parent / "world_the_end" / "DIM1" / "region",
             world / "DIM1" / "region",
         ]
+    elif "/" in dim:
+        ns, path = dim.split("/", 1)
+        candidates = [world / "dimensions" / ns / path / "region"]
     else:
         return None
 
@@ -1140,9 +1207,8 @@ def detect_region_dir(world: Path, dim: str) -> Path | None:
 
 
 def extra_dimension_ids(world: Path) -> list[str]:
-    """Namespaced dimensions beyond Overworld/Nether/End. Not rendered (no extra UI)."""
+    """Namespaced dimensions beyond Overworld/Nether/End with at least one .mca."""
     root = world / "dimensions"
-    skip = {("minecraft", "overworld"), ("minecraft", "the_nether"), ("minecraft", "the_end")}
     found: list[str] = []
     if not root.is_dir():
         return found
@@ -1152,12 +1218,17 @@ def extra_dimension_ids(world: Path) -> list[str]:
         for name in sorted(ns.iterdir()):
             if not name.is_dir():
                 continue
-            if (ns.name, name.name) in skip:
+            if (ns.name, name.name) in _VANILLA_DIM_FOLDERS:
                 continue
             region = name / "region"
-            if region.is_dir():
+            if region.is_dir() and _has_region_files(region):
                 found.append(f"{ns.name}/{name.name}")
     return found
+
+
+def extras_for_tick(ids: list[str]) -> tuple[list[str], list[str]]:
+    """First EXTRA_DIM_CAP extras (already sorted); remainder is over-cap skip."""
+    return ids[:EXTRA_DIM_CAP], ids[EXTRA_DIM_CAP:]
 
 
 def prepare_shim(world: Path, region: Path, shim_root: Path) -> Path:
@@ -1213,7 +1284,7 @@ def copy_tiles_without_processed(src: Path, dest_data: Path) -> None:
             shutil.copy2(item, target)
 
 
-def install_chrome(dest: Path, dim: str, *, at_root: bool = False) -> None:
+def install_chrome(dest: Path, dim: str, *, at_root: bool = False, dims: list[str] | None = None) -> None:
     """Wrap a copied MinedMap viewer: keep stock page as map.html, write product chrome."""
     dest.mkdir(parents=True, exist_ok=True)
     if not at_root:
@@ -1222,17 +1293,20 @@ def install_chrome(dest: Path, dim: str, *, at_root: bool = False) -> None:
             stock.replace(dest / "map.html")
         map_html = dest / "map.html"
         if map_html.is_file():
-            hook_map_html(map_html)
-    (dest / "index.html").write_text(chrome_html(dim, at_root=at_root), encoding="utf-8")
+            hook_map_html(map_html, dim)
+    (dest / "index.html").write_text(
+        chrome_html(dim, at_root=at_root, dims=dims), encoding="utf-8"
+    )
 
 
-def write_switcher(publish: Path) -> None:
+def write_switcher(publish: Path, dims: list[str] | None = None) -> None:
+    live = list(dims) if dims is not None else list(DIMS)
     publish.mkdir(parents=True, exist_ok=True)
     (publish / "chrome.css").write_text(CHROME_CSS, encoding="utf-8")
     (publish / "chrome.js").write_text(CHROME_JS, encoding="utf-8")
     (publish / "markers.css").write_text(MARKERS_CSS, encoding="utf-8")
     (publish / "markers.js").write_text(MARKERS_JS, encoding="utf-8")
-    install_chrome(publish, "overworld", at_root=True)
+    install_chrome(publish, "overworld", at_root=True, dims=live)
 
 
 def sha256_file(path: Path) -> str:
@@ -1314,7 +1388,8 @@ def run_minedmap(
     )
 
 
-def publish_from_render(root: Path) -> None:
+def publish_from_render(root: Path, dims: list[str] | None = None) -> None:
+    live = list(dims) if dims is not None else list(DIMS)
     viewer = root / "viewer"
     render = root / "render"
     publish = root / "publish"
@@ -1322,11 +1397,12 @@ def publish_from_render(root: Path) -> None:
     if staging.exists():
         shutil.rmtree(staging)
     staging.mkdir(parents=True, exist_ok=True)
-    write_switcher(staging)
-    for dim in DIMS:
-        copy_viewer_into(staging / dim, viewer)
-        install_chrome(staging / dim, dim, at_root=False)
-        copy_tiles_without_processed(render / dim, staging / dim / "data")
+    write_switcher(staging, live)
+    for dim in live:
+        dest = staging / dim
+        copy_viewer_into(dest, viewer)
+        install_chrome(dest, dim, at_root=False, dims=live)
+        copy_tiles_without_processed(render / dim, dest / "data")
     if publish.exists():
         shutil.rmtree(publish)
     staging.replace(publish)
@@ -1355,10 +1431,8 @@ def tick(
 
     root = map_root(cfg)
     root.mkdir(parents=True, exist_ok=True)
-    extras = extra_dimension_ids(world)
-    extra_note = (
-        f"; skipped extra dimensions {', '.join(extras)}" if extras else ""
-    )
+    extras_all = extra_dimension_ids(world)
+    extras, over_cap = extras_for_tick(extras_all)
 
     flush = save_flush or (lambda: rcon_save_flush(cfg))
     try:
@@ -1367,10 +1441,12 @@ def tick(
         return f"player-map skip (save-all flush failed: {exc})"
 
     rendered: list[str] = []
-    for dim in DIMS:
+    failed_extras: list[str] = []
+    for dim in list(DIMS) + extras:
         region = detect_region_dir(world, dim)
         if region is None:
             continue
+        is_extra = dim not in DIMS
         if dim == "overworld":
             input_dir = overworld_input(world)
         else:
@@ -1379,12 +1455,25 @@ def tick(
         try:
             proc = run_minedmap(binary, input_dir, out_dir, runner=runner)
         except subprocess.TimeoutExpired:
+            if is_extra:
+                failed_extras.append(dim)
+                continue
             return f"player-map fail ({dim} render timed out)"
         if proc.returncode != 0:
             err = (proc.stderr or proc.stdout or "").strip().splitlines()
             tail = err[-1] if err else f"exit {proc.returncode}"
+            if is_extra:
+                failed_extras.append(dim)
+                continue
             return f"player-map fail ({dim}: {tail})"
         rendered.append(dim)
+
+    notes: list[str] = []
+    if over_cap:
+        notes.append(f"skipped extra dimensions over cap {', '.join(over_cap)}")
+    if failed_extras:
+        notes.append(f"skipped extra dimensions failed {', '.join(failed_extras)}")
+    extra_note = f"; {'; '.join(notes)}" if notes else ""
 
     if not rendered:
         return "player-map skip (no region dirs)" + extra_note
@@ -1393,7 +1482,7 @@ def tick(
     if render_bytes > CAP_BYTES:
         return f"player-map skip (render tree {render_bytes} bytes over 2 GiB cap)"
 
-    publish_from_render(root)
+    publish_from_render(root, rendered)
     pub_bytes = tree_bytes(root / "publish")
     if pub_bytes > CAP_BYTES:
         return f"player-map skip (publish tree {pub_bytes} bytes over 2 GiB cap)"

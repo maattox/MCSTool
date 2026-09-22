@@ -1,4 +1,4 @@
-"""Player-map region detect, cap, extra-dim skip, publish omit processed."""
+"""Player-map region detect, cap, extra-dim publish, omit processed."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import patch
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 if _HERE not in sys.path:
@@ -68,10 +69,36 @@ class ExtraDimensionTests(unittest.TestCase):
             _touch_mca(world / "dimensions" / "minecraft" / "the_nether" / "region")
             _touch_mca(world / "dimensions" / "minecraft" / "the_end" / "region")
             _touch_mca(world / "dimensions" / "twilightforest" / "twilight_forest" / "region")
+            _touch_mca(world / "dimensions" / "minecraft" / "mining" / "region")
             self.assertEqual(
-                ["twilightforest/twilight_forest"],
+                ["minecraft/mining", "twilightforest/twilight_forest"],
                 pm.extra_dimension_ids(world),
             )
+
+    def test_requires_mca(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            world = Path(raw) / "world"
+            (world / "dimensions" / "aether" / "the_aether" / "region").mkdir(parents=True)
+            self.assertEqual([], pm.extra_dimension_ids(world))
+
+    def test_tab_labels(self) -> None:
+        self.assertEqual(
+            "Twilight Forest",
+            pm.extra_tab_label("twilightforest/twilight_forest", ["twilightforest/twilight_forest"]),
+        )
+        self.assertEqual(
+            "The Aether",
+            pm.extra_tab_label("aether/the_aether", ["aether/the_aether"]),
+        )
+        extras = ["mod_a/mining", "mod_b/mining"]
+        self.assertEqual("mod_a Mining", pm.extra_tab_label("mod_a/mining", extras))
+        self.assertEqual("mod_b Mining", pm.extra_tab_label("mod_b/mining", extras))
+
+    def test_extras_for_tick_caps(self) -> None:
+        ids = [f"mod{i:02d}/dim" for i in range(13)]
+        take, skip = pm.extras_for_tick(ids)
+        self.assertEqual(12, len(take))
+        self.assertEqual(["mod12/dim"], skip)
 
 
 class CapAndPublishTests(unittest.TestCase):
@@ -166,11 +193,14 @@ class CapAndPublishTests(unittest.TestCase):
             self.assertTrue((root / "publish" / "markers.js").is_file())
             self.assertTrue((root / "publish" / "overworld" / "index.html").is_file())
             self.assertTrue((root / "publish" / "overworld" / "map.html").is_file())
-            self.assertIn("<html>v</html>", (root / "publish" / "overworld" / "map.html").read_text(encoding="utf-8"))
+            ow_map = (root / "publish" / "overworld" / "map.html").read_text(encoding="utf-8")
+            self.assertIn("v</html>", ow_map)
+            self.assertIn('data-mc-dim="overworld"', ow_map)
             for dim in pm.DIMS:
                 map_html = (root / "publish" / dim / "map.html").read_text(encoding="utf-8")
                 self.assertIn('href="/markers.css"', map_html)
                 self.assertIn('src="/markers.js"', map_html)
+                self.assertIn(f'data-mc-dim="{dim}"', map_html)
             self.assertIn('data-dim="nether"', ow_html)
             self.assertIn('href="/nether/"', ow_html)
             self.assertIn("/nether/map.html", ow_html)
@@ -211,6 +241,14 @@ class CapAndPublishTests(unittest.TestCase):
             self.assertIn("mc-cursor-xz", markers_css)
             self.assertIn("mousemove", markers_js)
             self.assertIn('"X: "', markers_js)
+            self.assertIn("overflow-x: auto", css)
+            self.assertIn("flex-wrap: nowrap", css)
+            self.assertNotIn("grid-template-columns: 1fr 1fr 1fr", css)
+            self.assertIn("pointer: coarse", css)
+            self.assertIn("--slot-ink: var(--item)", css)
+            self.assertIn("data-mc-dim", markers_js)
+            self.assertIn("--pin-ink: var(--item)", markers_css)
+            self.assertIn('pinClass = (dim === "overworld"', markers_js)
 
     def test_hook_map_html_before_create_map(self) -> None:
         stock = (
@@ -231,7 +269,14 @@ class CapAndPublishTests(unittest.TestCase):
             self.assertIn('href="/markers.css"', text)
             self.assertLess(text.index("leaflet"), text.index("/markers.js"))
             self.assertLess(text.index("/markers.js"), text.index("createMap"))
+            self.assertIn('data-mc-dim="overworld"', text)
             self.assertNotIn("friend", text)
+
+            pm.hook_map_html(path, "twilightforest/twilight_forest")
+            text = path.read_text(encoding="utf-8")
+            self.assertEqual(1, text.count('src="/markers.js"'))
+            self.assertEqual(1, text.count("data-mc-dim="))
+            self.assertIn('data-mc-dim="twilightforest/twilight_forest"', text)
 
     def test_door_stub_matches_chrome_voice(self) -> None:
         stub = Path(_HERE).resolve().parent / "door_vm" / "player-map" / "index.html"
@@ -242,6 +287,186 @@ class CapAndPublishTests(unittest.TestCase):
         self.assertIn("Explored terrain only", text)
         self.assertNotIn("friend", text)
         self.assertNotIn("MinedMap", text)
+
+
+class ExtraPublishTests(unittest.TestCase):
+    def test_publishes_twilight_forest_tabs_and_dim(self) -> None:
+        extra = "twilightforest/twilight_forest"
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            viewer = root / "viewer"
+            viewer.mkdir()
+            (viewer / "index.html").write_text("<html>v</html>", encoding="utf-8")
+            for dim in list(pm.DIMS) + [extra]:
+                d = root / "render" / dim
+                d.mkdir(parents=True)
+                (d / "info.json").write_text("{}", encoding="utf-8")
+            live = list(pm.DIMS) + [extra]
+            pm.publish_from_render(root, live)
+            root_html = (root / "publish" / "index.html").read_text(encoding="utf-8")
+            extra_index = (
+                root / "publish" / "twilightforest" / "twilight_forest" / "index.html"
+            ).read_text(encoding="utf-8")
+            extra_map = (
+                root / "publish" / "twilightforest" / "twilight_forest" / "map.html"
+            ).read_text(encoding="utf-8")
+            self.assertIn("Overworld", root_html)
+            self.assertIn("Nether", root_html)
+            self.assertIn("End", root_html)
+            self.assertIn("Twilight Forest", root_html)
+            self.assertIn('data-dim="twilightforest/twilight_forest"', root_html)
+            self.assertIn('href="/twilightforest/twilight_forest/"', root_html)
+            self.assertIn('title="twilightforest/twilight_forest"', root_html)
+            self.assertIn("Twilight Forest", extra_index)
+            self.assertIn('aria-current="page"', extra_index)
+            self.assertIn('data-mc-dim="twilightforest/twilight_forest"', extra_map)
+            self.assertIn('src="/markers.js"', extra_map)
+            self.assertTrue(
+                (root / "publish" / "twilightforest" / "twilight_forest" / "data" / "info.json").is_file()
+            )
+            for html_path in (root / "publish").rglob("*.html"):
+                self.assertNotIn("friend", html_path.read_text(encoding="utf-8"))
+
+    def test_over_cap_extras_omitted_from_publish(self) -> None:
+        extras = [f"mod{i:02d}/dim" for i in range(13)]
+        take, skip = pm.extras_for_tick(extras)
+        self.assertEqual(["mod12/dim"], skip)
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            viewer = root / "viewer"
+            viewer.mkdir()
+            (viewer / "index.html").write_text("<html>v</html>", encoding="utf-8")
+            live = list(pm.DIMS) + take
+            for dim in live + skip:
+                d = root / "render" / dim
+                d.mkdir(parents=True)
+                (d / "info.json").write_text("{}", encoding="utf-8")
+            pm.publish_from_render(root, live)
+            html = (root / "publish" / "index.html").read_text(encoding="utf-8")
+            self.assertIn("mod00 Dim", html)
+            self.assertIn('data-dim="mod11/dim"', html)
+            self.assertNotIn("mod12", html)
+            self.assertFalse((root / "publish" / "mod12").exists())
+            self.assertNotIn("friend", html)
+
+    def test_tick_skips_failed_extra_not_vanilla(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            world = root / "world"
+            _touch_mca(world / "region")
+            _touch_mca(world / "dimensions" / "twilightforest" / "twilight_forest" / "region")
+            (world / "level.dat").write_bytes(b"dat")
+            binary = root / "minedmap"
+            binary.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+            binary.chmod(0o755)
+            map_root = root / "map"
+            viewer = map_root / "viewer"
+            viewer.mkdir(parents=True)
+            (viewer / "index.html").write_text("<html>v</html>", encoding="utf-8")
+
+            def runner(cmd, **_k):
+                joined = " ".join(str(c) for c in cmd)
+                if "twilightforest" in joined:
+                    return SimpleNamespace(returncode=1, stdout="", stderr="extra boom")
+                return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+            def fake_shim(_world, _region, shim_root: Path) -> Path:
+                shim_root.mkdir(parents=True, exist_ok=True)
+                return shim_root
+
+            with patch.object(pm, "prepare_shim", side_effect=fake_shim):
+                with patch.object(pm, "build_tar_and_manifest", return_value={}):
+                    msg = pm.tick(
+                        {
+                            "world_path": str(world),
+                            "minedmap_path": str(binary),
+                            "player_map_root": str(map_root),
+                        },
+                        game_up=True,
+                        save_flush=lambda: None,
+                        runner=runner,
+                    )
+            self.assertIn("rendered overworld", msg)
+            self.assertIn("skipped extra dimensions failed twilightforest/twilight_forest", msg)
+            self.assertFalse((map_root / "publish" / "twilightforest").exists())
+            html = (map_root / "publish" / "index.html").read_text(encoding="utf-8")
+            self.assertNotIn("Twilight Forest", html)
+            self.assertNotIn("friend", html)
+
+    def test_tick_renders_extra_dim(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            world = root / "world"
+            _touch_mca(world / "region")
+            _touch_mca(world / "dimensions" / "twilightforest" / "twilight_forest" / "region")
+            (world / "level.dat").write_bytes(b"dat")
+            binary = root / "minedmap"
+            binary.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+            binary.chmod(0o755)
+            map_root = root / "map"
+            viewer = map_root / "viewer"
+            viewer.mkdir(parents=True)
+            (viewer / "index.html").write_text("<html>v</html>", encoding="utf-8")
+
+            def fake_shim(_world, _region, shim_root: Path) -> Path:
+                shim_root.mkdir(parents=True, exist_ok=True)
+                return shim_root
+
+            with patch.object(pm, "prepare_shim", side_effect=fake_shim):
+                with patch.object(pm, "build_tar_and_manifest", return_value={}):
+                    msg = pm.tick(
+                        {
+                            "world_path": str(world),
+                            "minedmap_path": str(binary),
+                            "player_map_root": str(map_root),
+                        },
+                        game_up=True,
+                        save_flush=lambda: None,
+                        runner=lambda *_a, **_k: SimpleNamespace(
+                            returncode=0, stdout="", stderr=""
+                        ),
+                    )
+            self.assertIn("twilightforest/twilight_forest", msg)
+            self.assertNotIn("skipped extra", msg)
+            html = (map_root / "publish" / "index.html").read_text(encoding="utf-8")
+            self.assertIn("Twilight Forest", html)
+            extra_map = (
+                map_root / "publish" / "twilightforest" / "twilight_forest" / "map.html"
+            ).read_text(encoding="utf-8")
+            self.assertIn('data-mc-dim="twilightforest/twilight_forest"', extra_map)
+            self.assertNotIn("friend", html)
+
+    def test_tick_vanilla_failure_still_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            world = root / "world"
+            _touch_mca(world / "region")
+            _touch_mca(world / "dimensions" / "minecraft" / "the_nether" / "region")
+            (world / "level.dat").write_bytes(b"dat")
+            binary = root / "minedmap"
+            binary.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+            binary.chmod(0o755)
+            map_root = root / "map"
+
+            def runner(*_a, **_k):
+                return SimpleNamespace(returncode=1, stdout="", stderr="vanilla boom")
+
+            def fake_shim(_world, _region, shim_root: Path) -> Path:
+                shim_root.mkdir(parents=True, exist_ok=True)
+                return shim_root
+
+            with patch.object(pm, "prepare_shim", side_effect=fake_shim):
+                msg = pm.tick(
+                    {
+                        "world_path": str(world),
+                        "minedmap_path": str(binary),
+                        "player_map_root": str(map_root),
+                    },
+                    game_up=True,
+                    save_flush=lambda: None,
+                    runner=runner,
+                )
+            self.assertTrue(msg.startswith("player-map fail (overworld:"))
 
 
 class MinedMapCmdTests(unittest.TestCase):
