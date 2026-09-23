@@ -83,6 +83,8 @@ public static class SetupWizardStore
         if (state.CurrentStep < 0 || state.CurrentStep >= SetupWizardState.StepCount)
             state.CurrentStep = 0;
 
+        state.JvmXmx = JvmHeapChoice.ClampToHost(state.JvmXmx, state.Vm1MemoryGb);
+
         return state;
     }
 
@@ -127,7 +129,7 @@ public static class SetupWizardStore
         }
         catch (Exception ex)
         {
-            return ServiceResult.Fail($"Could not write Manager settings: {ex.Message}");
+            return ServiceResult.Fail($"Could not write MCSTool settings: {ex.Message}");
         }
     }
 }

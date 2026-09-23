@@ -9,7 +9,7 @@ using McManager.Hybrid.Ui;
 namespace McManager.Hybrid.ViewModels;
 
 /// <summary>
-/// Server → Settings change-type modal. No tofu. Vanilla/Paper reinstall via driver.sh;
+/// Server → Settings change-type modal. No tofu. Paper reinstall via driver.sh;
 /// Modded reuses pack analyze + the same prepare path.
 /// </summary>
 public sealed partial class ChangeServerTypeViewModel : ObservableObject
@@ -55,11 +55,10 @@ public sealed partial class ChangeServerTypeViewModel : ObservableObject
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsModdedTarget))]
     [NotifyPropertyChangedFor(nameof(IsVanillaTarget))]
-    [NotifyPropertyChangedFor(nameof(ShowSnapshotToggle))]
     [NotifyPropertyChangedFor(nameof(ShowVersionDropdown))]
     [NotifyPropertyChangedFor(nameof(ShowPackDrop))]
     [NotifyPropertyChangedFor(nameof(DirectionWarning))]
-    private string _targetChoice = ChangeServerTypeUx.ChoiceDefaultVanilla;
+    private string _targetChoice = ChangeServerTypeUx.ChoicePaper;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanSubmit))]
@@ -118,9 +117,6 @@ public sealed partial class ChangeServerTypeViewModel : ObservableObject
 
     public bool IsPaperTarget => ChangeServerTypeUx.IsPaperChoice(TargetChoice);
 
-    public bool ShowSnapshotToggle =>
-        string.Equals(ChangeServerTypeUx.NormalizeChoice(TargetChoice), ChangeServerTypeUx.ChoiceDefaultVanilla, StringComparison.Ordinal);
-
     public bool ShowVersionDropdown => IsVanillaTarget;
 
     public bool ShowPackDrop => IsModdedTarget;
@@ -156,9 +152,7 @@ public sealed partial class ChangeServerTypeViewModel : ObservableObject
 
     public string PackConfirmLabel => PackReplaceUx.PackConfirmLabel;
 
-    public string DefaultVanillaHelp => SetupWizardViewModel.DefaultVanillaHelp;
-
-    public string PaperHelp => SetupWizardViewModel.OptimizedVanillaHelp;
+    public string PaperHelp => SetupWizardViewModel.PaperHelp;
 
     public string ModdedHelp => SetupWizardViewModel.ModdedHelp;
 
@@ -187,7 +181,7 @@ public sealed partial class ChangeServerTypeViewModel : ObservableObject
             if (IsBusy || IsAnalyzingPack)
                 return "Wait until the current action finishes.";
             if (_config is null)
-                return "Local config is missing.";
+                return "This server's settings are missing.";
             if (IsModdedTarget)
             {
                 if (string.IsNullOrWhiteSpace(PackPath) || !PackCanContinue)
@@ -197,7 +191,7 @@ public sealed partial class ChangeServerTypeViewModel : ObservableObject
                 if (PackNeedsReview)
                     return ChangeServerTypeUx.PackNeedsReview;
                 if (!PackConfirmed)
-                    return "Confirm the pack.";
+                    return "Confirm the modpack.";
                 return "";
             }
 
@@ -264,7 +258,7 @@ public sealed partial class ChangeServerTypeViewModel : ObservableObject
             return;
         var path = await _filePicker.OpenFileAsync(new FilePickRequest
         {
-            Title = "Choose a mod pack (.mrpack or .zip)",
+            Title = "Choose a modpack (.mrpack or .zip)",
             Filters = [PackFilter, MrpackFilter, ZipFilter, AllFilesFilter],
         });
         if (string.IsNullOrWhiteSpace(path))
@@ -289,7 +283,7 @@ public sealed partial class ChangeServerTypeViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            StatusMessage = "Could not save the dropped pack: " + ex.Message;
+            StatusMessage = "Could not save the dropped modpack: " + ex.Message;
             return;
         }
 
@@ -306,7 +300,7 @@ public sealed partial class ChangeServerTypeViewModel : ObservableObject
 
         if (_config is null)
         {
-            StatusMessage = "Local config is missing.";
+            StatusMessage = "This server's settings are missing.";
             return;
         }
 
@@ -382,8 +376,8 @@ public sealed partial class ChangeServerTypeViewModel : ObservableObject
                 if (!meta.Succeeded)
                 {
                     StatusMessage = ChangeServerTypeUx.SuccessMessage(result.Value)
-                        + " Shared game info did not update: "
-                        + (meta.Error ?? "publish failed.");
+                        + " Server details did not update: "
+                        + (meta.Error ?? "save failed.");
                     _banner.Show(StatusMessage, ActionBannerSeverity.Warning);
                     ModalOpen = false;
                     Completed?.Invoke(this, EventArgs.Empty);
@@ -475,7 +469,7 @@ public sealed partial class ChangeServerTypeViewModel : ObservableObject
     {
         if (IsModdedTarget)
         {
-            VersionCatalogNotes = "Minecraft version comes from the pack you import.";
+            VersionCatalogNotes = "Minecraft version comes from the modpack you import.";
             OnPropertyChanged(nameof(VersionIds));
             return;
         }
@@ -485,45 +479,23 @@ public sealed partial class ChangeServerTypeViewModel : ObservableObject
             previous = _currentMinecraftVersion ?? "";
         _versionIds.Clear();
 
-        if (IsPaperTarget)
+        VersionCatalogNotes = string.IsNullOrWhiteSpace(_paperCatalogNotes)
+            ? "Paper versions (vanilla-like)."
+            : _paperCatalogNotes;
+        if (_paperProject is not null)
         {
-            VersionCatalogNotes = string.IsNullOrWhiteSpace(_paperCatalogNotes)
-                ? "Paper versions (Optimized Vanilla)."
-                : _paperCatalogNotes;
-            if (_paperProject is not null)
-            {
-                foreach (var id in PaperFillV3Client.FlattenVersionIds(_paperProject))
-                    _versionIds.Add(id);
-            }
-
-            var target = !string.IsNullOrWhiteSpace(previous) && _versionIds.Contains(previous)
-                ? previous
-                : (_paperProject is null
-                    ? previous
-                    : PaperFillV3Client.DefaultVersionId(_paperProject));
-            if (string.IsNullOrWhiteSpace(target) && _versionIds.Count > 0)
-                target = _versionIds[0];
-            MinecraftVersion = target;
-            OnPropertyChanged(nameof(VersionIds));
-            return;
+            foreach (var id in PaperFillV3Client.FlattenVersionIds(_paperProject))
+                _versionIds.Add(id);
         }
 
-        if (_manifest is null)
-        {
-            VersionCatalogNotes = string.IsNullOrWhiteSpace(_mojangCatalogNotes)
-                ? "Loading Minecraft versions…"
-                : _mojangCatalogNotes;
-            OnPropertyChanged(nameof(VersionIds));
-            return;
-        }
-
-        VersionCatalogNotes = _mojangCatalogNotes;
-        foreach (var v in MojangVersionCatalog.Filter(_manifest, IncludeSnapshots))
-            _versionIds.Add(v.Id);
-        var mojangTarget = !string.IsNullOrWhiteSpace(previous) && _versionIds.Contains(previous)
+        var target = !string.IsNullOrWhiteSpace(previous) && _versionIds.Contains(previous)
             ? previous
-            : MojangVersionCatalog.DefaultVersionId(_manifest);
-        MinecraftVersion = mojangTarget;
+            : (_paperProject is null
+                ? previous
+                : PaperFillV3Client.DefaultVersionId(_paperProject));
+        if (string.IsNullOrWhiteSpace(target) && _versionIds.Count > 0)
+            target = _versionIds[0];
+        MinecraftVersion = target;
         OnPropertyChanged(nameof(VersionIds));
     }
 
@@ -545,7 +517,7 @@ public sealed partial class ChangeServerTypeViewModel : ObservableObject
                 _packPreview = null;
                 PackPath = path;
                 PackCanContinue = false;
-                PackBlockReason = result.Error ?? "Could not analyze this file.";
+                PackBlockReason = result.Error ?? "Could not read this file.";
                 StatusMessage = PackBlockReason;
                 return;
             }
@@ -556,13 +528,13 @@ public sealed partial class ChangeServerTypeViewModel : ObservableObject
             PackSummary = result.Value.ConfirmableSummary;
             PackBlockReason = result.Value.CanContinue
                 ? ""
-                : (result.Value.BlockReason ?? "This pack cannot be installed.");
+                : (result.Value.BlockReason ?? "This modpack cannot be installed.");
             if (result.Value.CanContinue)
             {
                 MinecraftVersion = result.Value.MinecraftVersion;
                 StatusMessage = PackNeedsReview
                     ? ChangeServerTypeUx.PackNeedsReview
-                    : "Confirm the pack, then continue.";
+                    : "Confirm the modpack, then continue.";
             }
             else
             {
@@ -573,7 +545,7 @@ public sealed partial class ChangeServerTypeViewModel : ObservableObject
         {
             _packPreview = null;
             PackCanContinue = false;
-            PackBlockReason = "Analyze failed: " + ex.Message;
+            PackBlockReason = "Checking the modpack failed: " + ex.Message;
             StatusMessage = PackBlockReason;
         }
         finally

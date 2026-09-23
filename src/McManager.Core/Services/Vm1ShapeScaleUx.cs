@@ -94,7 +94,7 @@ public static class Vm1ShapeScaleUx
         {
             var state = string.IsNullOrWhiteSpace(vm1Lifecycle) ? "unknown" : vm1Lifecycle.Trim();
             return "Stop the server from the sidebar first (it must be fully Stopped). "
-                + "Minecraft stops with it. Current VM1 state: " + state + ".";
+                + "Minecraft stops with it. Current game VM state: " + state + ".";
         }
 
         return "";
@@ -106,23 +106,26 @@ public static class Vm1ShapeScaleUx
         int targetOcpus,
         int targetMemoryGb,
         double monthlyOcpuTarget,
-        double monthOcpuUsed)
+        double monthOcpuUsed,
+        string? currentJvmXmx = null)
     {
         var remaining = RemainingOcpuHours(monthlyOcpuTarget, monthOcpuUsed);
         var currentHours = RemainingPlayHours(remaining, currentOcpus);
         var targetHours = RemainingPlayHours(remaining, targetOcpus);
         var direction = targetOcpus > currentOcpus + 0.01
-            ? "less wall-clock uptime (hours burn faster)"
+            ? "fewer hours of uptime; free hours are used faster"
             : targetOcpus < currentOcpus - 0.01
-                ? "more wall-clock uptime (hours burn slower)"
-                : "the same wall-clock uptime";
+                ? "more hours of uptime; free hours are used slower"
+                : "the same hours of uptime";
 
-        return
-            $"Current: {FormatExact(currentOcpus, currentMemoryGb)} — about {currentHours:0.0} h left this month.\n"
-            + $"New: {FormatExact(targetOcpus, targetMemoryGb)} — about {targetHours:0.0} h left this month ({direction}).\n"
-            + $"Always Free envelope is about {AlwaysFreeOcpuHourEnvelope:0} OCPU-h/month; "
-            + $"this stack’s budget target is {monthlyOcpuTarget:0} OCPU-h. "
-            + "Past usage intervals keep the size they were recorded at.";
+        var body =
+            $"Current: {FormatExact(currentOcpus, currentMemoryGb)} — about {currentHours:0.0} hours left this month.\n"
+            + $"New: {FormatExact(targetOcpus, targetMemoryGb)} — about {targetHours:0.0} hours left this month ({direction}).\n"
+            + $"Always Free allows about {AlwaysFreeOcpuHourEnvelope:0} CPU-hours a month; "
+            + $"this server's budget is {monthlyOcpuTarget:0} CPU-hours. "
+            + "Past usage keeps the size it was recorded at.";
+        var clamp = ServerMemoryClampSentence(targetMemoryGb, currentJvmXmx);
+        return string.IsNullOrEmpty(clamp) ? body : body + "\n" + clamp;
     }
 
     public static string ConfirmMessage(
@@ -131,19 +134,45 @@ public static class Vm1ShapeScaleUx
         int targetOcpus,
         int targetMemoryGb,
         double monthlyOcpuTarget,
-        double monthOcpuUsed)
+        double monthOcpuUsed,
+        string? currentJvmXmx = null)
     {
         return
-            "This changes how fast Always Free Ampere hours burn while the server is on.\n\n"
+            "This changes how fast Always Free hours are used while the server is on.\n\n"
             + PreviewBody(
                 currentOcpus,
                 currentMemoryGb,
                 targetOcpus,
                 targetMemoryGb,
                 monthlyOcpuTarget,
-                monthOcpuUsed)
-            + "\n\nThe server and Minecraft must stay Stopped during the Oracle resize. "
-            + "Larger than 4 OCPU / 24 GB is not offered until the Always Free envelope is confirmed.\n\n"
-            + "Apply this size in Oracle and update shared budget/meta?";
+                monthOcpuUsed,
+                currentJvmXmx)
+            + "\n\nThe server must stay Stopped while Oracle changes the size. "
+            + "Sizes above 4 OCPU / 24 GB are not offered yet.\n\n"
+            + "Change the VM size now?";
+    }
+
+    /// <summary>
+    /// Token to persist after a size change. Downsize 24→12 GB clamps 10G/12G to 8G.
+    /// Upsize never raises server memory.
+    /// </summary>
+    public static string ServerMemoryAfterResize(string? currentJvmXmx, int targetMemoryGb) =>
+        JvmHeapChoice.ClampToHost(currentJvmXmx, targetMemoryGb);
+
+    public static bool ServerMemoryWillClamp(string? currentJvmXmx, int targetMemoryGb)
+    {
+        var current = JvmHeapChoice.Normalize(currentJvmXmx);
+        return !string.Equals(
+            current,
+            ServerMemoryAfterResize(current, targetMemoryGb),
+            StringComparison.Ordinal);
+    }
+
+    public static string? ServerMemoryClampSentence(int targetMemoryGb, string? currentJvmXmx)
+    {
+        if (!ServerMemoryWillClamp(currentJvmXmx, targetMemoryGb))
+            return null;
+        var cap = ServerMemoryAfterResize(currentJvmXmx, targetMemoryGb);
+        return $"Server memory will be set to {cap} so it fits this size.";
     }
 }

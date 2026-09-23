@@ -60,22 +60,19 @@ public sealed class InfrastructureDestroyOrchestrator
         CancellationToken cancellationToken = default,
         IProgress<DestroyProgressUpdate>? progress = null)
     {
-        Report(progress, 2, "Finding OpenTofu state…");
+        Report(progress, 2, "Finding this server's Setup files…");
 
         var infra = ProductPaths.FindInfraDirectory();
         if (infra is null)
-            return InfrastructureDestroyResult.Fail("Could not find product infra/ (main.tf).");
+            return InfrastructureDestroyResult.Fail("Could not find some MCSTool files. Reinstall MCSTool.");
 
         var workspace = ResolveWorkspace(log);
         if (workspace is null)
         {
             return InfrastructureDestroyResult.Fail(
-                "No OpenTofu state on this PC. Destroy only removes resources this Manager "
-                + "deployed (from %LOCALAPPDATA%\\"
-                + AppSettingsStore.ProductFolderName
-                + "\\tofu). Oracle’s default tenancy "
-                + "resources are never touched. If Setup ran on another PC, copy that tofu "
-                + "folder here, or delete leftover product resources in the OCI Console.");
+                "This PC doesn't have the Setup files for this server, so MCSTool can't tell what to delete. "
+                + "MCSTool only ever deletes what it created. If Setup ran on another PC, delete from that PC "
+                + "or copy its Setup files here. You can also delete leftovers in the Oracle Cloud Console.");
         }
 
         var tofuError = await EnsureTofuAsync(log, cancellationToken).ConfigureAwait(false);
@@ -83,7 +80,7 @@ public sealed class InfrastructureDestroyOrchestrator
             return InfrastructureDestroyResult.Fail(tofuError);
 
         log?.Report($"Using OpenTofu state: {workspace.StatePath}");
-        Report(progress, 8, "Emptying shared storage…");
+        Report(progress, 8, "Emptying cloud storage…");
 
         if (_dryRun)
         {
@@ -93,7 +90,7 @@ public sealed class InfrastructureDestroyOrchestrator
                 .ConfigureAwait(false);
             if (!dryPlan.Succeeded)
                 return InfrastructureDestroyResult.Fail("Dry-run plan failed. See the log.");
-            Report(progress, 70, "Destroying cloud resources (dry-run)…");
+            Report(progress, 70, "Deleting (dry-run)…");
             var dryDestroy = await Tofu.DestroyAsync(infra, workspace, log, cancellationToken)
                 .ConfigureAwait(false);
             if (!dryDestroy.Succeeded)
@@ -105,19 +102,19 @@ public sealed class InfrastructureDestroyOrchestrator
 
         var session = TryCreateSession(log);
         await EmptyBucketAsync(session, workspace, log, cancellationToken).ConfigureAwait(false);
-        Report(progress, 18, "Removing Function images…");
+        Report(progress, 18, "Removing $1 spending limit files…");
         await PurgeOcirAsync(session, workspace, log, cancellationToken).ConfigureAwait(false);
-        Report(progress, 21, "Removing leftover Functions…");
+        Report(progress, 21, "Removing the $1 spending limit…");
         await PurgeFunctionsEventsAsync(session, workspace, log, cancellationToken).ConfigureAwait(false);
 
-        Report(progress, 24, "Allowing bucket delete…");
+        Report(progress, 24, "Preparing cloud storage for deletion…");
         BucketDestroyOverride.Install(infra);
         try
         {
-            Report(progress, 28, "Initializing OpenTofu…");
+            Report(progress, 28, "Getting ready to delete…");
             var init = await Tofu.InitAsync(infra, log, cancellationToken).ConfigureAwait(false);
             if (!init.Succeeded)
-                return InfrastructureDestroyResult.Fail("tofu init failed. See the log.");
+                return InfrastructureDestroyResult.Fail("Could not get ready to delete. See the log.");
 
             var tracker = new TofuDestroyProgress();
             var trackedLog = new Progress<string>(line =>
@@ -125,14 +122,14 @@ public sealed class InfrastructureDestroyOrchestrator
                 tracker.Observe(line);
                 log?.Report(line);
                 var mapped = 35 + (int)Math.Round(55.0 * tracker.PercentOfDestroyPhase / 100.0);
-                Report(progress, mapped, "Waiting for Oracle to finish deleting resources…");
+                Report(progress, mapped, "Waiting for Oracle to finish deleting…");
             });
 
             Report(progress, 32, "Planning deletion…");
             var plan = await Tofu.PlanDestroyAsync(infra, workspace, trackedLog, cancellationToken)
                 .ConfigureAwait(false);
             if (!plan.Succeeded)
-                return InfrastructureDestroyResult.Fail("tofu plan -destroy failed. See the log.");
+                return InfrastructureDestroyResult.Fail("Planning the deletion failed. See the log.");
 
             tracker.Observe(plan.Output);
             log?.Report(
@@ -140,13 +137,13 @@ public sealed class InfrastructureDestroyOrchestrator
                     ? $"OpenTofu will destroy {tracker.ToDestroy} managed resource(s). This can take several minutes."
                     : "OpenTofu destroy plan had no resource count; continuing.");
 
-            Report(progress, 35, "Destroying cloud resources…");
+            Report(progress, 35, "Deleting…");
             var destroy = await Tofu.DestroyAsync(infra, workspace, trackedLog, cancellationToken)
                 .ConfigureAwait(false);
             if (!destroy.Succeeded)
             {
                 return InfrastructureDestroyResult.Fail(
-                    "tofu destroy failed. Local config was kept so you can retry. See the log.");
+                    "Deleting failed. This server's settings were kept so you can try again. See the log.");
             }
 
             tracker.Observe(destroy.Output);
@@ -163,14 +160,13 @@ public sealed class InfrastructureDestroyOrchestrator
             }
         }
 
-        Report(progress, 92, "Removing local stack files…");
+        Report(progress, 92, "Removing this server's files on this PC…");
         DeleteLocalStackFiles(workspace, log);
 
         Report(progress, 100, "Deletion finished");
         return InfrastructureDestroyResult.Ok(
-            "Product cloud infrastructure is gone. This did not close your Oracle account. "
-            + "Other servers on this PC were not deleted. If this was the only server with a stack, "
-            + "run Setup again to deploy a fresh one.");
+            "This server was deleted from Oracle Cloud. Your Oracle account is still open. "
+            + "Other servers on this PC were not deleted. To start over, run Setup again.");
     }
 
     internal static TofuWorkspace? ResolveWorkspace(IProgress<string>? log)

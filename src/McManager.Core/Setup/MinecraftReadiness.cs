@@ -37,8 +37,8 @@ public static class MinecraftReadiness
 
     public const string TimeoutHeadline =
         "Minecraft is running but RCON list did not succeed in time. "
-        + "The unit is not crash-looping; it may still be generating the world, or RCON is not responding. "
-        + "Re-Deploy can resume on-box stages.";
+        + "It is not crash-looping; it may still be generating the world, or the console is not responding. "
+        + "Wait a few minutes, then try again.";
 
     public const string JavaTooOldCause =
         "The Java runtime on the server is too old for this pack (UnsupportedClassVersionError).";

@@ -8,52 +8,54 @@ namespace McManager.Core.Tests;
 public sealed class SetupVanillaFlavorTests
 {
     [Theory]
-    [InlineData(null, SetupVanillaFlavor.Default)]
-    [InlineData("", SetupVanillaFlavor.Default)]
-    [InlineData("default", SetupVanillaFlavor.Default)]
-    [InlineData("DEFAULT", SetupVanillaFlavor.Default)]
-    [InlineData("optimized", SetupVanillaFlavor.Optimized)]
-    [InlineData("Optimized", SetupVanillaFlavor.Optimized)]
-    [InlineData("paper", SetupVanillaFlavor.Default)]
-    public void Normalize_maps_unknown_to_default(string? raw, string expected)
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("default")]
+    [InlineData("DEFAULT")]
+    [InlineData("optimized")]
+    [InlineData("Optimized")]
+    [InlineData("paper")]
+    public void Normalize_always_paper(string? raw)
     {
-        Assert.Equal(expected, SetupVanillaFlavor.Normalize(raw));
+        Assert.Equal(SetupVanillaFlavor.Optimized, SetupVanillaFlavor.Normalize(raw));
+        Assert.True(SetupVanillaFlavor.IsOptimized(raw));
+        Assert.Equal(SetupVanillaFlavor.DistributionPaper, SetupVanillaFlavor.ToDistribution(raw));
+        Assert.Equal(SetupVanillaFlavor.PlanLabelPaper, SetupVanillaFlavor.PlanLabel(raw));
     }
 
     [Fact]
-    public void ToDistribution_default_is_vanilla_optimized_is_paper()
+    public void ToDistribution_never_mojang_vanilla()
     {
-        Assert.Equal("vanilla", SetupVanillaFlavor.ToDistribution(SetupVanillaFlavor.Default));
+        Assert.Equal("paper", SetupVanillaFlavor.ToDistribution(SetupVanillaFlavor.Default));
         Assert.Equal("paper", SetupVanillaFlavor.ToDistribution(SetupVanillaFlavor.Optimized));
+        Assert.NotEqual("vanilla", SetupVanillaFlavor.ToDistribution(SetupVanillaFlavor.Default));
         Assert.NotEqual("forge", SetupVanillaFlavor.ToDistribution(SetupVanillaFlavor.Default));
-        Assert.NotEqual("forge", SetupVanillaFlavor.ToDistribution(SetupVanillaFlavor.Optimized));
-        Assert.NotEqual("neoforge", SetupVanillaFlavor.ToDistribution(SetupVanillaFlavor.Default));
         Assert.NotEqual("neoforge", SetupVanillaFlavor.ToDistribution(SetupVanillaFlavor.Optimized));
     }
 
     [Fact]
-    public void Plan_summary_names_default_and_optimized_paths()
+    public void Plan_summary_names_paper_as_vanilla_like_path()
     {
-        var def = new SetupWizardState
+        var leftoverFlavor = new SetupWizardState
         {
             MinecraftVersion = "1.21.11",
             VanillaFlavor = SetupVanillaFlavor.Default,
             EulaAccepted = true,
         };
-        var opt = new SetupWizardState
+        var paper = new SetupWizardState
         {
             MinecraftVersion = "1.21.10",
             VanillaFlavor = SetupVanillaFlavor.Optimized,
             EulaAccepted = true,
         };
 
-        var defText = InfraPlanSummary.Build(def);
-        var optText = InfraPlanSummary.Build(opt);
+        var leftoverText = InfraPlanSummary.Build(leftoverFlavor);
+        var paperText = InfraPlanSummary.Build(paper);
 
-        Assert.Contains("Default Vanilla 1.21.11", defText, StringComparison.Ordinal);
-        Assert.DoesNotContain("Paper", defText, StringComparison.Ordinal);
-        Assert.Contains("Server list name: " + ServerIdentityUx.DefaultName, defText, StringComparison.Ordinal);
-        Assert.Contains("Optimized Vanilla (Paper) 1.21.10", optText, StringComparison.Ordinal);
-        Assert.Contains("Server list name: " + ServerIdentityUx.DefaultName, optText, StringComparison.Ordinal);
+        Assert.Contains("Vanilla (Paper) 1.21.11", leftoverText, StringComparison.Ordinal);
+        Assert.DoesNotContain("Default Vanilla", leftoverText, StringComparison.Ordinal);
+        Assert.Contains("Server list name: " + ServerIdentityUx.DefaultName, leftoverText, StringComparison.Ordinal);
+        Assert.Contains("Vanilla (Paper) 1.21.10", paperText, StringComparison.Ordinal);
+        Assert.Contains("Server list name: " + ServerIdentityUx.DefaultName, paperText, StringComparison.Ordinal);
     }
 }

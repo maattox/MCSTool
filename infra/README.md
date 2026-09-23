@@ -58,11 +58,12 @@ Tofu writes **structural** ingress only:
 
 - ICMP (type 3 code 4 from `0.0.0.0/0`; type 3 from the VCN)
 - Subnet → 25565 TCP (door `wait_forge`)
-- Admin `/32` → SSH 22, Minecraft 25565 TCP+UDP, door 8080
+- Subnet → 8765 TCP (door player-map tile pull; VM1 firewalld rich-rule matches)
+- Admin `/32` → SSH 22, Minecraft 25565 TCP+UDP, door 8080, player map 80
 
-Descriptions match Manager ownership (`"{name} SSH access"`, name, `"{name} door access"`).
+Descriptions match Manager ownership (`"{name} SSH access"`, name, `"{name} door access"`, `"{name} map access"`).
 
-`lifecycle { ignore_changes = [ingress_security_rules] }` so day-2 Avalonia whitelist sync does not fight state. Player `/32`s are **not** tofu resources. RCON 25575 is never opened. No `0.0.0.0/0` on 22 / 25565 / 8080.
+`lifecycle { ignore_changes = [ingress_security_rules] }` so day-2 MCSTool whitelist sync does not fight state. Player `/32`s are **not** tofu resources. RCON 25575 is never opened. No `0.0.0.0/0` on 22 / 25565 / 8080 / 80.
 
 ---
 
@@ -74,7 +75,7 @@ Descriptions match Manager ownership (`"{name} SSH access"`, name, `"{name} door
 |-----|------|
 | `mcmgr` user/group, empty `/opt/mcmgr` + `/etc/mcmgr` + `/var/lib/mcmgr` with blueprint **§5** owners (`root:mcmgr` `0750` on `/opt/mcmgr`, **not** `chown -R mcmgr`; SoT is `onbox/mcmgr/common/layout.sh`) | hostname + `jq`/`curl` |
 | Adoptium **apt repo registration** (no `temurin-*` package) | no game tree, no firewalld |
-| firewalld: SSH + 25565 tcp/udp **without** source IPs (Security List is the IP allowlist). Cloud-init **masks `netfilter-persistent`** (SETUP-ISSUE-7), **masks UFW**, and writes `/etc/systemd/system/firewalld.service` (no `network-pre`) so boot does not delete dbus (OS-ISSUE-9). | iptables comes with `door_vm` in 3.3 |
+| firewalld: SSH + 25565 tcp/udp **without** source IPs (Security List is the IP allowlist). Tile-sync **8765/tcp** is a **subnet-only** rich-rule (door VCN pull). Cloud-init **masks `netfilter-persistent`** (SETUP-ISSUE-7), **masks UFW**, and writes `/etc/systemd/system/firewalld.service` (no `network-pre`) so boot does not delete dbus (OS-ISSUE-9). | iptables comes with `door_vm` in 3.3 |
 | marker `/etc/mcmgr/cloud-init-done` (0750 dir — Setup waiter uses `sudo -n test -f`, SETUP-ISSUE-5) | marker `/etc/mcmgr-door/cloud-init-done` |
 
 Instance `metadata` is `ignore_changes` after create so later template tweaks do not recreate VM1 (world lives on that boot volume). OS-baseline fixes for *new* deploys do not retrofit old VMs — those use SSH repair.

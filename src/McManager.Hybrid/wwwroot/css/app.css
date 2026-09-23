@@ -2101,6 +2101,10 @@ button.mcm-btn-disabled:hover {
     white-space: nowrap;
 }
 
+.mcm-overview-status .mcm-path-list {
+    margin-top: 10px;
+}
+
 .mcm-overview-empty {
     margin: 0;
     font-size: 13px;

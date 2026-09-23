@@ -114,7 +114,7 @@ public sealed class BackupStore
         backups.Sum(b => b.SizeBytes);
 
     public string FormatSoftCapLine(long currentBackupBytes) =>
-        $"Backups ~{WorldBackupInfo.FormatSize(currentBackupBytes)} / {_softCapGb:0.##} GiB (soft cap)";
+        $"Backups ~{WorldBackupInfo.FormatSize(currentBackupBytes)} / {_softCapGb:0.##} GiB";
 
     public BackupUploadCheck EvaluateUpload(long zipBytes, long currentBackupBytes)
     {
@@ -142,7 +142,7 @@ public sealed class BackupStore
             SoftCapBytes = softCap,
             CurrentBackupBytes = currentBackupBytes,
             ZipBytes = zipBytes,
-            Message = "Within soft cap.",
+            Message = "Within the storage limit.",
         };
     }
 

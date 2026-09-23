@@ -10,9 +10,11 @@ Redeploy to the VM (`/opt/mc-manager`) after changing this tree. Door Phase 4 de
 
 1. **Idle / budget SoftStop** — `mc-idle-watch.timer` → unit not active **or** RCON empty → `timeout 120 systemctl stop` when the game is up → **cold world zip → Object Storage** (9.5 GiB soft cap; evict oldest `backups/*.zip` first; delete local zip) → **close+save local ledger** → **clear lease** → **retry OS publish** → OCI SoftStop  
 2. **Lease heartbeat (Phase 5)** — while Minecraft is active, refresh `ledger/lease.json` about every 5 minutes (does not dirty ledger flags)  
-3. **Boot ledger** — `mc-boot-ledger.service` (**Before=** `minecraft.service`) → **force-enable idle agent** (timer + local/OS `idle_agent_enabled=true`) → **force-pull** `messages/chat.json` (identity MOTD/icon + idle chat templates) so this Java start loads them → **force-pull** OS ledger + lease → merge → close prior opens (lease / list-boots) → repair `stop_uncertain` → fill missing boots → **detect live shape** → open boot interval + lease → publish; sync shape to local config + OS `budget/config.json`  
-4. **Object Storage** — publish `ledger/usage.json` (with `revision`); dirty manager + door flags; publish `ledger/lease.json`; upload `backups/world-*.zip`  
-5. **Live world backup (ready for scheduled use)** — `world_backup.py live` / `mode=auto` while unit active: RCON `save-off` → `save-all flush` → zip → `save-on` (always) → upload → delete local. SoftStop uses **cold** after stop. **`--stream-stdout`** zips the world to stdout (no Object Storage PUT) for Manager oversized-world SSH download.  
+3. **Boot ledger** — `mc-boot-ledger.service` (**Before=** `minecraft.service`; Minecraft **Requires=** this unit) → **force-enable idle agent** (timer + local/OS `idle_agent_enabled=true`) → **force-pull** `messages/chat.json` (identity MOTD/icon + idle chat templates) so this Java start loads them → **force-pull** OS ledger + lease → merge → close prior opens (lease / list-boots) → repair `stop_uncertain` → fill missing boots → **detect live shape** → if guest server memory exceeds the live host cap (10G/12G on a 12 GB VM), run `apply-jvm-heap.py` + `daemon-reload` and **fail the oneshot** on rewrite error so Java does not start oversized → open boot interval + lease → publish; sync shape to local config + OS `budget/config.json`  
+4. **Memory pressure** — each idle tick scans `logs/latest.log` (and gc / hs_err if present) for `OutOfMemoryError`, GC overhead, or repeated Full GC — **not** G1 occupancy %. PUT `meta/heap-pressure.json` (rate-limited). DELETE when logs no longer show pressure. Manager warns; it does not auto-grow server memory.  
+5. **Player map** — `mc-player-map.timer` (5 min) niced MinedMap WebP of Overworld/Nether/End; `mc-map-http.service` serves a tar on the **primary private IP :8765** (subnet-only). Door pulls over the VCN. Independent of idle disable.  
+6. **Object Storage** — publish `ledger/usage.json` (with `revision`); dirty manager + door flags; publish `ledger/lease.json`; upload `backups/world-*.zip`  
+7. **Live world backup (ready for scheduled use)** — `world_backup.py live` / `mode=auto` while unit active: RCON `save-off` → `save-all flush` → zip → `save-on` (always) → upload → delete local. SoftStop uses **cold** after stop. **`--stream-stdout`** zips the world to stdout (no Object Storage PUT) for Manager oversized-world SSH download.  
 
 Intervals always include **`ocpus`** / **`memory_gb`** from **live guest detection** (config is fallback only), so totals stay correct after Console/Manager resize. Mid-session shape change (rare) closes the open interval and opens a new one.
 
@@ -40,8 +42,12 @@ RCON stays **localhost only** (`25575`).
 
 | Path | Role |
 |------|------|
-| `idle_watch.py` | Idle / soft-cap stop; lease heartbeat; cold world backup; publish retries before SoftStop |
-| `record_boot.py` | Boot force-enable idle + force-pull ledger/lease/messages → merge → reconcile → repair → start + lease → publish |
+| `idle_watch.py` | Idle / soft-cap stop; heap-pressure tick; lease heartbeat; cold world backup; publish retries before SoftStop |
+| `record_boot.py` | Boot force-enable idle + heap clamp to live host + force-pull ledger/lease/messages → merge → reconcile → repair → start + lease → publish |
+| `heap_clamp.py` | Before Java: if guest heap exceeds host cap, run `apply-jvm-heap.py` (fail oneshot on error) |
+| `heap_pressure.py` | Idle tick: log pressure → `meta/heap-pressure.json`; clear on relief |
+| `player_map.py` | Niced MinedMap render + publish tar (no `processed/`) |
+| `map_http.py` | Bind primary private IP **:8765**; serve `tiles.tar` + `manifest.json` |
 | `world_backup.py` | Cold + **live** zip → OS upload; **`--stream-stdout`** zip to stdout (no OS PUT) |
 | `ledger.py` | Interval math, list-boots reconcile, repair, merge |
 | `lease.py` | Lease open / heartbeat / clear helpers |

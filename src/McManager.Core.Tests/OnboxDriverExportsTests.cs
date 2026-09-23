@@ -89,6 +89,8 @@ public sealed class OnboxDriverExportsTests
 
         var exports = OnboxDriverExports.Build(state);
 
+        Assert.Contains("DISTRIBUTION='paper'", exports, StringComparison.Ordinal);
+        Assert.DoesNotContain("DISTRIBUTION='vanilla'", exports, StringComparison.Ordinal);
         Assert.DoesNotContain("JAVA_MAJOR=", exports, StringComparison.Ordinal);
     }
 
@@ -104,10 +106,31 @@ public sealed class OnboxDriverExportsTests
 
         var exports = OnboxDriverExports.Build(state);
 
+        Assert.Contains("DISTRIBUTION='paper'", exports, StringComparison.Ordinal);
+        Assert.DoesNotContain("DISTRIBUTION='vanilla'", exports, StringComparison.Ordinal);
         Assert.Contains("JVM_XMS='6G'", exports, StringComparison.Ordinal);
         Assert.Contains("JVM_XMX='6G'", exports, StringComparison.Ordinal);
         Assert.DoesNotContain("JVM_XMS='2G'", exports, StringComparison.Ordinal);
         Assert.DoesNotContain("LEVEL_SEED=", exports, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Build_clamps_12G_heap_on_12GB_host()
+    {
+        var state = new SetupWizardState
+        {
+            ServerType = SetupServerType.Vanilla,
+            MinecraftVersion = "1.21.8",
+            Vm1Ocpus = 2,
+            Vm1MemoryGb = 12,
+            JvmXmx = "12G",
+        };
+
+        var exports = OnboxDriverExports.Build(state);
+
+        Assert.Contains("JVM_XMS='8G'", exports, StringComparison.Ordinal);
+        Assert.Contains("JVM_XMX='8G'", exports, StringComparison.Ordinal);
+        Assert.DoesNotContain("JVM_XMX='12G'", exports, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -22,12 +22,12 @@ public static class MinecraftConsoleRemote
     public const string HelpTitle =
         "Send commands as if you typed them in the Minecraft server console. "
         + "Recent logs show player-facing activity by default (chat, joins, commands, errors); "
-        +         "switch to Full for the raw service log including RCON and modloader startup noise. "
+        + "switch to Full for the full server log, including console commands and mod loader startup. "
         + "If a crash set a mod aside, use Server → Mods to keep it excluded or put it back. "
         + "This is not a live terminal.";
 
     public const string SimpleLogEmptyHint =
-        "No simplified log lines in this buffer. Switch to Full to see the raw service log.";
+        "Nothing to show in Simple yet. Switch to Full to see the full server log.";
 
     public const string Intro =
         "Send Minecraft commands and read recent logs. Start the server first. "
@@ -47,7 +47,7 @@ public static class MinecraftConsoleRemote
     public const string CommandTooLongHint = "That command is too long.";
 
     public const string RconUnreachableHint =
-        "Could not reach Minecraft. Is the server Running?";
+        "Could not reach Minecraft. Is the server running?";
 
     public const string ListUuidsCommand = "list uuids";
 
@@ -679,9 +679,9 @@ public static class MinecraftConsoleRemote
         }
 
         if (run.ExitStatus == 3)
-            return "Could not read the on-box RCON secret.";
+            return "Could not read the console password on the game VM.";
         if (run.ExitStatus == 4)
-            return "RCON authentication failed.";
+            return "Console login failed.";
 
         return string.IsNullOrWhiteSpace(run.Error)
             ? "Command failed."

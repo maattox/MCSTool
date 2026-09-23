@@ -69,7 +69,7 @@ public sealed class ServerPropertiesStore
         if (doc.Version > ServerPropertiesDocument.DocumentVersion)
         {
             return ServiceResult<ServerPropertiesReadResult>.Fail(
-                $"{_objectName} is newer than this Manager supports "
+                $"{_objectName} is newer than this version of MCSTool supports "
                 + $"(version={doc.Version}; max={ServerPropertiesDocument.DocumentVersion}).");
         }
 

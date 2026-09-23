@@ -91,11 +91,11 @@ public sealed partial class FirstRunViewModel : ObservableObject
             }
 
             if (outcome == ConnectExistingOutcome.NoneFound)
-                StatusMessage = "No product stack found. Nothing was written.";
+                StatusMessage = "No MCSTool server found. Nothing was changed.";
             else if (outcome == ConnectExistingOutcome.Incompatible)
-                StatusMessage = "Stack is incompatible with this Manager. Nothing was written.";
+                StatusMessage = "That server is incompatible with this version of MCSTool. Nothing was changed.";
             else if (outcome == ConnectExistingOutcome.Cancelled)
-                StatusMessage = "Auto-detect cancelled. Nothing was written.";
+                StatusMessage = "Cancelled. Nothing was changed.";
         }
         finally
         {

@@ -10,6 +10,8 @@ WorkingDirectory=/opt/mccontrol
 Environment=TZ=America/Los_Angeles
 EnvironmentFile=-/etc/mccontrol/oci.env
 ExecStart=/opt/mccontrol/build/mccontrol /etc/mccontrol/config.json
+# Player map static HTTP binds TCP 80 from this root process (User=root).
+# If User= is ever dropped, add AmbientCapabilities=CAP_NET_BIND_SERVICE.
 Restart=on-failure
 RestartSec=5
 

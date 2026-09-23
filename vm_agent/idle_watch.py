@@ -11,9 +11,13 @@ import time
 from datetime import datetime, timezone
 
 LIB = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib")
+HERE = os.path.dirname(os.path.abspath(__file__))
 if LIB not in sys.path:
     sys.path.insert(0, LIB)
+if HERE not in sys.path:
+    sys.path.insert(0, HERE)
 
+import heap_pressure as heap_pressure_mod  # noqa: E402
 import lease as lease_mod  # noqa: E402
 import ledger as ledger_mod  # noqa: E402
 import os_publish as os_publish_mod  # noqa: E402
@@ -25,14 +29,14 @@ CONFIG_PATH = os.environ.get("MC_MANAGER_CONFIG", "/etc/mc-manager/config.json")
 
 DEFAULT_MESSAGES = {
     "budget_warn_leftover": (
-        "Daily usage limit exceeded; using leftover hours "
-        "(~{ocpu:.1f} OCPU-h / ~{gb:.1f} GB-h left)."
+        "Today's hours are used up. Now using rollover hours "
+        "(about {ocpu:.1f} CPU-hours left)."
     ),
     "budget_final_warn": (
-        "Daily + leftover usage exhausted. Server will shut down soon."
+        "No hours left for today. The server will shut down soon."
     ),
-    "budget_stop": "Usage limits reached. Server shutting down.",
-    "soft_cap_stop": "Monthly usage soft cap reached. Server shutting down.",
+    "budget_stop": "Out of hours. Server shutting down.",
+    "soft_cap_stop": "Monthly hours limit reached. Server shutting down.",
     "idle_stop": "No players for {minutes} minutes. Saving and shutting down.",
     "idle_stop_inactive": (
         "Minecraft not running for {minutes} minutes. Saving and shutting down."
@@ -318,12 +322,16 @@ def graceful_stop_and_poweroff(
 
 def main() -> int:
     cfg = load_config()
+    unit = cfg.get("minecraft_unit", "minecraft")
+    game_up = minecraft_active(unit)
+    try:
+        print(heap_pressure_mod.tick(cfg, game_up=game_up))
+    except Exception as exc:  # noqa: BLE001
+        print(f"heap-pressure tick warning: {exc}", file=sys.stderr)
+
     if not cfg.get("idle_agent_enabled", True):
         print("Idle agent disabled in config.")
         return 0
-
-    unit = cfg.get("minecraft_unit", "minecraft")
-    game_up = minecraft_active(unit)
 
     ledger_path = cfg.get("ledger_path", "/var/lib/mc-manager/usage.json")
     state_path = cfg.get("state_path", "/var/lib/mc-manager/idle_state.json")

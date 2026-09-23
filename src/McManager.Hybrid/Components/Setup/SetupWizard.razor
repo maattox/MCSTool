@@ -21,7 +21,7 @@
                     <button type="button"
                             class="mcm-wizard-text-link"
                             @onclick="Vm.OpenAlwaysFreeDocs">
-                        Always Free compute docs
+                        Oracle Always Free docs
                     </button>
                     <div class="mcm-wizard-alwaysfree-acks">
                         <label class="mcm-wizard-ack">
@@ -29,7 +29,7 @@
                                    disabled="@(!Vm.CanMutateWizard)"
                                    @bind="Vm.AlwaysFreeConfirmed" />
                             <span class="mcm-wizard-ack-text">
-                                <span class="mcm-wizard-ack-title">Stay on Always Free–eligible compute</span>
+                                <span class="mcm-wizard-ack-title">Stay on Always Free</span>
                                 <span class="mcm-wizard-ack-copy">@SetupWizardViewModel.AlwaysFreeStayHelp</span>
                             </span>
                         </label>
@@ -38,7 +38,7 @@
                                    disabled="@(!Vm.CanMutateWizard)"
                                    @bind="Vm.ResidualChargeDisclosed" />
                             <span class="mcm-wizard-ack-text">
-                                <span class="mcm-wizard-ack-title">I understand the $1 brake and a possible ~$1–$2 residual</span>
+                                <span class="mcm-wizard-ack-title">I understand the $1 spending limit and a possible $1–$2 charge</span>
                                 <span class="mcm-wizard-ack-copy">@SetupWizardViewModel.AlwaysFreeResidualHelp</span>
                             </span>
                         </label>
@@ -47,7 +47,7 @@
                                    disabled="@(!Vm.CanMutateWizard)"
                                    @bind="Vm.CapacityWaitConsent" />
                             <span class="mcm-wizard-ack-text">
-                                <span class="mcm-wizard-ack-title">I understand capacity wait</span>
+                                <span class="mcm-wizard-ack-title">I understand Oracle may be out of free capacity</span>
                                 <span class="mcm-wizard-ack-copy">@SetupWizardViewModel.AlwaysFreeCapacityHelp</span>
                             </span>
                         </label>
@@ -61,7 +61,7 @@
             else if (Vm.IsStepOci)
             {
                 <div class="mcm-wizard-pane">
-                    <p class="mcm-wizard-pane-lead">Region and account come from ~/.oci/config on this PC. Prefer the tenancy home region.</p>
+                    <p class="mcm-wizard-pane-lead">Region and account come from ~/.oci/config on this PC.</p>
                     <div class="mcm-wizard-card">
                         <div class="mcm-field mcm-field-short">
                             <label for="mcm-setup-profile" class="mcm-wizard-ack-title">OCI profile</label>
@@ -97,7 +97,7 @@
             else if (Vm.IsStepSsh)
             {
                 <div class="mcm-wizard-pane">
-                    <p class="mcm-wizard-pane-lead">Generate a new key, or import a .pub. Both VMs use this key unless you pick a different one for the door.</p>
+                    <p class="mcm-wizard-pane-lead">Generate a new key, or import a .pub. Both VMs use this key unless you pick a different one for the doorbell VM.</p>
                     <label class="mcm-wizard-ack">
                         <input type="radio"
                                name="mcm-setup-ssh"
@@ -106,7 +106,7 @@
                                @onchange="@(() => Vm.SshGenerateMode = true)" />
                         <span class="mcm-wizard-ack-text">
                             <span class="mcm-wizard-ack-title">Generate a new key</span>
-                            <span class="mcm-wizard-ack-copy">Creates a new key on this PC. The private key stays on disk and is not saved in Setup’s resume file.</span>
+                            <span class="mcm-wizard-ack-copy">Creates a new key on this PC. The private key stays on this PC.</span>
                         </span>
                     </label>
                     <label class="mcm-wizard-ack">
@@ -133,7 +133,7 @@
                         </button>
                     </div>
                     <div class="mcm-field">
-                        <label for="mcm-setup-ssh-pub">Game VM (VM1) public key</label>
+                        <label for="mcm-setup-ssh-pub">Game VM public key</label>
                         <textarea id="mcm-setup-ssh-pub"
                                   class="mcm-wizard-mono"
                                   name="ssh-public-key"
@@ -157,7 +157,7 @@
                                disabled="@(!Vm.CanMutateWizard)"
                                @bind="Vm.SshSplitDoorKey" />
                         <span class="mcm-wizard-ack-text">
-                            <span class="mcm-wizard-ack-title">Use a different key for the door VM</span>
+                            <span class="mcm-wizard-ack-title">Use a different key for the doorbell VM</span>
                             <span class="mcm-wizard-ack-copy">@SetupWizardViewModel.DoorSshHelp</span>
                         </span>
                     </label>
@@ -167,16 +167,16 @@
                             <button type="button"
                                     disabled="@(!Vm.CanMutateWizard)"
                                     @onclick="Vm.GenerateDoorSshKeyAsync">
-                                Generate door key
+                                Generate doorbell VM key
                             </button>
                             <button type="button"
                                     disabled="@(!Vm.CanMutateWizard)"
                                     @onclick="Vm.ImportDoorSshKeyAsync">
-                                Import door .pub…
+                                Import doorbell VM .pub…
                             </button>
                         </div>
                         <div class="mcm-field">
-                            <label for="mcm-setup-door-ssh-pub">Door VM public key</label>
+                            <label for="mcm-setup-door-ssh-pub">Doorbell VM public key</label>
                             <textarea id="mcm-setup-door-ssh-pub"
                                       class="mcm-wizard-mono"
                                       name="door-ssh-public-key"
@@ -212,7 +212,7 @@
                                            checked="@Vm.ServerTypeIsVanilla"
                                            @onchange="@(() => Vm.SelectVanillaServer())" />
                                     <span>
-                                        <span class="mcm-wizard-game-kind-title">Vanilla</span>
+                                        <span class="mcm-wizard-game-kind-title">Vanilla (Paper)</span>
                                         <span class="mcm-wizard-game-kind-copy">@SetupWizardViewModel.VanillaHelp</span>
                                     </span>
                                 </label>
@@ -235,37 +235,6 @@
                         <div class="mcm-wizard-game-options">
                             @if (Vm.ShowVanillaGameOptions)
                             {
-                                <label class="mcm-wizard-ack mcm-wizard-ack-sm">
-                                    <input type="radio"
-                                           name="mcm-setup-vanilla-flavor"
-                                           disabled="@(!Vm.CanMutateWizard)"
-                                           checked="@Vm.VanillaFlavorIsDefault"
-                                           @onchange="@(() => Vm.SelectDefaultVanilla())" />
-                                    <span class="mcm-wizard-ack-text">
-                                        <span class="mcm-wizard-ack-title">Default Vanilla</span>
-                                        <span class="mcm-wizard-ack-copy">@SetupWizardViewModel.DefaultVanillaHelp</span>
-                                    </span>
-                                </label>
-                                <label class="mcm-wizard-ack mcm-wizard-ack-sm">
-                                    <input type="radio"
-                                           name="mcm-setup-vanilla-flavor"
-                                           disabled="@(!Vm.CanMutateWizard)"
-                                           checked="@Vm.VanillaFlavorIsOptimized"
-                                           @onchange="@(() => Vm.SelectOptimizedVanilla())" />
-                                    <span class="mcm-wizard-ack-text">
-                                        <span class="mcm-wizard-ack-title">Optimized Vanilla (Paper)</span>
-                                        <span class="mcm-wizard-ack-copy">@SetupWizardViewModel.OptimizedVanillaHelp</span>
-                                    </span>
-                                </label>
-                                @if (Vm.ShowSnapshotToggle)
-                                {
-                                    <label class="mcm-checkbox-row">
-                                        <input type="checkbox"
-                                               disabled="@(!Vm.CanMutateWizard)"
-                                               @bind="Vm.IncludeSnapshots" />
-                                        <span>Advanced: include snapshots</span>
-                                    </label>
-                                }
                                 <div class="mcm-field">
                                     <label for="mcm-setup-mc-version">Minecraft version</label>
                                     <select id="mcm-setup-mc-version"
@@ -296,14 +265,14 @@
                                                    accept=".mrpack,.zip"
                                                    disabled="@(!Vm.CanMutateWizard || Vm.IsAnalyzingPack)" />
                                         <i class="ti ti-file-zip" aria-hidden="true"></i>
-                                        <p class="mcm-pack-drop-title">Drop a .mrpack or Server Files zip</p>
+                                        <p class="mcm-pack-drop-title">Drop a .mrpack or CurseForge Server Files zip</p>
                                     </div>
                                     <div class="mcm-wizard-game-ingest-actions">
                                         <div class="mcm-wizard-actions mcm-wizard-game-ingest-pick">
                                             <button type="button"
                                                     disabled="@(!Vm.CanMutateWizard || Vm.IsAnalyzingPack)"
                                                     @onclick="Vm.PickPackAsync">
-                                                Choose pack file…
+                                                Choose modpack…
                                             </button>
                                         </div>
                                         @if (!string.IsNullOrWhiteSpace(Vm.PackPath))
@@ -311,7 +280,7 @@
                                             <button type="button"
                                                     disabled="@(!Vm.CanMutateWizard || Vm.IsAnalyzingPack)"
                                                     @onclick="Vm.ClearPack">
-                                                Clear pack
+                                                Clear modpack
                                             </button>
                                         }
                                     </div>
@@ -418,7 +387,7 @@
                                                disabled="@(!Vm.CanMutateWizard)"
                                                @bind="Vm.PackConfirmed" />
                                         <span class="mcm-wizard-ack-text">
-                                            <span class="mcm-wizard-ack-title">Use this pack on the server (server-side mods only; client-only files are skipped).</span>
+                                            <span class="mcm-wizard-ack-title">Use this modpack. Client-only mods are skipped.</span>
                                         </span>
                                     </label>
                                 }
@@ -434,7 +403,7 @@
                         Players see this in Minecraft’s server list.
                         <WizardHelp Title="@SetupWizardViewModel.IdentityHelp" AriaLabel="About the server name and icon" />
                     </p>
-                    <p class="mcm-wizard-hint mcm-wizard-motd-tip">Highlight some text and click the effect buttons to style your server’s MOTD</p>
+                    <p class="mcm-wizard-hint mcm-wizard-motd-tip">Highlight text, then pick a color or style.</p>
                     <div class="mcm-identity-grid">
                         <MotdEditor IdPrefix="mcm-setup-server"
                                     Disabled="@(!Vm.CanMutateWizard)"
@@ -448,7 +417,7 @@
                             <div class="mcm-wizard-actions">
                                 <button type="button"
                                         disabled="@(!Vm.CanMutateWizard)"
-                                        title="Any PNG. Manager fits it to 64×64."
+                                        title="Any PNG. It is resized to 64×64."
                                         @onclick="Vm.PickIdentityIconAsync">
                                     Choose PNG
                                 </button>
@@ -458,7 +427,7 @@
                                     Use default
                                 </button>
                                 <span class="mcm-wizard-hint">Optional PNG — default if you skip</span>
-                                <WizardHelp Title="@SetupWizardViewModel.IconStatesHelp" AriaLabel="About doorbell list icons" />
+                                <WizardHelp Title="@SetupWizardViewModel.IconStatesHelp" AriaLabel="About server list icons" />
                             </div>
                         </div>
                     </div>
@@ -537,10 +506,10 @@
                         }
                         else
                         {
-                            <p class="mcm-wizard-hint">The reserved play IP was not found in local config. Close and copy Play IP from the Manager sidebar.</p>
+                            <p class="mcm-wizard-hint">The play IP was not found. Close Setup and copy it from the sidebar.</p>
                         }
                         <p>
-                            Close this wizard to continue to the Manager app. Give players the play IP above so they can join (Minecraft port 25565).
+                            Close Setup to open MCSTool. Give players the play IP above.
                         </p>
                     </aside>
                     @if (!string.IsNullOrWhiteSpace(Vm.DeployLog))
@@ -597,8 +566,12 @@
                         </span>
                     </label>
                     <div class="mcm-wizard-card mcm-wizard-card-sm">
-                        <span class="mcm-wizard-ack-title">Minecraft memory</span>
+                        <span class="mcm-wizard-ack-title">Server memory</span>
                         <span class="mcm-wizard-ack-copy">@SetupWizardViewModel.HeapHelp</span>
+                        @if (Vm.ShowHeapGuessCapNote)
+                        {
+                            <span class="mcm-wizard-ack-copy">@SetupWizardViewModel.HeapGuessCapNote</span>
+                        }
                         <div class="mcm-wizard-review-heap">
                             <label class="mcm-radio-row">
                                 <input type="radio"
@@ -606,7 +579,7 @@
                                        disabled="@(!Vm.CanMutateWizard)"
                                        checked="@Vm.JvmHeapIs4G"
                                        @onchange="@(() => Vm.SelectJvmHeap4G())" />
-                                <span>4G (default)</span>
+                                <span>@Vm.JvmHeapRadioLabel("4G")</span>
                             </label>
                             <label class="mcm-radio-row">
                                 <input type="radio"
@@ -614,7 +587,7 @@
                                        disabled="@(!Vm.CanMutateWizard)"
                                        checked="@Vm.JvmHeapIs6G"
                                        @onchange="@(() => Vm.SelectJvmHeap6G())" />
-                                <span>6G</span>
+                                <span>@Vm.JvmHeapRadioLabel("6G")</span>
                             </label>
                             <label class="mcm-radio-row">
                                 <input type="radio"
@@ -622,8 +595,36 @@
                                        disabled="@(!Vm.CanMutateWizard)"
                                        checked="@Vm.JvmHeapIs8G"
                                        @onchange="@(() => Vm.SelectJvmHeap8G())" />
-                                <span>8G</span>
+                                <span>@Vm.JvmHeapRadioLabel("8G")</span>
                             </label>
+                            @if (Vm.ShowJvmHeapExtraPresets)
+                            {
+                                <label class="mcm-radio-row">
+                                    <input type="radio"
+                                           name="mcm-setup-jvm-heap"
+                                           disabled="@(!Vm.CanMutateWizard)"
+                                           checked="@Vm.JvmHeapIs10G"
+                                           @onchange="@(() => Vm.SelectJvmHeap10G())" />
+                                    <span>
+                                        @Vm.JvmHeapRadioLabel("10G")
+                                        @if (!Vm.JvmHeapIsSuggested10G)
+                                        {
+                                            <span class="mcm-radio-note">More memory for heavier modpacks.</span>
+                                        }
+                                    </span>
+                                </label>
+                                <label class="mcm-radio-row">
+                                    <input type="radio"
+                                           name="mcm-setup-jvm-heap"
+                                           disabled="@(!Vm.CanMutateWizard)"
+                                           checked="@Vm.JvmHeapIs12G"
+                                           @onchange="@(() => Vm.SelectJvmHeap12G())" />
+                                    <span>
+                                        @Vm.JvmHeapRadioLabel("12G")
+                                        <span class="mcm-radio-note">More memory for heavier modpacks.</span>
+                                    </span>
+                                </label>
+                            }
                         </div>
                     </div>
                     <label class="mcm-checkbox-row">
@@ -634,7 +635,7 @@
                     {
                         <label class="mcm-checkbox-row">
                             <input type="checkbox" @bind="Vm.ReplaceConfigConfirmed" />
-                            <span>Replace config.local.json in this data folder after a successful deploy.</span>
+                            <span>Replace this server's saved settings after Deploy finishes.</span>
                         </label>
                     }
                 </fieldset>
@@ -649,8 +650,8 @@
 
                 <div class="mcm-wizard-review-plan">
                     <div class="mcm-wizard-log-label">
-                        <span>Plan summary</span>
-                        <button type="button" title="Copy plan summary" @onclick="Vm.CopyPlanSummaryAsync">Copy</button>
+                        <span>What Setup will create</span>
+                        <button type="button" title="Copy summary" @onclick="Vm.CopyPlanSummaryAsync">Copy</button>
                     </div>
                     <pre class="mcm-wizard-log mcm-wizard-mono mcm-slim-scroll">@Vm.PlanSummaryText</pre>
                 </div>
@@ -716,7 +717,7 @@
             <button type="button"
                     class="@(Vm.ShowDeploySuccess ? "mcm-primary" : null)"
                     disabled="@(!Vm.CanCloseWizard)"
-                    title="@(Vm.ShowDeploySuccess ? "Close Setup and continue to the Manager app." : "You can close while a deploy is not running. Resume later from Advanced → Deploy / repair.")"
+                    title="@(Vm.ShowDeploySuccess ? "Close Setup and open MCSTool." : "You can close while Deploy is not running. Resume later from Advanced → Deploy / repair.")"
                     @onclick="Close">
                 Close
             </button>
@@ -806,11 +807,11 @@
         }
         catch (IOException ex)
         {
-            Vm.StatusMessage = "Could not read the dropped file. Use Choose pack file for large packs. " + ex.Message;
+            Vm.StatusMessage = "Could not read the dropped file. Use Choose modpack for large modpacks. " + ex.Message;
         }
         catch (InvalidOperationException ex)
         {
-            Vm.StatusMessage = "Drop failed. Use Choose pack file. " + ex.Message;
+            Vm.StatusMessage = "Drop failed. Use Choose modpack. " + ex.Message;
         }
     }
 

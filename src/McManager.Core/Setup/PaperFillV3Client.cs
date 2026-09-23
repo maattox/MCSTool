@@ -55,7 +55,7 @@ public sealed class PaperFillV3Client
     }
 
     /// <summary>
-    /// Setup Optimized Vanilla picker: live Fill v3 project list, else bundled fixture.
+    /// Setup Vanilla (Paper) picker: live Fill v3 project list, else bundled fixture.
     /// </summary>
     public async Task<PaperCatalogResult> LoadProjectCatalogAsync(CancellationToken cancellationToken = default)
     {

@@ -234,7 +234,7 @@ public sealed partial class WhitelistViewModel : ObservableObject
             }
             else
             {
-                StatusMessage = result.Error ?? "Could not detect public IP.";
+                StatusMessage = result.Error ?? "Could not detect your public IP.";
             }
         }
         finally
@@ -257,7 +257,7 @@ public sealed partial class WhitelistViewModel : ObservableObject
         var admin = FindAdminFriend();
         if (admin is null)
         {
-            StatusMessage = "No admin player found. Mark a player as Admin or set admin_name in config.";
+            StatusMessage = "No admin player found. Mark one entry as Admin.";
             return;
         }
 
@@ -315,7 +315,7 @@ public sealed partial class WhitelistViewModel : ObservableObject
             if (!os.Succeeded)
             {
                 StatusMessage = summary
-                    + "\nObject Storage allowlist update failed: "
+                    + "\nSaving the whitelist to cloud storage failed: "
                     + (os.Error ?? "unknown");
                 return;
             }
@@ -334,17 +334,17 @@ public sealed partial class WhitelistViewModel : ObservableObject
 
     private async Task<SecurityListApplyResult?> ApplySecurityListUnlockedAsync()
     {
-        StatusMessage = "Applying allowlist…";
+        StatusMessage = "Saving whitelist…";
 
         if (_config is null)
         {
-            StatusMessage = "Local config is missing.";
+            StatusMessage = "This server's settings are missing.";
             return null;
         }
 
         if (_securityList is null)
         {
-            StatusMessage = _sessionError ?? "Cloud session failed.";
+            StatusMessage = _sessionError ?? "Connecting to Oracle Cloud failed.";
             return null;
         }
 
@@ -359,7 +359,7 @@ public sealed partial class WhitelistViewModel : ObservableObject
 
         if (!result.Succeeded)
         {
-            StatusMessage = result.Error ?? "Security List update failed.";
+            StatusMessage = result.Error ?? "Updating Oracle's firewall rules failed.";
             return null;
         }
 
@@ -403,14 +403,14 @@ public sealed partial class WhitelistViewModel : ObservableObject
                 var sl = await slTask;
                 if (!sl.Succeeded || sl.Value is null)
                 {
-                    StatusMessage = sl.Error ?? "Could not read Security List allowlist.";
+                    StatusMessage = sl.Error ?? "Could not read the whitelist from Oracle Cloud.";
                     return;
                 }
 
                 var os = await osTask;
                 if (!os.Succeeded || os.Value is null)
                 {
-                    StatusMessage = os.Error ?? "Could not read Object Storage allowlist.";
+                    StatusMessage = os.Error ?? "Could not read the whitelist from cloud storage.";
                     return;
                 }
 
@@ -460,7 +460,7 @@ public sealed partial class WhitelistViewModel : ObservableObject
                     if (!published.Succeeded)
                     {
                         StatusMessage = (parts.Count == 0 ? "" : string.Join("\n", parts) + "\n")
-                            + "Object Storage allowlist update failed: "
+                            + "Saving the whitelist to cloud storage failed: "
                             + (published.Error ?? "unknown");
                         return;
                     }
@@ -472,8 +472,8 @@ public sealed partial class WhitelistViewModel : ObservableObject
                 CaptureSavedFingerprint();
                 _reconcileSucceeded = true;
                 StatusMessage = parts.Count == 0
-                    ? "Allowlist updated on this PC to match the combined cloud lists."
-                    : "Allowlist combined from this PC, the Security List, and Object Storage.\n"
+                    ? "Whitelist on this PC updated to match Oracle Cloud."
+                    : "Whitelist merged from this PC and Oracle Cloud.\n"
                       + string.Join("\n", parts);
             }
             catch (OperationCanceledException)
@@ -539,7 +539,7 @@ public sealed partial class WhitelistViewModel : ObservableObject
 
         if (isAdmin && !source.IsSingleHost && !AllowsOwnAdminPrefix(name, editing))
         {
-            error = "Admin SSH and doorbell stay a single IPv4 unless you are editing your own admin entry. Uncheck Admin or use a /32.";
+            error = "Admin entries must be a single IPv4 address unless it is your own admin entry. Uncheck Admin or use a /32.";
             return false;
         }
 

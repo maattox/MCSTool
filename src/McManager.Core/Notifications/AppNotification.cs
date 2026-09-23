@@ -48,4 +48,5 @@ public static class NotificationKinds
 {
     public const string Debug = "debug";
     public const string OversizedWorld = "oversized-world";
+    public const string HeapPressure = "heap-pressure";
 }

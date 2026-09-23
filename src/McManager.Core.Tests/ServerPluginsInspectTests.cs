@@ -30,7 +30,7 @@ public sealed class ServerPluginsInspectTests
         Assert.True(ServerPluginsInspect.TryParse(stdout, out var result, out var error), error);
         Assert.False(result.PluginsDirectoryMissing);
         Assert.Equal(["luckperms.jar", "spark.jar"], result.FileNames.OrderBy(n => n, StringComparer.Ordinal).ToArray());
-        Assert.Contains("2 plugin jars", result.SummaryLine(), StringComparison.Ordinal);
+        Assert.Contains("2 plugins", result.SummaryLine(), StringComparison.Ordinal);
     }
 
     [Fact]

@@ -15,22 +15,22 @@ public static class OversizedWorldBackupUx
 
     public const string NotificationBody =
         "Automatic cloud backups have stopped because this world is too large for the free "
-        + "cloud storage cap. Use Server → Download latest world save while the "
-        + "game VM is running — that copies the live world to this PC over SSH and does not "
+        + "cloud storage limit. Use Server → World → Download live world while the server is "
+        + "running. That copies the live world straight from the game VM to this PC and does not "
         + "upload it to cloud storage.";
 
     public const string StartVmFirstMessage =
-        "The game VM must be running to copy the live world over SSH. Start the server, then "
-        + "use Download latest world save again. Cloud backups stay paused until this size "
-        + "limit is resolved.";
+        "The server must be running to copy the live world. Start the server, then "
+        + "use Download live world again. Cloud backups stay paused until the world fits "
+        + "the storage limit.";
 
     public const string HelpTitle =
-        "Cloud backups of the world zip. Live world is the uncompressed folder on the game VM "
-        + "(measured when you open World; Refresh waits two minutes). When a single save is "
-        + "too large for the free cap, automatic uploads stop and Download latest world save "
-        + "copies the live world over SSH instead (game VM must be running). That copy is not "
-        + "uploaded to cloud storage. Replace copies a zip onto the live server. Wipe world "
-        + "deletes only the live save.";
+        "Cloud backups of the world zip. Live world is the uncompressed size of the world on the "
+        + "game VM (measured when you open World; Refresh waits two minutes). When a single save is "
+        + "too large for free cloud storage, automatic uploads stop and the download button "
+        + "copies the live world straight from the game VM instead (the server must be running). "
+        + "That copy is not uploaded to cloud storage. Replace copies a zip onto the live server. "
+        + "Wipe world deletes only the live save.";
 
     /// <summary>
     /// Observed presence is the block. Transport errors are not treated as blocked
@@ -57,7 +57,7 @@ public static class OversizedWorldBackupUx
         return "Automatic cloud backups are paused because this world is too large for free "
             + "cloud storage."
             + sizeBit
-            + " Download latest world save copies the live world over SSH while the game VM "
+            + " Download live world copies it straight from the game VM while the server "
             + "is running. That file stays on this PC — it is not uploaded to cloud storage.";
     }
 
@@ -67,11 +67,11 @@ public static class OversizedWorldBackupUx
             return "Download the newest backup zip from cloud storage to this PC.";
         if (!vm1Running)
             return StartVmFirstMessage;
-        return "Copy the live world from the game VM to this PC over SSH. Not stored in cloud backup.";
+        return "Copy the live world straight from the game VM to this PC. Not stored in cloud backup.";
     }
 
     public static string DownloadLatestButtonLabel(bool blocked) =>
-        blocked ? "Download live world (SSH)" : "Download latest world save";
+        blocked ? "Download live world" : "Download latest world save";
 
     public static string SuggestedFileName(DateTimeOffset? nowUtc = null)
     {
@@ -87,7 +87,7 @@ public static class OversizedWorldBackupUx
             + FormatGiB(doc.ArchiveSizeBytes.Value)
             + " against a "
             + FormatGiB(doc.SoftCapBytes.Value)
-            + " cap.";
+            + " limit.";
     }
 
     public static string FormatGiB(long bytes)

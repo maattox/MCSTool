@@ -42,38 +42,38 @@ public static class SetupPackImport
     /// Assisted-review lead. Default Keep; optional Skip. Continue is Next / Install this pack.
     /// </summary>
     public const string AssistedReviewLead =
-        "We skip obvious client mods. Everything else stays unless you mark it. "
-        + "If the server crashes and the game names one mod, you can exclude it here.";
+        "Obvious client-only mods are skipped. Everything else stays unless you mark it. "
+        + "If the server crashes and names one mod, you can mark it here.";
 
     /// <summary>
     /// Drop-zone / help: novices should prefer a tagged export; homemade zip is the fallback.
     /// </summary>
     public const string PackFileNoviceHelp =
-        "Prefer a Modrinth .mrpack or a CurseForge Server Files zip (the jars are already inside). "
-        + "A homemade zip works as a fallback — you may need to review unknown jars. "
-        + "Very large packs: use Choose pack file so Windows can pass the path.";
+        "Use a Modrinth .mrpack or a CurseForge Server Files zip if you can. "
+        + "A zip of .jar mods also works, but you may need to review unknown mods. "
+        + "For very large modpacks, use Choose modpack.";
 
     /// <summary>
     /// Optional hint when the zip looks like a MultiMC/Prism client instance. Do not require export.
     /// </summary>
     public const string PrismExportHint =
         "This looks like a MultiMC or Prism instance. Exporting a Modrinth .mrpack from Prism "
-        + "is easier than reviewing dozens of unknown jars.";
+        + "is easier than reviewing dozens of unknown mods.";
 
     /// <summary>
     /// Review copy when leftover jars have no in-jar side metadata (default Keep).
     /// </summary>
     public const string UnclearSideKeepCopy =
-        "Some jar files in this zip do not declare whether they are client-only or server-side. "
-        + "They stay on the server unless you mark Skip on server.";
+        "Some mods in this zip don't say whether they are client-only or server-side. "
+        + "They stay on the server unless you mark them Client-only.";
 
     /// <summary>
     /// Stronger review copy when many mod jars still lack side metadata.
     /// Manual / jar-root only — <c>.mrpack</c> unclear rules are unchanged.
     /// </summary>
     public const string UnclearSideHighRiskCopy =
-        "Many jar files in this zip do not declare whether they are client-only or server-side. "
-        + "They stay unless you mark Skip on server. Use search to find a jar. "
+        "Many mods in this zip don't say whether they are client-only or server-side. "
+        + "They stay unless you mark them Client-only. Use Find a mod to search. "
         + "If the server fails to start, check Console for a short crash log.";
 
     /// <summary>Escalate unclear-side copy when at least this many mod jars lack side metadata.</summary>

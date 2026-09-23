@@ -47,7 +47,7 @@ public sealed class SetupBootstrapService
             if (DateTime.UtcNow >= deadline)
             {
                 return ServiceResult.Fail(
-                    $"Timed out waiting for {remoteMarker} on {host}. Last: {probe.Error ?? probe.Value}");
+                    $"Timed out waiting for the VM at {host} to finish starting. Last: {probe.Error ?? probe.Value}");
             }
 
             log?.Report($"waiting for {remoteMarker} on {host}…");
@@ -66,7 +66,7 @@ public sealed class SetupBootstrapService
         if (src is null)
         {
             return Task.FromResult(ServiceResult.Fail(
-                "Product door_vm/ not found. Expected OCI-mc-server/door_vm (not lab development/)."));
+                "Some MCSTool files were not found. Reinstall MCSTool."));
         }
 
         var key = TofuApplyOutputs.DoorPrivateKeyPath(state);
@@ -79,7 +79,7 @@ public sealed class SetupBootstrapService
                 }
                 catch (Exception ex)
                 {
-                    return ServiceResult.Fail("Door bootstrap failed: " + ex.Message);
+                    return ServiceResult.Fail("Installing the doorbell VM failed: " + ex.Message);
                 }
             },
             cancellationToken);
@@ -93,13 +93,13 @@ public sealed class SetupBootstrapService
     {
         var onbox = ProductPaths.FindOnboxDirectory();
         if (onbox is null)
-            return Task.FromResult(ServiceResult.Fail("Product onbox/mcmgr/ not found."));
+            return Task.FromResult(ServiceResult.Fail("Some MCSTool files were not found. Reinstall MCSTool."));
 
         var agent = ProductPaths.FindVmAgentDirectory();
         if (agent is null)
         {
             return Task.FromResult(ServiceResult.Fail(
-                "Product vm_agent/ not found. Expected OCI-mc-server/vm_agent."));
+                "Some MCSTool files were not found. Reinstall MCSTool."));
         }
 
         var key = TofuApplyOutputs.PrivateKeyPath(state);
@@ -113,7 +113,7 @@ public sealed class SetupBootstrapService
                 }
                 catch (Exception ex)
                 {
-                    return ServiceResult.Fail("VM1 bootstrap failed: " + ex.Message);
+                    return ServiceResult.Fail("Installing Minecraft failed: " + ex.Message);
                 }
             },
             cancellationToken);
@@ -141,15 +141,15 @@ public sealed class SetupBootstrapService
                 }
                 catch (Exception ex)
                 {
-                    return ServiceResult<PackReplaceResult>.Fail("Pack replace failed: " + ex.Message);
+                    return ServiceResult<PackReplaceResult>.Fail("Modpack install failed: " + ex.Message);
                 }
             },
             cancellationToken);
     }
 
     /// <summary>
-    /// Day-2 Vanilla / Paper / Modded switch (blueprint §12.3). Same prepare + <c>driver.sh</c>
-    /// as Change pack. No tofu. Vanilla/Paper skip pack copy. Keeps the world unless wipe.
+    /// Day-2 Vanilla (Paper) / Modded switch (blueprint §12.3). Same prepare + <c>driver.sh</c>
+    /// as Change pack. No tofu. Paper skips pack copy. Keeps the world unless wipe.
     /// </summary>
     public Task<ServiceResult<ChangeServerTypeResult>> ChangeServerTypeAsync(
         Vm1Settings vm1,
@@ -200,7 +200,7 @@ public sealed class SetupBootstrapService
                 }
                 catch (Exception ex)
                 {
-                    return ServiceResult.Fail("Guest runtime repair failed: " + ex.Message);
+                    return ServiceResult.Fail("Finishing game VM setup failed: " + ex.Message);
                 }
             },
             cancellationToken);
@@ -365,7 +365,7 @@ public sealed class SetupBootstrapService
                 catch (Exception ex)
                 {
                     return ServiceResult.Fail(
-                        "Minecraft restart after identity seed failed: " + ex.Message);
+                        "Restarting Minecraft to apply the server name and icon failed: " + ex.Message);
                 }
             },
             cancellationToken);
@@ -394,7 +394,7 @@ public sealed class SetupBootstrapService
                 }
                 catch (Exception ex)
                 {
-                    return ServiceResult.Fail("Parking reserved play IP failed: " + ex.Message);
+                    return ServiceResult.Fail("Moving the play IP to the game VM failed: " + ex.Message);
                 }
             },
             cancellationToken);
@@ -560,10 +560,10 @@ public sealed class SetupBootstrapService
     {
         log?.Report("Ensuring firewalld owns the host filter (25565 + SSH)…");
         var infra = ProductPaths.FindInfraDirectory()
-            ?? throw new InvalidOperationException("Product infra/ not found.");
+            ?? throw new InvalidOperationException("Some MCSTool files were not found. Reinstall MCSTool.");
         var unitPath = Path.Combine(infra, "cloud-init", "firewalld-mcmgr.service");
         if (!File.Exists(unitPath))
-            throw new InvalidOperationException("Missing infra/cloud-init/firewalld-mcmgr.service.");
+            throw new InvalidOperationException("Some MCSTool files are missing. Reinstall MCSTool.");
         var unit = File.ReadAllText(unitPath).Replace("\r\n", "\n", StringComparison.Ordinal);
         if (!unit.EndsWith('\n'))
             unit += "\n";
@@ -591,6 +591,11 @@ public sealed class SetupBootstrapService
                 + "firewall-cmd --permanent --add-service=ssh; "
                 + "firewall-cmd --permanent --add-port=25565/tcp; "
                 + "firewall-cmd --permanent --add-port=25565/udp; "
+                + "firewall-cmd --permanent --add-rich-rule=\"rule family=ipv4 source address="
+                + PlayerMapSync.DefaultSubnetCidr
+                + " port port="
+                + PlayerMapSync.TilePort
+                + " protocol=tcp accept\" || true; "
                 + "firewall-cmd --reload; "
                 + "mkdir -p /etc/mcmgr; "
                 + "if [ ! -f /etc/mcmgr/cloud-init-done ]; then date -u +%Y-%m-%dT%H:%M:%SZ > /etc/mcmgr/cloud-init-done; fi"),
@@ -601,7 +606,7 @@ public sealed class SetupBootstrapService
     private static string UploadOnboxRepairHelpers(SshClient client, IProgress<string>? log)
     {
         var onbox = ProductPaths.FindOnboxDirectory()
-            ?? throw new InvalidOperationException("Product onbox/mcmgr/ not found.");
+            ?? throw new InvalidOperationException("Some MCSTool files were not found. Reinstall MCSTool.");
         const string staging = "/tmp/mcmgr-onbox";
         Exec(client, $"rm -rf {staging} && mkdir -p {staging}/common", TimeSpan.FromSeconds(30), log);
         UploadFile(client, Path.Combine(onbox, "repair-server-properties.sh"), staging + "/repair-server-properties.sh", log);
@@ -653,21 +658,21 @@ public sealed class SetupBootstrapService
         IProgress<string>? log)
     {
         if (!eulaAccepted)
-            return ServiceResult.Fail("EULA was not accepted; refusing to run bootstrap.");
+            return ServiceResult.Fail("The Minecraft EULA was not accepted, so Setup stopped.");
 
         var minecraftVersion = state.MinecraftVersion.Trim();
         var dist = SetupPackImport.ToDistribution(state);
         if (!SetupPackImport.IsOnboxDistribution(dist))
         {
             return ServiceResult.Fail(
-                "Setup cannot bootstrap this game type (need Vanilla, Paper, Fabric, Forge, or NeoForge).");
+                "Setup can't install this server type. It needs Paper, Fabric, Forge, or NeoForge.");
         }
 
         if (SetupServerType.IsModded(state.ServerType)
             && (string.IsNullOrWhiteSpace(state.PackPath) || !File.Exists(state.PackPath)))
         {
             return ServiceResult.Fail(
-                "Modded Setup needs the pack file you confirmed. The original path is missing — pick the pack again.");
+                "Setup needs the modpack file you confirmed, but it is missing. Choose the modpack again.");
         }
 
         using var client = Connect(outputs.Vm1SshHost, outputs.SshUser, keyPath);
@@ -676,7 +681,7 @@ public sealed class SetupBootstrapService
         const string agentStaging = "/tmp/mc-manager-deploy";
         log?.Report($"Idle agent src: {agent}");
         Exec(client, $"rm -rf {agentStaging} && mkdir -p {agentStaging}", TimeSpan.FromSeconds(30), log);
-        UploadAgentFiles(client, agent, agentStaging, log);
+        UploadAgentFiles(client, agent, agentStaging, log, onbox);
         Exec(
             client,
             "sudo bash -c " + ShQuote(
@@ -721,10 +726,10 @@ public sealed class SetupBootstrapService
     {
         var onbox = ProductPaths.FindOnboxDirectory();
         if (onbox is null)
-            return ServiceResult<PackReplaceResult>.Fail("Product onbox/mcmgr/ not found.");
+            return ServiceResult<PackReplaceResult>.Fail("Some MCSTool files were not found. Reinstall MCSTool.");
 
         if (string.IsNullOrWhiteSpace(vm1.SshHost))
-            return ServiceResult<PackReplaceResult>.Fail("VM1 SSH host is missing.");
+            return ServiceResult<PackReplaceResult>.Fail("Game VM SSH host is missing.");
 
         var user = string.IsNullOrWhiteSpace(vm1.SshUser) ? "ubuntu" : vm1.SshUser.Trim();
         var analysis = SetupPackImport.AnalyzeFile(request.PackPath);
@@ -735,7 +740,7 @@ public sealed class SetupBootstrapService
         if (!preview.CanContinue)
         {
             return ServiceResult<PackReplaceResult>.Fail(
-                preview.BlockReason ?? "This pack cannot be installed.");
+                preview.BlockReason ?? "This modpack cannot be installed.");
         }
 
         var state = PackReplacePlanner.ToWizardState(preview);
@@ -744,7 +749,7 @@ public sealed class SetupBootstrapService
         if (!SetupPackImport.IsOnboxDistribution(dist))
         {
             return ServiceResult<PackReplaceResult>.Fail(
-                "Pack replace needs a Fabric, Forge, or NeoForge pack.");
+                "Changing the modpack needs a Fabric, Forge, or NeoForge modpack.");
         }
 
         using var client = Connect(vm1.SshHost, user, vm1.SshKeyPath);
@@ -771,7 +776,7 @@ public sealed class SetupBootstrapService
             request.DataDirectory,
             log);
         if (!health.Succeeded)
-            return ServiceResult<PackReplaceResult>.Fail(health.Error ?? "Pack replace failed.");
+            return ServiceResult<PackReplaceResult>.Fail(health.Error ?? "Modpack install failed.");
 
         log?.Report("Pack replace finished.");
         return ServiceResult<PackReplaceResult>.Ok(
@@ -791,10 +796,10 @@ public sealed class SetupBootstrapService
     {
         var onbox = ProductPaths.FindOnboxDirectory();
         if (onbox is null)
-            return ServiceResult<ChangeServerTypeResult>.Fail("Product onbox/mcmgr/ not found.");
+            return ServiceResult<ChangeServerTypeResult>.Fail("Some MCSTool files were not found. Reinstall MCSTool.");
 
         if (string.IsNullOrWhiteSpace(vm1.SshHost))
-            return ServiceResult<ChangeServerTypeResult>.Fail("VM1 SSH host is missing.");
+            return ServiceResult<ChangeServerTypeResult>.Fail("Game VM SSH host is missing.");
 
         var user = string.IsNullOrWhiteSpace(vm1.SshUser) ? "ubuntu" : vm1.SshUser.Trim();
         var local = ChangeServerTypePlanner.TryCreate(
@@ -829,8 +834,8 @@ public sealed class SetupBootstrapService
         {
             return ServiceResult<ChangeServerTypeResult>.Fail(
                 ChangeServerTypeUx.IsModdedChoice(plan.Value.TargetChoice)
-                    ? "Change type needs a Fabric, Forge, or NeoForge pack."
-                    : "Change type needs Default Vanilla, Paper, or a supported pack.");
+                    ? "Change server type needs a Fabric, Forge, or NeoForge modpack."
+                    : "Change server type needs Vanilla (Paper) or a supported modpack.");
         }
 
         if (!string.IsNullOrWhiteSpace(plan.Value.SaveCompatibilityWarning))
@@ -904,12 +909,12 @@ public sealed class SetupBootstrapService
                 log,
                 dataDirectory);
             if (!pack.Succeeded)
-                return ServiceResult.Fail(pack.Error ?? "Pack copy failed.");
+                return ServiceResult.Fail(pack.Error ?? "Copying the modpack failed.");
         }
 
         var health = WaitRcon(client, log);
         if (!health.Succeeded)
-            return ServiceResult.Fail(health.Error ?? "RCON health check failed.");
+            return ServiceResult.Fail(health.Error ?? "Minecraft health check failed.");
 
         if (!string.IsNullOrWhiteSpace(health.Warning))
             log?.Report(health.Warning);
@@ -1007,7 +1012,7 @@ public sealed class SetupBootstrapService
             {
                 var result = ManualServerPackInstaller.Install(state.PackPath, dest, dataDir);
                 if (!result.Succeeded)
-                    return ServiceResult.Fail(result.Error ?? "Server-pack zip install failed.");
+                    return ServiceResult.Fail(result.Error ?? "Installing the modpack zip failed.");
                 log?.Report(result.Value!.Summary);
             }
             else if (string.Equals(state.PackKind, SetupPackImport.KindMrpack, StringComparison.OrdinalIgnoreCase)
@@ -1016,14 +1021,14 @@ public sealed class SetupBootstrapService
                 var installer = MrpackInstaller.Create(state.PackPath, dataDir);
                 var result = installer.InstallAsync(state.PackPath, dest, dataDir).GetAwaiter().GetResult();
                 if (!result.Succeeded)
-                    return ServiceResult.Fail(result.Error ?? "Modrinth pack install failed.");
+                    return ServiceResult.Fail(result.Error ?? "Installing the Modrinth .mrpack failed.");
                 log?.Report(result.Value!.Summary);
             }
             else
             {
                 var result = ManualServerPackInstaller.Install(state.PackPath, dest, dataDir);
                 if (!result.Succeeded)
-                    return ServiceResult.Fail(result.Error ?? "Server-pack zip install failed.");
+                    return ServiceResult.Fail(result.Error ?? "Installing the modpack zip failed.");
                 log?.Report(result.Value!.Summary);
             }
 
@@ -1124,6 +1129,7 @@ public sealed class SetupBootstrapService
             + "  \"object_storage_soft_cap_gb\": 9.5,\n"
             + "  \"backup_enabled\": true,\n"
             + "  \"backup_prefix\": \"backups/\",\n"
+            + $"  \"vm1_private_ip\": {JsonString(o.Vm1PrimaryPrivateIp)},\n"
             + "  \"world_path\": \"/opt/mcmgr/server/world\"\n"
             + "}\n";
         UploadText(client, "/tmp/mc-manager-config.json", json);
@@ -1276,13 +1282,20 @@ public sealed class SetupBootstrapService
         return parsed.Ok ? parsed.CrashReport : null;
     }
 
-    private static void UploadAgentFiles(SshClient client, string agent, string staging, IProgress<string>? log)
+    private static void UploadAgentFiles(
+        SshClient client,
+        string agent,
+        string staging,
+        IProgress<string>? log,
+        string? onbox = null)
     {
         string[] files =
         [
             "idle_watch.py", "ledger.py", "lease.py", "shape_detect.py", "rcon_client.py",
-            "os_publish.py", "world_backup.py", "graceful_stop.sh", "record_boot.py",
-            "install.sh", "config.example.json",
+            "os_publish.py", "world_backup.py", "heap_clamp.py", "heap_pressure.py",
+            "player_map.py", "map_http.py",
+            "graceful_stop.sh",
+            "record_boot.py", "install.sh", "config.example.json",
         ];
         foreach (var name in files)
         {
@@ -1291,7 +1304,28 @@ public sealed class SetupBootstrapService
                 UploadFile(client, local, staging + "/" + Path.GetFileName(name), log);
         }
 
-        foreach (var unit in new[] { "mc-idle-watch.service", "mc-idle-watch.timer", "mc-boot-ledger.service" })
+        foreach (var rel in new[]
+                 {
+                     Path.Combine("vendor", "minedmap-aarch64"),
+                     Path.Combine("vendor", "MinedMap-2.8.0-viewer.zip"),
+                 })
+        {
+            var local = Path.Combine(agent, rel);
+            if (File.Exists(local))
+                UploadFile(client, local, staging + "/" + rel.Replace('\\', '/'), log);
+        }
+
+        var heapScript = onbox is null
+            ? Path.Combine(agent, "apply-jvm-heap.py")
+            : Path.Combine(onbox, "common", "apply-jvm-heap.py");
+        if (File.Exists(heapScript))
+            UploadFile(client, heapScript, staging + "/apply-jvm-heap.py", log);
+
+        foreach (var unit in new[]
+                 {
+                     "mc-idle-watch.service", "mc-idle-watch.timer", "mc-boot-ledger.service",
+                     "mc-player-map.service", "mc-player-map.timer", "mc-map-http.service",
+                 })
         {
             var local = Path.Combine(agent, "systemd", unit);
             if (File.Exists(local))

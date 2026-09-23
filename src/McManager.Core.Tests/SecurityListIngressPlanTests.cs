@@ -10,6 +10,7 @@ public sealed class SecurityListIngressPlanTests
     private const int McPort = 25565;
     private const int SshPort = 22;
     private const int DoorPort = 8080;
+    private const int MapPort = SecurityListIngressPlanner.PlayerHttpPort;
 
     private static readonly FriendEntry Alice = new()
     {
@@ -51,8 +52,13 @@ public sealed class SecurityListIngressPlanTests
         Assert.True(HasMc(plan.Owned, "198.51.100.7/32", "Admin"));
         Assert.DoesNotContain(plan.Owned, r => IsMinecraft(r) && FriendRules.IsWorldOpenCidr(r.Source));
 
+        Assert.True(HasTcp(plan.Owned, "203.0.113.10/32", MapPort, FriendRules.MapDescription("Alice")));
+        Assert.True(HasTcp(plan.Owned, "198.51.100.7/32", MapPort, FriendRules.MapDescription("Admin")));
+        Assert.DoesNotContain(plan.Owned, r => IsPlayerHttp(r) && FriendRules.IsWorldOpenCidr(r.Source));
+
         Assert.True(HasTcp(plan.Owned, "198.51.100.7/32", SshPort, FriendRules.SshDescription("Admin")));
         Assert.True(HasTcp(plan.Owned, "198.51.100.7/32", DoorPort, FriendRules.DoorDescription("Admin")));
+        Assert.DoesNotContain(plan.Owned, r => IsSshOrDoor(r) && r.Source == "203.0.113.10/32");
         Assert.DoesNotContain(plan.Ingress, r => IsSshOrDoor(r) && FriendRules.IsWorldOpenCidr(r.Source));
         Assert.DoesNotContain(plan.Ingress, IsRcon);
     }
@@ -70,8 +76,10 @@ public sealed class SecurityListIngressPlanTests
 
         Assert.True(HasMc(plan.Owned, "172.56.0.0/16", "Jordan"));
         Assert.False(HasMc(plan.Owned, "172.56.0.0/32", "Jordan"));
+        Assert.True(HasTcp(plan.Owned, "172.56.0.0/16", MapPort, FriendRules.MapDescription("Jordan")));
         Assert.True(HasTcp(plan.Owned, "198.51.100.7/32", SshPort, FriendRules.SshDescription("Admin")));
         Assert.DoesNotContain(plan.Owned, r => IsSshOrDoor(r) && r.Source == "172.56.0.0/16");
+        Assert.DoesNotContain(plan.Owned, r => IsPlayerHttp(r) && r.Source == "172.56.0.0/32");
     }
 
     [Fact]
@@ -104,8 +112,10 @@ public sealed class SecurityListIngressPlanTests
 
         Assert.Contains(plan.Preserved, SameIcmp);
         Assert.DoesNotContain(plan.Ingress, r => IsMinecraft(r) && FriendRules.IsWorldOpenCidr(r.Source));
+        Assert.DoesNotContain(plan.Ingress, r => IsPlayerHttp(r) && FriendRules.IsWorldOpenCidr(r.Source));
         Assert.True(HasMc(plan.Owned, "203.0.113.10/32", "Alice"));
         Assert.True(HasMc(plan.Owned, "198.51.100.7/32", "Admin"));
+        Assert.True(HasTcp(plan.Owned, "203.0.113.10/32", MapPort, FriendRules.MapDescription("Alice")));
         Assert.True(HasTcp(plan.Owned, "198.51.100.7/32", SshPort, FriendRules.SshDescription("Admin")));
     }
 
@@ -163,6 +173,33 @@ public sealed class SecurityListIngressPlanTests
         Assert.DoesNotContain(plan.Ingress, r => IsMinecraft(r) && r.Source == "172.56.0.0/16");
         Assert.DoesNotContain(plan.Ingress, r => IsMinecraft(r) && FriendRules.IsWorldOpenCidr(r.Source));
         Assert.True(HasMc(plan.Owned, "198.51.100.7/32", "Admin"));
+        Assert.True(HasTcp(plan.Owned, "198.51.100.7/32", MapPort, FriendRules.MapDescription("Admin")));
+    }
+
+    [Fact]
+    public void Private_preserves_subnet_tile_sync_tcp()
+    {
+        var tile = SecurityListIngressPlanner.MakeTcpRule(
+            PlayerMapSync.DefaultSubnetCidr,
+            PlayerMapSync.TilePort,
+            PlayerMapSync.IngressDescription);
+        var plan = SecurityListIngressPlanner.Build(
+            [IcmpRule(), WaitForgeTcpRule(), tile],
+            [Admin],
+            McPort,
+            SshPort,
+            DoorPort,
+            adminName: "Admin");
+
+        Assert.Contains(plan.Preserved, SameIcmp);
+        Assert.Contains(plan.Preserved, IsWaitForge);
+        Assert.Contains(plan.Preserved, r =>
+            r.Protocol == SecurityListIngressPlanner.ProtocolTcp
+            && r.Source == PlayerMapSync.DefaultSubnetCidr
+            && r.TcpOptions?.DestinationPortRange?.Min == PlayerMapSync.TilePort
+            && r.Description == PlayerMapSync.IngressDescription);
+        Assert.DoesNotContain(plan.Owned, r =>
+            r.TcpOptions?.DestinationPortRange?.Min == PlayerMapSync.TilePort);
     }
 
     [Fact]
@@ -186,6 +223,7 @@ public sealed class SecurityListIngressPlanTests
         Assert.Contains(plan.Preserved, IsWaitForge);
         Assert.DoesNotContain(plan.Preserved, r => r.Source == "172.56.0.0/16");
         Assert.True(HasMc(plan.Owned, "172.56.0.0/16", "Jordan"));
+        Assert.True(HasTcp(plan.Owned, "172.56.0.0/16", MapPort, FriendRules.MapDescription("Jordan")));
         Assert.DoesNotContain(plan.Ingress, r => IsMinecraft(r) && r.Description == "old name");
     }
 
@@ -198,8 +236,7 @@ public sealed class SecurityListIngressPlanTests
             OwnedRuleCount = 6,
         };
         Assert.DoesNotContain("0.0.0.0/0", result.Summary, StringComparison.Ordinal);
-        Assert.Contains("preserved 2", result.Summary, StringComparison.Ordinal);
-        Assert.Contains("wrote 6", result.Summary, StringComparison.Ordinal);
+        Assert.Equal("Oracle firewall rules updated.", result.Summary);
     }
 
     [Fact]
@@ -325,6 +362,41 @@ public sealed class SecurityListIngressPlanTests
             adminName: null));
     }
 
+    [Fact]
+    public void Private_player_http_is_on_every_source_and_never_world_open()
+    {
+        var existing = new[]
+        {
+            IcmpRule(),
+            SecurityListIngressPlanner.MakeTcpRule(
+                "0.0.0.0/0",
+                MapPort,
+                "public map"),
+            SecurityListIngressPlanner.MakeTcpRule(
+                "192.0.2.0/24",
+                MapPort,
+                "stale map prefix"),
+        };
+
+        var plan = SecurityListIngressPlanner.Build(
+            existing,
+            [Alice, Admin, CidrFriend],
+            McPort,
+            SshPort,
+            DoorPort,
+            adminName: "Admin");
+
+        Assert.True(HasTcp(plan.Owned, "203.0.113.10/32", MapPort, FriendRules.MapDescription("Alice")));
+        Assert.True(HasTcp(plan.Owned, "198.51.100.7/32", MapPort, FriendRules.MapDescription("Admin")));
+        Assert.True(HasTcp(plan.Owned, "172.56.0.0/16", MapPort, FriendRules.MapDescription("Jordan")));
+        Assert.DoesNotContain(plan.Ingress, r => IsPlayerHttp(r) && FriendRules.IsWorldOpenCidr(r.Source));
+        Assert.DoesNotContain(plan.Preserved, r => IsPlayerHttp(r));
+        Assert.DoesNotContain(plan.Owned, r => IsSshOrDoor(r) && r.Source == "203.0.113.10/32");
+        Assert.DoesNotContain(plan.Owned, r => IsSshOrDoor(r) && r.Source == "172.56.0.0/16");
+        Assert.True(HasTcp(plan.Owned, "198.51.100.7/32", DoorPort, FriendRules.DoorDescription("Admin")));
+        Assert.Equal(80, MapPort);
+    }
+
     private static IngressSecurityRule IcmpRule() =>
         new()
         {
@@ -373,6 +445,10 @@ public sealed class SecurityListIngressPlanTests
         rule.Protocol == SecurityListIngressPlanner.ProtocolTcp
         && (rule.TcpOptions?.DestinationPortRange?.Min == SshPort
             || rule.TcpOptions?.DestinationPortRange?.Min == DoorPort);
+
+    private static bool IsPlayerHttp(IngressSecurityRule rule) =>
+        rule.Protocol == SecurityListIngressPlanner.ProtocolTcp
+        && rule.TcpOptions?.DestinationPortRange?.Min == MapPort;
 
     private static bool HasMc(IReadOnlyList<IngressSecurityRule> rules, string source, string description) =>
         HasTcp(rules, source, McPort, description)

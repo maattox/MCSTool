@@ -1,7 +1,8 @@
 [Unit]
 Description=Minecraft server
 After=network-online.target mc-boot-ledger.service
-Wants=network-online.target mc-boot-ledger.service
+Wants=network-online.target
+Requires=mc-boot-ledger.service
 StartLimitIntervalSec=600
 StartLimitBurst=3
 

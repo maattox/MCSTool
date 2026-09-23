@@ -6,7 +6,7 @@
 <section class="mcm-pack-review" aria-label="Client-only review">
     @if (ShowHeading)
     {
-        <h2 id="@HeadingId" class="mcm-pack-review-title">Review jars</h2>
+        <h2 id="@HeadingId" class="mcm-pack-review-title">Review mods</h2>
     }
     @if (LooksLikeLauncherInstance)
     {
@@ -14,13 +14,13 @@
     }
     @if (!string.IsNullOrWhiteSpace(FreezeBlockReason))
     {
-        <p class="mcm-wizard-error" role="alert">@FreezeBlockReason Unmark Client-only on that jar to continue.</p>
+        <p class="mcm-wizard-error" role="alert">@FreezeBlockReason Unmark Client-only on that mod to continue.</p>
     }
 
     @if (ShowSearch)
     {
         <div class="mcm-field mcm-pack-review-search">
-            <label for="@SearchId">Find a jar</label>
+            <label for="@SearchId">Find a mod</label>
             <input id="@SearchId"
                    type="search"
                    name="@(IdPrefix)-review-search"
@@ -35,7 +35,7 @@
 
     @if (FilteredRows.Count == 0)
     {
-        <p class="mcm-wizard-hint">@(AllRows.Count == 0 ? "No jars to review." : "No jars match that name.")</p>
+        <p class="mcm-wizard-hint">@(AllRows.Count == 0 ? "No mods to review." : "No mods match that name.")</p>
     }
     else
     {
@@ -43,7 +43,7 @@
             <span class="mcm-pack-review-client-head">Client-only</span>
             <span class="mcm-pack-review-note">Note</span>
         </div>
-        <ul class="mcm-pack-review-list mcm-slim-scroll" aria-label="Mods in this pack">
+        <ul class="mcm-pack-review-list mcm-slim-scroll" aria-label="Mods in this modpack">
             @foreach (var item in FilteredRows)
             {
                 var inputId = RowId(item);
@@ -145,7 +145,7 @@
         if (IsMustKeep(item.Path))
         {
             if (!string.IsNullOrWhiteSpace(item.RequiredByName))
-                return "required by " + item.RequiredByName;
+                return "Required by " + item.RequiredByName;
             return item.Reason;
         }
 
@@ -153,9 +153,9 @@
         {
             return item.SkipReason switch
             {
-                PackFileSkipReason.PackDeclared => "env.server",
-                PackFileSkipReason.OverrideList => "exclude list",
-                PackFileSkipReason.InJarMetadata => "in-jar client",
+                PackFileSkipReason.PackDeclared => "Pack says client-only",
+                PackFileSkipReason.OverrideList => "Known client-only mod",
+                PackFileSkipReason.InJarMetadata => "Mod says client-only",
                 _ => string.IsNullOrWhiteSpace(item.Reason) ? "" : item.Reason,
             };
         }

@@ -53,7 +53,7 @@ public static class WorldWipe
 
         if (string.IsNullOrWhiteSpace(raw) || !raw.StartsWith('/'))
         {
-            error = "vm1.world_path must be an absolute path on VM1.";
+            error = "The world folder setting must be a full path on the game VM.";
             return false;
         }
 
@@ -63,7 +63,7 @@ public static class WorldWipe
             || raw.Contains('[', StringComparison.Ordinal)
             || raw.IndexOfAny(['\n', '\r', '\0', ';', '|', '&', '$', '`']) >= 0)
         {
-            error = "vm1.world_path is not a safe world directory.";
+            error = "The world folder setting is not a safe folder.";
             return false;
         }
 
@@ -71,15 +71,15 @@ public static class WorldWipe
             || !raw.StartsWith(ServerDir + "/", StringComparison.Ordinal))
         {
             error =
-                "vm1.world_path must be a world folder under /opt/mcmgr/server "
-                + "(not the server directory itself).";
+                "The world folder setting must be a folder inside the server folder "
+                + "(not the server folder itself).";
             return false;
         }
 
         var leaf = raw[(ServerDir.Length + 1)..];
         if (string.IsNullOrEmpty(leaf) || leaf.Contains('/', StringComparison.Ordinal))
         {
-            error = "vm1.world_path must be a single folder directly under /opt/mcmgr/server.";
+            error = "The world folder setting must be a single folder directly inside the server folder.";
             return false;
         }
 

@@ -36,6 +36,21 @@ fi
 if [[ -f "${OPT}/world_backup.py" ]]; then
   mv -f "${OPT}/world_backup.py" "${OPT}/lib/world_backup.py"
 fi
+if [[ -f "${OPT}/heap_clamp.py" ]]; then
+  mv -f "${OPT}/heap_clamp.py" "${OPT}/lib/heap_clamp.py"
+fi
+if [[ -f "${OPT}/heap_pressure.py" ]]; then
+  mv -f "${OPT}/heap_pressure.py" "${OPT}/lib/heap_pressure.py"
+fi
+if [[ -f "${OPT}/player_map.py" ]]; then
+  mv -f "${OPT}/player_map.py" "${OPT}/bin/player_map.py"
+fi
+if [[ -f "${OPT}/map_http.py" ]]; then
+  mv -f "${OPT}/map_http.py" "${OPT}/bin/map_http.py"
+fi
+if [[ -f "${OPT}/apply-jvm-heap.py" ]]; then
+  mv -f "${OPT}/apply-jvm-heap.py" "${OPT}/bin/apply-jvm-heap.py"
+fi
 
 chmod 755 "${OPT}/bin/idle_watch.py" "${OPT}/bin/record_boot.py" "${OPT}/bin/graceful_stop.sh"
 chmod 644 "${OPT}/lib/ledger.py" "${OPT}/lib/rcon_client.py"
@@ -43,6 +58,11 @@ chmod 644 "${OPT}/lib/ledger.py" "${OPT}/lib/rcon_client.py"
 [[ -f "${OPT}/lib/lease.py" ]] && chmod 644 "${OPT}/lib/lease.py"
 [[ -f "${OPT}/lib/shape_detect.py" ]] && chmod 644 "${OPT}/lib/shape_detect.py"
 [[ -f "${OPT}/lib/world_backup.py" ]] && chmod 644 "${OPT}/lib/world_backup.py"
+[[ -f "${OPT}/lib/heap_clamp.py" ]] && chmod 644 "${OPT}/lib/heap_clamp.py"
+[[ -f "${OPT}/lib/heap_pressure.py" ]] && chmod 644 "${OPT}/lib/heap_pressure.py"
+[[ -f "${OPT}/bin/player_map.py" ]] && chmod 755 "${OPT}/bin/player_map.py"
+[[ -f "${OPT}/bin/map_http.py" ]] && chmod 755 "${OPT}/bin/map_http.py"
+[[ -f "${OPT}/bin/apply-jvm-heap.py" ]] && chmod 755 "${OPT}/bin/apply-jvm-heap.py"
 # Normalize CRLF if files were uploaded from Windows
 sed -i 's/\r$//' "${OPT}/bin/graceful_stop.sh" "${OPT}/install.sh" 2>/dev/null || true
 sed -i 's/\r$//' "${OPT}/bin/"*.py "${OPT}/lib/"*.py 2>/dev/null || true
@@ -69,6 +89,15 @@ fi
 if [[ -f "${OPT}/mc-boot-ledger.service" ]]; then
   cp -f "${OPT}/mc-boot-ledger.service" /etc/systemd/system/mc-boot-ledger.service
 fi
+if [[ -f "${OPT}/mc-player-map.service" ]]; then
+  cp -f "${OPT}/mc-player-map.service" /etc/systemd/system/mc-player-map.service
+fi
+if [[ -f "${OPT}/mc-player-map.timer" ]]; then
+  cp -f "${OPT}/mc-player-map.timer" /etc/systemd/system/mc-player-map.timer
+fi
+if [[ -f "${OPT}/mc-map-http.service" ]]; then
+  cp -f "${OPT}/mc-map-http.service" /etc/systemd/system/mc-map-http.service
+fi
 
 # Existing VMs keep a generated minecraft.service; the drop-in makes Java wait
 # for identity apply without rewriting ExecStart. Greenfield template has the
@@ -77,7 +106,7 @@ mkdir -p /etc/systemd/system/minecraft.service.d
 cat > /etc/systemd/system/minecraft.service.d/mcmgr-identity.conf <<'EOF'
 [Unit]
 After=mc-boot-ledger.service
-Wants=mc-boot-ledger.service
+Requires=mc-boot-ledger.service
 EOF
 # Existing VMs keep ProtectSystem=strict from the generated unit; ImageIO needs a
 # writable /tmp to encode server-icon.png into the status ping favicon.
@@ -107,11 +136,63 @@ if [[ ! -s "${VAR}/lease.json" ]]; then
   echo '{"version":1,"active":false,"session_id":null,"interval_id":null,"started_at":null,"last_heartbeat_at":null,"ocpus":null,"memory_gb":null,"updated_at":null,"cleared_at":null,"clear_reason":null}' > "${VAR}/lease.json"
 fi
 
+# Pinned MinedMap v2.8.0 aarch64 ELF + viewer (SHA in docs/archive/Player-Map.md).
+MAP=/var/lib/mcmgr-map
+mkdir -p "${MAP}/http" "${MAP}/render" "${MAP}/publish" "${MAP}/shim" /opt/mcmgr/bin
+VENDOR="${OPT}/vendor"
+ELF="${VENDOR}/minedmap-aarch64"
+VIEWER_ZIP="${VENDOR}/MinedMap-2.8.0-viewer.zip"
+ELF_SHA="00295e590af406d6ca5a1e7054f112cf3678417e0a6b2942a218ed4c6c526604"
+VIEWER_SHA="6ddfe50714a0ab0c190ded3bd968fe3b6d919fd062fcb1b830201351357c37db"
+if [[ ! -f "${ELF}" ]]; then
+  echo "missing vendored MinedMap ELF at ${ELF}" >&2
+  exit 1
+fi
+if [[ ! -f "${VIEWER_ZIP}" ]]; then
+  echo "missing MinedMap viewer zip at ${VIEWER_ZIP}" >&2
+  exit 1
+fi
+command -v unzip >/dev/null 2>&1 || {
+  apt-get update -qq
+  DEBIAN_FRONTEND=noninteractive apt-get install -y -qq unzip
+}
+echo "${ELF_SHA}  ${ELF}" | sha256sum -c -
+echo "${VIEWER_SHA}  ${VIEWER_ZIP}" | sha256sum -c -
+install -m 755 "${ELF}" /opt/mcmgr/bin/minedmap
+rm -rf /tmp/mm-viewer-unpack
+mkdir -p /tmp/mm-viewer-unpack
+unzip -qo "${VIEWER_ZIP}" -d /tmp/mm-viewer-unpack
+VIEWER_SRC="$(find /tmp/mm-viewer-unpack -name index.html -printf '%h\n' | head -n 1)"
+if [[ -z "${VIEWER_SRC}" ]]; then
+  echo "MinedMap viewer zip has no index.html" >&2
+  exit 1
+fi
+rm -rf "${MAP}/viewer"
+mkdir -p "${MAP}/viewer"
+cp -a "${VIEWER_SRC}/." "${MAP}/viewer/"
+rm -rf /tmp/mm-viewer-unpack
+if [[ ! -f "${MAP}/http/manifest.json" ]]; then
+  printf '%s\n' '{"sha256":"","bytes":0,"rendered_at":null}' > "${MAP}/http/manifest.json"
+fi
+# Subnet-only tile port (PlayerMapSync.TilePort / DefaultSubnetCidr). Never world-open.
+if command -v firewall-cmd >/dev/null 2>&1 && systemctl is-active --quiet firewalld; then
+  TILE_RULE='rule family=ipv4 source address=10.0.0.0/24 port port=8765 protocol=tcp accept'
+  firewall-cmd --permanent --query-rich-rule="${TILE_RULE}" >/dev/null 2>&1 \
+    || firewall-cmd --permanent --add-rich-rule="${TILE_RULE}"
+  firewall-cmd --reload
+fi
+
 systemctl daemon-reload
 systemctl enable mc-idle-watch.timer
 systemctl enable mc-boot-ledger.service
+systemctl enable mc-player-map.timer
+systemctl enable mc-map-http.service
 systemctl restart mc-idle-watch.timer
 systemctl start mc-boot-ledger.service || true
+systemctl restart mc-map-http.service
+systemctl restart mc-player-map.timer
 
 echo "mc-manager idle agent installed."
 systemctl is-active mc-idle-watch.timer || true
+systemctl is-active mc-map-http.service || true
+systemctl is-active mc-player-map.timer || true

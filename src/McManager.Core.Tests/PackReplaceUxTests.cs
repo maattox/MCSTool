@@ -27,7 +27,7 @@ public sealed class PackReplaceUxTests
         Assert.True(PackReplaceUx.CanInstall(
             vm1Running: true, busy: false, canContinue: true, packConfirmed: true, clientPackAcknowledged: true));
         Assert.Contains(
-            "Confirm the pack",
+            "Confirm the modpack",
             PackReplaceUx.InstallDisabledReason(true, false, true, false, true),
             StringComparison.Ordinal);
         Assert.Equal(
@@ -96,16 +96,17 @@ public sealed class PackReplaceUxTests
     [Fact]
     public void Change_pack_copy_is_locked_and_pronoun_free()
     {
-        Assert.Equal("Drop a mod pack here", PackReplaceUx.DropTitle);
+        Assert.Equal("Drop a modpack here", PackReplaceUx.DropTitle);
         Assert.Contains("Modrinth .mrpack", PackReplaceUx.DropFormats, StringComparison.Ordinal);
-        Assert.Contains("CurseForge Server Pack .zip", PackReplaceUx.DropFormats, StringComparison.Ordinal);
-        Assert.Contains(".jar zip", PackReplaceUx.DropFormats, StringComparison.Ordinal);
+        Assert.Contains("CurseForge Server Files", PackReplaceUx.DropFormats, StringComparison.Ordinal);
+        Assert.Contains("zip of .jar mods", PackReplaceUx.DropFormats, StringComparison.Ordinal);
+        Assert.DoesNotContain("unstructured", PackReplaceUx.DropFormats, StringComparison.OrdinalIgnoreCase);
         Assert.Equal(
             "Known client-only mods will automatically be skipped. Check the list below and confirm that all client-only mods are correctly marked.",
             PackReplaceUx.SkipWarningBody);
         Assert.False(PackReplaceUx.ShouldShowSkipListWarning(assistedReviewVisible: false));
         Assert.True(PackReplaceUx.ShouldShowSkipListWarning(assistedReviewVisible: true));
-        Assert.Contains("irreversible", PackReplaceUx.WipeWorldLabel, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("can't be undone", PackReplaceUx.WipeWorldLabel, StringComparison.OrdinalIgnoreCase);
 
         var paneCopy = string.Join(
             " ",

@@ -15,6 +15,8 @@ public sealed class JvmHeapApplyTests
         Assert.Contains("-Xms", text, StringComparison.Ordinal);
         Assert.Contains("-Xmx", text, StringComparison.Ordinal);
         Assert.Contains("paper-jvm-flags.json", text, StringComparison.Ordinal);
+        Assert.Contains("10G", text, StringComparison.Ordinal);
+        Assert.Contains("12G", text, StringComparison.Ordinal);
         Assert.DoesNotContain("-Dusing.aikars.flags", text, StringComparison.Ordinal);
     }
 
@@ -35,6 +37,19 @@ public sealed class JvmHeapApplyTests
     {
         Assert.True(JvmHeapApply.TryParseOk("OK heap=6G paper_unit=1\n", out var heap, out var error), error);
         Assert.Equal("6G", heap);
+    }
+
+    [Theory]
+    [InlineData("10G")]
+    [InlineData("12G")]
+    public void Parses_extended_ok_line(string token)
+    {
+        Assert.True(
+            JvmHeapApply.TryParseOk($"OK heap={token} paper_unit=0\n", out var heap, out var error),
+            error);
+        Assert.Equal(token, heap);
+        var cmd = JvmHeapApply.RunCommand(token);
+        Assert.Contains($"'{token}'", cmd, StringComparison.Ordinal);
     }
 
     [Fact]

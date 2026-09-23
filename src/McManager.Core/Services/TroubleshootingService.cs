@@ -60,11 +60,11 @@ public sealed class TroubleshootingService
         log.Line("Wraps door /opt/mccontrol/oci/ip_to_vm1.sh or ip_to_vm2.sh (instance principal).");
 
         if (_compute is null)
-            return log.Fail("OCI Compute session unavailable.");
+            return log.Fail("Oracle Cloud connection unavailable.");
 
         var vm1 = await _compute.GetLifecycleStateAsync(_config.Vm1.InstanceId, cancellationToken);
         if (!vm1.Succeeded)
-            return log.Fail(vm1.Error ?? "Could not read VM1 lifecycle.");
+            return log.Fail(vm1.Error ?? "Could not read the game VM status.");
 
         var vm1Life = (vm1.Value ?? "").Trim().ToUpperInvariant();
         log.Line($"VM1 lifecycle: {vm1Life}");
@@ -85,9 +85,9 @@ public sealed class TroubleshootingService
         log.AppendExec("door " + Path.GetFileName(script), run);
         return run.Succeeded
             ? log.Ok(toVm1
-                ? "Reserved play IP is on VM1 (or was already there)."
-                : "Reserved play IP is on the door (or was already there).")
-            : log.Fail("IP move script failed. See log.");
+                ? "The play IP is on the game VM."
+                : "The play IP is on the doorbell VM.")
+            : log.Fail("Moving the play IP failed. See the result log.");
     }
 
     public Task<TroubleshootingLogResult> DiagnoseWaitForgeAsync(
@@ -97,6 +97,8 @@ public sealed class TroubleshootingService
             "/opt/mccontrol/scripts/diagnose_wait_forge.sh",
             DiagnoseTimeout,
             needsOciEnv: false,
+            "Doorbell wake check finished. See the result log.",
+            "Doorbell wake check failed. Is the doorbell VM running?",
             cancellationToken);
 
     public Task<TroubleshootingLogResult> ResetDoorStateAsync(
@@ -106,6 +108,8 @@ public sealed class TroubleshootingService
             "/opt/mccontrol/scripts/reset_door_state.sh",
             ResetTimeout,
             needsOciEnv: false,
+            "Doorbell reset.",
+            "Resetting the doorbell failed. Is the doorbell VM running?",
             cancellationToken);
 
     public Task<TroubleshootingLogResult> UnstickAfterForgeReadyAsync(
@@ -115,6 +119,8 @@ public sealed class TroubleshootingService
             "/opt/mccontrol/scripts/unstick_after_forge_ready.sh",
             UnstickTimeout,
             needsOciEnv: false,
+            "Unstick finished. See the result log.",
+            "Unstick failed. Is the doorbell VM running?",
             cancellationToken);
 
     public async Task<TroubleshootingLogResult> RefreshOsBudgetAsync(
@@ -131,7 +137,7 @@ public sealed class TroubleshootingService
             {
                 log.Line("POST /api/os-refresh OK");
                 log.Line(http.Value ?? "");
-                return log.Ok("Door OS cache refreshed.");
+                return log.Ok("Doorbell hours refreshed.");
             }
 
             log.Line("HTTP os-refresh failed: " + (http.Error ?? "unknown") + " — trying SSH.");
@@ -148,8 +154,8 @@ public sealed class TroubleshootingService
             cancellationToken);
         log.AppendExec("pull_os_budget.sh --force", ssh);
         return ssh.Succeeded
-            ? log.Ok("Door OS cache refreshed via SSH.")
-            : log.Fail("OS refresh failed. If the door VM is stopped, use Park play IP first.");
+            ? log.Ok("Doorbell hours refreshed.")
+            : log.Fail("Refreshing doorbell hours failed. If the doorbell VM is stopped, use Fix play IP first.");
     }
 
     public async Task<TroubleshootingLogResult> HealLedgerAsync(
@@ -159,19 +165,19 @@ public sealed class TroubleshootingService
         log.Line("Heal open Object Storage ledger (Phase 5: only when VM1 is STOPPED).");
 
         if (_compute is null)
-            return log.Fail("OCI Compute session unavailable.");
+            return log.Fail("Oracle Cloud connection unavailable.");
 
         var vm1 = await _compute.GetLifecycleStateAsync(_config.Vm1.InstanceId, cancellationToken);
         if (!vm1.Succeeded)
-            return log.Fail(vm1.Error ?? "Could not read VM1 lifecycle.");
+            return log.Fail(vm1.Error ?? "Could not read the game VM status.");
 
         var life = (vm1.Value ?? "").Trim().ToUpperInvariant();
         log.Line($"VM1 lifecycle: {life}");
         if (life != "STOPPED")
         {
             return log.Fail(
-                "Heal refused: VM1 must be STOPPED (not STOPPING/RUNNING). "
-                + "Wait for SoftStop to finish, or use Park play IP if the door is down.");
+                "The game VM must be fully Stopped first (not Stopping or Running). "
+                + "Wait for it to stop, or use Fix play IP if the doorbell VM is down.");
         }
 
         var run = await RunDoorOciScriptAsync(
@@ -181,8 +187,8 @@ public sealed class TroubleshootingService
             cancellationToken);
         log.AppendExec("heal_os_ledger.sh", run);
         return run.Succeeded
-            ? log.Ok("Heal script finished (see HEAL_SKIP / HEAL_OS_OK in the log).")
-            : log.Fail("Heal script failed. See log.");
+            ? log.Ok("Hours record check finished. See the result log.")
+            : log.Fail("Fixing the hours record failed. See the result log.");
     }
 
     public async Task<TroubleshootingLogResult> ShowIdleStatusAsync(
@@ -211,8 +217,8 @@ public sealed class TroubleshootingService
             cancellationToken);
         log.AppendExec("idle/minecraft status", run);
         return run.Succeeded
-            ? log.Ok("Idle / Minecraft status captured.")
-            : log.Fail("Could not read idle status. Is VM1 RUNNING?");
+            ? log.Ok("Idle timer and Minecraft status are in the result log.")
+            : log.Fail("Could not read idle timer status. Is the server running?");
     }
 
     public async Task<TroubleshootingLogResult> ForceEnableIdleTimerAsync(
@@ -236,8 +242,8 @@ public sealed class TroubleshootingService
             cancellationToken);
         log.AppendExec("enable mc-idle-watch.timer", run);
         return run.Succeeded
-            ? log.Ok("Idle timer enabled/started.")
-            : log.Fail("Failed to enable idle timer. Is VM1 RUNNING?");
+            ? log.Ok("Idle timer is back on.")
+            : log.Fail("Failed to turn the idle timer back on. Is the server running?");
     }
 
     public async Task<TroubleshootingLogResult> ReapplyPlayNetplanAsync(
@@ -247,14 +253,14 @@ public sealed class TroubleshootingService
         log.Line("Re-apply /etc/netplan/99-mcmgr-play.yaml on RUNNING guests (SETUP-ISSUE-1).");
 
         if (_compute is null)
-            return log.Fail("OCI Compute session unavailable.");
+            return log.Fail("Oracle Cloud connection unavailable.");
 
         var any = false;
         var allOk = true;
 
         var vm1Life = await _compute.GetLifecycleStateAsync(_config.Vm1.InstanceId, cancellationToken);
         if (!vm1Life.Succeeded)
-            return log.Fail(vm1Life.Error ?? "Could not read VM1 lifecycle.");
+            return log.Fail(vm1Life.Error ?? "Could not read the game VM status.");
 
         if (IsRunning(vm1Life.Value))
         {
@@ -284,7 +290,7 @@ public sealed class TroubleshootingService
 
         var doorLife = await _compute.GetLifecycleStateAsync(_config.Door.InstanceId, cancellationToken);
         if (!doorLife.Succeeded)
-            return log.Fail(doorLife.Error ?? "Could not read door lifecycle.");
+            return log.Fail(doorLife.Error ?? "Could not read the doorbell VM status.");
 
         if (IsRunning(doorLife.Value))
         {
@@ -313,11 +319,11 @@ public sealed class TroubleshootingService
         }
 
         if (!any)
-            return log.Fail("Neither VM is RUNNING — start the door (Park play IP) or VM1 first.");
+            return log.Fail("Neither VM is running. Use Fix play IP to start the doorbell VM, or start the server first.");
 
         return allOk
-            ? log.Ok("Play netplan re-applied on RUNNING guests.")
-            : log.Fail("Netplan apply had failures. See log.");
+            ? log.Ok("Play IP network settings restored on running VMs.")
+            : log.Fail("Restoring play IP network settings failed on a VM. See the result log.");
     }
 
     public async Task<TroubleshootingLogResult> RepairGamePermissionsAsync(
@@ -335,7 +341,7 @@ public sealed class TroubleshootingService
             cancellationToken);
         log.AppendExec("probe repair-permissions.sh", probe);
         if (!probe.Succeeded)
-            return log.Fail("Could not reach VM1. Is it RUNNING?");
+            return log.Fail("Could not reach the game VM. Is the server running?");
 
         string scriptPath;
         if ((probe.Output ?? "").Contains("INSTALLED", StringComparison.Ordinal))
@@ -346,7 +352,7 @@ public sealed class TroubleshootingService
         {
             var onbox = ProductPaths.FindOnboxDirectory();
             if (onbox is null)
-                return log.Fail("Product onbox/mcmgr/ not found and /opt/mcmgr/bin/repair-permissions.sh is missing.");
+                return log.Fail("Some MCSTool files were not found. Reinstall MCSTool.");
 
             const string staging = "/tmp/mcmgr-onbox";
             var mkdir = await _ssh.RunCommandAsync(
@@ -356,7 +362,7 @@ public sealed class TroubleshootingService
                 cancellationToken);
             log.AppendExec("mkdir staging", mkdir);
             if (!mkdir.Succeeded)
-                return log.Fail("Could not create ubuntu-writable /tmp/mcmgr-onbox.");
+                return log.Fail("Could not prepare the repair on the game VM.");
 
             var files = new (string LocalPath, string RemotePath)[]
             {
@@ -367,7 +373,7 @@ public sealed class TroubleshootingService
             var upload = await _ssh.UploadTextFilesAsync(vm1, files, cancellationToken);
             log.AppendExec("upload onbox helpers", upload);
             if (!upload.Succeeded)
-                return log.Fail("Upload of repair-permissions helpers failed.");
+                return log.Fail("Uploading the repair files failed.");
 
             scriptPath = staging + "/repair-permissions.sh";
         }
@@ -379,8 +385,8 @@ public sealed class TroubleshootingService
             cancellationToken);
         log.AppendExec("repair-permissions.sh", run);
         return run.Succeeded
-            ? log.Ok("Layout contract re-applied. Minecraft was not started.")
-            : log.Fail("repair-permissions.sh failed. See log.");
+            ? log.Ok("Game permissions repaired. Minecraft was not started.")
+            : log.Fail("Repairing game permissions failed. See the result log.");
     }
 
     public async Task<TroubleshootingLogResult> DiagnoseMinecraftChdirAsync(
@@ -410,8 +416,8 @@ public sealed class TroubleshootingService
             cancellationToken);
         log.AppendExec("minecraft journal + namei", run);
         return run.Succeeded
-            ? log.Ok("Diagnosis captured. If you see 200/CHDIR, use Repair game permissions.")
-            : log.Fail("Could not read Minecraft journal. Is VM1 RUNNING?");
+            ? log.Ok("Check finished. If the result log shows Minecraft can't enter its folder, use Repair game permissions.")
+            : log.Fail("Could not read the Minecraft log. Is the server running?");
     }
 
     private async Task<TroubleshootingLogResult> RunDoorScriptAsync(
@@ -419,6 +425,8 @@ public sealed class TroubleshootingService
         string scriptPath,
         TimeSpan timeout,
         bool needsOciEnv,
+        string okSummary,
+        string failSummary,
         CancellationToken cancellationToken)
     {
         var log = new LogBuffer();
@@ -432,8 +440,8 @@ public sealed class TroubleshootingService
                 cancellationToken);
         log.AppendExec(Path.GetFileName(scriptPath), run);
         return run.Succeeded
-            ? log.Ok(Path.GetFileName(scriptPath) + " finished.")
-            : log.Fail(Path.GetFileName(scriptPath) + " failed. Is the door VM RUNNING?");
+            ? log.Ok(okSummary)
+            : log.Fail(failSummary);
     }
 
     private async Task<SshExecResult> RunDoorOciScriptAsync(
@@ -461,15 +469,15 @@ public sealed class TroubleshootingService
         CancellationToken cancellationToken)
     {
         if (_compute is null)
-            return log.Fail("OCI Compute session unavailable.");
+            return log.Fail("Oracle Cloud connection unavailable.");
 
         var id = _config.Door.InstanceId;
         if (string.IsNullOrWhiteSpace(id))
-            return log.Fail("door.instance_id is empty.");
+            return log.Fail("This server's settings have no doorbell VM.");
 
         var life = await _compute.GetLifecycleStateAsync(id, cancellationToken);
         if (!life.Succeeded)
-            return log.Fail(life.Error ?? "Could not read door lifecycle.");
+            return log.Fail(life.Error ?? "Could not read the doorbell VM status.");
 
         var state = (life.Value ?? "").Trim().ToUpperInvariant();
         log.Line($"Door lifecycle: {state}");
@@ -482,7 +490,7 @@ public sealed class TroubleshootingService
             log.Line("Door is STOPPING — waiting for STOPPED before START.");
             var waitStopped = await _compute.WaitForLifecycleAsync(id, "STOPPED", cancellationToken: cancellationToken);
             if (!waitStopped.Succeeded)
-                return log.Fail(waitStopped.Error ?? "Timed out waiting for door STOPPED.");
+                return log.Fail(waitStopped.Error ?? "Timed out waiting for the doorbell VM to stop.");
             state = "STOPPED";
         }
 
@@ -491,13 +499,13 @@ public sealed class TroubleshootingService
             log.Line("Starting door VM (Always Free Micro; required to run ip_to_vm*.sh).");
             var start = await _compute.StartInstanceAsync(id, cancellationToken);
             if (!start.Succeeded)
-                return log.Fail(start.Error ?? "Door START failed.");
+                return log.Fail(start.Error ?? "Starting the doorbell VM failed.");
         }
 
         log.Line("Waiting for door RUNNING…");
         var wait = await _compute.WaitForLifecycleAsync(id, "RUNNING", cancellationToken: cancellationToken);
         if (!wait.Succeeded)
-            return log.Fail(wait.Error ?? "Timed out waiting for door RUNNING.");
+            return log.Fail(wait.Error ?? "Timed out waiting for the doorbell VM to start.");
 
         log.Line("Door is RUNNING.");
         return log.Ok("Door RUNNING.");

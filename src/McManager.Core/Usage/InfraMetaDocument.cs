@@ -233,10 +233,8 @@ public sealed class InfraMetaDocument
         var vm1 = string.IsNullOrWhiteSpace(Vm1.DisplayName) ? Vm1.InstanceId : Vm1.DisplayName;
         var door = string.IsNullOrWhiteSpace(Door.DisplayName) ? Door.InstanceId : Door.DisplayName;
         return
-            $"v{Version} infra_schema={InfraSchemaValue} stack={StackVersion} mode={Mode} "
-            + $"region={Region} play={play} vm1={vm1} door={door} "
-            + $"game={Game.ServerKind}/{Game.MinecraftVersion} "
-            + $"bucket={ObjectStorage.Namespace}/{ObjectStorage.Bucket}";
+            $"Region: {Region} · Play IP: {play} · Game VM: {vm1} · Doorbell VM: {door} · "
+            + $"Server: {Game.ServerKind} {Game.MinecraftVersion} · Version: {StackVersion}";
     }
 
     /// <summary>
@@ -255,10 +253,10 @@ public sealed class InfraMetaDocument
             + $"Region: {Region}\n"
             + $"Compartment: {compartmentName}\n"
             + $"Play IP: {play}\n"
-            + $"VM1: {vm1}\n"
-            + $"Door: {door}\n"
-            + $"Bucket: {bucket}\n"
-            + $"Infra schema: {InfraSchemaValue} · stack {StackVersion}";
+            + $"Game VM: {vm1}\n"
+            + $"Doorbell VM: {door}\n"
+            + $"Cloud storage: {bucket}\n"
+            + $"Version: {StackVersion} (format {InfraSchemaValue})";
     }
 
     /// <summary>
@@ -376,21 +374,21 @@ public sealed class InfraMetaDocument
         if (Version != DocumentVersion)
         {
             warns.Add(
-                $"Document version is {Version} (this Manager writes {DocumentVersion}). "
-                + "Connect will not modify the stack.");
+                $"Server details use a different format ({Version}; this version of MCSTool writes {DocumentVersion}). "
+                + "Connecting doesn't change anything in Oracle Cloud.");
         }
 
         if (InfraSchemaValue != InfraSchema)
         {
             warns.Add(
-                $"infra_schema is {InfraSchemaValue} (this Manager expects {InfraSchema}). "
-                + "Connect will not modify the stack.");
+                $"This server was set up with a different Setup format ({InfraSchemaValue}; this version of MCSTool expects {InfraSchema}). "
+                + "Connecting doesn't change anything in Oracle Cloud.");
         }
 
         if (!string.IsNullOrWhiteSpace(Mode)
             && !string.Equals(Mode, ModeAlwaysFree, StringComparison.Ordinal))
         {
-            warns.Add($"mode is '{Mode}' (MVP expects '{ModeAlwaysFree}').");
+            warns.Add($"This server uses mode '{Mode}' (MCSTool expects '{ModeAlwaysFree}').");
         }
 
         if (string.IsNullOrWhiteSpace(StackVersion))

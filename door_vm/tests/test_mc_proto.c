@@ -61,20 +61,20 @@ static void test_motd_by_door_state(void) {
   state.daily_limit_ocpu_hours = 48.0;
   state.ocpus = 4.0;
   mcdoor_build_motd(&state, motd, sizeof motd);
-  CHECK(strstr(motd, "~10.0h remaining today") != NULL,
+  CHECK(strstr(motd, "~10.0h left today") != NULL,
         "idle MOTD missing wall-clock remaining: %s", motd);
   CHECK(strstr(motd, "OCPU-h") == NULL, "idle MOTD must not say OCPU-h: %s", motd);
 
   state.ocpus = 2.0;
   mcdoor_build_motd(&state, motd, sizeof motd);
-  CHECK(strstr(motd, "remaining today") == NULL,
+  CHECK(strstr(motd, "left today") == NULL,
         "2-OCPU idle MOTD must not nag remaining hours: %s", motd);
-  CHECK(strstr(motd, "Connect to wake") != NULL, "2-OCPU idle MOTD missing wake hint: %s",
+  CHECK(strstr(motd, "Join to wake") != NULL, "2-OCPU idle MOTD missing wake hint: %s",
         motd);
 
   state.ocpus = 0.0;
   mcdoor_build_motd(&state, motd, sizeof motd);
-  CHECK(strstr(motd, "remaining today") == NULL, "0-OCPU idle MOTD must omit remaining: %s",
+  CHECK(strstr(motd, "left today") == NULL, "0-OCPU idle MOTD must omit remaining: %s",
         motd);
 
   state.door = DOOR_STARTING;
@@ -84,15 +84,22 @@ static void test_motd_by_door_state(void) {
 
   state.door = DOOR_BUDGET_EXHAUSTED;
   mcdoor_build_motd(&state, motd, sizeof motd);
-  CHECK(strstr(motd, "DAILY BUDGET FULFILLED") != NULL, "exhausted MOTD wrong: %s", motd);
-  CHECK(strstr(motd, "COME BACK") != NULL, "exhausted MOTD missing reset hint: %s", motd);
+  CHECK(strstr(motd, "Out of play time for today") != NULL, "exhausted MOTD wrong: %s", motd);
+  CHECK(strstr(motd, "Come back") != NULL, "exhausted MOTD missing reset hint: %s", motd);
 
   state.door = DOOR_SPEND_BRAKE;
   mcdoor_build_motd(&state, motd, sizeof motd);
-  CHECK(strstr(motd, "MONTHLY SPEND BRAKE FIRED") != NULL, "spend-brake MOTD wrong: %s",
+  CHECK(strstr(motd, "rest of the month") != NULL, "spend-brake MOTD wrong: %s",
         motd);
-  CHECK(strstr(motd, "Manager") != NULL, "spend-brake MOTD missing Manager hint: %s", motd);
-  CHECK(strstr(motd, "DAILY") == NULL, "spend-brake MOTD must be distinct from daily: %s",
+  CHECK(strstr(motd, "MCSTool") != NULL, "spend-brake MOTD missing MCSTool hint: %s", motd);
+  CHECK(strstr(motd, "today") == NULL, "spend-brake MOTD must be distinct from daily: %s",
+        motd);
+
+  state.door = DOOR_DEGRADED;
+  snprintf(state.last_error, sizeof state.last_error, "ip_to_vm1 failed");
+  mcdoor_build_motd(&state, motd, sizeof motd);
+  CHECK(strstr(motd, "Try again later") != NULL, "degraded MOTD wrong: %s", motd);
+  CHECK(strstr(motd, "ip_to_vm1") == NULL, "degraded MOTD must not show last_error: %s",
         motd);
 }
 
@@ -106,15 +113,19 @@ static void test_kick_reason(void) {
   mcdoor_build_kick_reason(&state, reason, sizeof reason);
   CHECK(strstr(reason, "starting") != NULL, "starting kick: %s", reason);
 
+  state.door = DOOR_IDLE;
+  mcdoor_build_kick_reason(&state, reason, sizeof reason);
+  CHECK(strstr(reason, "Waking the server") != NULL, "idle kick: %s", reason);
+
   state.door = DOOR_BUDGET_EXHAUSTED;
   mcdoor_build_kick_reason(&state, reason, sizeof reason);
-  CHECK(strstr(reason, "DAILY BUDGET FULFILLED") != NULL, "exhausted kick: %s", reason);
+  CHECK(strstr(reason, "Out of play time for today") != NULL, "exhausted kick: %s", reason);
 
   state.door = DOOR_SPEND_BRAKE;
   mcdoor_build_kick_reason(&state, reason, sizeof reason);
-  CHECK(strstr(reason, "MONTHLY SPEND BRAKE FIRED") != NULL, "spend-brake kick: %s",
+  CHECK(strstr(reason, "rest of the month") != NULL, "spend-brake kick: %s",
         reason);
-  CHECK(strstr(reason, "DAILY") == NULL, "spend-brake kick must be distinct from daily: %s",
+  CHECK(strstr(reason, "today") == NULL, "spend-brake kick must be distinct from daily: %s",
         reason);
 }
 

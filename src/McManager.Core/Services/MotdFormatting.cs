@@ -68,7 +68,7 @@ public static class MotdFormatting
         new('o', "Italic", "ti-italic"),
         new('n', "Underline", "ti-underline"),
         new('m', "Strikethrough", "ti-strikethrough"),
-        new('k', "obfuscate", ""),
+        new('k', "Obfuscated", ""),
         new('r', "Reset", "ti-clear-all"),
     ];
 

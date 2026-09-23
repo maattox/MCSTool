@@ -3,7 +3,7 @@
 ; published into packaging\out\publish\ (including the Function tar).
 
 #ifndef MyAppVersion
-  #define MyAppVersion "1.1.2"
+  #define MyAppVersion "1.2.0"
 #endif
 
 #define MyAppName "MCSTool"

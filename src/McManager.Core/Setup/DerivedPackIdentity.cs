@@ -15,7 +15,7 @@ public static class DerivedPackIdentity
     public const int JavaMajorMax = 25;
 
     public const string IdentityHelp =
-        "Jar-only zips often guess these wrong. Correct them before install.";
+        "Versions guessed from a zip of mods are often wrong. Check them before installing.";
 
     public const string MinecraftVersionLabel = "Minecraft version";
     public const string LoaderLabel = "Loader";

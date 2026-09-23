@@ -128,7 +128,7 @@ public sealed class ServerPluginsInspectResult
         if (PluginsDirectoryMissing)
             return "no plugins folder on the server yet";
         var n = FileNames.Count;
-        var bit = n == 1 ? "1 plugin jar" : $"{n} plugin jars";
+        var bit = n == 1 ? "1 plugin" : $"{n} plugins";
         if (Truncated)
             bit += $" · showing first {ServerPluginsInspect.MaxListedFiles}";
         return bit;

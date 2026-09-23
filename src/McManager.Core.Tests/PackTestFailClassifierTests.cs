@@ -9,6 +9,9 @@ public sealed class PackTestFailClassifierTests
     [InlineData("Pack replace failed: An established connection was aborted by the server.")]
     [InlineData(
         "VM1 SSH connect failed: A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond.")]
+    [InlineData("Game VM SSH connect failed: timed out")]
+    [InlineData("Some MCSTool files were not found. Reinstall MCSTool.")]
+    [InlineData("Game VM SSH host is missing.")]
     [InlineData("VM1 is not RUNNING.")]
     [InlineData("Instance lifecycle STOPPING")]
     [InlineData("An existing connection was forcibly closed by the remote host.")]

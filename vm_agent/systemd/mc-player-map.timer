@@ -1,0 +1,11 @@
+[Unit]
+Description=Render player map every five minutes while VM1 is up
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=5min
+AccuracySec=30s
+Unit=mc-player-map.service
+
+[Install]
+WantedBy=timers.target

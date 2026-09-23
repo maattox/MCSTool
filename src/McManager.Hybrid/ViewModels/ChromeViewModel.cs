@@ -41,7 +41,7 @@ public sealed partial class ChromeViewModel : ObservableObject
 
     public string AppName { get; } = "MCSTool";
 
-    public string Tagline { get; } = "Automated Minecraft server deployment and management tool";
+    public string Tagline { get; } = "Create and manage a Minecraft server on Oracle Always Free";
 
     public string ContactEmail { get; } = "mcstool.contact@gmail.com";
 
@@ -98,8 +98,13 @@ public sealed partial class ChromeViewModel : ObservableObject
         if (row is null || string.IsNullOrWhiteSpace(row.Path))
             return;
 
-        await _clipboard.SetTextAsync(row.Path);
-        CopyFeedback = "Copied " + row.Label.ToLowerInvariant() + ".";
+        if (!await ClipboardUx.TrySetTextAsync(_clipboard, row.Path).ConfigureAwait(true))
+        {
+            CopyFeedback = "Clipboard unavailable. Try copy again.";
+            return;
+        }
+
+        CopyFeedback = row.Label + " path copied.";
         _copyCts?.Cancel();
         _copyCts = new CancellationTokenSource();
         var token = _copyCts.Token;
@@ -151,6 +156,6 @@ public sealed partial class ChromeViewModel : ObservableObject
             return plus > 0 ? informational[..plus] : informational;
         }
 
-        return asm.GetName().Version?.ToString(3) ?? "1.1.2";
+        return asm.GetName().Version?.ToString(3) ?? "1.2.0";
     }
 }

@@ -3,35 +3,35 @@
 
 <div class="mcm-pane-stack">
     <p style="margin:0;font-size:13px;color:var(--text-secondary);">
-        One-click repairs for a common issues.
+        One-click fixes for common problems.
     </p>
 
     <div class="mcm-card-grid">
     <div class="mcm-section-card">
         <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
-            <span style="font-size:14px;font-weight:600;">Play address</span>
+            <span style="font-size:14px;font-weight:600;">Play IP</span>
             <button type="button"
                     class="mcm-help"
-                    title="The Play address is the IP players use to connect. Mechanisms that manage the play IP and move it between the door VM and the server VM can sometimes break, resulting in the play IP being placed on the wrong VM.">
+                    title="The play IP is the address players use to join. It moves between the doorbell VM and the game VM, and sometimes ends up on the wrong one.">
                 <i class="ti ti-help" aria-hidden="true"></i>
-                <span class="sr-only">About Play address</span>
+                <span class="sr-only">About the play IP</span>
             </button>
         </div>
         <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);">
-            Reconfigure the reserved play IP if the server is running but players cannot connect or if the server is off but the play IP is still assigned to the server VM. Also covers leftover after the $1 last-resort brake stops both VMs.
+            Use Fix play IP if the server is running but players can't connect, or the server is off but the play IP is still on the game VM. Also use it after the $1 spending limit stops both VMs.
         </p>
         <div style="display:flex;flex-wrap:wrap;gap:8px;">
             <button type="button"
                     disabled="@Vm.IsBusy"
-                    title="Moves the reserved play IP to the game VM if it is running, otherwise to the doorbell."
+                    title="Moves the play IP to the game VM if it is running, otherwise to the doorbell VM."
                     @onclick="Vm.ParkPlayIpAsync">
-                Park reserved play IP
+                Fix play IP
             </button>
             <button type="button"
                     disabled="@Vm.IsBusy"
-                    title="Puts the secondary play IP back on the guest network if it is missing."
+                    title="Restores the play IP network settings on each running VM."
                     @onclick="Vm.ReapplyNetplanAsync">
-                Re-apply play netplan
+                Restore play IP network settings
             </button>
         </div>
     </div>
@@ -39,14 +39,14 @@
     <div class="mcm-section-card">
         <div style="font-size:14px;font-weight:600;margin-bottom:6px;">Doorbell state</div>
         <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);">
-            Use Diagnose if the doorbell is stuck Starting after Minecraft is actually up. Diagnose is read-only. Reset does not move the IP.
+            Use Check doorbell wake if the doorbell VM is stuck on Starting after Minecraft is up. Checking changes nothing. Reset doesn't move the play IP.
         </p>
         <div style="display:flex;flex-wrap:wrap;gap:8px;">
             <button type="button" disabled="@Vm.IsBusy" @onclick="Vm.DiagnoseWaitForgeAsync">
-                Diagnose wait_forge
+                Check doorbell wake
             </button>
             <button type="button" disabled="@Vm.IsBusy" @onclick="Vm.ResetDoorStateAsync">
-                Reset door state
+                Reset doorbell
             </button>
             <button type="button" disabled="@Vm.IsBusy" @onclick="Vm.UnstickDoorAsync">
                 Unstick after game is up
@@ -55,16 +55,16 @@
     </div>
 
     <div class="mcm-section-card">
-        <div style="font-size:14px;font-weight:600;margin-bottom:6px;">Budget / hours ledger</div>
+        <div style="font-size:14px;font-weight:600;margin-bottom:6px;">Budget and hours</div>
         <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);">
-            Refresh re-pulls the shared budget on the doorbell. Heal an open hours ledger only when the game VM is already stopped.
+            Refresh doorbell hours reloads the budget and hours on the doorbell VM. Use Fix hours record only when the game VM is already stopped.
         </p>
         <div style="display:flex;flex-wrap:wrap;gap:8px;">
             <button type="button" disabled="@Vm.IsBusy" @onclick="Vm.RefreshOsBudgetAsync">
-                Refresh door OS budget
+                Refresh doorbell hours
             </button>
             <button type="button" disabled="@Vm.IsBusy" @onclick="Vm.HealLedgerAsync">
-                Heal open ledger
+                Fix hours record
             </button>
         </div>
     </div>
@@ -74,32 +74,32 @@
             <span style="font-size:14px;font-weight:600;">Game VM / idle timer</span>
             <button type="button"
                     class="mcm-help"
-                    title="Boot / Minecraft start force-enables the idle timer.">
+                    title="The idle timer turns back on whenever the game VM boots or Minecraft starts.">
                 <i class="ti ti-help" aria-hidden="true"></i>
                 <span class="sr-only">About Game VM / idle timer</span>
             </button>
         </div>
         <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);">
-            Repair permissions uses the same install layout as Setup. Force-enable idle does not start Minecraft — a reboot already turns the timer back on.
+            Repair game permissions sets folder access the same way Setup does. Turning the idle timer back on doesn't start Minecraft. Restarting the game VM also turns it back on.
         </p>
         <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
             <button type="button" disabled="@Vm.IsBusy" @onclick="Vm.ShowIdleStatusAsync">
                 Idle timer status
             </button>
             <button type="button" disabled="@Vm.IsBusy" @onclick="Vm.ForceEnableIdleAsync">
-                Force-enable idle timer
+                Turn idle timer back on
             </button>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:8px;">
             <button type="button" disabled="@Vm.IsBusy" @onclick="Vm.DiagnoseMinecraftAsync">
-                Minecraft CHDIR diagnosis
+                Check Minecraft folder access
             </button>
             <button type="button" disabled="@Vm.IsBusy" @onclick="Vm.RepairPermissionsAsync">
                 Repair game permissions
             </button>
         </div>
         <p style="margin:10px 0 0;font-size:12px;color:var(--text-muted);">
-            If the game VM hangs while Stopping, that is not a Manager button. In the Oracle Console use Stop → Reset (or Force stop), then Park play IP. Heal the hours ledger only after the VM is Stopped.
+            If the game VM is stuck on Stopping, MCSTool has no button for that. In the Oracle Cloud Console use Stop → Reset (or Force stop), then Fix play IP. Use Fix hours record only after the game VM is Stopped.
         </p>
     </div>
     </div>

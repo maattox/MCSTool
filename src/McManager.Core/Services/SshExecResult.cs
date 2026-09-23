@@ -15,7 +15,7 @@ public sealed class SshTarget
             Host = vm1.SshHost,
             User = string.IsNullOrWhiteSpace(vm1.SshUser) ? "ubuntu" : vm1.SshUser,
             KeyPath = vm1.SshKeyPath,
-            Label = "VM1",
+            Label = "Game VM",
         };
 
     public static SshTarget FromDoor(DoorSettings door) =>
@@ -24,7 +24,7 @@ public sealed class SshTarget
             Host = door.SshHost,
             User = string.IsNullOrWhiteSpace(door.SshUser) ? "ubuntu" : door.SshUser,
             KeyPath = door.SshKeyPath,
-            Label = "door",
+            Label = "Doorbell VM",
         };
 }
 

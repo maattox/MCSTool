@@ -16,11 +16,11 @@ public sealed class TabStatusBannerPolicyTests
     [InlineData("List failed.", true)]
     [InlineData("Upload failed.", true)]
     [InlineData("Wiping live world via SSH…", true)]
-    [InlineData("Analyzing modpack…", false)]
-    [InlineData("Building the derived pack…", false)]
-    [InlineData("Reinstalling Minecraft from this pack…", false)]
-    [InlineData("Choose a pack file, then install.", false)]
-    [InlineData("Review the pack, then install.", false)]
+    [InlineData(ProgressDockUx.ChangePackAnalyzeFallback, false)]
+    [InlineData(ProgressDockUx.ChangePackBuildFallback, false)]
+    [InlineData(ProgressDockUx.ChangePackInstallFallback, false)]
+    [InlineData(ProgressDockUx.ChangePackPickStatus, false)]
+    [InlineData(ProgressDockUx.ChangePackReviewStatus, false)]
     public void ServerManagement_status_gate(string message, bool forward) =>
         Assert.Equal(forward, TabStatusBannerPolicy.ShouldForwardServerManagementStatus(message));
 
@@ -33,15 +33,19 @@ public sealed class TabStatusBannerPolicyTests
         Assert.Equal(forward, TabStatusBannerPolicy.ShouldForwardServerManagementIdentityStatus(message));
 
     [Theory]
-    [InlineData("Loaded meta/infra.json: play=1.2.3.4 bucket=mcmgr", false)]
-    [InlineData("Loading meta/infra.json…", false)]
-    [InlineData("Idle settings loaded from Object Storage budget.", false)]
-    [InlineData("budget/config.json missing — seeded from local config.", false)]
-    [InlineData("Publish meta failed.", true)]
-    [InlineData("Break-glass: START VM1 (no IP move)…", true)]
-    [InlineData("Auto-detect: scanning OCI profiles…", true)]
+    [InlineData("Emergency power doesn't move the play IP. Use Start and Stop in the sidebar for normal use.", false)]
+    [InlineData("Loaded server details: play=1.2.3.4 bucket=mcmgr", false)]
+    [InlineData("Loading server details…", false)]
+    [InlineData("Loading idle settings from cloud storage…", false)]
+    [InlineData("Idle settings loaded from cloud storage.", false)]
+    [InlineData("Idle settings missing from cloud storage — showing this PC's settings.", false)]
+    [InlineData("Cloud storage unavailable — showing this PC's idle settings.", false)]
+    [InlineData("Saving server details failed.", true)]
+    [InlineData("Starting the game VM (play IP not moved)…", true)]
+    [InlineData("Looking for an existing server…", true)]
     [InlineData("Selected private key for the game VM. Save to use it.", false)]
-    [InlineData("Door VM will use the game VM private key after Save.", false)]
+    [InlineData("Doorbell VM will use the game VM private key after Save.", false)]
+    [InlineData("Game VM will use the doorbell VM private key after Save.", false)]
     [InlineData("Saved SSH key paths on this PC. Both VMs use the same private key file.", true)]
     public void Advanced_status_gate(string message, bool forward) =>
         Assert.Equal(forward, TabStatusBannerPolicy.ShouldForwardAdvancedStatus(message));

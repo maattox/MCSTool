@@ -23,8 +23,8 @@ public static class ProgramPaths
         Add(
             rows,
             "data",
-            "Manager data folder",
-            "Stack config, player list, and imported packs on this PC.",
+            "MCSTool data folder",
+            "Server settings, player list, and imported modpacks on this PC.",
             dataDirectory);
 
         var config = string.IsNullOrWhiteSpace(dataDirectory)
@@ -33,15 +33,15 @@ public static class ProgramPaths
         Add(
             rows,
             "config",
-            "Stack config",
-            "config.local.json for the connected Always Free stack.",
+            "Server settings file",
+            "Settings for the server this PC is connected to.",
             config);
 
         Add(
             rows,
             "tofu",
-            "OpenTofu workspaces",
-            "Setup state for this server — not the repo terraform.tfvars.",
+            "Setup files",
+            "Files Setup uses to create and delete this server in Oracle Cloud.",
             string.IsNullOrWhiteSpace(dataDirectory)
                 ? TofuWorkspace.TofuRootDirectory()
                 : Path.Combine(dataDirectory, "tofu"));
@@ -51,7 +51,7 @@ public static class ProgramPaths
             rows,
             "oci",
             "Oracle API config",
-            "Signing key file used by Manager. This is not the SSH key.",
+            "Used by MCSTool to sign in to Oracle. This is not the SSH key.",
             oci);
 
         return rows;

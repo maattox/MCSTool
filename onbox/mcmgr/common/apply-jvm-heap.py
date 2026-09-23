@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Rewrite Minecraft heap (Xms=Xmx) without dropping Paper Fill/Aikar flags.
 
-Usage: apply-jvm-heap.py 4G|6G|8G
+Usage: apply-jvm-heap.py 4G|6G|8G|10G|12G
 
 Patches:
   /etc/mcmgr/jvm.env
@@ -19,7 +19,7 @@ import re
 import sys
 from pathlib import Path
 
-ALLOWED = {"4G", "6G", "8G"}
+ALLOWED = {"4G", "6G", "8G", "10G", "12G"}
 JVM_ENV = Path(os.environ.get("MCMGR_JVM_ENV", "/etc/mcmgr/jvm.env"))
 USER_ARGS = Path(os.environ.get("MCMGR_USER_JVM_ARGS", "/opt/mcmgr/server/user_jvm_args.txt"))
 UNIT_PATH = Path(os.environ.get("MCMGR_SYSTEMD_UNIT", "/etc/systemd/system/minecraft.service"))
@@ -346,10 +346,10 @@ def main(argv: list[str]) -> int:
         print(f"OK extras_set={len(strip_heap(raw))}")
         return 0
     if len(argv) != 2:
-        _fail("usage: apply-jvm-heap.py 4G|6G|8G | dump-extras | set-extras [json]")
+        _fail("usage: apply-jvm-heap.py 4G|6G|8G|10G|12G | dump-extras | set-extras [json]")
     heap = argv[1].strip().upper()
     if heap not in ALLOWED:
-        _fail(f"heap must be 4G, 6G, or 8G (got {argv[1]!r})")
+        _fail(f"heap must be 4G, 6G, 8G, 10G, or 12G (got {argv[1]!r})")
     write_jvm_env(heap)
     patch_user_args(heap)
     paperish = patch_unit(heap)

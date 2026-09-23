@@ -144,7 +144,7 @@ void mcdoor_build_motd(const ControlState *state, char *out, size_t out_cap) {
   switch (state->door) {
     case DOOR_IDLE: {
       if (budget_shape_always_on_capable(state->ocpus) || state->ocpus <= 0.0) {
-        snprintf(out, out_cap, "Server offline. Connect to wake the world.");
+        snprintf(out, out_cap, "Server is asleep. Join to wake it up.");
         break;
       }
       double remaining_ocpu =
@@ -156,8 +156,8 @@ void mcdoor_build_motd(const ControlState *state, char *out, size_t out_cap) {
       char reset_when[64];
       format_utc_reset_date(reset_when, sizeof reset_when);
       snprintf(out, out_cap,
-               "Server offline. ~%.1fh remaining today (resets %s). "
-               "Connect to wake the world.",
+               "Server is asleep. Join to wake it up. "
+               "~%.1fh left today (resets %s).",
                remaining_wall, reset_when);
       break;
     }
@@ -169,26 +169,23 @@ void mcdoor_build_motd(const ControlState *state, char *out, size_t out_cap) {
       char reset_when[64];
       format_utc_reset_date(reset_when, sizeof reset_when);
       snprintf(out, out_cap,
-               "DAILY BUDGET FULFILLED FOR THE DAY — COME BACK %s",
+               "Out of play time for today. Come back %s.",
                reset_when);
       break;
     }
     case DOOR_SPEND_BRAKE:
       snprintf(out, out_cap,
-               "MONTHLY SPEND BRAKE FIRED — the admin must use Manager after a new calendar month.");
+               "Server is off for the rest of the month. "
+               "The owner can turn it back on in MCSTool next month.");
       break;
     case DOOR_PLAYABLE:
-      snprintf(out, out_cap, "Server is online — connect directly.");
+      snprintf(out, out_cap, "Server is online.");
       break;
     case DOOR_DEGRADED:
-      if (state->last_error[0] != '\0') {
-        snprintf(out, out_cap, "Control plane degraded: %s", state->last_error);
-      } else {
-        snprintf(out, out_cap, "Control plane degraded — manual intervention required.");
-      }
+      snprintf(out, out_cap, "Server can't start right now. Try again later.");
       break;
     default:
-      snprintf(out, out_cap, "Unavailable.");
+      snprintf(out, out_cap, "Server unavailable.");
       break;
   }
 }
@@ -205,24 +202,25 @@ void mcdoor_build_kick_reason(const ControlState *state, char *out, size_t out_c
       char reset_when[64];
       format_utc_reset_date(reset_when, sizeof reset_when);
       snprintf(out, out_cap,
-               "DAILY BUDGET FULFILLED FOR THE DAY — COME BACK %s",
+               "Out of play time for today. Come back %s.",
                reset_when);
       break;
     }
     case DOOR_SPEND_BRAKE:
       snprintf(out, out_cap,
-               "MONTHLY SPEND BRAKE FIRED — the admin must use Manager after a new calendar month.");
+               "Server is off for the rest of the month. "
+               "The owner can turn it back on in MCSTool next month.");
       break;
     case DOOR_PLAYABLE:
-      snprintf(out, out_cap, "Server is online on another host — reconnect.");
+      snprintf(out, out_cap, "The server just came online. Reconnect.");
       break;
     case DOOR_DEGRADED:
-      snprintf(out, out_cap, "Control plane degraded. Try again later or contact the admin.");
+      snprintf(out, out_cap, "Server can't start right now. Try again later.");
       break;
     case DOOR_IDLE:
     default:
       snprintf(out, out_cap,
-               "Server is offline. Connect to wake the world.");
+               "Waking the server. Try again in 3-5 minutes.");
       break;
   }
 }

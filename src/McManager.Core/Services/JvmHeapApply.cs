@@ -48,7 +48,7 @@ public static class JvmHeapApply
             var token = rest.Split(' ', 2)[0].Trim();
             if (!JvmHeapChoice.IsAllowed(token))
             {
-                error = "Heap apply returned an unexpected size.";
+                error = "Setting server memory returned an unexpected size.";
                 return false;
             }
 
@@ -56,7 +56,7 @@ public static class JvmHeapApply
             return true;
         }
 
-        error = "Heap apply did not confirm OK.";
+        error = "The game VM did not confirm the server memory change.";
         return false;
     }
 
@@ -98,12 +98,12 @@ public static class JvmHeapApply
             }
             catch (System.Text.Json.JsonException)
             {
-                error = "Flag dump was not valid JSON.";
+                error = "The game VM returned the JVM flags in an unexpected format.";
                 return false;
             }
         }
 
-        error = "Flag dump did not confirm OK.";
+        error = "The game VM did not return the JVM flags.";
         return false;
     }
 
@@ -117,7 +117,7 @@ public static class JvmHeapApply
                 return true;
         }
 
-        error = "Flag apply did not confirm OK.";
+        error = "The game VM did not confirm the JVM flag change.";
         return false;
     }
 }

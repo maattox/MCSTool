@@ -35,6 +35,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private UsageBudgetStore? _usageStore;
     private SpendBrakeLockStore? _spendBrake;
     private OversizedWorldBackupStore? _oversizedWorld;
+    private HeapPressureStore? _heapPressure;
     private TroubleshootingService? _troubleshooting;
     private SshService _ssh = null!;
     private bool _resumeChromeAfterReload;
@@ -79,6 +80,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     private string _copyPlayIpLabel = "copy";
+
+    [ObservableProperty]
+    private string _playerMapUrl = Placeholder;
+
+    [ObservableProperty]
+    private string _copyPlayerMapUrlLabel = "copy";
 
     [ObservableProperty]
     private string _vm1Lifecycle = Placeholder;
@@ -198,6 +205,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public bool HasPlayIp =>
         !string.IsNullOrWhiteSpace(PlayIp) && PlayIp != Placeholder;
 
+    public bool HasPlayerMapUrl =>
+        !string.IsNullOrWhiteSpace(PlayerMapUrl) && PlayerMapUrl != Placeholder;
+
     public string StartButtonLabel =>
         _powerAction == PowerActionKind.Start ? "Starting…" : "Start";
 
@@ -234,7 +244,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     public string StartToolTip => CanStart
         ? (string.Equals(DoorState, "DEGRADED", StringComparison.OrdinalIgnoreCase)
-            ? "The server is on but not joinable. Start retries the wake path."
+            ? "The server is on, but players can't join yet. Start tries again."
             : "Start the Minecraft server so players can connect.")
         : StartDisabledReason;
 
@@ -255,7 +265,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             if (_powerActionInFlight)
                 return "Wait — a start, stop, or restart is already in progress.";
             if (!ConfigLoaded)
-                return "Local config is missing or failed to load.";
+                return "This server's settings are missing or failed to load.";
             if (ManagePowerUx.IsVm1Running(Vm1Lifecycle)
                 || DoorStatus.IsPlayableName(DoorState))
                 return "The server is already on. Use Stop or Restart.";
@@ -263,13 +273,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 || string.Equals(DoorState, "STARTING", StringComparison.OrdinalIgnoreCase))
                 return "Already starting. Wait until status is Running.";
             if (_spendBrakeUi == SpendBrakeUiState.Locked)
-                return "The monthly spend brake is on. Confirm in the warning to unlock, then use Start.";
+                return "The $1 spending limit was reached. Clear the lock in the warning, then use Start.";
             if (_spendBrakeUi == SpendBrakeUiState.Unknown)
-                return "Can't start: spend-brake lock status is unknown. Check Object Storage, then try Start again.";
+                return "Can't start: the $1 spending limit status is unknown. Check your internet connection, then try Start again.";
             if (!ManagePowerUx.LifecycleAllowsStart(Vm1Lifecycle))
                 return ManagePowerUx.WaitUntilFullyStoppedToolTip;
             if (DoorState is Placeholder or "unreachable")
-                return "Can't start: the wake service is unreachable. Try Troubleshooting if this lasts.";
+                return "Can't start: the doorbell VM is not responding. Try Troubleshooting if this lasts.";
             return "Start is unavailable right now.";
         }
     }
@@ -283,7 +293,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             if (_powerActionInFlight)
                 return "Wait — a start, stop, or restart is already in progress.";
             if (!ConfigLoaded)
-                return "Local config is missing or failed to load.";
+                return "This server's settings are missing or failed to load.";
             return "Nothing to stop — the server is already off.";
         }
     }
@@ -297,7 +307,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             if (_powerActionInFlight)
                 return "Wait — a start, stop, or restart is already in progress.";
             if (!ConfigLoaded)
-                return "Local config is missing or failed to load.";
+                return "This server's settings are missing or failed to load.";
             return "Can't restart Minecraft while the server is off. Use Start first.";
         }
     }
@@ -356,11 +366,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _usageStore = _cloud.UsageStore;
         _spendBrake = _cloud.SpendBrakeLock;
         _oversizedWorld = _cloud.OversizedWorldBackup;
+        _heapPressure = _cloud.HeapPressure;
         _ssh = _cloud.Ssh;
         _troubleshooting = _config is not null
             ? new TroubleshootingService(_config, _ssh, _compute, _door)
             : null;
         PlayIp = _configHost.PlayIp;
+        PlayerMapUrl = PlayerMapPublicUrl.TryFormat(_configHost.DoorSshHost) ?? Placeholder;
         ConfigLoaded = _configHost.HasManageConfig && _config is not null;
         _hasInitialStatus = false;
         _pinLedger = UsageLedgerDocument.Empty();
@@ -406,22 +418,23 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             Status = "Stopped";
             StatusIsRunning = false;
             SetPlayersPin(false, null, null);
-            ShowToast(_configHost.LoadResult.Error ?? "Local config failed to load.", isError: true);
+            ShowToast(_configHost.LoadResult.Error ?? "This server's settings failed to load.", isError: true);
             return;
         }
 
         ApplyPinnedUsage(BuildLocalFallbackPins());
 
         if (!string.IsNullOrWhiteSpace(_cloud.SessionError))
-            ShowToast($"Cloud session failed: {_cloud.SessionError}", isError: true);
+            ShowToast($"Could not connect to Oracle Cloud: {_cloud.SessionError}", isError: true);
         if (!string.IsNullOrWhiteSpace(_cloud.DoorError))
-            ShowToast($"Wake service client failed: {_cloud.DoorError}", isError: true);
+            ShowToast($"Could not connect to the doorbell VM: {_cloud.DoorError}", isError: true);
 
         StartPoller();
         _ = RefreshStatusAsync(forceDoor: true, forceOci: true);
         _ = RefreshPinsAsync();
         _ = RefreshSpendBrakeLockAsync();
         _ = RefreshOversizedWorldFlagAsync();
+        _ = RefreshHeapPressureFlagAsync();
     }
 
     /// <summary>
@@ -521,7 +534,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             return;
 
         SpendBrakeUnlockInFlight = true;
-        SpendBrakeUnlockStatus = "Starting the doorbell and parking the play IP…";
+        SpendBrakeUnlockStatus = "Starting the doorbell VM and moving the play IP…";
         ShowToast(SpendBrakeUnlockStatus, isError: false);
 
         try
@@ -529,7 +542,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             if (_troubleshooting is null)
             {
                 SpendBrakeUnlockStatus =
-                    "Can't recover the doorbell (config/OCI/SSH unavailable). The lock was not cleared.";
+                    "This server's settings are missing. The lock was not cleared.";
                 ShowToast(SpendBrakeUnlockStatus, isError: true);
                 return;
             }
@@ -542,27 +555,27 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 return;
             }
 
-            SpendBrakeUnlockStatus = "Clearing the monthly spend-brake lock…";
+            SpendBrakeUnlockStatus = "Clearing the $1 spending limit lock…";
             var cleared = await _spendBrake.ClearAsync();
             if (!cleared.Succeeded)
             {
                 SpendBrakeUnlockStatus = cleared.Error
-                    ?? "Could not delete the spend-brake lock. The lock was not cleared.";
+                    ?? "Could not clear the $1 spending limit lock.";
                 ShowToast(SpendBrakeUnlockStatus, isError: true);
                 return;
             }
 
             SpendBrakeTypedConfirm = "";
             SetSpendBrakeUi(SpendBrakeUiState.Unlocked);
-            SpendBrakeUnlockStatus = "Refreshing the doorbell budget cache…";
+            SpendBrakeUnlockStatus = "Updating hours on the doorbell VM…";
             var refresh = await _troubleshooting.RefreshOsBudgetAsync();
             if (!refresh.Succeeded)
             {
                 ShowToast(
-                    "Lock cleared, but the doorbell cache refresh failed. Try Troubleshooting → Refresh OS budget, then Start.",
+                    "Lock cleared, but updating hours on the doorbell VM failed. Try Troubleshooting → Refresh doorbell hours, then Start.",
                     isError: true);
                 SpendBrakeUnlockStatus =
-                    "Lock cleared. Use Start in the sidebar when you are ready (doorbell cache refresh failed).";
+                    "Lock cleared. Use Start in the sidebar when you are ready (updating doorbell VM hours failed).";
                 return;
             }
 
@@ -578,7 +591,14 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     public async Task CopySpendBrakeConfirmationAsync()
     {
-        await _clipboard.SetTextAsync(SpendBrakeLockUx.ConfirmationSentence);
+        if (!await ClipboardUx.TrySetTextAsync(_clipboard, SpendBrakeLockUx.ConfirmationSentence)
+            .ConfigureAwait(true))
+        {
+            SpendBrakeUnlockStatus = "Clipboard unavailable. Try copy again.";
+            ShowToast(SpendBrakeUnlockStatus, isError: true);
+            return;
+        }
+
         SpendBrakeUnlockStatus = "Copied the confirmation sentence.";
         ShowToast(SpendBrakeUnlockStatus, isError: false);
     }
@@ -685,6 +705,49 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         await RefreshOversizedWorldFlagAsync();
     }
 
+    public async Task RefreshHeapPressureFlagAsync()
+    {
+        if (_heapPressure is null)
+            return;
+
+        var got = await _heapPressure.GetAsync();
+        if (!got.Succeeded || got.Value is null)
+            return;
+
+        HeapPressureUx.SyncBell(_notices, got.Value);
+    }
+
+    public async Task DebugPutHeapPressureFixtureAsync()
+    {
+        if (!UiHostProbes.Enabled || _heapPressure is null)
+            return;
+        var put = await _heapPressure.PutAsync(
+            HeapPressureDocument.CreatePressure("8G", 24, HeapPressureDocument.ReasonOom));
+        if (!put.Succeeded)
+        {
+            ShowToast(put.Error ?? "DEBUG: could not PUT heap-pressure fixture.", isError: true);
+            return;
+        }
+
+        ShowToast("DEBUG: heap-pressure flag fixture written.", isError: false);
+        await RefreshHeapPressureFlagAsync();
+    }
+
+    public async Task DebugClearHeapPressureAsync()
+    {
+        if (!UiHostProbes.Enabled || _heapPressure is null)
+            return;
+        var cleared = await _heapPressure.ClearAsync();
+        if (!cleared.Succeeded)
+        {
+            ShowToast(cleared.Error ?? "DEBUG: could not DELETE heap-pressure flag.", isError: true);
+            return;
+        }
+
+        ShowToast("DEBUG: heap-pressure flag deleted.", isError: false);
+        await RefreshHeapPressureFlagAsync();
+    }
+
     private async Task<bool> WakeGameServerAsync()
     {
         if (_door is null)
@@ -692,7 +755,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
         BeginPowerAction(PowerActionKind.Start);
         ActionFeedback = "Starting…";
-        ShowToast("Starting the game server…", isError: false);
+        ShowToast("Starting the server…", isError: false);
 
         try
         {
@@ -733,7 +796,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
         BeginPowerAction(PowerActionKind.Stop);
         ActionFeedback = "Stopping…";
-        ShowToast("Stopping the game server…", isError: false);
+        ShowToast("Stopping the server…", isError: false);
 
         try
         {
@@ -791,7 +854,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             return;
         }
 
-        await _clipboard.SetTextAsync(PlayIp);
+        if (!await ClipboardUx.TrySetTextAsync(_clipboard, PlayIp).ConfigureAwait(true))
+        {
+            ActionFeedback = "Clipboard unavailable. Try copy again.";
+            ShowToast(ActionFeedback, isError: true);
+            return;
+        }
+
         CopyPlayIpLabel = "copied";
         _copyLabelCts?.Cancel();
         _copyLabelCts?.Dispose();
@@ -800,6 +869,32 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _ = RestoreCopyLabelAsync(cts.Token);
         ActionFeedback = $"Copied play IP: {PlayIp}";
         ShowToast("Copied play IP.", isError: false);
+    }
+
+    public async Task CopyPlayerMapUrlAsync()
+    {
+        if (!HasPlayerMapUrl)
+        {
+            ActionFeedback = "No player map URL to copy.";
+            ShowToast(ActionFeedback, isError: true);
+            return;
+        }
+
+        if (!await ClipboardUx.TrySetTextAsync(_clipboard, PlayerMapUrl).ConfigureAwait(true))
+        {
+            ActionFeedback = "Clipboard unavailable. Try copy again.";
+            ShowToast(ActionFeedback, isError: true);
+            return;
+        }
+
+        CopyPlayerMapUrlLabel = "copied";
+        _copyLabelCts?.Cancel();
+        _copyLabelCts?.Dispose();
+        var cts = new CancellationTokenSource();
+        _copyLabelCts = cts;
+        _ = RestoreCopyLabelAsync(cts.Token);
+        ActionFeedback = $"Copied player map URL: {PlayerMapUrl}";
+        ShowToast("Copied player map URL.", isError: false);
     }
 
     public void Dispose()
@@ -820,6 +915,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     partial void OnCanStopChanged(bool value) => NotifyPowerTooltips();
     partial void OnCanRestartChanged(bool value) => NotifyPowerTooltips();
     partial void OnPlayIpChanged(string value) => OnPropertyChanged(nameof(HasPlayIp));
+    partial void OnPlayerMapUrlChanged(string value) => OnPropertyChanged(nameof(HasPlayerMapUrl));
 
     private void OnWindowFocusChanged(bool focused) =>
         _ = _dispatcher.InvokeAsync(() => SetWindowFocused(focused));
@@ -1233,6 +1329,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         {
             await _clock.Delay(TimeSpan.FromMilliseconds(1200), cancellationToken).ConfigureAwait(false);
             CopyPlayIpLabel = "copy";
+            CopyPlayerMapUrlLabel = "copy";
         }
         catch (OperationCanceledException)
         {
@@ -1258,11 +1355,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 if (predicate(result.Value))
                 {
                     ActionFeedback = result.Value.IsDegraded
-                        ? $"Wake service degraded: {result.Value.LastError}"
+                        ? $"Doorbell VM problem: {result.Value.LastError}"
                         : result.Value.IsPlayable
                             ? "Server is running."
                             : result.Value.IsSpendBrake
-                                ? "The monthly spend brake blocked Start."
+                                ? "The $1 spending limit blocked Start."
                                 : "Server is stopped.";
                     ShowToast(
                         ActionFeedback,

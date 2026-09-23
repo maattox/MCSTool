@@ -119,7 +119,7 @@ public sealed class TofuApplyOutputs
         }
         catch (Exception ex)
         {
-            return ServiceResult<TofuApplyOutputs>.Fail($"Failed to parse tofu outputs: {ex.Message}");
+            return ServiceResult<TofuApplyOutputs>.Fail($"Could not read the results from Oracle Cloud: {ex.Message}");
         }
     }
 
@@ -161,7 +161,9 @@ public sealed class TofuApplyOutputs
                 SshKeyPath = vm1Key,
                 WorldPath = WorldPath,
                 MinecraftUnit = MinecraftUnit,
-                JvmXmx = JvmHeapChoice.Normalize(state.JvmXmx),
+                JvmXmx = JvmHeapChoice.ClampToHost(
+                    state.JvmXmx,
+                    JvmHeapChoice.ResolvedHostMemoryGb(Vm1MemoryGb)),
             },
             Door = new DoorSettings
             {

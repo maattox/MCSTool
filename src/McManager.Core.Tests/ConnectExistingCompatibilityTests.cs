@@ -37,9 +37,11 @@ public sealed class ConnectExistingCompatibilityTests
         var decision = ConnectExistingCompatibility.Evaluate(parsed.Value);
         Assert.Equal(ConnectExistingCompatibilityLevel.Block, decision.Level);
         Assert.True(decision.BlocksConnect);
-        Assert.Contains("infra_schema=99", decision.Reasons[0], StringComparison.Ordinal);
+        Assert.Contains("format 99", decision.Reasons[0], StringComparison.Ordinal);
+        Assert.Contains("newer version of MCSTool", decision.Reasons[0], StringComparison.Ordinal);
+        Assert.DoesNotContain("infra_schema", decision.Reasons[0], StringComparison.Ordinal);
         Assert.Contains("Cannot connect", decision.DialogTitle, StringComparison.Ordinal);
-        Assert.Contains("will not attach", decision.FormatBody("summary"), StringComparison.Ordinal);
+        Assert.Contains("Nothing was changed", decision.FormatBody("summary"), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -49,7 +51,7 @@ public sealed class ConnectExistingCompatibilityTests
         Assert.True(parsed.Succeeded);
         var decision = ConnectExistingCompatibility.Evaluate(parsed.Value!);
         Assert.True(decision.BlocksConnect);
-        Assert.Contains("document version=99", decision.Reasons[0], StringComparison.Ordinal);
+        Assert.Contains("version 99", decision.Reasons[0], StringComparison.Ordinal);
     }
 
     [Fact]
@@ -63,7 +65,7 @@ public sealed class ConnectExistingCompatibilityTests
         Assert.Equal(ConnectExistingCompatibilityLevel.Warn, decision.Level);
         Assert.False(decision.BlocksConnect);
         Assert.True(decision.RequiresConfirm);
-        Assert.Contains("infra_schema is 1", decision.Reasons[0], StringComparison.Ordinal);
+        Assert.Contains("older version of MCSTool (format 1;", decision.Reasons[0], StringComparison.Ordinal);
         Assert.Contains("connect anyway", decision.DialogTitle, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -75,7 +77,7 @@ public sealed class ConnectExistingCompatibilityTests
 
         var decision = ConnectExistingCompatibility.Evaluate(parsed.Value!);
         Assert.Equal(ConnectExistingCompatibilityLevel.Warn, decision.Level);
-        Assert.Contains("stack_version is '9.9.9'", string.Join(" ", decision.Reasons), StringComparison.Ordinal);
+        Assert.Contains("different version of MCSTool (9.9.9;", string.Join(" ", decision.Reasons), StringComparison.Ordinal);
         Assert.Contains(InfraMetaDocument.DefaultStackVersion, string.Join(" ", decision.Reasons), StringComparison.Ordinal);
     }
 
@@ -86,7 +88,7 @@ public sealed class ConnectExistingCompatibilityTests
         Assert.NotNull(parsed.Value?.Document);
         var decision = ConnectExistingCompatibility.Evaluate(parsed.Value.Document, isLegacy: true);
         Assert.Equal(ConnectExistingCompatibilityLevel.Warn, decision.Level);
-        Assert.Contains("infra_schema is 2", decision.Reasons[0], StringComparison.Ordinal);
+        Assert.Contains("older version of MCSTool (format 2;", decision.Reasons[0], StringComparison.Ordinal);
     }
 
     [Fact]
@@ -99,8 +101,8 @@ public sealed class ConnectExistingCompatibilityTests
         var result = await ConnectExistingService.HydrateAsync(candidate, @"C:\keys\mcmgr_ed25519");
         Assert.False(result.Succeeded);
         Assert.Null(result.Value);
-        Assert.Contains("newer than this Manager", result.Error, StringComparison.Ordinal);
-        Assert.Contains("infra_schema=3", result.Error, StringComparison.Ordinal);
+        Assert.Contains("newer version of MCSTool", result.Error, StringComparison.Ordinal);
+        Assert.Contains("format 3", result.Error, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -125,8 +127,9 @@ public sealed class ConnectExistingCompatibilityTests
     {
         var parsed = InfraMetaStore.ParseForConnect(ReadBytes());
         var summary = parsed.Value!.Document!.FormatConnectSummary("TESTING", "mcmgr");
-        Assert.Contains("Infra schema: 2", summary, StringComparison.Ordinal);
-        Assert.Contains("stack 0.1.0", summary, StringComparison.Ordinal);
+        Assert.Contains("Version: 0.1.0 (format 2)", summary, StringComparison.Ordinal);
+        Assert.Contains("Game VM: ", summary, StringComparison.Ordinal);
+        Assert.Contains("Doorbell VM: ", summary, StringComparison.Ordinal);
         Assert.Contains("203.0.113.10", summary, StringComparison.Ordinal);
     }
 
@@ -155,7 +158,7 @@ public sealed class ConnectExistingCompatibilityTests
     {
         var decision = ConnectExistingCompatibility.Evaluate(document: null);
         Assert.True(decision.BlocksConnect);
-        Assert.Contains("no readable meta/infra.json", decision.Reasons[0], StringComparison.Ordinal);
+        Assert.Contains("no readable details", decision.Reasons[0], StringComparison.Ordinal);
     }
 
     private static ConnectExistingCandidate Candidate(InfraMetaDocument doc, bool isLegacy) =>

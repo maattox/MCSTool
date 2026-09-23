@@ -204,8 +204,7 @@ public sealed class UsageBudgetStore
         {
             Budget = document,
             Flags = flags,
-            Message =
-                $"Published {BudgetObjectName}; set budget flags door=true, vm1=true; manager=false.",
+            Message = "Saved.",
         });
     }
 

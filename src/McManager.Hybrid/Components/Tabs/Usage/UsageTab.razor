@@ -16,20 +16,20 @@
                     class="mcm-subtab @PaneClass("edit-budget")"
                     aria-selected="@(IsPane("edit-budget") ? "true" : "false")"
                     @onclick="@(() => SelectPane("edit-budget"))">
-                Edit Budget
+                Calendar
             </button>
             <button type="button"
                     role="tab"
                     class="mcm-subtab @PaneClass("budget")"
                     aria-selected="@(IsPane("budget") ? "true" : "false")"
                     @onclick="@(() => SelectPane("budget"))">
-                Budget
+                Budget settings
             </button>
         </nav>
         <button type="button"
                 class="mcm-usage-refresh"
                 disabled="@Vm.IsBusy"
-                title="Reload hours used from shared storage."
+                title="Reload hours used."
                 @onclick="Vm.RefreshAsync">
             Refresh
         </button>
@@ -56,16 +56,16 @@
         </div>
         <div class="mcm-usage-metric">
             <div class="mcm-usage-metric-label">
-                Rollover bank
+                Rollover
                 <button type="button"
                         class="mcm-help"
                         title="@Vm.RolloverHelp">
                     <i class="ti ti-help" aria-hidden="true"></i>
-                    <span class="sr-only">About rollover bank</span>
+                    <span class="sr-only">About rollover</span>
                 </button>
             </div>
             <div class="mcm-usage-metric-value @(Vm.RolloverHoursPositive ? "is-positive" : null)">@Vm.RolloverHoursValue</div>
-            <div class="mcm-usage-metric-hint">Unused hours from closed UTC days. Put them on later days in Edit Budget, or leave them for idle overage.</div>
+            <div class="mcm-usage-metric-hint">Unused hours from closed UTC days. Add them to later days in Calendar, or keep them for days that run over.</div>
         </div>
     </div>
 
@@ -111,10 +111,10 @@
     <details class="mcm-usage-day-details">
         <summary>
             <span class="mcm-usage-day-details-title">Cloud details</span>
-            <span class="mcm-usage-day-details-hint">CPU-hours and memory-hours behind the wall-clock figures</span>
+            <span class="mcm-usage-day-details-hint">CPU-hours and memory-hours behind the hours above</span>
         </summary>
         <p class="mcm-usage-fieldset-hint" style="margin-top:10px;">
-            Always Free is counted in CPU-hours and memory-hours. Wall-clock hours above are those figures divided by the server’s CPUs.
+            Oracle counts Always Free use in CPU-hours (Oracle calls them OCPU hours) and memory-hours. The hours above are CPU-hours divided by the VM’s CPUs.
         </p>
         <div class="mcm-usage-details" style="margin-top:10px;">
             <div class="mcm-usage-detail">
@@ -130,7 +130,7 @@
                     Monthly targets
                     <button type="button"
                             class="mcm-help"
-                            title="Oracle Always Free is billed in OCPU-hours and memory-hours. Wall-clock hours ≈ OCPU-hours ÷ CPUs.">
+                            title="This month’s free CPU-hours and memory-hours.">
                         <i class="ti ti-help" aria-hidden="true"></i>
                         <span class="sr-only">About monthly targets</span>
                     </button>
@@ -138,23 +138,23 @@
                 <div class="mcm-usage-detail-value">@Vm.MonthlyTargetsDisplay</div>
             </div>
             <div class="mcm-usage-detail">
-                <div class="mcm-usage-detail-label">Soft caps</div>
+                <div class="mcm-usage-detail-label">Monthly hours limit</div>
                 <div class="mcm-usage-detail-value">@Vm.SoftCapsDisplay</div>
             </div>
             <div class="mcm-usage-detail">
-                <div class="mcm-usage-detail-label">Used (cloud units)</div>
+                <div class="mcm-usage-detail-label">Used</div>
                 <div class="mcm-usage-detail-value">@Vm.MtdDisplay</div>
             </div>
             <div class="mcm-usage-detail">
-                <div class="mcm-usage-detail-label">Today (cloud units)</div>
+                <div class="mcm-usage-detail-label">Today</div>
                 <div class="mcm-usage-detail-value">@Vm.TodayDisplay</div>
             </div>
             <div class="mcm-usage-detail">
-                <div class="mcm-usage-detail-label">Rollover (cloud units)</div>
+                <div class="mcm-usage-detail-label">Rollover</div>
                 <div class="mcm-usage-detail-value">@Vm.LeftoverDisplay</div>
             </div>
             <div class="mcm-usage-detail">
-                <div class="mcm-usage-detail-label">Soft cap hit</div>
+                <div class="mcm-usage-detail-label">Monthly limit reached</div>
                 <div class="mcm-usage-detail-value @(Vm.HitSoftCap ? "is-warn" : null)">@Vm.SoftCapHitDisplay</div>
             </div>
         </div>
@@ -172,7 +172,7 @@
                         class="mcm-help"
                         title="@Vm.ShapeSculptNote">
                     <i class="ti ti-info-circle" aria-hidden="true"></i>
-                    <span class="sr-only">About wall-clock vs CPU-hours</span>
+                    <span class="sr-only">About hours vs CPU-hours</span>
                 </button>
             </div>
             <p class="mcm-cal-hint">@Vm.CalendarClickHint</p>
@@ -213,7 +213,7 @@
         <div class="mcm-cal-body">
             <div class="mcm-cal-buckets">
                 <div class="mcm-cal-stat">
-                    <div class="mcm-cal-stat-label">Unbudgeted</div>
+                    <div class="mcm-cal-stat-label">Unassigned</div>
                     <div class="mcm-cal-stat-value @(Vm.UnbudgetedHoursNegative ? "is-warn" : null)">@Vm.UnbudgetedHoursValue</div>
                 </div>
                 <div class="mcm-cal-stat">
@@ -294,12 +294,12 @@
                         {
                             <label class="mcm-cal-field" for="mcm-cal-buffer">
                                 <span class="mcm-cal-field-label">
-                                    Minimum rollover buffer
+                                    Minimum rollover to keep
                                     <button type="button"
                                             class="mcm-help"
                                             title="@Vm.MinRolloverBufferHelp">
                                         <i class="ti ti-info-circle" aria-hidden="true"></i>
-                                        <span class="sr-only">About minimum rollover buffer</span>
+                                        <span class="sr-only">About minimum rollover to keep</span>
                                     </button>
                                 </span>
                                 <input id="mcm-cal-buffer"
@@ -345,7 +345,7 @@
     <div class="mcm-section-card" role="tabpanel">
         <div style="font-size:14px;font-weight:600;margin-bottom:2px;">Usage budget</div>
         <p class="mcm-usage-fieldset-hint">
-            These numbers stay inside Always Free. To turn the idle timer on or off, use Advanced → Danger.
+            These numbers stay inside Always Free. To turn the idle timer on or off, use Advanced → Danger Zone.
         </p>
 
         <fieldset class="mcm-usage-fieldset">
@@ -374,11 +374,11 @@
         </fieldset>
 
         <fieldset class="mcm-usage-fieldset">
-            <div class="mcm-usage-fieldset-title">Soft caps</div>
+            <div class="mcm-usage-fieldset-title">Monthly hours limit</div>
             <p class="mcm-usage-fieldset-hint">@Vm.SoftCapsHint</p>
             <div class="mcm-usage-fields">
                 <label class="mcm-usage-field" for="mcm-usage-soft-ocpu">
-                    <span class="mcm-usage-field-label">Soft CPU-hour cap</span>
+                    <span class="mcm-usage-field-label">CPU-hours limit</span>
                     <input id="mcm-usage-soft-ocpu"
                            type="text"
                            class="mcm-num-input"
@@ -387,7 +387,7 @@
                            @bind:event="oninput" />
                 </label>
                 <label class="mcm-usage-field" for="mcm-usage-soft-gb">
-                    <span class="mcm-usage-field-label">Soft memory-hour cap</span>
+                    <span class="mcm-usage-field-label">Memory-hours limit</span>
                     <input id="mcm-usage-soft-gb"
                            type="text"
                            class="mcm-num-input"
@@ -412,7 +412,7 @@
                            @bind:event="oninput" />
                 </label>
                 <label class="mcm-usage-field" for="mcm-usage-warn">
-                    <span class="mcm-usage-field-label">Warn players (minutes before cap)</span>
+                    <span class="mcm-usage-field-label">Warn players (minutes before stop)</span>
                     <input id="mcm-usage-warn"
                            type="text"
                            class="mcm-num-input"
@@ -424,11 +424,11 @@
         </fieldset>
 
         <fieldset class="mcm-usage-fieldset">
-            <div class="mcm-usage-fieldset-title">Server size</div>
-            <p class="mcm-usage-fieldset-hint">Used to convert CPU-hours into the wall-clock hours shown above. Match the live server.</p>
+            <div class="mcm-usage-fieldset-title">VM size</div>
+            <p class="mcm-usage-fieldset-hint">Used to turn CPU-hours into the hours shown on this tab. Match the game VM’s size.</p>
             <div class="mcm-usage-fields">
                 <label class="mcm-usage-field" for="mcm-usage-shape-ocpu">
-                    <span class="mcm-usage-field-label">Server CPUs</span>
+                    <span class="mcm-usage-field-label">VM CPUs</span>
                     <input id="mcm-usage-shape-ocpu"
                            type="text"
                            class="mcm-num-input"
@@ -437,7 +437,7 @@
                            @bind:event="oninput" />
                 </label>
                 <label class="mcm-usage-field" for="mcm-usage-shape-mem">
-                    <span class="mcm-usage-field-label">Server memory (GB)</span>
+                    <span class="mcm-usage-field-label">VM memory (GB)</span>
                     <input id="mcm-usage-shape-mem"
                            type="text"
                            class="mcm-num-input"

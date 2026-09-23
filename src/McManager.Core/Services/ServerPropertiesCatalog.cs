@@ -130,7 +130,7 @@ public static class ServerPropertiesCatalog
             {
                 if (Forbidden.Contains(key))
                     return ServiceResult<Dictionary<string, string>>.Fail(
-                        $"Cannot edit {key} from Manager.");
+                        $"Cannot edit {key} from MCSTool.");
             }
         }
 

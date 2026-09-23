@@ -46,6 +46,7 @@ module "compute" {
   vm1_memory_gb       = var.vm1_memory_gb
   vm1_user_data = base64gzip(templatefile("${path.module}/cloud-init/vm1.yaml.tftpl", {
     firewalld_unit = replace(file("${path.module}/cloud-init/firewalld-mcmgr.service"), "\r\n", "\n")
+    subnet_cidr    = var.subnet_cidr
   }))
   door_user_data = base64gzip(templatefile("${path.module}/cloud-init/door.yaml.tftpl", {}))
 }

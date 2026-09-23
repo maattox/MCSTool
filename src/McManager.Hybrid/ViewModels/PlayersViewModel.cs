@@ -16,8 +16,8 @@ public sealed partial class PlayersViewModel : ObservableObject, IDisposable
     public const string HelpTitle =
         "Players currently connected. Hover a row to Kick, Mod, Unmod, or Ban. "
         + "Banned lists in-game bans; hover Unban. "
-        + "Ban is Minecraft’s in-game ban only — it does not change Who can join. "
-        + "Kick, Ban, and Mod may appear in operator chat (broadcast-rcon-to-ops).";
+        + "Ban is Minecraft’s in-game ban only — it does not change the whitelist. "
+        + "Kick, Ban, and Mod may appear in operator chat.";
 
     public const string NobodyOnlineHint = "No one is online.";
 
@@ -256,7 +256,7 @@ public sealed partial class PlayersViewModel : ObservableObject, IDisposable
             return;
         if (_config is null)
         {
-            StatusMessage = "Local config is missing.";
+            StatusMessage = "This server's settings are missing.";
             return;
         }
 
@@ -310,7 +310,7 @@ public sealed partial class PlayersViewModel : ObservableObject, IDisposable
         "kick" => "Kicked " + name + ".",
         "op" => "Modded " + name + ".",
         "deop" => "Unmodded " + name + ".",
-        "ban" => "Banned " + name + " in Minecraft. Who can join was not changed.",
+        "ban" => "Banned " + name + " in Minecraft. The whitelist was not changed.",
         "pardon" => "Unbanned " + name + ".",
         _ => "Done.",
     };

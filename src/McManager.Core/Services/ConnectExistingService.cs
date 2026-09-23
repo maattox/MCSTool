@@ -37,7 +37,7 @@ public static class ConnectExistingService
         CancellationToken cancellationToken = default)
     {
         var configPath = ociConfigPath ?? OciConfigProfiles.DefaultConfigPath();
-        progress?.Report("Reading OCI config (no API calls yet)…");
+        progress?.Report("Reading your OCI config…");
 
         if (!File.Exists(LocalConfigStore.ExpandPath(configPath)))
         {
@@ -67,7 +67,7 @@ public static class ConnectExistingService
 
             if (string.IsNullOrWhiteSpace(profile.Tenancy))
             {
-                notes.Add($"Skipped profile '{profile.Name}': no tenancy OCID in ~/.oci/config.");
+                notes.Add($"Skipped profile '{profile.Name}': no Oracle account (tenancy=) in ~/.oci/config.");
                 continue;
             }
 
@@ -95,8 +95,7 @@ public static class ConnectExistingService
                         candidates.Add(candidate);
                     else
                         notes.Add(
-                            $"Skipped duplicate stack already found "
-                            + $"(tenancy/compartment/bucket) via profile {candidate.ProfileName}.");
+                            $"Skipped a server already found through profile {candidate.ProfileName}.");
                 }
             }
             catch (OperationCanceledException)
@@ -111,8 +110,8 @@ public static class ConnectExistingService
 
         progress?.Report(
             candidates.Count == 0
-                ? "No product stacks found."
-                : $"Found {candidates.Count} stack(s).");
+                ? "No MCSTool server found."
+                : $"Found {candidates.Count} server(s).");
 
         return ServiceResult<ConnectExistingScanResult>.Ok(new ConnectExistingScanResult
         {
@@ -130,7 +129,7 @@ public static class ConnectExistingService
         CancellationToken cancellationToken = default)
     {
         if (candidate.Document is null)
-            return ServiceResult<ManagerLocalConfig>.Fail("Candidate has no meta/infra.json document.");
+            return ServiceResult<ManagerLocalConfig>.Fail("This server has no readable details in cloud storage.");
 
         var compatibility = ConnectExistingCompatibility.Evaluate(candidate);
         if (compatibility.BlocksConnect)
@@ -141,14 +140,14 @@ public static class ConnectExistingService
         var needDoor = string.IsNullOrWhiteSpace(doc.Door.SshHost);
         if (needVm1 || needDoor)
         {
-            progress?.Report("Refreshing stale/missing SSH hosts (Get-by-OCID)…");
+            progress?.Report("Refreshing SSH addresses…");
             var sessionResult = OciSession.TryCreate(
                 candidate.OciConfigFile,
                 candidate.ProfileName,
                 string.IsNullOrWhiteSpace(doc.Region) ? candidate.Region : doc.Region);
             if (!sessionResult.Succeeded || sessionResult.Value is null)
             {
-                progress?.Report($"SSH host refresh skipped: {sessionResult.Error}");
+                progress?.Report($"SSH address refresh skipped: {sessionResult.Error}");
             }
             else
             {
@@ -165,7 +164,7 @@ public static class ConnectExistingService
                     if (ip.Succeeded && !string.IsNullOrWhiteSpace(ip.Value))
                         doc.Vm1.SshHost = ip.Value;
                     else if (!ip.Succeeded)
-                        progress?.Report($"VM1 ssh_host refresh failed: {ip.Error}");
+                        progress?.Report($"Game VM SSH address refresh failed: {ip.Error}");
                 }
 
                 if (needDoor && !string.IsNullOrWhiteSpace(doc.Door.InstanceId))
@@ -175,7 +174,7 @@ public static class ConnectExistingService
                     if (ip.Succeeded && !string.IsNullOrWhiteSpace(ip.Value))
                         doc.Door.SshHost = ip.Value;
                     else if (!ip.Succeeded)
-                        progress?.Report($"Door ssh_host refresh failed: {ip.Error}");
+                        progress?.Report($"Doorbell VM SSH address refresh failed: {ip.Error}");
                 }
             }
         }
@@ -205,12 +204,11 @@ public static class ConnectExistingService
         if (compartments.Count == 0)
         {
             notes.Add(
-                $"Profile '{profile.Name}': no compartment named '{ProductCompartmentName}' / '{ProductCompartmentName}-2' "
-                + $"or tagged {DomainTagKey}={DomainTagValue}.");
+                $"Profile '{profile.Name}': no MCSTool compartment ('{ProductCompartmentName}' or '{ProductCompartmentName}-2').");
             return new ConnectExistingScanResult { Notes = notes };
         }
 
-        progress?.Report($"Resolving Object Storage namespace for {profile.Name}…");
+        progress?.Report($"Checking cloud storage for {profile.Name}…");
         var nsResult = await GetNamespaceAsync(session, cancellationToken).ConfigureAwait(false);
         if (!nsResult.Succeeded || string.IsNullOrWhiteSpace(nsResult.Value))
         {
@@ -320,7 +318,7 @@ public static class ConnectExistingService
         var found = new List<ConnectExistingCandidate>();
         var tried = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        progress?.Report($"Looking for {GreenfieldBucketName} in {compartment.Name}…");
+        progress?.Report($"Looking for cloud storage in {compartment.Name}…");
         var greenfield = await TryReadMetaAsync(
             session, ns, GreenfieldBucketName, profile, configPath, compartment, cancellationToken)
             .ConfigureAwait(false);
@@ -330,7 +328,7 @@ public static class ConnectExistingService
         else if (!string.IsNullOrWhiteSpace(greenfield.Note))
             notes.Add(greenfield.Note);
 
-        progress?.Report($"Listing buckets in {compartment.Name}…");
+        progress?.Report($"Listing cloud storage in {compartment.Name}…");
         IReadOnlyList<string> bucketNames;
         try
         {
@@ -349,7 +347,7 @@ public static class ConnectExistingService
             if (!tried.Add(bucket))
                 continue;
 
-            progress?.Report($"Checking {bucket} for {InfraObjectName}…");
+            progress?.Report($"Checking {bucket} for server details…");
             var read = await TryReadMetaAsync(
                 session, ns, bucket, profile, configPath, compartment, cancellationToken)
                 .ConfigureAwait(false);
@@ -365,7 +363,7 @@ public static class ConnectExistingService
         if (found.Count == 0)
         {
             notes.Add(
-                $"Profile '{profile.Name}' compartment '{compartment.Name}': no {InfraObjectName} found.");
+                $"Profile '{profile.Name}' compartment '{compartment.Name}': no server details found.");
         }
 
         return found;
@@ -557,13 +555,13 @@ public sealed class ConnectExistingCandidate
                 _ => "",
             };
             return
-                $"{ProfileName} · {Region} · {CompartmentName} · play {play} · {vm1} · {Bucket}{warn}";
+                $"{ProfileName} · {Region} · {CompartmentName} · play IP {play} · {vm1} · {Bucket}{warn}";
         }
     }
 
     public string IdentitySummary =>
         Document is null
-            ? $"Profile: {ProfileName}\nRegion: {Region}\nCompartment: {CompartmentName}\nBucket: {Bucket}"
+            ? $"Profile: {ProfileName}\nRegion: {Region}\nCompartment: {CompartmentName}\nCloud storage: {Bucket}"
             : Document.FormatConnectSummary(ProfileName, CompartmentName);
 
     public string ConfirmSummary

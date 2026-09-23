@@ -192,7 +192,7 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     private string _shapeSculptNote =
-        "Hours are wall-clock. Stored values are CPU-hours, so switching 2/12 ↔ 4/24 changes the hours shown, not the stored CPU-hours.";
+        "Budgets are saved as CPU-hours. Changing the VM size (2 OCPU / 12 GB ↔ 4 OCPU / 24 GB) changes the hours shown, not the saved CPU-hours.";
 
     [ObservableProperty]
     private string _calendarClickHint =
@@ -224,7 +224,7 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     private string _minRolloverBufferHelp =
-        "Hours of rollover to keep unassigned instead of putting them on later days. Idle overage can draw from this leftover. Save refuses a plan that would spend rollover below this buffer.";
+        "Rollover hours to hold back instead of adding them to later days. If a day runs over, the server can still use them. Save won't allow a plan that leaves less rollover than this.";
 
     public bool HasObjectStorage => _store is not null;
 
@@ -296,8 +296,8 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
         if (_store is null)
         {
             StatusMessage = _config is null
-                ? "Local config isn't loaded. Showing default budget numbers only."
-                : "Shared hours storage isn't available. Showing local budget numbers only.";
+                ? "This server's settings aren't loaded. Showing default budget numbers only."
+                : "Cloud storage isn't available. Showing budget numbers from this PC only.";
         }
         else
             StatusMessage = "Open this tab to refresh hours used.";
@@ -357,24 +357,24 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
         }
 
         var confirmed = await _dialogs.ConfirmAsync(
-            "Save usage budget?",
+            "Save budget?",
             AlwaysOnCapableCopy.PublishConfirmBody(AlwaysOnCapableCopy.ForShape(doc.ShapeOcpus)),
-            confirmButtonText: "Publish");
+            confirmButtonText: "Save");
         if (!confirmed)
         {
-            StatusMessage = "Publish cancelled.";
+            StatusMessage = "Save cancelled.";
             return;
         }
 
         IsBusy = true;
-        StatusMessage = "Publishing budget…";
+        StatusMessage = "Saving budget…";
 
         try
         {
             var result = await _store.PublishBudgetAsync(doc);
             if (!result.Succeeded || result.Value is null)
             {
-                var fail = result.Error ?? "Publish failed.";
+                var fail = result.Error ?? "Save failed.";
                 StatusMessage = fail;
                 ToastError(fail);
                 return;
@@ -382,7 +382,7 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
 
             ApplyBudgetToEdit(result.Value.Budget);
             CaptureBudgetSnapshot();
-            StatusMessage = $"{result.Value.Message} ({result.Value.Flags.SummarizeBudgetFlags()})";
+            StatusMessage = "Saved budget.";
             await RefreshAsync(forceLedger: true, manageBusy: false);
         }
         finally
@@ -412,8 +412,8 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
         if (_store is null)
         {
             StatusMessage = _config is null
-                ? "Local config isn't loaded. Showing default budget numbers only."
-                : "Shared hours storage isn't available. Showing local budget numbers only.";
+                ? "This server's settings aren't loaded. Showing default budget numbers only."
+                : "Cloud storage isn't available. Showing budget numbers from this PC only.";
             ApplyReportFromLocalFallback();
             return;
         }
@@ -429,7 +429,7 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
             var pull = await _store.PullAsync(forceLedger, _ledger);
             if (!pull.Succeeded || pull.Value is null)
             {
-                StatusMessage = pull.Error ?? "Pull failed.";
+                StatusMessage = pull.Error ?? "Loading hours used failed.";
                 return;
             }
 
@@ -474,7 +474,7 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
             var refreshNote = string.IsNullOrWhiteSpace(snap.Notes)
                 ? $"Refreshed at {LastRefreshDisplay}."
                 : $"{snap.Notes} ({LastRefreshDisplay})";
-            if (!StatusMessage.StartsWith("Published", StringComparison.Ordinal))
+            if (!StatusMessage.StartsWith("Saved", StringComparison.Ordinal))
                 StatusMessage = refreshNote;
             else
                 StatusMessage = $"{StatusMessage} · {refreshNote}";
@@ -490,18 +490,18 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
     {
         MonthLabel = $"{report.Year}-{report.Month:D2} UTC ({report.DaysInMonth} days)";
         MonthlyTargetsDisplay =
-            $"{report.MonthlyOcpuTarget:F0} OCPU-h / {report.MonthlyGbTarget:F0} GB-h";
+            $"{report.MonthlyOcpuTarget:F0} CPU-hours / {report.MonthlyGbTarget:F0} memory-hours";
         SoftCapsDisplay =
-            $"{report.SoftOcpuCap:F0} OCPU-h / {report.SoftGbCap:F0} GB-h";
+            $"{report.SoftOcpuCap:F0} CPU-hours / {report.SoftGbCap:F0} memory-hours";
         MtdDisplay =
-            $"{report.MonthOcpu:F1} OCPU-h · {report.MonthGb:F1} GB-h · {report.MonthUptime:F1} instance-h";
+            $"{report.MonthOcpu:F1} CPU-hours · {report.MonthGb:F1} memory-hours · {report.MonthUptime:F1} hours";
         AvgHoursDisplay = $"{report.AvgHoursPerDay:F2} h/day";
         LeftoverDisplay =
-            $"{report.LeftoverOcpu:F1} OCPU-h / {report.LeftoverGb:F1} GB-h";
+            $"{report.LeftoverOcpu:F1} CPU-hours / {report.LeftoverGb:F1} memory-hours";
         TodayDisplay =
-            $"{report.TodayOcpu:F1} / {report.DailyOcpuAllowance:F1} OCPU-h"
-            + (report.OcpuOverDaily ? " (over daily)" : "");
-        SoftCapHitDisplay = report.HitSoftCap ? "Yes — soft cap hit" : "No";
+            $"{report.TodayOcpu:F1} / {report.DailyOcpuAllowance:F1} CPU-hours"
+            + (report.OcpuOverDaily ? " (over today’s budget)" : "");
+        SoftCapHitDisplay = report.HitSoftCap ? "Yes" : "No";
         HitSoftCap = report.HitSoftCap;
         var shape = ResolveShapeOcpus(shapeOcpus);
         var alwaysOn = AlwaysOnCapableCopy.ForShape(shape);
@@ -551,7 +551,7 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
                 DateLabel = isToday
                     ? "Today"
                     : day.Day.ToString("d MMM", System.Globalization.CultureInfo.InvariantCulture),
-                BudgetValue = day.IsZeroed ? "Zeroed" : $"{day.BudgetWallClockHours:F1}h",
+                BudgetValue = day.IsZeroed ? "0 hours" : $"{day.BudgetWallClockHours:F1}h",
                 UsedValue = $"{day.UptimeHours:F1}h",
                 HoursValue = $"{day.UptimeHours:F1}h",
                 IsToday = isToday,
@@ -724,14 +724,14 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
         doc = new BudgetConfigDocument();
         error = "";
 
-        if (!TryParseDouble(EditMonthlyOcpu, "Monthly OCPU target", out var monthlyOcpu)
-            || !TryParseDouble(EditMonthlyGb, "Monthly GB target", out var monthlyGb)
-            || !TryParseDouble(EditSoftOcpu, "Soft OCPU cap", out var softOcpu)
-            || !TryParseDouble(EditSoftGb, "Soft GB cap", out var softGb)
-            || !TryParseInt(EditIdleTimeout, "Idle timeout minutes", out var idleTimeout)
-            || !TryParseInt(EditBudgetWarn, "Budget warn minutes", out var warnMinutes)
-            || !TryParseDouble(EditShapeOcpus, "Shape OCPUs", out var shapeOcpus)
-            || !TryParseDouble(EditShapeMemory, "Shape memory GB", out var shapeMemory))
+        if (!TryParseDouble(EditMonthlyOcpu, "Monthly CPU-hours", out var monthlyOcpu)
+            || !TryParseDouble(EditMonthlyGb, "Monthly memory-hours", out var monthlyGb)
+            || !TryParseDouble(EditSoftOcpu, "CPU-hours limit", out var softOcpu)
+            || !TryParseDouble(EditSoftGb, "Memory-hours limit", out var softGb)
+            || !TryParseInt(EditIdleTimeout, "Idle timeout", out var idleTimeout)
+            || !TryParseInt(EditBudgetWarn, "Warning minutes", out var warnMinutes)
+            || !TryParseDouble(EditShapeOcpus, "VM CPUs", out var shapeOcpus)
+            || !TryParseDouble(EditShapeMemory, "VM memory", out var shapeMemory))
         {
             error = _lastParseError;
             return false;
@@ -739,7 +739,7 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
 
         if (idleTimeout < 1 || warnMinutes < 0)
         {
-            error = "Idle timeout must be ≥ 1; warn minutes must be ≥ 0.";
+            error = "Idle timeout must be 1 or more, and warning minutes 0 or more.";
             return false;
         }
 
@@ -789,7 +789,7 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
 
         if (!double.TryParse(text, out bufferWall) || bufferWall < 0)
         {
-            _lastParseError = "Invalid minimum rollover buffer.";
+            _lastParseError = "Invalid Minimum rollover to keep.";
             bufferWall = 0;
             return false;
         }
@@ -915,7 +915,7 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
         BudgetSculpt.ResetTodayAndFutureToDefault(_workingBudget, NowUtc());
         RecalculateBudgetDirty();
         ClearDaySelection();
-        RebuildFromWorking("Today and future days reset to the even-split default — Save changes to publish.");
+        RebuildFromWorking("Today and future days reset to an even split. Save changes to keep it.");
     }
 
     private static double ParseOrKeep(string text, double fallback) =>
@@ -941,7 +941,7 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
 
         RecalculateBudgetDirty();
         ClearDaySelection();
-        RebuildFromWorking("Hours plan updated — Save changes to publish.");
+        RebuildFromWorking("Hours plan updated. Save changes to keep it.");
     }
 
     private void ClearDaySelection() => _selectedDays.Clear();
@@ -1008,7 +1008,7 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
                 Title = day.IsClosed
                     ? $"{day.Day:yyyy-MM-dd} UTC — Budget {day.BudgetWallClockHours:F1}h; Used {day.UptimeHours:F1}h"
                     : day.IsZeroed
-                        ? $"{day.Day:yyyy-MM-dd} UTC — zeroed (doorbell will not wake)"
+                        ? $"{day.Day:yyyy-MM-dd} UTC — 0 hours (players can't wake the server)"
                         : $"{day.Day:yyyy-MM-dd} UTC — {day.BudgetWallClockHours:F1}h planned",
             });
         }
@@ -1039,7 +1039,7 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
         CanDistributeSelected = anyPool && editable.Count > 0;
         CanDistribute = CanDistributeRemaining || CanDistributeSelected;
         DistributeHint = !anyPool
-            ? "No unbudgeted or rollover hours to distribute."
+            ? "No unassigned or rollover hours to distribute."
             : unspecified == 0 && editable.Count == 0
                 ? "Every remaining UTC day already has an hours value. Select days to distribute onto."
                 : "Spread available hours across remaining days, or only the days you selected.";
@@ -1096,21 +1096,21 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
 
     private void SyncWorkingCapsFromEdit()
     {
-        if (TryParseDouble(EditMonthlyOcpu, "Monthly OCPU target", out var monthlyOcpu))
+        if (TryParseDouble(EditMonthlyOcpu, "Monthly CPU-hours", out var monthlyOcpu))
             _workingBudget.MonthlyOcpuTarget = monthlyOcpu;
-        if (TryParseDouble(EditMonthlyGb, "Monthly GB target", out var monthlyGb))
+        if (TryParseDouble(EditMonthlyGb, "Monthly memory-hours", out var monthlyGb))
             _workingBudget.MonthlyGbTarget = monthlyGb;
-        if (TryParseDouble(EditSoftOcpu, "Soft OCPU cap", out var softOcpu))
+        if (TryParseDouble(EditSoftOcpu, "CPU-hours limit", out var softOcpu))
             _workingBudget.SoftOcpuCap = softOcpu;
-        if (TryParseDouble(EditSoftGb, "Soft GB cap", out var softGb))
+        if (TryParseDouble(EditSoftGb, "Memory-hours limit", out var softGb))
             _workingBudget.SoftGbCap = softGb;
-        if (TryParseDouble(EditShapeOcpus, "Shape OCPUs", out var shapeOcpus))
+        if (TryParseDouble(EditShapeOcpus, "VM CPUs", out var shapeOcpus))
             _workingBudget.ShapeOcpus = shapeOcpus;
-        if (TryParseDouble(EditShapeMemory, "Shape memory GB", out var shapeMemory))
+        if (TryParseDouble(EditShapeMemory, "VM memory", out var shapeMemory))
             _workingBudget.ShapeMemoryGb = shapeMemory;
-        if (TryParseInt(EditIdleTimeout, "Idle timeout minutes", out var idleTimeout))
+        if (TryParseInt(EditIdleTimeout, "Idle timeout", out var idleTimeout))
             _workingBudget.IdleTimeoutMinutes = idleTimeout;
-        if (TryParseInt(EditBudgetWarn, "Budget warn minutes", out var warnMinutes))
+        if (TryParseInt(EditBudgetWarn, "Warning minutes", out var warnMinutes))
             _workingBudget.BudgetWarnMinutes = warnMinutes;
         _workingBudget.IdleAgentEnabled = EditIdleAgentEnabled;
     }

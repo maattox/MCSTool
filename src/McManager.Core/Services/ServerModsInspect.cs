@@ -249,7 +249,7 @@ public sealed class ServerModsInspectResult
         else
         {
             var n = FileNames.Count;
-            bits.Add(n == 1 ? "1 file in mods/" : $"{n} files in mods/");
+            bits.Add(n == 1 ? "1 file in the mods folder" : $"{n} files in the mods folder");
             if (Truncated)
                 bits.Add($"showing first {ServerModsInspect.MaxListedFiles}");
         }

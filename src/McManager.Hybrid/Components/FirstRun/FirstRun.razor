@@ -8,9 +8,9 @@
         <header class="mcm-firstrun-intro">
             <h1>Welcome</h1>
             <p class="mcm-firstrun-lead">
-                MCSTool creates a vanilla, Paper, or modded Minecraft server on Oracle Always Free,
-                then lets you manage it from this app. Players join one address. When nobody is playing,
-                the game server sleeps; a small always-on doorbell can still wake it.
+                MCSTool creates a Vanilla (Paper) or modded Minecraft server on Oracle Always Free
+                and lets you manage it from this app. Players join one address. When nobody is playing,
+                the game VM sleeps and a small always-on doorbell VM can wake it.
             </p>
         </header>
 
@@ -19,22 +19,22 @@
                     class="mcm-firstrun-choice mcm-firstrun-choice-primary"
                     disabled="@Vm.IsBusy"
                     @onclick="Vm.OpenSetup">
-                <span class="mcm-firstrun-choice-title">Deploy a new stack</span>
-                <span class="mcm-firstrun-choice-copy">Walk through setup and create the cloud computers.</span>
+                <span class="mcm-firstrun-choice-title">Set up a new server</span>
+                <span class="mcm-firstrun-choice-copy">Walk through Setup and create both VMs in Oracle Cloud.</span>
             </button>
             <button type="button"
                     class="mcm-firstrun-choice"
                     disabled="@Vm.IsBusy"
                     @onclick="Vm.DetectAsync">
-                <span class="mcm-firstrun-choice-title">Find an existing stack</span>
-                <span class="mcm-firstrun-choice-copy">Reads your saved cloud logins, finds the product compartment, and fills this app from shared storage after you confirm.</span>
+                <span class="mcm-firstrun-choice-title">Find an existing server</span>
+                <span class="mcm-firstrun-choice-copy">Looks in your Oracle account for a server made with MCSTool and asks before saving anything.</span>
             </button>
             <button type="button"
                     class="mcm-firstrun-choice"
                     disabled="@Vm.IsBusy"
                     @onclick="Vm.OpenExistingStack">
-                <span class="mcm-firstrun-choice-title">I already have a stack</span>
-                <span class="mcm-firstrun-choice-copy">Opens Manager without scanning the cloud. Use this if you already copied a config file onto this PC.</span>
+                <span class="mcm-firstrun-choice-title">Use settings on this PC</span>
+                <span class="mcm-firstrun-choice-copy">Opens MCSTool without checking Oracle Cloud. Use this if you already copied this server's settings onto this PC.</span>
             </button>
         </div>
 

@@ -30,6 +30,6 @@ public static class PublicIpDetector
             }
         }
 
-        return ServiceResult<string>.Fail("Could not detect public IP from ipify/ifconfig.me/icanhazip.");
+        return ServiceResult<string>.Fail("Could not detect your public IP.");
     }
 }

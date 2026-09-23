@@ -70,7 +70,7 @@ public static class CompartmentNameResolver
         if (string.IsNullOrWhiteSpace(tenancy))
         {
             return ServiceResult<IReadOnlyList<string>>.Fail(
-                "Could not read tenancy= from ~/.oci/config for the selected profile.");
+                "Could not read your Oracle account (tenancy=) from ~/.oci/config for the selected profile.");
         }
 
         var config = new ManagerLocalConfig
@@ -89,7 +89,7 @@ public static class CompartmentNameResolver
         if (!session.Succeeded || session.Value is null)
         {
             return ServiceResult<IReadOnlyList<string>>.Fail(
-                session.Error ?? "OCI session failed while listing compartments.");
+                session.Error ?? "Could not connect to Oracle Cloud.");
         }
 
         using var s = session.Value;

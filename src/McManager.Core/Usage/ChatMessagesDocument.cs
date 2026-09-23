@@ -19,10 +19,10 @@ public sealed class ChatMessagesDocument
         new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["budget_warn_leftover"] =
-                "Daily usage limit exceeded; using leftover hours (~{ocpu:.1f} OCPU-h / ~{gb:.1f} GB-h left).",
-            ["budget_final_warn"] = "Daily + leftover usage exhausted. Server will shut down soon.",
-            ["budget_stop"] = "Usage limits reached. Server shutting down.",
-            ["soft_cap_stop"] = "Monthly usage soft cap reached. Server shutting down.",
+                "Today's hours are used up. Now using rollover hours (about {ocpu:.1f} CPU-hours left).",
+            ["budget_final_warn"] = "No hours left for today. The server will shut down soon.",
+            ["budget_stop"] = "Out of hours. Server shutting down.",
+            ["soft_cap_stop"] = "Monthly hours limit reached. Server shutting down.",
             ["idle_stop"] = "No players for {minutes} minutes. Saving and shutting down.",
             ["idle_stop_inactive"] =
                 "Minecraft not running for {minutes} minutes. Saving and shutting down.",

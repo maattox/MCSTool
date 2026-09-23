@@ -73,7 +73,7 @@ public sealed class InfraMetaStore
             || schema > InfraMetaDocument.InfraSchema)
         {
             return ServiceResult<InfraMetaReadResult>.Fail(
-                $"{InfraObjectName} is newer than this Manager supports "
+                $"{InfraObjectName} is newer than this version of MCSTool supports "
                 + $"(version={version}, infra_schema={schema}; "
                 + $"max version={InfraMetaDocument.DocumentVersion}, "
                 + $"max infra_schema={InfraMetaDocument.InfraSchema}).");
@@ -118,7 +118,7 @@ public sealed class InfraMetaStore
         {
             Document = doc,
             Etag = etag,
-            Notes = $"Loaded {InfraObjectName}: {doc.FormatSummary()}",
+            Notes = $"Loaded server details: {doc.FormatSummary()}",
         });
     }
 
@@ -208,11 +208,8 @@ public sealed class InfraMetaStore
         if (version > InfraMetaDocument.DocumentVersion || schema > InfraMetaDocument.InfraSchema)
         {
             warnList.Add(
-                $"This stack's meta is newer than this Manager "
-                + $"(version={version}, infra_schema={schema}; "
-                + $"max version={InfraMetaDocument.DocumentVersion}, "
-                + $"max infra_schema={InfraMetaDocument.InfraSchema}). "
-                + "Connect will not modify the stack.");
+                "This server's details were saved by a newer version of MCSTool. "
+                + "Connecting doesn't change anything in Oracle Cloud.");
         }
 
         if (errors.Count > 0)
@@ -478,11 +475,7 @@ public sealed class InfraMetaStore
             Document = doc,
             Flags = flags,
             MigratedFromLegacy = migrated,
-            Message =
-                $"Published {InfraObjectName} "
-                + $"(infra_schema={doc.InfraSchemaValue}, stack={doc.StackVersion}); "
-                + "set meta flags door=true, vm1=true; manager=false."
-                + (migrated ? " Migrated from missing/legacy object." : ""),
+            Message = "Saved server details." + (migrated ? " Updated to the current format." : ""),
         });
     }
 

@@ -230,7 +230,7 @@ public static class BudgetSculpt
                 true,
                 false,
                 0,
-                "This plan exceeds this month’s hour target. Zero out or lower other days before saving.");
+                "This plan is over this month’s hours. Lower other days or set them to 0 hours before saving.");
         }
 
         if (env.RolloverSpentOcpu <= Epsilon)
@@ -243,7 +243,7 @@ public static class BudgetSculpt
                 false,
                 false,
                 0,
-                "This plan needs rollover hours. Turn on Use rollover hours, or zero out / lower other days.");
+                "This plan needs rollover hours. Turn on Use rollover hours, or lower other days.");
         }
 
         var available = AvailableRolloverOcpu(env.ClosedUnusedOcpu, minBufferWallClockHours, shapeOcpus);
@@ -257,7 +257,7 @@ public static class BudgetSculpt
             false,
             true,
             suggested,
-            $"You don’t have enough hours for this plan, but you can get enough if you set the minimum rollover buffer to {suggested:0.#} hours first.");
+            $"You don’t have enough hours for this plan. Set Minimum rollover to keep to {suggested:0.#} hours first, then save.");
     }
 
     public static bool IsClosed(DateOnly day, DateTime nowUtc) =>
@@ -288,16 +288,16 @@ public static class BudgetSculpt
         foreach (var day in days)
         {
             if (day.Year != now.Year || day.Month != now.Month)
-                return "Sculpt only days in the current UTC month.";
+                return "Only days in the current UTC month can be edited.";
             if (IsClosed(day, now))
                 return "Closed UTC days are not editable.";
             if (day == today)
             {
                 usedByDay.TryGetValue(today, out var used);
                 if (wallClockHours <= Epsilon && used.Ocpu > Epsilon)
-                    return "Cannot zero out today after the server has already run. Stop it first if you need a lower cap.";
+                    return "Today can't be set to 0 hours after the server has already run. Stop the server first if you need less time today.";
                 if (ocpu + Epsilon < used.Ocpu)
-                    return "Today cannot go below hours already used. Stop the server first if you need a lower cap.";
+                    return "Today can't go below the hours already used. Stop the server first if you need less time today.";
             }
         }
 

@@ -78,7 +78,7 @@ public sealed class SpendBrakeLockStore
         if (doc.Version > SpendBrakeLockDocument.DocumentVersion)
         {
             parseWarning =
-                $"{_objectName} is newer than this Manager supports "
+                $"{_objectName} is newer than this version of MCSTool supports "
                 + $"(version={doc.Version}; max={SpendBrakeLockDocument.DocumentVersion}).";
             return ServiceResult<SpendBrakeLockReadResult>.Ok(new SpendBrakeLockReadResult
             {
@@ -116,7 +116,7 @@ public sealed class SpendBrakeLockStore
         if (document.Version > SpendBrakeLockDocument.DocumentVersion)
         {
             return ServiceResult.Fail(
-                $"{_objectName} version {document.Version} is newer than this Manager can write "
+                $"{_objectName} version {document.Version} is newer than this version of MCSTool can write "
                 + $"(max={SpendBrakeLockDocument.DocumentVersion}).");
         }
 

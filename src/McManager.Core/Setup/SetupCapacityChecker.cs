@@ -38,7 +38,7 @@ public static class SetupCapacityChecker
             return new Result
             {
                 ProbeFailed = true,
-                Message = "Could not read tenancy= from ~/.oci/config; skipping capacity probe.",
+                Message = "Could not read your Oracle account (tenancy=) from ~/.oci/config; skipping the capacity check.",
             };
         }
 
@@ -125,8 +125,8 @@ public static class SetupCapacityChecker
                     AvailabilityStatus = statusName,
                     OpcRequestId = opc,
                     Message =
-                        "Always Free A1 Flex host capacity is unavailable in this region right now. "
-                        + "VM1 was not created. Retry reuses any compartment/VCN/door already in OpenTofu state.",
+                        "Oracle's free Ampere capacity is unavailable in this region right now, so the game VM was not created. "
+                        + "Anything already created is kept and reused when you retry.",
                 };
             }
 
@@ -138,7 +138,7 @@ public static class SetupCapacityChecker
                     AvailabilityDomain = ad,
                     AvailabilityStatus = statusName,
                     OpcRequestId = opc,
-                    Message = $"VM.Standard.A1.Flex is not supported in {ad}. Pick the tenancy home region.",
+                    Message = $"Oracle's free Ampere VMs aren't offered in {ad}. Use your Oracle account's home region.",
                 };
             }
 

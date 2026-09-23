@@ -139,12 +139,12 @@ public static class SetupApplyStage
     public static string DisplayName(string? stage) => (stage ?? "").Trim() switch
     {
         TofuApplied => "Creating cloud resources…",
-        CloudInit => "Waiting for the servers to start…",
-        Door => "Installing doorbell software…",
+        CloudInit => "Waiting for both VMs to start…",
+        Door => "Installing doorbell VM software…",
         Vm1 => "Installing Minecraft…",
-        OsMeta => "Saving shared storage…",
-        Function => "Installing the spend-brake Function…",
-        ConfigWritten => "Saving local config…",
+        OsMeta => "Saving to cloud storage…",
+        Function => "Setting up the $1 spending limit…",
+        ConfigWritten => "Saving settings on this PC…",
         _ => "Starting…",
     };
 

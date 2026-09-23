@@ -7,6 +7,7 @@
 #include "httpmini.h"
 #include "keepalive.h"
 #include "mcdoor.h"
+#include "playermap.h"
 
 #ifdef _WIN32
 #include <process.h>
@@ -85,6 +86,30 @@ static void *http_thread_main(void *arg) {
 #endif
 }
 
+#ifdef _WIN32
+static unsigned __stdcall playerhttp_thread_main(void *arg) {
+#else
+static void *playerhttp_thread_main(void *arg) {
+#endif
+  AppContext *app = (AppContext *)arg;
+  PlayerMapConfig pcfg = {
+      .bind_host = app->cfg.bind_host,
+      .port = app->cfg.player_http_port,
+      .map_root = app->cfg.player_map_root,
+  };
+  fprintf(stdout, "mccontrol: player http on %s:%u (root %s)\n", pcfg.bind_host,
+          (unsigned)pcfg.port, pcfg.map_root);
+  fflush(stdout);
+  if (playermap_serve(&pcfg) != 0) {
+    fprintf(stderr, "mccontrol: player http serve failed\n");
+  }
+#ifdef _WIN32
+  return 0;
+#else
+  return NULL;
+#endif
+}
+
 static void usage(const char *prog) {
   fprintf(stderr, "Usage: %s [config.json]\n", prog);
 }
@@ -152,8 +177,26 @@ int main(int argc, char **argv) {
 #endif
   }
 
-  if (!cfg.enable_mcdoor && !cfg.enable_http) {
-    fprintf(stderr, "mccontrol: nothing to do (enable_mcdoor and enable_http both false)\n");
+  if (cfg.enable_player_http) {
+#ifdef _WIN32
+    uintptr_t h = _beginthreadex(NULL, 0, playerhttp_thread_main, &g_app, 0, NULL);
+    if (h == 0) {
+      fprintf(stderr, "mccontrol: failed to start player http thread\n");
+      return 1;
+    }
+    CloseHandle((HANDLE)h);
+#else
+    pthread_t tid;
+    if (pthread_create(&tid, NULL, playerhttp_thread_main, &g_app) != 0) {
+      fprintf(stderr, "mccontrol: failed to start player http thread\n");
+      return 1;
+    }
+    pthread_detach(tid);
+#endif
+  }
+
+  if (!cfg.enable_mcdoor && !cfg.enable_http && !cfg.enable_player_http) {
+    fprintf(stderr, "mccontrol: nothing to do (enable_mcdoor, enable_http, and enable_player_http all false)\n");
     return 1;
   }
 

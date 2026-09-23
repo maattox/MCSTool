@@ -97,7 +97,7 @@ export EULA_ACCEPTED=true
 export MINECRAFT_VERSION=1.21.1   # or latest.release
 bash /path/to/onbox/mcmgr/common/driver.sh
 
-# Paper (Optimized Vanilla) — Fill v3 STABLE, same generic unit:
+# Vanilla (Paper) — Fill v3 STABLE, same generic unit:
 export EULA_ACCEPTED=true
 export DISTRIBUTION=paper
 export MINECRAFT_VERSION=1.21.10

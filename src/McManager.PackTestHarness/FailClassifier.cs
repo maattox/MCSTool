@@ -43,11 +43,13 @@ internal static class FailClassifier
             "SocketException",
             "SshConnection",
             "VM1 SSH",
+            "Game VM SSH",
             "VM1 is not RUNNING",
             "STOPPED",
             "STOPPING",
             "GetInstance",
             "Product onbox/mcmgr/ not found",
+            "Some MCSTool files were not found",
             "instance_id is empty",
             "OCI ",
         ];

@@ -10,6 +10,10 @@ Danger Zone disable cannot leave free-tier SoftStop brakes off after reboot.
 
 Messages identity (motd/icon) is force-pulled at the start of this oneshot.
 The unit is Before=minecraft.service so Java sees the new files this start.
+
+After a STOPPED 24→12 GB resize, guest server memory above 8G is rewritten
+here (apply-jvm-heap.py + daemon-reload) before Java starts. A failed clamp
+fails this oneshot so Minecraft does not boot with an oversized allocation.
 """
 
 from __future__ import annotations
@@ -19,10 +23,13 @@ import os
 import subprocess
 import sys
 
-LIB = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib")
-if LIB not in sys.path:
-    sys.path.insert(0, LIB)
+HERE = os.path.dirname(os.path.abspath(__file__))
+LIB = os.path.join(os.path.dirname(HERE), "lib")
+for _path in (LIB, HERE):
+    if _path not in sys.path:
+        sys.path.insert(0, _path)
 
+import heap_clamp as heap_clamp_mod  # noqa: E402
 import lease as lease_mod  # noqa: E402
 import ledger as ledger_mod  # noqa: E402
 import os_publish as os_publish_mod  # noqa: E402
@@ -141,6 +148,15 @@ def main() -> int:
     )
     print(f"Detected shape via {shape_src}: {ocpus} OCPU / {memory_gb} GB")
     _sync_shape(cfg, ocpus, memory_gb)
+
+    clamp_rc, clamp_msg = heap_clamp_mod.ensure_fits_host(memory_gb)
+    print(clamp_msg)
+    if clamp_rc != 0:
+        print(
+            "Refusing Minecraft start: guest server memory still exceeds this VM.",
+            file=sys.stderr,
+        )
+        return clamp_rc
 
     # Snapshot on-disk ledger BEFORE clear/pull so a local idle_or_budget_stop
     # survives an Object Storage pull that still has an open / door-approximate row.

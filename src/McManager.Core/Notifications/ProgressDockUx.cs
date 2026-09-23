@@ -6,19 +6,19 @@ namespace McManager.Core.Notifications;
 /// </summary>
 public static class ProgressDockUx
 {
-    public const string ChangePackPickStatus = "Choose a pack file, then install.";
+    public const string ChangePackPickStatus = "Choose a modpack, then install.";
 
-    public const string ChangePackReviewStatus = "Review the pack, then install.";
+    public const string ChangePackReviewStatus = "Review the modpack, then install.";
 
     public const string ChangePackAnalyzeFallback = "Analyzing modpack…";
 
-    public const string ChangePackBuildFallback = "Building the derived pack…";
+    public const string ChangePackBuildFallback = "Applying your version fixes…";
 
     public const string ChangePackStartFallback = "Starting the game VM…";
 
     public const string ChangePackIdleHoldFallback = "Disabling the idle timer…";
 
-    public const string ChangePackInstallFallback = "Reinstalling Minecraft from this pack…";
+    public const string ChangePackInstallFallback = "Reinstalling Minecraft from this modpack…";
 
     public static string FormatElapsed(TimeSpan elapsed)
     {
@@ -121,22 +121,22 @@ public static class ProgressDockUx
             || StartsWithToken(body, "tofu"))
             return "Creating cloud resources…";
         if (Contains(body, "cloud-init ready"))
-            return "Servers are ready.";
+            return "Both VMs are ready.";
         if (Contains(body, "cloud-init") || Contains(body, "/etc/mcmgr/cloud-init")
             || Contains(body, "/etc/mcmgr-door/cloud-init"))
-            return "Waiting for the servers to start…";
+            return "Waiting for both VMs to start…";
         if (Contains(body, "Door bootstrap finished") || Contains(body, "Door runtime repaired"))
-            return "Doorbell software is ready.";
+            return "Doorbell VM software is ready.";
         if (Contains(body, "Repairing door"))
-            return "Finishing doorbell setup…";
+            return "Finishing doorbell VM setup…";
         if (Contains(body, "Door src") || Contains(body, "door bootstrap")
             || Contains(body, "Installing door"))
-            return "Installing doorbell software…";
+            return "Installing doorbell VM software…";
         if (Contains(body, "Parking reserved play IP") || Contains(body, "play IP is on VM1")
             || Contains(body, "door PLAYABLE"))
-            return "Moving the play IP to the game server…";
+            return "Moving the play IP to the game VM…";
         if (Contains(body, "Repairing VM1") || Contains(body, "VM1 runtime repaired"))
-            return "Finishing the game server setup…";
+            return "Finishing game VM setup…";
         if (Contains(body, "firewalld") || Contains(body, "host filter"))
             return "Opening Minecraft on the firewall…";
         if (Contains(body, "Idle agent"))
@@ -149,22 +149,22 @@ public static class ProgressDockUx
         if (Contains(body, "server.properties"))
             return "Applying server settings…";
         if (Contains(body, "server-side pack") || Contains(body, "uploaded pack files"))
-            return "Installing pack files…";
+            return "Installing modpack files…";
         if (StartsWithToken(body, "uploaded") || StartsWithToken(body, "put"))
             return "Copying files to the server…";
         if (Contains(body, "list name and icon") || Contains(body, "systemctl restart minecraft"))
             return "Applying the server list name and icon…";
         if (Contains(body, "Object Storage") || Contains(body, "Published budget")
             || Contains(body, "Seeding Object") || Contains(body, "meta/infra.json"))
-            return "Saving shared storage…";
+            return "Saving to cloud storage…";
         if (Contains(body, "OCIR") || Contains(body, "Function image") || Contains(body, "Pushed Function")
             || Contains(body, "spend-brake"))
-            return "Installing the spend-brake Function…";
+            return "Setting up the $1 spending limit…";
         if (Contains(body, "Waiting for VM1") || Contains(body, "VM1 is stopped")
             || Contains(body, "Waiting for VM1 RUNNING"))
-            return "Waiting for the game server to start…";
+            return "Waiting for the game VM to start…";
         if (Contains(body, "Waiting for door"))
-            return "Waiting for the doorbell to start…";
+            return "Waiting for the doorbell VM to start…";
         if (Contains(body, "RCON list succeeded"))
             return "Minecraft is ready.";
         if (Contains(body, "blamed one mod") || Contains(body, "moving it aside"))
@@ -178,11 +178,11 @@ public static class ProgressDockUx
         if (Contains(body, "RCON not ready") || Contains(body, "still starting"))
             return "Waiting for Minecraft to start…";
         if (Contains(body, "tfvars") || Contains(body, "Preparing the cloud"))
-            return "Preparing the cloud plan…";
+            return "Preparing cloud resources…";
         if (Contains(body, "dry-run") || Contains(body, "Dry-run"))
             return "Dry-run (no Oracle Cloud)…";
         if (Contains(body, "out of host capacity") || Contains(body, "capacity is unavailable"))
-            return "Always Free A1 capacity is unavailable.";
+            return "Oracle's free Ampere capacity is unavailable right now.";
         return null;
     }
 

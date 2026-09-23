@@ -67,36 +67,36 @@ public static class TabStatusBannerPolicy
         if (text.Length == 0)
             return false;
 
-        if (text.StartsWith("Break-glass Compute actions do not move the reserved play IP.", StringComparison.Ordinal))
+        if (text.StartsWith("Emergency power doesn't move the play IP.", StringComparison.Ordinal))
             return false;
 
-        if (text.Equals("Loading meta/infra.json…", StringComparison.Ordinal))
+        if (text.Equals("Loading server details…", StringComparison.Ordinal))
             return false;
 
-        if (text.StartsWith("Loaded meta/infra.json:", StringComparison.Ordinal))
+        if (text.StartsWith("Loaded server details:", StringComparison.Ordinal))
             return false;
 
-        if (text.Equals("Loading idle settings from Object Storage…", StringComparison.Ordinal))
+        if (text.Equals("Loading idle settings from cloud storage…", StringComparison.Ordinal))
             return false;
 
-        if (text.Equals("Idle settings loaded from Object Storage budget.", StringComparison.Ordinal))
+        if (text.Equals("Idle settings loaded from cloud storage.", StringComparison.Ordinal))
             return false;
 
-        if (text.StartsWith("budget/config.json missing", StringComparison.Ordinal))
+        if (text.StartsWith("Idle settings missing from cloud storage", StringComparison.Ordinal))
             return false;
 
         if (text.Equals(
-                "Object Storage unavailable — using local config for idle fields.",
+                "Cloud storage unavailable — showing this PC's idle settings.",
                 StringComparison.Ordinal))
             return false;
 
         if (text.StartsWith("Selected private key for the", StringComparison.Ordinal))
             return false;
 
-        if (text.StartsWith("Door VM will use the game VM private key", StringComparison.Ordinal))
+        if (text.StartsWith("Doorbell VM will use the game VM private key", StringComparison.Ordinal))
             return false;
 
-        if (text.StartsWith("Game VM will use the doorbell private key", StringComparison.Ordinal))
+        if (text.StartsWith("Game VM will use the doorbell VM private key", StringComparison.Ordinal))
             return false;
 
         return true;

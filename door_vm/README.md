@@ -19,9 +19,10 @@ door_vm/
   install.sh                ← full-ish install helper (prototype-era; prefer steps below)
   config.example.json
   include/  src/            ← C11 mccontrol sources
-  oci/                      ← start/stop VM1, IP move, wait_forge, pull/heal OS
+  oci/                      ← start/stop VM1, IP move, wait_forge, pull/heal OS, pull_player_map
   scripts/                  ← reconcile, reset, diagnose helpers
   web/static/               ← door admin UI (served on :8080)
+  player-map/               ← stub index.html for /var/lib/mc-player-map (:80)
   assets/icons/             ← MOTD favicons (idle/starting/exhausted.png; Manager-composed defaults)
   systemd/                  ← mccontrol.service + reconcile timer/service
   tests/                    ← unit smoke (optional on Micro)
@@ -40,23 +41,24 @@ Installed on the live door (typical):
 | `/etc/mccontrol/config.json` | from example + local edits |
 | `/etc/mccontrol/oci.env` | secrets / OCIDs (not in git) |
 | `/var/lib/mccontrol/` | state + `os-cache/` |
-| `/etc/systemd/system/mccontrol*.service` / `.timer` | `systemd/` |
+| `/var/lib/mc-player-map/` | player static HTTP root (`playermap.c` :80; VCN-synced viewer + tiles) |
+| `/etc/systemd/system/mccontrol*.service` / `.timer` | `systemd/` + root `mccontrol.service` |
 
 ---
 
 ## Rebuild from bare Ubuntu Micro (outline)
 
-Assumes: Ubuntu 22.04 aarch64/x86_64 Micro, `ubuntu` user, instance principal for door dynamic group, Security List allows your admin `/32` → `:22` and `:8080`, VCN can reach Object Storage / OCI APIs.
+Assumes: Ubuntu 22.04 aarch64/x86_64 Micro, `ubuntu` user, instance principal for door dynamic group, Security List allows your admin `/32` → `:22`, `:8080`, and player map `:80` (player CIDRs get 25565 + 80; never `0.0.0.0/0`), VCN can reach Object Storage / OCI APIs.
 
 1. **Packages:** `build-essential`, `curl`, OCI CLI under `/home/ubuntu/bin` (same pattern as Testing docs).
 2. **Copy this tree** to the VM (Setup uploads it over SSH).
 3. **Config:** create `/etc/mccontrol/config.json` from `config.example.json`; set `object_storage_enabled`, cache paths, ports, `vm1_private_ip` as needed.
 4. **Env:** create `/etc/mccontrol/oci.env` from `oci/config.example.env` — `INSTANCE_ID` (VM1), compartment, VNIC/IP OCIDs, `OBJECT_STORAGE_NAMESPACE` / `BUCKET`, `OS_CACHE_DIR`. **Never commit this file.**
 5. **Build:** `make mccontrol` on the door (slow on Micro).
-6. **Install binary + assets:** stop `mccontrol` if running; install binary under `/opt/mccontrol/build/`; copy `oci/`, `scripts/`, `web/`.
-7. **Systemd:** install units from `systemd/`; `systemctl enable --now mccontrol.service mccontrol-reconcile.timer`.
+6. **Install binary + assets:** stop `mccontrol` if running; copy binary to `mccontrol.new` then `mv` under `/opt/mccontrol/build/` (avoid `ETXTBSY`); copy `oci/`, `scripts/`, `web/`. `install.sh` also seeds `/var/lib/mc-player-map/` and ACCEPT **80**.
+7. **Systemd:** install units from `systemd/` (and repo-root `mccontrol.service`); `systemctl enable --now mccontrol.service mccontrol-reconcile.timer`. `User=root` binds :80.
 8. **IAM:** door instance in dynamic group(s) for compute/IP move **and** Object Storage.
-9. **Smoke:** `curl -sS http://127.0.0.1:8080/api/status`; then Manager Troubleshooting / door journals.
+9. **Smoke:** `curl -sS http://127.0.0.1:8080/api/status`; `curl -sS http://127.0.0.1:80/`; then Manager Troubleshooting / door journals.
 
 Manager **Troubleshooting** / Setup door deploy covers the same operations (park IP, OS refresh, heal, redeploy from this tree).
 
@@ -67,6 +69,7 @@ Manager **Troubleshooting** / Setup door deploy covers the same operations (park
 - [x] Reconcile IP handback when VM1 stopped under PLAYABLE  
 - [x] One-shot orphan ledger heal + `ledger_heal_verified` latch (**STOPPED**-only; lease-aware close — Phase 5)  
 - [x] `HOME` default for systemd oneshot scripts  
+- [x] Player map static HTTP :80 (`playermap.c`; TESTING deployed; Manager Copy URL in P5)  
 - [ ] First-join custom kick text always shown (parked — Issues DOOR-ISSUE-1)
 
 ---

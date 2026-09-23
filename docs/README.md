@@ -6,7 +6,7 @@ The app is a .NET 8 **Blazor Hybrid** app (WPF + WebView2): one WinExe, `MCSTool
 
 ## Status
 
-**1.1.2** is published on [GitHub Releases](https://github.com/maattox/MCSTool/releases).
+**1.2.0** is published on [GitHub Releases](https://github.com/maattox/MCSTool/releases).
 
 Licensed under the [MIT License](../LICENSE).
 
@@ -65,7 +65,7 @@ When you mean to ship a newer installer: bump Hybrid `<Version>`, pack with `pac
 Optional:
 
 ```powershell
-gh release create v1.1.2 .\packaging\out\MCSTool-Setup-1.1.2.exe --title "MCSTool 1.1.2" --notes "Paste the user-facing notes here."
+gh release create v1.2.0 .\packaging\out\MCSTool-Setup-1.2.0.exe --title "MCSTool 1.2.0" --notes "Paste the user-facing notes here."
 ```
 
 

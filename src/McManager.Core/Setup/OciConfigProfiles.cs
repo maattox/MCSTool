@@ -35,7 +35,7 @@ public sealed class OciConfigProfile
             {
                 $"Profile: {Name}",
                 $"Region: {(string.IsNullOrWhiteSpace(Region) ? "(not set in ~/.oci/config)" : Region)}",
-                $"Tenancy: {Abbreviate(Tenancy)}",
+                $"Account: {Abbreviate(Tenancy)}",
                 $"User: {Abbreviate(User)}",
             };
             if (!string.IsNullOrWhiteSpace(Fingerprint))

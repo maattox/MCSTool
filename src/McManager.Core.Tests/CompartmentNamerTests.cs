@@ -96,9 +96,12 @@ public sealed class CompartmentNamerTests
     public void Plan_summary_auto_names_and_does_not_offer_paste_ocid()
     {
         var text = InfraPlanSummary.Build(new SetupWizardState { CompartmentName = "mcmgr" });
-        Assert.Contains("`mcmgr-2`", text, StringComparison.Ordinal);
-        Assert.Contains("`mcmgr-3`", text, StringComparison.Ordinal);
+        Assert.Contains("mcmgr-2", text, StringComparison.Ordinal);
+        Assert.Contains("mcmgr-3", text, StringComparison.Ordinal);
         Assert.DoesNotContain("existing OCID", text, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("Use existing compartment", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("OpenTofu", text, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("tfvars", text, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("VM1", text, StringComparison.Ordinal);
     }
 }
