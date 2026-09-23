@@ -33,7 +33,7 @@ public sealed class ConnectExistingFlow
         IProgress<string>? progress,
         CancellationToken cancellationToken = default)
     {
-        progress?.Report("Scanning OCI profiles for product stacks…");
+        progress?.Report("Looking for MCSTool servers in your Oracle account…");
         ServiceResult<ConnectExistingScanResult> scan;
         try
         {
@@ -41,29 +41,28 @@ public sealed class ConnectExistingFlow
         }
         catch (OperationCanceledException)
         {
-            progress?.Report("Auto-detect cancelled.");
+            progress?.Report("Cancelled. Nothing was changed.");
             return ConnectExistingOutcome.Cancelled;
         }
 
         if (!scan.Succeeded || scan.Value is null)
         {
-            progress?.Report(scan.Error ?? "Auto-detect failed.");
-            await _dialogs.ShowInfoAsync("Auto-detect failed", scan.Error ?? "Unknown error.", cancellationToken);
+            progress?.Report(scan.Error ?? "Finding an existing server failed.");
+            await _dialogs.ShowInfoAsync("Could not find servers", scan.Error ?? "Unknown error.", cancellationToken);
             return ConnectExistingOutcome.Failed;
         }
 
         var result = scan.Value;
         var extra = result.Notes.Count == 0
             ? ""
-            : "\n\nScan notes:\n- " + string.Join("\n- ", result.Notes.Take(12));
+            : "\n\nDetails:\n- " + string.Join("\n- ", result.Notes.Take(12));
 
         if (result.Candidates.Count == 0)
         {
-            progress?.Report("No product stacks found.");
+            progress?.Report("No MCSTool server found.");
             await _dialogs.ShowInfoAsync(
-                "No existing stack found",
-                "Auto-detect did not find a product compartment (name mcmgr / mcmgr-2 or tag mcmgr-domain=mc-server-compartment) "
-                + "with meta/infra.json.\n\nUse Setup to deploy a new stack, or seed this server's config.local.json by hand."
+                "No server found",
+                "No MCSTool server was found in this Oracle account. Use Setup to create one, or copy this server's settings onto this PC."
                 + extra,
                 cancellationToken);
             return ConnectExistingOutcome.NoneFound;
@@ -81,7 +80,7 @@ public sealed class ConnectExistingFlow
         var compatibility = chosen.Compatibility;
         if (compatibility.BlocksConnect)
         {
-            progress?.Report("Connect refused (incompatible infra schema).");
+            progress?.Report("Can't connect: that server is incompatible with this version of MCSTool.");
             await _dialogs.ShowInfoAsync(
                 compatibility.DialogTitle,
                 compatibility.FormatBody(chosen.IdentitySummary),
@@ -104,10 +103,10 @@ public sealed class ConnectExistingFlow
         }
 
         var confirmed = await _dialogs.ConfirmAsync(
-            "Existing infrastructure detected. Connect?",
+            "MCSTool server found. Connect?",
             chosen.ConfirmSummary
-            + "\n\nThis writes this server's config.local.json from meta/infra.json. "
-            + "SSH private key path and RCON stay on this PC (not Object Storage).",
+            + "\n\nMCSTool will save this server's settings on this PC. "
+            + "Your SSH key and console password stay on this PC.",
             confirmButtonText: "Connect",
             cancellationToken: cancellationToken);
         if (!confirmed)
@@ -120,14 +119,14 @@ public sealed class ConnectExistingFlow
         if (LocalConfigStore.ConfigFileExists())
         {
             var overwrite = await _dialogs.ConfirmAsync(
-                "Replace local manage config?",
-                "config.local.json already exists for this server. Connecting will overwrite OCIDs from the detected stack.\n\n"
-                + "Existing SSH key path and RCON password on this PC will be kept unless you pick a new key.",
-                confirmButtonText: "Overwrite",
+                "Replace saved settings?",
+                "This PC already has saved settings for a server. Connecting replaces them with the server you found.\n\n"
+                + "Your SSH key and console password on this PC are kept unless you pick a new key.",
+                confirmButtonText: "Replace",
                 cancellationToken: cancellationToken);
             if (!overwrite)
             {
-                progress?.Report("Connect cancelled (existing config kept).");
+                progress?.Report("Connect cancelled (saved settings kept).");
                 return ConnectExistingOutcome.Cancelled;
             }
 
@@ -143,7 +142,7 @@ public sealed class ConnectExistingFlow
             return ConnectExistingOutcome.Cancelled;
         }
 
-        progress?.Report("Writing local config from meta…");
+        progress?.Report("Saving settings…");
         var hydrated = await ConnectExistingService.HydrateAsync(
             chosen,
             sshPath,
@@ -153,10 +152,10 @@ public sealed class ConnectExistingFlow
             cancellationToken);
         if (!hydrated.Succeeded || hydrated.Value is null)
         {
-            progress?.Report(hydrated.Error ?? "Hydrate failed.");
+            progress?.Report(hydrated.Error ?? "Could not save settings.");
             await _dialogs.ShowInfoAsync(
                 "Connect failed",
-                hydrated.Error ?? "Could not build local config.",
+                hydrated.Error ?? "Could not save settings.",
                 cancellationToken);
             return ConnectExistingOutcome.Failed;
         }
@@ -164,15 +163,15 @@ public sealed class ConnectExistingFlow
         var saved = LocalConfigStore.SaveConfig(hydrated.Value);
         if (!saved.Succeeded)
         {
-            progress?.Report(saved.Error ?? "Failed to save config.local.json.");
+            progress?.Report(saved.Error ?? "Failed to save settings.");
             await _dialogs.ShowInfoAsync(
                 "Connect failed",
-                saved.Error ?? "Could not write config.local.json for this server. Existing file was not deleted.",
+                saved.Error ?? "Could not save settings for this server. Your existing settings were not deleted.",
                 cancellationToken);
             return ConnectExistingOutcome.Failed;
         }
 
-        progress?.Report("Connected. Local config written.");
+        progress?.Report("Connected. Settings saved.");
         return ConnectExistingOutcome.Connected;
     }
 
@@ -188,8 +187,8 @@ public sealed class ConnectExistingFlow
             .Select((c, i) => new UiChoice(i.ToString(), c.ChooserLabel))
             .ToList();
         var id = await _dialogs.ChooseAsync(
-            "Choose a stack to connect",
-            "Multiple product stacks were found. Select one. This Manager connects to a single stack.",
+            "Choose a server",
+            "More than one MCSTool server was found. MCSTool connects to one at a time.",
             choices,
             cancellationToken);
         if (id is null
@@ -221,7 +220,7 @@ public sealed class ConnectExistingFlow
         var path = await _filePicker.OpenFileAsync(
             new FilePickRequest
             {
-                Title = "Select SSH private key (not stored in Object Storage)",
+                Title = "Select SSH private key",
                 Filters = [new FileTypeFilter("All files", ".*")],
             },
             cancellationToken);
@@ -233,7 +232,7 @@ public sealed class ConnectExistingFlow
         {
             await _dialogs.ShowInfoAsync(
                 "SSH key required",
-                "Could not resolve the selected private key path. Connect did not write config.local.json.",
+                "Could not find the selected private key. Nothing was changed.",
                 cancellationToken);
             return null;
         }

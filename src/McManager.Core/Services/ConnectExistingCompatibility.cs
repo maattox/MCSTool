@@ -25,10 +25,10 @@ public sealed class ConnectExistingDecision
     public string DialogTitle => Level switch
     {
         ConnectExistingCompatibilityLevel.Block =>
-            "Cannot connect — incompatible infrastructure",
+            "Cannot connect — incompatible server",
         ConnectExistingCompatibilityLevel.Warn =>
-            "Infrastructure version mismatch — connect anyway?",
-        _ => "Existing infrastructure detected. Connect?",
+            "Different MCSTool version — connect anyway?",
+        _ => "MCSTool server found. Connect?",
     };
 
     public string FormatBody(string stackSummary)
@@ -41,21 +41,21 @@ public sealed class ConnectExistingDecision
             ConnectExistingCompatibilityLevel.Block =>
                 stackSummary
                 + reasons
-                + "\n\nThis Manager will not attach. Update Manager, or use the app that matches this stack. "
-                + "Nothing was written to config.local.json.",
+                + "\n\nMCSTool can't connect to this server. Update MCSTool, or use the version that set it up. "
+                + "Nothing was changed.",
             ConnectExistingCompatibilityLevel.Warn =>
                 stackSummary
                 + reasons
-                + "\n\nThis Manager will not modify Object Storage meta or the cloud stack. "
-                + "Connecting a different infra/stack version can break manage actions. "
-                + "Continue only if this is the intended stack.",
+                + "\n\nConnecting does not change anything in Oracle Cloud. "
+                + "Some actions may not work if the versions differ. "
+                + "Continue only if this is the right server.",
             _ => stackSummary,
         };
     }
 
     public string HydrateError =>
         Reasons.Count == 0
-            ? "This stack is incompatible with this Manager."
+            ? "That server is incompatible with this version of MCSTool."
             : string.Join(" ", Reasons);
 }
 
@@ -74,7 +74,7 @@ public static class ConnectExistingCompatibility
             return new ConnectExistingDecision
             {
                 Level = ConnectExistingCompatibilityLevel.Block,
-                Reasons = ["This stack has no readable meta/infra.json."],
+                Reasons = ["This server has no readable details in cloud storage."],
             };
         }
 
@@ -87,10 +87,10 @@ public static class ConnectExistingCompatibility
                 Level = ConnectExistingCompatibilityLevel.Block,
                 Reasons =
                 [
-                    $"This stack is newer than this Manager "
-                    + $"(document version={version}, infra_schema={schema}; "
-                    + $"this Manager supports version={InfraMetaDocument.DocumentVersion}, "
-                    + $"infra_schema={InfraMetaDocument.InfraSchema}).",
+                    $"This server was set up by a newer version of MCSTool "
+                    + $"(version {version}, format {schema}; "
+                    + $"this version supports {InfraMetaDocument.DocumentVersion}, "
+                    + $"format {InfraMetaDocument.InfraSchema}).",
                 ],
             };
         }
@@ -99,15 +99,15 @@ public static class ConnectExistingCompatibility
         if (isLegacy || schema < InfraMetaDocument.InfraSchema)
         {
             reasons.Add(
-                $"infra_schema is {schema} (this Manager expects {InfraMetaDocument.InfraSchema}). "
-                + "Connect will not migrate or modify Object Storage meta.");
+                $"This server was set up by an older version of MCSTool (format {schema}; this version expects {InfraMetaDocument.InfraSchema}). "
+                + "Connecting does not change it.");
         }
 
         if (version < InfraMetaDocument.DocumentVersion)
         {
             reasons.Add(
-                $"Document version is {version} (this Manager writes {InfraMetaDocument.DocumentVersion}). "
-                + "Connect will not modify the stack.");
+                $"This server was set up by an older version of MCSTool (version {version}; this version writes {InfraMetaDocument.DocumentVersion}). "
+                + "Connecting does not change it.");
         }
 
         var stack = document.StackVersion?.Trim() ?? "";
@@ -115,15 +115,15 @@ public static class ConnectExistingCompatibility
             && !string.Equals(stack, InfraMetaDocument.DefaultStackVersion, StringComparison.Ordinal))
         {
             reasons.Add(
-                $"stack_version is '{stack}' (this Manager's bundled stack is '{InfraMetaDocument.DefaultStackVersion}'). "
-                + "On-box software may not match this app.");
+                $"This server was set up by a different version of MCSTool ({stack}; this version is {InfraMetaDocument.DefaultStackVersion}). "
+                + "Software on the VMs may not match this app.");
         }
 
         if (!string.IsNullOrWhiteSpace(document.Mode)
             && !string.Equals(document.Mode, InfraMetaDocument.ModeAlwaysFree, StringComparison.Ordinal))
         {
             reasons.Add(
-                $"mode is '{document.Mode}' (this Manager expects '{InfraMetaDocument.ModeAlwaysFree}').");
+                $"This server uses mode '{document.Mode}' (MCSTool expects '{InfraMetaDocument.ModeAlwaysFree}').");
         }
 
         if (reasons.Count == 0)

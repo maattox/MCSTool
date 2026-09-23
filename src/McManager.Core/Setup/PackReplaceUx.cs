@@ -7,14 +7,14 @@ public static class PackReplaceUx
 {
     public const long PackDropMaxBytes = 512L * 1024 * 1024;
 
-    public const string ConfirmTitle = "Reinstall Minecraft from this pack?";
+    public const string ConfirmTitle = "Reinstall Minecraft from this modpack?";
 
-    public const string DropTitle = "Drop a mod pack here";
+    public const string DropTitle = "Drop a modpack here";
 
     public const string DropFormats =
-        "Modrinth .mrpack, CurseForge Server Pack .zip, or unstructured .jar zip.";
+        "Modrinth .mrpack, CurseForge Server Files, or a zip of .jar mods.";
 
-    public const string DropLargeHint = "Large packs: Choose pack file.";
+    public const string DropLargeHint = "Large modpacks: use Choose modpack.";
 
     public const string SkipWarningBody =
         "Known client-only mods will automatically be skipped. Check the list below and confirm that all client-only mods are correctly marked.";
@@ -27,13 +27,13 @@ public static class PackReplaceUx
         assistedReviewVisible;
 
     public const string ChangePackPickHint =
-        "Reinstall Minecraft from a .mrpack or server-pack zip. The world is kept unless wipe is checked.";
+        "Reinstall Minecraft from a .mrpack or .zip modpack. The world is kept unless wipe is checked.";
 
     public const string PackConfirmLabel =
-        "Use this pack on the server. Client-only mods are skipped.";
+        "Use this modpack. Client-only mods are skipped.";
 
     public const string WipeWorldLabel =
-        "Also wipe the world (irreversible). Cloud backups stay. Leave unchecked to keep the current world.";
+        "Also wipe the world (can't be undone). Cloud backups are kept.";
 
     public const string IdleForceEnableNote =
         "Minecraft start turns the idle timer back on.";
@@ -46,7 +46,7 @@ public static class PackReplaceUx
     public const string ConfirmWipeWorld =
         "Reinstalls Minecraft from the chosen file. "
         + "If the game VM is stopped, it is started first. "
-        + "The live world will be deleted. Cloud backups stay. Irreversible except by restoring a backup.";
+        + "The current world will be deleted. Cloud backups are kept. This can't be undone except by restoring a backup.";
 
     public static string ConfirmBody(bool wipeWorld) =>
         wipeWorld ? ConfirmWipeWorld : ConfirmKeepWorld;
@@ -102,13 +102,13 @@ public static class PackReplaceUx
         if (busy)
             return "Wait until the current action finishes.";
         if (!canContinue)
-            return "Choose a pack that can be installed first.";
+            return "Choose a modpack that can be installed first.";
         if (!FreezeAllowsContinue(freezeBlockReason))
             return freezeBlockReason!.Trim();
         if (!identityComplete)
             return DerivedPackIdentity.IdentityIncompleteReason;
         if (!packConfirmed)
-            return "Confirm the pack.";
+            return "Confirm the modpack.";
         return "";
     }
 

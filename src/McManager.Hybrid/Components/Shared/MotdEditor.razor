@@ -6,7 +6,7 @@
 <div class="mcm-motd-editor">
     <div class="mcm-motd-toolbar"
          role="toolbar"
-         aria-label="MOTD formatting"
+         aria-label="Text formatting"
          @onmousedown:preventDefault="true">
         <div class="mcm-motd-swatches" role="group" aria-label="Colors">
             @foreach (var color in MotdFormatting.VanillaColors)
@@ -77,7 +77,7 @@
         }
     </p>
     <div class="mcm-field mcm-motd-field mcm-motd-raw">
-        <label class="mcm-field-head" for="@RawId">Raw motd= string</label>
+        <label class="mcm-field-head" for="@RawId">Raw text (motd=)</label>
         <div class="mcm-motd-raw-row">
             <textarea id="@RawId"
                       class="mcm-motd-raw-input"

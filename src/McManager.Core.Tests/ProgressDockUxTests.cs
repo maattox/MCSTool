@@ -68,19 +68,24 @@ public sealed class ProgressDockUxTests
     public void DisplayName_is_novice_english()
     {
         Assert.Equal("Creating cloud resources…", SetupApplyStage.DisplayName(SetupApplyStage.TofuApplied));
-        Assert.Equal("Waiting for the servers to start…", SetupApplyStage.DisplayName(SetupApplyStage.CloudInit));
-        Assert.Equal("Installing doorbell software…", SetupApplyStage.DisplayName(SetupApplyStage.Door));
-        Assert.DoesNotContain("VM", SetupApplyStage.DisplayName(SetupApplyStage.CloudInit), StringComparison.Ordinal);
+        Assert.Equal("Waiting for both VMs to start…", SetupApplyStage.DisplayName(SetupApplyStage.CloudInit));
+        Assert.Equal("Installing doorbell VM software…", SetupApplyStage.DisplayName(SetupApplyStage.Door));
+        Assert.Equal("Saving to cloud storage…", SetupApplyStage.DisplayName(SetupApplyStage.OsMeta));
+        Assert.Equal("Setting up the $1 spending limit…", SetupApplyStage.DisplayName(SetupApplyStage.Function));
+        Assert.DoesNotContain("cloud-init", SetupApplyStage.DisplayName(SetupApplyStage.CloudInit), StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("stack", SetupApplyStage.DisplayName(SetupApplyStage.Door), StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Function", SetupApplyStage.DisplayName(SetupApplyStage.Function), StringComparison.Ordinal);
     }
 
     [Theory]
     [InlineData("> rm -rf /tmp/mcmgr-onbox && mkdir -p /tmp/mcmgr-onbox", "Preparing files on the server…")]
     [InlineData("$ tofu apply -auto-approve", "Creating cloud resources…")]
-    [InlineData("waiting for /etc/mcmgr/cloud-init-done on 10.0.0.2…", "Waiting for the servers to start…")]
-    [InlineData("Door src: C:\\repo\\door_vm", "Installing doorbell software…")]
+    [InlineData("waiting for /etc/mcmgr/cloud-init-done on 10.0.0.2…", "Waiting for both VMs to start…")]
+    [InlineData("Door src: C:\\repo\\door_vm", "Installing doorbell VM software…")]
     [InlineData("onbox src: /opt DISTRIBUTION=fabric MINECRAFT_VERSION=1.21.1", "Installing Minecraft…")]
-    [InlineData("uploaded pack files (12 files, skipped 0 eula/properties/world) → /opt/mcmgr", "Installing pack files…")]
+    [InlineData("uploaded pack files (12 files, skipped 0 eula/properties/world) → /opt/mcmgr", "Installing modpack files…")]
+    [InlineData("Parking reserved play IP on VM1 (game is up)…", "Moving the play IP to the game VM…")]
+    [InlineData("Repairing VM1 runtime (play netplan, host firewall, server.properties)…", "Finishing game VM setup…")]
     [InlineData("Restarting Minecraft so the list name and icon apply…", "Applying the server list name and icon…")]
     [InlineData("> sudo bash -c 'systemctl restart minecraft'", "Applying the server list name and icon…")]
     [InlineData("RCON list succeeded.", "Minecraft is ready.")]
@@ -107,7 +112,7 @@ public sealed class ProgressDockUxTests
     [Fact]
     public void HumanizeOrFallback_keeps_fallback_for_unmapped_shell() =>
         Assert.Equal(
-            "Reinstalling Minecraft from this pack…",
+            "Reinstalling Minecraft from this modpack…",
             ProgressDockUx.HumanizeOrFallback(
                 "> chmod 755 /opt/mystery",
                 ProgressDockUx.ChangePackInstallFallback));

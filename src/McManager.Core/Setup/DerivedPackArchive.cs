@@ -60,12 +60,12 @@ public static class DerivedPackArchive
         if (string.IsNullOrWhiteSpace(sourceZipPath) || !File.Exists(sourceZipPath))
             return ServiceResult<string>.Fail($"File not found: {sourceZipPath}");
         if (string.IsNullOrWhiteSpace(destZipPath))
-            return ServiceResult<string>.Fail("No destination path for the derived pack.");
+            return ServiceResult<string>.Fail("No destination path for the modpack with your version fixes.");
         if (Path.GetFullPath(sourceZipPath).Equals(
                 Path.GetFullPath(destZipPath),
                 StringComparison.OrdinalIgnoreCase))
         {
-            return ServiceResult<string>.Fail("Derived pack path must differ from the original file.");
+            return ServiceResult<string>.Fail("The fixed modpack must be saved to a different file than the original.");
         }
 
         ArgumentNullException.ThrowIfNull(analysis);
@@ -177,7 +177,7 @@ public static class DerivedPackArchive
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
         {
-            return ServiceResult<string>.Fail($"Cannot build derived pack: {ex.Message}");
+            return ServiceResult<string>.Fail($"Cannot apply your version fixes: {ex.Message}");
         }
     }
 
@@ -192,7 +192,7 @@ public static class DerivedPackArchive
         string? originalFileName = null)
     {
         if (string.IsNullOrWhiteSpace(dataDirectory))
-            return ServiceResult<string>.Fail("No Manager data directory was provided.");
+            return ServiceResult<string>.Fail("No MCSTool data folder was provided.");
 
         var destDir = ImportedPackArchiveStore.DirectoryFor(
             dataDirectory,

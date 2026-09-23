@@ -285,9 +285,9 @@ public static class ManualServerPackAnalyzer
                 forceIncluded: match.Keep && peek.Environment.Equals("client", StringComparison.OrdinalIgnoreCase),
                 automaticSkipReason: autoSkip,
                 skipDetail: autoSkip == PackFileSkipReason.OverrideList
-                    ? "exclude list"
+                    ? "Known client-only mod"
                     : autoSkip == PackFileSkipReason.InJarMetadata
-                        ? "in-jar client"
+                        ? "Mod says client-only"
                         : null));
         }
 
@@ -332,7 +332,7 @@ public static class ManualServerPackAnalyzer
         if (minecraft != "(unknown)" && MinecraftJavaFloor.TryGet(minecraft, out var mappedJava))
             javaMajor = mappedJava;
         else if (minecraft != "(unknown)")
-            warnings.Add($"Could not map Minecraft {minecraft} to a Java major (blueprint §9.1).");
+            warnings.Add($"Could not tell which Java version Minecraft {minecraft} needs.");
         else
             warnings.Add("Minecraft version is not declared in this zip (no CurseForge manifest).");
 

@@ -21,26 +21,26 @@ public static class TfvarsWriter
             if (string.IsNullOrWhiteSpace(tenancy) || tenancy.Contains("REPLACE_ME", StringComparison.Ordinal))
             {
                 return ServiceResult.Fail(
-                    "Could not read tenancy= from ~/.oci/config for the selected profile.");
+                    "Could not read your Oracle account (tenancy=) from ~/.oci/config for the selected profile.");
             }
 
             var cidr = NormalizeAdminCidr(state.AdminCidr);
             if (cidr is null)
-                return ServiceResult.Fail("admin_cidr must be an IPv4 address or /32 CIDR.");
+                return ServiceResult.Fail("Your public IP must be an IPv4 address or /32.");
 
             var vm1Pub = (state.SshPublicKey ?? "").Trim();
             if (!SshKeyHelper.LooksLikePublicKey(vm1Pub))
                 return ServiceResult.Fail("SSH public key is missing or invalid.");
 
             if (state.SshSplitDoorKey && !SshKeyHelper.LooksLikePublicKey(state.DoorSshPublicKey ?? ""))
-                return ServiceResult.Fail("Door SSH public key is missing or invalid.");
+                return ServiceResult.Fail("Doorbell VM SSH public key is missing or invalid.");
 
             var doorPub = TofuApplyOutputs.DoorPublicKeyLine(state);
 
             if (!Vm1ShapeChoice.IsAllowed(state.Vm1Ocpus, state.Vm1MemoryGb))
             {
                 return ServiceResult.Fail(
-                    "VM1 size must be 2 OCPU / 12 GB or 4 OCPU / 24 GB.");
+                    "Game VM size must be 2 OCPU / 12 GB or 4 OCPU / 24 GB.");
             }
 
             var existing = "";
@@ -65,7 +65,7 @@ public static class TfvarsWriter
         }
         catch (Exception ex)
         {
-            return ServiceResult.Fail($"Failed to write tfvars: {ex.Message}");
+            return ServiceResult.Fail($"Saving Setup files failed: {ex.Message}");
         }
     }
 

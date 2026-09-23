@@ -71,7 +71,7 @@ public sealed class SetupDualSshTests
             DoorSshFingerprint = "SHA256:door",
         });
 
-        Assert.Contains("SSH: game VM SHA256:game; door SHA256:door", text, StringComparison.Ordinal);
+        Assert.Contains("SSH keys: game VM SHA256:game; doorbell VM SHA256:door", text, StringComparison.Ordinal);
     }
 
     [Fact]

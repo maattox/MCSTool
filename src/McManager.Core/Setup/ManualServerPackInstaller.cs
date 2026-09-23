@@ -142,7 +142,7 @@ public static class ManualServerPackInstaller
             }
             else
             {
-                warnings.Add("Original zip was not copied into Manager local data (no data directory).");
+                warnings.Add("Original zip was not copied into the MCSTool data folder (no data folder found).");
             }
 
             var summary = BuildSummary(

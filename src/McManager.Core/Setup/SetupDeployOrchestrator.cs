@@ -105,12 +105,12 @@ public sealed class SetupDeployOrchestrator
         {
             return SetupDeployResult.Fail(
                 state.ApplyStage,
-                "VM1 size must be 2 OCPU / 12 GB or 4 OCPU / 24 GB.");
+                "Game VM size must be 2 OCPU / 12 GB or 4 OCPU / 24 GB.");
         }
 
         var infra = ProductPaths.FindInfraDirectory();
         if (infra is null)
-            return SetupDeployResult.Fail(state.ApplyStage, "Could not find product infra/ (main.tf).");
+            return SetupDeployResult.Fail(state.ApplyStage, "Could not find some MCSTool files. Reinstall MCSTool.");
 
         var tofuError = await EnsureTofuAsync(log, cancellationToken).ConfigureAwait(false);
         if (tofuError is not null)
@@ -130,7 +130,7 @@ public sealed class SetupDeployOrchestrator
 
         var tfvars = TfvarsWriter.Write(workspace, state, state.FunctionImage);
         if (!tfvars.Succeeded)
-            return SetupDeployResult.Fail(state.ApplyStage, tfvars.Error ?? "tfvars write failed.");
+            return SetupDeployResult.Fail(state.ApplyStage, tfvars.Error ?? "Saving Setup files failed.");
 
         log?.Report($"Wrote {workspace.VarFilePath} (not repo infra/terraform.tfvars).");
 
@@ -142,7 +142,7 @@ public sealed class SetupDeployOrchestrator
             ReportProgress(progress, SetupApplyStage.NotStarted, "Creating cloud resources…");
             var init = await Tofu.InitAsync(infra, log, cancellationToken).ConfigureAwait(false);
             if (!init.Succeeded)
-                return SetupDeployResult.Fail(stage, "tofu init failed. See the deploy log.");
+                return SetupDeployResult.Fail(stage, "Setup could not start. See the deploy log.");
 
             if (!_dryRun)
             {
@@ -158,21 +158,21 @@ public sealed class SetupDeployOrchestrator
             if (apply.IsCapacityError)
             {
                 return SetupDeployResult.Capacity(
-                    "Always Free A1 Flex host capacity is unavailable in this region right now. "
-                    + "VM1 was not created. Retry reuses any compartment/VCN/door already in OpenTofu state.");
+                    "Oracle's free Ampere capacity is unavailable in this region right now, so the game VM was not created. "
+                    + "Anything already created is kept and reused when you retry.");
             }
 
             if (!apply.Succeeded)
-                return SetupDeployResult.Fail(stage, "tofu apply failed. See the deploy log.");
+                return SetupDeployResult.Fail(stage, "Creating cloud resources failed. See the deploy log.");
 
             var raw = await Tofu.OutputJsonAsync(infra, workspace, log, cancellationToken).ConfigureAwait(false);
             if (!raw.Succeeded)
-                return SetupDeployResult.Fail(stage, "tofu output failed. See the deploy log.");
+                return SetupDeployResult.Fail(stage, "Could not read the results from Oracle Cloud. See the deploy log.");
 
             File.WriteAllText(workspace.OutputsPath, raw.Output);
             var parsed = TofuApplyOutputs.Parse(raw.Output);
             if (!parsed.Succeeded || parsed.Value is null)
-                return SetupDeployResult.Fail(stage, parsed.Error ?? "output parse failed.");
+                return SetupDeployResult.Fail(stage, parsed.Error ?? "Could not read the results from Oracle Cloud.");
 
             outputs = parsed.Value;
             stage = SetupApplyStage.TofuApplied;
@@ -183,7 +183,7 @@ public sealed class SetupDeployOrchestrator
         {
             outputs = LoadOutputs(workspace);
             if (outputs is null)
-                return SetupDeployResult.Fail(stage, "Saved tofu outputs missing; cannot resume.");
+                return SetupDeployResult.Fail(stage, "Saved Setup results are missing, so Deploy cannot resume.");
         }
 
         if (_dryRun)
@@ -216,10 +216,10 @@ public sealed class SetupDeployOrchestrator
 
         if (!SetupApplyStage.Reached(stage, SetupApplyStage.CloudInit))
         {
-            ReportProgress(progress, SetupApplyStage.CloudInit, "Waiting for the servers to finish starting…");
+            ReportProgress(progress, SetupApplyStage.CloudInit, "Waiting for both VMs to finish starting…");
             var waitVm = await WaitRunningAsync(outputs, state, log, cancellationToken).ConfigureAwait(false);
             if (!waitVm.Succeeded)
-                return SetupDeployResult.Fail(stage, waitVm.Error ?? "Wait RUNNING failed.");
+                return SetupDeployResult.Fail(stage, waitVm.Error ?? "Waiting for the VMs to start failed.");
 
             var vm1Key = TofuApplyOutputs.PrivateKeyPath(state);
             var doorKey = TofuApplyOutputs.DoorPrivateKeyPath(state);
@@ -227,13 +227,13 @@ public sealed class SetupDeployOrchestrator
                 outputs.Vm1SshHost, outputs.SshUser, vm1Key, "/etc/mcmgr/cloud-init-done", log, cancellationToken)
                 .ConfigureAwait(false);
             if (!c1.Succeeded)
-                return SetupDeployResult.Fail(stage, c1.Error ?? "VM1 cloud-init wait failed.");
+                return SetupDeployResult.Fail(stage, c1.Error ?? "Waiting for the game VM to finish starting failed.");
 
             var c2 = await _bootstrap.WaitCloudInitAsync(
                 outputs.DoorSshHost, outputs.SshUser, doorKey, "/etc/mcmgr-door/cloud-init-done", log, cancellationToken)
                 .ConfigureAwait(false);
             if (!c2.Succeeded)
-                return SetupDeployResult.Fail(stage, c2.Error ?? "Door cloud-init wait failed.");
+                return SetupDeployResult.Fail(stage, c2.Error ?? "Waiting for the doorbell VM to finish starting failed.");
 
             stage = SetupApplyStage.CloudInit;
             PersistStage(state, stage);
@@ -242,10 +242,10 @@ public sealed class SetupDeployOrchestrator
 
         if (!SetupApplyStage.Reached(stage, SetupApplyStage.Door))
         {
-            ReportProgress(progress, SetupApplyStage.Door, "Installing doorbell software…");
+            ReportProgress(progress, SetupApplyStage.Door, "Installing doorbell VM software…");
             var door = await _bootstrap.DeployDoorAsync(outputs, state, log, cancellationToken).ConfigureAwait(false);
             if (!door.Succeeded)
-                return SetupDeployResult.Fail(stage, door.Error ?? "Door bootstrap failed.");
+                return SetupDeployResult.Fail(stage, door.Error ?? "Installing the doorbell VM failed.");
             stage = SetupApplyStage.Door;
             PersistStage(state, stage);
             ReportProgress(progress, stage, complete: true);
@@ -257,7 +257,7 @@ public sealed class SetupDeployOrchestrator
             ReportProgress(progress, SetupApplyStage.Vm1, "Installing Minecraft…");
             var vm1 = await _bootstrap.DeployVm1Async(outputs, state, log, cancellationToken).ConfigureAwait(false);
             if (!vm1.Succeeded)
-                return SetupDeployResult.Fail(stage, vm1.Error ?? "VM1 bootstrap failed.");
+                return SetupDeployResult.Fail(stage, vm1.Error ?? "Installing Minecraft failed.");
             quarantineNotice = vm1.Warning;
             stage = SetupApplyStage.Vm1;
             PersistStage(state, stage);
@@ -267,12 +267,12 @@ public sealed class SetupDeployOrchestrator
         var running = await EnsureVm1RunningForSshAsync(outputs, state, log, cancellationToken)
             .ConfigureAwait(false);
         if (!running.Succeeded)
-            return SetupDeployResult.Fail(stage, running.Error ?? "VM1 start/wait failed.");
+            return SetupDeployResult.Fail(stage, running.Error ?? "Starting the game VM failed.");
 
         var guest = await _bootstrap.EnsureGuestRuntimeAsync(outputs, state, log, cancellationToken)
             .ConfigureAwait(false);
         if (!guest.Succeeded)
-            return SetupDeployResult.Fail(stage, guest.Error ?? "Guest runtime repair failed.");
+            return SetupDeployResult.Fail(stage, guest.Error ?? "Finishing game VM setup failed.");
 
         var rcon = "";
         var secret = await _bootstrap.PullRconSecretAsync(outputs, state, cancellationToken).ConfigureAwait(false);
@@ -308,14 +308,14 @@ public sealed class SetupDeployOrchestrator
 
         if (!SetupApplyStage.Reached(stage, SetupApplyStage.OsMeta))
         {
-            ReportProgress(progress, SetupApplyStage.OsMeta, "Writing shared storage…");
+            ReportProgress(progress, SetupApplyStage.OsMeta, "Saving to cloud storage…");
             log?.Report("Seeding Object Storage (budget/config.json, ledger/usage.json, meta/infra.json)…");
             var os = await SeedObjectStorageAsync(config, state, mcVersion, serverKind, log, cancellationToken)
                 .ConfigureAwait(false);
             if (!os.Succeeded)
             {
                 log?.Report("Object Storage seed failed: " + (os.Error ?? "unknown error"));
-                return SetupDeployResult.Fail(stage, os.Error ?? "Object Storage seed failed.");
+                return SetupDeployResult.Fail(stage, os.Error ?? "Saving to cloud storage failed.");
             }
 
             var icons = await TryRefreshDoorIconsAsync(outputs, log, cancellationToken).ConfigureAwait(false);
@@ -333,7 +333,7 @@ public sealed class SetupDeployOrchestrator
             {
                 return SetupDeployResult.Fail(
                     stage,
-                    applyIcon.Error ?? "Minecraft restart after identity seed failed.");
+                    applyIcon.Error ?? "Restarting Minecraft to apply the server name and icon failed.");
             }
 
             if (!string.IsNullOrWhiteSpace(applyIcon.Warning))
@@ -351,7 +351,7 @@ public sealed class SetupDeployOrchestrator
         var artifact = FunctionImageArtifact.Find();
         if (FunctionImageDeployer.ShouldAttempt(stage, artifact))
         {
-            ReportProgress(progress, SetupApplyStage.Function, "Spend-brake Function…");
+            ReportProgress(progress, SetupApplyStage.Function, "Setting up the $1 spending limit…");
             var fn = await FunctionImageDeployer.RunAsync(
                     _functionImages,
                     Tofu,
@@ -384,11 +384,11 @@ public sealed class SetupDeployOrchestrator
                 if (!promote.Succeeded)
                     return SetupDeployResult.Fail(
                         stage,
-                        promote.Error ?? "Parking reserved play IP after Function apply failed.");
+                        promote.Error ?? "Moving the play IP to the game VM failed.");
             }
         }
 
-        ReportProgress(progress, SetupApplyStage.ConfigWritten, "Saving local config…");
+        ReportProgress(progress, SetupApplyStage.ConfigWritten, "Saving settings on this PC…");
         var saved = LocalConfigStore.SaveConfig(config);
         if (!saved.Succeeded)
         {
@@ -404,11 +404,10 @@ public sealed class SetupDeployOrchestrator
 
         return SetupDeployResult.Ok(
             stage,
-            "Setup finished. Local config written. "
-            + (fnSkip is null
-                ? "Function image applied."
-                : "Function image skipped or second apply failed — see the deploy log. "
-                  + "Deploy / repair will retry when an Auth Token and pre-built image are present.")
+            (fnSkip is null
+                ? "Setup finished."
+                : "Setup finished, but setting up the $1 spending limit failed. See the deploy log. "
+                  + "Deploy / repair tries again when an Auth Token is saved.")
             + (string.IsNullOrWhiteSpace(quarantineNotice) ? "" : " " + quarantineNotice.Trim()),
             outputs,
             fnSkip);
@@ -422,7 +421,7 @@ public sealed class SetupDeployOrchestrator
     {
         var session = OciSession.TryCreate(outputs.ToLocalConfig(state, ""));
         if (!session.Succeeded || session.Value is null)
-            return ServiceResult.Fail(session.Error ?? "OCI session failed after apply.");
+            return ServiceResult.Fail(session.Error ?? "Could not connect to Oracle Cloud.");
 
         using var s = session.Value;
         var compute = new ComputeService(s);
@@ -430,12 +429,12 @@ public sealed class SetupDeployOrchestrator
         var vm1 = await compute.WaitForLifecycleAsync(outputs.Vm1InstanceId, "RUNNING", cancellationToken: cancellationToken)
             .ConfigureAwait(false);
         if (!vm1.Succeeded)
-            return ServiceResult.Fail(vm1.Error ?? "VM1 wait failed.");
+            return ServiceResult.Fail(vm1.Error ?? "Waiting for the game VM failed.");
 
         log?.Report("Waiting for door RUNNING…");
         var door = await compute.WaitForLifecycleAsync(outputs.DoorInstanceId, "RUNNING", cancellationToken: cancellationToken)
             .ConfigureAwait(false);
-        return door.Succeeded ? ServiceResult.Ok() : ServiceResult.Fail(door.Error ?? "Door wait failed.");
+        return door.Succeeded ? ServiceResult.Ok() : ServiceResult.Fail(door.Error ?? "Waiting for the doorbell VM failed.");
     }
 
     private static async Task<ServiceResult> EnsureVm1RunningForSshAsync(
@@ -446,14 +445,14 @@ public sealed class SetupDeployOrchestrator
     {
         var session = OciSession.TryCreate(outputs.ToLocalConfig(state, ""));
         if (!session.Succeeded || session.Value is null)
-            return ServiceResult.Fail(session.Error ?? "OCI session failed before guest repair.");
+            return ServiceResult.Fail(session.Error ?? "Could not connect to Oracle Cloud.");
 
         using var s = session.Value;
         var compute = new ComputeService(s);
         var life = await compute.GetLifecycleStateAsync(outputs.Vm1InstanceId, cancellationToken)
             .ConfigureAwait(false);
         if (!life.Succeeded)
-            return ServiceResult.Fail(life.Error ?? "Get VM1 lifecycle failed.");
+            return ServiceResult.Fail(life.Error ?? "Could not check the game VM status.");
 
         var current = (life.Value ?? "").ToUpperInvariant();
         if (current is "STOPPING")
@@ -463,7 +462,7 @@ public sealed class SetupDeployOrchestrator
                     outputs.Vm1InstanceId, "STOPPED", cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
             if (!stopped.Succeeded)
-                return ServiceResult.Fail(stopped.Error ?? "Wait STOPPED failed.");
+                return ServiceResult.Fail(stopped.Error ?? "Waiting for the game VM to stop failed.");
             current = "STOPPED";
         }
 
@@ -473,7 +472,7 @@ public sealed class SetupDeployOrchestrator
             var start = await compute.StartInstanceAsync(outputs.Vm1InstanceId, cancellationToken)
                 .ConfigureAwait(false);
             if (!start.Succeeded)
-                return ServiceResult.Fail(start.Error ?? "VM1 start failed.");
+                return ServiceResult.Fail(start.Error ?? "Starting the game VM failed.");
         }
 
         log?.Report("Waiting for VM1 RUNNING…");
@@ -482,7 +481,7 @@ public sealed class SetupDeployOrchestrator
             .ConfigureAwait(false);
         return running.Succeeded
             ? ServiceResult.Ok()
-            : ServiceResult.Fail(running.Error ?? "VM1 wait RUNNING failed.");
+            : ServiceResult.Fail(running.Error ?? "Waiting for the game VM to start failed.");
     }
 
     private static async Task<ServiceResult> SeedObjectStorageAsync(
@@ -495,7 +494,7 @@ public sealed class SetupDeployOrchestrator
     {
         var session = OciSession.TryCreate(config);
         if (!session.Succeeded || session.Value is null)
-            return ServiceResult.Fail(session.Error ?? "OCI session failed for Object Storage seed.");
+            return ServiceResult.Fail(session.Error ?? "Could not connect to Oracle Cloud.");
 
         using var s = session.Value;
         var os = new ObjectStorageService(s, config.ObjectStorage);
@@ -507,14 +506,14 @@ public sealed class SetupDeployOrchestrator
         if (!pubBudget.Succeeded)
         {
             log?.Report("Publish budget/config.json failed: " + (pubBudget.Error ?? "unknown"));
-            return ServiceResult.Fail(pubBudget.Error ?? "Publish budget failed.");
+            return ServiceResult.Fail(pubBudget.Error ?? "Saving the budget to cloud storage failed.");
         }
 
         var ledger = await budgetStore.SeedEmptyLedgerIfMissingAsync(cancellationToken).ConfigureAwait(false);
         if (!ledger.Succeeded)
         {
             log?.Report("Seed ledger/usage.json failed: " + (ledger.Error ?? "unknown"));
-            return ServiceResult.Fail(ledger.Error ?? "Seed ledger failed.");
+            return ServiceResult.Fail(ledger.Error ?? "Saving the hours record failed.");
         }
 
         var pubMeta = await infraStore.PublishFromLocalAsync(
@@ -526,7 +525,7 @@ public sealed class SetupDeployOrchestrator
         if (!pubMeta.Succeeded)
         {
             log?.Report("Publish meta/infra.json failed: " + (pubMeta.Error ?? "unknown"));
-            return ServiceResult.Fail(pubMeta.Error ?? "Publish meta/infra.json failed.");
+            return ServiceResult.Fail(pubMeta.Error ?? "Saving server details failed.");
         }
 
         var chatStore = new ChatMessagesStore(os, config.ObjectStorage.Prefixes);
@@ -540,7 +539,7 @@ public sealed class SetupDeployOrchestrator
         if (!seedChat.Succeeded)
         {
             log?.Report("Seed messages/chat.json failed: " + (seedChat.Error ?? "unknown"));
-            return ServiceResult.Fail(seedChat.Error ?? "Seed messages/chat.json failed.");
+            return ServiceResult.Fail(seedChat.Error ?? "Saving chat messages failed.");
         }
 
         log?.Report("Published budget/config.json, ledger/usage.json, meta/infra.json, and messages/chat.json.");
@@ -553,7 +552,7 @@ public sealed class SetupDeployOrchestrator
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(outputs.DoorSshHost))
-            return ServiceResult.Fail("Door SSH host missing; cannot refresh doorbell icons.");
+            return ServiceResult.Fail("Doorbell VM SSH address missing; can't update the offline icons.");
 
         var port = outputs.DoorHttpPort > 0 ? outputs.DoorHttpPort : 8080;
         try

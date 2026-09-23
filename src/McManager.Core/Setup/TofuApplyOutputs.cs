@@ -119,7 +119,7 @@ public sealed class TofuApplyOutputs
         }
         catch (Exception ex)
         {
-            return ServiceResult<TofuApplyOutputs>.Fail($"Failed to parse tofu outputs: {ex.Message}");
+            return ServiceResult<TofuApplyOutputs>.Fail($"Could not read the results from Oracle Cloud: {ex.Message}");
         }
     }
 

@@ -34,10 +34,9 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     public const string MinecraftEulaUrl = "https://aka.ms/MinecraftEULA";
 
     public const string CapacityWaitExplanation =
-        "Always Free A1 Flex host capacity is unavailable in this region right now. The game server was not created.\n\n"
-        + "Other Always Free resources from this Setup (compartment, network, doorbell, reserved IP) may already exist. Retry reuses them; it does not start from scratch.\n\n"
-        + "Try again now, or auto-retry every 5 minutes while Setup stays open. Auto-retry checks capacity first and stays silent on later failures.\n\n"
-        + "Close returns to Setup so you can pause or resume later.";
+        "Oracle has no free Ampere capacity in this region right now, so the game VM was not created. Anything already created is kept and reused when you retry.\n\n"
+        + "Try again now, or auto-retry every 5 minutes while Setup stays open. Auto-retry checks capacity first and stays quiet when it fails.\n\n"
+        + "Close returns to Setup so you can retry later.";
 
     public const string DeployDurationHint =
         "Often 10–25 minutes. Leave this window open until it finishes.";
@@ -45,37 +44,37 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     public const long PackDropMaxBytes = 512L * 1024 * 1024;
 
     public const string AlwaysFreeStayHelp =
-        "This product uses an Ampere A1 VM for the game server plus a micro VM for the door VM. These are included in Oracle's Always Free offering. There is no paid mode. A1 capacity can be unavailable in the region.";
+        "MCSTool creates an Ampere game VM and a small doorbell VM. Both are part of Oracle's Always Free offer. There is no paid mode.";
 
     public const string IncompleteDeployWarning =
-        "If the server deployment is interrupted after the server VM is created but before the Minecraft server is started, the server VM will NOT turn off automatically. If you selected the 4 OCPU / 24 GB Memory VM shape, make sure to restart and finish the deployment or turn off the VM manually in the OCI Console. If the VM is left on for over 375 hours, your account will begin to be charged.";
+        "If Deploy stops after the game VM is created but before Minecraft starts, the game VM stays on. On the 4 OCPU / 24 GB size, finish Deploy or stop the VM in the Oracle Cloud Console. After 375 hours on, Oracle starts charging your account.";
 
     public const string AlwaysFreeResidualHelp =
-        "A $1 monthly budget is a last-resort brake that stops the game server. Oracle may still bill a small residual (~$1–$2) after that brake fires. This is not a hard $0 guarantee.";
+        "If you go past the free monthly usage, the $1 spending limit stops the game VM. It is not instant, so you might see a $1–$2 charge. This is not a $0 guarantee.";
 
     public const string AlwaysFreeCapacityHelp =
-        "If A1 Flex is out of capacity, the deployment may stall. You can either try deployment again, start an auto-retry every 5 minutes, or resume later. If you close the setup wizard during deployment, your progress is saved and you are able to begin deployment again later.";
+        "Oracle sometimes has no free Ampere capacity in a region. You can retry right away, auto-retry every 5 minutes, or come back later. If you close Setup, your progress is saved.";
 
     public const string AlwaysFreeLeadCopy =
-        "MCSTool uses Oracle Always Free so the target is $0. Cost controls turn on at deploy. Oracle’s free-tier limits can change; confirm tenancies still get 1,500 OCPU hours and 9,000 GB-hours per month for A1 Flex.";
+        "MCSTool runs on Oracle Always Free, so the goal is $0. Cost controls turn on when you deploy. Oracle can change its free limits; check that Ampere VMs still get 1,500 CPU-hours and 9,000 memory-hours per month.";
 
     public const string OciProfileHelp =
-        "Region and account details come from ~/.oci/config on this PC. Prefer the tenancy home region so Always Free A1 and Micro eligibility apply.";
+        "Use your account's home region so both VMs qualify for Always Free.";
 
     public const string AlertEmailHelp =
-        "Oracle emails the $1 last-resort budget alert here. Use a comma between addresses if more than one.";
+        "Oracle sends the $1 budget alert here. Separate more than one address with commas.";
 
     public const string SshKeyHelp =
-        "Create a new key on this PC, or import an existing public key. The private key stays on disk and is not saved in Setup’s resume file. This is not the Oracle API key. Default is one key for both VMs. You can optionally import a different key for the door.";
+        "Create a new key on this PC, or import an existing public key. The private key stays on this PC. This is not the Oracle API key. By default both VMs use one key. You can import a different key for the doorbell VM.";
 
     public const string DoorSshHelp =
-        "Game VM and door can use different keys. The door public key is installed at deploy. Advanced can still change local paths later without installing a new key on the VM.";
+        "The doorbell VM gets its own public key at Deploy. You can change which key file this PC uses later in Advanced.";
 
     public const string VanillaHelp =
         "Paper is the vanilla-like server (better multiplayer).";
 
     public const string ModdedHelp =
-        "Choose a local .mrpack or server-pack zip you already exported. There is no pack search.";
+        "Choose a modpack file you already downloaded. There is no modpack search.";
 
     public const string PaperHelp =
         "Paper is the vanilla-like server (better multiplayer).";
@@ -83,13 +82,13 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     public const string PackFileHelp = SetupPackImport.PackFileNoviceHelp;
 
     public const string EulaHelp =
-        "The installer writes eula.txt only if this is checked. This product will not auto-accept the EULA for you.";
+        "MCSTool accepts the EULA on the server only if you check this.";
 
     public const string AuthTokenHelp =
-        "Needed to push the spend-brake Function image. Paste it and choose Store token. Saved in Windows Credential Manager, not in the Setup resume file.";
+        "Needed to set up the $1 spending limit. Paste it and choose Store token. It is saved in Windows Credential Manager.";
 
     public const string AdminCidrHelp =
-        "Oracle’s cloud firewall allowlist.";
+        "Your public IP is added to the whitelist so you can play and manage the server. Use /32 for a single address.";
 
     public const string ShapeDefaultHelp =
         "More room for players and later mods. Uses Always Free hours faster while the server is on.";
@@ -98,16 +97,16 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         "Smaller Always Free size. Vanilla (Paper) can often stay on all month; less room if you add mods or more players later.";
 
     public const string HeapHelp =
-        "RAM allocated to the Minecraft server, not the VM size. MCSTool estimates a size from this server; you can change it. 8G still leaves about 4 GB for the OS. On the 24 GB size you can also pick 10G or 12G for heavier packs.";
+        "Memory for Minecraft, not the whole VM. MCSTool suggests a value; you can change it. 8G still leaves about 4 GB for the system. On the 24 GB size you can also pick 10G or 12G for heavier modpacks.";
 
     public const string HeapGuessCapNote =
-        "The 12 GB size is tight for this pack.";
+        "The 12 GB size is tight for this modpack.";
 
     public const string IdentityHelp =
-        "Players see the name, description, and in-game icon in Minecraft’s server list while the game is running. Each box is one list line (59 characters). Select text and apply colors, or paste a motd= string from a generator. Hex colors need Paper/Spigot 1.16+. You can change this later on the Server tab.";
+        "Players see the name, description, and icon in Minecraft’s server list. Each box is one line (59 characters). Hex colors need Minecraft 1.16 or newer. You can change this later on the Server tab.";
 
     public const string IconStatesHelp =
-        "In-game is the color icon while Minecraft is up. Offline, Starting, and Unavailable are greyscale copies with overlays for the doorbell list while the server is off, waking, or cannot start (daily hours or spend-brake).";
+        "In-game is the color icon while Minecraft is running. Offline, Starting, and Unavailable are grey copies shown while the server is off, waking up, or can't start (out of hours or $1 spending limit).";
 
     private static readonly TimeSpan LogFlushPeriod = TimeSpan.FromMilliseconds(250);
     private static readonly TimeSpan ElapsedTickPeriod = TimeSpan.FromSeconds(1);
@@ -387,7 +386,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     public string AuthTokenStoredDisplay =>
         AuthTokenStored
-            ? $"Stored in Credential Manager: yes ({WindowsCredentialStore.OcirTarget})"
+            ? "Stored in Credential Manager: yes"
             : "Stored in Credential Manager: no";
 
     public SetupWizardViewModel(
@@ -488,8 +487,8 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
     public string DeployToolTip =>
         IsDeployLocked
-            ? "Deploy already started or finished on this page. Close, then use Advanced → Deploy / repair infrastructure to resume or re-run."
-            : "Creates Always Free resources. State is under LocalAppData, not the repo terraform.tfvars.";
+            ? "Deploy already started or finished. Close, then use Advanced → Deploy / repair to resume or run it again."
+            : "Create the server in your Oracle account.";
 
     public bool ShowReplaceConfigConfirm => HasExistingManageConfig && !IsTofuDryRun;
 
@@ -500,17 +499,17 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             var selected = _profiles.FirstOrDefault(p =>
                 string.Equals(p.Name, OciProfile, StringComparison.OrdinalIgnoreCase));
             return selected?.DetailsText
-                ?? "Select a profile to confirm region, tenancy, and user from ~/.oci/config.";
+                ?? "Select a profile to confirm region, account, and user from ~/.oci/config.";
         }
     }
 
     public string CreateResourcesConfirmText =>
         IsTofuDryRun
             ? "I understand this is a dry-run (no Oracle resources and config.local.json will not be written)."
-            : $"Create the Always Free game server ({Vm1ShapeChoice.Format(Vm1Ocpus, Vm1MemoryGb)}), doorbell, and reserved play IP in this Oracle account.";
+            : $"Create the Always Free game VM ({Vm1ShapeChoice.Format(Vm1Ocpus, Vm1MemoryGb)}), doorbell VM, and play IP in this Oracle account.";
 
     public string AutoRetryBannerText =>
-        "Auto-retrying every 5 minutes until A1 capacity is available. Failures stay silent. Use Pause auto-retry to stop.";
+        "Auto-retrying every 5 minutes until free Ampere capacity is available. Failed tries stay quiet. Use Pause auto-retry to stop.";
 
     public bool IsStepAlwaysFree => CurrentStep == SetupWizardState.StepAlwaysFree;
     public bool IsStepOci => CurrentStep == SetupWizardState.StepOci;
@@ -729,15 +728,15 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         SetupWizardState.StepSsh => "SSH key",
         SetupWizardState.StepGame => "Minecraft",
         SetupWizardState.StepIdentity => "Name and icon",
-        SetupWizardState.StepEula => "Mojang EULA",
+        SetupWizardState.StepEula => "Minecraft EULA",
         SetupWizardState.StepAuthToken => "Auth Token",
-        SetupWizardState.StepSummary => ShowDeploySuccess ? "Deployment Complete" : "Review and deploy",
+        SetupWizardState.StepSummary => ShowDeploySuccess ? "Setup complete" : "Review and deploy",
         _ => "Setup",
     };
 
     public string StepSubtitle =>
         ShowDeploySuccess
-            ? "Close this wizard to continue to the Manager app."
+            ? "Close Setup to open MCSTool."
             : $"Step {CurrentStep + 1} of {SetupWizardState.StepCount}";
 
     public string PlanSummaryText => InfraPlanSummary.Build(ToState());
@@ -766,7 +765,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             }
             else if (ServerTypeIsModded && !string.IsNullOrWhiteSpace(PackPath) && !File.Exists(PackPath))
             {
-                PackBlockReason = "The pack file is missing. Choose it again.";
+                PackBlockReason = "The modpack file is missing. Choose it again.";
                 PackCanContinue = false;
                 PackConfirmed = false;
             }
@@ -812,7 +811,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     {
         var saved = SetupWizardStore.Save(ToState());
         if (!saved.Succeeded)
-            StatusMessage = saved.Error ?? "Failed to save resume state.";
+            StatusMessage = saved.Error ?? "Failed to save Setup progress.";
     }
 
     public void PrepareToClose()
@@ -843,13 +842,13 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             return;
 
         IsBusy = true;
-        StatusMessage = forDoor ? "Generating door ed25519 key…" : "Generating ed25519 key…";
+        StatusMessage = forDoor ? "Generating doorbell VM key…" : "Generating SSH key…";
         try
         {
             var result = await SshKeyHelper.GenerateEd25519Async().ConfigureAwait(true);
             if (!result.Succeeded || result.Value is null)
             {
-                StatusMessage = result.Error ?? "SSH generate failed.";
+                StatusMessage = result.Error ?? "Could not create the SSH key.";
                 return;
             }
 
@@ -864,7 +863,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
                 ApplySsh(result.Value);
             }
 
-            StatusMessage = $"Created {result.Value.Path} (private key stays on disk).";
+            StatusMessage = $"Created {result.Value.Path}. The private key stays on this PC.";
             Persist();
         }
         finally
@@ -880,11 +879,11 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
         var path = await _picker.OpenFileAsync(new FilePickRequest
         {
-            Title = "Choose a modpack file (.mrpack or server-pack zip)",
+            Title = "Choose a modpack (.mrpack or .zip)",
             Filters =
             [
-                new FileTypeFilter("Modpack archives", ".mrpack", ".zip"),
-                new FileTypeFilter("Modrinth pack", ".mrpack"),
+                new FileTypeFilter("Modpack files", ".mrpack", ".zip"),
+                new FileTypeFilter("Modrinth .mrpack", ".mrpack"),
                 new FileTypeFilter("Zip archives", ".zip"),
                 new FileTypeFilter("All files", ".*"),
             ],
@@ -917,7 +916,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            StatusMessage = "Could not save the dropped pack: " + ex.Message;
+            StatusMessage = "Could not save the dropped modpack: " + ex.Message;
             return;
         }
 
@@ -984,7 +983,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         _operatorSkipTerms = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         _operatorKeepTerms = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         _packLooksLikeLauncherInstance = false;
-        StatusMessage = "Pack cleared. Choose a .mrpack or server-pack zip.";
+        StatusMessage = "Modpack cleared. Choose a .mrpack or .zip.";
         ApplySuggestedJvmHeap();
         Persist();
     }
@@ -1028,9 +1027,9 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             await PrefetchIdentityCatalogsAsync(result.Value).ConfigureAwait(true);
             StatusMessage = result.Value.CanContinue
                 ? (result.Value.NeedsAssistedReview
-                    ? "Review unknown jars, then confirm before continuing."
-                    : "Review the pack summary, then confirm before continuing.")
-                : (result.Value.BlockReason ?? "This pack cannot be installed.");
+                    ? "Review unknown mods, then confirm before continuing."
+                    : "Review the modpack summary, then confirm before continuing.")
+                : (result.Value.BlockReason ?? "This modpack cannot be installed.");
             Persist();
         }
         catch (Exception ex)
@@ -1038,7 +1037,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             PackCanContinue = false;
             PackConfirmed = false;
             PackOverrideListWarning = "";
-            PackBlockReason = "Analyze failed: " + ex.Message;
+            PackBlockReason = "Checking the modpack failed: " + ex.Message;
             StatusMessage = PackBlockReason;
         }
         finally
@@ -1055,7 +1054,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
         var path = await _picker.OpenFileAsync(new FilePickRequest
         {
-            Title = forDoor ? "Import door OpenSSH public key" : "Import OpenSSH public key",
+            Title = forDoor ? "Import doorbell VM public key" : "Import SSH public key",
             Filters =
             [
                 new FileTypeFilter("Public keys", ".pub"),
@@ -1217,14 +1216,14 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             var dataDir = LocalConfigStore.TryFindDataDirectory();
             if (string.IsNullOrWhiteSpace(dataDir))
             {
-                StatusMessage = "Could not find Manager data directory for the derived pack.";
+                StatusMessage = "Could not find the MCSTool data folder for your version fixes.";
                 return;
             }
 
             var source = string.IsNullOrWhiteSpace(PackSourcePath) ? PackPath : PackSourcePath;
             if (!File.Exists(source))
             {
-                StatusMessage = "Original pack file is missing. Choose the pack again.";
+                StatusMessage = "The original modpack file is missing. Choose it again.";
                 return;
             }
 
@@ -1240,12 +1239,12 @@ public sealed partial class SetupWizardViewModel : ObservableObject
                 Path.GetFileName(source));
             if (!build.Succeeded || string.IsNullOrWhiteSpace(build.Value))
             {
-                StatusMessage = build.Error ?? "Could not build the derived pack.";
+                StatusMessage = build.Error ?? "Could not apply your version fixes to the modpack.";
                 return;
             }
 
             PackPath = build.Value;
-            StatusMessage = "Derived pack saved for install and Download pack.";
+            StatusMessage = "Saved the modpack with your version fixes.";
             Persist();
             return;
         }
@@ -1263,7 +1262,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
             MinecraftVersion,
             retainDir);
         if (!retained.Succeeded)
-            StatusMessage = retained.Error ?? "Could not keep a local copy of the pack.";
+            StatusMessage = retained.Error ?? "Could not keep a local copy of the modpack.";
     }
 
     public void StoreAuthToken()
@@ -1278,7 +1277,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         AuthTokenInput = "";
         AuthTokenStored = WindowsCredentialStore.Exists();
         StatusMessage = deleted.Succeeded
-            ? $"Removed {WindowsCredentialStore.OcirTarget} from Credential Manager."
+            ? "Removed the Auth Token from Credential Manager."
             : deleted.Error ?? "Could not delete stored token.";
         Persist();
     }
@@ -1336,7 +1335,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     }
 
     public async Task CopyPlanSummaryAsync() =>
-        await CopyToClipboardAsync(PlanSummaryText, "Copied plan summary.").ConfigureAwait(true);
+        await CopyToClipboardAsync(PlanSummaryText, "Copied summary.").ConfigureAwait(true);
 
     public async Task CopyDeployLogAsync()
     {
@@ -1408,7 +1407,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
                     StatusMessage = "Auto-retrying every 5 minutes.";
                 else
                 {
-                    StatusMessage = "Always Free A1 capacity is unavailable.";
+                    StatusMessage = "Oracle's free Ampere capacity is unavailable right now.";
                     promptCapacity = true;
                 }
             }
@@ -1699,7 +1698,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         }
         else
         {
-            StatusMessage = detected.Error ?? "Could not detect public IP. Enter it on the summary step.";
+            StatusMessage = detected.Error ?? "Could not detect your public IP. Enter it on the Review step.";
         }
     }
 
@@ -1717,7 +1716,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
 
         AuthTokenInput = "";
         AuthTokenStored = true;
-        StatusMessage = $"Auth Token stored in Windows Credential Manager ({WindowsCredentialStore.OcirTarget}). Not written to wizard JSON.";
+        StatusMessage = "Auth Token stored in Windows Credential Manager.";
     }
 
     private void PrimeVersionCatalogFixtures()
@@ -1746,7 +1745,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            _mojangCatalogNotes = $"Version catalog failed: {ex.Message}";
+            _mojangCatalogNotes = $"Could not load Minecraft versions: {ex.Message}";
         }
 
         try
@@ -1757,7 +1756,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            _paperCatalogNotes = $"Paper version list failed: {ex.Message}";
+            _paperCatalogNotes = $"Could not load Paper versions: {ex.Message}";
         }
 
         RebuildVersionList(keepSelection: true);
@@ -1767,7 +1766,7 @@ public sealed partial class SetupWizardViewModel : ObservableObject
     {
         if (ServerTypeIsModded)
         {
-            VersionCatalogNotes = "Minecraft version comes from the pack you import.";
+            VersionCatalogNotes = "Minecraft version comes from the modpack you choose.";
             OnPropertyChanged(nameof(VersionIds));
             return;
         }

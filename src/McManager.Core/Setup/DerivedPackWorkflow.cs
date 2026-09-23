@@ -27,12 +27,12 @@ public static class DerivedPackWorkflow
 
         var analysisResult = ManualServerPackAnalyzer.AnalyzeFile(sourceZipPath);
         if (!analysisResult.Succeeded || analysisResult.Value is null)
-            return ServiceResult<string>.Fail(analysisResult.Error ?? "Could not analyze the pack.");
+            return ServiceResult<string>.Fail(analysisResult.Error ?? "Could not check the modpack.");
 
         var analysis = analysisResult.Value;
         if (!DerivedPackIdentity.NeedsIdentityConfirm(analysis.Kind))
         {
-            return ServiceResult<string>.Fail("This pack does not need a derived manifest.");
+            return ServiceResult<string>.Fail("This modpack doesn't need version fixes.");
         }
 
         var fields = new DerivedPackFields(mc, loaderId, loaderVer, javaMajor);
@@ -43,7 +43,7 @@ public static class DerivedPackWorkflow
             dataDirectory,
             originalFileName ?? Path.GetFileName(sourceZipPath));
         if (!build.Succeeded || string.IsNullOrWhiteSpace(build.Value))
-            return ServiceResult<string>.Fail(build.Error ?? "Could not build the derived pack.");
+            return ServiceResult<string>.Fail(build.Error ?? "Could not apply your version fixes to the modpack.");
 
         var retain = ImportedPackArchiveStore.Retain(
             build.Value,
@@ -53,7 +53,7 @@ public static class DerivedPackWorkflow
             mc,
             dataDirectory);
         if (!retain.Succeeded)
-            return ServiceResult<string>.Fail(retain.Error ?? "Could not retain the derived pack.");
+            return ServiceResult<string>.Fail(retain.Error ?? "Could not save the modpack with your version fixes.");
 
         return ServiceResult<string>.Ok(build.Value);
     }

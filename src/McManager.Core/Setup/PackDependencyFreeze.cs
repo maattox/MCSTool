@@ -54,7 +54,7 @@ public static class PackDependencyFreeze
                 || jar.AutomaticSkipReason == PackFileSkipReason.None)
             {
                 skipReason[jar.Path] = PackFileSkipReason.OperatorSkip;
-                skipDetail[jar.Path] = "operator skip";
+                skipDetail[jar.Path] = "You marked it";
             }
         }
 
@@ -150,7 +150,7 @@ public static class PackDependencyFreeze
 
             if (rescued)
             {
-                var why = "required by " + DisplayName(keeper!);
+                var why = "Required by " + DisplayName(keeper!);
                 mustKeep.Add(new PackReviewItem(
                     jar.Path,
                     why,
@@ -230,11 +230,11 @@ public static class PackDependencyFreeze
     public static string ReasonLabel(PackFileSkipReason reason) =>
         reason switch
         {
-            PackFileSkipReason.OverrideList => "exclude list",
-            PackFileSkipReason.PackDeclared => "env.server",
-            PackFileSkipReason.InJarMetadata => "in-jar client",
-            PackFileSkipReason.OperatorSkip => "operator skip",
-            _ => "skipped",
+            PackFileSkipReason.OverrideList => "Known client-only mod",
+            PackFileSkipReason.PackDeclared => "Pack says client-only",
+            PackFileSkipReason.InJarMetadata => "Mod says client-only",
+            PackFileSkipReason.OperatorSkip => "You marked it",
+            _ => "Skipped",
         };
 
     private static string DisplayName(PackJarRecord jar)

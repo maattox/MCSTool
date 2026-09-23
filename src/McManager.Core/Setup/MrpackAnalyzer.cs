@@ -183,7 +183,7 @@ public static class MrpackAnalyzer
         if (MinecraftJavaFloor.TryGet(minecraftVersion, out var mappedJava))
             javaMajor = mappedJava;
         else
-            warnings.Add($"Could not map Minecraft {minecraftVersion} to a Java major (blueprint §9.1).");
+            warnings.Add($"Could not tell which Java version Minecraft {minecraftVersion} needs.");
 
         var names = zipEntryNames ?? [];
         var lists = matcher ?? DefaultMatcher.Value;
@@ -251,11 +251,11 @@ public static class MrpackAnalyzer
                 automaticSkipReason: autoSkip,
                 unclearBlocksInstall: unclearBlocks,
                 skipDetail: autoSkip == PackFileSkipReason.PackDeclared
-                    ? "env.server"
+                    ? "Pack says client-only"
                     : autoSkip == PackFileSkipReason.OverrideList
-                        ? "exclude list"
+                        ? "Known client-only mod"
                         : autoSkip == PackFileSkipReason.InJarMetadata
-                            ? "in-jar client"
+                            ? "Mod says client-only"
                             : null));
         }
 

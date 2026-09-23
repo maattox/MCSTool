@@ -69,11 +69,11 @@ public static class ImportedPackArchiveStore
         string dataDirectory)
     {
         if (string.IsNullOrWhiteSpace(sourceArchivePath))
-            return ServiceResult<string>.Fail("No pack archive path was provided to retain.");
+            return ServiceResult<string>.Fail("No modpack file was provided to keep.");
         if (!File.Exists(sourceArchivePath))
             return ServiceResult<string>.Fail($"File not found: {sourceArchivePath}");
         if (string.IsNullOrWhiteSpace(dataDirectory))
-            return ServiceResult<string>.Fail("No Manager data directory was provided for the retained pack archive.");
+            return ServiceResult<string>.Fail("No MCSTool data folder was provided for the saved modpack copy.");
 
         try
         {
@@ -99,7 +99,7 @@ public static class ImportedPackArchiveStore
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            return ServiceResult<string>.Fail($"Cannot retain the original pack archive: {ex.Message}");
+            return ServiceResult<string>.Fail($"Cannot keep a copy of the original modpack: {ex.Message}");
         }
     }
 
