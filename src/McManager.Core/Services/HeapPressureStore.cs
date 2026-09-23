@@ -79,7 +79,7 @@ public sealed class HeapPressureStore
         if (doc.Version > HeapPressureDocument.DocumentVersion)
         {
             parseWarning =
-                $"{_objectName} is newer than this Manager supports "
+                $"{_objectName} is newer than this version of MCSTool supports "
                 + $"(version={doc.Version}; max={HeapPressureDocument.DocumentVersion}).";
             return ServiceResult<HeapPressureReadResult>.Ok(new HeapPressureReadResult
             {
@@ -121,7 +121,7 @@ public sealed class HeapPressureStore
         if (document.Version > HeapPressureDocument.DocumentVersion)
         {
             return ServiceResult.Fail(
-                $"{_objectName} version {document.Version} is newer than this Manager can write "
+                $"{_objectName} version {document.Version} is newer than this version of MCSTool can write "
                 + $"(max={HeapPressureDocument.DocumentVersion}).");
         }
 

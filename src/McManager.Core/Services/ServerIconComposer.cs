@@ -51,7 +51,7 @@ public static class ServerIconComposer
     {
         var source = sourcePng is { Length: > 0 } ? sourcePng : LoadResource(DefaultIconResource);
         if (source is null || source.Length == 0)
-            return ServiceResult<ServerIconSet>.Fail("Default server icon is missing from this Manager build.");
+            return ServiceResult<ServerIconSet>.Fail("Default server icon is missing. Reinstall MCSTool.");
 
         if (sourcePng is { Length: > 0 })
         {

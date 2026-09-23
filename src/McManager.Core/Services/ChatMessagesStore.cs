@@ -82,7 +82,7 @@ public sealed class ChatMessagesStore
         if (doc.Version > ChatMessagesDocument.DocumentVersion)
         {
             return ServiceResult<ChatMessagesReadResult>.Fail(
-                $"{_objectName} is newer than this Manager supports "
+                $"{_objectName} is newer than this version of MCSTool supports "
                 + $"(version={doc.Version}; max={ChatMessagesDocument.DocumentVersion}).");
         }
 
@@ -238,7 +238,7 @@ public sealed class ChatMessagesStore
         if (document.Version > ChatMessagesDocument.DocumentVersion)
         {
             return ServiceResult<ChatMessagesPublishResult>.Fail(
-                $"{_objectName} version {document.Version} is newer than this Manager can write "
+                $"{_objectName} version {document.Version} is newer than this version of MCSTool can write "
                 + $"(max={ChatMessagesDocument.DocumentVersion}).");
         }
 

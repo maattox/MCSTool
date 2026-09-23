@@ -37,9 +37,9 @@ public sealed class ActionBannerTests
 
     [Theory]
     [InlineData("Copied play IP.", ActionBannerSeverity.Success, false)]
-    [InlineData("Starting the game server…", ActionBannerSeverity.Progress, true)]
+    [InlineData("Starting the server…", ActionBannerSeverity.Progress, true)]
     [InlineData("Wipe failed.", ActionBannerSeverity.Error, true)]
-    [InlineData("VM1 is STOPPED — Wipe world requires RUNNING.", ActionBannerSeverity.Warning, true)]
+    [InlineData("Wipe world requires the server to be running (game VM is STOPPED).", ActionBannerSeverity.Warning, true)]
     public void ShouldPersist_matches_severity_and_length(
         string message,
         ActionBannerSeverity severity,
@@ -89,27 +89,52 @@ public sealed class ActionBannerTests
     public void InferSeverity_wipe_while_stopped_is_warning()
     {
         var msg =
-            "VM1 is 'STOPPED' — Wipe world requires RUNNING. "
-            + "Start the game VM first, then wipe. Cloud backups stay until you delete them separately.";
+            "Wipe world requires the server to be running (game VM is STOPPED). "
+            + "Start the server first, then wipe. Cloud backups stay until you delete them separately.";
         Assert.Equal(ActionBannerSeverity.Warning, ActionBanner.InferSeverity(msg));
         Assert.True(ActionBanner.ShouldPersist(msg, ActionBannerSeverity.Warning));
     }
 
     [Theory]
-    [InlineData("Wiping live world via SSH…", ActionBannerSeverity.Progress)]
+    [InlineData("Wiping live world…", ActionBannerSeverity.Progress)]
     [InlineData("Wipe cancelled.", ActionBannerSeverity.Success)]
     [InlineData("List failed.", ActionBannerSeverity.Error)]
-    [InlineData("Local config is missing.", ActionBannerSeverity.Error)]
+    [InlineData("This server's settings are missing.", ActionBannerSeverity.Error)]
     [InlineData("Copied play IP.", ActionBannerSeverity.Success)]
-    [InlineData("Shared backup storage isn't configured.", ActionBannerSeverity.Warning)]
+    [InlineData("Cloud backup storage isn't configured.", ActionBannerSeverity.Warning)]
+    [InlineData("Could not connect to Oracle Cloud: timeout", ActionBannerSeverity.Error)]
+    [InlineData("Starting the doorbell VM and moving the play IP…", ActionBannerSeverity.Progress)]
+    [InlineData("The $1 spending limit blocked Start.", ActionBannerSeverity.Warning)]
+    [InlineData("Saving the whitelist to cloud storage failed: 409", ActionBannerSeverity.Error)]
+    [InlineData("Replace world requires the server to be running (game VM is STOPPED).", ActionBannerSeverity.Warning)]
+    [InlineData("Some MCSTool files were not found. Reinstall MCSTool.", ActionBannerSeverity.Warning)]
+    [InlineData("Oracle's free Ampere capacity is unavailable right now.", ActionBannerSeverity.Error)]
+    [InlineData("Saved server details. Updated to the current format.", ActionBannerSeverity.Success)]
+    [InlineData("Emergency power doesn't move the play IP. Use Start and Stop in the sidebar for normal use.", ActionBannerSeverity.Success)]
+    [InlineData("Idle settings missing from cloud storage — showing this PC's settings.", ActionBannerSeverity.Error)]
     public void InferSeverity_common_copy(string message, ActionBannerSeverity expected) =>
+        Assert.Equal(expected, ActionBanner.InferSeverity(message));
+
+    public static TheoryData<string, ActionBannerSeverity> CoreConstantCopy => new()
+    {
+        { ProgressDockUx.ChangePackPickStatus, ActionBannerSeverity.Success },
+        { ProgressDockUx.ChangePackReviewStatus, ActionBannerSeverity.Success },
+        { ProgressDockUx.ChangePackBuildFallback, ActionBannerSeverity.Progress },
+        { ProgressDockUx.ChangePackInstallFallback, ActionBannerSeverity.Progress },
+        { McManager.Core.Services.MinecraftConsoleRemote.RconUnreachableHint, ActionBannerSeverity.Error },
+        { McManager.Core.Usage.OversizedWorldBackupUx.StartVmFirstMessage, ActionBannerSeverity.Warning },
+    };
+
+    [Theory]
+    [MemberData(nameof(CoreConstantCopy))]
+    public void InferSeverity_core_constants(string message, ActionBannerSeverity expected) =>
         Assert.Equal(expected, ActionBanner.InferSeverity(message));
 
     [Fact]
     public void ShowInferred_uses_infer()
     {
         var banner = new ActionBanner();
-        banner.ShowInferred("Wiping live world via SSH…");
+        banner.ShowInferred("Wiping live world…");
         Assert.Equal(ActionBannerSeverity.Progress, banner.Severity);
         Assert.True(banner.IsVisible);
     }

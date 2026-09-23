@@ -79,7 +79,7 @@ public sealed class OversizedWorldBackupStore
         if (doc.Version > OversizedWorldBackupDocument.DocumentVersion)
         {
             parseWarning =
-                $"{_objectName} is newer than this Manager supports "
+                $"{_objectName} is newer than this version of MCSTool supports "
                 + $"(version={doc.Version}; max={OversizedWorldBackupDocument.DocumentVersion}).";
             return ServiceResult<OversizedWorldBackupReadResult>.Ok(new OversizedWorldBackupReadResult
             {
@@ -121,7 +121,7 @@ public sealed class OversizedWorldBackupStore
         if (document.Version > OversizedWorldBackupDocument.DocumentVersion)
         {
             return ServiceResult.Fail(
-                $"{_objectName} version {document.Version} is newer than this Manager can write "
+                $"{_objectName} version {document.Version} is newer than this version of MCSTool can write "
                 + $"(max={OversizedWorldBackupDocument.DocumentVersion}).");
         }
 
