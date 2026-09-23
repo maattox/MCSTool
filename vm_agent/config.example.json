@@ -28,7 +28,7 @@
   "lease_stale_grace_seconds": 900,
   "state_path": "/var/lib/mc-manager/idle_state.json",
   "object_storage_enabled": true,
-  "object_storage_namespace": "axro3tcqntey",
+  "object_storage_namespace": "<OBJECT_STORAGE_NAMESPACE>",
   "object_storage_bucket": "minecraft-shared-data",
   "object_storage_soft_cap_gb": 9.5,
   "backup_enabled": true,

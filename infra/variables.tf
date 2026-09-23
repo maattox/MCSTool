@@ -98,6 +98,14 @@ variable "vm1_memory_gb" {
   type        = number
   description = "VM1 A1 Flex memory in GB. Setup picker writes 12 (with 2 OCPU) or 24 (with 4); default 24."
   default     = 24
+
+  validation {
+    condition = (
+      (var.vm1_ocpus == 2 && var.vm1_memory_gb == 12)
+      || (var.vm1_ocpus == 4 && var.vm1_memory_gb == 24)
+    )
+    error_message = "vm1_ocpus / vm1_memory_gb must be 2/12 or 4/24 (Always Free)."
+  }
 }
 
 variable "bucket_name" {
