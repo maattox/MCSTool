@@ -1,10 +1,10 @@
 # Setup guide
 
-This guide explains how to set up your Minecraft server with **MCSTool**, hosted on Oracle Cloud Infrastructure (OCI) using Always Free resources, and managed from one desktop app.
+This guide explains how to set up a Minecraft server with **MCSTool**. The server runs on Oracle Cloud Infrastructure (OCI) Always Free resources, and you manage it from one desktop app.
 
-- **Windows only.** There is no macOS or Linux MCSTool in this version.
-- For modded servers, you must supply the modpack file. Supported formats are **Modrinth** `.mrpack`, **CurseForge Server Files**, and a **zip of** `.jar` **mods**. For a zip of jars, Setup asks you to confirm the loader, Minecraft version, and Java.
-- Always Free *can* work at **$0**, but Oracle **capacity often blocks creating the VMs**. Upgrading the account to **Pay As You Go (PAYG)** raises scheduling priority. You can still stay at $0 if you stay inside Always Free limits.
+- **Windows only.** There is no macOS or Linux version of MCSTool yet.
+- For modded servers, you must supply the modpack file. Supported formats are **Modrinth** `.mrpack`, **CurseForge Server Files**, and a **zip of** `.jar` **mods**. For a zip of mods, Setup asks you to confirm the loader, Minecraft version, and Java.
+- Always Free can work at **$0**, but Oracle often **doesn't have enough free capacity to create the VMs**. Upgrading the account to **Pay As You Go (PAYG)** makes it more likely the VMs can be created. You still pay $0 if you stay inside Always Free limits.
 
 
 
@@ -12,6 +12,7 @@ This guide explains how to set up your Minecraft server with **MCSTool**, hosted
 
 - Windows 10 or 11
 - An [Oracle Cloud](https://www.oracle.com/cloud/) account (you will create one in Part 1)
+- Minecraft Java Edition
 
 
 
@@ -19,9 +20,9 @@ This guide explains how to set up your Minecraft server with **MCSTool**, hosted
 
 The goal is **$0** using Oracle [Always Free](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm#compute) resources.
 
-Oracle still requires **Pay As You Go (PAYG)** in many regions so the Ampere game server can be created. That is for **eligibility**, not permission to spend. Always Free resources stay free after the upgrade; you are charged only for usage **above** those limits. There are several mechanisms in place to ensure your account usage does **not** exceed those limits so you will not be charged.
+In many regions, Oracle still requires **Pay As You Go (PAYG)** before it will create the game VM. That is for **eligibility**, not permission to spend. Always Free resources stay free after the upgrade; you are charged only for usage **above** those limits. MCSTool tracks your hours and stops the server automatically so you stay inside those limits.
 
-Setup also creates a last-resort **$1 monthly budget**. If spend ever reaches $1, a Function stops the game server. That brake is not instant, so you might still see about **$1–$2 that month**, then no further charges while it holds.
+Setup also adds a **$1 spending limit**. If spending ever reaches $1, MCSTool stops the game VM. It is not instant, so you might still see about **$1–$2 that month**. After that, the game VM stays off until you turn it back on in MCSTool, so there are no further charges.
 
 ---
 
@@ -131,48 +132,51 @@ Setup also creates a last-resort **$1 monthly budget**. If spend ever reaches $1
 
 ### Walk through the wizard
 
-3. Open **MCSTool**. Select **Deploy a new stack**.
+3. Open **MCSTool**. Select **Set up a new server**.
 4. Work through the pages:
 
-**Step 1 — Disclaimers**  
-Read disclaimers and confirm you understand them (stay on Always Free–eligible compute, the $1 last-resort budget, and capacity wait)
+**Step 1 — Always Free**  
+Read the notes and check each box: stay on Always Free, the $1 spending limit (and a possible $1–$2 charge), and that Oracle may be out of free capacity.
 
-**Step 2 — OCI profile and email**  
-Select your OCI profile and enter an email. The profile should be detected automatically if you finished Part 2. The email is only used to alert you if the $1 budget is triggered.
+**Step 2 — Oracle Cloud**  
+Select your OCI profile and enter an email. The profile should be detected automatically if you finished Part 2. The email is only used for Oracle's $1 budget alert.
 
 **Step 3 — SSH key**  
-Generate a new key, or import an existing one. This is **not** the API key from Part 2. Setup can use one key for both VMs or a different key for the door.
+Generate a new key, or import an existing one. This is **not** the API key from Part 2. Setup can use one key for both VMs or a different key for the doorbell VM.
 
-**Step 4 — Server type**  
-Choose **Vanilla (Paper)** or **Modded**. Paper is the vanilla-like server (better multiplayer). Modded needs a pack you already exported.
+**Step 4 — Minecraft**  
+Choose **Vanilla (Paper)** or **Modded**. Paper is the vanilla-like server (better multiplayer). Modded needs a modpack you already exported.
 
-- Supported pack formats: Modrinth `.mrpack`, CurseForge **Server Files**, or a `.zip` of `.jar` mods (confirm loader, versions, and that client-only mods are marked correctly).
+- Supported modpack formats: Modrinth `.mrpack`, CurseForge **Server Files**, or a zip of `.jar` mods (confirm the loader, versions, and that client-only mods are marked correctly).
 - Supported loaders: Fabric, Forge, NeoForge.
-- Large packs with heavy mods will lag on this VM. In particular, skip **Distant Horizons** (generating new chunks on this size of VM causes significant lag).
-- You can change Vanilla (Paper) or Modded later from **Server → Settings → Change type**.
+- Large modpacks with heavy mods will lag on this VM. In particular, skip **Distant Horizons** (generating new chunks on this VM size causes significant lag).
+- You can switch between Vanilla (Paper) and Modded later from **Server → Settings → Change server type**.
 - Optional **World seed**. Leave it blank for a random world.
 
-**Step 5 — Server identity**  
+**Step 5 — Name and icon**  
 Set the name, description, and icon players see in the Minecraft server list. You can change these later.
 
 **Step 6 — Minecraft EULA**  
 Open and accept the [Minecraft EULA](https://aka.ms/MinecraftEULA).
 
 **Step 7 — Auth Token**  
-Paste the Auth Token you saved in Part 2 and store it. MCSTool keeps **one** token on this PC (Windows Credential Manager). If you later add a second Oracle account, you may need to replace that token during Setup. Day-to-day manage does not need it again.
+Paste the Auth Token you saved in Part 2 and click **Store token**. MCSTool keeps **one** token on this PC (Windows Credential Manager). If you later add a second Oracle account, you may need to replace that token during Setup. You won't need it again after Setup.
 
-**Step 8 — VM size and deploy**  
-Pick a size, server memory, and start deployment.
+**Step 8 — Review and deploy**  
+Setup detects your public IP and adds it to the whitelist. Pick a VM size and server memory, look over **What Setup will create**, tick the confirmation box, and click **Deploy**.
 
-- Deployment often takes **10–25 minutes**, depending on VM size and pack. Leave the app open until it finishes.
-- If Deploy is interrupted after the game VM already exists, that VM may stay on. Finish Setup, or stop it in the OCI Console (especially the 4 OCPU / 24 GB size).
-- The recommended size (**4 OCPU / 24 GB**) can only run about **~11.5 hours a day** on average over a month. MCSTool’s usage stats make that easy to track.
+- Deployment often takes **10–25 minutes**, depending on VM size and modpack. Leave the app open until it finishes.
+- If Deploy is interrupted after the game VM already exists, that VM may stay on. Finish Setup, or stop it in the OCI Console (especially on the 4 OCPU / 24 GB size).
+- The recommended size (**4 OCPU / 24 GB**) can only run about **11.5 hours a day** on average over a month. The **Usage** tab tracks this for you.
 - The smaller size (**2 OCPU / 12 GB**) can usually stay on all month, with less room for mods and players.
-- **Server memory** is RAM allocated to the Minecraft server, not the VM size. Setup pre-selects a size from the server type and pack; you can change it. Sizes are **4G**, **6G**, and **8G**. On the **24 GB** VM you can also pick **10G** or **12G** for heavier packs. You can change this later on Advanced → Danger (restarts Minecraft). Changing the VM from **24 GB** to **12 GB** on Advanced → Danger sets **server memory** above 8G to **8G** (applied when Minecraft next starts). MCSTool can warn when the server is short on memory; it does not raise the size by itself.
+- **Server memory** is the memory Minecraft can use, not the VM size:
+  - Setup picks a starting value from the server type and modpack. You can change it.
+  - Choices are **4G**, **6G**, and **8G**. The **24 GB** VM also offers **10G** and **12G** for heavier modpacks.
+  - You can change it later on **Advanced → Danger Zone** (restarts Minecraft).
+  - Changing the VM size from **24 GB** to **12 GB** on **Advanced → Danger Zone** lowers server memory above 8G to **8G** (applied when Minecraft next starts).
+  - MCSTool can warn when the server is short on memory. It does not add memory by itself.
 
-
-
-#### When deployment completes, click **Close** to enter MCSTool.
+When you see **Setup complete**, click **Close** to open MCSTool.
 
 ---
 
@@ -182,9 +186,22 @@ Pick a size, server memory, and start deployment.
 
 The Minecraft server should now be up. Copy the **play IP** from MCSTool (Overview or the sidebar) and connect from Minecraft Java Edition.
 
-Players can open a **2D map** in a browser. Copy **Player map** from Overview (or **Advanced → Stack**). That URL is the doorbell address, **not** the play IP. It opens on the Overworld; switch Overworld / Nether / End on the page, and other explored dimensions when the pack has them. Extra dimensions show the same explored shape and pins; their colors may look plain. It shows chunks the server has already generated. Hover shows block **X** / **Z** next to the cursor (the same numbers stay in the corner). Double-click the map (or press and hold on a phone) to add a named pin; any allowlisted player can rename or delete pins. Click a pin, then click the map or **×** to close without changing it. The map and pins still work when the game VM is off.
+### Whitelist
 
-- Your public IP is allowlisted during Setup for Minecraft **and** the map page. To allow other players, add each player’s **current public IPv4** on the **Whitelist** tab and click **Save changes**. The same list is required for the map website. Home IPs can change; update the list when they do.
+Setup adds your public IP to the whitelist for Minecraft **and** the player map. The whitelist works by IP address, not Minecraft username.
+
+To let other players in, add each player’s **current public IPv4** on the **Whitelist** tab (or **Open Whitelist** on Overview) and click **Save changes**. The map page uses the same whitelist. Home IPs can change; update the whitelist when they do.
+
+### Player map
+
+Players can open a **2D map** in a browser. Copy **Player map** from Overview (or **Advanced → Setup**).
+
+- The map uses the doorbell VM's address, **not** the play IP.
+- It shows chunks the server has already generated.
+- It opens on the Overworld. Switch between Overworld, Nether, and End on the page, plus other explored dimensions when the modpack has them. Extra dimensions show the same explored shape and pins, but their colors may look plain.
+- Hover to see block **X** / **Z** next to the cursor. The same numbers stay in the corner.
+- Double-click the map (or press and hold on a phone) to add a named pin. Any whitelisted player can rename or delete pins. Click a pin, then click the map or **×** to close it without changes.
+- The map and pins still work when the game VM is off.
 
 
 
@@ -194,8 +211,8 @@ On the **Players** tab:
 
 - **Online now** shows who is connected (name and face). Start the server to see the list.
 - Hover a row for **Kick** (optional reason), **Mod** / **Unmod**, and **Ban** (confirm + optional reason).
-- **Banned** lists in-game banned players under **Online now**. Hover **Unban** (`pardon`). This still does not change **Whitelist** / Who can join.
-- **Ban** is Minecraft’s in-game ban only. It does **not** change **Whitelist** / Who can join (the cloud IP allowlist). An in-game `/ban` from another operator also does not update that list.
+- **Banned** lists in-game banned players under **Online now**. Hover a row for **Unban** (`pardon`).
+- **Ban** and **Unban** use Minecraft’s in-game ban list only. They do **not** change the **Whitelist**, and neither does an in-game `/ban` from another operator.
 
 
 
@@ -204,25 +221,26 @@ On the **Players** tab:
 On the **Server** tab:
 
 - **Identity** — name, description, and icon in the Minecraft server list.
-- **Settings** — difficulty, default game mode, max players, view distance, simulation distance, PvP, spawn protection, hardcore, force game mode, and allow flight. **Save**, then **Restart** (or **Start**) so Minecraft reads the file. Below that, **Change server type** (Vanilla (Paper) / Modded) reinstalls Minecraft on this VM. Optional wipe (off by default). Modded needs a pack file.
+- **Settings** — difficulty, default game mode, max players, view distance, simulation distance, PvP, spawn protection, hardcore, force game mode, and allow flight. **Save**, then **Restart** (or **Start**) so Minecraft picks up the changes. Below that, **Change server type** switches between Vanilla (Paper) and Modded and reinstalls Minecraft on the game VM. Wiping the world is optional (off by default). Modded needs a modpack file.
 - **World** — cloud backups, **Replace world** from a zip, and **Wipe world**.
-- **Mods** — drop a new `.mrpack` or server-pack zip to change the modpack. At the bottom of this menu, you can add or delete a single `.jar` in `mods/`.
-- **Plugins** — only for a **Paper** server. List, upload, and delete plugin jars in `plugins/`. Upload and delete **restart Minecraft**. Do **not** use `/reload`.
+- **Mods** — drop a new modpack file (any supported format) to change the modpack. At the bottom of this menu, you can add or delete a single mod `.jar`.
+- **Plugins** — only for a **Paper** server. List, upload, and delete plugin `.jar` files. Upload and delete **restart Minecraft**. Do **not** use `/reload`.
 
 
 
 
 ### Usage tab
 
-Days and hour math are **UTC**, not your local calendar. **Hours** shows what you have used. **Edit Budget** is the calendar. **Budget** is the monthly/soft/idle/size form.
+Days and hours are counted in **UTC**, not your local time zone. **Hours** shows what you have used. **Calendar** sets how many hours the server can run each day. **Budget settings** holds the monthly allowance, monthly hours limit, idle warnings, and VM size.
 
-- The calendar sets **wall-clock hours** per day.
-- Monthly targets stay on the operational ~1400 CPU-hour / ~8800 memory-hour cap. The 4 OCPU / 24 GB size averages about **~11.5 hours a day**.
+- **Rollover** (also in the sidebar) is unused hours from past UTC days. The server can keep running on them after a day's hours run out, or you can put them on later days in **Calendar**.
+- The default monthly allowance is about 1,400 CPU-hours and 8,800 memory-hours, which stays under Oracle's free limits. On the 4 OCPU / 24 GB size, that averages about **11.5 hours a day**.
 
 
 
 ### Idle stop and wake
 
-- The game server turns off after **15 minutes** with no players. That is how the app stays inside Oracle’s free-hour allowance. The doorbell stays on and keeps the same play IP.
-- When the server is off, it can be started from MCSTool, or by a player attempting to connect from the Minecraft client (unless that UTC day is **zeroed** or out of today’s hours). The doorbell then starts the server VM. Wake can take **2–5 minutes**, depending on the pack and world. On a 4 OCPU world the Minecraft server list shows about how many **clock hours** are left today (not CPU-hours); a 2 OCPU world omits that number. Minecraft may cache the list text — refresh or reconnect if it looks stale.
+- The server stops after **15 minutes** with no players. That is how MCSTool stays inside Oracle’s free monthly hours. The doorbell VM stays on and keeps the same play IP.
+- When the server is off, start it from MCSTool, or a player can wake it by joining from Minecraft (unless that UTC day is **set to 0 hours** or today’s hours are used up). The doorbell VM then starts the game VM. Waking can take **2–5 minutes**, depending on the modpack and world.
+- On the 4 OCPU / 24 GB size, the Minecraft server list shows about how many hours are left today (not CPU-hours). The 2 OCPU / 12 GB size doesn't show that number. Minecraft may cache the server list text; refresh or reconnect if it looks stale.
 
