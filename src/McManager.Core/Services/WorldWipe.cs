@@ -2,8 +2,10 @@ namespace McManager.Core.Services;
 
 /// <summary>
 /// Builds the SSH wipe script for the live VM1 world directory.
-/// Deletes only that folder (recreated empty). Does not touch mods, config,
-/// <c>server.properties</c>, or Object Storage backups.
+/// Deletes that folder and sibling Nether/End folders (<c>{name}_nether</c>,
+/// <c>{name}_the_end</c>), then clears the shared-map tile cache. Recreates the
+/// world folder empty. Does not touch mods, config, <c>server.properties</c>,
+/// or Object Storage backups.
 /// </summary>
 public static class WorldWipe
 {
@@ -103,14 +105,27 @@ public static class WorldWipe
             + "/opt/mcmgr/server/*) ;; "
             + "*) echo refusing world_path outside /opt/mcmgr/server/; exit 2 ;; "
             + "esac; "
-            + "BASE=$(basename \"$WORLD\"); "
+            + "BASE=$(basename -- \"$WORLD\"); "
             + "case \"$BASE\" in "
             + "mods|config|libraries|bin|logs) echo refusing reserved name; exit 2 ;; "
             + "esac; "
+            + "PARENT=$(dirname -- \"$WORLD\"); "
             + "if [ -e \"$WORLD\" ]; then sudo rm -rf -- \"$WORLD\"; fi; "
+            + "for EXTRA in \"${BASE}_nether\" \"${BASE}_the_end\"; do "
+            + "DIR=\"$PARENT/$EXTRA\"; "
+            + "case \"$DIR\" in "
+            + "/opt/mcmgr/server/*) ;; "
+            + "*) echo refusing dimension path; exit 2 ;; "
+            + "esac; "
+            + "case \"$EXTRA\" in "
+            + "mods|config|libraries|bin|logs) echo refusing reserved name; exit 2 ;; "
+            + "esac; "
+            + "if [ -e \"$DIR\" ] || [ -L \"$DIR\" ]; then sudo rm -rf -- \"$DIR\"; fi; "
+            + "done; "
             + "sudo mkdir -p -- \"$WORLD\"; "
             + "sudo chown mcmgr:mcmgr -- \"$WORLD\"; "
             + "sudo chmod 0750 -- \"$WORLD\"; "
+            + PlayerMapReset.VmCacheClearBody()
             + "echo OK";
     }
 }

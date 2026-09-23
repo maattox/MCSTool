@@ -977,8 +977,9 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         var confirmed = await _dialogs.ConfirmAsync(
             "Replace world?",
             "This stops Minecraft, replaces the current world with the zip (the old world is kept as a "
-            + "backup folder on the game VM), then starts Minecraft again. The zip must contain the "
-            + "world folder's contents, like a downloaded world save.",
+            + "backup folder on the game VM), then starts Minecraft again. The player map is cleared "
+            + "so it can show the new world. The zip must contain the world folder's contents, like a "
+            + "downloaded world save.",
             "Replace");
         if (!confirmed)
         {
@@ -992,9 +993,11 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
         try
         {
-            var result = await _ssh.ReplaceWorldAsync(_config.Vm1, localPath);
+            var result = await _ssh.ReplaceWorldAsync(_config.Vm1, _config.Door, localPath);
             StatusMessage = result.Succeeded
-                ? "World replaced. Minecraft is starting."
+                ? string.IsNullOrWhiteSpace(result.Warning)
+                    ? "World replaced. Minecraft is starting. The player map was cleared."
+                    : "World replaced. Minecraft is starting. " + result.Warning
                 : result.Error ?? "Replace failed.";
         }
         finally
@@ -1041,8 +1044,10 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
         var confirmed = await _dialogs.ConfirmAsync(
             "Wipe the live world?",
-            "This deletes the current world on the server. Minecraft stops, the world is deleted, "
-            + "and Minecraft starts again with a new world. This can't be undone except by restoring a backup. "
+            "This deletes the current world, including the Nether, the End, and any other dimensions. "
+            + "Minecraft stops, the world is deleted, and Minecraft starts again with a new world. "
+            + "The player map and its pins are cleared. "
+            + "This can't be undone except by restoring a backup. "
             + "Mods and settings are kept (except the seed). "
             + seedNote + " "
             + backupHint,
@@ -1059,9 +1064,11 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
         try
         {
-            var result = await _ssh.WipeWorldAsync(_config.Vm1, seed);
+            var result = await _ssh.WipeWorldAsync(_config.Vm1, _config.Door, seed);
             StatusMessage = result.Succeeded
-                ? "Live world wiped. Minecraft is starting. Cloud backups were not deleted."
+                ? string.IsNullOrWhiteSpace(result.Warning)
+                    ? "Live world wiped. Minecraft is starting. Cloud backups were not deleted. The player map was cleared."
+                    : "Live world wiped. Minecraft is starting. Cloud backups were not deleted. " + result.Warning
                 : result.Error ?? "Wipe failed.";
         }
         finally
@@ -1780,7 +1787,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
             });
             var result = await _bootstrap.ReplacePackAsync(
                 _config.Vm1,
-                new PackReplaceRequest(installPath, WipeWorld, _dataDirectory),
+                new PackReplaceRequest(installPath, WipeWorld, _dataDirectory, _config.Door),
                 progress);
             if (!result.Succeeded || result.Value is null)
             {

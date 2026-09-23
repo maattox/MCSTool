@@ -55,7 +55,8 @@ public static class ChangeServerTypeUx
 
     public const string ConfirmWipeWorld =
         "Reinstalls Minecraft on this game VM. The doorbell VM and play IP don't change. "
-        + "Nothing else in Oracle Cloud is recreated. The live world will be deleted. Cloud backups are kept. "
+        + "Nothing else in Oracle Cloud is recreated. The live world will be deleted, including the Nether, the End, and any other dimensions. "
+        + "The player map and its pins are cleared. Cloud backups are kept. "
         + "This can't be undone except by restoring a backup.";
 
     public static string ConfirmBody(bool wipeWorld) =>
@@ -127,7 +128,11 @@ public static class ChangeServerTypeUx
     {
         ArgumentNullException.ThrowIfNull(result);
         var kind = KindLabel(result.ServerKind);
-        var wipe = result.WipedWorld ? " The world was wiped." : " The world was kept.";
+        var wipe = result.WipedWorld
+            ? string.IsNullOrWhiteSpace(result.SharedMapWarning)
+                ? " The world was wiped. The player map was cleared."
+                : " The world was wiped. " + result.SharedMapWarning.Trim()
+            : " The world was kept.";
         var warn = string.IsNullOrWhiteSpace(result.SaveCompatibilityWarning)
             ? ""
             : " " + result.SaveCompatibilityWarning.Trim();

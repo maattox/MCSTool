@@ -358,7 +358,8 @@ public sealed partial class ChangeServerTypeViewModel : ObservableObject
                     MinecraftVersion,
                     WipeWorld,
                     string.IsNullOrWhiteSpace(PackPath) ? null : PackPath,
-                    _dataDirectory),
+                    _dataDirectory,
+                    _config.Door),
                 progress);
             if (!result.Succeeded || result.Value is null)
             {

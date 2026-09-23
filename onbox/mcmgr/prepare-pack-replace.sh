@@ -97,6 +97,21 @@ _clear_server_dir() {
   fi
 }
 
+# Tile cache only. Leaves the MinedMap viewer template in place.
+_clear_player_map_cache() {
+  if [[ "${WIPE_WORLD}" != "1" ]]; then
+    return 0
+  fi
+  local map
+  map="$(_mcmgr_prefix /var/lib/mcmgr-map)"
+  if [[ "${DRY_RUN}" != "1" ]]; then
+    systemctl stop mc-player-map.service >/dev/null 2>&1 || true
+  fi
+  rm -rf -- "${map}/render" "${map}/publish" "${map}/publish.next" "${map}/shim" "${map}/http"
+  mkdir -p -- "${map}"
+  mcmgr_log "prepare-pack-replace: cleared the player map cache"
+}
+
 main() {
   export HOME="${HOME:-/home/ubuntu}"
   mkdir -p "${SERVER_DIR}" "${ETC_MCMGR}" "${VAR_MCMGR}"
@@ -124,6 +139,7 @@ main() {
 
   _clear_server_dir
   _restore_stash
+  _clear_player_map_cache
 
   rm -f "${BOOTSTRAP_STATE}"
   # Leave rcon.secret, /opt/mcmgr bin+lib, and idle-agent config alone.

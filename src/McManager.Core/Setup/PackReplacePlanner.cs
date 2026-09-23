@@ -77,16 +77,22 @@ public sealed class PackReplacePlan
 
 public sealed class PackReplaceRequest
 {
-    public PackReplaceRequest(string packPath, bool wipeWorld, string? dataDirectory = null)
+    public PackReplaceRequest(
+        string packPath,
+        bool wipeWorld,
+        string? dataDirectory = null,
+        DoorSettings? door = null)
     {
         PackPath = packPath;
         WipeWorld = wipeWorld;
         DataDirectory = dataDirectory;
+        Door = door;
     }
 
     public string PackPath { get; }
     public bool WipeWorld { get; }
     public string? DataDirectory { get; }
+    public DoorSettings? Door { get; }
 }
 
 public sealed class PackReplaceResult
@@ -97,7 +103,8 @@ public sealed class PackReplaceResult
         string loader,
         bool wipedWorld,
         string? saveCompatibilityWarning,
-        string? quarantineNotice = null)
+        string? quarantineNotice = null,
+        string? sharedMapWarning = null)
     {
         PackName = packName;
         MinecraftVersion = minecraftVersion;
@@ -105,6 +112,7 @@ public sealed class PackReplaceResult
         WipedWorld = wipedWorld;
         SaveCompatibilityWarning = saveCompatibilityWarning;
         QuarantineNotice = quarantineNotice;
+        SharedMapWarning = sharedMapWarning;
     }
 
     public string PackName { get; }
@@ -113,4 +121,5 @@ public sealed class PackReplaceResult
     public bool WipedWorld { get; }
     public string? SaveCompatibilityWarning { get; }
     public string? QuarantineNotice { get; }
+    public string? SharedMapWarning { get; }
 }

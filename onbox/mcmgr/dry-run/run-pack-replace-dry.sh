@@ -40,6 +40,9 @@ printf 'secret-keep\n' >"${ETC}/rcon.secret"
 printf '{"operation":"install","stages_completed":["artifact_placed","manifest_written"]}\n' \
   >"${VAR}/bootstrap-state.json"
 printf '{"minecraft_version":"1.21.1","loader":"fabric"}\n' >"${ETC}/game-manifest.json"
+mkdir -p "${STAGING}/var/lib/mcmgr-map/render" "${STAGING}/var/lib/mcmgr-map/viewer"
+printf 'old-tile\n' >"${STAGING}/var/lib/mcmgr-map/render/old.webp"
+printf 'viewer-keep\n' >"${STAGING}/var/lib/mcmgr-map/viewer/index.html"
 
 echo "[pack-replace-dry] staging=${STAGING}"
 echo "[pack-replace-dry] KEEP_WORLD=1"
@@ -60,6 +63,8 @@ grep -q 'secret-keep' "${ETC}/rcon.secret" || fail "rcon.secret contents changed
 [[ ! -e "${SERVER}/config/old.toml" ]] || fail "old config/ was not cleared"
 [[ ! -e "${SERVER}/libraries/old.jar" ]] || fail "old libraries/ was not cleared"
 [[ ! -e "${VAR}/bootstrap-state.json" ]] || fail "bootstrap-state.json must be reset"
+[[ -f "${STAGING}/var/lib/mcmgr-map/render/old.webp" ]] || fail "map cache cleared while keeping the world"
+[[ -f "${STAGING}/var/lib/mcmgr-map/viewer/index.html" ]] || fail "viewer template was removed"
 
 echo "[pack-replace-dry] KEEP_WORLD OK"
 
@@ -75,6 +80,10 @@ KEEP_WORLD=0 WIPE_WORLD=1 bash "${ROOT}/prepare-pack-replace.sh"
 [[ ! -e "${SERVER}/mods/x.jar" ]] || fail "mods/ not cleared on wipe"
 [[ -f "${SERVER}/eula.txt" ]] || fail "eula.txt must survive wipe"
 [[ -f "${ETC}/rcon.secret" ]] || fail "rcon.secret must survive wipe"
+[[ ! -e "${SERVER}/world_nether" ]] || fail "world_nether survived WIPE_WORLD=1"
+[[ ! -e "${STAGING}/var/lib/mcmgr-map/render/old.webp" ]] || fail "map render cache survived wipe"
+[[ ! -e "${STAGING}/var/lib/mcmgr-map/http" ]] || fail "map http cache should stay absent"
+[[ -f "${STAGING}/var/lib/mcmgr-map/viewer/index.html" ]] || fail "viewer template must survive wipe"
 
 echo "[pack-replace-dry] WIPE_WORLD OK"
 echo "[pack-replace-dry] OK"

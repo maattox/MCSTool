@@ -767,16 +767,17 @@ public sealed class SetupBootstrapService
         log?.Report(
             $"Pack replace: {preview.PackName} DISTRIBUTION={dist} "
             + $"MINECRAFT_VERSION={preview.MinecraftVersion} wipe_world={request.WipeWorld}");
-        var health = ReinstallMinecraft(
+        var installed = ReinstallMinecraft(
             client,
             onbox,
             state,
             request.WipeWorld,
             preview.JavaMajor,
             request.DataDirectory,
-            log);
-        if (!health.Succeeded)
-            return ServiceResult<PackReplaceResult>.Fail(health.Error ?? "Modpack install failed.");
+            log,
+            request.Door);
+        if (!installed.Health.Succeeded)
+            return ServiceResult<PackReplaceResult>.Fail(installed.Health.Error ?? "Modpack install failed.");
 
         log?.Report("Pack replace finished.");
         return ServiceResult<PackReplaceResult>.Ok(
@@ -786,7 +787,8 @@ public sealed class SetupBootstrapService
                 preview.Loader,
                 request.WipeWorld,
                 warning,
-                health.Warning));
+                installed.Health.Warning,
+                installed.MapWarning));
     }
 
     private static ServiceResult<ChangeServerTypeResult> ChangeServerType(
@@ -841,17 +843,18 @@ public sealed class SetupBootstrapService
         if (!string.IsNullOrWhiteSpace(plan.Value.SaveCompatibilityWarning))
             log?.Report(plan.Value.SaveCompatibilityWarning);
 
-        var health = ReinstallMinecraft(
+        var installed = ReinstallMinecraft(
             client,
             onbox,
             state,
             request.WipeWorld,
             plan.Value.Preview?.JavaMajor,
             request.DataDirectory,
-            log);
-        if (!health.Succeeded)
+            log,
+            request.Door);
+        if (!installed.Health.Succeeded)
             return ServiceResult<ChangeServerTypeResult>.Fail(
-                health.Error ?? "Change server type failed.");
+                installed.Health.Error ?? "Change server type failed.");
 
         log?.Report("Change server type finished.");
         var kind = ChangeServerTypeUx.ServerKindForMeta(
@@ -865,17 +868,19 @@ public sealed class SetupBootstrapService
                 plan.Value.Preview?.PackName,
                 plan.Value.Preview?.Loader,
                 plan.Value.SaveCompatibilityWarning,
-                health.Warning));
+                installed.Health.Warning,
+                installed.MapWarning));
     }
 
-    private static ServiceResult ReinstallMinecraft(
+    private static (ServiceResult Health, string? MapWarning) ReinstallMinecraft(
         SshClient client,
         string onbox,
         SetupWizardState state,
         bool wipeWorld,
         int? analyzedJavaMajor,
         string? dataDirectory,
-        IProgress<string>? log)
+        IProgress<string>? log,
+        DoorSettings? door)
     {
         const string onboxStaging = "/tmp/mcmgr-onbox";
         var dist = SetupPackImport.ToDistribution(state);
@@ -897,6 +902,14 @@ public sealed class SetupBootstrapService
             TimeSpan.FromMinutes(3),
             log);
 
+        string? mapWarning = null;
+        if (wipeWorld)
+        {
+            mapWarning = PlayerMapReset.TryClearDoor(door, "The player map could not be cleared.");
+            if (!string.IsNullOrWhiteSpace(mapWarning))
+                log?.Report(mapWarning);
+        }
+
         RunOnboxDriver(client, onboxStaging, state, analyzedJavaMajor, log);
 
         if (SetupServerType.IsModded(state.ServerType))
@@ -909,17 +922,17 @@ public sealed class SetupBootstrapService
                 log,
                 dataDirectory);
             if (!pack.Succeeded)
-                return ServiceResult.Fail(pack.Error ?? "Copying the modpack failed.");
+                return (ServiceResult.Fail(pack.Error ?? "Copying the modpack failed."), null);
         }
 
         var health = WaitRcon(client, log);
         if (!health.Succeeded)
-            return ServiceResult.Fail(health.Error ?? "Minecraft health check failed.");
+            return (ServiceResult.Fail(health.Error ?? "Minecraft health check failed."), null);
 
         if (!string.IsNullOrWhiteSpace(health.Warning))
             log?.Report(health.Warning);
 
-        return health;
+        return (health, mapWarning);
     }
 
     private static void RunOnboxDriver(
