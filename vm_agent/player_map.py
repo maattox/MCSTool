@@ -494,7 +494,7 @@ MARKERS_JS = """(function () {
     var name = String(raw || "").trim();
     if (!name) return { ok: false, name: name, err: "Enter a name." };
     if (/[\\x00-\\x1F]/.test(name)) {
-      return { ok: false, name: name, err: "Name cannot include control characters." };
+      return { ok: false, name: name, err: "That name has characters that aren't allowed." };
     }
     if (codePoints(name) > NAME_MAX || utf8Len(name) > NAME_BYTES) {
       return { ok: false, name: name, err: "Name is too long." };

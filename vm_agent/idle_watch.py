@@ -29,14 +29,14 @@ CONFIG_PATH = os.environ.get("MC_MANAGER_CONFIG", "/etc/mc-manager/config.json")
 
 DEFAULT_MESSAGES = {
     "budget_warn_leftover": (
-        "Daily usage limit exceeded; using leftover hours "
-        "(~{ocpu:.1f} OCPU-h / ~{gb:.1f} GB-h left)."
+        "Today's hours are used up. Now using rollover hours "
+        "(about {ocpu:.1f} CPU-hours left)."
     ),
     "budget_final_warn": (
-        "Daily + leftover usage exhausted. Server will shut down soon."
+        "No hours left for today. The server will shut down soon."
     ),
-    "budget_stop": "Usage limits reached. Server shutting down.",
-    "soft_cap_stop": "Monthly usage soft cap reached. Server shutting down.",
+    "budget_stop": "Out of hours. Server shutting down.",
+    "soft_cap_stop": "Monthly hours limit reached. Server shutting down.",
     "idle_stop": "No players for {minutes} minutes. Saving and shutting down.",
     "idle_stop_inactive": (
         "Minecraft not running for {minutes} minutes. Saving and shutting down."

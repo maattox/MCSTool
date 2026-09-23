@@ -56,7 +56,7 @@ public sealed class ChatMessagesStoreTests
         Assert.False(got.Value.Document.MotdOmitName);
         Assert.Equal("messages/server-icon.png", got.Value.Document.IconObject);
         Assert.Equal("Empty for {minutes} minutes. Saving.", got.Value.Document.ChatMessages["idle_stop"]);
-        Assert.Equal("Usage limits reached. Server shutting down.", got.Value.Document.ChatMessages["budget_stop"]);
+        Assert.Equal("Out of hours. Server shutting down.", got.Value.Document.ChatMessages["budget_stop"]);
         Assert.NotNull(got.Value.IconPng);
         Assert.Null(ServerIdentityUx.ValidateIcon(got.Value.IconPng));
         Assert.True(storage.Objects.ContainsKey("messages/door-idle.png"));
