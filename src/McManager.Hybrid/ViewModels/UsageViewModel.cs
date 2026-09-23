@@ -762,16 +762,24 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
 
     private bool TryParseDouble(string text, string label, out double value)
     {
-        if (double.TryParse(text.Trim(), out value) && value >= 0)
+        if (TryParseHours(text, out value) && value >= 0)
             return true;
         _lastParseError = $"Invalid {label}.";
         value = 0;
         return false;
     }
 
+    /// <summary>Accepts "1.5" and "1,5" on any Windows region setting.</summary>
+    private static bool TryParseHours(string? text, out double value) =>
+        double.TryParse(
+            (text ?? "").Trim().Replace(',', '.'),
+            System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture,
+            out value);
+
     private bool TryParseInt(string text, string label, out int value)
     {
-        if (int.TryParse(text.Trim(), out value))
+        if (int.TryParse(text.Trim(), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out value))
             return true;
         _lastParseError = $"Invalid {label}.";
         value = 0;
@@ -787,7 +795,7 @@ public sealed partial class UsageViewModel : ObservableObject, IDisposable
             return true;
         }
 
-        if (!double.TryParse(text, out bufferWall) || bufferWall < 0)
+        if (!TryParseHours(text, out bufferWall) || bufferWall < 0)
         {
             _lastParseError = "Invalid Minimum rollover to keep.";
             bufferWall = 0;
