@@ -20,8 +20,9 @@ public sealed class OversizedWorldBackupUxTests
 
         Assert.True(OversizedWorldBackupUx.IsBlocked(blocked));
         Assert.True(OversizedWorldBackupUx.UseSshDownload(blocked));
-        Assert.Contains("SSH", OversizedWorldBackupUx.DownloadLatestButtonLabel(true), StringComparison.Ordinal);
-        Assert.Contains("SSH", OversizedWorldBackupUx.DownloadLatestTitle(true, vm1Running: true), StringComparison.Ordinal);
+        Assert.Equal("Download live world", OversizedWorldBackupUx.DownloadLatestButtonLabel(true));
+        Assert.Contains("game VM", OversizedWorldBackupUx.DownloadLatestTitle(true, vm1Running: true), StringComparison.Ordinal);
+        Assert.DoesNotContain("SSH", OversizedWorldBackupUx.DownloadLatestTitle(true, vm1Running: true), StringComparison.Ordinal);
         Assert.Equal(
             OversizedWorldBackupUx.StartVmFirstMessage,
             OversizedWorldBackupUx.DownloadLatestTitle(true, vm1Running: false));

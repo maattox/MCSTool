@@ -41,7 +41,7 @@ public static class CrashQuarantine
         }
         else
         {
-            sb.Append("This mod may be required for the pack. You can put it back.");
+            sb.Append("This mod may be required for the modpack. You can put it back.");
         }
 
         sb.Append(" On Server → Mods, choose Keep excluded or Put back.");
@@ -49,15 +49,15 @@ public static class CrashQuarantine
     }
 
     public static string KeepExcludedCopy(string modId) =>
-        "'" + (modId ?? "").Trim() + "' will stay off this server. Future installs of this same pack file will skip it.";
+        "'" + (modId ?? "").Trim() + "' will stay off this server. Future installs of this same modpack file will skip it.";
 
     public static string PutBackCopy(string modId) =>
-        "Put '" + (modId ?? "").Trim() + "' back into mods/. Restart Minecraft if it is already running.";
+        "Put '" + (modId ?? "").Trim() + "' back. Restart Minecraft if it is already running.";
 
     public static string PanelHelp =>
-        "If Minecraft crashed and the loader blamed exactly one mod, Manager moves that jar to "
-        + "mods.quarantined (never deletes it) and retries once. Keep excluded skips it on future "
-        + "installs of this same pack file. Put back restores the jar.";
+        "If Minecraft crashed and the loader blamed exactly one mod, MCSTool sets that mod aside "
+        + "(it is never deleted) and retries once. Keep excluded skips it on future "
+        + "installs of this same modpack file. Put back restores it.";
 
     public static string EntryCopy(QuarantinedFileEntry entry, bool likelyClientOnly)
     {

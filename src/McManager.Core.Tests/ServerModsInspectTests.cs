@@ -40,7 +40,7 @@ public sealed class ServerModsInspectTests
         Assert.False(result.ModsDirectoryMissing);
         Assert.Equal(["fabric-api.jar", "lithium.jar"], result.FileNames.OrderBy(n => n, StringComparer.Ordinal).ToArray());
         Assert.Contains("Fabric 0.16.9", result.SummaryLine(), StringComparison.Ordinal);
-        Assert.Contains("2 files in mods/", result.SummaryLine(), StringComparison.Ordinal);
+        Assert.Contains("2 files in the mods folder", result.SummaryLine(), StringComparison.Ordinal);
     }
 
     [Fact]

@@ -288,7 +288,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
     public string DownloadPackTitle =>
         CanDownloadPack
-            ? "Save a copy of the confirmed pack file (manifest added for jar-root zips when you corrected versions)."
+            ? "Save the modpack file this server uses (including any version fixes)."
             : ModdingPanelLogic.DownloadDisabledReason(IsModdedServer, HasLocalPackArchive);
 
     public string VanillaEmptyState => IsPaperServer
@@ -320,7 +320,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
     public string UploadModTitle =>
         CanUploadMod
-            ? "Add a .jar to mods/. Bypasses pack checks. Minecraft restarts after install."
+            ? "Add a mod .jar. Skips modpack checks. Minecraft restarts after install."
             : (!IsModdedServer
                 ? ModdingPanelLogic.VanillaEmptyState
                 : (!Vm1IsRunning
@@ -407,10 +407,10 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     public string WorldBackupsHelpTitle => OversizedWorldBackupUx.HelpTitle;
 
     public string IdentityHelpTitle =>
-        "Name and description show in Minecraft’s server list when the game is running. Each box is one list line (59 characters). Select text and apply colors, or paste a motd= string. The in-game PNG is the list icon while Minecraft is up. Offline / starting / unavailable copies show on the doorbell while the server is off. Automated chat is what the idle timer says in-game before a stop. Save, then Restart Minecraft (or Start) to apply the in-game icon. The doorbell icon updates on Save.";
+        "Name and description are the two lines in Minecraft’s server list, up to 59 characters each. Select text to add colors and styles. Save, then Restart Minecraft (or Start) to apply the in-game name and icon; the offline icons update when you save.";
 
     public string IconStatesHelp =>
-        "In-game is the icon shown while the server is up. Offline, Starting, and Unavailable are shown while the server is off, waking, or cannot start (daily hours or spend-brake).";
+        "In-game is the icon shown while the server is up. Offline, Starting, and Unavailable are shown while the server is off, waking, or cannot start (out of hours or $1 spending limit).";
 
     public string MotdPreview =>
         ServerIdentityUx.BuildMotd(IdentityName, IdentityDescription);
@@ -422,7 +422,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     public string ServerKindDisplay => ChangeServerTypeUx.KindLabel(_currentLoaderOrDistribution);
 
     public string SettingsHelpTitle =>
-        "Gameplay settings are stored in the cloud and written to server.properties the next time Minecraft starts. Save, then Restart (or Start). Name, icon, and MOTD stay on Identity. PvP and simulation distance hide when this Minecraft version does not have those keys.";
+        "Gameplay settings are saved to cloud storage and applied the next time Minecraft starts. Save, then Restart Minecraft (or Start). Name, icon, and description are on Identity. PvP and simulation distance are hidden when this Minecraft version doesn't have them.";
 
     public IReadOnlyList<string> SettingsDifficulties => ServerPropertiesCatalog.Difficulties;
 
@@ -752,7 +752,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
         StatusMessage = _backups is null
             ? (string.IsNullOrWhiteSpace(_sessionError)
-                ? "Shared backup storage isn't configured."
+                ? "Cloud backup storage isn't configured."
                 : _sessionError)
             : "Open this tab to list world backups.";
         OnPropertyChanged(nameof(HasObjectStorage));
@@ -808,7 +808,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         if (_backups is null)
         {
             StatusMessage = string.IsNullOrWhiteSpace(_sessionError)
-                ? "Shared backup storage isn't configured."
+                ? "Cloud backup storage isn't configured."
                 : _sessionError;
             return;
         }
@@ -840,7 +840,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
             ApplyBackupList(result.Value, preserveSelection: true);
             StatusMessage = OversizedWorldBlocked
-                ? "Automatic cloud backups are paused. Download latest copies the live world over SSH."
+                ? "Automatic cloud backups are paused. Download latest copies the live world straight from the game VM."
                 : (Backups.Count == 0
                     ? "No world backups stored yet."
                     : $"Listed {Backups.Count} backup(s). Select one to download.");
@@ -876,7 +876,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
         var localPath = await _filePicker.OpenFileAsync(new FilePickRequest
         {
-            Title = "Upload world zip to Object Storage",
+            Title = "Upload world zip to cloud storage",
             Filters = [ZipFilter],
         });
 
@@ -888,7 +888,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
         if (!File.Exists(localPath))
         {
-            StatusMessage = "Could not resolve local zip path.";
+            StatusMessage = "Could not find that zip file.";
             return;
         }
 
@@ -903,7 +903,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         var confirmed = await _dialogs.ConfirmAsync(
             "Upload backup?",
             $"Upload {Path.GetFileName(localPath)} ({WorldBackupInfo.FormatSize(zipBytes)}) "
-            + "to Object Storage as a new backups/world-*.zip?",
+            + "to cloud storage as a new backup?",
             "Upload");
         if (!confirmed)
         {
@@ -926,7 +926,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
                 return;
             }
 
-            StatusMessage = $"Uploaded {result.Value}";
+            StatusMessage = $"Uploaded {Path.GetFileName(result.Value)}";
             await RefreshWithoutBusyGuardAsync();
         }
         finally
@@ -942,7 +942,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
         if (_config is null)
         {
-            StatusMessage = "Local config is missing.";
+            StatusMessage = "This server's settings are missing.";
             return;
         }
 
@@ -951,14 +951,14 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         if (life != "RUNNING")
         {
             StatusMessage =
-                $"VM1 is '{lifeRaw}' — Replace requires RUNNING. "
-                + "You can Upload a zip to Object Storage while stopped, then Start and Replace.";
+                $"Replace world requires the server to be running (game VM is {lifeRaw}). "
+                + "You can upload a zip while stopped, then Start and Replace.";
             return;
         }
 
         var localPath = await _filePicker.OpenFileAsync(new FilePickRequest
         {
-            Title = "Replace VM1 world from local zip",
+            Title = "Replace world from a zip",
             Filters = [ZipFilter],
         });
 
@@ -970,16 +970,15 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
         if (!File.Exists(localPath))
         {
-            StatusMessage = "Could not resolve local zip path.";
+            StatusMessage = "Could not find that zip file.";
             return;
         }
 
-        var worldPath = _config.Vm1.WorldPath;
         var confirmed = await _dialogs.ConfirmAsync(
-            "Replace world on VM1?",
-            "This STOPS Minecraft, replaces the world at "
-            + $"{worldPath} (previous folder moved aside as .bak.*), then starts Minecraft again. "
-            + "Zip contents must be world-folder relative (same as SoftStop backups). Continue?",
+            "Replace world?",
+            "This stops Minecraft, replaces the current world with the zip (the old world is kept as a "
+            + "backup folder on the game VM), then starts Minecraft again. The zip must contain the "
+            + "world folder's contents, like a downloaded world save.",
             "Replace");
         if (!confirmed)
         {
@@ -988,14 +987,14 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         }
 
         IsBusy = true;
-        StatusMessage = "Replacing world via SSH…";
+        StatusMessage = "Replacing world…";
         ProgressDisplay = "";
 
         try
         {
             var result = await _ssh.ReplaceWorldAsync(_config.Vm1, localPath);
             StatusMessage = result.Succeeded
-                ? $"World replaced at {worldPath}. Minecraft start requested."
+                ? "World replaced. Minecraft is starting."
                 : result.Error ?? "Replace failed.";
         }
         finally
@@ -1011,7 +1010,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
         if (_config is null)
         {
-            StatusMessage = "Local config is missing.";
+            StatusMessage = "This server's settings are missing.";
             return;
         }
 
@@ -1020,32 +1019,31 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         if (life != "RUNNING")
         {
             StatusMessage =
-                $"VM1 is '{lifeRaw}' — Wipe world requires RUNNING. "
-                + "Start the game VM first, then wipe. Cloud backups stay until you delete them separately.";
+                $"Wipe world requires the server to be running (game VM is {lifeRaw}). "
+                + "Start the server first. Cloud backups stay until you delete them separately.";
             return;
         }
 
-        if (!WorldWipe.TryCreate(_config.Vm1.WorldPath, out var plan, out var pathError))
+        if (!WorldWipe.TryCreate(_config.Vm1.WorldPath, out _, out var pathError))
         {
-            StatusMessage = pathError ?? "vm1.world_path is invalid.";
+            StatusMessage = pathError ?? "The world folder setting is invalid.";
             return;
         }
 
         var backupHint = _backups is null
-            ? "There is no shared backup storage configured, so this cannot be undone from Manager."
-            : "Cloud backups (Download World Save) are kept. Download one first if you might want this world back.";
+            ? "Cloud backup storage isn't set up, so this can't be undone from MCSTool."
+            : "Cloud backups are kept. Download one first if you might want this world back.";
 
         var seed = McManager.Core.Setup.WorldSeed.Normalize(WipeWorldSeed);
         var seedNote = seed.Length == 0
-            ? "The new world will use a random seed (level-seed is cleared)."
+            ? "The new world will use a random seed."
             : "The new world will use seed \"" + seed + "\".";
 
         var confirmed = await _dialogs.ConfirmAsync(
             "Wipe the live world?",
-            "This deletes the current world on the server at "
-            + $"{plan.WorldPath}. Minecraft will be stopped, that folder removed, and Minecraft started again "
-            + "so a new world generates. This cannot be undone except by restoring a backup. "
-            + "Mods, loader files, and server.properties stay (except the seed). "
+            "This deletes the current world on the server. Minecraft stops, the world is deleted, "
+            + "and Minecraft starts again with a new world. This can't be undone except by restoring a backup. "
+            + "Mods and settings are kept (except the seed). "
             + seedNote + " "
             + backupHint,
             "Wipe world");
@@ -1056,15 +1054,14 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         }
 
         IsBusy = true;
-        StatusMessage = "Wiping live world via SSH…";
+        StatusMessage = "Wiping live world…";
         ProgressDisplay = "";
 
         try
         {
             var result = await _ssh.WipeWorldAsync(_config.Vm1, seed);
             StatusMessage = result.Succeeded
-                ? $"Live world wiped at {plan.WorldPath}. Minecraft start requested. "
-                  + "Cloud backups were not deleted."
+                ? "Live world wiped. Minecraft is starting. Cloud backups were not deleted."
                 : result.Error ?? "Wipe failed.";
         }
         finally
@@ -1118,7 +1115,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
             return;
         if (_config is null)
         {
-            ModdingHint = "Local config is missing.";
+            ModdingHint = "This server's settings are missing.";
             return;
         }
 
@@ -1134,7 +1131,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         }
 
         IsModdingBusy = true;
-        ModdingHint = "Listing mods on the game VM…";
+        ModdingHint = "Listing mods on the server…";
         try
         {
             var run = await _ssh.RunCommandAsync(
@@ -1145,7 +1142,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
                 ModFiles.Clear();
                 QuarantinedMods.Clear();
                 ModdingSummary = "";
-                ModdingHint = run.Error ?? "Could not list mods on the game VM.";
+                ModdingHint = run.Error ?? "Could not list mods on the server.";
                 return;
             }
 
@@ -1165,7 +1162,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
             ModdingSummary = inspect.SummaryLine();
             ModdingHint = inspect.ModsDirectoryMissing
                 ? "No mods folder on the server yet."
-                : (ModFiles.Count == 0 ? "No files in mods/." : "");
+                : (ModFiles.Count == 0 ? "No mods installed." : "");
         }
         finally
         {
@@ -1262,7 +1259,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
             return;
         if (_config is null)
         {
-            ModdingHint = "Local config is missing.";
+            ModdingHint = "This server's settings are missing.";
             return;
         }
 
@@ -1278,7 +1275,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         }
 
         IsModdingBusy = true;
-        ModdingHint = "Listing Paper plugins on the game VM…";
+        ModdingHint = "Listing Paper plugins on the server…";
         try
         {
             var run = await _ssh.RunCommandAsync(
@@ -1288,7 +1285,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
             {
                 PluginFiles.Clear();
                 ModdingSummary = "";
-                ModdingHint = run.Error ?? "Could not list plugins on the game VM.";
+                ModdingHint = run.Error ?? "Could not list plugins on the server.";
                 return;
             }
 
@@ -1305,7 +1302,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
                 PluginFiles.Add(name);
             ModdingSummary = inspect.SummaryLine();
             ModdingHint = inspect.PluginsDirectoryMissing || PluginFiles.Count == 0
-                ? "No plugin jars yet. Upload a Paper .jar — Minecraft restarts after upload or delete. Do not use /reload."
+                ? "No plugins yet. Upload a Paper plugin .jar — Minecraft restarts after upload or delete. Do not use /reload."
                 : "";
         }
         finally
@@ -1339,7 +1336,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
             "Upload plugin and restart Minecraft?",
             "Install "
             + name
-            + " into plugins/ and restart Minecraft. Do not use /reload. Wrong-loader jars are your problem — Paper plugins only.",
+            + " and restart Minecraft. Do not use /reload. Paper plugins only. Mods and plugins for other loaders won't work.",
             confirmButtonText: "Upload and restart");
         if (!confirmed)
             return;
@@ -1375,7 +1372,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
             "Delete plugin and restart Minecraft?",
             "Remove "
             + fileName
-            + " from plugins/ and restart Minecraft. Do not use /reload.",
+            + " and restart Minecraft. Do not use /reload.",
             confirmButtonText: "Delete and restart");
         if (!confirmed)
             return;
@@ -1407,7 +1404,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
         var path = await _filePicker.OpenFileAsync(new FilePickRequest
         {
-            Title = "Add mod jar",
+            Title = "Add mod .jar",
             Filters = [ModJarFilter],
         });
         if (string.IsNullOrWhiteSpace(path))
@@ -1421,10 +1418,10 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         }
 
         var confirmed = await _dialogs.ConfirmAsync(
-            "Add mod jar and restart Minecraft?",
+            "Add mod and restart Minecraft?",
             "Install "
             + name
-            + " into mods/ and restart Minecraft. This bypasses automatic pack checks.",
+            + " and restart Minecraft. This skips modpack checks.",
             confirmButtonText: "Add and restart");
         if (!confirmed)
             return;
@@ -1455,10 +1452,10 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
             return;
 
         var confirmed = await _dialogs.ConfirmAsync(
-            "Delete mod jar and restart Minecraft?",
+            "Delete mod and restart Minecraft?",
             "Remove "
             + fileName
-            + " from mods/ and restart Minecraft. This bypasses automatic pack checks.",
+            + " and restart Minecraft. This skips modpack checks.",
             confirmButtonText: "Delete and restart");
         if (!confirmed)
             return;
@@ -1530,7 +1527,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
         var localPath = await _filePicker.SaveFileAsync(new FileSaveRequest
         {
-            Title = "Download imported pack",
+            Title = "Download modpack",
             FileName = suggested,
             DefaultExtension = ext,
             Filters = filters,
@@ -1543,18 +1540,18 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         }
 
         IsBusy = true;
-        StatusMessage = "Copying original imported pack…";
+        StatusMessage = "Copying the modpack file…";
         ProgressDisplay = "";
         var archivePath = _localPack.ArchivePath;
         try
         {
             await Task.Run(() => File.Copy(archivePath, localPath, overwrite: true));
-            StatusMessage = $"Saved confirmed pack to {localPath}";
-            ModdingHint = "This is the confirmed pack file saved on this PC, not a zip of server mods.";
+            StatusMessage = $"Saved modpack to {localPath}";
+            ModdingHint = "This is the modpack file saved on this PC, not a zip of the server's mods.";
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            StatusMessage = "Could not copy the original pack: " + ex.Message;
+            StatusMessage = "Could not copy the modpack file: " + ex.Message;
         }
         finally
         {
@@ -1595,7 +1592,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         ShowChangePackUi = true;
         var path = await _filePicker.OpenFileAsync(new FilePickRequest
         {
-            Title = "Choose a mod pack (.mrpack or .zip)",
+            Title = "Choose a modpack (.mrpack or .zip)",
             Filters = [PackFilter, MrpackFilter, ZipFilter, AllFilesFilter],
         });
         if (string.IsNullOrWhiteSpace(path))
@@ -1631,7 +1628,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         }
         catch (Exception ex)
         {
-            StatusMessage = "Could not save the dropped pack: " + ex.Message;
+            StatusMessage = "Could not save the dropped modpack: " + ex.Message;
             return;
         }
 
@@ -1655,13 +1652,13 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
         if (_config is null)
         {
-            StatusMessage = "Local config is missing.";
+            StatusMessage = "This server's settings are missing.";
             return;
         }
 
         if (string.IsNullOrWhiteSpace(PackPath) || !File.Exists(PackPath))
         {
-            StatusMessage = "Could not resolve the pack file.";
+            StatusMessage = "Could not find the modpack file.";
             return;
         }
 
@@ -1677,14 +1674,14 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
             var source = string.IsNullOrWhiteSpace(PackSourcePath) ? PackPath : PackSourcePath;
             if (!File.Exists(source))
             {
-                StatusMessage = "Original pack file is missing. Choose the pack again.";
+                StatusMessage = "The original modpack file is missing. Choose it again.";
                 return;
             }
 
             var dataDir = _dataDirectory ?? LocalConfigStore.TryFindDataDirectory();
             if (string.IsNullOrWhiteSpace(dataDir))
             {
-                StatusMessage = "Could not find Manager data directory for the derived pack.";
+                StatusMessage = "Could not find the MCSTool data folder.";
                 _banner.Show(StatusMessage, ActionBannerSeverity.Error);
                 return;
             }
@@ -1693,7 +1690,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         var confirmed = await _dialogs.ConfirmAsync(
             PackReplaceUx.ConfirmTitle,
             PackReplaceUx.ConfirmBody(WipeWorld),
-            "Install this pack");
+            "Install this modpack");
         if (!confirmed)
         {
             StatusMessage = "Change pack cancelled.";
@@ -1733,7 +1730,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
                         originalName));
                 if (!build.Succeeded || string.IsNullOrWhiteSpace(build.Value))
                 {
-                    StatusMessage = build.Error ?? "Could not build the derived pack.";
+                    StatusMessage = build.Error ?? "Could not apply your version fixes to the modpack.";
                     _banner.Show(StatusMessage, ActionBannerSeverity.Error);
                     return;
                 }
@@ -1750,7 +1747,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
                 if (!started)
                 {
                     StatusMessage = string.IsNullOrWhiteSpace(_main.ActionFeedback)
-                        ? "Start failed. Pack was not installed."
+                        ? "Start failed. The modpack was not installed."
                         : _main.ActionFeedback;
                     return;
                 }
@@ -1765,7 +1762,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
                 _config.Budget.BudgetWarnMinutes);
             if (!idle.Succeeded)
             {
-                StatusMessage = idle.Error ?? "Could not disable the idle timer. Pack was not installed.";
+                StatusMessage = idle.Error ?? "Could not turn off the idle timer. The modpack was not installed.";
                 _banner.Show(StatusMessage, ActionBannerSeverity.Error);
                 return;
             }
@@ -1787,7 +1784,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
                 progress);
             if (!result.Succeeded || result.Value is null)
             {
-                StatusMessage = result.Error ?? "Pack replace failed.";
+                StatusMessage = result.Error ?? "Modpack install failed.";
                 _banner.Show(StatusMessage, ActionBannerSeverity.Error);
                 return;
             }
@@ -1798,8 +1795,8 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
             StatusMessage = PackReplaceUx.SuccessMessage(result.Value);
             if (!meta.Succeeded)
             {
-                StatusMessage += " Shared game info did not update: "
-                    + (meta.Error ?? "publish failed.");
+                StatusMessage += " Server details did not update: "
+                    + (meta.Error ?? "save failed.");
             }
 
             _banner.Show(
@@ -1849,7 +1846,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
                 _packPreview = null;
                 PackPath = path;
                 PackCanContinue = false;
-                PackBlockReason = result.Error ?? "Could not analyze this file.";
+                PackBlockReason = result.Error ?? "Could not read this file.";
                 StatusMessage = PackBlockReason;
                 _banner.Show(StatusMessage, ActionBannerSeverity.Error);
                 return;
@@ -1859,12 +1856,12 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
             if (result.Value.CanContinue)
             {
                 StatusMessage = result.Value.NeedsAssistedReview
-                    ? "Review unknown jars, then confirm the pack."
+                    ? "Review unknown mods, then confirm the modpack."
                     : ProgressDockUx.ChangePackReviewStatus;
             }
             else
             {
-                StatusMessage = result.Value.BlockReason ?? "This pack cannot be installed.";
+                StatusMessage = result.Value.BlockReason ?? "This modpack cannot be installed.";
                 _banner.Show(StatusMessage, ActionBannerSeverity.Error);
             }
         }
@@ -1873,7 +1870,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
             _packPreview = null;
             PackCanContinue = false;
             PackConfirmed = false;
-            PackBlockReason = "Analyze failed: " + ex.Message;
+            PackBlockReason = "Checking the modpack failed: " + ex.Message;
             StatusMessage = PackBlockReason;
             _banner.Show(StatusMessage, ActionBannerSeverity.Error);
         }
@@ -2021,7 +2018,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
             serverKind: string.IsNullOrWhiteSpace(kind) ? null : kind,
             minecraftVersion: result.MinecraftVersion);
         if (!published.Succeeded)
-            return ServiceResult.Fail(published.Error ?? "Could not update shared game info.");
+            return ServiceResult.Fail(published.Error ?? "Could not update server details.");
         return ServiceResult.Ok();
     }
 
@@ -2223,7 +2220,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         if (_config is null)
         {
             if (isManual)
-                StatusMessage = "Local config is missing.";
+                StatusMessage = "This server's settings are missing.";
             NotifyLiveWorldSizeUi();
             return;
         }
@@ -2237,7 +2234,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         if (!LiveWorldSizeProbe.TryCreateCommand(_config.Vm1.WorldPath, out var command, out var pathError))
         {
             if (isManual)
-                StatusMessage = pathError ?? "vm1.world_path is not a safe world directory.";
+                StatusMessage = pathError ?? "The world folder setting is not a safe folder.";
             NotifyLiveWorldSizeUi();
             return;
         }
@@ -2465,7 +2462,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
         if (_config is null)
         {
-            StatusMessage = "Local config is missing.";
+            StatusMessage = "This server's settings are missing.";
             return;
         }
 
@@ -2477,7 +2474,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
         var localPath = await _filePicker.SaveFileAsync(new FileSaveRequest
         {
-            Title = "Download live world (SSH)",
+            Title = "Download live world",
             FileName = OversizedWorldBackupUx.SuggestedFileName(),
             DefaultExtension = "zip",
             Filters = [ZipFilter, AllFilesFilter],
@@ -2490,7 +2487,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         }
 
         IsBusy = true;
-        StatusMessage = "Copying the live world over SSH…";
+        StatusMessage = "Copying the live world from the game VM…";
         ProgressDisplay = "0 B";
 
         try
@@ -2500,7 +2497,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
             var result = await _ssh.DownloadLiveWorldZipAsync(_config.Vm1, localPath, progress);
             StatusMessage = result.Succeeded
                 ? $"Saved live world to {localPath}. It was not uploaded to cloud storage."
-                : result.Error ?? "SSH world download failed.";
+                : result.Error ?? "World download failed.";
         }
         finally
         {
@@ -2677,7 +2674,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
         BindSettingsDocument(got.Value.Document, _currentMinecraftVersion);
         SettingsStatus = got.Value.Present
             ? ""
-            : "No saved settings yet — defaults are shown. Save to store them in the cloud.";
+            : "No saved settings yet — defaults are shown. Save to store them in cloud storage.";
     }
 
     private void ApplySettingsVersion(string? minecraftVersion)
@@ -2801,7 +2798,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
             IdentityStatus =
                 "Saved. Restart Minecraft (or Start) to apply the in-game name and icon. "
                 + (string.IsNullOrWhiteSpace(doorNote)
-                    ? "Doorbell list icons update on Save."
+                    ? "Offline icons update on Save."
                     : doorNote);
         }
         finally
@@ -2841,7 +2838,7 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
 
             IdentityStatus = got.Value.Present
                 ? ""
-                : "No saved identity yet — defaults are shown. Save to create the shared file.";
+                : "No saved identity yet — defaults are shown. Save to store it in cloud storage.";
         }
         finally
         {
@@ -2852,17 +2849,17 @@ public sealed partial class ServerManagementViewModel : ObservableObject, IDispo
     private async Task<string> TryRefreshDoorIconsAsync()
     {
         if (_cloud.Door is null)
-            return "Could not reach the doorbell to load list icons; they apply on the next wake.";
+            return "Could not reach the doorbell VM to update the offline icons; they apply on the next wake.";
         try
         {
             var refresh = await _cloud.Door.RefreshOsAsync();
             if (!refresh.Succeeded)
-                return "Doorbell icon refresh failed: " + (refresh.Error ?? "unknown") + " They apply on the next wake.";
-            return "Doorbell list icons updated.";
+                return "Updating the offline icons failed: " + (refresh.Error ?? "unknown") + " They apply on the next wake.";
+            return "Offline icons updated.";
         }
         catch (Exception ex)
         {
-            return "Doorbell icon refresh failed: " + ex.Message;
+            return "Updating the offline icons failed: " + ex.Message;
         }
     }
 

@@ -72,13 +72,13 @@
                 <button type="button"
                         class="mcm-primary"
                         disabled="@(!Vm.CanSaveIdentity)"
-                        title="Writes the shared copy. Restart Minecraft (or Start) to apply name, icon, and chat lines."
+                        title="Saves to cloud storage. Restart Minecraft (or Start) to apply."
                         @onclick="Vm.SaveIdentityAsync">
                     Save
                 </button>
             </div>
             <p class="mcm-server-facts">
-                        Minecraft @Vm.MinecraftVersionDisplay. Server name, description, and icon are shown in the in-game server listing. To style name and description, highlight a text segment and use the toolbar to apply an effect. Offline / Starting / Unavailable icons are shown while the server is off.
+                        Minecraft @Vm.MinecraftVersionDisplay. Name, description, and icon show in Minecraft's server list. Highlight text, then pick a color or style. The Offline, Starting, and Unavailable icons show while the server is off.
             </p>
             <div class="mcm-identity-grid">
                 <div>
@@ -95,7 +95,7 @@
                     <div class="mcm-server-actions" style="align-items:center;">
                         <button type="button"
                                 disabled="@Vm.AnyBusy"
-                                title="Any PNG. Manager fits it to 64×64."
+                                title="Any PNG. It is resized to 64×64."
                                 @onclick="Vm.PickIconAsync">
                             Choose icon
                         </button>
@@ -108,10 +108,10 @@
                                 class="mcm-help"
                                 title="@Vm.IconStatesHelp">
                             <i class="ti ti-help" aria-hidden="true"></i>
-                            <span class="sr-only">About doorbell list icons</span>
+                            <span class="sr-only">About server list icons</span>
                         </button>
                     </div>
-                    <p style="margin:6px 0 0;font-size:12px;color:var(--text-muted);">PNG — fitted to 64×64</p>
+                    <p style="margin:6px 0 0;font-size:12px;color:var(--text-muted);">PNG — resized to 64×64</p>
                 </div>
             </div>
             @if (!string.IsNullOrWhiteSpace(Vm.IdentityStatus))
@@ -126,7 +126,7 @@
             @if (Vm.ShowChatTemplates)
             {
                 <p style="margin:0 0 10px;font-size:12px;color:var(--text-muted);">
-                    These lines are sent in-game before an idle or budget stop. Keep the placeholders such as <code>{minutes}</code> if the line uses them.
+                    Sent in chat before the server stops for being idle or out of hours. Keep placeholders like <code>{minutes}</code>.
                 </p>
                 <div class="mcm-chat-templates">
                     @foreach (var row in Vm.ChatTemplates)
@@ -169,13 +169,13 @@
                 <button type="button"
                         class="mcm-primary"
                         disabled="@(!Vm.CanSaveSettings)"
-                        title="Writes the shared copy. Restart Minecraft (or Start) to apply."
+                        title="Saves to cloud storage. Restart Minecraft (or Start) to apply."
                         @onclick="Vm.SaveSettingsAsync">
                     Save
                 </button>
             </div>
             <p class="mcm-server-facts">
-                Minecraft @Vm.MinecraftVersionDisplay. These values are stored in the cloud and applied the next time Minecraft starts. Name, icon, and MOTD stay on Identity.
+                Minecraft @Vm.MinecraftVersionDisplay. These are saved to cloud storage and applied the next time Minecraft starts. Name, icon, and description are on Identity.
             </p>
             <div class="mcm-settings-grid">
                 <div>
@@ -279,7 +279,7 @@
                                @bind="Vm.SettingsHardcore" />
                         <span>Hardcore</span>
                     </label>
-                    <p class="mcm-wizard-hint">Hardcore uses this world’s hardcore flag. Players who die become spectators. This does not wipe the world.</p>
+                    <p class="mcm-wizard-hint">Players who die become spectators. This does not wipe the world.</p>
                 </div>
             </div>
             @if (!string.IsNullOrWhiteSpace(Vm.SettingsStatus))
@@ -300,13 +300,13 @@
                 </div>
                 <button type="button"
                         disabled="@Vm.AnyBusy"
-                        title="Opens a dialog to reinstall Vanilla (Paper) or a mod pack on this existing VM."
+                        title="Opens a dialog to reinstall Vanilla (Paper) or a modpack on this game VM."
                         @onclick="OpenChangeTypeAsync">
                     @ChangeServerTypeUx.OpenButton
                 </button>
             </div>
             <p class="mcm-server-facts">
-                Now @Vm.ServerKindDisplay · Minecraft @Vm.MinecraftVersionDisplay. Reinstalls Minecraft on this VM. The cloud stack, doorbell, and play IP stay. This is not a Redeploy.
+                Now @Vm.ServerKindDisplay · Minecraft @Vm.MinecraftVersionDisplay. Reinstalls Minecraft on this game VM. The doorbell VM and play IP don't change. Nothing else in Oracle Cloud is recreated.
             </p>
         </div>
     </div>
@@ -345,7 +345,7 @@
                     <button type="button"
                             class="mcm-danger-btn"
                             disabled="@Vm.AnyBusy"
-                            title="Stops Minecraft, deletes the live world on the game VM, then starts it again. Cloud backups, mods, and server.properties stay. Requires the server running. Download a world save first if you might want this world back."
+                            title="Stops Minecraft, deletes the live world, then starts it again. Cloud backups, mods, and settings are kept. Requires the server to be running. Download a world save first if you might want this world back."
                             @onclick="Vm.WipeWorldAsync">
                         Wipe world
                     </button>
@@ -417,7 +417,7 @@
                 <p style="margin:10px 0 0;font-size:12px;color:var(--text-muted);">@Vm.SoftCapDisplay</p>
             }
             <p style="margin:12px 0 0;font-size:12px;color:var(--text-muted);">
-                Replace and Wipe world need the server running. Wipe deletes only the live save — cloud backups stay. Download a world save first if you might want this world back. Upload while stopped only stores a zip — Start, then Replace to apply it. If a world is too large for cloud backup, Download latest copies the live world over SSH instead.
+                Replace and Wipe world need the server running. Wipe deletes only the live save — cloud backups stay. Download a world save first if you might want this world back. Upload while stopped only stores a zip — Start, then Replace to apply it. If a world is too large for cloud backup, Download latest copies the live world straight from the game VM instead.
             </p>
         </div>
     }
@@ -467,7 +467,7 @@
                             disabled="@(!Vm.CanPickPack || Vm.IsAnalyzingPack)"
                             title="@Vm.ChangePackTitle"
                             @onclick="Vm.PickPackAsync">
-                        Choose pack file…
+                        Choose modpack…
                     </button>
                     @if (!string.IsNullOrWhiteSpace(Vm.PackFileNameDisplay))
                     {
@@ -573,13 +573,13 @@
                                     <button type="button"
                                             class="mcm-primary"
                                             disabled="@(!Vm.CanActOnQuarantine)"
-                                            title="Skip this mod on future installs of this same pack file."
+                                            title="Skip this mod on future installs of this same modpack file."
                                             @onclick="() => Vm.KeepExcludedAsync(entry)">
                                         Keep excluded
                                     </button>
                                     <button type="button"
                                             disabled="@(!Vm.CanActOnQuarantine)"
-                                            title="Move the jar back into mods/ and restart Minecraft."
+                                            title="Put the mod back and restart Minecraft."
                                             @onclick="() => Vm.PutBackAsync(entry)">
                                         Put back
                                     </button>
@@ -600,7 +600,7 @@
                                 </button>
                                 <button type="button"
                                         disabled="@Vm.AnyBusy"
-                                        title="List server-side mods on the game VM. Requires the VM running."
+                                        title="List the mods on the server. Requires the server to be running."
                                         @onclick="Vm.RefreshLiveModsAsync">
                                     <i class="ti ti-refresh" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
                                     Refresh list
@@ -625,7 +625,7 @@
                                             {
                                                 <button type="button"
                                                         disabled="@(!Vm.CanUploadMod)"
-                                                        title="Delete this mod jar and restart Minecraft."
+                                                        title="Delete this mod and restart Minecraft."
                                                         @onclick="() => Vm.DeleteModAsync(name)">
                                                     Delete
                                                 </button>
@@ -636,7 +636,7 @@
                             }
                             else
                             {
-                                <p class="mcm-expander-empty">Refresh list to load server-side mods. Requires the VM running.</p>
+                                <p class="mcm-expander-empty">Refresh list to load server-side mods. Requires the server to be running.</p>
                             }
                         </details>
                     </div>
@@ -670,7 +670,7 @@
                     </button>
                     <button type="button"
                             disabled="@Vm.AnyBusy"
-                            title="List Paper plugins on the game VM. Requires the VM running."
+                            title="List Paper plugins on the server. Requires the server to be running."
                             @onclick="Vm.RefreshLivePluginsAsync">
                         <i class="ti ti-refresh" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i>
                         Refresh list
@@ -698,7 +698,7 @@
                                 <span>@name</span>
                                 <button type="button"
                                         disabled="@(!Vm.CanUploadPlugin)"
-                                        title="Delete this plugin jar and restart Minecraft."
+                                        title="Delete this plugin and restart Minecraft."
                                         @onclick="() => Vm.DeletePluginAsync(name)">
                                     Delete
                                 </button>
@@ -708,7 +708,7 @@
                 }
                 else
                 {
-                    <p class="mcm-expander-empty">Refresh list to load Paper plugins. Requires the VM running.</p>
+                    <p class="mcm-expander-empty">Refresh list to load Paper plugins. Requires the server to be running.</p>
                 }
             </details>
         </div>
@@ -776,7 +776,7 @@
             }
             @if (Vm.ChangeType.ShowPackDrop)
             {
-                <p class="mcm-wizard-hint">Minecraft version comes from the pack.</p>
+                <p class="mcm-wizard-hint">Minecraft version comes from the modpack.</p>
                 <div class="mcm-pack-drop @(Vm.ChangeType.IsAnalyzingPack ? "is-busy" : "")"
                      aria-label="@PackReplaceUx.DropTitle">
                     <InputFile class="mcm-pack-drop-input"
@@ -791,7 +791,7 @@
                     <button type="button"
                             disabled="@(Vm.ChangeType.IsBusy || Vm.ChangeType.IsAnalyzingPack)"
                             @onclick="Vm.ChangeType.PickPackAsync">
-                        Choose pack file…
+                        Choose modpack…
                     </button>
                 </div>
                 @if (!string.IsNullOrWhiteSpace(Vm.ChangeType.PackBlockReason))
@@ -963,11 +963,11 @@
         }
         catch (IOException ex)
         {
-            Vm.ChangeType.StatusMessage = "Could not read the dropped file. Use Choose pack file. " + ex.Message;
+            Vm.ChangeType.StatusMessage = "Could not read the dropped file. Use Choose modpack. " + ex.Message;
         }
         catch (InvalidOperationException ex)
         {
-            Vm.ChangeType.StatusMessage = "Drop failed. Use Choose pack file. " + ex.Message;
+            Vm.ChangeType.StatusMessage = "Drop failed. Use Choose modpack. " + ex.Message;
         }
     }
 
@@ -984,11 +984,11 @@
         }
         catch (IOException ex)
         {
-            Vm.StatusMessage = "Could not read the dropped file. Use Choose pack file. " + ex.Message;
+            Vm.StatusMessage = "Could not read the dropped file. Use Choose modpack. " + ex.Message;
         }
         catch (InvalidOperationException ex)
         {
-            Vm.StatusMessage = "Drop failed. Use Choose pack file. " + ex.Message;
+            Vm.StatusMessage = "Drop failed. Use Choose modpack. " + ex.Message;
         }
     }
 

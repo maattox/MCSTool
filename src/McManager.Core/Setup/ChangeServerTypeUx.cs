@@ -15,14 +15,14 @@ public static class ChangeServerTypeUx
     public const string OpenButton = "Change type…";
 
     public const string SectionHelp =
-        "Reinstalls Minecraft as Vanilla (Paper) or Modded on this existing VM. "
-        + "The cloud stack, doorbell, and play IP stay. This is not a cloud Redeploy. "
+        "Reinstalls Minecraft as Vanilla (Paper) or Modded on this game VM. "
+        + "The doorbell VM and play IP don't change. "
         + "The world is kept unless you check wipe. Going from Modded back to Vanilla (Paper) "
         + "can lose mod blocks and items.";
 
     public const string ModalTitle = "Change server type";
 
-    public const string ConfirmTitle = "Reinstall Minecraft on this VM?";
+    public const string ConfirmTitle = "Reinstall Minecraft?";
 
     public const string PrimaryAction = "Continue";
 
@@ -35,12 +35,12 @@ public static class ChangeServerTypeUx
     public const string WipeWorldLabel = PackReplaceUx.WipeWorldLabel;
 
     public const string MissingPackError =
-        "Modded needs a pack file. Drop a .mrpack or server-pack zip.";
+        "Modded needs a modpack. Drop a .mrpack or .zip file.";
 
     public const string MissingVersionError = "Choose a Minecraft version.";
 
     public const string PackNeedsReview =
-        "This pack needs review on Mods → Change pack (unknown jars or version fields).";
+        "This modpack needs a review on the Mods tab first (unknown mods or versions).";
 
     public const string AnyToModdedNote =
         "After mods run, going back to Vanilla (Paper) can lose mod blocks and items.";
@@ -50,13 +50,13 @@ public static class ChangeServerTypeUx
         + "Download a world save first if that world matters.";
 
     public const string ConfirmKeepWorld =
-        "Reinstalls Minecraft on the existing game VM. The OCI stack, doorbell, and play IP stay the same. "
-        + "This is not a cloud Redeploy. The world is kept unless wipe is checked.";
+        "Reinstalls Minecraft on this game VM. The doorbell VM and play IP don't change. "
+        + "Nothing else in Oracle Cloud is recreated. The world is kept unless wipe is checked.";
 
     public const string ConfirmWipeWorld =
-        "Reinstalls Minecraft on the existing game VM. The OCI stack, doorbell, and play IP stay the same. "
-        + "This is not a cloud Redeploy. The live world will be deleted. Cloud backups stay. "
-        + "Irreversible except by restoring a backup.";
+        "Reinstalls Minecraft on this game VM. The doorbell VM and play IP don't change. "
+        + "Nothing else in Oracle Cloud is recreated. The live world will be deleted. Cloud backups are kept. "
+        + "This can't be undone except by restoring a backup.";
 
     public static string ConfirmBody(bool wipeWorld) =>
         wipeWorld ? ConfirmWipeWorld : ConfirmKeepWorld;

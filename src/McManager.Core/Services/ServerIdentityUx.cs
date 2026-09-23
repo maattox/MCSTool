@@ -27,10 +27,10 @@ public static class ServerIdentityUx
 
     public static readonly IReadOnlyList<ChatTemplateField> ChatTemplateFields =
     [
-        new("budget_warn_leftover", "Daily leftover warning", "{ocpu} {gb}"),
+        new("budget_warn_leftover", "Using rollover hours", "{ocpu} {gb}"),
         new("budget_final_warn", "Daily hours almost gone", null),
         new("budget_stop", "Daily hours used up", null),
-        new("soft_cap_stop", "Monthly cap stop", null),
+        new("soft_cap_stop", "Monthly limit stop", null),
         new("idle_stop", "Idle (nobody online)", "{minutes}"),
         new("idle_stop_inactive", "Idle (Minecraft not running)", "{minutes}"),
         new("admin_stop", "Admin stop", null),

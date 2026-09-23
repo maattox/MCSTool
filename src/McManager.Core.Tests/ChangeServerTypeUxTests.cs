@@ -66,7 +66,9 @@ public sealed class ChangeServerTypeUxTests
     public void Confirm_names_stack_and_play_ip()
     {
         Assert.Contains("play IP", ChangeServerTypeUx.ConfirmKeepWorld, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("not a cloud Redeploy", ChangeServerTypeUx.ConfirmKeepWorld, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Nothing else in Oracle Cloud is recreated", ChangeServerTypeUx.ConfirmKeepWorld, StringComparison.Ordinal);
+        Assert.DoesNotContain("Redeploy", ChangeServerTypeUx.ConfirmKeepWorld, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("stack", ChangeServerTypeUx.ConfirmWipeWorld, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("play IP", ChangeServerTypeUx.ConfirmWipeWorld, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("deleted", ChangeServerTypeUx.ConfirmWipeWorld, StringComparison.OrdinalIgnoreCase);
         Assert.Equal(ChangeServerTypeUx.ConfirmWipeWorld, ChangeServerTypeUx.ConfirmBody(wipeWorld: true));
