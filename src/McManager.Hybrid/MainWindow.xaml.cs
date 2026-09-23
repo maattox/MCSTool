@@ -98,6 +98,9 @@ public partial class MainWindow : Window
         // Autofill on first text-field focus can freeze WebView2 + custom WindowChrome for a beat.
         core.Settings.IsGeneralAutofillEnabled = false;
         core.Settings.IsPasswordAutosaveEnabled = false;
+#if !DEBUG
+        core.Settings.AreDevToolsEnabled = false;
+#endif
         // Overview shows http://<door ephemeral>/. A click that WebView2 treats as
         // navigation would replace the Blazor app with the map page.
         core.NavigationStarting += OnBlazorNavigationStarting;

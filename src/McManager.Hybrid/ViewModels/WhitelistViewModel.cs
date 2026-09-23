@@ -543,6 +543,15 @@ public sealed partial class WhitelistViewModel : ObservableObject
             return false;
         }
 
+        var duplicate = Friends.FirstOrDefault(f =>
+            (editing is null || f.Id != editing.Id)
+            && string.Equals(f.Ip, source.Stored, StringComparison.OrdinalIgnoreCase));
+        if (duplicate is not null)
+        {
+            error = $"{source.Stored} is already on the Whitelist ({duplicate.Name}).";
+            return false;
+        }
+
         normalized = source.Stored;
         error = "";
         return true;

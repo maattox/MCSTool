@@ -107,13 +107,15 @@ public sealed class ChangeServerTypeRequest
         string minecraftVersion,
         bool wipeWorld,
         string? packPath = null,
-        string? dataDirectory = null)
+        string? dataDirectory = null,
+        DoorSettings? door = null)
     {
         TargetChoice = targetChoice;
         MinecraftVersion = minecraftVersion;
         WipeWorld = wipeWorld;
         PackPath = packPath;
         DataDirectory = dataDirectory;
+        Door = door;
     }
 
     public string TargetChoice { get; }
@@ -121,6 +123,7 @@ public sealed class ChangeServerTypeRequest
     public bool WipeWorld { get; }
     public string? PackPath { get; }
     public string? DataDirectory { get; }
+    public DoorSettings? Door { get; }
 }
 
 public sealed class ChangeServerTypeResult
@@ -132,7 +135,8 @@ public sealed class ChangeServerTypeResult
         string? packName = null,
         string? loader = null,
         string? saveCompatibilityWarning = null,
-        string? quarantineNotice = null)
+        string? quarantineNotice = null,
+        string? sharedMapWarning = null)
     {
         ServerKind = serverKind;
         MinecraftVersion = minecraftVersion;
@@ -141,6 +145,7 @@ public sealed class ChangeServerTypeResult
         Loader = loader;
         SaveCompatibilityWarning = saveCompatibilityWarning;
         QuarantineNotice = quarantineNotice;
+        SharedMapWarning = sharedMapWarning;
     }
 
     public string ServerKind { get; }
@@ -150,4 +155,5 @@ public sealed class ChangeServerTypeResult
     public string? Loader { get; }
     public string? SaveCompatibilityWarning { get; }
     public string? QuarantineNotice { get; }
+    public string? SharedMapWarning { get; }
 }

@@ -372,6 +372,7 @@ static void serve_file(socket_t fd, const char *full, const char *rel, int head_
                       "HTTP/1.1 200 OK\r\n"
                       "Content-Type: %s\r\n"
                       "Content-Length: %zu\r\n"
+                      "Cache-Control: no-store\r\n"
                       "Connection: close\r\n"
                       "\r\n",
                       mime_for(rel), len);

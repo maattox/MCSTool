@@ -531,11 +531,18 @@ static void *wake_thread_main(void *arg) {
 #endif
 
 static int start_wake_thread(ControlContext *ctx, int admin_override) {
+  lock_ctx(ctx);
   if (ctx->wake_in_progress) {
+    unlock_ctx(ctx);
     return 0;
+  }
+  if (ctx->stop_in_progress) {
+    unlock_ctx(ctx);
+    return -1;
   }
   ctx->wake_in_progress = 1;
   ctx->wake_admin_override = admin_override;
+  unlock_ctx(ctx);
 #ifdef _WIN32
   uintptr_t h = _beginthreadex(NULL, 0, wake_thread_main, ctx, 0, NULL);
   if (h == 0) {
@@ -656,11 +663,19 @@ static void *stop_thread_main(void *arg) {
 #endif
 
 static int start_stop_thread(ControlContext *ctx, int exhausted) {
+  lock_ctx(ctx);
   if (ctx->stop_in_progress) {
+    unlock_ctx(ctx);
     return 0;
+  }
+  /* A stop during wake would race ip_to_vm1 against ip_to_vm2. */
+  if (ctx->wake_in_progress) {
+    unlock_ctx(ctx);
+    return -1;
   }
   ctx->stop_exhausted = exhausted;
   ctx->stop_in_progress = 1;
+  unlock_ctx(ctx);
 #ifdef _WIN32
   uintptr_t h = _beginthreadex(NULL, 0, stop_thread_main, ctx, 0, NULL);
   if (h == 0) {

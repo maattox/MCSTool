@@ -44,6 +44,14 @@ public static class OpenTofuLocator
 
     internal static string? Find(string bundledDirectory, bool searchPathAndWinget = true)
     {
+        // The pinned, SHA-256-verified copy wins over whatever tofu is on PATH.
+        if (!string.IsNullOrWhiteSpace(bundledDirectory))
+        {
+            var pinned = Path.Combine(bundledDirectory, ExeFileName);
+            if (File.Exists(pinned))
+                return pinned;
+        }
+
         if (searchPathAndWinget)
         {
             var fromPath = FindOnPath(ExeFileName) ?? FindOnPath("tofu");

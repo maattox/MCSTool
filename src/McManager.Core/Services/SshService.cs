@@ -15,11 +15,13 @@ public interface ISshService
 
     Task<ServiceResult> ReplaceWorldAsync(
         Vm1Settings vm1,
+        DoorSettings? door,
         string localZipPath,
         CancellationToken cancellationToken = default);
 
     Task<ServiceResult> WipeWorldAsync(
         Vm1Settings vm1,
+        DoorSettings? door,
         string? levelSeed = null,
         CancellationToken cancellationToken = default);
 
@@ -136,15 +138,17 @@ public sealed class SshService : ISshService
 
     public Task<ServiceResult> ReplaceWorldAsync(
         Vm1Settings vm1,
+        DoorSettings? door,
         string localZipPath,
         CancellationToken cancellationToken = default) =>
-        Task.Run(() => ReplaceWorld(vm1, localZipPath), cancellationToken);
+        Task.Run(() => ReplaceWorld(vm1, door, localZipPath), cancellationToken);
 
     public Task<ServiceResult> WipeWorldAsync(
         Vm1Settings vm1,
+        DoorSettings? door,
         string? levelSeed = null,
         CancellationToken cancellationToken = default) =>
-        Task.Run(() => WipeWorld(vm1, levelSeed), cancellationToken);
+        Task.Run(() => WipeWorld(vm1, door, levelSeed), cancellationToken);
 
     public Task<ServiceResult> DownloadLiveWorldZipAsync(
         Vm1Settings vm1,
@@ -595,7 +599,7 @@ public sealed class SshService : ISshService
         return ServiceResult.Ok();
     }
 
-    private static ServiceResult ReplaceWorld(Vm1Settings vm1, string localZipPath)
+    private static ServiceResult ReplaceWorld(Vm1Settings vm1, DoorSettings? door, string localZipPath)
     {
         if (string.IsNullOrWhiteSpace(localZipPath) || !File.Exists(localZipPath))
             return ServiceResult.Fail($"Local zip not found: {localZipPath}");
@@ -661,6 +665,21 @@ public sealed class SshService : ISshService
                         + "Attempted to start Minecraft again.");
                 }
 
+                var map = client.RunCommand(
+                    $"sudo bash -c {EscapeShellArg(PlayerMapReset.VmCacheClearScript())}");
+                if (map.ExitStatus != 0)
+                {
+                    var err = string.IsNullOrWhiteSpace(map.Error) ? map.Result : map.Error;
+                    TryStartUnit(client, unit);
+                    return ServiceResult.Fail(
+                        "World replaced, but the player map on the game VM could not be cleared "
+                        + $"(exit {map.ExitStatus}): {err.Trim()}. Attempted to start Minecraft again.");
+                }
+
+                var mapWarning = PlayerMapReset.TryClearDoor(
+                    door,
+                    "The player map could not be cleared.");
+
                 var start = client.RunCommand($"sudo systemctl start {EscapeShellArg(unit)}");
                 if (start.ExitStatus != 0)
                 {
@@ -670,7 +689,7 @@ public sealed class SshService : ISshService
                         + $"(exit {start.ExitStatus}): {err.Trim()}");
                 }
 
-                return ServiceResult.Ok();
+                return ServiceResult.Ok(mapWarning);
             }
             catch (Exception ex)
             {
@@ -681,7 +700,7 @@ public sealed class SshService : ISshService
         }
     }
 
-    private static ServiceResult WipeWorld(Vm1Settings vm1, string? levelSeed)
+    private static ServiceResult WipeWorld(Vm1Settings vm1, DoorSettings? door, string? levelSeed)
     {
         if (!WorldWipe.TryCreate(vm1.WorldPath, out var plan, out var pathError))
             return ServiceResult.Fail(pathError ?? "The world folder setting is invalid.");
@@ -725,6 +744,10 @@ public sealed class SshService : ISshService
                         + "Attempted to start Minecraft again.");
                 }
 
+                var mapWarning = PlayerMapReset.TryClearDoor(
+                    door,
+                    "The player map could not be cleared.");
+
                 var start = client.RunCommand($"sudo systemctl start {EscapeShellArg(unit)}");
                 if (start.ExitStatus != 0)
                 {
@@ -734,7 +757,7 @@ public sealed class SshService : ISshService
                         + $"(exit {start.ExitStatus}): {err.Trim()}");
                 }
 
-                return ServiceResult.Ok();
+                return ServiceResult.Ok(mapWarning);
             }
             catch (Exception ex)
             {

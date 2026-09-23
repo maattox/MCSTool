@@ -79,18 +79,20 @@ class RconClient:
         return buf
 
 
-def parse_list_online_count(list_response: str) -> int:
+def parse_list_online_count(list_response: str) -> int | None:
     """
     Parse `list` output. Examples:
       There are 0 of a max of 20 players online:
       There are 2 of a max of 20 players online: Steve, Alex
+    Returns None when the format is not recognized, so callers never mistake
+    an unknown reply for an empty server.
     """
     text = (list_response or "").strip()
     lower = text.lower()
     marker = "there are "
     idx = lower.find(marker)
     if idx < 0:
-        return 0
+        return None
     rest = text[idx + len(marker) :]
     num = ""
     for ch in rest:
@@ -98,4 +100,4 @@ def parse_list_online_count(list_response: str) -> int:
             num += ch
         elif num:
             break
-    return int(num) if num else 0
+    return int(num) if num else None

@@ -174,7 +174,20 @@ public sealed class PackReplaceUxTests
         var wiped = PackReplaceUx.SuccessMessage(
             new PackReplaceResult("CI Fabric Strip Fixture", "1.21.1", "fabric", wipedWorld: true, null));
         Assert.Contains("world was wiped", wiped, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("player map was cleared", wiped, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("compat", wiped, StringComparison.Ordinal);
+
+        var mapFailed = PackReplaceUx.SuccessMessage(
+            new PackReplaceResult(
+                "CI Fabric Strip Fixture",
+                "1.21.1",
+                "fabric",
+                wipedWorld: true,
+                null,
+                null,
+                "The player map could not be cleared."));
+        Assert.Contains("could not be cleared", mapFailed, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("player map was cleared", mapFailed, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

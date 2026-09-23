@@ -202,6 +202,7 @@ Players can open a **2D map** in a browser. Copy **Player map** from Overview (o
 - Hover to see block **X** / **Z** next to the cursor. The same numbers stay in the corner.
 - Double-click the map (or press and hold on a phone) to add a named pin. Any whitelisted player can rename or delete pins. Click a pin, then click the map or **×** to close it without changes.
 - The map and pins still work when the game VM is off.
+- Wiping the world clears the map and its pins. The map fills in again as the new world is explored. Replacing the world clears the map the same way.
 
 
 
@@ -222,7 +223,7 @@ On the **Server** tab:
 
 - **Identity** — name, description, and icon in the Minecraft server list.
 - **Settings** — difficulty, default game mode, max players, view distance, simulation distance, PvP, spawn protection, hardcore, force game mode, and allow flight. **Save**, then **Restart** (or **Start**) so Minecraft picks up the changes. Below that, **Change server type** switches between Vanilla (Paper) and Modded and reinstalls Minecraft on the game VM. Wiping the world is optional (off by default). Modded needs a modpack file.
-- **World** — cloud backups, **Replace world** from a zip, and **Wipe world**.
+- **World** — cloud backups, **Replace world** from a zip, and **Wipe world**. Wipe deletes every dimension (Nether, End, and any others) and clears the player map and its pins. Replace world clears the player map too. Cloud backups are kept.
 - **Mods** — drop a new modpack file (any supported format) to change the modpack. At the bottom of this menu, you can add or delete a single mod `.jar`.
 - **Plugins** — only for a **Paper** server. List, upload, and delete plugin `.jar` files. Upload and delete **restart Minecraft**. Do **not** use `/reload`.
 
