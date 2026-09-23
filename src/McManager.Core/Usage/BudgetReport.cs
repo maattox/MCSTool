@@ -38,5 +38,5 @@ public sealed class BudgetReport
     public IReadOnlyList<UsageDayRow> CalendarDays { get; init; } = [];
 
     public string FormatTodayBar() =>
-        $"{TodayOcpu:F1}/{DailyOcpuAllowance:F1} OCPU-h";
+        $"{TodayOcpu:F1}/{DailyOcpuAllowance:F1} CPU-hours";
 }

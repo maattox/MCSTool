@@ -205,7 +205,7 @@ public sealed class BudgetSculptTests
 
         var zeroErr = BudgetSculpt.TryZeroDays(budget, [today], used, Now);
         Assert.NotNull(zeroErr);
-        Assert.Contains("zero out", zeroErr, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("0 hours", zeroErr, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

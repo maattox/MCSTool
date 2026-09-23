@@ -34,14 +34,14 @@ public sealed class AlwaysOnCapableCopyTests
         Assert.Contains("typical day", AlwaysOnCapableCopy.PinAvgHint(22.5, true));
         Assert.DoesNotContain("budget", AlwaysOnCapableCopy.PinAvgHint(22.5, true));
         Assert.DoesNotContain("daily slice", AlwaysOnCapableCopy.PinTodayHelp(true));
-        Assert.DoesNotContain("free compute budget already used", AlwaysOnCapableCopy.PinMonthHelp(true));
+        Assert.DoesNotContain("free hours already used", AlwaysOnCapableCopy.PinMonthHelp(true));
         Assert.DoesNotContain("today's allowed hours", AlwaysOnCapableCopy.PinAvgHelp(true));
         Assert.DoesNotContain("hours still left in the month", AlwaysOnCapableCopy.PinRolloverHelp(true));
         Assert.Equal("still counted", AlwaysOnCapableCopy.PinRemainingHint(true));
         Assert.Contains("usually stay on all month", AlwaysOnCapableCopy.PinRemainingHelp(true));
         Assert.DoesNotContain("this month’s cap", AlwaysOnCapableCopy.PinRemainingHelp(true));
         Assert.Equal("empty server", AlwaysOnCapableCopy.PinIdleHint(true));
-        Assert.Contains("Daily-cap warnings are uncommon", AlwaysOnCapableCopy.PinIdleHelp(true));
+        Assert.Contains("Out-of-hours warnings are rare", AlwaysOnCapableCopy.PinIdleHelp(true));
     }
 
     [Fact]
@@ -49,17 +49,17 @@ public sealed class AlwaysOnCapableCopyTests
     {
         Assert.Contains("out of hours", AlwaysOnCapableCopy.UsageLead(false));
         Assert.Equal("Hours left this month", AlwaysOnCapableCopy.RemainingHoursLabel(false));
-        Assert.Contains("not the rollover bank", AlwaysOnCapableCopy.RemainingHoursHint(false));
+        Assert.Contains("not rollover", AlwaysOnCapableCopy.RemainingHoursHint(false));
         Assert.Contains("run out of free time", AlwaysOnCapableCopy.PublishConfirmBody(false));
-        Assert.Equal("of monthly cap", AlwaysOnCapableCopy.PinMonthHint(false));
+        Assert.Equal("of monthly hours", AlwaysOnCapableCopy.PinMonthHint(false));
         Assert.Equal("/ 11.2h", AlwaysOnCapableCopy.PinTodayHint(11.25, false));
         Assert.DoesNotContain("allowed", AlwaysOnCapableCopy.PinTodayHint(11.25, false));
         Assert.Contains("budget", AlwaysOnCapableCopy.PinAvgHint(11.25, false));
         Assert.Contains("daily slice", AlwaysOnCapableCopy.PinTodayHelp(false));
-        Assert.Contains("free compute budget already used", AlwaysOnCapableCopy.PinMonthHelp(false));
-        Assert.Contains("Hours left pin", AlwaysOnCapableCopy.PinRolloverHelp(false));
+        Assert.Contains("free hours already used", AlwaysOnCapableCopy.PinMonthHelp(false));
+        Assert.Contains("Hours left", AlwaysOnCapableCopy.PinRolloverHelp(false));
         Assert.Equal("not rollover", AlwaysOnCapableCopy.PinRemainingHint(false));
-        Assert.Contains("not the rollover bank", AlwaysOnCapableCopy.PinRemainingHelp(false));
+        Assert.Contains("not rollover", AlwaysOnCapableCopy.PinRemainingHelp(false));
         Assert.Equal("empty / not running", AlwaysOnCapableCopy.PinIdleHint(false));
         Assert.Contains("Minecraft not running", AlwaysOnCapableCopy.PinIdleHelp(false));
     }

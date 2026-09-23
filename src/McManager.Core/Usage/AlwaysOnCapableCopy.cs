@@ -13,31 +13,31 @@ public static class AlwaysOnCapableCopy
 
     public static string UsageLead(bool alwaysOnCapable) =>
         alwaysOnCapable
-            ? "How much free cloud time the server has used. This smaller size can usually stay on all month inside Always Free. Hours are still counted."
-            : "How much free cloud time the server has used. Saving a budget below is what refuses a start when you are out of hours.";
+            ? "How many free hours the server has used. This smaller size can usually stay on all month inside Always Free. Hours are still counted."
+            : "How many free hours the server has used. A budget below can block Start when you're out of hours.";
 
     public static string RemainingHoursLabel(bool alwaysOnCapable) =>
         alwaysOnCapable ? "Hours available this month" : "Hours left this month";
 
     public static string RemainingHoursHint(bool alwaysOnCapable) =>
         alwaysOnCapable
-            ? "This size can usually stay on all month. Hours are still counted — this is not the rollover bank."
-            : "Wall-clock time still in this month’s cap — not the rollover bank";
+            ? "This size can usually stay on all month. Hours are still counted. This is not rollover."
+            : "Hours left in this month’s budget — not rollover";
 
     public static string SoftCapsHint(bool alwaysOnCapable) =>
         alwaysOnCapable
-            ? "Still used to stop the server if a cap is hit. This size can usually stay on all month."
-            : "Warn and idle-stop before you fully spend the monthly allowance.";
+            ? "The server still stops if it reaches this limit. This size can usually stay on all month."
+            : "Stops the server before the monthly allowance is fully used.";
 
     public static string IdleWarningsHint(bool alwaysOnCapable) =>
         alwaysOnCapable
-            ? "How long the server can sit empty. Daily-cap warnings are uncommon on this size."
-            : "How long the server can sit empty, and how far ahead to warn players about the daily cap.";
+            ? "How long the server can sit empty. Out-of-hours warnings are rare on this size."
+            : "How long the server can sit empty, and how much warning players get before it stops for being out of hours.";
 
     public static string PublishConfirmBody(bool alwaysOnCapable) =>
         alwaysOnCapable
-            ? "This updates the shared hours budget. Usage is still counted; this smaller size can usually stay on all month. Continue?"
-            : "This updates the shared hours budget the server uses to stop itself when you run out of free time. Continue?";
+            ? "This updates the hours budget. Hours are still counted; this smaller size can usually stay on all month. Continue?"
+            : "This updates the hours budget the server uses to stop itself when you run out of free time. Continue?";
 
     public static string PinTodayHint(double dailyHours, bool alwaysOnCapable)
     {
@@ -51,7 +51,7 @@ public static class AlwaysOnCapableCopy
             : $"/ {dailyHours:F1}h budget";
 
     public static string PinMonthHint(bool alwaysOnCapable) =>
-        alwaysOnCapable ? "used this month" : "of monthly cap";
+        alwaysOnCapable ? "used this month" : "of monthly hours";
 
     public static string PinTodayHelp(bool alwaysOnCapable) =>
         alwaysOnCapable
@@ -61,7 +61,7 @@ public static class AlwaysOnCapableCopy
     public static string PinMonthHelp(bool alwaysOnCapable) =>
         alwaysOnCapable
             ? "Share of this month’s hours already used. This smaller size can usually stay on all month. Details are on the Usage tab."
-            : "Share of this month's free compute budget already used. Details and edits are on the Usage tab.";
+            : "Share of this month's free hours already used. Details and edits are on the Usage tab.";
 
     public static string PinAvgHelp(bool alwaysOnCapable) =>
         alwaysOnCapable
@@ -70,22 +70,22 @@ public static class AlwaysOnCapableCopy
 
     public static string PinRolloverHelp(bool alwaysOnCapable) =>
         alwaysOnCapable
-            ? "Unused hours from closed UTC days. You can leave them for idle overage or put them on later days on Usage → Edit Budget. They do not unlock a zeroed day for the doorbell."
-            : "Unused hours from closed UTC days. Leave them for idle overage or put them on later days on Usage → Edit Budget. They do not unlock a zeroed day for the doorbell. This is not the hours still left in the month — that remaining figure is the Hours left pin.";
+            ? "Unused hours from closed UTC days. Add them to later days in Usage → Calendar, or keep them for days that run over. They don't let players wake the server on a day set to 0 hours."
+            : "Unused hours from closed UTC days. Add them to later days in Usage → Calendar, or keep them for days that run over. They don't let players wake the server on a day set to 0 hours. For the hours still left in the month, see Hours left this month on the Usage tab.";
 
     public static string PinRemainingHint(bool alwaysOnCapable) =>
         alwaysOnCapable ? "still counted" : "not rollover";
 
     public static string PinRemainingHelp(bool alwaysOnCapable) =>
         alwaysOnCapable
-            ? "Wall-clock hours still available this month. This smaller size can usually stay on all month; hours are still counted. This is not the rollover bank."
-            : "Wall-clock hours still in this month’s cap — not the rollover bank. Details and edits are on the Usage tab.";
+            ? "Hours still available this month. This smaller size can usually stay on all month; hours are still counted. This is not rollover."
+            : "Hours left in this month’s budget — not rollover. Details and edits are on the Usage tab.";
 
     public static string PinIdleHint(bool alwaysOnCapable) =>
         alwaysOnCapable ? "empty server" : "empty / not running";
 
     public static string PinIdleHelp(bool alwaysOnCapable) =>
         alwaysOnCapable
-            ? "How long the server can sit empty before it stops. Daily-cap warnings are uncommon on this size. Change this on Usage → Budget or Advanced → Danger."
-            : "How long the server can sit empty (or with Minecraft not running) before it stops. Change this on Usage → Budget or Advanced → Danger.";
+            ? "How long the server can sit empty before it stops. Out-of-hours warnings are rare on this size. Change this on Usage → Budget settings or Advanced → Danger Zone."
+            : "How long the server can sit empty (or with Minecraft not running) before it stops. Change this on Usage → Budget settings or Advanced → Danger Zone.";
 }
