@@ -267,14 +267,32 @@ def maybe_heartbeat(cfg: dict, data: dict) -> None:
         print(f"Lease heartbeat publish warning: {exc}", file=sys.stderr)
 
 
+def players_still_online(cfg: dict) -> bool:
+    """True unless RCON `list` clearly reports an empty server."""
+    try:
+        online = parse_list_online_count(rcon_cmd(cfg, "list"))
+    except (RconError, OSError) as exc:
+        print(f"RCON list before idle stop failed: {exc}", file=sys.stderr)
+        return True
+    return online is None or online > 0
+
+
 def graceful_stop_and_poweroff(
-    cfg: dict, reason: str, *, game_was_up: bool | None = None
-) -> None:
+    cfg: dict,
+    reason: str,
+    *,
+    game_was_up: bool | None = None,
+    abort_if_players: bool = False,
+) -> bool:
     unit = cfg.get("minecraft_unit", "minecraft")
     if game_was_up is None:
         game_was_up = minecraft_active(unit)
-    ledger_path = cfg["ledger_path"]
     state_path = cfg.get("state_path", "/var/lib/mc-manager/idle_state.json")
+    if abort_if_players and game_was_up and players_still_online(cfg):
+        clear_idle_tracking(cfg, state_path=state_path)
+        print("Player joined before idle stop; cancelled.")
+        return False
+    ledger_path = cfg["ledger_path"]
     lpath = os_publish_mod.lease_path(cfg)
     # Reset idle timer before power-off so the next boot does not instantly re-stop.
     clear_idle_tracking(cfg, state_path=state_path)
@@ -286,6 +304,10 @@ def graceful_stop_and_poweroff(
         except Exception as exc:  # noqa: BLE001
             print(f"RCON during stop: {exc}", file=sys.stderr)
         time.sleep(15)
+        if abort_if_players and players_still_online(cfg):
+            clear_idle_tracking(cfg, state_path=state_path)
+            print("Player joined during idle stop countdown; cancelled.")
+            return False
         # Bound systemctl so a broken D-Bus cannot block forever before ledger close.
         stop = subprocess.run(
             ["timeout", "120", "systemctl", "stop", unit],
@@ -318,6 +340,7 @@ def graceful_stop_and_poweroff(
     _publish_stop_state(cfg, data, lease)
     oci_stop_instance(cfg["instance_id"])
     print(f"Stopped instance after: {reason}")
+    return True
 
 
 def main() -> int:
@@ -411,6 +434,10 @@ def main() -> int:
             print(f"RCON list failed: {exc}", file=sys.stderr)
             maybe_heartbeat(cfg, data)
             return 0
+        if online is None:
+            print(f"Unrecognized RCON list reply: {listing!r}", file=sys.stderr)
+            maybe_heartbeat(cfg, data)
+            return 0
     else:
         online = 0
 
@@ -469,7 +496,10 @@ def main() -> int:
 
     stop_key = "idle_stop" if game_up else "idle_stop_inactive"
     graceful_stop_and_poweroff(
-        cfg, msg(cfg, stop_key, minutes=int(timeout)), game_was_up=game_up
+        cfg,
+        msg(cfg, stop_key, minutes=int(timeout)),
+        game_was_up=game_up,
+        abort_if_players=True,
     )
     return 0
 

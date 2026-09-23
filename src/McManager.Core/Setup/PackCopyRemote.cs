@@ -8,7 +8,12 @@ public static class PackCopyRemote
 {
     public const string ServerDir = "/opt/mcmgr/server";
     public const string ModsDir = ServerDir + "/mods";
+    public const string JvmArgsFile = "user_jvm_args.txt";
 
+    /// <remarks>
+    /// The bootstrap already wrote server memory into <c>user_jvm_args.txt</c>; a pack copy
+    /// (often <c>-Xmx10G</c> or more) must not replace it.
+    /// </remarks>
     public static string ApplyStagedTreeCommand(string remoteStaging, string onboxStaging)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(remoteStaging);
@@ -16,6 +21,7 @@ public static class PackCopyRemote
         return "set -euo pipefail; "
             + "HOME=\"${HOME:-/home/ubuntu}\"; "
             + "systemctl stop minecraft || true; "
+            + "if [ -f " + ServerDir + "/" + JvmArgsFile + " ]; then rm -f " + remoteStaging + "/" + JvmArgsFile + "; fi; "
             + "rm -rf " + ModsDir + "; "
             + "mkdir -p " + ModsDir + "; "
             + "cp -a " + remoteStaging + "/. " + ServerDir + "/; "

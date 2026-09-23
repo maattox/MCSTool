@@ -18,4 +18,14 @@ public sealed class PackCopyRemoteTests
         var cpAt = cmd.IndexOf("cp -a /tmp/mcmgr-pack/.", StringComparison.Ordinal);
         Assert.True(rmAt >= 0 && cpAt > rmAt, "mods/ must be cleared before cp -a merge");
     }
+
+    [Fact]
+    public void Apply_keeps_bootstrap_jvm_args_over_pack_copy()
+    {
+        var cmd = PackCopyRemote.ApplyStagedTreeCommand("/tmp/mcmgr-pack", "/tmp/mcmgr-onbox");
+        var dropAt = cmd.IndexOf("rm -f /tmp/mcmgr-pack/user_jvm_args.txt", StringComparison.Ordinal);
+        var cpAt = cmd.IndexOf("cp -a /tmp/mcmgr-pack/.", StringComparison.Ordinal);
+        Assert.True(dropAt >= 0 && cpAt > dropAt, "pack user_jvm_args.txt must be dropped before the copy");
+        Assert.Contains("if [ -f /opt/mcmgr/server/user_jvm_args.txt ]", cmd, StringComparison.Ordinal);
+    }
 }
