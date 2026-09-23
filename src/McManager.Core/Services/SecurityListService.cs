@@ -16,7 +16,7 @@ public sealed class SecurityListService : ISecurityListService
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(securityListId))
-            return ServiceResult<string>.Fail("network.security_list_id is empty.");
+            return ServiceResult<string>.Fail("No Oracle firewall rules are saved for this server.");
 
         try
         {
@@ -41,7 +41,7 @@ public sealed class SecurityListService : ISecurityListService
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(securityListId))
-            return ServiceResult<SecurityListAllowlistSnapshot>.Fail("network.security_list_id is empty.");
+            return ServiceResult<SecurityListAllowlistSnapshot>.Fail("No Oracle firewall rules are saved for this server.");
 
         try
         {
@@ -77,7 +77,7 @@ public sealed class SecurityListService : ISecurityListService
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(securityListId))
-            return ServiceResult<SecurityListApplyResult>.Fail("network.security_list_id is empty.");
+            return ServiceResult<SecurityListApplyResult>.Fail("No Oracle firewall rules are saved for this server.");
 
         try
         {

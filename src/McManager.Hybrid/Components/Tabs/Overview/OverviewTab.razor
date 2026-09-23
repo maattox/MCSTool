@@ -39,7 +39,7 @@
             <li class="mcm-path-row">
                 <div class="mcm-path-copy">
                     <span class="mcm-path-label">Player map</span>
-                    <span class="mcm-path-hint">Last explored terrain. The game VM does not need to be on. Not the play IP.</span>
+                    <span class="mcm-path-hint">Explored areas of the world. Works while the game VM is off. This is not the play IP.</span>
                     <code class="mcm-path-value @(Vm.HasPlayerMapUrl ? null : "is-missing")">
                         @(Vm.HasPlayerMapUrl ? Vm.PlayerMapUrl : "—")
                     </code>
@@ -79,8 +79,8 @@
                 }
             </div>
         </div>
-        <div class="mcm-motd-preview mcm-overview-motd" aria-label="Server list MOTD">
-            <span class="mcm-motd-preview-label">List MOTD</span>
+        <div class="mcm-motd-preview mcm-overview-motd" aria-label="Server list preview">
+            <span class="mcm-motd-preview-label">Server list</span>
             @((MarkupString)MotdFormatting.ToPreviewHtml(Server.MotdPreview))
         </div>
         <div class="mcm-overview-actions">
@@ -163,7 +163,7 @@
                     <thead>
                         <tr>
                             <th scope="col">Name</th>
-                            <th scope="col">IP / CIDR</th>
+                            <th scope="col">IP address</th>
                             <th scope="col">Role</th>
                         </tr>
                     </thead>
@@ -188,7 +188,7 @@
             </div>
         }
         <div class="mcm-overview-actions">
-            <button type="button" @onclick="OpenWhitelist">Manage IPs</button>
+            <button type="button" @onclick="OpenWhitelist">Open Whitelist</button>
         </div>
     </section>
 </div>

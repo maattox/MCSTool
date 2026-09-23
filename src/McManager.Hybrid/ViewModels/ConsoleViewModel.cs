@@ -130,9 +130,9 @@ public sealed partial class ConsoleViewModel : ObservableObject, IDisposable
         _config = _configHost.Config;
         _ssh = _cloud.Ssh;
         if (_config is null)
-            StatusMessage = "Local config is missing.";
+            StatusMessage = "This server's settings are missing.";
         else if (string.IsNullOrWhiteSpace(_config.Vm1.SshHost))
-            StatusMessage = "No SSH host for the server.";
+            StatusMessage = "No address saved for the game VM.";
         else
             StatusMessage = MinecraftConsoleRemote.Intro;
         NotifyDerived();
@@ -154,7 +154,7 @@ public sealed partial class ConsoleViewModel : ObservableObject, IDisposable
             return;
         if (_config is null)
         {
-            StatusMessage = "Local config is missing.";
+            StatusMessage = "This server's settings are missing.";
             return;
         }
 
@@ -195,7 +195,7 @@ public sealed partial class ConsoleViewModel : ObservableObject, IDisposable
             return;
         if (_config is null)
         {
-            StatusMessage = "Local config is missing.";
+            StatusMessage = "This server's settings are missing.";
             return;
         }
 

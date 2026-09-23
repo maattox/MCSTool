@@ -4,16 +4,16 @@
 <div>
     <div style="margin-bottom:12px;">
         <div style="display:flex;align-items:center;gap:4px;">
-            <span style="font-size:16px;font-weight:600;">Who can join</span>
+            <span style="font-size:16px;font-weight:600;">Whitelist</span>
             <button type="button"
                     class="mcm-help"
-                    title="Only these public IPv4 addresses can connect. Server access is controlled by OCI Virtual Cloud Network Security List, by not Minecraft's in-game whitelist. Admin role also allows remote maintenance from that IP. CIDR prefixes apply to Minecraft only unless you are editing your own admin entry.">
+                    title="Only these public IPv4 addresses can join the server and open the player map. The whitelist works by IP address, not Minecraft username. Admin also allows remote maintenance from that IP.">
                 <i class="ti ti-help" aria-hidden="true"></i>
-                <span class="sr-only">About Who can join</span>
+                <span class="sr-only">About Whitelist</span>
             </button>
         </div>
         <p style="margin:4px 0 0;font-size:13px;color:var(--text-secondary);">
-            Players need an entry here before they can connect. Opening MCSTool (or this tab the first time) combines this PC's list with the cloud Security List and Object Storage copy. Save changes writes all of them so they match.
+            Players must be on the whitelist before they can join. Save changes updates it everywhere.
         </p>
     </div>
 
@@ -65,7 +65,7 @@
             <span style="font-size:14px;font-weight:500;">Your IP changed?</span>
             <button type="button"
                     class="mcm-help"
-                    title="Home internet IPs often change. Detect or paste your current public IP, then update the admin row. That writes the list and pushes it immediately.">
+                    title="Home internet IPs often change. Detect or paste your current public IP, then click Update my IP. The whitelist is saved right away.">
                 <i class="ti ti-help" aria-hidden="true"></i>
                 <span class="sr-only">About Your IP changed</span>
             </button>

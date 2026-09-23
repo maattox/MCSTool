@@ -37,8 +37,8 @@
             <button type="button"
                     class="mcm-console-mode-btn @(Vm.ShowFullLog ? "is-active" : null)"
                     aria-pressed="@Vm.ShowFullLog"
-                    aria-label="Full raw journalctl log"
-                    title="Unfiltered service log including RCON plumbing"
+                    aria-label="Full server log"
+                    title="Everything Minecraft logs, including console commands"
                     @onclick="() => SetLogMode(full: true)">
                 Full
             </button>

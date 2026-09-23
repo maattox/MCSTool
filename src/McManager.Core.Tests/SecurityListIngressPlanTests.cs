@@ -236,8 +236,7 @@ public sealed class SecurityListIngressPlanTests
             OwnedRuleCount = 6,
         };
         Assert.DoesNotContain("0.0.0.0/0", result.Summary, StringComparison.Ordinal);
-        Assert.Contains("preserved 2", result.Summary, StringComparison.Ordinal);
-        Assert.Contains("wrote 6", result.Summary, StringComparison.Ordinal);
+        Assert.Equal("Oracle firewall rules updated.", result.Summary);
     }
 
     [Fact]

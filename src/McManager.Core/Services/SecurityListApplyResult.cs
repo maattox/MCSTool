@@ -8,8 +8,7 @@ public sealed class SecurityListApplyResult
     public int PreservedRuleCount { get; init; }
     public int OwnedRuleCount { get; init; }
 
-    public string Summary =>
-        $"Security List updated — preserved {PreservedRuleCount} rule(s), wrote {OwnedRuleCount} owned rule(s).";
+    public string Summary => "Oracle firewall rules updated.";
 }
 
 /// <summary>One GET of subnet Security List ingress, parsed into allowlist rows.</summary>

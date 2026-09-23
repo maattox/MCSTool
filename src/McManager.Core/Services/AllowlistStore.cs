@@ -50,7 +50,7 @@ public sealed class AllowlistStore
             }
 
             return ServiceResult<AllowlistReadResult>.Fail(
-                got.Error ?? $"Get {_objectName} failed.");
+                got.Error ?? "Could not read the whitelist from cloud storage.");
         }
 
         IpAllowlistDocument doc;
@@ -62,7 +62,7 @@ public sealed class AllowlistStore
         catch (JsonException ex)
         {
             return ServiceResult<AllowlistReadResult>.Fail(
-                $"{_objectName} JSON parse failed: {ex.Message}");
+                $"The whitelist in cloud storage could not be read: {ex.Message}");
         }
 
         return ServiceResult<AllowlistReadResult>.Ok(new AllowlistReadResult
@@ -101,7 +101,7 @@ public sealed class AllowlistStore
                     return ServiceResult<AllowlistPublishResult>.Ok(new AllowlistPublishResult
                     {
                         SkippedMissing = true,
-                        Message = $"{_objectName} is not in the bucket yet; Security List is the live allowlist.",
+                        Message = "The whitelist is not in cloud storage yet. Oracle's firewall rules are up to date.",
                     });
                 }
 
@@ -114,7 +114,7 @@ public sealed class AllowlistStore
             }
 
             return ServiceResult<AllowlistPublishResult>.Fail(
-                got.Error ?? $"Get {_objectName} failed.");
+                got.Error ?? "Could not read the whitelist from cloud storage.");
         }
 
         if (string.IsNullOrWhiteSpace(got.Value.Etag))
@@ -132,7 +132,7 @@ public sealed class AllowlistStore
         catch (JsonException ex)
         {
             return ServiceResult<AllowlistPublishResult>.Fail(
-                $"{_objectName} JSON parse failed: {ex.Message}");
+                $"The whitelist in cloud storage could not be read: {ex.Message}");
         }
 
         return await PutDocumentAsync(
@@ -170,15 +170,15 @@ public sealed class AllowlistStore
             ifMatch,
             cancellationToken);
         if (!put.Succeeded)
-            return ServiceResult<AllowlistPublishResult>.Fail(put.Error ?? $"Put {_objectName} failed.");
+            return ServiceResult<AllowlistPublishResult>.Fail(put.Error ?? "Upload failed.");
 
         return ServiceResult<AllowlistPublishResult>.Ok(new AllowlistPublishResult
         {
             SkippedMissing = false,
             Created = created,
             Message = created
-                ? $"Created {_objectName} ({doc.Entries.Count} entries)."
-                : $"Updated {_objectName} ({doc.Entries.Count} entries).",
+                ? $"Whitelist added to cloud storage ({doc.Entries.Count} entries)."
+                : $"Whitelist saved to cloud storage ({doc.Entries.Count} entries).",
         });
     }
 
