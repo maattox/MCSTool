@@ -27,8 +27,8 @@ public static class HeapPressureUx
         if (!string.IsNullOrWhiteSpace(suggested) && JvmHeapChoice.IsAllowed(suggested)
             && doc is not { AtHostMax: true })
         {
-            return "The Minecraft server is short on memory. Apply a larger size on Advanced → Danger "
-                + "(this restarts Minecraft). Suggested size: "
+            return "The Minecraft server is short on memory. Set more server memory on Advanced → Danger Zone "
+                + "(this restarts Minecraft). Suggested: "
                 + JvmHeapChoice.Format(suggested)
                 + ".";
         }
@@ -37,13 +37,13 @@ public static class HeapPressureUx
         if (hostGb <= 12)
         {
             return "The Minecraft server is short on memory. Server memory is already at the maximum "
-                + "for this VM size. The 24 GB size can offer more RAM. Changing size is on "
-                + "Advanced → Danger.";
+                + "for this VM size. The 24 GB VM size allows more server memory. Change VM size on "
+                + "Advanced → Danger Zone.";
         }
 
         return "The Minecraft server is short on memory. Server memory is already at the maximum "
-            + "for this VM size. Extra RAM does not fix 4-OCPU lag. You can still review "
-            + "Advanced → Danger.";
+            + "for this VM size. More server memory won't fix lag on 4 OCPU. You can still review "
+            + "Advanced → Danger Zone.";
     }
 
     /// <summary>

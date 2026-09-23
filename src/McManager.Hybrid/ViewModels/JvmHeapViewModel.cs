@@ -28,7 +28,7 @@ public sealed partial class JvmHeapViewModel : ObservableObject
 
     [ObservableProperty]
     private string _statusMessage =
-        "Server memory is 4G, 6G, or 8G (10G or 12G on the 24 GB size). Apply restarts Minecraft; the VM stays up.";
+        "Server memory is 4G, 6G, or 8G (10G or 12G on the 24 GB size). Apply restarts Minecraft; the game VM stays on.";
 
     [ObservableProperty]
     private string _currentHeap = JvmHeapChoice.Default;
@@ -54,11 +54,11 @@ public sealed partial class JvmHeapViewModel : ObservableObject
         get
         {
             if (_config is null)
-                return "Local config is missing.";
+                return "This server's settings are missing.";
             if (IsBusy)
                 return "";
             if (!ManagePowerUx.IsVm1Running(_main.Vm1Lifecycle))
-                return "Start the server from the sidebar first — applying server memory needs SSH.";
+                return "Start the server from the sidebar first. Server memory can only change while it's running.";
             return "";
         }
     }
@@ -107,10 +107,10 @@ public sealed partial class JvmHeapViewModel : ObservableObject
         var heap = JvmHeapChoice.ClampToHost(TargetHeap, HostMemoryGb);
         var confirmed = await _dialogs.ConfirmAsync(
             "Change server memory?",
-            "This sets RAM allocated to the Minecraft server to "
+            "This sets server memory to "
             + heap
-            + " and restarts Minecraft. This is not the VM size. Paper keeps its Fill GC flags. "
-            + "Do not use /reload. The VM stays up.",
+            + " and restarts Minecraft. It does not change the VM size, and the game VM stays on. "
+            + "Do not use /reload.",
             confirmButtonText: "Apply server memory");
         if (!confirmed)
         {
@@ -119,14 +119,14 @@ public sealed partial class JvmHeapViewModel : ObservableObject
         }
 
         IsBusy = true;
-        StatusMessage = $"Applying {heap} server memory and restarting Minecraft…";
+        StatusMessage = $"Setting server memory to {heap} and restarting Minecraft…";
         NotifyDerived();
         try
         {
             var result = await _ssh.ApplyJvmHeapAsync(_config.Vm1, heap);
             if (!result.Succeeded)
             {
-                StatusMessage = result.Error ?? "Server memory apply failed.";
+                StatusMessage = result.Error ?? "Setting server memory failed.";
                 return;
             }
 
@@ -135,7 +135,7 @@ public sealed partial class JvmHeapViewModel : ObservableObject
             if (!saved.Succeeded)
             {
                 StatusMessage =
-                    $"Server memory is now {heap} on the guest, but saving config.local.json failed: "
+                    $"Server memory is now {heap} on the game VM, but saving settings on this PC failed: "
                     + (saved.Error ?? "unknown");
                 return;
             }

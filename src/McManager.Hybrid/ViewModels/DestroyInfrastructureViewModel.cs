@@ -82,10 +82,10 @@ public sealed partial class DestroyInfrastructureViewModel : ObservableObject
 
     public string Title => Phase switch
     {
-        DestroyInfrastructurePhase.Running => "Deleting infrastructure",
-        DestroyInfrastructurePhase.Succeeded => "Infrastructure deleted",
+        DestroyInfrastructurePhase.Running => "Deleting from Oracle Cloud",
+        DestroyInfrastructurePhase.Succeeded => "Deleted from Oracle Cloud",
         DestroyInfrastructurePhase.Failed => "Deletion failed",
-        _ => "Delete all cloud infrastructure",
+        _ => "Delete from Oracle Cloud",
     };
 
     public string CloseButtonText => Phase == DestroyInfrastructurePhase.Succeeded

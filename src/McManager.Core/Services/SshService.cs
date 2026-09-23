@@ -264,7 +264,7 @@ public sealed class SshService : ISshService
             }
             catch (Exception ex)
             {
-                return ServiceResult.Fail($"SSH restart failed: {ex.Message}");
+                return ServiceResult.Fail($"Restart failed: {ex.Message}");
             }
         }
     }
@@ -280,7 +280,7 @@ public sealed class SshService : ISshService
             combined =>
             {
                 if (!JvmHeapApply.TryParseOk(combined, out _, out var parseError))
-                    return ServiceResult.Fail(parseError ?? "Heap apply did not confirm OK.");
+                    return ServiceResult.Fail(parseError ?? "The game VM did not confirm the server memory change.");
                 return ServiceResult.Ok();
             });
     }
@@ -299,14 +299,14 @@ public sealed class SshService : ISshService
                 if (!JvmHeapApply.TryParseExtrasDump(combined, out var parsed, out var parseError))
                 {
                     fail = parseError;
-                    return ServiceResult.Fail(parseError ?? "Flag dump did not confirm OK.");
+                    return ServiceResult.Fail(parseError ?? "The game VM did not return the JVM flags.");
                 }
 
                 flags = parsed;
                 return ServiceResult.Ok();
             });
         if (!ran.Succeeded)
-            return ServiceResult<IReadOnlyList<string>>.Fail(fail ?? ran.Error ?? "Flag dump failed.");
+            return ServiceResult<IReadOnlyList<string>>.Fail(fail ?? ran.Error ?? "Reading JVM flags failed.");
         return ServiceResult<IReadOnlyList<string>>.Ok(flags ?? []);
     }
 
@@ -323,7 +323,7 @@ public sealed class SshService : ISshService
             combined =>
             {
                 if (!JvmHeapApply.TryParseExtrasSet(combined, out var parseError))
-                    return ServiceResult.Fail(parseError ?? "Flag apply did not confirm OK.");
+                    return ServiceResult.Fail(parseError ?? "The game VM did not confirm the JVM flag change.");
                 return ServiceResult.Ok();
             });
     }
@@ -337,7 +337,7 @@ public sealed class SshService : ISshService
     {
         var local = JvmHeapApply.FindLocalScript();
         if (local is null)
-            return ServiceResult.Fail("Product onbox/mcmgr/common/apply-jvm-heap.py was not found.");
+            return ServiceResult.Fail("Some MCSTool files were not found. Reinstall MCSTool.");
 
         if (!TryOpenSsh(vm1, out var client, out var unit, out var error))
             return ServiceResult.Fail(error!);
@@ -350,7 +350,7 @@ public sealed class SshService : ISshService
                 if (mkdir.ExitStatus != 0)
                 {
                     var err = string.IsNullOrWhiteSpace(mkdir.Error) ? mkdir.Result : mkdir.Error;
-                    return ServiceResult.Fail("Could not create heap staging dir: " + err.Trim());
+                    return ServiceResult.Fail("Could not create a temporary folder on the game VM: " + err.Trim());
                 }
 
                 using (var sftp = new SftpClient(client.ConnectionInfo))
@@ -375,7 +375,7 @@ public sealed class SshService : ISshService
                 if (strip.ExitStatus != 0)
                 {
                     var err = string.IsNullOrWhiteSpace(strip.Error) ? strip.Result : strip.Error;
-                    return ServiceResult.Fail("Could not strip CR from heap script: " + err.Trim());
+                    return ServiceResult.Fail("Could not prepare the script on the game VM: " + err.Trim());
                 }
 
                 var apply = client.RunCommand(runCommand);
@@ -383,7 +383,7 @@ public sealed class SshService : ISshService
                 if (apply.ExitStatus != 0)
                 {
                     return ServiceResult.Fail(
-                        $"Heap script failed (exit {apply.ExitStatus}): {combined.Trim()}");
+                        $"The change failed on the game VM (exit {apply.ExitStatus}): {combined.Trim()}");
                 }
 
                 var parsed = parseStdout(combined);
@@ -400,7 +400,7 @@ public sealed class SshService : ISshService
             }
             catch (Exception ex)
             {
-                return ServiceResult.Fail($"SSH heap script failed: {ex.Message}");
+                return ServiceResult.Fail($"Could not run the change on the game VM: {ex.Message}");
             }
         }
     }
@@ -433,7 +433,7 @@ public sealed class SshService : ISshService
                 if (mkdir.ExitStatus != 0)
                 {
                     var err = string.IsNullOrWhiteSpace(mkdir.Error) ? mkdir.Result : mkdir.Error;
-                    return ServiceResult.Fail("Could not create plugin staging dir: " + err.Trim());
+                    return ServiceResult.Fail("Could not prepare the upload on the game VM: " + err.Trim());
                 }
 
                 using (var sftp = new SftpClient(client.ConnectionInfo))
@@ -455,7 +455,7 @@ public sealed class SshService : ISshService
             }
             catch (Exception ex)
             {
-                return ServiceResult.Fail($"SSH plugin upload failed: {ex.Message}");
+                return ServiceResult.Fail($"Plugin upload failed: {ex.Message}");
             }
         }
     }
@@ -484,7 +484,7 @@ public sealed class SshService : ISshService
             }
             catch (Exception ex)
             {
-                return ServiceResult.Fail($"SSH plugin delete failed: {ex.Message}");
+                return ServiceResult.Fail($"Plugin delete failed: {ex.Message}");
             }
         }
     }
@@ -517,7 +517,7 @@ public sealed class SshService : ISshService
                 if (mkdir.ExitStatus != 0)
                 {
                     var err = string.IsNullOrWhiteSpace(mkdir.Error) ? mkdir.Result : mkdir.Error;
-                    return ServiceResult.Fail("Could not create mod staging dir: " + err.Trim());
+                    return ServiceResult.Fail("Could not prepare the upload on the game VM: " + err.Trim());
                 }
 
                 using (var sftp = new SftpClient(client.ConnectionInfo))
@@ -539,7 +539,7 @@ public sealed class SshService : ISshService
             }
             catch (Exception ex)
             {
-                return ServiceResult.Fail($"SSH mod upload failed: {ex.Message}");
+                return ServiceResult.Fail($"Mod upload failed: {ex.Message}");
             }
         }
     }
@@ -568,7 +568,7 @@ public sealed class SshService : ISshService
             }
             catch (Exception ex)
             {
-                return ServiceResult.Fail($"SSH mod delete failed: {ex.Message}");
+                return ServiceResult.Fail($"Mod delete failed: {ex.Message}");
             }
         }
     }
@@ -602,7 +602,7 @@ public sealed class SshService : ISshService
 
         var worldPath = (vm1.WorldPath ?? "").Trim();
         if (string.IsNullOrWhiteSpace(worldPath) || !worldPath.StartsWith('/'))
-            return ServiceResult.Fail("vm1.world_path must be an absolute path on VM1.");
+            return ServiceResult.Fail("The world folder setting must be a full path on the game VM.");
 
         if (!TryOpenSsh(vm1, out var client, out var unit, out var error))
             return ServiceResult.Fail(error!);
@@ -676,7 +676,7 @@ public sealed class SshService : ISshService
             {
                 if (stopped)
                     TryStartUnit(client, unit);
-                return ServiceResult.Fail($"SSH world replace failed: {ex.Message}");
+                return ServiceResult.Fail($"World replace failed: {ex.Message}");
             }
         }
     }
@@ -684,7 +684,7 @@ public sealed class SshService : ISshService
     private static ServiceResult WipeWorld(Vm1Settings vm1, string? levelSeed)
     {
         if (!WorldWipe.TryCreate(vm1.WorldPath, out var plan, out var pathError))
-            return ServiceResult.Fail(pathError ?? "vm1.world_path is invalid.");
+            return ServiceResult.Fail(pathError ?? "The world folder setting is invalid.");
 
         if (!TryOpenSsh(vm1, out var client, out var unit, out var error))
             return ServiceResult.Fail(error!);
@@ -740,7 +740,7 @@ public sealed class SshService : ISshService
             {
                 if (stopped)
                     TryStartUnit(client, unit);
-                return ServiceResult.Fail($"SSH world wipe failed: {ex.Message}");
+                return ServiceResult.Fail($"World wipe failed: {ex.Message}");
             }
         }
     }
@@ -808,14 +808,14 @@ public sealed class SshService : ISshService
                         ? $"Is {RemoteWorldBackupScript} deployed with --stream-stdout? Redeploy the idle agent."
                         : stderr;
                     return ServiceResult.Fail(
-                        $"Live world zip over SSH failed (exit {exit}): {hint}");
+                        $"Zipping the live world failed (exit {exit}): {hint}");
                 }
 
                 if (total < 22)
                 {
                     TryDeleteLocal(localZipPath);
                     return ServiceResult.Fail(
-                        "SSH world download did not produce a zip. "
+                        "World download did not produce a zip. "
                         + (string.IsNullOrEmpty(stderr)
                             ? "Is the world folder present on the game VM?"
                             : stderr));
@@ -826,7 +826,7 @@ public sealed class SshService : ISshService
             catch (Exception ex)
             {
                 TryDeleteLocal(localZipPath);
-                return ServiceResult.Fail($"SSH world download failed: {ex.Message}");
+                return ServiceResult.Fail($"World download failed: {ex.Message}");
             }
         }
     }
@@ -949,7 +949,7 @@ public sealed class SshService : ISshService
             }
             catch (Exception ex)
             {
-                return ServiceResult.Fail($"SSH idle apply failed: {ex.Message}");
+                return ServiceResult.Fail($"Updating the idle timer failed: {ex.Message}");
             }
         }
     }
@@ -1078,7 +1078,7 @@ public sealed class SshService : ISshService
 
         if (string.IsNullOrWhiteSpace(target.Host))
         {
-            error = $"{target.Label} ssh_host is empty.";
+            error = $"{target.Label} SSH address is empty.";
             return false;
         }
 

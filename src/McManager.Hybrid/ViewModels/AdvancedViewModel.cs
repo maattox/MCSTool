@@ -50,7 +50,7 @@ public sealed partial class AdvancedViewModel : ObservableObject
 
     [ObservableProperty]
     private string _statusMessage =
-        "Break-glass Compute actions do not move the reserved play IP. Prefer top-bar Start/Stop (door-aware).";
+        "Emergency power doesn't move the play IP. Use Start and Stop in the sidebar for normal use.";
 
     [ObservableProperty]
     private bool _isBusy;
@@ -340,7 +340,7 @@ public sealed partial class AdvancedViewModel : ObservableObject
         {
             await _dialogs.ShowInfoAsync(
                 "Deletion still running",
-                "Wait until Delete infrastructure finishes before switching servers.");
+                "Wait until Delete from Oracle Cloud finishes before switching servers.");
             return false;
         }
 
@@ -363,7 +363,7 @@ public sealed partial class AdvancedViewModel : ObservableObject
         else
             _shell.EnterFirstRun();
         _chrome.RefreshServerLabel();
-        StatusMessage = "Switched server. Manager reloaded this folder.";
+        StatusMessage = "Switched server. MCSTool reloaded this folder.";
     }
 
     private void RefreshServerSwitcher()
@@ -391,7 +391,7 @@ public sealed partial class AdvancedViewModel : ObservableObject
             return;
 
         IsBusy = true;
-        StatusMessage = "Auto-detect: scanning OCI profiles…";
+        StatusMessage = "Looking for an existing server…";
         var progress = new Progress<string>(msg => StatusMessage = msg);
 
         try
@@ -400,20 +400,20 @@ public sealed partial class AdvancedViewModel : ObservableObject
             if (outcome == ConnectExistingOutcome.Connected)
             {
                 _session.ReloadFromDisk();
-                StatusMessage = "Connected. Manager reloaded the new local config.";
+                StatusMessage = "Connected. MCSTool loaded this server's settings.";
                 await _dialogs.ShowInfoAsync(
                     "Connected",
-                    "Local manage config was written from the detected stack. "
-                    + "Manager loaded it without a restart. SSH key path and RCON stayed on this PC.");
+                    "This server's settings were saved on this PC and loaded. "
+                    + "Your SSH key and console password stay on this PC.");
                 return;
             }
 
             if (outcome == ConnectExistingOutcome.NoneFound)
-                StatusMessage = "No product stack found. Existing local config was not changed.";
+                StatusMessage = "No MCSTool server found. Nothing was changed.";
             else if (outcome == ConnectExistingOutcome.Incompatible)
-                StatusMessage = "Stack is incompatible with this Manager. Existing local config was not changed.";
+                StatusMessage = "That server is incompatible with this version of MCSTool. Nothing was changed.";
             else if (outcome == ConnectExistingOutcome.Cancelled)
-                StatusMessage = "Auto-detect cancelled. Existing local config was not changed.";
+                StatusMessage = "Cancelled. Nothing was changed.";
         }
         finally
         {
@@ -432,7 +432,7 @@ public sealed partial class AdvancedViewModel : ObservableObject
         if (!CanCopyVm1KeyToDoor)
             return;
         EditDoorSshKeyPath = SshKeyPathUx.Normalize(EditVm1SshKeyPath);
-        StatusMessage = "Door VM will use the game VM private key after Save.";
+        StatusMessage = "Doorbell VM will use the game VM private key after Save.";
     }
 
     public void CopyDoorKeyToVm1()
@@ -440,7 +440,7 @@ public sealed partial class AdvancedViewModel : ObservableObject
         if (!CanCopyDoorKeyToVm1)
             return;
         EditVm1SshKeyPath = SshKeyPathUx.Normalize(EditDoorSshKeyPath);
-        StatusMessage = "Game VM will use the doorbell private key after Save.";
+        StatusMessage = "Game VM will use the doorbell VM private key after Save.";
     }
 
     public Task SaveSshKeysAsync()
@@ -463,14 +463,14 @@ public sealed partial class AdvancedViewModel : ObservableObject
             var saved = LocalConfigStore.SaveConfig(_config);
             if (!saved.Succeeded)
             {
-                StatusMessage = saved.Error ?? "Failed to save config.local.json.";
+                StatusMessage = saved.Error ?? "Failed to save settings.";
                 return Task.CompletedTask;
             }
 
             _session.ReloadFromDisk();
             StatusMessage = SshKeysUseSameFile
                 ? "Saved SSH key paths on this PC. Both VMs use the same private key file."
-                : "Saved SSH key paths on this PC. Game VM and doorbell now use different private key files.";
+                : "Saved SSH key paths on this PC. Game VM and doorbell VM now use different private key files.";
         }
         finally
         {
@@ -504,7 +504,7 @@ public sealed partial class AdvancedViewModel : ObservableObject
             return;
         }
 
-        StatusMessage = "Copied doorbell SSH IP.";
+        StatusMessage = "Copied doorbell VM SSH IP.";
     }
 
     public async Task CopyPlayerMapUrlAsync()
@@ -525,7 +525,7 @@ public sealed partial class AdvancedViewModel : ObservableObject
         if (!CanRefreshSshHosts || _config is null || _compute is null)
         {
             StatusMessage = _compute is null
-                ? "OCI session is not ready."
+                ? "Not connected to Oracle Cloud yet."
                 : "Cannot refresh SSH IPs yet.";
             return;
         }
@@ -533,12 +533,12 @@ public sealed partial class AdvancedViewModel : ObservableObject
         var compartment = _config.Oci.CompartmentId;
         if (string.IsNullOrWhiteSpace(compartment))
         {
-            StatusMessage = "Local config is missing compartment_id.";
+            StatusMessage = "This server's settings are missing its Oracle compartment.";
             return;
         }
 
         IsBusy = true;
-        StatusMessage = "Refreshing SSH IPs from OCI…";
+        StatusMessage = "Refreshing SSH IPs from Oracle…";
         NotifySshHostDerived();
         try
         {
@@ -560,20 +560,20 @@ public sealed partial class AdvancedViewModel : ObservableObject
                 if (ip.Succeeded && !string.IsNullOrWhiteSpace(ip.Value))
                     _config.Door.SshHost = ip.Value.Trim();
                 else
-                    notes.Add("Door: " + (ip.Error ?? "no public IP"));
+                    notes.Add("Doorbell VM: " + (ip.Error ?? "no public IP"));
             }
 
             var saved = LocalConfigStore.SaveConfig(_config);
             if (!saved.Succeeded)
             {
-                StatusMessage = saved.Error ?? "Failed to save config.local.json.";
+                StatusMessage = saved.Error ?? "Failed to save settings.";
                 return;
             }
 
             _session.ReloadFromDisk();
             SeedSshHostsFromLocal();
             StatusMessage = notes.Count == 0
-                ? "Updated SSH IPs from OCI. Players still join with the reserved play IP."
+                ? "Updated SSH IPs from Oracle. Players still join with the play IP."
                 : "SSH IPs refreshed with warnings: " + string.Join("; ", notes);
         }
         finally
@@ -591,7 +591,7 @@ public sealed partial class AdvancedViewModel : ObservableObject
     {
         if (_compute is null || _config is null)
         {
-            StatusMessage = "OCI session unavailable — cannot start VM1.";
+            StatusMessage = "Oracle Cloud connection unavailable — can't start the game VM.";
             return;
         }
 
@@ -599,22 +599,22 @@ public sealed partial class AdvancedViewModel : ObservableObject
             return;
 
         IsBusy = true;
-        StatusMessage = "Break-glass: START VM1 (no IP move)…";
+        StatusMessage = "Starting the game VM (play IP not moved)…";
 
         try
         {
             var start = await _compute.StartInstanceAsync(_config.Vm1.InstanceId);
             if (!start.Succeeded)
             {
-                StatusMessage = start.Error ?? "START failed.";
+                StatusMessage = start.Error ?? "Start failed.";
                 return;
             }
 
-            StatusMessage = "Waiting for RUNNING…";
+            StatusMessage = "Waiting for the game VM to start…";
             var wait = await _compute.WaitForLifecycleAsync(_config.Vm1.InstanceId, "RUNNING");
             StatusMessage = wait.Succeeded
-                ? $"VM1 is {wait.Value}. Reserved IP was NOT moved — use top-bar Start for play path."
-                : wait.Error ?? "Wait for RUNNING failed.";
+                ? "Game VM is on. The play IP was not moved. Use Start in the sidebar so players can join."
+                : wait.Error ?? "Waiting for the game VM to start failed.";
         }
         finally
         {
@@ -626,7 +626,7 @@ public sealed partial class AdvancedViewModel : ObservableObject
     {
         if (_compute is null || _config is null)
         {
-            StatusMessage = "OCI session unavailable — cannot SoftStop VM1.";
+            StatusMessage = "Oracle Cloud connection unavailable — can't stop the game VM.";
             return;
         }
 
@@ -634,22 +634,22 @@ public sealed partial class AdvancedViewModel : ObservableObject
             return;
 
         IsBusy = true;
-        StatusMessage = "Break-glass: SOFTSTOP VM1 (no door handback)…";
+        StatusMessage = "Stopping the game VM (play IP not moved)…";
 
         try
         {
             var stop = await _compute.SoftStopInstanceAsync(_config.Vm1.InstanceId);
             if (!stop.Succeeded)
             {
-                StatusMessage = stop.Error ?? "SOFTSTOP failed.";
+                StatusMessage = stop.Error ?? "Stop failed.";
                 return;
             }
 
-            StatusMessage = "Waiting for STOPPED…";
+            StatusMessage = "Waiting for the game VM to stop…";
             var wait = await _compute.WaitForLifecycleAsync(_config.Vm1.InstanceId, "STOPPED");
             StatusMessage = wait.Succeeded
-                ? $"VM1 is {wait.Value}. Prefer top-bar Stop so door reclaim the play IP."
-                : wait.Error ?? "Wait for STOPPED failed.";
+                ? "Game VM is off. Next time, use Stop in the sidebar so the doorbell VM takes back the play IP."
+                : wait.Error ?? "Waiting for the game VM to stop failed.";
         }
         finally
         {
@@ -671,13 +671,13 @@ public sealed partial class AdvancedViewModel : ObservableObject
         }
 
         var confirmed = await _dialogs.ConfirmAsync(
-            "Apply idle settings?",
-            "This publishes idle timeout and budget warning lead time to Object Storage (budget/config.json, notifies door + VM1) "
-            + "and, if VM1 is RUNNING, patches /etc/mc-manager/config.json. It does not turn the idle timer off. Continue?",
-            confirmButtonText: "Apply");
+            "Save idle settings?",
+            "This saves the idle timeout and budget warning time to cloud storage for both VMs. "
+            + "If the server is running, the game VM updates right away. This does not turn off the idle timer. Continue?",
+            confirmButtonText: "Save");
         if (!confirmed)
         {
-            StatusMessage = "Apply cancelled.";
+            StatusMessage = "Save cancelled.";
             return;
         }
 
@@ -706,12 +706,12 @@ public sealed partial class AdvancedViewModel : ObservableObject
         if (!enabling)
         {
             var confirmed = await _dialogs.ConfirmAsync(
-                "Danger Zone — disable idle agent?",
-                "This DISABLES the idle agent on VM1 (empty-server SoftStop and daily budget SoftStop stop until the next Minecraft boot).\n\n"
-                + "Testing / troubleshooting only. Every VM1 boot / Minecraft start FORCE-ENABLES the idle timer and rewrites shared Object Storage budget to enabled if it was off (OS-ISSUE-7). "
-                + "A forgotten disable cannot leave Always Free brakes off after a restart.\n\n"
-                + "Publishes budget/config.json and applies on VM1 if RUNNING. Continue?",
-                confirmButtonText: "Disable idle");
+                "Turn off the idle timer?",
+                "Until Minecraft next starts, the server is not stopped when it's empty or out of daily hours.\n\n"
+                + "For testing only. The idle timer turns back on every time the game VM boots or Minecraft starts, "
+                + "so forgetting to turn it back on can't leave it off after a restart.\n\n"
+                + "This saves to cloud storage and, if the server is running, updates the game VM now. Continue?",
+                confirmButtonText: "Turn off");
             if (!confirmed)
             {
                 StatusMessage = "Disable cancelled.";
@@ -721,10 +721,10 @@ public sealed partial class AdvancedViewModel : ObservableObject
         else
         {
             var confirmed = await _dialogs.ConfirmAsync(
-                "Enable idle agent?",
-                "This turns the idle timer back on (empty-server SoftStop and daily budget SoftStop). "
-                + "Publishes budget/config.json and, if VM1 is RUNNING, enables the on-box timer. Continue?",
-                confirmButtonText: "Enable idle");
+                "Turn on the idle timer?",
+                "The server will stop again when it's empty or out of daily hours. "
+                + "This saves to cloud storage and, if the server is running, turns the timer on now. Continue?",
+                confirmButtonText: "Turn on");
             if (!confirmed)
             {
                 StatusMessage = "Enable cancelled.";
@@ -738,13 +738,13 @@ public sealed partial class AdvancedViewModel : ObservableObject
     private async Task PublishAndApplyIdleAsync(int timeout, int warn, bool enabling)
     {
         IsBusy = true;
-        StatusMessage = "Publishing budget…";
+        StatusMessage = "Saving idle settings…";
 
         try
         {
             if (_budgetStore is null || _config is null)
             {
-                StatusMessage = "Object Storage unavailable — cannot publish budget.";
+                StatusMessage = "Cloud storage unavailable — can't save idle settings.";
                 return;
             }
 
@@ -756,7 +756,7 @@ public sealed partial class AdvancedViewModel : ObservableObject
             var published = await _budgetStore.PublishBudgetAsync(doc);
             if (!published.Succeeded || published.Value is null)
             {
-                StatusMessage = published.Error ?? "Publish budget failed.";
+                StatusMessage = published.Error ?? "Saving idle settings failed.";
                 return;
             }
 
@@ -767,22 +767,22 @@ public sealed partial class AdvancedViewModel : ObservableObject
             if (life != "RUNNING")
             {
                 StatusMessage =
-                    $"{published.Value.Message} ({published.Value.Flags.SummarizeBudgetFlags()}). "
-                    + $"VM1 is '{_main.Vm1Lifecycle}' — SSH apply skipped. "
-                    + "Start VM1 and Apply again to change the on-box timer, or wait for boot force-enable when enabling.";
+                    $"{published.Value.Message} "
+                    + "The game VM is off, so it was not updated. "
+                    + "Start the server and save again to update it. Starting it always turns the idle timer on.";
                 return;
             }
 
-            StatusMessage = "Budget published — applying on VM1 via SSH…";
+            StatusMessage = "Saved — updating the game VM…";
             var ssh = await _ssh.ApplyIdleSettingsAsync(
                 _config.Vm1,
                 enabling,
                 timeout,
                 warn);
             StatusMessage = ssh.Succeeded
-                ? $"{published.Value.Message} Applied on VM1 "
-                  + (enabling ? "(timer enabled)." : "(timer stopped/disabled).")
-                : $"Budget published, but SSH apply failed: {ssh.Error}";
+                ? $"{published.Value.Message} Game VM updated "
+                  + (enabling ? "(idle timer on)." : "(idle timer off).")
+                : $"Saved, but updating the game VM failed: {ssh.Error}";
         }
         finally
         {
@@ -796,7 +796,7 @@ public sealed partial class AdvancedViewModel : ObservableObject
     {
         if (_infraStore is null || _config is null)
         {
-            StatusMessage = "Object Storage unavailable — cannot publish meta/infra.json.";
+            StatusMessage = "Cloud storage unavailable — can't save server details.";
             return;
         }
 
@@ -810,24 +810,25 @@ public sealed partial class AdvancedViewModel : ObservableObject
             || string.IsNullOrWhiteSpace(serverKind)
             || string.IsNullOrWhiteSpace(minecraftVersion))
         {
-            StatusMessage = "stack_version, server_kind, and minecraft_version are required.";
+            StatusMessage = "Setup version, server type, and Minecraft version are required.";
             return;
         }
 
         var confirmed = await _dialogs.ConfirmAsync(
-            "Publish infrastructure meta?",
-            "This writes meta/infra.json from local config (OCIDs, play IP, network, VM/door identity, Object Storage). "
-            + "It does NOT include SSH private keys, OCI API paths, or RCON passwords.\n\n"
-            + "If the bucket still has the legacy flat v1 object, this migrates it to nested v2 for Connect existing. Continue?",
-            confirmButtonText: "Publish meta");
+            "Save server details?",
+            "This saves this server's details (both VMs, the play IP, and the network) to cloud storage "
+            + "so another PC can find it with Find existing server. "
+            + "SSH private keys, API keys, and the console password are never included.\n\n"
+            + "Older saved details are updated to the current format. Continue?",
+            confirmButtonText: "Save");
         if (!confirmed)
         {
-            StatusMessage = "Publish meta cancelled.";
+            StatusMessage = "Save cancelled.";
             return;
         }
 
         IsBusy = true;
-        StatusMessage = "Publishing meta/infra.json…";
+        StatusMessage = "Saving server details…";
 
         try
         {
@@ -838,7 +839,7 @@ public sealed partial class AdvancedViewModel : ObservableObject
                 minecraftVersion: minecraftVersion);
             if (!published.Succeeded || published.Value is null)
             {
-                var error = published.Error ?? "Publish meta failed.";
+                var error = published.Error ?? "Saving server details failed.";
                 StatusMessage = error;
                 _banner.Show(error, ActionBannerSeverity.Error);
                 return;
@@ -898,7 +899,7 @@ public sealed partial class AdvancedViewModel : ObservableObject
     {
         if (_budgetStore is null)
         {
-            StatusMessage = "Object Storage unavailable — using local config for idle fields.";
+            StatusMessage = "Cloud storage unavailable — showing this PC's idle settings.";
             if (!HasIdleTimeoutChanges && !HasIdleEnabledChanges)
                 SeedIdleFromLocal();
             return;
@@ -908,14 +909,14 @@ public sealed partial class AdvancedViewModel : ObservableObject
             return;
 
         IsBusy = true;
-        StatusMessage = "Loading idle settings from Object Storage…";
+        StatusMessage = "Loading idle settings from cloud storage…";
 
         try
         {
             var pull = await _budgetStore.PullAsync(forceLedger: false);
             if (!pull.Succeeded || pull.Value is null)
             {
-                StatusMessage = pull.Error ?? "Failed to pull budget.";
+                StatusMessage = pull.Error ?? "Failed to load idle settings.";
                 SeedIdleFromLocal();
                 return;
             }
@@ -927,8 +928,8 @@ public sealed partial class AdvancedViewModel : ObservableObject
             if (!HasIdleTimeoutChanges && !HasIdleEnabledChanges)
                 ApplyBudgetToIdleEdit(budget);
             StatusMessage = pull.Value.BudgetMissing
-                ? "budget/config.json missing — seeded from local config."
-                : "Idle settings loaded from Object Storage budget.";
+                ? "Idle settings missing from cloud storage — showing this PC's settings."
+                : "Idle settings loaded from cloud storage.";
         }
         finally
         {
@@ -940,7 +941,7 @@ public sealed partial class AdvancedViewModel : ObservableObject
     {
         if (_infraStore is null)
         {
-            InfraSummary = "Object Storage unavailable — cannot read meta/infra.json.";
+            InfraSummary = "Cloud storage unavailable — can't read server details.";
             return;
         }
 
@@ -954,7 +955,7 @@ public sealed partial class AdvancedViewModel : ObservableObject
             var read = await _infraStore.GetAsync();
             if (!read.Succeeded || read.Value is null)
             {
-                InfraSummary = read.Error ?? "Failed to read meta/infra.json.";
+                InfraSummary = read.Error ?? "Failed to read server details.";
                 return;
             }
 
@@ -985,15 +986,15 @@ public sealed partial class AdvancedViewModel : ObservableObject
         _lastInfra = null;
         if (read.Missing)
         {
-            InfraSummary = "meta/infra.json missing — publish from local config to seed Connect existing.";
+            InfraSummary = "No server details saved yet. Save to let other PCs find this server.";
             return;
         }
 
         if (read.IsLegacy)
         {
             InfraSummary =
-                $"Legacy object needs migration. {read.LegacySummary ?? ""} "
-                + "Publish from local config to write nested v2.";
+                $"Server details use an older format. {read.LegacySummary ?? ""} "
+                + "Save to update them.";
             return;
         }
 
@@ -1113,7 +1114,7 @@ public sealed partial class AdvancedViewModel : ObservableObject
         var path = await _filePicker.OpenFileAsync(
             new FilePickRequest
             {
-                Title = $"Select SSH private key for the {label} (not stored in Object Storage)",
+                Title = $"Select SSH private key for the {label}",
                 InitialDirectory = SshKeyPathUx.InitialDirectory(current),
                 Filters = [new FileTypeFilter("All files", ".*")],
             });
@@ -1155,14 +1156,14 @@ public sealed partial class AdvancedViewModel : ObservableObject
                 Host = _config.Vm1.SshHost,
                 User = string.IsNullOrWhiteSpace(_config.Vm1.SshUser) ? "ubuntu" : _config.Vm1.SshUser,
                 KeyPath = path,
-                Label = "VM1",
+                Label = "Game VM",
             }
             : new SshTarget
             {
                 Host = _config.Door.SshHost,
                 User = string.IsNullOrWhiteSpace(_config.Door.SshUser) ? "ubuntu" : _config.Door.SshUser,
                 KeyPath = path,
-                Label = "door",
+                Label = "Doorbell VM",
             };
 
         var label = forVm1 ? "game VM" : "doorbell VM";
@@ -1247,13 +1248,13 @@ public sealed partial class AdvancedViewModel : ObservableObject
 
         if (!int.TryParse(EditIdleTimeout.Trim(), out timeout) || timeout < 1)
         {
-            error = "Idle timeout must be an integer ≥ 1.";
+            error = "Idle timeout must be a whole number, 1 or more.";
             return false;
         }
 
         if (!int.TryParse(EditBudgetWarn.Trim(), out warn) || warn < 0)
         {
-            error = "Budget warn minutes must be an integer ≥ 0.";
+            error = "Budget warning time must be a whole number, 0 or more.";
             return false;
         }
 

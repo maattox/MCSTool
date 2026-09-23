@@ -15,14 +15,14 @@
                 class="mcm-subtab @PaneClass("stack")"
                 aria-selected="@(IsPane("stack") ? "true" : "false")"
                 @onclick="@(() => SelectPane("stack"))">
-            Stack
+            Setup
         </button>
         <button type="button"
                 role="tab"
                 class="mcm-subtab @PaneClass("danger")"
                 aria-selected="@(IsPane("danger") ? "true" : "false")"
                 @onclick="@(() => SelectPane("danger"))">
-            Danger
+            Danger Zone
         </button>
     </nav>
 
@@ -31,41 +31,41 @@
     <div class="mcm-pane-stack" role="tabpanel">
     <div class="mcm-section-card">
         <div style="display:flex;align-items:center;gap:4px;margin-bottom:10px;">
-            <span style="font-size:14px;font-weight:600;">Technical status</span>
+            <span style="font-size:14px;font-weight:600;">VM status</span>
             <button type="button"
                     class="mcm-help"
-                    title="The top of the window only shows whether Minecraft is Running or Stopped. Door / VM details live here.">
+                    title="The sidebar only shows whether the server is Running or Stopped. Details for each VM are here.">
                 <i class="ti ti-help" aria-hidden="true"></i>
-                <span class="sr-only">About technical status</span>
+                <span class="sr-only">About VM status</span>
             </button>
         </div>
         <div style="display:grid;grid-template-columns:180px 1fr;gap:8px 12px;align-items:center;">
-            <span style="color:var(--text-muted);">Game VM (VM1)</span>
+            <span style="color:var(--text-muted);">Game VM</span>
             <span style="font-family:var(--font-mono);">@Vm.GameVmLifecycle</span>
-            <span style="color:var(--text-muted);">Door VM (VM2)</span>
+            <span style="color:var(--text-muted);">Doorbell VM</span>
             <span style="font-family:var(--font-mono);">@Vm.DoorVmLifecycle</span>
-            <span style="color:var(--text-muted);">Door service</span>
+            <span style="color:var(--text-muted);">Doorbell service</span>
             <span style="font-family:var(--font-mono);">@Vm.DoorServiceState</span>
         </div>
     </div>
 
     <div class="mcm-section-card">
-        <div style="font-size:14px;font-weight:600;margin-bottom:6px;">Break-glass VM power</div>
+        <div style="font-size:14px;font-weight:600;margin-bottom:6px;">Emergency power</div>
         <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);">
-                    These start or stop the game VM in Oracle Cloud and do not move the play IP. Everyday Start / Stop in the left sidebar are the doorbell-aware path players should use.
+                    Starts or stops the game VM directly in Oracle Cloud. Doesn't move the play IP. Use Start and Stop in the sidebar for normal use.
         </p>
         <div style="display:flex;flex-wrap:wrap;gap:8px;">
             <button type="button"
                     disabled="@Vm.IsBusy"
-                    title="OCI Compute start only. Does not move the reserved play IP."
+                    title="Starts the game VM only. Doesn't move the play IP."
                     @onclick="Vm.BreakGlassStartAsync">
-                Raw VM Start
+                Start game VM
             </button>
             <button type="button"
                     disabled="@Vm.IsBusy"
-                    title="OCI Compute stop only. Does not move the reserved play IP."
+                    title="Stops the game VM only. Doesn't move the play IP."
                     @onclick="Vm.BreakGlassSoftStopAsync">
-                Raw VM SoftStop
+                Stop game VM
             </button>
         </div>
     </div>
@@ -79,7 +79,7 @@
         @if (Vm.ShowServerSwitcher)
         {
             <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);">
-                Each server is a separate folder on this PC. Switching reloads Manager from that folder. Add server opens first-run for a new empty folder.
+                Each server is a separate folder on this PC. Switching reloads MCSTool from that folder. Add server opens the Welcome screen for a new empty folder.
             </p>
             <div class="mcm-field">
                 <label for="mcm-adv-server">Switch server</label>
@@ -121,7 +121,7 @@
                 <button type="button"
                         class="mcm-primary"
                         disabled="@Vm.IsBusy"
-                        title="Creates an empty folder and opens first-run. Does not create Oracle resources until you Deploy."
+                        title="Creates an empty folder and opens the Welcome screen. Nothing is created in Oracle Cloud until you Deploy."
                         @onclick="Vm.AddServerAsync">
                     Add server
                 </button>
@@ -136,21 +136,21 @@
     </div>
 
     <div class="mcm-section-card">
-        <div style="font-size:14px;font-weight:600;margin-bottom:6px;">Infrastructure setup</div>
+        <div style="font-size:14px;font-weight:600;margin-bottom:6px;">Cloud setup</div>
         <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);">
-            Deploy a new Always Free stack, repair an existing one, or attach this PC to a stack that is already in your tenancy. Auto-detect never runs by itself — only when you click the button.
+            Set up a new server, repair this one, or connect this PC to a server already in your Oracle account. Find existing server only runs when you click it.
         </p>
         <div style="display:flex;flex-wrap:wrap;gap:8px;">
             <button type="button"
-                    title="Opens Setup. Resume or re-run from here after a finished Deploy page (do not click Deploy twice on the same finished page). Does not run OpenTofu from this button."
+                    title="Opens Setup so you can resume or run it again. Don't click Deploy twice on the same finished page."
                     @onclick="Vm.OpenSetup">
-                Deploy / repair infrastructure
+                Deploy / repair
             </button>
             <button type="button"
                     disabled="@Vm.IsBusy"
-                    title="Looks for a product compartment and shared storage, then asks before writing local config."
+                    title="Looks in your Oracle account for a server made with MCSTool and asks before saving anything."
                     @onclick="Vm.AutoDetectAsync">
-                Auto-detect infrastructure
+                Find existing server
             </button>
         </div>
     </div>
@@ -160,19 +160,19 @@
             <span style="font-size:14px;font-weight:600;">SSH addresses</span>
             <button type="button"
                     class="mcm-help"
-                    title="These are the public ephemeral IPs MCSTool uses for SSH (PuTTY, WinSCP). Players join Minecraft with the reserved play IP in the sidebar. Refresh reads the current primary public IP from OCI and saves it locally.">
+                    title="The public IPs MCSTool uses for SSH (PuTTY, WinSCP). Players join with the play IP in the sidebar. Refresh reads the current IPs from Oracle and saves them on this PC.">
                 <i class="ti ti-help" aria-hidden="true"></i>
                 <span class="sr-only">About SSH addresses</span>
             </button>
         </div>
         <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);">
-            Players use the reserved play IP@(string.IsNullOrWhiteSpace(Vm.PlayReservedIp) ? "" : " (" + Vm.PlayReservedIp + ")"). These addresses are for SSH tools.
+            Players use the play IP@(string.IsNullOrWhiteSpace(Vm.PlayReservedIp) ? "" : " (" + Vm.PlayReservedIp + ")"). These addresses are for SSH tools.
         </p>
         <ul class="mcm-path-list">
             <li class="mcm-path-row">
                 <div class="mcm-path-copy">
                     <span class="mcm-path-label">Game VM</span>
-                    <span class="mcm-path-hint">Public ephemeral IP for SSH to the Minecraft VM.</span>
+                    <span class="mcm-path-hint">Public IP for SSH to the game VM.</span>
                     <code class="mcm-path-value">@Vm.Vm1SshHostDisplay</code>
                 </div>
                 <div class="mcm-path-actions">
@@ -188,16 +188,16 @@
             </li>
             <li class="mcm-path-row">
                 <div class="mcm-path-copy">
-                    <span class="mcm-path-label">Doorbell</span>
-                    <span class="mcm-path-hint">Public ephemeral IP for SSH to the door VM.</span>
+                    <span class="mcm-path-label">Doorbell VM</span>
+                    <span class="mcm-path-hint">Public IP for SSH to the doorbell VM.</span>
                     <code class="mcm-path-value">@Vm.DoorSshHostDisplay</code>
                 </div>
                 <div class="mcm-path-actions">
                     <button type="button"
                             class="mcm-copy-inline"
                             disabled="@(!Vm.HasDoorSshHost)"
-                            title="Copy doorbell SSH IP"
-                            aria-label="Copy doorbell SSH IP"
+                            title="Copy doorbell VM SSH IP"
+                            aria-label="Copy doorbell VM SSH IP"
                             @onclick="Vm.CopyDoorSshHostAsync">
                         <i class="ti ti-copy" aria-hidden="true"></i>
                     </button>
@@ -208,7 +208,7 @@
             <button type="button"
                     disabled="@(!Vm.CanRefreshSshHosts)"
                     @onclick="Vm.RefreshSshHostsFromOciAsync">
-                Refresh from OCI
+                Refresh from Oracle
             </button>
         </div>
     </div>
@@ -218,19 +218,19 @@
             <span style="font-size:14px;font-weight:600;">Player map</span>
             <button type="button"
                     class="mcm-help"
-                    title="Players open this URL in a browser. It is the doorbell ephemeral IP on port 80, not the reserved play IP. Refresh from OCI above updates the address if it changed.">
+                    title="Players open this in a browser. It uses the doorbell VM's address, not the play IP. Players must be on the whitelist.">
                 <i class="ti ti-help" aria-hidden="true"></i>
                 <span class="sr-only">About the player map URL</span>
             </button>
         </div>
         <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);">
-            Last explored terrain. The game VM does not need to be on.
+            Explored areas of the world. Works while the game VM is off.
         </p>
         <ul class="mcm-path-list">
             <li class="mcm-path-row">
                 <div class="mcm-path-copy">
                     <span class="mcm-path-label">Map URL</span>
-                    <span class="mcm-path-hint">Door ephemeral HTTP. Players need the same allowlisted IP as Minecraft.</span>
+                    <span class="mcm-path-hint">Refresh from Oracle above updates this if the address changes.</span>
                     <code class="mcm-path-value">@Vm.PlayerMapUrlDisplay</code>
                 </div>
                 <div class="mcm-path-actions">
@@ -258,7 +258,7 @@
             </button>
         </div>
         <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);">
-            Game VM and doorbell can use different private keys. Paths stay on this PC. Changing a path does not install a new key on the VM.
+            Game VM and doorbell VM can use different private keys. Paths stay on this PC. Changing a path does not install a new key on the VM.
         </p>
         @if (Vm.SshKeysUseSameFile)
         {
@@ -267,8 +267,8 @@
         <ul class="mcm-path-list">
             <li class="mcm-path-row">
                 <div class="mcm-path-copy">
-                    <span class="mcm-path-label">Game VM (VM1)</span>
-                    <span class="mcm-path-hint">Used for Minecraft, world, pack, and idle-agent SSH.</span>
+                    <span class="mcm-path-label">Game VM</span>
+                    <span class="mcm-path-hint">Used for Minecraft, world, modpack, and idle timer changes.</span>
                     <code class="mcm-path-value @(Vm.Vm1SshKeyMissing ? "is-missing" : null)">
                         @(string.IsNullOrWhiteSpace(Vm.EditVm1SshKeyPath) ? "—" : Vm.EditVm1SshKeyPath)
                     </code>
@@ -289,17 +289,17 @@
                     @if (Vm.CanCopyDoorKeyToVm1)
                     {
                         <button type="button"
-                                title="Use the doorbell private key for the game VM too"
+                                title="Use the doorbell VM private key for the game VM too"
                                 @onclick="Vm.CopyDoorKeyToVm1">
-                            Use door key
+                            Use doorbell VM key
                         </button>
                     }
                 </div>
             </li>
             <li class="mcm-path-row">
                 <div class="mcm-path-copy">
-                    <span class="mcm-path-label">Door VM</span>
-                    <span class="mcm-path-hint">Used for doorbell troubleshooting and repair SSH.</span>
+                    <span class="mcm-path-label">Doorbell VM</span>
+                    <span class="mcm-path-hint">Used for Troubleshooting and repairs on the doorbell VM.</span>
                     <code class="mcm-path-value @(Vm.DoorSshKeyMissing ? "is-missing" : null)">
                         @(string.IsNullOrWhiteSpace(Vm.EditDoorSshKeyPath) ? "—" : Vm.EditDoorSshKeyPath)
                     </code>
@@ -320,7 +320,7 @@
                     @if (Vm.CanCopyVm1KeyToDoor)
                     {
                         <button type="button"
-                                title="Use the game VM private key for the doorbell too"
+                                title="Use the game VM private key for the doorbell VM too"
                                 @onclick="Vm.CopyVm1KeyToDoor">
                             Use game VM key
                         </button>
@@ -340,31 +340,31 @@
 
     <div class="mcm-section-card">
         <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
-            <span style="font-size:14px;font-weight:600;">Stack identity (shared storage)</span>
+            <span style="font-size:14px;font-weight:600;">Server details for other PCs</span>
             <button type="button"
                     class="mcm-help"
-                    title="Publishes a description of this stack so another PC can Auto-detect it. Never includes SSH keys, API keys, or the RCON password.">
+                    title="Saves this server's details to cloud storage so another PC can find it with Find existing server. Never includes SSH keys, API keys, or the console password.">
                 <i class="ti ti-help" aria-hidden="true"></i>
-                <span class="sr-only">About stack identity</span>
+                <span class="sr-only">About server details</span>
             </button>
         </div>
         <p style="margin:0 0 12px;font-size:12px;opacity:0.85;font-family:var(--font-mono);white-space:pre-wrap;">@Vm.InfraSummary</p>
         <div style="display:grid;grid-template-columns:200px 1fr;gap:8px 12px;align-items:center;">
-            <label for="mcm-adv-stack-version">stack_version</label>
+            <label for="mcm-adv-stack-version">Setup version</label>
             <input id="mcm-adv-stack-version"
                    type="text"
                    disabled="@Vm.IsBusy"
                    @bind="Vm.EditStackVersion"
                    @bind:event="oninput" />
 
-            <label for="mcm-adv-server-kind">server_kind</label>
+            <label for="mcm-adv-server-kind">Server type</label>
             <input id="mcm-adv-server-kind"
                    type="text"
                    disabled="@Vm.IsBusy"
                    @bind="Vm.EditServerKind"
                    @bind:event="oninput" />
 
-            <label for="mcm-adv-mc-version">minecraft_version</label>
+            <label for="mcm-adv-mc-version">Minecraft version</label>
             <input id="mcm-adv-mc-version"
                    type="text"
                    disabled="@Vm.IsBusy"
@@ -375,7 +375,7 @@
             <button type="button"
                     disabled="@Vm.IsBusy"
                     @onclick="Vm.RefreshInfraMetaAsync">
-                Refresh infra meta
+                Refresh
             </button>
             <button type="button"
                     class="mcm-primary"

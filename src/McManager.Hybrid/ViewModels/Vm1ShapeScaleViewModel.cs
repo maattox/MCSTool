@@ -31,7 +31,7 @@ public sealed partial class Vm1ShapeScaleViewModel : ObservableObject
     private bool _isBusy;
 
     [ObservableProperty]
-    private string _statusMessage = "Server size is an Always Free setting. Apply only while the server is Stopped.";
+    private string _statusMessage = "VM size is an Always Free setting. Apply only while the server is Stopped.";
 
     [ObservableProperty]
     private string _vm1Lifecycle = "—";
@@ -120,20 +120,20 @@ public sealed partial class Vm1ShapeScaleViewModel : ObservableObject
         BindFromHost();
         if (_compute is null || _config is null)
         {
-            StatusMessage = "OCI session unavailable — cannot read VM1 size.";
+            StatusMessage = "Oracle Cloud connection unavailable — can't read the VM size.";
             SeedFromLocal();
             NotifyDerived();
             return;
         }
 
         IsBusy = true;
-        StatusMessage = "Reading VM1 size from Oracle…";
+        StatusMessage = "Reading the VM size from Oracle…";
         try
         {
             var shape = await _compute.GetInstanceShapeAsync(_config.Vm1.InstanceId);
             if (!shape.Succeeded || shape.Value is null)
             {
-                StatusMessage = shape.Error ?? "GetInstance failed.";
+                StatusMessage = shape.Error ?? "Reading the VM size failed.";
                 SeedFromLocal();
                 return;
             }
@@ -150,8 +150,8 @@ public sealed partial class Vm1ShapeScaleViewModel : ObservableObject
             SeedTargetFromCurrent();
             await PullBudgetAsync();
             StatusMessage =
-                $"Current size {CurrentSizeDisplay} (VM1 {Vm1Lifecycle}). "
-                + "Apply is disabled unless the server is Stopped.";
+                $"Current size: {CurrentSizeDisplay}. "
+                + "Apply only while the server is Stopped.";
         }
         finally
         {
@@ -168,7 +168,7 @@ public sealed partial class Vm1ShapeScaleViewModel : ObservableObject
         BindFromHost();
         if (_compute is null || _config is null)
         {
-            StatusMessage = "OCI session unavailable — cannot resize VM1.";
+            StatusMessage = "Oracle Cloud connection unavailable — can't change the VM size.";
             return;
         }
 
@@ -183,7 +183,7 @@ public sealed partial class Vm1ShapeScaleViewModel : ObservableObject
         var targetO = TargetOcpus;
         var targetM = TargetMemoryGb;
         var confirmed = await _dialogs.ConfirmAsync(
-            "Danger Zone — change server size?",
+            "Change VM size?",
             Vm1ShapeScaleUx.ConfirmMessage(
                 CurrentOcpus,
                 CurrentMemoryGb,
@@ -200,7 +200,7 @@ public sealed partial class Vm1ShapeScaleViewModel : ObservableObject
         }
 
         IsBusy = true;
-        StatusMessage = $"Updating VM1 to {Vm1ShapeScaleUx.FormatExact(targetO, targetM)}…";
+        StatusMessage = $"Changing the game VM to {Vm1ShapeScaleUx.FormatExact(targetO, targetM)}…";
         NotifyDerived();
         try
         {
@@ -220,7 +220,7 @@ public sealed partial class Vm1ShapeScaleViewModel : ObservableObject
                 targetM);
             if (!update.Succeeded)
             {
-                StatusMessage = update.Error ?? "UpdateInstance failed.";
+                StatusMessage = update.Error ?? "Changing the VM size failed.";
                 return;
             }
 
@@ -232,7 +232,7 @@ public sealed partial class Vm1ShapeScaleViewModel : ObservableObject
             if (!wait.Succeeded || wait.Value is null)
             {
                 StatusMessage = wait.Error
-                    ?? "Timed out waiting for the new size. Shared config was not updated.";
+                    ?? "Timed out waiting for the new size. Settings were not updated.";
                 return;
             }
 
@@ -250,9 +250,9 @@ public sealed partial class Vm1ShapeScaleViewModel : ObservableObject
             if (!saved.Succeeded)
             {
                 StatusMessage =
-                    $"Oracle size is now {CurrentSizeDisplay}, but saving config.local.json failed: "
+                    $"The VM size is now {CurrentSizeDisplay}, but saving settings on this PC failed: "
                     + (saved.Error ?? "unknown")
-                    + ". Shared budget/meta were not updated.";
+                    + ". Cloud storage was not updated.";
                 return;
             }
 
@@ -276,14 +276,14 @@ public sealed partial class Vm1ShapeScaleViewModel : ObservableObject
     {
         var notes = new List<string>
         {
-            $"Oracle size is {Vm1ShapeScaleUx.FormatExact(ocpus, memoryGb)}.",
-            "config.local.json updated.",
+            $"VM size is now {Vm1ShapeScaleUx.FormatExact(ocpus, memoryGb)}.",
+            "Saved on this PC.",
         };
         if (Vm1ShapeScaleUx.ServerMemoryWillClamp(previousHeap, memoryGb))
         {
             notes.Add(
-                $"Server memory in config is now {clampedHeap} "
-                + "(applied when Minecraft next starts).");
+                $"Server memory is now {clampedHeap} "
+                + "(applies when Minecraft next starts).");
         }
 
         if (_budgetStore is not null)
@@ -295,31 +295,31 @@ public sealed partial class Vm1ShapeScaleViewModel : ObservableObject
             if (published.Succeeded && published.Value is not null)
             {
                 _lastBudget = published.Value.Budget;
-                notes.Add("budget/config.json updated (ledger intervals unchanged).");
+                notes.Add("Budget saved to cloud storage.");
             }
             else
             {
-                notes.Add("budget/config.json publish failed: " + (published.Error ?? "unknown"));
+                notes.Add("Saving the budget to cloud storage failed: " + (published.Error ?? "unknown"));
             }
         }
         else
         {
-            notes.Add("Object Storage unavailable — budget/config.json not published.");
+            notes.Add("Cloud storage unavailable — budget not saved.");
         }
 
         if (_infraStore is not null && _config is not null)
         {
             var meta = await _infraStore.PublishFromLocalAsync(_config);
             notes.Add(meta.Succeeded
-                ? "meta/infra.json updated."
-                : "meta/infra.json publish failed: " + (meta.Error ?? "unknown"));
+                ? "Server details saved to cloud storage."
+                : "Saving server details failed: " + (meta.Error ?? "unknown"));
         }
         else
         {
-            notes.Add("Object Storage unavailable — meta/infra.json not published.");
+            notes.Add("Cloud storage unavailable — server details not saved.");
         }
 
-        notes.Add("On the next VM1 boot, the idle agent re-detects live size.");
+        notes.Add("The idle timer picks up the new size when the game VM next starts.");
         return string.Join(" ", notes);
     }
 

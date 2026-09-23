@@ -11,8 +11,8 @@ namespace McManager.Core.Services;
 public static class SshKeyPathUx
 {
     public const string HelpText =
-        "Private keys stay on this PC and are never uploaded. The game VM and doorbell can use different files. "
-        + "Pick the private key each VM already trusts — this does not install a new key on the guest.";
+        "Private keys stay on this PC and are never uploaded. The game VM and doorbell VM can use different files. "
+        + "Pick the private key each VM already trusts — this does not install a new key on the VM.";
 
     public static string Normalize(string? path) => (path ?? "").Trim();
 
@@ -82,7 +82,7 @@ public static class SshKeyPathUx
 
         var door = ValidatePrivateKeyFile(doorPath);
         if (!door.Succeeded)
-            return ServiceResult.Fail("Door VM: " + (door.Error ?? "invalid SSH key."));
+            return ServiceResult.Fail("Doorbell VM: " + (door.Error ?? "invalid SSH key."));
 
         return ServiceResult.Ok();
     }

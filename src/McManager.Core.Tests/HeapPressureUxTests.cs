@@ -26,7 +26,8 @@ public sealed class HeapPressureUxTests
         Assert.DoesNotContain("heap", notices.Snapshot()[0].Title, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("heap", notices.Snapshot()[0].Body, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("10G", notices.Snapshot()[0].Body, StringComparison.Ordinal);
-        Assert.Contains("Advanced → Danger", notices.Snapshot()[0].Body, StringComparison.Ordinal);
+        Assert.Contains("Advanced → Danger Zone", notices.Snapshot()[0].Body, StringComparison.Ordinal);
+        Assert.Contains("more server memory", notices.Snapshot()[0].Body, StringComparison.Ordinal);
 
         HeapPressureUx.SyncBell(notices, new HeapPressureReadResult { Present = false });
         Assert.Equal(0, notices.Count);

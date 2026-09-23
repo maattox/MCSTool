@@ -46,19 +46,21 @@ public sealed class Vm1ShapeScaleUxTests
     public void Preview_says_more_hours_when_scaling_down_and_less_when_scaling_up()
     {
         var down = Vm1ShapeScaleUx.PreviewBody(4, 24, 2, 12, 1400, 0);
-        Assert.Contains("more wall-clock uptime", down);
-        Assert.Contains("700.0 h", down);
-        Assert.Contains("350.0 h", down);
+        Assert.Contains("more hours of uptime", down);
+        Assert.Contains("700.0 hours", down);
+        Assert.Contains("350.0 hours", down);
+        Assert.DoesNotContain("wall-clock", down, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("OCPU-h", down, StringComparison.Ordinal);
 
         var up = Vm1ShapeScaleUx.PreviewBody(2, 12, 4, 24, 1400, 0);
-        Assert.Contains("less wall-clock uptime", up);
+        Assert.Contains("fewer hours of uptime", up);
     }
 
     [Fact]
     public void Confirm_message_warns_about_burn_rate_and_stopped_requirement()
     {
         var text = Vm1ShapeScaleUx.ConfirmMessage(4, 24, 2, 12, 1400, 200);
-        Assert.Contains("Always Free Ampere hours burn", text);
+        Assert.Contains("how fast Always Free hours are used", text);
         Assert.Contains("must stay Stopped", text);
         Assert.Contains("not offered", text);
         Assert.DoesNotContain("8 OCPU", text);

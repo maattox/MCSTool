@@ -28,7 +28,7 @@ public sealed partial class JvmExtraFlagsViewModel : ObservableObject
 
     [ObservableProperty]
     private string _statusMessage =
-        "Extra JVM flags (not server memory). Save restarts Minecraft; the VM stays up. Paper empty save restores Fill/Aikar flags.";
+        "Extra JVM flags (not server memory). Save restarts Minecraft; the game VM stays on. On Paper, saving an empty box restores the default flags.";
 
     [ObservableProperty]
     private string _flagsText = "";
@@ -38,11 +38,11 @@ public sealed partial class JvmExtraFlagsViewModel : ObservableObject
         get
         {
             if (_config is null)
-                return "Local config is missing.";
+                return "This server's settings are missing.";
             if (IsBusy)
                 return "";
             if (!ManagePowerUx.IsVm1Running(_main.Vm1Lifecycle))
-                return "Start the server from the sidebar first — loading and saving flags needs SSH.";
+                return "Start the server from the sidebar first. Flags can only be loaded or saved while it's running.";
             return "";
         }
     }
@@ -96,7 +96,7 @@ public sealed partial class JvmExtraFlagsViewModel : ObservableObject
             }
 
             FlagsText = JvmExtraFlags.Format(result.Value ?? []);
-            StatusMessage = "Loaded current extra flags. Server memory stays on the card above.";
+            StatusMessage = "Loaded current extra flags. Server memory is set on the card above.";
         }
         finally
         {
@@ -113,13 +113,13 @@ public sealed partial class JvmExtraFlagsViewModel : ObservableObject
         var strippedHeap = JvmExtraFlags.ContainedHeapTokens(FlagsText);
         var flags = JvmExtraFlags.Parse(FlagsText);
         var body =
-            "Changing JVM flags can stop Minecraft from starting. This rewrites the launch extras, "
-            + "restarts Minecraft, and leaves the VM up. Do not use /reload. Server memory (-Xms/-Xmx) stays on the card above.";
+            "Wrong JVM flags can stop Minecraft from starting. This saves the flags and restarts Minecraft; "
+            + "the game VM stays on. Do not use /reload. Server memory (-Xms/-Xmx) is set on the card above.";
         if (strippedHeap)
             body += " Any -Xms/-Xmx in the box will be ignored.";
 
         var confirmed = await _dialogs.ConfirmAsync(
-            "Save JVM flags?",
+            "Save extra JVM flags?",
             body,
             confirmButtonText: "Save");
         if (!confirmed)
@@ -129,14 +129,14 @@ public sealed partial class JvmExtraFlagsViewModel : ObservableObject
         }
 
         IsBusy = true;
-        StatusMessage = "Applying JVM flags and restarting Minecraft…";
+        StatusMessage = "Saving JVM flags and restarting Minecraft…";
         NotifyDerived();
         try
         {
             var result = await _ssh.ApplyJvmExtraFlagsAsync(_config.Vm1, flags);
             if (!result.Succeeded)
             {
-                StatusMessage = result.Error ?? "Flag apply failed.";
+                StatusMessage = result.Error ?? "Saving flags failed.";
                 return;
             }
 

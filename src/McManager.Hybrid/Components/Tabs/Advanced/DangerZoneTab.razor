@@ -9,7 +9,7 @@
     <div>
         <h2 id="mcm-danger-zone-title" class="mcm-danger-zone-title">Danger Zone</h2>
         <p class="mcm-danger-zone-lede">
-            Idle shutdown, server size, server memory, extra JVM flags, and deleting the cloud stack. These can turn off Always Free brakes or tear the stack down. Break-glass VM power is on Advanced → Status. Everyday Start / Stop stay in the left sidebar.
+            Idle shutdown, VM size, server memory, extra JVM flags, and deleting the server. These settings can use up your free hours or delete the server for good. Emergency power is on Advanced → Status. Everyday Start and Stop stay in the sidebar.
         </p>
     </div>
 
@@ -18,13 +18,13 @@
             <span class="mcm-danger-card-title">Idle shutdown</span>
             <button type="button"
                     class="mcm-help"
-                    title="The idle timer shuts the server down when nobody is playing (or Minecraft is not running) so you stay on Always Free. Disable only for short tests. Starting Minecraft or rebooting the VM turns the timer back on.">
+                    title="The idle timer shuts the server down when nobody is playing (or Minecraft is not running) so you stay on Always Free. Turn it off only for short tests. Starting Minecraft or restarting the game VM turns it back on.">
                 <i class="ti ti-help" aria-hidden="true"></i>
                 <span class="sr-only">About idle shutdown</span>
             </button>
         </div>
         <p style="margin:0 0 12px;font-size:13px;">
-            Testing / troubleshooting only. Unchecking this stops empty-server and daily-budget SoftStop until the next Minecraft boot. Boot force-enables idle (OS-ISSUE-7).
+            For testing only. While off, the server is not stopped when empty or out of daily hours. It turns back on the next time Minecraft starts.
         </p>
         <label class="mcm-checkbox-row" style="margin:0;" for="mcm-dz-idle-enabled">
             <input id="mcm-dz-idle-enabled"
@@ -78,20 +78,20 @@
 
     <div class="mcm-danger-card">
         <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
-            <span class="mcm-danger-card-title">Change server size</span>
+            <span class="mcm-danger-card-title">Change VM size</span>
             <button type="button"
                     class="mcm-help"
-                    title="Ampere A1 Flex OCPU and memory. Changing size changes how fast Always Free hours burn. Shrinking to 12 GB sets server memory to 8G if it was larger. The server and Minecraft must be Stopped. Past usage rows keep the size they were recorded at. Sizes above 4 OCPU / 24 GB are not offered yet.">
+                    title="CPUs and memory for the game VM. A bigger size uses Always Free hours faster. Shrinking to 12 GB sets server memory to 8G if it was higher. The server must be Stopped. Past usage keeps the size it was recorded at. Sizes above 4 OCPU / 24 GB are not offered yet.">
                 <i class="ti ti-help" aria-hidden="true"></i>
-                <span class="sr-only">About changing server size</span>
+                <span class="sr-only">About changing VM size</span>
             </button>
         </div>
         <p style="margin:0 0 12px;font-size:13px;">
             Current size: <strong>@Scale.CurrentSizeDisplay</strong>
-            <span> · VM1 @Scale.Vm1Lifecycle</span>
+            <span> · Game VM: @Scale.Vm1Lifecycle</span>
         </p>
         <p style="margin:0 0 10px;font-size:13px;">
-            Apply is disabled until the server is Stopped (top-bar Stop). Minecraft stops with it. Always Free sizes only — not larger than 4 OCPU / 24 GB.
+            Stop the server from the sidebar before changing the size. Always Free sizes only, up to 4 OCPU / 24 GB.
         </p>
         <label class="mcm-radio-row">
             <input type="radio"
@@ -112,7 +112,7 @@
                    @onchange="@(() => Scale.SelectSmallerShape())" />
             <span>
                 2 OCPU / 12 GB
-                <span class="mcm-radio-note">Smaller Always Free size. More wall-clock hours from the same OCPU-hour budget; less room if you add mods or more players. Server memory above 8G becomes 8G.</span>
+                <span class="mcm-radio-note">Smaller Always Free size. More hours from the same CPU-hours; less room for mods or more players. Server memory above 8G becomes 8G.</span>
             </span>
         </label>
         <div class="mcm-shape-preview">@Scale.PreviewText</div>
@@ -141,7 +141,7 @@
             <span class="mcm-danger-card-title">Server memory</span>
             <button type="button"
                     class="mcm-help"
-                    title="RAM allocated to the Minecraft server, not the VM size. Default 4G for vanilla. 8G still leaves about 4 GB for the OS. On the 24 GB size you can also pick 10G or 12G for heavier packs. Technical: -Xms always matches -Xmx. Paper keeps Fill/Aikar GC flags. Apply restarts Minecraft; the VM stays up. Do not use /reload.">
+                    title="Memory for Minecraft, not the whole VM. Default 4G for Vanilla. 8G still leaves about 4 GB for the OS. On the 24 GB size you can also pick 10G or 12G for heavier modpacks. Apply restarts Minecraft; the game VM stays on. Do not use /reload.">
                 <i class="ti ti-help" aria-hidden="true"></i>
                 <span class="sr-only">About server memory</span>
             </button>
@@ -150,7 +150,7 @@
             Current server memory: <strong>@Heap.CurrentHeapDisplay</strong>
         </p>
         <p style="margin:0 0 10px;font-size:13px;">
-            Apply is disabled until the server is Running. This does not change VM size.
+            Apply works only while the server is Running. This does not change the VM size.
         </p>
         <label class="mcm-radio-row">
             <input type="radio"
@@ -195,7 +195,7 @@
                        @onchange="@(() => Heap.Select10G())" />
                 <span>
                     10G
-                    <span class="mcm-radio-note">Extra RAM for heavier packs.</span>
+                    <span class="mcm-radio-note">More memory for heavier modpacks.</span>
                 </span>
             </label>
             <label class="mcm-radio-row">
@@ -206,7 +206,7 @@
                        @onchange="@(() => Heap.Select12G())" />
                 <span>
                     12G
-                    <span class="mcm-radio-note">Extra RAM for heavier packs.</span>
+                    <span class="mcm-radio-note">More memory for heavier modpacks.</span>
                 </span>
             </label>
         }
@@ -227,12 +227,12 @@
 
     <div class="mcm-danger-card">
         <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
-            <span class="mcm-danger-card-title">JVM flags</span>
+            <span class="mcm-danger-card-title">Extra JVM flags</span>
             <button type="button"
                     class="mcm-help"
-                    title="Do not put -Xms or -Xmx here; server memory stays on the card above. Paper loads Fill/Aikar flags; an empty save restores those. Paper and modded extras go in user_jvm_args or the unit. Save asks for confirm, then restarts Minecraft. Do not use /reload.">
+                    title="Do not put -Xms or -Xmx here; set server memory on the card above. On Paper, saving an empty box restores the default flags. Save asks you to confirm, then restarts Minecraft. Do not use /reload.">
                 <i class="ti ti-help" aria-hidden="true"></i>
-                <span class="sr-only">About JVM flags</span>
+                <span class="sr-only">About extra JVM flags</span>
             </button>
         </div>
         <p style="margin:0 0 10px;font-size:13px;">
@@ -256,7 +256,7 @@
             <button type="button"
                     disabled="@(!Flags.CanLoad)"
                     @onclick="Flags.LoadAsync">
-                Reload from VM
+                Reload from game VM
             </button>
             <button type="button"
                     class="mcm-danger-btn"
@@ -270,23 +270,23 @@
 
     <div class="mcm-danger-card">
         <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
-            <span class="mcm-danger-card-title">Delete infrastructure</span>
+            <span class="mcm-danger-card-title">Delete from Oracle Cloud</span>
             <button type="button"
                     class="mcm-help"
-                    title="Removes only the product stack this Manager deployed (OpenTofu state on this PC). Does not delete your Oracle tenancy or Oracle’s default account resources.">
+                    title="Deletes only what MCSTool created for this server. Nothing else in your Oracle account is deleted, and your account stays open.">
                 <i class="ti ti-help" aria-hidden="true"></i>
-                <span class="sr-only">About delete infrastructure</span>
+                <span class="sr-only">About deleting from Oracle Cloud</span>
             </button>
         </div>
         <p style="margin:0 0 12px;font-size:13px;">
-            Tear down the Always Free stack so you can run Setup again on this tenancy. World backups in shared storage are deleted. This does not close your Oracle account.
+            Delete this server from Oracle Cloud, for example to run Setup again. World backups in cloud storage are deleted too. Your Oracle account stays open.
         </p>
         <button type="button"
                 class="mcm-danger-btn"
                 disabled="@Vm.IsBusy"
-                title="Opens a confirm window. Type confirm, then watch OpenTofu delete the stack. The window stays open until Oracle finishes."
+                title="Opens a confirm window. Type confirm to delete. The window stays open until Oracle finishes."
                 @onclick="Destroy.Open">
-            Delete infrastructure
+            Delete from Oracle Cloud
         </button>
     </div>
 

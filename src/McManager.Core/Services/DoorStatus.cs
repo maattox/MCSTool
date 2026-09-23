@@ -64,7 +64,7 @@ public sealed class DoorStatus
         {
             var life = (vm1Lifecycle ?? "").ToUpperInvariant();
             if (life is "STOPPED" or "STOPPING")
-                return "Degraded / recovering (door PLAYABLE, VM1 down)";
+                return "Recovering (doorbell VM ready, game VM off)";
             return "Playable";
         }
 

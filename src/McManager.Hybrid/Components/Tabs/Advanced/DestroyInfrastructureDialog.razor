@@ -20,13 +20,10 @@
         @if (Vm.ShowConfirm)
         {
             <p class="mcm-modal-body">
-                This deletes the Minecraft stack this Manager deployed: both computers, the network, the reserved play IP, shared storage (including world backups in the cloud), IAM, budget, and Function wiring.
+                This deletes everything MCSTool created for this server: both VMs, the network, the play IP, cloud storage (including world backups), access policies, the $1 budget, and the $1 spending limit. Nothing else in your Oracle account is deleted, and your account stays open.
             </p>
             <p class="mcm-modal-body">
-                Only OpenTofu-managed product resources are removed. Oracle’s default tenancy resources stay. This does not close your Oracle account — you would still sign in to the OCI Console in a browser to delete the tenancy itself.
-            </p>
-            <p class="mcm-modal-body">
-                Worlds that exist only in the cloud are gone. Downloaded zips on this PC, your API key, SSH keys, and the player list stay.
+                Worlds that are only in the cloud are gone. World zips you downloaded, your API key, SSH keys, and the player list stay on this PC.
             </p>
             @if (Vm.IsTofuDryRun)
             {
@@ -48,7 +45,7 @@
                         class="mcm-danger-btn"
                         disabled="@(!Vm.CanStartDestroy)"
                         @onclick="Vm.StartDestroyAsync">
-                    Delete infrastructure
+                    Delete
                 </button>
             </div>
         }
