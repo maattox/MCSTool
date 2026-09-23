@@ -41,7 +41,7 @@ public sealed partial class ChromeViewModel : ObservableObject
 
     public string AppName { get; } = "MCSTool";
 
-    public string Tagline { get; } = "Automated Minecraft server deployment and management tool";
+    public string Tagline { get; } = "Create and manage a Minecraft server on Oracle Always Free";
 
     public string ContactEmail { get; } = "mcstool.contact@gmail.com";
 
@@ -104,7 +104,7 @@ public sealed partial class ChromeViewModel : ObservableObject
             return;
         }
 
-        CopyFeedback = "Copied " + row.Label.ToLowerInvariant() + ".";
+        CopyFeedback = row.Label + " path copied.";
         _copyCts?.Cancel();
         _copyCts = new CancellationTokenSource();
         var token = _copyCts.Token;

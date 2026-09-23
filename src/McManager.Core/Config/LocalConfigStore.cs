@@ -18,7 +18,7 @@ public static class LocalConfigStore
 
     /// <summary>User-facing save failure when no writable settings folder can be resolved.</summary>
     public const string CannotWriteSettingsMessage =
-        "Could not save Manager settings on this PC. Check that files can be written under Local App Data.";
+        "Could not save MCSTool settings on this PC. Check that files can be written under Local App Data.";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -97,7 +97,7 @@ public static class LocalConfigStore
         }
         catch (Exception ex)
         {
-            return ServiceResult.Fail($"Could not write Manager settings: {ex.Message}");
+            return ServiceResult.Fail($"Could not write MCSTool settings: {ex.Message}");
         }
     }
 
@@ -117,7 +117,7 @@ public static class LocalConfigStore
         }
         catch (Exception ex)
         {
-            return ServiceResult.Fail($"Could not write Manager settings: {ex.Message}");
+            return ServiceResult.Fail($"Could not write MCSTool settings: {ex.Message}");
         }
     }
 
@@ -152,7 +152,7 @@ public static class LocalConfigStore
         if (dataDir is null)
         {
             return LocalConfigLoadResult.Missing(
-                "Could not find Manager settings on this PC.");
+                "Could not find MCSTool settings on this PC.");
         }
 
         var configPath = Path.Combine(dataDir, ConfigFileName);
@@ -229,11 +229,11 @@ public static class LocalConfigStore
 
         var vm1Key = ExpandPath(config.Vm1.SshKeyPath);
         if (!string.IsNullOrWhiteSpace(vm1Key) && !File.Exists(vm1Key))
-            warnings.Add($"VM1 SSH key not found: {vm1Key}");
+            warnings.Add($"Game VM SSH key not found: {vm1Key}");
 
         var doorKey = ExpandPath(config.Door.SshKeyPath);
         if (!string.IsNullOrWhiteSpace(doorKey) && !File.Exists(doorKey))
-            warnings.Add($"Door SSH key not found: {doorKey}");
+            warnings.Add($"Doorbell VM SSH key not found: {doorKey}");
 
         return warnings;
     }

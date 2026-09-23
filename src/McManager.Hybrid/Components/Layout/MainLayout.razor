@@ -190,10 +190,10 @@
             </div>
             <div class="mcm-statcard">
                 <div class="mcm-stat-label">
-                    <span class="mcm-stat-label-text">Rollover bank</span>
+                    <span class="mcm-stat-label-text">Rollover</span>
                     <button type="button" class="mcm-help" title="@Vm.PinRolloverHelp">
                         <i class="ti ti-help" aria-hidden="true"></i>
-                        <span class="sr-only">About rollover bank</span>
+                        <span class="sr-only">About rollover</span>
                     </button>
                 </div>
                 <div class="mcm-stat-line">
@@ -204,7 +204,7 @@
             <div class="mcm-sidebar-gap" aria-hidden="true"></div>
         </div>
 
-        <nav class="mcm-tabs" role="tablist" aria-label="Manager sections" aria-orientation="vertical">
+        <nav class="mcm-tabs" role="tablist" aria-label="Sections" aria-orientation="vertical">
             <div class="mcm-tab-stack">
             <button type="button"
                     role="tab"
@@ -460,9 +460,9 @@
                         <input id="mcm-check-updates"
                                type="checkbox"
                                @bind="Chrome.CheckForUpdates" />
-                        Check for updates when Manager opens
+                        Check for updates when MCSTool opens
                     </label>
-                    <p class="mcm-settings-note">When this is on, Manager asks GitHub Releases once as it opens. If a newer version is published, you get the release notes and a download link. Manager never installs an update by itself.</p>
+                    <p class="mcm-settings-note">MCSTool checks GitHub once when it opens. If there is a newer version, you see the release notes and a download link. Updates are never installed automatically.</p>
                     @if (!string.IsNullOrWhiteSpace(Chrome.SaveError))
                     {
                         <p class="mcm-settings-error" role="alert">@Chrome.SaveError</p>

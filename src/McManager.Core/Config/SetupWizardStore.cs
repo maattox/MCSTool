@@ -129,7 +129,7 @@ public static class SetupWizardStore
         }
         catch (Exception ex)
         {
-            return ServiceResult.Fail($"Could not write Manager settings: {ex.Message}");
+            return ServiceResult.Fail($"Could not write MCSTool settings: {ex.Message}");
         }
     }
 }

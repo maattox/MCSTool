@@ -8,8 +8,7 @@ namespace McManager.Hybrid.ViewModels;
 /// </summary>
 public sealed partial class NotificationCenterViewModel : ObservableObject, IDisposable
 {
-    public const string EmptyState =
-        "Nothing waiting. Notices about this server show here — for example if a world save is too large for automatic cloud backup.";
+    public const string EmptyState = "No notifications.";
 
     public const string DebugTitle = "DEBUG: sample notice";
 

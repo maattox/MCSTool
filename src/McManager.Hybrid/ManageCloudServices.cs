@@ -52,7 +52,7 @@ public sealed class ManageCloudServices : IDisposable
         var sessionResult = OciSession.TryCreate(config);
         if (!sessionResult.Succeeded || sessionResult.Value is null)
         {
-            SessionError = sessionResult.Error ?? "Cloud session failed.";
+            SessionError = sessionResult.Error ?? "Oracle Cloud connection failed.";
         }
         else
         {
