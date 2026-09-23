@@ -7,6 +7,9 @@ namespace McManager.Core.Services;
 
 public sealed class SecurityListService : ISecurityListService
 {
+    /// <summary>OCI per-Security-List ingress rule cap.</summary>
+    public const int MaxIngressRules = 200;
+
     private readonly OciSession _session;
 
     public SecurityListService(OciSession session) => _session = session;
@@ -92,6 +95,12 @@ public sealed class SecurityListService : ISecurityListService
                 sshPort,
                 doorHttpPort,
                 adminName);
+
+            if (plan.Ingress.Count > MaxIngressRules)
+            {
+                return ServiceResult<SecurityListApplyResult>.Fail(
+                    $"Too many Whitelist entries: Oracle allows {MaxIngressRules} firewall rules and this list needs {plan.Ingress.Count}. Remove some entries and try again.");
+            }
 
             await _session.VirtualNetwork.UpdateSecurityList(
                 new UpdateSecurityListRequest
